@@ -1,0 +1,42 @@
+{
+  "name": "remote-debug-agent",
+  "version": "1.0.0",
+  "description": "Safe remote Linux debugging through a local SSH-backed agent.",
+  "author": {
+    "name": "Local Developer"
+  },
+  "homepage": "https://example.local/remote-debug-agent",
+  "repository": "https://example.local/remote-debug-agent",
+  "license": "MIT",
+  "keywords": [
+    "remote-debug",
+    "ssh",
+    "devops",
+    "nginx",
+    "logs"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Remote Debug Agent",
+    "shortDescription": "Debug Linux servers through a safe local SSH agent",
+    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. The local agent enforces command allowlists, path boundaries, SSH configuration, timeouts, and audit logging.",
+    "developerName": "Local Developer",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://example.local/remote-debug-agent",
+    "privacyPolicyURL": "https://example.local/remote-debug-agent/privacy",
+    "termsOfServiceURL": "https://example.local/remote-debug-agent/terms",
+    "defaultPrompt": [
+      "Why is port 9000 unreachable?",
+      "Check nginx errors safely",
+      "Inspect app logs under /home/app"
+    ],
+    "brandColor": "#0F766E",
+    "screenshots": []
+  }
+}
+

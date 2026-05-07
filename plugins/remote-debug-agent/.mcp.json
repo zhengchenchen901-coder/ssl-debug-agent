@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "remote-debug-agent": {
+      "command": "C:\\nvm4w\\nodejs\\node.exe",
+      "args": [
+        "./mcp-server.js"
+      ],
+      "env": {
+        "REMOTE_DEBUG_AGENT_URL": "http://127.0.0.1:3000"
+      }
+    }
+  }
+}

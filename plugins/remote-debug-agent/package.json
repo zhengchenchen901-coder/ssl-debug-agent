@@ -1,0 +1,15 @@
+{
+  "name": "remote-debug-agent-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Codex Desktop MCP wrapper for the Remote Debug Agent.",
+  "main": "mcp-server.js",
+  "scripts": {
+    "start": "node mcp-server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18.17"
+  }
+}
