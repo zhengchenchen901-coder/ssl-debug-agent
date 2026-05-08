@@ -91,8 +91,55 @@ codex plugin install .\plugins\remote-debug-agent
 ```
 
 The plugin starts `mcp-server.js`, which forwards tool calls to the local agent.
-The bundled `.mcp.json` uses the nvm-managed Node shim at
-`C:\nvm4w\nodejs\node.exe`, so run `nvm use 22.18.0` before testing the plugin.
+The bundled `.mcp.json` starts Node with the `node` command, so make sure Node is
+available on your `PATH` in the environment where Codex Desktop runs. If Codex
+cannot find Node, change `plugins\remote-debug-agent\.mcp.json` to use the full
+path to your local `node.exe`.
+
+## Use From A Fresh Clone
+
+Another Codex Desktop user can install this plugin directly from the Git
+repository:
+
+```powershell
+git clone https://github.com/zhengchenchen901-coder/ssl-debug-agent.git
+cd ssl-debug-agent
+```
+
+Install and start the local agent:
+
+```powershell
+cd agent
+npm install
+npm start
+```
+
+In another terminal, configure SSH credentials from the repository root:
+
+```powershell
+cd ..
+Copy-Item .env.example .env
+```
+
+Edit `.env` with the target server details:
+
+```text
+REMOTE_DEBUG_HOST=example.com
+REMOTE_DEBUG_PORT=22
+REMOTE_DEBUG_USER=app
+REMOTE_DEBUG_PRIVATE_KEY_PATH=C:\Users\you\.ssh\id_ed25519
+REMOTE_DEBUG_AGENT_PORT=3000
+```
+
+Then install the Codex Desktop plugin from the repository root:
+
+```powershell
+codex plugin install .\plugins\remote-debug-agent
+```
+
+Restart Codex Desktop or open a new Codex thread after installation. Keep
+`npm start` running in the `agent` directory while using the plugin, because the
+plugin forwards MCP calls to that local HTTP agent.
 
 ## Exposed Tools
 
