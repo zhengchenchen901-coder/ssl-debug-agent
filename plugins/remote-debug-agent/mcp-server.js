@@ -4,14 +4,84 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PROTOCOL_VERSION = "2024-11-05";
+const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
+const PLUGIN_VERSION = "1.0.5";
 const DEFAULT_AGENT_PORT = 3000;
 const PROBE_TIMEOUT_MS = 1500;
 const START_TIMEOUT_MS = 7000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "..", "..");
+
+function normalizeWindowsExtendedPath(inputPath) {
+  return inputPath.replace(/^\\\\\?\\/, "");
+}
+
+function codexHomeDir() {
+  return process.env.CODEX_HOME ||
+    path.join(process.env.USERPROFILE || process.env.HOME || "", ".codex");
+}
+
+function marketplaceNameFromCachePath() {
+  const parts = path.normalize(__dirname).split(path.sep);
+  const cacheIndex = parts.lastIndexOf("cache");
+  if (cacheIndex === -1 || cacheIndex + 1 >= parts.length) {
+    return "";
+  }
+
+  return parts[cacheIndex + 1];
+}
+
+function readMarketplaceSource(marketplaceName) {
+  if (!marketplaceName) {
+    return "";
+  }
+
+  const configPath = path.join(codexHomeDir(), "config.toml");
+  if (!fs.existsSync(configPath)) {
+    return "";
+  }
+
+  const sectionNames = new Set([
+    `[marketplaces.${marketplaceName}]`,
+    `[marketplaces."${marketplaceName}"]`,
+  ]);
+  let inSection = false;
+
+  for (const line of fs.readFileSync(configPath, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      inSection = sectionNames.has(trimmed);
+      continue;
+    }
+
+    if (!inSection) {
+      continue;
+    }
+
+    const match = /^source\s*=\s*(['"])(.*)\1\s*$/.exec(trimmed);
+    if (match) {
+      return normalizeWindowsExtendedPath(match[2]);
+    }
+  }
+
+  return "";
+}
+
+function resolveProjectRoot() {
+  if (process.env.REMOTE_DEBUG_PROJECT_ROOT) {
+    return path.resolve(normalizeWindowsExtendedPath(process.env.REMOTE_DEBUG_PROJECT_ROOT));
+  }
+
+  const marketplaceSource = readMarketplaceSource(marketplaceNameFromCachePath());
+  if (marketplaceSource) {
+    return path.resolve(marketplaceSource);
+  }
+
+  return path.resolve(__dirname, "..", "..");
+}
+
+const projectRoot = resolveProjectRoot();
 
 const tools = [
   {
@@ -181,8 +251,15 @@ function agentSettings() {
 async function appendPluginLog(settings, event) {
   const entry = {
     time: new Date().toISOString(),
+    component: "mcp-server",
+    pluginVersion: PLUGIN_VERSION,
+    projectRoot,
+    mcpServerPath: __filename,
+    pid: process.pid,
     agentUrl: settings.agentUrl,
     port: settings.port,
+    agentDir: settings.agentDir,
+    explicitAgentUrl: settings.explicitUrl,
     ...event,
   };
 
@@ -192,6 +269,70 @@ async function appendPluginLog(settings, event) {
   } catch (error) {
     console.error("failed to write MCP runtime log", error);
   }
+}
+
+function fallbackLogSettings(error) {
+  const runtimeDir = path.resolve(__dirname, ".runtime");
+
+  return {
+    agentUrl: "",
+    port: null,
+    agentDir: "",
+    explicitUrl: false,
+    runtimeDir,
+    logPath: path.resolve(runtimeDir, "mcp-error.log"),
+    settingsError: {
+      code: error?.code || "AGENT_SETTINGS_ERROR",
+      message: error?.message || "failed to resolve Remote Debug Agent settings",
+    },
+  };
+}
+
+function logSettings() {
+  try {
+    return agentSettings();
+  } catch (error) {
+    return fallbackLogSettings(error);
+  }
+}
+
+function toolArgumentSummary(name, args = {}) {
+  if (name === "remote_debug_run_command") {
+    return {
+      cmd: typeof args.cmd === "string" ? args.cmd.slice(0, 256) : undefined,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_read_file") {
+    return {
+      path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+      maxBytes: args.maxBytes,
+    };
+  }
+
+  if (name === "remote_debug_list_dir") {
+    return {
+      path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+    };
+  }
+
+  return {
+    keys: Object.keys(args).slice(0, 20),
+  };
+}
+
+async function logMcpLifecycle(code, message, event = {}) {
+  const settings = logSettings();
+  const details = {
+    level: "info",
+    code,
+    message,
+    settingsError: settings.settingsError,
+    ...event,
+  };
+
+  await appendPluginLog(settings, details);
 }
 
 function sendMessage(message) {
@@ -206,6 +347,12 @@ function sendResult(id, result) {
 
 function sendError(id, code, message) {
   sendMessage({ jsonrpc: "2.0", id, error: { code, message } });
+}
+
+function protocolVersionFor(params) {
+  return typeof params?.protocolVersion === "string" && params.protocolVersion
+    ? params.protocolVersion
+    : DEFAULT_PROTOCOL_VERSION;
 }
 
 async function fetchJson(url, options = {}) {
@@ -403,7 +550,7 @@ async function startAgent(settings, reason) {
   throw error;
 }
 
-async function ensureAgentReady() {
+async function performEnsureAgentReady() {
   const settings = agentSettings();
   if (settings.explicitUrl) {
     return settings;
@@ -446,6 +593,43 @@ async function ensureAgentReady() {
     details: error.payload,
   });
   throw error;
+}
+
+let ensureAgentReadyPromise = null;
+
+function ensureAgentReady() {
+  if (!ensureAgentReadyPromise) {
+    ensureAgentReadyPromise = performEnsureAgentReady().finally(() => {
+      ensureAgentReadyPromise = null;
+    });
+  }
+
+  return ensureAgentReadyPromise;
+}
+
+function scheduleAgentPrewarm(trigger) {
+  let settings;
+  try {
+    settings = agentSettings();
+  } catch (error) {
+    console.error(`failed to resolve Remote Debug Agent settings during ${trigger}: ${error.message}`);
+    return;
+  }
+
+  if (settings.explicitUrl || ensureAgentReadyPromise) {
+    return;
+  }
+
+  ensureAgentReady().catch((error) => {
+    appendPluginLog(settings, {
+      level: "error",
+      code: error.code || "AGENT_PREWARM_FAILED",
+      message: `Remote Debug Agent prewarm failed during ${trigger}: ${error.message}`,
+      details: error.payload,
+    }).catch((logError) => {
+      console.error("failed to write MCP prewarm failure log", logError);
+    });
+  });
 }
 
 async function callAgent(pathName, payload) {
@@ -518,27 +702,70 @@ async function handleRequest(message) {
   const { id, method, params } = message;
 
   if (method === "initialize") {
+    const protocolVersion = protocolVersionFor(params);
+    await logMcpLifecycle("MCP_INITIALIZE", "MCP initialize received.", {
+      requestId: id,
+      method,
+      protocolVersion,
+      clientName: params?.clientInfo?.name,
+      clientVersion: params?.clientInfo?.version,
+    });
     sendResult(id, {
-      protocolVersion: PROTOCOL_VERSION,
+      protocolVersion,
       capabilities: {
+        resources: {},
         tools: {},
       },
       serverInfo: {
         name: "remote-debug-agent",
-        version: "1.0.0",
+        version: PLUGIN_VERSION,
       },
     });
+    scheduleAgentPrewarm("initialize");
     return;
   }
 
   if (method === "tools/list") {
+    await logMcpLifecycle("MCP_TOOLS_LIST", "MCP tools/list received.", {
+      requestId: id,
+      method,
+      toolNames: tools.map((tool) => tool.name),
+      toolCount: tools.length,
+    });
     sendResult(id, { tools });
+    scheduleAgentPrewarm("tools/list");
+    return;
+  }
+
+  if (method === "resources/list") {
+    await logMcpLifecycle("MCP_RESOURCES_LIST", "MCP resources/list received.", {
+      requestId: id,
+      method,
+    });
+    sendResult(id, { resources: [] });
     return;
   }
 
   if (method === "tools/call") {
+    const startedAt = Date.now();
+    const toolName = params?.name;
+    const toolArguments = params?.arguments || {};
+    await logMcpLifecycle("MCP_TOOLS_CALL_STARTED", "MCP tools/call started.", {
+      requestId: id,
+      method,
+      toolName,
+      arguments: toolArgumentSummary(toolName, toolArguments),
+    });
+
     try {
-      const result = await callTool(params?.name, params?.arguments || {});
+      const result = await callTool(toolName, toolArguments);
+      await logMcpLifecycle("MCP_TOOLS_CALL_COMPLETED", "MCP tools/call completed.", {
+        requestId: id,
+        method,
+        toolName,
+        durationMs: Date.now() - startedAt,
+        ok: true,
+      });
       sendResult(id, {
         content: [
           {
@@ -548,6 +775,17 @@ async function handleRequest(message) {
         ],
       });
     } catch (error) {
+      await logMcpLifecycle("MCP_TOOLS_CALL_FAILED", "MCP tools/call failed.", {
+        requestId: id,
+        method,
+        toolName,
+        durationMs: Date.now() - startedAt,
+        ok: false,
+        error: {
+          code: error.code || "TOOL_CALL_FAILED",
+          message: error.message,
+        },
+      });
       sendResult(id, {
         isError: true,
         content: [

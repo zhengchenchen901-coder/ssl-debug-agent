@@ -178,9 +178,9 @@ server.listen(port, "127.0.0.1");
   );
 }
 
-function startMcp(env) {
-  return spawn(process.execPath, [serverPath], {
-    cwd: path.dirname(serverPath),
+function startMcp(env, targetServerPath = serverPath) {
+  return spawn(process.execPath, [targetServerPath], {
+    cwd: path.dirname(targetServerPath),
     env: {
       ...process.env,
       ...env,
@@ -229,10 +229,14 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       ],
     );
 
+    child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 3, method: "resources/list" }));
+    const resources = await readMessage();
+    assert.deepEqual(resources.result.resources, []);
+
     child.stdin.write(
       encodeMessage({
         jsonrpc: "2.0",
-        id: 3,
+        id: 4,
         method: "tools/call",
         params: {
           name: "remote_debug_run_command",
@@ -268,6 +272,105 @@ test("MCP starts the local agent from .env port when no service is listening", a
     REMOTE_DEBUG_ENV_PATH: envPath,
     REMOTE_DEBUG_AGENT_DIR: agentDir,
   });
+
+  try {
+    const call = await callRunTool(child);
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+  } finally {
+    child.kill();
+    const status = await waitForStatus(port);
+    process.kill(status.agent.pid);
+  }
+});
+
+test("MCP prewarms the local agent after initialize", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-prewarm-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const port = await getFreePort();
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+  });
+  const readMessage = createMessageReader(child);
+
+  try {
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: { protocolVersion: "2025-06-18" },
+      }),
+    );
+    const initialize = await readMessage();
+    assert.equal(initialize.result.serverInfo.name, "remote-debug-agent");
+    assert.equal(initialize.result.protocolVersion, "2025-06-18");
+
+    const status = await waitForStatus(port);
+    assert.equal(status.name, "remote-debug-agent");
+    assert.equal(status.agent.port, port);
+    process.kill(status.agent.pid);
+  } finally {
+    child.kill();
+  }
+});
+
+test("MCP resolves project root from Codex local marketplace config when running from cache", async () => {
+  const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-project-"));
+  const codexHome = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-codex-home-"));
+  const agentDir = path.join(projectDir, "agent");
+  const cacheDir = path.join(
+    codexHome,
+    "plugins",
+    "cache",
+    "remote-debug-local",
+    "remote-debug-agent",
+    "1.0.5",
+  );
+  const installedServerPath = path.join(cacheDir, "mcp-server.js");
+  const port = await getFreePort();
+
+  await writeFakeAgent(agentDir);
+  await fs.mkdir(cacheDir, { recursive: true });
+  await fs.copyFile(serverPath, installedServerPath);
+  await fs.writeFile(
+    path.join(projectDir, ".env"),
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+  await fs.writeFile(
+    path.join(codexHome, "config.toml"),
+    [
+      "[marketplaces.remote-debug-local]",
+      'source_type = "local"',
+      `source = '${projectDir}'`,
+    ].join("\n"),
+  );
+
+  const child = startMcp(
+    {
+      CODEX_HOME: codexHome,
+      REMOTE_DEBUG_AGENT_URL: "",
+      REMOTE_DEBUG_AGENT_DIR: "",
+      REMOTE_DEBUG_ENV_PATH: "",
+    },
+    installedServerPath,
+  );
 
   try {
     const call = await callRunTool(child);

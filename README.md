@@ -76,7 +76,8 @@ cd remote-debug-agent\agent
 npm install
 ```
 
-The Codex plugin starts and repairs the local agent automatically from `.env`.
+The Codex plugin prewarms, starts, and repairs the local agent automatically from `.env`
+after the MCP server initializes.
 For manual debugging, run `npm start` in the `agent` directory. The agent listens
 on `http://127.0.0.1:3000` by default, or `REMOTE_DEBUG_AGENT_PORT` when set.
 
@@ -101,6 +102,58 @@ The bundled `.mcp.json` starts Node with the `node` command, so make sure Node i
 available on your `PATH` in the environment where Codex Desktop runs. If Codex
 cannot find Node, change `plugins\remote-debug-agent\.mcp.json` to use the full
 path to your local `node.exe`.
+
+## Update The Codex Plugin
+
+For users who installed this plugin from a local clone:
+
+```powershell
+git pull
+codex plugin marketplace add .
+```
+
+Then reinstall or re-enable `remote-debug-agent` in Codex Desktop, and restart
+Codex Desktop or open a new Codex thread so the MCP server reloads the updated
+plugin files.
+If Codex logs still reference an older cache path such as
+`remote-debug-agent/1.0.0`, the old installed plugin is still active.
+
+`codex plugin marketplace upgrade remote-debug-local` is only for Git-backed
+marketplaces. Local marketplaces must be updated with `git pull` and
+`codex plugin marketplace add .`, then reinstalled or re-enabled in Codex
+Desktop.
+
+For users who configured a Git-backed marketplace, use:
+
+```powershell
+codex plugin marketplace upgrade <marketplace-name>
+```
+
+## Troubleshooting Plugin Loading
+
+If Codex Desktop says the `remote_debug_*` tools are unavailable, first confirm
+that the MCP wrapper itself can expose them:
+
+```powershell
+cd plugins\remote-debug-agent
+npm run diagnose
+```
+
+The diagnose command starts `mcp-server.js` over stdio, sends `initialize` and
+`tools/list`, and checks the local HTTP agent `/status` endpoint. A healthy MCP
+wrapper should list:
+
+```text
+remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir
+```
+
+The MCP wrapper writes lifecycle events to
+`plugins\remote-debug-agent\.runtime\mcp-error.log`, including `initialize`,
+`tools/list`, `tools/call`, the resolved project root, agent URL, and plugin
+version. If the diagnose command lists the tools but the current Codex thread
+does not expose them, reinstall or re-enable the plugin in Codex Desktop, then
+restart Codex Desktop or open a new thread. Existing threads cannot be forced by
+repository code to inject newly loaded MCP tools.
 
 ## Use From A Fresh Clone
 

@@ -96,7 +96,9 @@ async function writeRuntimeState(config, event) {
   };
 
   await fs.mkdir(path.dirname(statePath), { recursive: true });
-  await fs.writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
+  await fs.writeFile(tempPath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  await fs.rename(tempPath, statePath);
 }
 
 function requestText(value, maxChars = 256) {
