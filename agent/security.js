@@ -9,6 +9,11 @@ export const ALLOWED_COMMANDS = new Set([
   "free",
   "tail",
   "grep",
+  "mongodump",
+  "mongo",
+  "mongosh",
+  "systemctl",
+  "nginx",
 ]);
 
 export const DENIED_COMMANDS = new Set([
@@ -23,6 +28,12 @@ export const DENIED_COMMANDS = new Set([
 
 const SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
 const SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/;
+const VERSION_ONLY_COMMANDS = new Set(["mongodump", "mongo", "mongosh"]);
+const ALLOWED_SYSTEMCTL_ACTIONS = new Set(["status", "is-active", "is-enabled"]);
+const ALLOWED_SYSTEMCTL_UNITS = new Set(["mongod", "mongod.service", "nginx", "nginx.service"]);
+const ALLOWED_SYSTEMCTL_OPTIONS = new Set(["--no-pager", "--plain", "--full"]);
+const SYSTEMCTL_LINES_PATTERN = /^--lines=\d+$/;
+const ALLOWED_NGINX_ARGS = new Set(["-t", "-T", "-v", "-V"]);
 
 export class SecurityError extends Error {
   constructor(message, code = "SECURITY_REJECTED") {
@@ -132,6 +143,78 @@ function validateTail(tokens) {
   }
 }
 
+function validateVersionOnlyCommand(executable, tokens) {
+  if (tokens.length !== 2 || tokens[1] !== "--version") {
+    throw new SecurityError(
+      `${executable} only supports --version`,
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+}
+
+function isAllowedSystemctlOption(token) {
+  return ALLOWED_SYSTEMCTL_OPTIONS.has(token) || SYSTEMCTL_LINES_PATTERN.test(token);
+}
+
+function validateSystemctl(tokens) {
+  const commandTokens = [];
+
+  for (const token of tokens.slice(1)) {
+    if (token.startsWith("-")) {
+      if (!isAllowedSystemctlOption(token)) {
+        throw new SecurityError(
+          `unsupported systemctl option: ${token}`,
+          "UNSUPPORTED_COMMAND_ARGUMENTS",
+        );
+      }
+      continue;
+    }
+
+    commandTokens.push(token);
+  }
+
+  if (commandTokens.length !== 2) {
+    throw new SecurityError(
+      "systemctl requires one read-only action and one supported unit",
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+
+  const [action, unit] = commandTokens;
+  if (!ALLOWED_SYSTEMCTL_ACTIONS.has(action)) {
+    throw new SecurityError(
+      `unsupported systemctl action: ${action}`,
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+
+  if (!ALLOWED_SYSTEMCTL_UNITS.has(unit)) {
+    throw new SecurityError(
+      `unsupported systemctl unit: ${unit}`,
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+}
+
+function validateNginx(tokens) {
+  const args = tokens.slice(1);
+  if (args.length === 0) {
+    throw new SecurityError(
+      "nginx requires a supported diagnostic flag",
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+
+  for (const arg of args) {
+    if (!ALLOWED_NGINX_ARGS.has(arg)) {
+      throw new SecurityError(
+        `unsupported nginx argument: ${arg}`,
+        "UNSUPPORTED_COMMAND_ARGUMENTS",
+      );
+    }
+  }
+}
+
 export function validateCommand(command, options = {}) {
   const allowedPaths = options.allowedPaths || [];
   const tokens = tokenizeCommand(command);
@@ -153,6 +236,18 @@ export function validateCommand(command, options = {}) {
 
   if (executable === "tail") {
     validateTail(tokens);
+  }
+
+  if (VERSION_ONLY_COMMANDS.has(executable)) {
+    validateVersionOnlyCommand(executable, tokens);
+  }
+
+  if (executable === "systemctl") {
+    validateSystemctl(tokens);
+  }
+
+  if (executable === "nginx") {
+    validateNginx(tokens);
   }
 
   const absolutePaths = validatePathArguments(executable, tokens, allowedPaths);

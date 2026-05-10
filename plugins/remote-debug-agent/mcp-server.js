@@ -95,7 +95,8 @@ const tools = [
       properties: {
         cmd: {
           type: "string",
-          description: "Command such as 'netstat -tlnp' or 'tail -n 100 /var/log/nginx/error.log'.",
+          description:
+            "Command such as 'netstat -tlnp', 'systemctl status nginx', or 'tail -n 100 /var/log/nginx/error.log'.",
         },
         timeoutMs: {
           type: "number",

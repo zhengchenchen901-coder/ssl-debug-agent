@@ -21,9 +21,15 @@ path allowlists.
 2. Check listening ports with `netstat -tlnp`.
 3. Check process state with `ps aux`.
 4. Inspect disk and memory with `df -h` and `free -m` when relevant.
-5. Inspect nginx config under `/etc/nginx` only when nginx may be involved.
-6. Inspect logs under `/var/log` and app files under `/home/app` only as needed.
-7. Summarize evidence, likely root cause, confidence, and next safe action.
+5. Check service state with `systemctl status nginx` or
+   `systemctl status mongod` when relevant.
+6. Use `nginx -t` or `nginx -T` when nginx config validation or merged config
+   output is needed.
+7. Inspect nginx config under `/etc/nginx` only when nginx may be involved.
+8. Inspect logs under `/var/log` and app files under `/home/app` only as needed.
+9. Use `mongodump --version`, `mongo --version`, or `mongosh --version` when
+   MongoDB tool availability must be confirmed.
+10. Summarize evidence, likely root cause, confidence, and next safe action.
 
 ## Safety Rules
 

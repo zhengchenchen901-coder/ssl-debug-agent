@@ -16,6 +16,16 @@ const security = {
 test("allows whitelisted diagnostic commands", () => {
   assert.equal(validateCommand("netstat -tlnp", security).normalizedCommand, "netstat -tlnp");
   assert.equal(validateCommand("ps aux", security).normalizedCommand, "ps aux");
+  assert.equal(validateCommand("mongodump --version", security).normalizedCommand, "mongodump --version");
+  assert.equal(validateCommand("mongo --version", security).normalizedCommand, "mongo --version");
+  assert.equal(validateCommand("mongosh --version", security).normalizedCommand, "mongosh --version");
+  assert.equal(validateCommand("systemctl status mongod", security).normalizedCommand, "systemctl status mongod");
+  assert.equal(
+    validateCommand("systemctl --no-pager status nginx.service", security).normalizedCommand,
+    "systemctl --no-pager status nginx.service",
+  );
+  assert.equal(validateCommand("nginx -t", security).normalizedCommand, "nginx -t");
+  assert.equal(validateCommand("nginx -T", security).normalizedCommand, "nginx -T");
   const tail = validateCommand("tail -n 100 /var/log/nginx/error.log", security);
   assert.equal(tail.normalizedCommand, "tail -n 100 /var/log/nginx/error.log");
   assert.deepEqual(tail.absolutePaths, ["/var/log/nginx/error.log"]);
@@ -34,6 +44,16 @@ test("rejects shell injection and streaming tails", () => {
   assert.throws(() => validateCommand("ls", security), /requires at least one/);
   assert.throws(() => validateCommand("grep error", security), /requires at least one/);
   assert.throws(() => validateCommand("cat nginx/error.log", security), /relative or embedded/);
+});
+
+test("restricts newly allowed commands to read-only diagnostics", () => {
+  assert.throws(
+    () => validateCommand("mongodump --archive=/tmp/dump.archive", security),
+    /only supports --version/,
+  );
+  assert.throws(() => validateCommand("systemctl restart nginx", security), /unsupported systemctl action/);
+  assert.throws(() => validateCommand("systemctl status ssh", security), /unsupported systemctl unit/);
+  assert.throws(() => validateCommand("nginx -s reload", security), /unsupported nginx argument/);
 });
 
 test("enforces allowed path roots", () => {

@@ -210,7 +210,31 @@ needed when you want to debug the agent manually.
 Allowed commands:
 
 ```text
-ls cat ps netstat df free tail grep
+ls cat ps netstat df free tail grep mongodump mongo mongosh systemctl nginx
+```
+
+Additional command constraints:
+
+- MongoDB client/tool commands are limited to `--version`.
+- `systemctl` is limited to read-only `status`, `is-active`, and `is-enabled`
+  checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
+- `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.
+- Path-reading commands such as `ls`, `cat`, `tail`, and `grep` require at
+  least one allowed absolute path.
+
+Example commands:
+
+```text
+mongodump --version
+mongo --version
+mongosh --version
+systemctl status mongod
+systemctl status nginx
+nginx -t
+nginx -T
+cat /etc/nginx/nginx.conf
+ls /etc/nginx
+grep server_name /etc/nginx/nginx.conf
 ```
 
 Allowed path roots:
@@ -220,6 +244,54 @@ Allowed path roots:
 /etc/nginx
 /home/app
 ```
+
+## Architecture And Command Security
+
+The plugin is an MCP wrapper and local agent launcher. It does not execute SSH
+commands directly. The command path is:
+
+```text
+Codex
+  -> plugins/remote-debug-agent/mcp-server.js
+  -> agent/server.js local HTTP API
+  -> agent/ssh.js SSH or SFTP client
+  -> remote Linux server
+```
+
+`mcp-server.js` exposes the MCP tools, resolves `.env`, discovers or starts the
+local HTTP agent, and forwards tool calls to `http://127.0.0.1:<port>`.
+`remote_debug_run_command` forwards `cmd` and `timeoutMs` to the agent's `/run`
+endpoint. `remote_debug_read_file` and `remote_debug_list_dir` use the agent's
+SFTP-backed file endpoints.
+
+The local HTTP agent is the security boundary. For `/run`, `agent/server.js`
+calls `validateCommand` from `agent/security.js` before any SSH command is
+executed. Only the normalized command returned by validation is passed to
+`agent/ssh.js`.
+
+Command validation applies these checks:
+
+- The command must be a non-empty string and no longer than 4096 characters.
+- Shell control characters are rejected, including `;`, `&`, `|`, backticks,
+  `$`, redirects, brackets, backslashes, and newlines.
+- Tokens may only contain the safe character set used by
+  `SAFE_TOKEN_PATTERN`.
+- The executable must be in `ALLOWED_COMMANDS`.
+- Dangerous commands are denied even if they appear inside a token, including
+  `rm`, `sudo`, `shutdown`, `reboot`, `mkfs`, `chmod`, and `chown`.
+- `tail -f` and `tail --follow` are rejected.
+- `mongodump`, `mongo`, and `mongosh` are limited to `--version`.
+- `systemctl` is limited to read-only `status`, `is-active`, and `is-enabled`
+  checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
+- `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.
+- Path-reading commands such as `ls`, `cat`, `tail`, and `grep` require at
+  least one allowed absolute path under `/var/log`, `/etc/nginx`, or
+  `/home/app`.
+
+If a command contains path arguments, the agent also resolves the remote
+canonical paths before execution to reduce symlink escape risk. Audit logs are
+written after each operation with command metadata, duration, result sizes, and
+success or failure.
 
 ## Safety Rules
 
