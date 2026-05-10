@@ -40,7 +40,24 @@ function makeConfig(logPath) {
       maxCommandOutputBytes: 1024 * 1024,
     },
     audit: { logPath },
+    runtime: { statePath: path.join(path.dirname(logPath), "agent-state.json") },
   };
+}
+
+async function waitForFileJson(filePath) {
+  const deadline = Date.now() + 3000;
+  let lastError;
+
+  while (Date.now() < deadline) {
+    try {
+      return JSON.parse(await fsPromises.readFile(filePath, "utf8"));
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
+  throw lastError || new Error(`timed out waiting for ${filePath}`);
 }
 
 async function getText(server, route) {
@@ -200,6 +217,8 @@ test("dashboard serves status and streams remote interaction activity", { skip: 
 
     const status = await getJson(server, "/status");
     assert.equal(status.status, 200);
+    assert.equal(status.body.agent.pid, process.pid);
+    assert.equal(typeof status.body.agent.configFingerprint, "string");
     assert.deepEqual(status.body.security.allowedPaths, DEFAULT_ALLOWED_PATHS);
 
     let runPromise;
@@ -225,6 +244,29 @@ test("dashboard serves status and streams remote interaction activity", { skip: 
     assert.match(stream, /streamed output/);
   } finally {
     await close(server);
+  }
+});
+
+test("startServer records port binding errors in runtime state", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const blocker = http.createServer((_request, response) => response.end("busy"));
+  await new Promise((resolve, reject) => {
+    blocker.once("error", reject);
+    blocker.listen(0, "127.0.0.1", resolve);
+  });
+
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-bind-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.agent.port = blocker.address().port;
+  const failedServer = startServer(config);
+
+  try {
+    const state = await waitForFileJson(config.runtime.statePath);
+    assert.equal(state.status, "error");
+    assert.equal(state.lastError.code, "EADDRINUSE");
+  } finally {
+    failedServer.close();
+    await close(blocker);
   }
 });
 

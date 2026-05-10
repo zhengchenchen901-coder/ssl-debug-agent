@@ -1,5 +1,17 @@
-const AGENT_URL = process.env.REMOTE_DEBUG_AGENT_URL || "http://127.0.0.1:3000";
+import { execFile, spawn } from "node:child_process";
+import fs from "node:fs";
+import fsp from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 const PROTOCOL_VERSION = "2024-11-05";
+const DEFAULT_AGENT_PORT = 3000;
+const PROBE_TIMEOUT_MS = 1500;
+const START_TIMEOUT_MS = 7000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, "..", "..");
 
 const tools = [
   {
@@ -60,6 +72,128 @@ const tools = [
   },
 ];
 
+function parseEnvFile(contents) {
+  const parsed = {};
+
+  for (const line of contents.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) continue;
+
+    if (
+      (value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+      if (line.includes("\"")) {
+        value = value
+          .replace(/\\n/g, "\n")
+          .replace(/\\r/g, "\r")
+          .replace(/\\t/g, "\t")
+          .replace(/\\"/g, "\"");
+      }
+    } else {
+      value = value.replace(/\s+#.*$/, "");
+    }
+
+    parsed[key] = value;
+  }
+
+  return parsed;
+}
+
+function readEnvFile(envPath) {
+  if (!envPath || !fs.existsSync(envPath)) {
+    return {};
+  }
+
+  return parseEnvFile(fs.readFileSync(envPath, "utf8"));
+}
+
+function loadDotEnv() {
+  const explicitEnvPath = process.env.REMOTE_DEBUG_ENV_PATH;
+  if (explicitEnvPath) {
+    return readEnvFile(explicitEnvPath);
+  }
+
+  return {
+    ...readEnvFile(path.resolve(projectRoot, ".env")),
+    ...readEnvFile(path.resolve(projectRoot, "agent", ".env")),
+  };
+}
+
+function loadRemoteDebugEnv() {
+  const env = { ...process.env };
+  const dotEnv = loadDotEnv();
+
+  for (const [key, value] of Object.entries(dotEnv)) {
+    if (key.startsWith("REMOTE_DEBUG_")) {
+      env[key] = value;
+    }
+  }
+
+  return env;
+}
+
+function parsePositivePort(value, fallback) {
+  if (value === undefined || value === "") {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
+    const error = new Error(`REMOTE_DEBUG_AGENT_PORT must be a valid TCP port: ${value}`);
+    error.code = "INVALID_AGENT_PORT";
+    throw error;
+  }
+
+  return parsed;
+}
+
+function agentSettings() {
+  const env = loadRemoteDebugEnv();
+  const explicitUrl = env.REMOTE_DEBUG_AGENT_URL || "";
+  const port = parsePositivePort(env.REMOTE_DEBUG_AGENT_PORT, DEFAULT_AGENT_PORT);
+  const agentUrl = explicitUrl || `http://127.0.0.1:${port}`;
+  const agentDir = path.resolve(env.REMOTE_DEBUG_AGENT_DIR || path.resolve(projectRoot, "agent"));
+  const statePath = path.resolve(agentDir, ".runtime", "agent-state.json");
+  const runtimeDir = path.resolve(__dirname, ".runtime");
+
+  return {
+    env,
+    explicitUrl: Boolean(explicitUrl),
+    agentUrl,
+    port,
+    agentDir,
+    serverPath: path.resolve(agentDir, "server.js"),
+    statePath,
+    runtimeDir,
+    logPath: path.resolve(runtimeDir, "mcp-error.log"),
+  };
+}
+
+async function appendPluginLog(settings, event) {
+  const entry = {
+    time: new Date().toISOString(),
+    agentUrl: settings.agentUrl,
+    port: settings.port,
+    ...event,
+  };
+
+  try {
+    await fsp.mkdir(settings.runtimeDir, { recursive: true });
+    await fsp.appendFile(settings.logPath, `${JSON.stringify(entry)}\n`, "utf8");
+  } catch (error) {
+    console.error("failed to write MCP runtime log", error);
+  }
+}
+
 function sendMessage(message) {
   const body = Buffer.from(JSON.stringify(message), "utf8");
   process.stdout.write(`Content-Length: ${body.length}\r\n\r\n`);
@@ -74,22 +208,268 @@ function sendError(id, code, message) {
   sendMessage({ jsonrpc: "2.0", id, error: { code, message } });
 }
 
-async function callAgent(path, payload) {
-  const response = await fetch(new URL(path, AGENT_URL), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Remote-Debug-Source": "codex-plugin",
-    },
-    body: JSON.stringify(payload),
+async function fetchJson(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs || PROBE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let parsed;
+
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = { ok: false, raw: text };
+    }
+
+    return { response, parsed };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isConnectionRefused(error) {
+  const code = error?.cause?.code || error?.code;
+  return code === "ECONNREFUSED" || code === "ENOENT";
+}
+
+async function probeAgent(settings) {
+  try {
+    const { response, parsed } = await fetchJson(new URL("/status", settings.agentUrl));
+    if (parsed?.name === "remote-debug-agent") {
+      return { kind: "agent", response, status: parsed };
+    }
+
+    return { kind: "occupied", response, status: parsed };
+  } catch (error) {
+    if (isConnectionRefused(error)) {
+      return { kind: "unreachable", error };
+    }
+
+    return { kind: "occupied", error };
+  }
+}
+
+function agentStatusIsHealthy(status, settings) {
+  const agentPort = status?.agent?.port;
+  const portMatches = agentPort === undefined || agentPort === settings.port;
+
+  return Boolean(
+    status?.name === "remote-debug-agent" &&
+      portMatches &&
+      status?.target?.host &&
+      status?.target?.username,
+  );
+}
+
+async function readState(settings) {
+  try {
+    return JSON.parse(await fsp.readFile(settings.statePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function execFileText(command, args) {
+  return new Promise((resolve) => {
+    execFile(command, args, { windowsHide: true }, (error, stdout) => {
+      resolve(error ? "" : stdout);
+    });
+  });
+}
+
+async function findListeningPid(port) {
+  if (process.platform === "win32") {
+    const output = await execFileText("netstat", ["-ano", "-p", "tcp"]);
+    for (const line of output.split(/\r?\n/)) {
+      if (!line.includes("LISTENING")) continue;
+
+      const parts = line.trim().split(/\s+/);
+      const localAddress = parts[1] || "";
+      const pid = Number.parseInt(parts[4], 10);
+      if (localAddress.endsWith(`:${port}`) && Number.isInteger(pid)) {
+        return pid;
+      }
+    }
+  } else {
+    const output = await execFileText("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"]);
+    const pid = Number.parseInt(output.trim().split(/\s+/)[0], 10);
+    if (Number.isInteger(pid)) {
+      return pid;
+    }
+  }
+
+  return null;
+}
+
+async function stopConfirmedAgent(settings, status) {
+  const state = await readState(settings);
+  const pid =
+    status?.agent?.pid ||
+    (state?.name === "remote-debug-agent" && state?.port === settings.port ? state.pid : null) ||
+    (await findListeningPid(settings.port));
+
+  if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid) {
+    const error = new Error("Remote Debug Agent is unhealthy, but no safe local pid was found to restart it.");
+    error.code = "AGENT_RESTART_UNSAFE";
+    error.payload = { agentUrl: settings.agentUrl, port: settings.port, status, state };
+    throw error;
+  }
+
+  await appendPluginLog(settings, {
+    level: "warn",
+    code: "AGENT_RESTARTING",
+    message: "Stopping unhealthy Remote Debug Agent before restart.",
+    pid,
+  });
+  process.kill(pid);
+
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const probe = await probeAgent(settings);
+    if (probe.kind === "unreachable") {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+async function startAgent(settings, reason) {
+  if (!fs.existsSync(settings.serverPath)) {
+    const error = new Error(`Remote Debug Agent server not found: ${settings.serverPath}`);
+    error.code = "AGENT_SERVER_NOT_FOUND";
+    error.payload = { agentDir: settings.agentDir, serverPath: settings.serverPath };
+    throw error;
+  }
+
+  await appendPluginLog(settings, {
+    level: "info",
+    code: "AGENT_STARTING",
+    message: reason,
+    serverPath: settings.serverPath,
   });
 
-  const text = await response.text();
+  const child = spawn(process.execPath, [settings.serverPath], {
+    cwd: settings.agentDir,
+    detached: true,
+    env: {
+      ...process.env,
+      ...settings.env,
+      REMOTE_DEBUG_AGENT_PORT: String(settings.port),
+    },
+    stdio: "ignore",
+    windowsHide: true,
+  });
+  child.unref();
+
+  const deadline = Date.now() + START_TIMEOUT_MS;
+  let lastProbe;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    lastProbe = await probeAgent(settings);
+    if (lastProbe.kind === "agent" && agentStatusIsHealthy(lastProbe.status, settings)) {
+      await appendPluginLog(settings, {
+        level: "info",
+        code: "AGENT_READY",
+        message: "Remote Debug Agent is ready.",
+        pid: lastProbe.status?.agent?.pid,
+      });
+      return;
+    }
+    if (lastProbe.kind === "occupied") {
+      break;
+    }
+  }
+
+  const state = await readState(settings);
+  const error = new Error(`Remote Debug Agent did not become ready at ${settings.agentUrl}`);
+  error.code = "AGENT_START_FAILED";
+  error.payload = {
+    agentUrl: settings.agentUrl,
+    port: settings.port,
+    lastProbe,
+    lastError: state?.lastError,
+  };
+  await appendPluginLog(settings, {
+    level: "error",
+    code: error.code,
+    message: error.message,
+    details: error.payload,
+  });
+  throw error;
+}
+
+async function ensureAgentReady() {
+  const settings = agentSettings();
+  if (settings.explicitUrl) {
+    return settings;
+  }
+
+  const probe = await probeAgent(settings);
+  if (probe.kind === "agent" && agentStatusIsHealthy(probe.status, settings)) {
+    return settings;
+  }
+
+  if (probe.kind === "agent") {
+    await appendPluginLog(settings, {
+      level: "warn",
+      code: "AGENT_UNHEALTHY",
+      message: "Remote Debug Agent responded but does not match the configured target.",
+      status: probe.status,
+    });
+    await stopConfirmedAgent(settings, probe.status);
+    await startAgent(settings, "Restarting unhealthy Remote Debug Agent.");
+    return settings;
+  }
+
+  if (probe.kind === "unreachable") {
+    await startAgent(settings, "Starting missing Remote Debug Agent.");
+    return settings;
+  }
+
+  const error = new Error(`Port ${settings.port} is occupied by a non Remote Debug Agent service.`);
+  error.code = "AGENT_PORT_OCCUPIED";
+  error.payload = {
+    agentUrl: settings.agentUrl,
+    port: settings.port,
+    status: probe.status,
+    error: probe.error?.message,
+  };
+  await appendPluginLog(settings, {
+    level: "error",
+    code: error.code,
+    message: error.message,
+    details: error.payload,
+  });
+  throw error;
+}
+
+async function callAgent(pathName, payload) {
+  const settings = await ensureAgentReady();
+  let response;
   let parsed;
+
   try {
-    parsed = JSON.parse(text);
-  } catch {
-    parsed = { ok: false, raw: text };
+    const result = await fetchJson(new URL(pathName, settings.agentUrl), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Remote-Debug-Source": "codex-plugin",
+      },
+      body: JSON.stringify(payload),
+      timeoutMs: payload?.timeoutMs || 30_000,
+    });
+    response = result.response;
+    parsed = result.parsed;
+  } catch (error) {
+    const wrapped = new Error(`Remote Debug Agent is unavailable at ${settings.agentUrl}: ${error.message}`);
+    wrapped.code = "AGENT_UNAVAILABLE";
+    wrapped.payload = { agentUrl: settings.agentUrl, port: settings.port };
+    throw wrapped;
   }
 
   if (!response.ok || parsed.ok === false) {
@@ -97,7 +477,11 @@ async function callAgent(path, payload) {
     const code = parsed.error?.code || "AGENT_REQUEST_FAILED";
     const error = new Error(message);
     error.code = code;
-    error.payload = parsed;
+    error.payload = {
+      agentUrl: settings.agentUrl,
+      port: settings.port,
+      ...parsed,
+    };
     throw error;
   }
 

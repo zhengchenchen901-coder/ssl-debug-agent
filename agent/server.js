@@ -1,5 +1,6 @@
 import express from "express";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
@@ -56,6 +57,46 @@ function publicSecurity(config) {
     defaultReadMaxBytes: config.security.defaultReadMaxBytes,
     maxCommandOutputBytes: config.security.maxCommandOutputBytes,
   };
+}
+
+function configFingerprint(config) {
+  const publicConfig = {
+    agent: config.agent,
+    ssh: publicTarget(config),
+    security: publicSecurity(config),
+  };
+
+  return createHash("sha256").update(JSON.stringify(publicConfig)).digest("hex");
+}
+
+function publicAgent(config) {
+  return {
+    host: config.agent.host,
+    port: config.agent.port,
+    pid: process.pid,
+    configFingerprint: configFingerprint(config),
+  };
+}
+
+async function writeRuntimeState(config, event) {
+  const statePath = config.runtime?.statePath;
+  if (!statePath) {
+    return;
+  }
+
+  const state = {
+    name: "remote-debug-agent",
+    pid: process.pid,
+    host: config.agent.host,
+    port: config.agent.port,
+    target: publicTarget(config),
+    configFingerprint: configFingerprint(config),
+    ...event,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await fs.mkdir(path.dirname(statePath), { recursive: true });
+  await fs.writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 }
 
 function requestText(value, maxChars = 256) {
@@ -158,6 +199,7 @@ export function createApp(options = {}) {
     response.json({
       ok: true,
       name: "remote-debug-agent",
+      agent: publicAgent(config),
       target: publicTarget(config),
       security: publicSecurity(config),
       recentEvents: activity.list().slice(-20),
@@ -365,20 +407,64 @@ export function createApp(options = {}) {
   return app;
 }
 
-export function startServer(config = loadConfig()) {
-  const app = createApp({ config });
-  return app.listen(config.agent.port, config.agent.host, () => {
-    console.log(
-      `remote-debug-agent listening on http://${config.agent.host}:${config.agent.port}`,
-    );
-  });
+function isEntrypointProcess() {
+  return Boolean(
+    process.argv[1] &&
+      path.resolve(__filename) === path.resolve(process.argv[1]),
+  );
 }
 
-const isEntrypoint =
-  process.argv[1] &&
-  path.resolve(__filename) === path.resolve(process.argv[1]);
+export function startServer(config = loadConfig()) {
+  const app = createApp({ config });
+  const startedAt = new Date().toISOString();
+  const server = app.listen(config.agent.port, config.agent.host, () => {
+    const address = server.address();
+    const port = typeof address === "object" && address ? address.port : config.agent.port;
+    const event = {
+      status: "listening",
+      startedAt,
+      port,
+      hasTargetHost: Boolean(config.ssh.host),
+      hasTargetUser: Boolean(config.ssh.username),
+      hasPrivateKeyPath: Boolean(config.ssh.privateKeyPath),
+    };
 
-if (isEntrypoint) {
+    writeRuntimeState(config, event).catch((error) => {
+      console.error("failed to write runtime state", error);
+    });
+    console.log(JSON.stringify({
+      name: "remote-debug-agent",
+      pid: process.pid,
+      host: config.agent.host,
+      port,
+      target: publicTarget(config),
+      startedAt,
+    }));
+  });
+
+  server.on("error", (error) => {
+    const payload = {
+      status: "error",
+      startedAt,
+      lastError: {
+        code: error.code || "AGENT_LISTEN_ERROR",
+        message: error.message,
+      },
+    };
+
+    writeRuntimeState(config, payload).catch((stateError) => {
+      console.error("failed to write runtime state", stateError);
+    });
+    console.error(error);
+    if (isEntrypointProcess()) {
+      process.exitCode = 1;
+    }
+  });
+
+  return server;
+}
+
+if (isEntrypointProcess()) {
   try {
     startServer();
   } catch (error) {

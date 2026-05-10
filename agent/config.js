@@ -90,8 +90,8 @@ function parsePositiveInt(value, fallback, name) {
 
 export function loadConfig(env = process.env, cwd = process.cwd()) {
   const mergedEnv = {
-    ...loadDotEnv(cwd),
     ...env,
+    ...loadDotEnv(cwd),
   };
   const agentPort = parsePositiveInt(
     mergedEnv.REMOTE_DEBUG_AGENT_PORT,
@@ -128,6 +128,9 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       logPath:
         mergedEnv.REMOTE_DEBUG_AUDIT_LOG ||
         path.resolve(cwd, "audit", "remote-debug-agent.jsonl"),
+    },
+    runtime: {
+      statePath: path.resolve(cwd, ".runtime", "agent-state.json"),
     },
   };
 }

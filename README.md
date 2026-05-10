@@ -42,7 +42,8 @@ remote-debug-agent/
 ## Configure SSH
 
 Create `remote-debug-agent/.env` or set these environment variables before
-starting the local agent. Real environment variables override `.env` values.
+using the plugin. Values in `.env` take precedence for `REMOTE_DEBUG_*`
+settings so the plugin and local agent use the same target and port.
 
 ```powershell
 $env:REMOTE_DEBUG_HOST = "example.com"
@@ -60,7 +61,7 @@ $env:REMOTE_DEBUG_AUDIT_LOG = "C:\path\to\remote-debug-audit.jsonl"
 ```
 
 Do not commit secrets or private keys. This project intentionally reads SSH
-credentials only from environment variables.
+credentials only from `.env` or environment variables.
 
 ## Start The Agent
 
@@ -73,10 +74,11 @@ nvm use 22.18.0
 ```powershell
 cd remote-debug-agent\agent
 npm install
-npm start
 ```
 
-The agent listens on `http://127.0.0.1:3000` by default.
+The Codex plugin starts and repairs the local agent automatically from `.env`.
+For manual debugging, run `npm start` in the `agent` directory. The agent listens
+on `http://127.0.0.1:3000` by default, or `REMOTE_DEBUG_AGENT_PORT` when set.
 
 Open `http://127.0.0.1:3000/` to view the local dashboard. It shows live
 agent activity from the Codex plugin through Server-Sent Events, including
@@ -87,10 +89,14 @@ operation start, validation, streamed command output, completion, and failures.
 From the `remote-debug-agent` directory:
 
 ```powershell
-codex plugin install .\plugins\remote-debug-agent
+codex plugin marketplace add .
 ```
 
-The plugin starts `mcp-server.js`, which forwards tool calls to the local agent.
+Then install or enable `remote-debug-agent` from Codex Desktop's plugin
+marketplace UI. The plugin starts `mcp-server.js`, which reads `.env`, checks
+the configured local agent port, starts the agent when it is missing, and only
+restarts an existing process when it can confirm that process is Remote Debug
+Agent.
 The bundled `.mcp.json` starts Node with the `node` command, so make sure Node is
 available on your `PATH` in the environment where Codex Desktop runs. If Codex
 cannot find Node, change `plugins\remote-debug-agent\.mcp.json` to use the full
@@ -134,12 +140,13 @@ REMOTE_DEBUG_AGENT_PORT=3000
 Then install the Codex Desktop plugin from the repository root:
 
 ```powershell
-codex plugin install .\plugins\remote-debug-agent
+codex plugin marketplace add .
 ```
 
-Restart Codex Desktop or open a new Codex thread after installation. Keep
-`npm start` running in the `agent` directory while using the plugin, because the
-plugin forwards MCP calls to that local HTTP agent.
+Install or enable `remote-debug-agent` from Codex Desktop's plugin marketplace
+UI, then restart Codex Desktop or open a new Codex thread after installation.
+The plugin will start the local HTTP agent from `.env`; `npm start` is only
+needed when you want to debug the agent manually.
 
 ## Exposed Tools
 

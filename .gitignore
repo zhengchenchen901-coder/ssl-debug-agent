@@ -5,4 +5,6 @@ npm-debug.log*
 .env.*
 !.env.example
 agent/audit/
+agent/.runtime/
+plugins/remote-debug-agent/.runtime/
 *.log

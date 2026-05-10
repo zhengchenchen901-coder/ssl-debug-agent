@@ -29,13 +29,13 @@ test("loads root .env when agent starts from the agent directory", async () => {
   assert.equal(config.agent.port, 3001);
 });
 
-test("real environment values override .env defaults", async () => {
+test(".env overrides inherited environment for remote debug config", async () => {
   const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-config-"));
   await fs.writeFile(path.join(projectDir, ".env"), "REMOTE_DEBUG_HOST=from-file\n");
 
   const config = loadConfig({ REMOTE_DEBUG_HOST: "from-env" }, projectDir);
 
-  assert.equal(config.ssh.host, "from-env");
+  assert.equal(config.ssh.host, "from-file");
 });
 
 test("agent .env can override project root .env for local experiments", async () => {
