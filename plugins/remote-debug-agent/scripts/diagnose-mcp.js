@@ -147,8 +147,8 @@ function agentUrlFromEnv(env) {
     return env.REMOTE_DEBUG_AGENT_URL;
   }
 
-  const port = Number.parseInt(env.REMOTE_DEBUG_AGENT_PORT || "3000", 10);
-  return `http://127.0.0.1:${Number.isInteger(port) ? port : 3000}`;
+  const port = Number.parseInt(env.REMOTE_DEBUG_AGENT_PORT || "4343", 10);
+  return `http://127.0.0.1:${Number.isInteger(port) ? port : 4343}`;
 }
 
 async function fetchAgentStatus(agentUrl) {

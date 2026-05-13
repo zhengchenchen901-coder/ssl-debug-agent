@@ -6,9 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
 const PLUGIN_VERSION = "1.0.5";
-const DEFAULT_AGENT_PORT = 3000;
+const DEFAULT_AGENT_PORT = 4343;
 const PROBE_TIMEOUT_MS = 1500;
 const START_TIMEOUT_MS = 7000;
+const FALLBACK_PORT_ATTEMPTS = 100;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,6 +83,7 @@ function resolveProjectRoot() {
 }
 
 const projectRoot = resolveProjectRoot();
+let activeAgentSettings = null;
 
 const tools = [
   {
@@ -246,6 +248,14 @@ function agentSettings() {
     statePath,
     runtimeDir,
     logPath: path.resolve(runtimeDir, "mcp-error.log"),
+  };
+}
+
+function agentSettingsWithPort(settings, port) {
+  return {
+    ...settings,
+    agentUrl: `http://127.0.0.1:${port}`,
+    port,
   };
 }
 
@@ -551,14 +561,111 @@ async function startAgent(settings, reason) {
   throw error;
 }
 
+async function resolveFallbackAgentSettings(settings, initialProbe) {
+  const attempted = [];
+  const endPort = Math.min(65535, settings.port + FALLBACK_PORT_ATTEMPTS);
+
+  await appendPluginLog(settings, {
+    level: "warn",
+    code: "AGENT_PORT_OCCUPIED",
+    message: "Configured Remote Debug Agent port is occupied; looking for a fallback port.",
+    details: {
+      port: settings.port,
+      agentUrl: settings.agentUrl,
+      status: initialProbe.status,
+      error: initialProbe.error?.message,
+      fallbackStartPort: settings.port + 1,
+      fallbackEndPort: endPort,
+    },
+  });
+
+  for (let port = settings.port + 1; port <= endPort; port += 1) {
+    const candidate = agentSettingsWithPort(settings, port);
+    const probe = await probeAgent(candidate);
+
+    if (probe.kind === "unreachable") {
+      await appendPluginLog(candidate, {
+        level: "info",
+        code: "AGENT_FALLBACK_PORT_SELECTED",
+        message: "Selected fallback Remote Debug Agent port.",
+        preferredPort: settings.port,
+        port,
+      });
+      return { settings: candidate, action: "start" };
+    }
+
+    if (probe.kind === "agent" && agentStatusIsHealthy(probe.status, candidate)) {
+      await appendPluginLog(candidate, {
+        level: "info",
+        code: "AGENT_FALLBACK_REUSED",
+        message: "Reusing healthy Remote Debug Agent on fallback port.",
+        preferredPort: settings.port,
+        port,
+        pid: probe.status?.agent?.pid,
+      });
+      return { settings: candidate, action: "reuse" };
+    }
+
+    attempted.push({
+      port,
+      kind: probe.kind,
+      statusName: probe.status?.name,
+      error: probe.error?.message,
+    });
+  }
+
+  const error = new Error(
+    `Port ${settings.port} is occupied and no fallback Remote Debug Agent port is available.`,
+  );
+  error.code = "AGENT_PORT_OCCUPIED";
+  error.payload = {
+    agentUrl: settings.agentUrl,
+    port: settings.port,
+    status: initialProbe.status,
+    error: initialProbe.error?.message,
+    fallbackStartPort: settings.port + 1,
+    fallbackEndPort: endPort,
+    attempted,
+  };
+  await appendPluginLog(settings, {
+    level: "error",
+    code: error.code,
+    message: error.message,
+    details: error.payload,
+  });
+  throw error;
+}
+
 async function performEnsureAgentReady() {
   const settings = agentSettings();
   if (settings.explicitUrl) {
     return settings;
   }
 
+  if (activeAgentSettings) {
+    const activeProbe = await probeAgent(activeAgentSettings);
+    if (activeProbe.kind === "agent" && agentStatusIsHealthy(activeProbe.status, activeAgentSettings)) {
+      return activeAgentSettings;
+    }
+
+    if (activeProbe.kind === "agent") {
+      await appendPluginLog(activeAgentSettings, {
+        level: "warn",
+        code: "AGENT_UNHEALTHY",
+        message: "Fallback Remote Debug Agent responded but does not match the configured target.",
+        status: activeProbe.status,
+      });
+      await stopConfirmedAgent(activeAgentSettings, activeProbe.status);
+      await startAgent(activeAgentSettings, "Restarting unhealthy fallback Remote Debug Agent.");
+      return activeAgentSettings;
+    }
+
+    activeAgentSettings = null;
+  }
+
   const probe = await probeAgent(settings);
   if (probe.kind === "agent" && agentStatusIsHealthy(probe.status, settings)) {
+    activeAgentSettings = settings;
     return settings;
   }
 
@@ -571,29 +678,22 @@ async function performEnsureAgentReady() {
     });
     await stopConfirmedAgent(settings, probe.status);
     await startAgent(settings, "Restarting unhealthy Remote Debug Agent.");
+    activeAgentSettings = settings;
     return settings;
   }
 
   if (probe.kind === "unreachable") {
     await startAgent(settings, "Starting missing Remote Debug Agent.");
+    activeAgentSettings = settings;
     return settings;
   }
 
-  const error = new Error(`Port ${settings.port} is occupied by a non Remote Debug Agent service.`);
-  error.code = "AGENT_PORT_OCCUPIED";
-  error.payload = {
-    agentUrl: settings.agentUrl,
-    port: settings.port,
-    status: probe.status,
-    error: probe.error?.message,
-  };
-  await appendPluginLog(settings, {
-    level: "error",
-    code: error.code,
-    message: error.message,
-    details: error.payload,
-  });
-  throw error;
+  const fallback = await resolveFallbackAgentSettings(settings, probe);
+  if (fallback.action === "start") {
+    await startAgent(fallback.settings, "Starting Remote Debug Agent on fallback port.");
+  }
+  activeAgentSettings = fallback.settings;
+  return fallback.settings;
 }
 
 let ensureAgentReadyPromise = null;

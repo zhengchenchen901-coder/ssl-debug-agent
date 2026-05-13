@@ -3,7 +3,7 @@ import path from "node:path";
 
 export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app"];
 
-const DEFAULT_AGENT_PORT = 3000;
+const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_TIMEOUT_MS = 30_000;

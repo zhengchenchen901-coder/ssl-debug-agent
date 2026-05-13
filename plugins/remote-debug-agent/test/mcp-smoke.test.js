@@ -111,6 +111,58 @@ async function getFreePort() {
   return port;
 }
 
+async function canBindPort(port) {
+  const server = http.createServer();
+  try {
+    await new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(port, "127.0.0.1", resolve);
+    });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    if (server.listening) {
+      await close(server);
+    }
+  }
+}
+
+async function getFreeConsecutivePorts() {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const first = http.createServer();
+    const second = http.createServer();
+    try {
+      await new Promise((resolve, reject) => {
+        first.once("error", reject);
+        first.listen(0, "127.0.0.1", resolve);
+      });
+      const port = first.address().port;
+      if (port >= 65535) {
+        await close(first);
+        continue;
+      }
+
+      await new Promise((resolve, reject) => {
+        second.once("error", reject);
+        second.listen(port + 1, "127.0.0.1", resolve);
+      });
+      await close(second);
+      await close(first);
+      return port;
+    } catch {
+      if (second.listening) {
+        await close(second);
+      }
+      if (first.listening) {
+        await close(first);
+      }
+    }
+  }
+
+  throw new Error("failed to find consecutive free ports");
+}
+
 async function waitForStatus(port) {
   const deadline = Date.now() + 5000;
   let lastError;
@@ -283,6 +335,42 @@ test("MCP starts the local agent from .env port when no service is listening", a
   }
 });
 
+test("MCP uses 4343 as the default local agent port", async (t) => {
+  if (!(await canBindPort(4343))) {
+    t.skip("port 4343 is already in use");
+    return;
+  }
+
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-default-port-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+    ].join("\n"),
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_AGENT_PORT: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+  });
+
+  try {
+    const call = await callRunTool(child);
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    const status = await waitForStatus(4343);
+    assert.equal(status.agent.port, 4343);
+    process.kill(status.agent.pid);
+  } finally {
+    child.kill();
+  }
+});
+
 test("MCP prewarms the local agent after initialize", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-prewarm-"));
   const agentDir = path.join(dir, "agent");
@@ -428,11 +516,12 @@ test("MCP restarts an unhealthy Remote Debug Agent on the configured port", asyn
   }
 });
 
-test("MCP refuses to stop a non-agent service on the configured port", async () => {
+test("MCP starts the local agent on a fallback port when the configured port is occupied", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-occupied-"));
   const agentDir = path.join(dir, "agent");
   const envPath = path.join(dir, ".env");
-  const port = await getFreePort();
+  const port = await getFreeConsecutivePorts();
+  const fallbackPort = port + 1;
   await writeFakeAgent(agentDir);
   await fs.writeFile(
     envPath,
@@ -460,10 +549,15 @@ test("MCP refuses to stop a non-agent service on the configured port", async () 
 
   try {
     const call = await callRunTool(child);
-    assert.equal(call.result.isError, true);
-    assert.match(call.result.content[0].text, /AGENT_PORT_OCCUPIED/);
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    const status = await waitForStatus(fallbackPort);
+    assert.equal(status.agent.port, fallbackPort);
+    assert.notEqual(status.agent.port, port);
+
     const response = await fetch(`http://127.0.0.1:${port}/status`);
     assert.equal(response.status, 200);
+    assert.equal((await response.json()).name, "not-remote-debug-agent");
+    process.kill(status.agent.pid);
   } finally {
     child.kill();
     await close(occupied);

@@ -14,6 +14,7 @@ export const ALLOWED_COMMANDS = new Set([
   "mongosh",
   "systemctl",
   "nginx",
+  "pm2",
 ]);
 
 export const DENIED_COMMANDS = new Set([
@@ -34,6 +35,7 @@ const ALLOWED_SYSTEMCTL_UNITS = new Set(["mongod", "mongod.service", "nginx", "n
 const ALLOWED_SYSTEMCTL_OPTIONS = new Set(["--no-pager", "--plain", "--full"]);
 const SYSTEMCTL_LINES_PATTERN = /^--lines=\d+$/;
 const ALLOWED_NGINX_ARGS = new Set(["-t", "-T", "-v", "-V"]);
+const PM2_ID_PATTERN = /^\d+$/;
 
 export class SecurityError extends Error {
   constructor(message, code = "SECURITY_REJECTED") {
@@ -215,6 +217,45 @@ function validateNginx(tokens) {
   }
 }
 
+function validatePm2(tokens) {
+  const [, action, subject, ...extra] = tokens;
+
+  if (action === "list") {
+    if (subject !== undefined || extra.length > 0) {
+      throw new SecurityError(
+        "pm2 list does not support additional arguments",
+        "UNSUPPORTED_COMMAND_ARGUMENTS",
+      );
+    }
+    return;
+  }
+
+  if (action === "describe") {
+    if (subject === undefined || extra.length > 0) {
+      throw new SecurityError(
+        "pm2 describe requires exactly one app name or id",
+        "UNSUPPORTED_COMMAND_ARGUMENTS",
+      );
+    }
+    return;
+  }
+
+  if (action === "env") {
+    if (subject === undefined || extra.length > 0 || !PM2_ID_PATTERN.test(subject)) {
+      throw new SecurityError(
+        "pm2 env requires exactly one numeric process id",
+        "UNSUPPORTED_COMMAND_ARGUMENTS",
+      );
+    }
+    return;
+  }
+
+  throw new SecurityError(
+    `unsupported pm2 action: ${action || ""}`,
+    "UNSUPPORTED_COMMAND_ARGUMENTS",
+  );
+}
+
 export function validateCommand(command, options = {}) {
   const allowedPaths = options.allowedPaths || [];
   const tokens = tokenizeCommand(command);
@@ -248,6 +289,10 @@ export function validateCommand(command, options = {}) {
 
   if (executable === "nginx") {
     validateNginx(tokens);
+  }
+
+  if (executable === "pm2") {
+    validatePm2(tokens);
   }
 
   const absolutePaths = validatePathArguments(executable, tokens, allowedPaths);

@@ -50,7 +50,7 @@ $env:REMOTE_DEBUG_HOST = "example.com"
 $env:REMOTE_DEBUG_PORT = "22"
 $env:REMOTE_DEBUG_USER = "app"
 $env:REMOTE_DEBUG_PRIVATE_KEY_PATH = "C:\Users\you\.ssh\id_ed25519"
-$env:REMOTE_DEBUG_AGENT_PORT = "3000"
+$env:REMOTE_DEBUG_AGENT_PORT = "4343"
 ```
 
 Optional:
@@ -79,9 +79,9 @@ npm install
 The Codex plugin prewarms, starts, and repairs the local agent automatically from `.env`
 after the MCP server initializes.
 For manual debugging, run `npm start` in the `agent` directory. The agent listens
-on `http://127.0.0.1:3000` by default, or `REMOTE_DEBUG_AGENT_PORT` when set.
+on `http://127.0.0.1:4343` by default, or `REMOTE_DEBUG_AGENT_PORT` when set.
 
-Open `http://127.0.0.1:3000/` to view the local dashboard. It shows live
+Open `http://127.0.0.1:4343/` to view the local dashboard. It shows live
 agent activity from the Codex plugin through Server-Sent Events, including
 operation start, validation, streamed command output, completion, and failures.
 
@@ -187,7 +187,7 @@ REMOTE_DEBUG_HOST=example.com
 REMOTE_DEBUG_PORT=22
 REMOTE_DEBUG_USER=app
 REMOTE_DEBUG_PRIVATE_KEY_PATH=C:\Users\you\.ssh\id_ed25519
-REMOTE_DEBUG_AGENT_PORT=3000
+REMOTE_DEBUG_AGENT_PORT=4343
 ```
 
 Then install the Codex Desktop plugin from the repository root:

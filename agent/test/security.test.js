@@ -26,6 +26,10 @@ test("allows whitelisted diagnostic commands", () => {
   );
   assert.equal(validateCommand("nginx -t", security).normalizedCommand, "nginx -t");
   assert.equal(validateCommand("nginx -T", security).normalizedCommand, "nginx -T");
+  assert.equal(validateCommand("pm2 list", security).normalizedCommand, "pm2 list");
+  assert.equal(validateCommand("pm2 describe api-server", security).normalizedCommand, "pm2 describe api-server");
+  assert.equal(validateCommand("pm2 describe app-1", security).normalizedCommand, "pm2 describe app-1");
+  assert.equal(validateCommand("pm2 env 1", security).normalizedCommand, "pm2 env 1");
   const tail = validateCommand("tail -n 100 /var/log/nginx/error.log", security);
   assert.equal(tail.normalizedCommand, "tail -n 100 /var/log/nginx/error.log");
   assert.deepEqual(tail.absolutePaths, ["/var/log/nginx/error.log"]);
@@ -54,6 +58,12 @@ test("restricts newly allowed commands to read-only diagnostics", () => {
   assert.throws(() => validateCommand("systemctl restart nginx", security), /unsupported systemctl action/);
   assert.throws(() => validateCommand("systemctl status ssh", security), /unsupported systemctl unit/);
   assert.throws(() => validateCommand("nginx -s reload", security), /unsupported nginx argument/);
+  assert.throws(() => validateCommand("pm2 restart app", security), /unsupported pm2 action/);
+  assert.throws(() => validateCommand("pm2 delete app", security), /unsupported pm2 action/);
+  assert.throws(() => validateCommand("pm2 logs app", security), /unsupported pm2 action/);
+  assert.throws(() => validateCommand("pm2 env abc", security), /numeric process id/);
+  assert.throws(() => validateCommand("pm2 describe", security), /requires exactly one/);
+  assert.throws(() => validateCommand("pm2 list extra", security), /does not support additional/);
 });
 
 test("enforces allowed path roots", () => {
