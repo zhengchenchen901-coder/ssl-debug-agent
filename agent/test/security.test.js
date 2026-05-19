@@ -8,7 +8,7 @@ import {
 } from "../security.js";
 
 const security = {
-  allowedPaths: ["/var/log", "/etc/nginx", "/home/app"],
+  allowedPaths: ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"],
   defaultTimeoutMs: 10_000,
   maxTimeoutMs: 30_000,
 };
@@ -69,6 +69,8 @@ test("restricts newly allowed commands to read-only diagnostics", () => {
 test("enforces allowed path roots", () => {
   assert.equal(isPathAllowed("/var/log/nginx/error.log", security.allowedPaths), true);
   assert.equal(isPathAllowed("/etc/nginx/nginx.conf", security.allowedPaths), true);
+  assert.equal(isPathAllowed("/root/.pm2/dump.pm2", security.allowedPaths), true);
+  assert.equal(isPathAllowed("/home/github/app.log", security.allowedPaths), true);
   assert.equal(isPathAllowed("/tmp/app.log", security.allowedPaths), false);
   assert.throws(() => assertPathAllowed("/etc/passwd", security.allowedPaths), /outside allowed/);
   assert.throws(() => validateCommand("cat /etc/passwd", security), /outside allowed/);

@@ -15,6 +15,25 @@ path allowlists.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
 
+## Evidence Discipline
+
+- Separate observations from interpretations. Say what was checked, what was
+  found, and what still needs confirmation before naming a likely cause.
+- Do not conclude that the plugin is not installed, the MCP tools are not
+  loaded, the local HTTP agent is unhealthy, or a remote tool is absent from one
+  negative signal such as a missing directory, an empty log, a closed local port,
+  or a rejected command.
+- Keep the layers distinct:
+  - source repository: the project checkout that contains `agent/`.
+  - installed plugin cache: Codex Desktop's copied plugin bundle.
+  - local HTTP agent: `http://127.0.0.1:<port>`.
+  - remote Linux target: the configured SSH host inspected through the agent.
+- When troubleshooting plugin loading from this repository, prefer
+  `npm run diagnose` in `plugins/remote-debug-agent` and report its explicit
+  fields before inferring installation or runtime state.
+- Phrase provisional conclusions as "this suggests" or "next I will verify"
+  until at least two independent checks support the same cause.
+
 ## Safe Workflow
 
 1. State a short diagnostic plan before calling tools.
@@ -26,7 +45,7 @@ path allowlists.
 6. Use `nginx -t` or `nginx -T` when nginx config validation or merged config
    output is needed.
 7. Inspect nginx config under `/etc/nginx` only when nginx may be involved.
-8. Inspect logs under `/var/log` and app files under `/home/app` only as needed.
+8. Inspect logs under `/var/log`, app files under `/home/app` or `/home/github`, and PM2 metadata under `/root/.pm2` only as needed.
 9. Use `mongodump --version`, `mongo --version`, or `mongosh --version` when
    MongoDB tool availability must be confirmed.
 10. Summarize evidence, likely root cause, confidence, and next safe action.
@@ -51,7 +70,7 @@ For "Why is port 9000 unreachable?":
 1. Run `netstat -tlnp`.
 2. If nothing listens on `9000`, inspect relevant processes with `ps aux`.
 3. If nginx proxies to `9000`, read nginx configs under `/etc/nginx`.
-4. Inspect recent nginx and app logs under `/var/log` or `/home/app`.
+4. Inspect recent nginx and app logs under `/var/log`, `/home/app`, or `/home/github`, and PM2 metadata under `/root/.pm2`.
 5. Report whether the problem is listener absence, bind address, proxy config,
    crash loop, or resource pressure.
 

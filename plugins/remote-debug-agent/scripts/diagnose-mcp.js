@@ -6,14 +6,193 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const pluginRoot = path.resolve(__dirname, "..");
-const projectRoot = path.resolve(pluginRoot, "..", "..");
 const serverPath = path.resolve(pluginRoot, "mcp-server.js");
 const logPath = path.resolve(pluginRoot, ".runtime", "mcp-error.log");
+const pluginName = "remote-debug-agent";
 const expectedTools = [
   "remote_debug_run_command",
   "remote_debug_read_file",
   "remote_debug_list_dir",
 ];
+
+function normalizeWindowsExtendedPath(inputPath) {
+  return inputPath.replace(/^\\\\\?\\/, "");
+}
+
+function codexHomeDir() {
+  return process.env.CODEX_HOME ||
+    path.join(process.env.USERPROFILE || process.env.HOME || "", ".codex");
+}
+
+function codexConfigPath() {
+  return path.join(codexHomeDir(), "config.toml");
+}
+
+function marketplaceNameFromCachePath() {
+  const parts = path.normalize(pluginRoot).split(path.sep);
+  const cacheIndex = parts.lastIndexOf("cache");
+  if (cacheIndex === -1 || cacheIndex + 1 >= parts.length) {
+    return "";
+  }
+
+  return parts[cacheIndex + 1];
+}
+
+function parseTomlScalar(value) {
+  const trimmed = value.trim();
+  const quoted = /^(['"])(.*)\1$/.exec(trimmed);
+  if (quoted) {
+    return normalizeWindowsExtendedPath(quoted[2]);
+  }
+
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+
+  return trimmed;
+}
+
+function readCodexSections() {
+  const configPath = codexConfigPath();
+  if (!fs.existsSync(configPath)) {
+    return [];
+  }
+
+  const sections = [];
+  let current = null;
+  for (const line of fs.readFileSync(configPath, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    const sectionMatch = /^\[(.+)]$/.exec(trimmed);
+    if (sectionMatch) {
+      current = { name: sectionMatch[1], values: {} };
+      sections.push(current);
+      continue;
+    }
+
+    if (!current || !trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const valueMatch = /^([A-Za-z0-9_.-]+)\s*=\s*(.+)$/.exec(trimmed);
+    if (valueMatch) {
+      current.values[valueMatch[1]] = parseTomlScalar(valueMatch[2]);
+    }
+  }
+
+  return sections;
+}
+
+function marketplaceNameFromSection(sectionName) {
+  let match = /^marketplaces\.([A-Za-z0-9_.-]+)$/.exec(sectionName);
+  if (match) {
+    return match[1];
+  }
+
+  match = /^marketplaces\."([^"]+)"$/.exec(sectionName);
+  return match ? match[1] : "";
+}
+
+function pluginNameFromSection(sectionName) {
+  let match = /^plugins\.([A-Za-z0-9_.@-]+)$/.exec(sectionName);
+  if (match) {
+    return match[1];
+  }
+
+  match = /^plugins\."([^"]+)"$/.exec(sectionName);
+  return match ? match[1] : "";
+}
+
+function readPluginVersion() {
+  try {
+    return JSON.parse(fs.readFileSync(path.resolve(pluginRoot, "package.json"), "utf8")).version || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+function findMarketplace(sections) {
+  const cacheMarketplaceName = marketplaceNameFromCachePath();
+  const sourceRoot = path.resolve(pluginRoot, "..", "..");
+  const marketplaces = sections
+    .map((section) => ({
+      name: marketplaceNameFromSection(section.name),
+      source: typeof section.values.source === "string" ? path.resolve(section.values.source) : "",
+      sourceType: section.values.source_type || "",
+      lastUpdated: section.values.last_updated || "",
+    }))
+    .filter((marketplace) => marketplace.name);
+
+  if (cacheMarketplaceName) {
+    return marketplaces.find((marketplace) => marketplace.name === cacheMarketplaceName) || {
+      name: cacheMarketplaceName,
+      source: "",
+    };
+  }
+
+  return marketplaces.find((marketplace) => marketplace.source === sourceRoot) || null;
+}
+
+function pluginEnabledState(sections, marketplaceName) {
+  if (!marketplaceName) {
+    return "unknown";
+  }
+
+  const installedName = `${pluginName}@${marketplaceName}`;
+  const section = sections.find((candidate) => pluginNameFromSection(candidate.name) === installedName);
+  if (!section) {
+    return "not configured";
+  }
+
+  return section.values.enabled === true ? "enabled" : "disabled";
+}
+
+function installedCachePath(marketplaceName, version) {
+  if (!marketplaceName) {
+    return "";
+  }
+
+  const candidate = path.join(codexHomeDir(), "plugins", "cache", marketplaceName, pluginName, version);
+  return fs.existsSync(candidate) ? candidate : "";
+}
+
+function resolveProjectRoot(marketplace) {
+  if (process.env.REMOTE_DEBUG_PROJECT_ROOT) {
+    return path.resolve(normalizeWindowsExtendedPath(process.env.REMOTE_DEBUG_PROJECT_ROOT));
+  }
+
+  if (marketplace?.source) {
+    return path.resolve(marketplace.source);
+  }
+
+  return path.resolve(pluginRoot, "..", "..");
+}
+
+function mergeEnvironment(...sources) {
+  const merged = {};
+  const keysByNormalizedName = new Map();
+
+  for (const source of sources) {
+    for (const [key, value] of Object.entries(source || {})) {
+      if (value === undefined) {
+        continue;
+      }
+
+      const normalizedKey = process.platform === "win32" ? key.toUpperCase() : key;
+      const existingKey = keysByNormalizedName.get(normalizedKey);
+      if (existingKey && existingKey !== key) {
+        delete merged[existingKey];
+      }
+
+      merged[key] = String(value);
+      keysByNormalizedName.set(normalizedKey, key);
+    }
+  }
+
+  return merged;
+}
+
+const codexSections = readCodexSections();
+const marketplace = findMarketplace(codexSections);
+const projectRoot = resolveProjectRoot(marketplace);
 
 function encodeMessage(message) {
   const body = Buffer.from(JSON.stringify(message), "utf8");
@@ -185,10 +364,7 @@ async function main() {
   const agentUrl = agentUrlFromEnv(env);
   const child = spawn(process.execPath, [serverPath], {
     cwd: pluginRoot,
-    env: {
-      ...process.env,
-      ...env,
-    },
+    env: mergeEnvironment(process.env, env),
     stdio: ["pipe", "pipe", "pipe"],
     windowsHide: true,
   });
@@ -221,6 +397,18 @@ async function main() {
 
     const toolNames = (list.result?.tools || []).map((tool) => tool.name);
     const missingTools = expectedTools.filter((name) => !toolNames.includes(name));
+    const pluginVersion = readPluginVersion();
+    const cachePath = installedCachePath(marketplace?.name, pluginVersion);
+
+    printLine("Source root", projectRoot);
+    printLine("Installed cache", cachePath || "not found");
+    printLine(
+      "Codex plugin",
+      marketplace?.name
+        ? `${pluginName}@${marketplace.name} (${pluginEnabledState(codexSections, marketplace.name)})`
+        : "not configured",
+    );
+    printLine("MCP server", serverPath);
     printLine("MCP initialize", `ok (${initialize.result?.serverInfo?.name || "unknown"} ${initialize.result?.serverInfo?.version || ""})`);
     printLine("MCP tools", toolNames.length > 0 ? toolNames.join(", ") : "none");
 
@@ -240,6 +428,10 @@ async function main() {
     }
 
     printLine("MCP log", logPath);
+    printLine(
+      "Current thread",
+      "diagnose verifies the MCP wrapper only; if this Codex thread still cannot see remote_debug_* tools, restart Codex Desktop or open a new thread after reinstalling/re-enabling the plugin.",
+    );
     if (stderr.trim()) {
       printLine("MCP stderr", stderr.trim());
     }

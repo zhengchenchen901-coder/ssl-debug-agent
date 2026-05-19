@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { loadConfig, loadDotEnv } from "../config.js";
+import { configFingerprint, loadConfig, loadDotEnv } from "../config.js";
 
 test("loads root .env when agent starts from the agent directory", async () => {
   const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-config-"));
@@ -46,5 +46,31 @@ test("agent .env can override project root .env for local experiments", async ()
   await fs.writeFile(path.join(agentDir, ".env"), "REMOTE_DEBUG_HOST=from-agent\n");
 
   assert.equal(loadDotEnv(agentDir).REMOTE_DEBUG_HOST, "from-agent");
+});
+
+test("runtime config fingerprint changes when sensitive .env-backed settings change", () => {
+  const baseEnv = {
+    REMOTE_DEBUG_HOST: "prod.example.com",
+    REMOTE_DEBUG_PORT: "22",
+    REMOTE_DEBUG_USER: "app",
+    REMOTE_DEBUG_PRIVATE_KEY_PATH: "C:\\Users\\you\\.ssh\\id_ed25519",
+    REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: "first",
+    REMOTE_DEBUG_AGENT_PORT: "3001",
+    REMOTE_DEBUG_AUDIT_LOG: "C:\\logs\\remote-debug.jsonl",
+  };
+  const cwd = "C:\\remote-debug-agent\\agent";
+  const base = configFingerprint(loadConfig(baseEnv, cwd));
+
+  for (const [key, value] of [
+    ["REMOTE_DEBUG_PRIVATE_KEY_PATH", "C:\\Users\\you\\.ssh\\other_ed25519"],
+    ["REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE", "second"],
+    ["REMOTE_DEBUG_AUDIT_LOG", "C:\\logs\\other-remote-debug.jsonl"],
+  ]) {
+    assert.notEqual(
+      configFingerprint(loadConfig({ ...baseEnv, [key]: value }, cwd)),
+      base,
+      `${key} should affect the runtime config fingerprint`,
+    );
+  }
 });
 

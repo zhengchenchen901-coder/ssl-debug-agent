@@ -180,25 +180,78 @@ async function waitForStatus(port) {
   throw lastError || new Error(`timed out waiting for fake agent on ${port}`);
 }
 
+function killPid(pid) {
+  if (!Number.isInteger(pid)) {
+    return;
+  }
+
+  try {
+    process.kill(pid);
+  } catch {
+    // The wrapper may already have stopped this process.
+  }
+}
+
 async function writeFakeAgent(agentDir) {
   await fs.mkdir(agentDir, { recursive: true });
   await fs.writeFile(
     path.join(agentDir, "server.js"),
     `
+import { createHash } from "node:crypto";
 import http from "node:http";
+import path from "node:path";
 
 const port = Number(process.env.REMOTE_DEBUG_AGENT_PORT);
 const empty = process.env.FAKE_AGENT_EMPTY === "1";
+const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
+
+function sshPort() {
+  return Number.parseInt(process.env.REMOTE_DEBUG_PORT || "22", 10);
+}
+
+function securityConfig() {
+  return {
+    allowedPaths: DEFAULT_ALLOWED_PATHS,
+    defaultTimeoutMs: 10000,
+    maxTimeoutMs: 30000,
+    defaultReadMaxBytes: 256 * 1024,
+    maxCommandOutputBytes: 1024 * 1024
+  };
+}
+
+function configFingerprint() {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      agent: {
+        host: "127.0.0.1",
+        port
+      },
+      ssh: {
+        host: process.env.REMOTE_DEBUG_HOST || "",
+        port: sshPort(),
+        username: process.env.REMOTE_DEBUG_USER || "",
+        privateKeyPath: process.env.REMOTE_DEBUG_PRIVATE_KEY_PATH || "",
+        passphrase: process.env.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || "",
+        readyTimeout: 10000
+      },
+      security: securityConfig(),
+      audit: {
+        logPath: process.env.REMOTE_DEBUG_AUDIT_LOG || path.resolve(process.cwd(), "audit", "remote-debug-agent.jsonl")
+      }
+    }))
+    .digest("hex");
+}
+
 const server = http.createServer((request, response) => {
   if (request.method === "GET" && request.url === "/status") {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(JSON.stringify({
       ok: true,
       name: "remote-debug-agent",
-      agent: { port, pid: process.pid },
+      agent: { port, pid: process.pid, configFingerprint: configFingerprint() },
       target: empty
-        ? { host: "", username: "" }
-        : { host: process.env.REMOTE_DEBUG_HOST || "", username: process.env.REMOTE_DEBUG_USER || "" }
+        ? { host: "", port: sshPort(), username: "" }
+        : { host: process.env.REMOTE_DEBUG_HOST || "", port: sshPort(), username: process.env.REMOTE_DEBUG_USER || "" }
     }));
     return;
   }
@@ -249,6 +302,26 @@ async function callRunTool(child) {
     encodeMessage({
       jsonrpc: "2.0",
       id: 2,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_run_command",
+        arguments: { cmd: "netstat -tlnp" },
+      },
+    }),
+  );
+  return readMessage();
+}
+
+async function initializeMcp(child, readMessage, id = 1) {
+  child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "initialize" }));
+  return readMessage();
+}
+
+async function callRunToolWithReader(child, readMessage, id) {
+  child.stdin.write(
+    encodeMessage({
+      jsonrpc: "2.0",
+      id,
       method: "tools/call",
       params: {
         name: "remote_debug_run_command",
@@ -513,6 +586,113 @@ test("MCP restarts an unhealthy Remote Debug Agent on the configured port", asyn
     if (!unhealthy.killed) {
       unhealthy.kill();
     }
+  }
+});
+
+test("MCP restarts the local agent when .env target config changes", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-env-change-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const port = await getFreePort();
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+  });
+  const readMessage = createMessageReader(child);
+  let firstStatus;
+  let secondStatus;
+
+  try {
+    await initializeMcp(child, readMessage);
+    const firstCall = await callRunToolWithReader(child, readMessage, 2);
+    assert.match(firstCall.result.content[0].text, /ran:netstat -tlnp/);
+    firstStatus = await waitForStatus(port);
+    assert.equal(firstStatus.target.host, "prod.example.com");
+
+    await fs.writeFile(
+      envPath,
+      [
+        "REMOTE_DEBUG_HOST=staging.example.com",
+        "REMOTE_DEBUG_USER=app",
+        `REMOTE_DEBUG_AGENT_PORT=${port}`,
+      ].join("\n"),
+    );
+
+    const secondCall = await callRunToolWithReader(child, readMessage, 3);
+    assert.match(secondCall.result.content[0].text, /ran:netstat -tlnp/);
+    secondStatus = await waitForStatus(port);
+    assert.equal(secondStatus.target.host, "staging.example.com");
+    assert.notEqual(secondStatus.agent.pid, firstStatus.agent.pid);
+    assert.notEqual(secondStatus.agent.configFingerprint, firstStatus.agent.configFingerprint);
+  } finally {
+    child.kill();
+    killPid(secondStatus?.agent?.pid);
+    killPid(firstStatus?.agent?.pid);
+  }
+});
+
+test("MCP starts a new local agent when .env port changes", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-port-change-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const port = await getFreeConsecutivePorts();
+  const nextPort = port + 1;
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+  });
+  const readMessage = createMessageReader(child);
+  let firstStatus;
+  let secondStatus;
+
+  try {
+    await initializeMcp(child, readMessage);
+    const firstCall = await callRunToolWithReader(child, readMessage, 2);
+    assert.match(firstCall.result.content[0].text, /ran:netstat -tlnp/);
+    firstStatus = await waitForStatus(port);
+    assert.equal(firstStatus.agent.port, port);
+
+    await fs.writeFile(
+      envPath,
+      [
+        "REMOTE_DEBUG_HOST=prod.example.com",
+        "REMOTE_DEBUG_USER=app",
+        `REMOTE_DEBUG_AGENT_PORT=${nextPort}`,
+      ].join("\n"),
+    );
+
+    const secondCall = await callRunToolWithReader(child, readMessage, 3);
+    assert.match(secondCall.result.content[0].text, /ran:netstat -tlnp/);
+    secondStatus = await waitForStatus(nextPort);
+    assert.equal(secondStatus.agent.port, nextPort);
+    assert.notEqual(secondStatus.agent.pid, firstStatus.agent.pid);
+    assert.notEqual(secondStatus.agent.configFingerprint, firstStatus.agent.configFingerprint);
+  } finally {
+    child.kill();
+    killPid(secondStatus?.agent?.pid);
+    killPid(firstStatus?.agent?.pid);
   }
 });
 

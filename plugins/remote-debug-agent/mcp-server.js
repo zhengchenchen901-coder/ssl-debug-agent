@@ -1,4 +1,5 @@
 import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -7,9 +8,15 @@ import { fileURLToPath } from "node:url";
 const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
 const PLUGIN_VERSION = "1.0.5";
 const DEFAULT_AGENT_PORT = 4343;
+const DEFAULT_SSH_PORT = 22;
 const PROBE_TIMEOUT_MS = 1500;
 const START_TIMEOUT_MS = 7000;
 const FALLBACK_PORT_ATTEMPTS = 100;
+const DEFAULT_TIMEOUT_MS = 10_000;
+const MAX_TIMEOUT_MS = 30_000;
+const DEFAULT_READ_MAX_BYTES = 256 * 1024;
+const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
+const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,7 +117,7 @@ const tools = [
   {
     name: "remote_debug_read_file",
     description:
-      "Read a remote file under /var/log, /etc/nginx, or /home/app through SFTP path checks.",
+      "Read a remote file under /var/log, /etc/nginx, /home/app, /root/.pm2, or /home/github through SFTP path checks.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -130,7 +137,7 @@ const tools = [
   {
     name: "remote_debug_list_dir",
     description:
-      "List a remote directory under /var/log, /etc/nginx, or /home/app through SFTP path checks.",
+      "List a remote directory under /var/log, /etc/nginx, /home/app, /root/.pm2, or /home/github through SFTP path checks.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -214,6 +221,30 @@ function loadRemoteDebugEnv() {
   return env;
 }
 
+function mergeEnvironment(...sources) {
+  const merged = {};
+  const keysByNormalizedName = new Map();
+
+  for (const source of sources) {
+    for (const [key, value] of Object.entries(source || {})) {
+      if (value === undefined) {
+        continue;
+      }
+
+      const normalizedKey = process.platform === "win32" ? key.toUpperCase() : key;
+      const existingKey = keysByNormalizedName.get(normalizedKey);
+      if (existingKey && existingKey !== key) {
+        delete merged[existingKey];
+      }
+
+      merged[key] = String(value);
+      keysByNormalizedName.set(normalizedKey, key);
+    }
+  }
+
+  return merged;
+}
+
 function parsePositivePort(value, fallback) {
   if (value === undefined || value === "") {
     return fallback;
@@ -229,6 +260,66 @@ function parsePositivePort(value, fallback) {
   return parsed;
 }
 
+function parseSshPort(value) {
+  if (value === undefined || value === "") {
+    return DEFAULT_SSH_PORT;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
+    const error = new Error(`REMOTE_DEBUG_PORT must be a valid TCP port: ${value}`);
+    error.code = "INVALID_SSH_PORT";
+    throw error;
+  }
+
+  return parsed;
+}
+
+function publicTargetFromEnv(env) {
+  return {
+    host: env.REMOTE_DEBUG_HOST || "",
+    port: parseSshPort(env.REMOTE_DEBUG_PORT),
+    username: env.REMOTE_DEBUG_USER || "",
+  };
+}
+
+function publicSecurityConfig() {
+  return {
+    allowedPaths: DEFAULT_ALLOWED_PATHS,
+    defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
+    maxTimeoutMs: MAX_TIMEOUT_MS,
+    defaultReadMaxBytes: DEFAULT_READ_MAX_BYTES,
+    maxCommandOutputBytes: MAX_COMMAND_OUTPUT_BYTES,
+  };
+}
+
+function fingerprintConfigFromEnv(env, agentDir, port) {
+  return {
+    agent: {
+      host: "127.0.0.1",
+      port,
+    },
+    ssh: {
+      host: env.REMOTE_DEBUG_HOST || "",
+      port: parseSshPort(env.REMOTE_DEBUG_PORT),
+      username: env.REMOTE_DEBUG_USER || "",
+      privateKeyPath: env.REMOTE_DEBUG_PRIVATE_KEY_PATH || "",
+      passphrase: env.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || "",
+      readyTimeout: 10_000,
+    },
+    security: publicSecurityConfig(),
+    audit: {
+      logPath: env.REMOTE_DEBUG_AUDIT_LOG || path.resolve(agentDir, "audit", "remote-debug-agent.jsonl"),
+    },
+  };
+}
+
+function configFingerprintFromEnv(env, agentDir, port) {
+  return createHash("sha256")
+    .update(JSON.stringify(fingerprintConfigFromEnv(env, agentDir, port)))
+    .digest("hex");
+}
+
 function agentSettings() {
   const env = loadRemoteDebugEnv();
   const explicitUrl = env.REMOTE_DEBUG_AGENT_URL || "";
@@ -237,12 +328,18 @@ function agentSettings() {
   const agentDir = path.resolve(env.REMOTE_DEBUG_AGENT_DIR || path.resolve(projectRoot, "agent"));
   const statePath = path.resolve(agentDir, ".runtime", "agent-state.json");
   const runtimeDir = path.resolve(__dirname, ".runtime");
+  const target = publicTargetFromEnv(env);
+  const configFingerprint = configFingerprintFromEnv(env, agentDir, port);
 
   return {
     env,
     explicitUrl: Boolean(explicitUrl),
     agentUrl,
     port,
+    preferredPort: port,
+    target,
+    configFingerprint,
+    sourceFingerprint: configFingerprint,
     agentDir,
     serverPath: path.resolve(agentDir, "server.js"),
     statePath,
@@ -256,6 +353,7 @@ function agentSettingsWithPort(settings, port) {
     ...settings,
     agentUrl: `http://127.0.0.1:${port}`,
     port,
+    configFingerprint: configFingerprintFromEnv(settings.env, settings.agentDir, port),
   };
 }
 
@@ -415,13 +513,77 @@ async function probeAgent(settings) {
 function agentStatusIsHealthy(status, settings) {
   const agentPort = status?.agent?.port;
   const portMatches = agentPort === undefined || agentPort === settings.port;
+  const target = status?.target || {};
+  const targetMatches =
+    target.host === settings.target.host &&
+    target.port === settings.target.port &&
+    target.username === settings.target.username;
+  const fingerprintMatches = status?.agent?.configFingerprint === settings.configFingerprint;
 
   return Boolean(
     status?.name === "remote-debug-agent" &&
       portMatches &&
-      status?.target?.host &&
-      status?.target?.username,
+      targetMatches &&
+      fingerprintMatches,
   );
+}
+
+function agentSourceMatches(settings, currentSettings) {
+  return settings?.sourceFingerprint === currentSettings?.sourceFingerprint;
+}
+
+function statusSummary(status) {
+  return {
+    pid: status?.agent?.pid,
+    port: status?.agent?.port,
+    configFingerprint: status?.agent?.configFingerprint,
+    target: status?.target,
+  };
+}
+
+function expectedSummary(settings) {
+  return {
+    port: settings.port,
+    preferredPort: settings.preferredPort,
+    configFingerprint: settings.configFingerprint,
+    sourceFingerprint: settings.sourceFingerprint,
+    target: settings.target,
+  };
+}
+
+async function logAgentConfigChanged(settings, status, previousSettings) {
+  await appendPluginLog(settings, {
+    level: "warn",
+    code: "AGENT_CONFIG_CHANGED",
+    message: "Remote Debug Agent configuration changed; restarting local agent.",
+    previous: previousSettings ? expectedSummary(previousSettings) : undefined,
+    actual: statusSummary(status),
+    expected: expectedSummary(settings),
+  });
+}
+
+async function stopStaleAgent(settings, status, currentSettings) {
+  try {
+    await stopConfirmedAgent(
+      settings,
+      status,
+      "Stopping stale Remote Debug Agent after configuration change.",
+    );
+    return true;
+  } catch (error) {
+    await appendPluginLog(currentSettings, {
+      level: "warn",
+      code: error.code || "AGENT_RESTART_UNSAFE",
+      message: `Skipping stale Remote Debug Agent stop: ${error.message}`,
+      details: error.payload,
+    });
+
+    if (settings.port === currentSettings.port) {
+      throw error;
+    }
+
+    return false;
+  }
 }
 
 async function readState(settings) {
@@ -464,7 +626,7 @@ async function findListeningPid(port) {
   return null;
 }
 
-async function stopConfirmedAgent(settings, status) {
+async function stopConfirmedAgent(settings, status, reason = "Stopping unhealthy Remote Debug Agent before restart.") {
   const state = await readState(settings);
   const pid =
     status?.agent?.pid ||
@@ -481,7 +643,7 @@ async function stopConfirmedAgent(settings, status) {
   await appendPluginLog(settings, {
     level: "warn",
     code: "AGENT_RESTARTING",
-    message: "Stopping unhealthy Remote Debug Agent before restart.",
+    message: reason,
     pid,
   });
   process.kill(pid);
@@ -511,25 +673,91 @@ async function startAgent(settings, reason) {
     serverPath: settings.serverPath,
   });
 
-  const child = spawn(process.execPath, [settings.serverPath], {
-    cwd: settings.agentDir,
-    detached: true,
-    env: {
-      ...process.env,
-      ...settings.env,
-      REMOTE_DEBUG_AGENT_PORT: String(settings.port),
-    },
-    stdio: "ignore",
-    windowsHide: true,
+  let child;
+  try {
+    child = spawn(process.execPath, [settings.serverPath], {
+      cwd: settings.agentDir,
+      detached: true,
+      env: mergeEnvironment(process.env, settings.env, {
+        REMOTE_DEBUG_AGENT_PORT: String(settings.port),
+      }),
+      stdio: "ignore",
+      windowsHide: true,
+    });
+  } catch (error) {
+    const wrapped = new Error(`Remote Debug Agent process could not be spawned: ${error.message}`);
+    wrapped.code = "AGENT_SPAWN_FAILED";
+    wrapped.payload = {
+      serverPath: settings.serverPath,
+      agentDir: settings.agentDir,
+      spawnError: {
+        code: error.code,
+        message: error.message,
+      },
+    };
+    await appendPluginLog(settings, {
+      level: "error",
+      code: wrapped.code,
+      message: wrapped.message,
+      details: wrapped.payload,
+    });
+    throw wrapped;
+  }
+
+  let agentReady = false;
+  let spawnError = null;
+  let childExit = null;
+
+  child.once("error", (error) => {
+    spawnError = {
+      code: error.code,
+      message: error.message,
+    };
+    appendPluginLog(settings, {
+      level: "error",
+      code: "AGENT_SPAWN_ERROR",
+      message: `Remote Debug Agent process emitted an error: ${error.message}`,
+      details: {
+        serverPath: settings.serverPath,
+        agentDir: settings.agentDir,
+        error: spawnError,
+      },
+    }).catch((logError) => {
+      console.error("failed to write MCP spawn error log", logError);
+    });
   });
+
+  child.once("exit", (code, signal) => {
+    childExit = {
+      pid: child.pid,
+      code,
+      signal,
+    };
+    appendPluginLog(settings, {
+      level: agentReady ? "warn" : "error",
+      code: "AGENT_PROCESS_EXITED",
+      message: agentReady
+        ? "Remote Debug Agent process exited after readiness."
+        : "Remote Debug Agent process exited before readiness.",
+      details: childExit,
+    }).catch((logError) => {
+      console.error("failed to write MCP process exit log", logError);
+    });
+  });
+
   child.unref();
 
   const deadline = Date.now() + START_TIMEOUT_MS;
   let lastProbe;
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, 250));
+    if (spawnError || childExit) {
+      break;
+    }
+
     lastProbe = await probeAgent(settings);
     if (lastProbe.kind === "agent" && agentStatusIsHealthy(lastProbe.status, settings)) {
+      agentReady = true;
       await appendPluginLog(settings, {
         level: "info",
         code: "AGENT_READY",
@@ -550,6 +778,8 @@ async function startAgent(settings, reason) {
     agentUrl: settings.agentUrl,
     port: settings.port,
     lastProbe,
+    spawnError,
+    childExit,
     lastError: state?.lastError,
   };
   await appendPluginLog(settings, {
@@ -639,28 +869,54 @@ async function resolveFallbackAgentSettings(settings, initialProbe) {
 async function performEnsureAgentReady() {
   const settings = agentSettings();
   if (settings.explicitUrl) {
+    if (
+      !activeAgentSettings ||
+      activeAgentSettings.agentUrl !== settings.agentUrl ||
+      activeAgentSettings.sourceFingerprint !== settings.sourceFingerprint
+    ) {
+      await appendPluginLog(settings, {
+        level: "info",
+        code: "AGENT_EXTERNAL_URL",
+        message: "External Remote Debug Agent URL configured; skipping local restart management.",
+      });
+    }
+    activeAgentSettings = settings;
     return settings;
   }
 
   if (activeAgentSettings) {
     const activeProbe = await probeAgent(activeAgentSettings);
-    if (activeProbe.kind === "agent" && agentStatusIsHealthy(activeProbe.status, activeAgentSettings)) {
+    const sameSource = agentSourceMatches(activeAgentSettings, settings);
+
+    if (
+      activeProbe.kind === "agent" &&
+      sameSource &&
+      agentStatusIsHealthy(activeProbe.status, activeAgentSettings)
+    ) {
       return activeAgentSettings;
     }
 
     if (activeProbe.kind === "agent") {
-      await appendPluginLog(activeAgentSettings, {
-        level: "warn",
-        code: "AGENT_UNHEALTHY",
-        message: "Fallback Remote Debug Agent responded but does not match the configured target.",
-        status: activeProbe.status,
-      });
-      await stopConfirmedAgent(activeAgentSettings, activeProbe.status);
-      await startAgent(activeAgentSettings, "Restarting unhealthy fallback Remote Debug Agent.");
-      return activeAgentSettings;
+      const previousSettings = activeAgentSettings;
+      if (!sameSource) {
+        await logAgentConfigChanged(settings, activeProbe.status, previousSettings);
+        await stopStaleAgent(previousSettings, activeProbe.status, settings);
+        activeAgentSettings = null;
+      } else {
+        await appendPluginLog(previousSettings, {
+          level: "warn",
+          code: "AGENT_UNHEALTHY",
+          message: "Fallback Remote Debug Agent responded but does not match the configured target.",
+          status: activeProbe.status,
+          expected: expectedSummary(previousSettings),
+        });
+        await stopConfirmedAgent(previousSettings, activeProbe.status);
+        await startAgent(previousSettings, "Restarting unhealthy fallback Remote Debug Agent.");
+        return previousSettings;
+      }
+    } else {
+      activeAgentSettings = null;
     }
-
-    activeAgentSettings = null;
   }
 
   const probe = await probeAgent(settings);
@@ -670,13 +926,19 @@ async function performEnsureAgentReady() {
   }
 
   if (probe.kind === "agent") {
-    await appendPluginLog(settings, {
-      level: "warn",
-      code: "AGENT_UNHEALTHY",
-      message: "Remote Debug Agent responded but does not match the configured target.",
-      status: probe.status,
-    });
-    await stopConfirmedAgent(settings, probe.status);
+    if (probe.status?.agent?.configFingerprint !== settings.configFingerprint) {
+      await logAgentConfigChanged(settings, probe.status, null);
+      await stopStaleAgent(settings, probe.status, settings);
+    } else {
+      await appendPluginLog(settings, {
+        level: "warn",
+        code: "AGENT_UNHEALTHY",
+        message: "Remote Debug Agent responded but does not match the configured target.",
+        status: probe.status,
+        expected: expectedSummary(settings),
+      });
+      await stopConfirmedAgent(settings, probe.status);
+    }
     await startAgent(settings, "Restarting unhealthy Remote Debug Agent.");
     activeAgentSettings = settings;
     return settings;
@@ -714,6 +976,15 @@ function scheduleAgentPrewarm(trigger) {
     settings = agentSettings();
   } catch (error) {
     console.error(`failed to resolve Remote Debug Agent settings during ${trigger}: ${error.message}`);
+    const fallbackSettings = fallbackLogSettings(error);
+    appendPluginLog(fallbackSettings, {
+      level: "error",
+      code: error.code || "AGENT_PREWARM_SETTINGS_FAILED",
+      message: `Remote Debug Agent prewarm could not resolve settings during ${trigger}: ${error.message}`,
+      details: fallbackSettings.settingsError,
+    }).catch((logError) => {
+      console.error("failed to write MCP prewarm settings failure log", logError);
+    });
     return;
   }
 

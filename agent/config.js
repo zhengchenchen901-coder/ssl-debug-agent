@@ -1,7 +1,8 @@
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 
-export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app"];
+export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
 
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
@@ -133,6 +134,49 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       statePath: path.resolve(cwd, ".runtime", "agent-state.json"),
     },
   };
+}
+
+export function publicTarget(config) {
+  return {
+    host: config.ssh.host || "",
+    port: config.ssh.port,
+    username: config.ssh.username || "",
+  };
+}
+
+export function publicSecurity(config) {
+  return {
+    allowedPaths: config.security.allowedPaths,
+    defaultTimeoutMs: config.security.defaultTimeoutMs,
+    maxTimeoutMs: config.security.maxTimeoutMs,
+    defaultReadMaxBytes: config.security.defaultReadMaxBytes,
+    maxCommandOutputBytes: config.security.maxCommandOutputBytes,
+  };
+}
+
+function fingerprintConfig(config) {
+  return {
+    agent: {
+      host: config.agent.host,
+      port: config.agent.port,
+    },
+    ssh: {
+      host: config.ssh.host || "",
+      port: config.ssh.port,
+      username: config.ssh.username || "",
+      privateKeyPath: config.ssh.privateKeyPath || "",
+      passphrase: config.ssh.passphrase || "",
+      readyTimeout: config.ssh.readyTimeout,
+    },
+    security: publicSecurity(config),
+    audit: {
+      logPath: config.audit.logPath,
+    },
+  };
+}
+
+export function configFingerprint(config) {
+  return createHash("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
 }
 
 export function assertSshConfig(config) {

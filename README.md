@@ -140,8 +140,9 @@ npm run diagnose
 ```
 
 The diagnose command starts `mcp-server.js` over stdio, sends `initialize` and
-`tools/list`, and checks the local HTTP agent `/status` endpoint. A healthy MCP
-wrapper should list:
+`tools/list`, checks the local HTTP agent `/status` endpoint, and prints the
+resolved source root, installed cache path, Codex plugin enablement state, MCP
+server path, and MCP runtime log path. A healthy MCP wrapper should list:
 
 ```text
 remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir
@@ -150,10 +151,27 @@ remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir
 The MCP wrapper writes lifecycle events to
 `plugins\remote-debug-agent\.runtime\mcp-error.log`, including `initialize`,
 `tools/list`, `tools/call`, the resolved project root, agent URL, and plugin
-version. If the diagnose command lists the tools but the current Codex thread
-does not expose them, reinstall or re-enable the plugin in Codex Desktop, then
-restart Codex Desktop or open a new thread. Existing threads cannot be forced by
-repository code to inject newly loaded MCP tools.
+version.
+
+Passing diagnose means the wrapper process can expose the tools. It does not
+prove that an already-open Codex thread has loaded those tools into its current
+tool table. If diagnose lists the tools but the current Codex thread still does
+not expose `remote_debug_*`, reinstall or re-enable the plugin in Codex Desktop,
+then restart Codex Desktop or open a new thread. Existing threads cannot be
+forced by repository code to inject newly loaded MCP tools.
+
+Interpret troubleshooting evidence conservatively. A missing path in the
+installed plugin cache, an unavailable `remote_debug_*` tool in the current
+thread, or a local HTTP warning from `127.0.0.1:<port>` are separate signals.
+None of them alone proves that the source checkout lacks `agent/`, that the
+plugin installation is broken, or that the remote target is unhealthy. Use the
+explicit `npm run diagnose` fields first, then state whether a conclusion is
+confirmed or still only suggested.
+
+Direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`, or
+`/list-dir`, or one-off Node scripts that import the local agent code, are
+development diagnostics only. Normal Codex usage should go through the
+`remote_debug_*` MCP tools so the plugin remains the visible safety boundary.
 
 ## Use From A Fresh Clone
 
@@ -243,6 +261,8 @@ Allowed path roots:
 /var/log
 /etc/nginx
 /home/app
+/root/.pm2
+/home/github
 ```
 
 ## Architecture And Command Security
@@ -285,8 +305,8 @@ Command validation applies these checks:
   checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
 - `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.
 - Path-reading commands such as `ls`, `cat`, `tail`, and `grep` require at
-  least one allowed absolute path under `/var/log`, `/etc/nginx`, or
-  `/home/app`.
+  least one allowed absolute path under `/var/log`, `/etc/nginx`, `/home/app`,
+  `/root/.pm2`, or `/home/github`.
 
 If a command contains path arguments, the agent also resolves the remote
 canonical paths before execution to reduce symlink escape risk. Audit logs are

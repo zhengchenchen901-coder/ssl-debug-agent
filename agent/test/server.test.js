@@ -44,19 +44,28 @@ function makeConfig(logPath) {
   };
 }
 
-async function waitForFileJson(filePath) {
+async function waitForFileJson(filePath, predicate = () => true) {
   const deadline = Date.now() + 3000;
   let lastError;
+  let lastValue;
 
   while (Date.now() < deadline) {
     try {
-      return JSON.parse(await fsPromises.readFile(filePath, "utf8"));
+      const parsed = JSON.parse(await fsPromises.readFile(filePath, "utf8"));
+      lastValue = parsed;
+      if (predicate(parsed)) {
+        return parsed;
+      }
     } catch (error) {
       lastError = error;
-      await new Promise((resolve) => setTimeout(resolve, 50));
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
+  if (lastValue) {
+    throw new Error(`timed out waiting for ${filePath} to match predicate; last status was ${lastValue.status || "unknown"}`);
+  }
   throw lastError || new Error(`timed out waiting for ${filePath}`);
 }
 
@@ -261,7 +270,10 @@ test("startServer records port binding errors in runtime state", { skip: !depsIn
   const failedServer = startServer(config);
 
   try {
-    const state = await waitForFileJson(config.runtime.statePath);
+    const state = await waitForFileJson(
+      config.runtime.statePath,
+      (candidate) => candidate.status === "error",
+    );
     assert.equal(state.status, "error");
     assert.equal(state.lastError.code, "EADDRINUSE");
   } finally {

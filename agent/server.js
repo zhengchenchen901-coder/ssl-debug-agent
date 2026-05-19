@@ -1,11 +1,11 @@
 import express from "express";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { byteLength, createActivityLog, previewText } from "./activity.js";
-import { loadConfig } from "./config.js";
+import { configFingerprint, loadConfig, publicSecurity, publicTarget } from "./config.js";
 import { writeAuditLog } from "./audit.js";
 import {
   assertPathAllowed,
@@ -39,34 +39,6 @@ function errorPayload(error) {
       message: error.message || "remote debug operation failed",
     },
   };
-}
-
-function publicTarget(config) {
-  return {
-    host: config.ssh.host || "",
-    port: config.ssh.port,
-    username: config.ssh.username || "",
-  };
-}
-
-function publicSecurity(config) {
-  return {
-    allowedPaths: config.security.allowedPaths,
-    defaultTimeoutMs: config.security.defaultTimeoutMs,
-    maxTimeoutMs: config.security.maxTimeoutMs,
-    defaultReadMaxBytes: config.security.defaultReadMaxBytes,
-    maxCommandOutputBytes: config.security.maxCommandOutputBytes,
-  };
-}
-
-function configFingerprint(config) {
-  const publicConfig = {
-    agent: config.agent,
-    ssh: publicTarget(config),
-    security: publicSecurity(config),
-  };
-
-  return createHash("sha256").update(JSON.stringify(publicConfig)).digest("hex");
 }
 
 function publicAgent(config) {
