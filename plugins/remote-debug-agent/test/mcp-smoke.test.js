@@ -62,8 +62,9 @@ function createMessageReader(child) {
 }
 
 function startAgentStub() {
+  const drafts = new Map();
   const server = http.createServer((request, response) => {
-    if (request.method !== "POST" || request.url !== "/run") {
+    if (request.method !== "POST") {
       response.writeHead(404).end();
       return;
     }
@@ -74,17 +75,76 @@ function startAgentStub() {
     });
     request.on("end", () => {
       const parsed = JSON.parse(body);
-      response.writeHead(200, { "Content-Type": "application/json" });
-      response.end(
-        JSON.stringify({
+      if (request.url === "/run") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(
+          JSON.stringify({
+            ok: true,
+            stdout: `ran:${parsed.cmd}`,
+            stderr: "",
+            exitCode: 0,
+            durationMs: 1,
+            timedOut: false,
+          }),
+        );
+        return;
+      }
+
+      if (request.url === "/approved-command-drafts") {
+        const draft = {
           ok: true,
-          stdout: `ran:${parsed.cmd}`,
-          stderr: "",
-          exitCode: 0,
-          durationMs: 1,
-          timedOut: false,
-        }),
-      );
+          draftId: "draft-1",
+          purpose: parsed.purpose,
+          commands: parsed.commands,
+          commandHash: "hash-1",
+          commandCount: parsed.commands.length,
+          commandBlock: parsed.commands.join("\n\n"),
+          status: "pending",
+          createdAt: "2026-05-19T00:00:00.000Z",
+          expiresAt: "2026-05-19T00:30:00.000Z",
+          instructions: ["stub"],
+        };
+        drafts.set(draft.draftId, draft);
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify(draft));
+        return;
+      }
+
+      if (request.url === "/approved-command-drafts/get") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify(drafts.get(parsed.draftId)));
+        return;
+      }
+
+      if (request.url === "/approved-command-drafts/execute") {
+        const draft = drafts.get(parsed.draftId);
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(
+          JSON.stringify({
+            ok: true,
+            commandsOk: true,
+            draftId: parsed.draftId,
+            commandHash: parsed.commandHash,
+            status: "executed",
+            executedAt: "2026-05-19T00:01:00.000Z",
+            durationMs: 1,
+            results: draft.commands.map((command, commandIndex) => ({
+              command,
+              commandIndex,
+              commandPreview: command,
+              stdout: `ran:${command}`,
+              stderr: "",
+              exitCode: 0,
+              timedOut: false,
+              durationMs: 1,
+            })),
+          }),
+        );
+        return;
+      }
+
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ ok: false, error: { code: "UNKNOWN_ROUTE" } }));
     });
   });
 
@@ -209,13 +269,36 @@ function sshPort() {
   return Number.parseInt(process.env.REMOTE_DEBUG_PORT || "22", 10);
 }
 
+function positiveInt(value, fallback) {
+  const parsed = Number.parseInt(value || "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function flag(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
 function securityConfig() {
+  const approvedMaxTimeoutMs = positiveInt(process.env.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS, 300000);
+  const approvedDefaultTimeoutMs = Math.min(
+    positiveInt(process.env.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS, 30000),
+    approvedMaxTimeoutMs
+  );
+
   return {
     allowedPaths: DEFAULT_ALLOWED_PATHS,
     defaultTimeoutMs: 10000,
     maxTimeoutMs: 30000,
     defaultReadMaxBytes: 256 * 1024,
-    maxCommandOutputBytes: 1024 * 1024
+    maxCommandOutputBytes: 1024 * 1024,
+    approvedCommands: {
+      enabled: flag(process.env.REMOTE_DEBUG_APPROVED_COMMANDS),
+      ttlMs: 30 * 60 * 1000,
+      defaultTimeoutMs: approvedDefaultTimeoutMs,
+      maxTimeoutMs: approvedMaxTimeoutMs,
+      maxCommandLength: 16 * 1024,
+      maxCommands: 20
+    }
   };
 }
 
@@ -351,6 +434,9 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_run_command",
         "remote_debug_read_file",
         "remote_debug_list_dir",
+        "remote_debug_prepare_command_draft",
+        "remote_debug_get_command_draft",
+        "remote_debug_execute_command_draft",
       ],
     );
 
@@ -371,6 +457,72 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     );
     const call = await readMessage();
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+  } finally {
+    child.kill();
+    await close(agentStub);
+  }
+});
+
+test("MCP forwards approved command draft tools", async () => {
+  const agentStub = await startAgentStub();
+  const port = agentStub.address().port;
+  const child = startMcp({ REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${port}` });
+  const readMessage = createMessageReader(child);
+
+  try {
+    child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 1, method: "initialize" }));
+    await readMessage();
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_prepare_command_draft",
+          arguments: {
+            purpose: "manual fix",
+            commands: ["echo ok | tee /tmp/approved-command-test"],
+          },
+        },
+      }),
+    );
+    const prepare = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(prepare.draftId, "draft-1");
+    assert.match(prepare.commandBlock, /tee/);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_get_command_draft",
+          arguments: { draftId: prepare.draftId },
+        },
+      }),
+    );
+    const view = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(view.commandHash, prepare.commandHash);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_execute_command_draft",
+          arguments: {
+            draftId: prepare.draftId,
+            commandHash: prepare.commandHash,
+            confirmation: "使用命令",
+          },
+        },
+      }),
+    );
+    const execute = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(execute.commandsOk, true);
+    assert.match(execute.results[0].stdout, /ran:echo ok/);
   } finally {
     child.kill();
     await close(agentStub);
@@ -498,7 +650,7 @@ test("MCP resolves project root from Codex local marketplace config when running
     "cache",
     "remote-debug-local",
     "remote-debug-agent",
-    "1.0.5",
+    "1.0.6",
   );
   const installedServerPath = path.join(cacheDir, "mcp-server.js");
   const port = await getFreePort();

@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
+import {
+  DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
+  DEFAULT_APPROVED_COMMAND_TTL_MS,
+  MAX_APPROVED_COMMAND_LENGTH,
+  MAX_APPROVED_COMMAND_TIMEOUT_MS,
+  MAX_APPROVED_COMMANDS,
+} from "./approved-commands.js";
 
 export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
 
@@ -89,6 +96,14 @@ function parsePositiveInt(value, fallback, name) {
   return parsed;
 }
 
+function parseBooleanFlag(value) {
+  if (value === undefined || value === "") {
+    return false;
+  }
+
+  return ["1", "true", "yes", "on"].includes(String(value).trim().toLowerCase());
+}
+
 export function loadConfig(env = process.env, cwd = process.cwd()) {
   const mergedEnv = {
     ...env,
@@ -103,6 +118,19 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
     mergedEnv.REMOTE_DEBUG_PORT,
     DEFAULT_SSH_PORT,
     "REMOTE_DEBUG_PORT",
+  );
+  const approvedCommandMaxTimeoutMs = parsePositiveInt(
+    mergedEnv.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS,
+    MAX_APPROVED_COMMAND_TIMEOUT_MS,
+    "REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS",
+  );
+  const approvedCommandDefaultTimeoutMs = Math.min(
+    parsePositiveInt(
+      mergedEnv.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS,
+      DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
+      "REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS",
+    ),
+    approvedCommandMaxTimeoutMs,
   );
 
   return {
@@ -124,6 +152,14 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       maxTimeoutMs: MAX_TIMEOUT_MS,
       defaultReadMaxBytes: DEFAULT_READ_MAX_BYTES,
       maxCommandOutputBytes: MAX_COMMAND_OUTPUT_BYTES,
+    },
+    approvedCommands: {
+      enabled: parseBooleanFlag(mergedEnv.REMOTE_DEBUG_APPROVED_COMMANDS),
+      ttlMs: DEFAULT_APPROVED_COMMAND_TTL_MS,
+      defaultTimeoutMs: approvedCommandDefaultTimeoutMs,
+      maxTimeoutMs: approvedCommandMaxTimeoutMs,
+      maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
+      maxCommands: MAX_APPROVED_COMMANDS,
     },
     audit: {
       logPath:
@@ -151,6 +187,14 @@ export function publicSecurity(config) {
     maxTimeoutMs: config.security.maxTimeoutMs,
     defaultReadMaxBytes: config.security.defaultReadMaxBytes,
     maxCommandOutputBytes: config.security.maxCommandOutputBytes,
+    approvedCommands: {
+      enabled: Boolean(config.approvedCommands?.enabled),
+      ttlMs: config.approvedCommands?.ttlMs,
+      defaultTimeoutMs: config.approvedCommands?.defaultTimeoutMs,
+      maxTimeoutMs: config.approvedCommands?.maxTimeoutMs,
+      maxCommandLength: config.approvedCommands?.maxCommandLength,
+      maxCommands: config.approvedCommands?.maxCommands,
+    },
   };
 }
 

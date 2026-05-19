@@ -7,13 +7,35 @@ description: Safely debug a remote Linux server through the Remote Debug Agent M
 
 Use the Remote Debug Agent tools to inspect a configured Linux server. The local
 agent is the security boundary: do not attempt to bypass command allowlists or
-path allowlists.
+path allowlists except through the explicit approved-command draft workflow
+described below.
 
 ## Tools
 
 - `remote_debug_run_command`: run whitelisted diagnostic commands.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
+- `remote_debug_prepare_command_draft`: generate exact commands for user review;
+  this does not execute anything.
+- `remote_debug_get_command_draft`: view a generated command draft.
+- `remote_debug_execute_command_draft`: execute a generated draft only after the
+  user explicitly chooses `使用命令`.
+
+## Approved Command Draft Workflow
+
+Use this workflow when the next safe action requires a remote write or
+maintenance command, such as editing cron, exporting MongoDB data, reloading a
+service, or writing a helper script.
+
+1. Generate the minimal exact commands and call
+   `remote_debug_prepare_command_draft` with a short purpose.
+2. Show the returned command block, `draftId`, `commandHash`, and expiration to
+   the user.
+3. If the user says `只生成命令，不执行`, do not call the execution tool.
+4. If the user says `使用命令`, call `remote_debug_execute_command_draft` with
+   the returned `draftId`, `commandHash`, and exact confirmation phrase
+   `使用命令`.
+5. If command text changes, create a new draft instead of executing the old one.
 
 ## Evidence Discipline
 
@@ -53,6 +75,8 @@ path allowlists.
 ## Safety Rules
 
 - Never request arbitrary shell execution.
+- For non-read-only commands, use approved-command drafts; never execute a draft
+  unless the user explicitly chooses `使用命令`.
 - Never use `rm`, `sudo`, `shutdown`, `reboot`, `mkfs`, `chmod`, or `chown`.
 - Never use shell operators such as `;`, `&&`, `|`, redirects, command
   substitution, or newlines.

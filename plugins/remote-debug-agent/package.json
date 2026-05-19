@@ -1,6 +1,6 @@
 {
   "name": "remote-debug-agent-plugin",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "type": "module",
   "description": "Codex Desktop MCP wrapper for the Remote Debug Agent.",

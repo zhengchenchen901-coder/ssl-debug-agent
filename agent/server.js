@@ -5,6 +5,12 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { byteLength, createActivityLog, previewText } from "./activity.js";
+import {
+  assertApprovedCommandsEnabled,
+  createCommandDraftStore,
+  normalizeApprovedCommandTimeoutMs,
+  redactCommand,
+} from "./approved-commands.js";
 import { configFingerprint, loadConfig, publicSecurity, publicTarget } from "./config.js";
 import { writeAuditLog } from "./audit.js";
 import {
@@ -139,6 +145,32 @@ function directorySummary(payload) {
   };
 }
 
+function approvedDraftSummary(payload) {
+  return {
+    draftId: payload.draftId,
+    purpose: payload.purpose,
+    commandHash: payload.commandHash,
+    commandCount: payload.commandCount,
+    expiresAt: payload.expiresAt,
+    status: payload.status,
+  };
+}
+
+function approvedExecutionSummary(payload) {
+  return {
+    draftId: payload.draftId,
+    commandHash: payload.commandHash,
+    durationMs: payload.durationMs,
+    commandCount: payload.results.length,
+    stopped: payload.stopped,
+    commandsOk: payload.commandsOk,
+  };
+}
+
+function commandAuditPreview(commands) {
+  return commands.map((command, index) => `${index + 1}. ${redactCommand(command)}`).join("\n");
+}
+
 async function audit(config, event) {
   try {
     await writeAuditLog(config.audit.logPath, event);
@@ -154,10 +186,11 @@ export function createApp(options = {}) {
   const listRemoteDir = options.listRemoteDir || defaultListRemoteDir;
   const resolveRemotePaths = options.resolveRemotePaths || defaultResolveRemotePaths;
   const activity = options.activity || createActivityLog();
+  const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = express();
   const publicDir = path.join(__dirname, "public");
 
-  app.use(express.json({ limit: "32kb" }));
+  app.use(express.json({ limit: "512kb" }));
 
   app.get("/", (_request, response) => {
     response.sendFile(path.join(publicDir, "dashboard.html"));
@@ -249,6 +282,255 @@ export function createApp(options = {}) {
       await audit(config, {
         tool: "run",
         cmd: typeof rawCmd === "string" ? rawCmd.slice(0, 256) : undefined,
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
+  app.post("/approved-command-drafts", async (request, response) => {
+    const startedAt = performance.now();
+    const rawPurpose = request.body?.purpose;
+    const rawCommands = request.body?.commands;
+    const operation = createOperation(request, config, "approved-command-draft", {
+      purpose: requestText(rawPurpose),
+      commandCount: Array.isArray(rawCommands) ? rawCommands.length : undefined,
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      assertApprovedCommandsEnabled(config);
+      const draft = commandDraftStore.createDraft({
+        purpose: rawPurpose,
+        commands: rawCommands,
+        settings: config.approvedCommands,
+      });
+      const payload = {
+        ok: true,
+        ...draft,
+        durationMs: durationSince(startedAt),
+      };
+
+      await audit(config, {
+        tool: "approved-command-draft",
+        draftId: draft.draftId,
+        commandHash: draft.commandHash,
+        commandCount: draft.commandCount,
+        commandPreview: commandAuditPreview(draft.commands),
+        ok: true,
+        durationMs: payload.durationMs,
+      });
+
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        result: approvedDraftSummary(payload),
+      });
+
+      response.json(payload);
+    } catch (error) {
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "approved-command-draft",
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
+  app.post("/approved-command-drafts/get", async (request, response) => {
+    const startedAt = performance.now();
+    const rawDraftId = request.body?.draftId;
+    const operation = createOperation(request, config, "approved-command-draft", {
+      draftId: requestText(rawDraftId),
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      assertApprovedCommandsEnabled(config);
+      const draft = commandDraftStore.getDraft(rawDraftId);
+      const payload = {
+        ok: true,
+        ...draft,
+        durationMs: durationSince(startedAt),
+      };
+
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        result: approvedDraftSummary(payload),
+      });
+
+      response.json(payload);
+    } catch (error) {
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
+  app.post("/approved-command-drafts/execute", async (request, response) => {
+    const startedAt = performance.now();
+    const rawDraftId = request.body?.draftId;
+    const rawCommandHash = request.body?.commandHash;
+    const operation = createOperation(request, config, "approved-command-execute", {
+      draftId: requestText(rawDraftId),
+      commandHash: requestText(rawCommandHash),
+      timeoutMs: request.body?.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    let claimedDraft;
+    try {
+      assertApprovedCommandsEnabled(config);
+      const timeoutMs = normalizeApprovedCommandTimeoutMs(
+        request.body?.timeoutMs,
+        config.approvedCommands,
+      );
+      claimedDraft = commandDraftStore.claimDraft({
+        draftId: rawDraftId,
+        commandHash: rawCommandHash,
+        confirmation: request.body?.confirmation,
+      });
+      operation.request = {
+        draftId: claimedDraft.draftId,
+        commandHash: claimedDraft.commandHash,
+        commandCount: claimedDraft.commandCount,
+        timeoutMs,
+      };
+      publishStage(activity, operation, "validated");
+
+      await audit(config, {
+        tool: "approved-command-execute-start",
+        draftId: claimedDraft.draftId,
+        commandHash: claimedDraft.commandHash,
+        commandCount: claimedDraft.commandCount,
+        ok: true,
+        durationMs: 0,
+      });
+
+      const results = [];
+      let stopped;
+      for (const [index, command] of claimedDraft.commands.entries()) {
+        publishStage(activity, operation, "command-started", {
+          commandIndex: index,
+          commandPreview: redactCommand(command),
+        });
+        const commandStartedAt = performance.now();
+        const result = await runSSH(command, {
+          config,
+          timeoutMs,
+          onStdout: (chunk) => {
+            publishStage(activity, operation, "stdout", {
+              commandIndex: index,
+              chunk: previewText(String(chunk)),
+            });
+          },
+          onStderr: (chunk) => {
+            publishStage(activity, operation, "stderr", {
+              commandIndex: index,
+              chunk: previewText(String(chunk)),
+            });
+          },
+        });
+        const durationMs = durationSince(commandStartedAt);
+        const commandOk = result.exitCode === 0 && !result.timedOut;
+        const commandPayload = {
+          command,
+          commandIndex: index,
+          commandPreview: redactCommand(command),
+          durationMs,
+          exitCode: result.exitCode,
+          stdout: result.stdout,
+          stderr: result.stderr,
+          timedOut: result.timedOut,
+        };
+        results.push(commandPayload);
+
+        await audit(config, {
+          tool: "approved-command-execute",
+          draftId: claimedDraft.draftId,
+          commandHash: claimedDraft.commandHash,
+          commandIndex: index,
+          commandPreview: commandPayload.commandPreview,
+          ok: commandOk,
+          durationMs,
+          stdout: commandPayload.stdout,
+          stderr: commandPayload.stderr,
+          errorCode: commandOk
+            ? undefined
+            : result.timedOut
+              ? "APPROVED_COMMAND_TIMED_OUT"
+              : "APPROVED_COMMAND_NON_ZERO_EXIT",
+        });
+
+        if (!commandOk) {
+          stopped = {
+            commandIndex: index,
+            reason: result.timedOut ? "timed_out" : "non_zero_exit",
+            exitCode: result.exitCode,
+          };
+          break;
+        }
+      }
+
+      const finalDraft = commandDraftStore.finishDraft(claimedDraft.draftId, "executed");
+      const payload = {
+        ok: true,
+        commandsOk: !stopped,
+        draftId: claimedDraft.draftId,
+        commandHash: claimedDraft.commandHash,
+        status: finalDraft?.status || "executed",
+        executedAt: finalDraft?.executedAt,
+        results,
+        stopped,
+        durationMs: durationSince(startedAt),
+      };
+
+      await audit(config, {
+        tool: "approved-command-execute-complete",
+        draftId: claimedDraft.draftId,
+        commandHash: claimedDraft.commandHash,
+        commandCount: results.length,
+        ok: payload.commandsOk,
+        durationMs: payload.durationMs,
+        errorCode: stopped ? `STOPPED_${stopped.reason.toUpperCase()}` : undefined,
+      });
+
+      publishStage(activity, operation, "completed", {
+        ok: payload.commandsOk,
+        result: approvedExecutionSummary(payload),
+      });
+
+      response.json(payload);
+    } catch (error) {
+      if (claimedDraft) {
+        commandDraftStore.finishDraft(claimedDraft.draftId, "failed");
+      }
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "approved-command-execute",
+        draftId: claimedDraft?.draftId || (typeof rawDraftId === "string" ? rawDraftId : undefined),
+        commandHash: claimedDraft?.commandHash || (typeof rawCommandHash === "string" ? rawCommandHash : undefined),
         ok: false,
         durationMs,
         errorCode: payload.error.code,
@@ -391,6 +673,8 @@ function isEntrypointProcess() {
 export function startServer(config = loadConfig()) {
   const app = createApp({ config });
   const startedAt = new Date().toISOString();
+  let failedToListen = false;
+  let listeningStateTimer;
   const server = app.listen(config.agent.port, config.agent.host, () => {
     const address = server.address();
     const port = typeof address === "object" && address ? address.port : config.agent.port;
@@ -403,20 +687,31 @@ export function startServer(config = loadConfig()) {
       hasPrivateKeyPath: Boolean(config.ssh.privateKeyPath),
     };
 
-    writeRuntimeState(config, event).catch((error) => {
-      console.error("failed to write runtime state", error);
-    });
-    console.log(JSON.stringify({
-      name: "remote-debug-agent",
-      pid: process.pid,
-      host: config.agent.host,
-      port,
-      target: publicTarget(config),
-      startedAt,
-    }));
+    listeningStateTimer = setTimeout(() => {
+      if (failedToListen) {
+        return;
+      }
+
+      writeRuntimeState(config, event).catch((error) => {
+        console.error("failed to write runtime state", error);
+      });
+      console.log(JSON.stringify({
+        name: "remote-debug-agent",
+        pid: process.pid,
+        host: config.agent.host,
+        port,
+        target: publicTarget(config),
+        startedAt,
+      }));
+    }, 25);
+    listeningStateTimer.unref?.();
   });
 
   server.on("error", (error) => {
+    failedToListen = true;
+    if (listeningStateTimer) {
+      clearTimeout(listeningStateTimer);
+    }
     const payload = {
       status: "error",
       startedAt,

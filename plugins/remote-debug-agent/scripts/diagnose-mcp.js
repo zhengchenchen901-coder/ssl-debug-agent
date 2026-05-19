@@ -13,6 +13,9 @@ const expectedTools = [
   "remote_debug_run_command",
   "remote_debug_read_file",
   "remote_debug_list_dir",
+  "remote_debug_prepare_command_draft",
+  "remote_debug_get_command_draft",
+  "remote_debug_execute_command_draft",
 ];
 
 function normalizeWindowsExtendedPath(inputPath) {

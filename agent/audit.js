@@ -6,7 +6,7 @@ function safeLength(value) {
 }
 
 export function buildAuditEntry(event, now = () => new Date()) {
-  return {
+  const entry = {
     time: now().toISOString(),
     tool: event.tool,
     cmd: event.cmd,
@@ -18,6 +18,14 @@ export function buildAuditEntry(event, now = () => new Date()) {
     contentLength: event.contentLength ?? safeLength(event.content),
     errorCode: event.errorCode,
   };
+
+  for (const key of ["draftId", "commandHash", "commandIndex", "commandCount", "commandPreview"]) {
+    if (event[key] !== undefined) {
+      entry[key] = event[key];
+    }
+  }
+
+  return entry;
 }
 
 export async function writeAuditLog(logPath, event, now) {

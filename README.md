@@ -58,6 +58,9 @@ Optional:
 ```powershell
 $env:REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE = "..."
 $env:REMOTE_DEBUG_AUDIT_LOG = "C:\path\to\remote-debug-audit.jsonl"
+$env:REMOTE_DEBUG_APPROVED_COMMANDS = "0"
+$env:REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS = "30000"
+$env:REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS = "300000"
 ```
 
 Do not commit secrets or private keys. This project intentionally reads SSH
@@ -145,7 +148,9 @@ resolved source root, installed cache path, Codex plugin enablement state, MCP
 server path, and MCP runtime log path. A healthy MCP wrapper should list:
 
 ```text
-remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir
+remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir,
+remote_debug_prepare_command_draft, remote_debug_get_command_draft,
+remote_debug_execute_command_draft
 ```
 
 The MCP wrapper writes lifecycle events to
@@ -224,6 +229,40 @@ needed when you want to debug the agent manually.
 - `remote_debug_run_command`: run a whitelisted read-only diagnostic command.
 - `remote_debug_read_file`: read a file under an allowed remote path.
 - `remote_debug_list_dir`: list a directory under an allowed remote path.
+- `remote_debug_prepare_command_draft`: generate an exact command draft for
+  user review. It never executes commands.
+- `remote_debug_get_command_draft`: view a previously generated command draft.
+- `remote_debug_execute_command_draft`: execute a one-time command draft after
+  the user explicitly chooses `使用命令`.
+
+## Approved Command Drafts
+
+The approved-command channel is for cases where Codex should present a minimal
+set of remote write or maintenance commands, but a human must decide whether the
+plugin may execute them. It is disabled by default. To enable it, set:
+
+```text
+REMOTE_DEBUG_APPROVED_COMMANDS=1
+```
+
+The flow is:
+
+1. Codex calls `remote_debug_prepare_command_draft` with a purpose and exact
+   command list.
+2. The tool returns `draftId`, `commandHash`, `expiresAt`, and a command block
+   that can be reviewed in the Codex conversation.
+3. If the user chooses `只生成命令，不执行`, Codex must not call the execution
+   tool and should leave the command block for manual execution.
+4. If the user chooses `使用命令`, Codex calls
+   `remote_debug_execute_command_draft` with the same `draftId`,
+   `commandHash`, and the exact confirmation phrase `使用命令`.
+
+Drafts are one-time use and expire after 30 minutes. Execution runs commands in
+order with the approved-command timeout. A non-zero exit code or timeout stops
+the remaining commands. This channel bypasses the read-only command allowlist,
+but it does not bypass SSH configuration, timeouts, output limits, the one-time
+hash check, or audit logging. Audit entries store command hashes and redacted
+command previews instead of raw password-bearing command text.
 
 Allowed commands:
 
@@ -282,7 +321,9 @@ Codex
 local HTTP agent, and forwards tool calls to `http://127.0.0.1:<port>`.
 `remote_debug_run_command` forwards `cmd` and `timeoutMs` to the agent's `/run`
 endpoint. `remote_debug_read_file` and `remote_debug_list_dir` use the agent's
-SFTP-backed file endpoints.
+SFTP-backed file endpoints. The approved-command tools use
+`/approved-command-drafts`, `/approved-command-drafts/get`, and
+`/approved-command-drafts/execute`.
 
 The local HTTP agent is the security boundary. For `/run`, `agent/server.js`
 calls `validateCommand` from `agent/security.js` before any SSH command is
@@ -308,6 +349,11 @@ Command validation applies these checks:
   least one allowed absolute path under `/var/log`, `/etc/nginx`, `/home/app`,
   `/root/.pm2`, or `/home/github`.
 
+Approved-command draft execution intentionally does not call `validateCommand`;
+it relies on `REMOTE_DEBUG_APPROVED_COMMANDS=1`, the one-time draft ID, the
+command hash, the exact confirmation phrase `使用命令`, timeouts, output limits,
+and audit logging. Use it only for commands the user has reviewed.
+
 If a command contains path arguments, the agent also resolves the remote
 canonical paths before execution to reduce symlink escape risk. Audit logs are
 written after each operation with command metadata, duration, result sizes, and
@@ -316,9 +362,13 @@ success or failure.
 ## Safety Rules
 
 - No arbitrary shell.
-- No shell control operators, pipes, redirects, command substitution, or newlines.
-- No dangerous commands such as `rm`, `sudo`, `shutdown`, `reboot`, `mkfs`,
-  `chmod`, or `chown`.
+- The only exception is the disabled-by-default approved-command draft workflow,
+  which requires a one-time draft ID, command hash, and exact user confirmation.
+- Read-only diagnostic commands cannot use shell control operators, pipes,
+  redirects, command substitution, or newlines.
+- Read-only diagnostic commands reject dangerous tokens such as `rm`, `sudo`,
+  `shutdown`, `reboot`, `mkfs`, `chmod`, or `chown`. Approved draft commands
+  are not allowlist-validated and must be explicitly reviewed before execution.
 - File and directory operations use SFTP and validate canonical remote paths to
   reduce symlink escape risk.
 - Audit logs are JSONL and record operation metadata, duration, result size, and

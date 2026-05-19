@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
-const PLUGIN_VERSION = "1.0.5";
+const PLUGIN_VERSION = "1.0.6";
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
 const PROBE_TIMEOUT_MS = 1500;
@@ -16,6 +16,11 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_TIMEOUT_MS = 30_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
+const DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1000;
+const DEFAULT_APPROVED_COMMAND_TIMEOUT_MS = 30_000;
+const MAX_APPROVED_COMMAND_TIMEOUT_MS = 300_000;
+const MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
+const MAX_APPROVED_COMMANDS = 20;
 const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
 
 const __filename = fileURLToPath(import.meta.url);
@@ -150,6 +155,72 @@ const tools = [
       },
     },
   },
+  {
+    name: "remote_debug_prepare_command_draft",
+    description:
+      "Create a one-time approved-command draft for user review. This only generates commands; it never executes them.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["purpose", "commands"],
+      properties: {
+        purpose: {
+          type: "string",
+          description: "Why these remote commands are needed.",
+        },
+        commands: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string" },
+          description: "Exact remote shell commands to show to the user for approval.",
+        },
+      },
+    },
+  },
+  {
+    name: "remote_debug_get_command_draft",
+    description:
+      "View a previously generated approved-command draft, including the exact command block and command hash.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["draftId"],
+      properties: {
+        draftId: {
+          type: "string",
+          description: "The draftId returned by remote_debug_prepare_command_draft.",
+        },
+      },
+    },
+  },
+  {
+    name: "remote_debug_execute_command_draft",
+    description:
+      "Execute a one-time approved-command draft only after the user explicitly chooses 使用命令. Requires the exact draftId, commandHash, and confirmation phrase.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["draftId", "commandHash", "confirmation"],
+      properties: {
+        draftId: {
+          type: "string",
+          description: "The draftId returned by remote_debug_prepare_command_draft.",
+        },
+        commandHash: {
+          type: "string",
+          description: "The commandHash returned by remote_debug_prepare_command_draft.",
+        },
+        confirmation: {
+          type: "string",
+          description: "Must exactly equal 使用命令.",
+        },
+        timeoutMs: {
+          type: "number",
+          description: "Optional per-command timeout in milliseconds. The agent clamps it to the approved-command maximum.",
+        },
+      },
+    },
+  },
 ];
 
 function parseEnvFile(contents) {
@@ -275,6 +346,23 @@ function parseSshPort(value) {
   return parsed;
 }
 
+function parsePositiveInt(value, fallback) {
+  if (value === undefined || value === "") {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseBooleanFlag(value) {
+  if (value === undefined || value === "") {
+    return false;
+  }
+
+  return ["1", "true", "yes", "on"].includes(String(value).trim().toLowerCase());
+}
+
 function publicTargetFromEnv(env) {
   return {
     host: env.REMOTE_DEBUG_HOST || "",
@@ -283,13 +371,33 @@ function publicTargetFromEnv(env) {
   };
 }
 
-function publicSecurityConfig() {
+function publicSecurityConfig(env = {}) {
+  const approvedMaxTimeoutMs = parsePositiveInt(
+    env.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS,
+    MAX_APPROVED_COMMAND_TIMEOUT_MS,
+  );
+  const approvedDefaultTimeoutMs = Math.min(
+    parsePositiveInt(
+      env.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS,
+      DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
+    ),
+    approvedMaxTimeoutMs,
+  );
+
   return {
     allowedPaths: DEFAULT_ALLOWED_PATHS,
     defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
     maxTimeoutMs: MAX_TIMEOUT_MS,
     defaultReadMaxBytes: DEFAULT_READ_MAX_BYTES,
     maxCommandOutputBytes: MAX_COMMAND_OUTPUT_BYTES,
+    approvedCommands: {
+      enabled: parseBooleanFlag(env.REMOTE_DEBUG_APPROVED_COMMANDS),
+      ttlMs: DEFAULT_APPROVED_COMMAND_TTL_MS,
+      defaultTimeoutMs: approvedDefaultTimeoutMs,
+      maxTimeoutMs: approvedMaxTimeoutMs,
+      maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
+      maxCommands: MAX_APPROVED_COMMANDS,
+    },
   };
 }
 
@@ -307,7 +415,7 @@ function fingerprintConfigFromEnv(env, agentDir, port) {
       passphrase: env.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || "",
       readyTimeout: 10_000,
     },
-    security: publicSecurityConfig(),
+    security: publicSecurityConfig(env),
     audit: {
       logPath: env.REMOTE_DEBUG_AUDIT_LOG || path.resolve(agentDir, "audit", "remote-debug-agent.jsonl"),
     },
@@ -423,6 +531,27 @@ function toolArgumentSummary(name, args = {}) {
   if (name === "remote_debug_list_dir") {
     return {
       path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+    };
+  }
+
+  if (name === "remote_debug_prepare_command_draft") {
+    return {
+      purpose: typeof args.purpose === "string" ? args.purpose.slice(0, 256) : undefined,
+      commandCount: Array.isArray(args.commands) ? args.commands.length : undefined,
+    };
+  }
+
+  if (name === "remote_debug_get_command_draft") {
+    return {
+      draftId: typeof args.draftId === "string" ? args.draftId.slice(0, 128) : undefined,
+    };
+  }
+
+  if (name === "remote_debug_execute_command_draft") {
+    return {
+      draftId: typeof args.draftId === "string" ? args.draftId.slice(0, 128) : undefined,
+      commandHash: typeof args.commandHash === "string" ? args.commandHash.slice(0, 128) : undefined,
+      timeoutMs: args.timeoutMs,
     };
   }
 
@@ -1062,6 +1191,28 @@ async function callTool(name, args) {
   if (name === "remote_debug_list_dir") {
     return callAgent("/list-dir", {
       path: args?.path,
+    });
+  }
+
+  if (name === "remote_debug_prepare_command_draft") {
+    return callAgent("/approved-command-drafts", {
+      purpose: args?.purpose,
+      commands: args?.commands,
+    });
+  }
+
+  if (name === "remote_debug_get_command_draft") {
+    return callAgent("/approved-command-drafts/get", {
+      draftId: args?.draftId,
+    });
+  }
+
+  if (name === "remote_debug_execute_command_draft") {
+    return callAgent("/approved-command-drafts/execute", {
+      draftId: args?.draftId,
+      commandHash: args?.commandHash,
+      confirmation: args?.confirmation,
+      timeoutMs: args?.timeoutMs,
     });
   }
 
