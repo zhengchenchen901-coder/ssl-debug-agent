@@ -21,6 +21,21 @@ described below.
 - `remote_debug_execute_command_draft`: execute a generated draft only after the
   user explicitly chooses `使用命令`.
 
+## Tool Visibility
+
+Before inspecting the remote server, confirm that the current Codex tool table
+actually exposes the `remote_debug_*` MCP tools. If those tools are not
+callable in the current session, do not complete the user's remote diagnostic
+task through direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`,
+or `/list-dir`.
+
+When the MCP tools are missing, only troubleshoot plugin visibility: run
+`npm run diagnose` from `plugins/remote-debug-agent`, inspect the MCP runtime
+logs, and report whether the installed plugin cache recently received
+`MCP_INITIALIZE` and `MCP_TOOLS_LIST`. Stop after the visibility diagnosis and
+give the user recovery steps such as reinstalling or re-enabling the plugin,
+restarting Codex Desktop, or opening a fresh thread.
+
 ## Approved Command Draft Workflow
 
 Use this workflow when the next safe action requires a remote write or
@@ -73,6 +88,14 @@ service, or writing a helper script.
 10. Summarize evidence, likely root cause, confidence, and next safe action.
 
 ## Safety Rules
+
+- Direct local HTTP agent calls are development diagnostics only. Do not treat
+  them as equivalent to callable `remote_debug_*` tools for real remote server
+  work.
+- MongoDB client commands in the read-only allowlist are limited to
+  `mongodump --version`, `mongo --version`, and `mongosh --version`. Real
+  database queries must not be disguised as read-only diagnostics; wait for the
+  MCP approved-command draft tools and present the command for user review.
 
 - Never request arbitrary shell execution.
 - For non-read-only commands, use approved-command drafts; never execute a draft

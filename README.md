@@ -134,8 +134,16 @@ codex plugin marketplace upgrade <marketplace-name>
 
 ## Troubleshooting Plugin Loading
 
-If Codex Desktop says the `remote_debug_*` tools are unavailable, first confirm
-that the MCP wrapper itself can expose them:
+If Codex Desktop says the `remote_debug_*` tools are unavailable, check the
+loading path in three separate layers:
+
+1. Plugin configuration: Codex has the plugin installed and enabled.
+2. MCP wrapper self-test: `mcp-server.js` can answer `initialize` and
+   `tools/list` with the six expected tools.
+3. Current session tool table: the active Codex thread actually exposes
+   callable `remote_debug_*` tools to the model.
+
+First confirm the first two layers with the bundled diagnostic script:
 
 ```powershell
 cd plugins\remote-debug-agent
@@ -145,7 +153,9 @@ npm run diagnose
 The diagnose command starts `mcp-server.js` over stdio, sends `initialize` and
 `tools/list`, checks the local HTTP agent `/status` endpoint, and prints the
 resolved source root, installed cache path, Codex plugin enablement state, MCP
-server path, and MCP runtime log path. A healthy MCP wrapper should list:
+server path, MCP runtime log path, and the installed cache's latest
+`MCP_INITIALIZE` and `MCP_TOOLS_LIST` lifecycle records. A healthy MCP wrapper
+should list:
 
 ```text
 remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir,
@@ -158,12 +168,15 @@ The MCP wrapper writes lifecycle events to
 `tools/list`, `tools/call`, the resolved project root, agent URL, and plugin
 version.
 
-Passing diagnose means the wrapper process can expose the tools. It does not
-prove that an already-open Codex thread has loaded those tools into its current
-tool table. If diagnose lists the tools but the current Codex thread still does
-not expose `remote_debug_*`, reinstall or re-enable the plugin in Codex Desktop,
-then restart Codex Desktop or open a new thread. Existing threads cannot be
-forced by repository code to inject newly loaded MCP tools.
+Passing diagnose means the plugin is configured and the wrapper process can
+expose the tools. It does not prove that an already-open Codex thread has
+loaded those tools into its current tool table. If diagnose lists the tools and
+the installed cache log shows a recent `MCP_TOOLS_LIST`, but the current Codex
+thread still does not expose `remote_debug_*`, the failure is in the host
+session tool injection layer. Reinstall or re-enable the plugin in Codex
+Desktop, restart Codex Desktop, and then open a fresh thread. If a fresh thread
+still lacks the tools while diagnose remains healthy, report the issue with the
+diagnose output and the installed cache lifecycle lines.
 
 Interpret troubleshooting evidence conservatively. A missing path in the
 installed plugin cache, an unavailable `remote_debug_*` tool in the current
@@ -175,7 +188,9 @@ confirmed or still only suggested.
 
 Direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`, or
 `/list-dir`, or one-off Node scripts that import the local agent code, are
-development diagnostics only. Normal Codex usage should go through the
+development diagnostics only. If the current session cannot call
+`remote_debug_*`, stop after plugin visibility diagnosis instead of using HTTP
+to complete the user's remote task. Normal Codex usage should go through the
 `remote_debug_*` MCP tools so the plugin remains the visible safety boundary.
 
 ## Use From A Fresh Clone
@@ -272,7 +287,9 @@ ls cat ps netstat df free tail grep mongodump mongo mongosh systemctl nginx
 
 Additional command constraints:
 
-- MongoDB client/tool commands are limited to `--version`.
+- MongoDB client/tool commands are limited to `--version`. Real database
+  queries must not be disguised as read-only diagnostics; wait for the MCP
+  approved-command draft tools and present the exact command for user review.
 - `systemctl` is limited to read-only `status`, `is-active`, and `is-enabled`
   checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
 - `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.

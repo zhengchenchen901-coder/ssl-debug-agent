@@ -157,6 +157,56 @@ function installedCachePath(marketplaceName, version) {
   return fs.existsSync(candidate) ? candidate : "";
 }
 
+function installedRuntimeLogPath(cachePath) {
+  return cachePath ? path.join(cachePath, ".runtime", "mcp-error.log") : "";
+}
+
+function parseJsonLine(line) {
+  try {
+    return JSON.parse(line);
+  } catch {
+    return null;
+  }
+}
+
+function latestLogEvent(logFilePath, code) {
+  if (!logFilePath || !fs.existsSync(logFilePath)) {
+    return null;
+  }
+
+  const lines = fs.readFileSync(logFilePath, "utf8").split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const entry = parseJsonLine(lines[index]);
+    if (entry?.code === code) {
+      return entry;
+    }
+  }
+
+  return null;
+}
+
+function formatLifecycleEvent(event) {
+  if (!event) {
+    return "not found";
+  }
+
+  const parts = [
+    event.time || "unknown time",
+    `pid ${event.pid || "unknown"}`,
+    `path ${event.mcpServerPath || "unknown"}`,
+  ];
+
+  if (event.protocolVersion) {
+    parts.push(`protocol ${event.protocolVersion}`);
+  }
+
+  if (event.code === "MCP_TOOLS_LIST") {
+    parts.push(`toolCount ${event.toolCount ?? "unknown"}`);
+  }
+
+  return parts.join(", ");
+}
+
 function resolveProjectRoot(marketplace) {
   if (process.env.REMOTE_DEBUG_PROJECT_ROOT) {
     return path.resolve(normalizeWindowsExtendedPath(process.env.REMOTE_DEBUG_PROJECT_ROOT));
@@ -402,6 +452,9 @@ async function main() {
     const missingTools = expectedTools.filter((name) => !toolNames.includes(name));
     const pluginVersion = readPluginVersion();
     const cachePath = installedCachePath(marketplace?.name, pluginVersion);
+    const cacheLogPath = installedRuntimeLogPath(cachePath);
+    const cacheInitialize = latestLogEvent(cacheLogPath, "MCP_INITIALIZE");
+    const cacheToolsList = latestLogEvent(cacheLogPath, "MCP_TOOLS_LIST");
 
     printLine("Source root", projectRoot);
     printLine("Installed cache", cachePath || "not found");
@@ -414,6 +467,10 @@ async function main() {
     printLine("MCP server", serverPath);
     printLine("MCP initialize", `ok (${initialize.result?.serverInfo?.name || "unknown"} ${initialize.result?.serverInfo?.version || ""})`);
     printLine("MCP tools", toolNames.length > 0 ? toolNames.join(", ") : "none");
+    printLine("Source wrapper self-test", "ok");
+    printLine("Installed cache MCP log", cacheLogPath || "not found");
+    printLine("Installed cache last initialize", formatLifecycleEvent(cacheInitialize));
+    printLine("Installed cache last tools/list", formatLifecycleEvent(cacheToolsList));
 
     if (missingTools.length > 0) {
       throw new Error(`missing expected MCP tools: ${missingTools.join(", ")}`);
