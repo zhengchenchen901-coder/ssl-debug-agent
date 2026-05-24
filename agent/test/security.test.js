@@ -26,6 +26,7 @@ test("allows whitelisted diagnostic commands", () => {
   );
   assert.equal(validateCommand("nginx -t", security).normalizedCommand, "nginx -t");
   assert.equal(validateCommand("nginx -T", security).normalizedCommand, "nginx -T");
+  assert.equal(validateCommand("which node", security).normalizedCommand, "which node");
   assert.equal(validateCommand("pm2 list", security).normalizedCommand, "pm2 list");
   assert.equal(validateCommand("pm2 describe api-server", security).normalizedCommand, "pm2 describe api-server");
   assert.equal(validateCommand("pm2 describe app-1", security).normalizedCommand, "pm2 describe app-1");

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend API Errors"
+  short_description: "Check YJ backend API error logs"
+  default_prompt: "Use $backend-api-errors to check yesterday /v3/order_payment errors."

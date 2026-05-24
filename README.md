@@ -282,7 +282,7 @@ command previews instead of raw password-bearing command text.
 Allowed commands:
 
 ```text
-ls cat ps netstat df free tail grep mongodump mongo mongosh systemctl nginx
+ls cat ps netstat df free tail grep mongodump mongo mongosh systemctl nginx which
 ```
 
 Additional command constraints:

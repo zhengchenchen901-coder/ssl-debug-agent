@@ -14,6 +14,7 @@ export const ALLOWED_COMMANDS = new Set([
   "mongosh",
   "systemctl",
   "nginx",
+  "which",
   "pm2",
 ]);
 
