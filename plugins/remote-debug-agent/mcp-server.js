@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -12,6 +12,8 @@ const DEFAULT_SSH_PORT = 22;
 const PROBE_TIMEOUT_MS = 1500;
 const START_TIMEOUT_MS = 7000;
 const FALLBACK_PORT_ATTEMPTS = 100;
+const AGENT_LEASE_TTL_MS = 45_000;
+const AGENT_LEASE_HEARTBEAT_MS = 15_000;
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_TIMEOUT_MS = 30_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
@@ -96,6 +98,8 @@ function resolveProjectRoot() {
 
 const projectRoot = resolveProjectRoot();
 let activeAgentSettings = null;
+const leaseClientId = `codex-mcp-${process.pid}-${randomUUID()}`;
+let activeAgentLease = null;
 
 const instanceIdProperty = {
   type: "string",
@@ -648,6 +652,106 @@ async function fetchJson(url, options = {}) {
   }
 }
 
+function leasePayload() {
+  return {
+    clientId: leaseClientId,
+    ttlMs: AGENT_LEASE_TTL_MS,
+    source: "codex-plugin",
+    pid: process.pid,
+  };
+}
+
+async function renewAgentLease(settings, phase) {
+  try {
+    const { response, parsed } = await fetchJson(new URL("/api/leases", settings.agentUrl), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Remote-Debug-Source": "codex-plugin",
+      },
+      body: JSON.stringify(leasePayload()),
+      timeoutMs: PROBE_TIMEOUT_MS,
+    });
+
+    if (!response.ok || parsed.ok === false) {
+      throw new Error(parsed.error?.message || `lease request failed with HTTP ${response.status}`);
+    }
+
+    return true;
+  } catch (error) {
+    await appendPluginLog(settings, {
+      level: "warn",
+      code: "AGENT_LEASE_RENEW_FAILED",
+      message: `Remote Debug Agent lease ${phase} failed: ${error.message}`,
+    });
+    return false;
+  }
+}
+
+async function releaseAgentLease(lease = activeAgentLease) {
+  if (!lease) {
+    return;
+  }
+
+  if (lease.timer) {
+    clearInterval(lease.timer);
+  }
+
+  if (!lease.settings.explicitUrl) {
+    try {
+      await fetchJson(new URL(`/api/leases/${encodeURIComponent(leaseClientId)}`, lease.settings.agentUrl), {
+        method: "DELETE",
+        headers: {
+          "X-Remote-Debug-Source": "codex-plugin",
+        },
+        timeoutMs: PROBE_TIMEOUT_MS,
+      });
+    } catch {
+      // Lease expiry is the fallback when best-effort release is not delivered.
+    }
+  }
+
+  if (activeAgentLease === lease) {
+    activeAgentLease = null;
+  }
+}
+
+async function syncAgentLease(settings) {
+  if (settings.explicitUrl) {
+    await releaseAgentLease();
+    return;
+  }
+
+  const sameLease =
+    activeAgentLease &&
+    activeAgentLease.settings.agentUrl === settings.agentUrl &&
+    activeAgentLease.settings.sourceFingerprint === settings.sourceFingerprint;
+
+  if (!sameLease) {
+    await releaseAgentLease();
+    activeAgentLease = {
+      settings,
+      timer: null,
+    };
+    await renewAgentLease(settings, "registration");
+    activeAgentLease.timer = setInterval(() => {
+      renewAgentLease(settings, "heartbeat").catch((error) => {
+        console.error("failed to renew Remote Debug Agent lease", error);
+      });
+    }, AGENT_LEASE_HEARTBEAT_MS);
+    activeAgentLease.timer.unref?.();
+    return;
+  }
+
+  await renewAgentLease(settings, "ensure");
+}
+
+async function activateAgentSettings(settings) {
+  activeAgentSettings = settings;
+  await syncAgentLease(settings);
+  return settings;
+}
+
 function isConnectionRefused(error) {
   const code = error?.cause?.code || error?.code;
   return code === "ECONNREFUSED" || code === "ENOENT";
@@ -833,6 +937,7 @@ async function startAgent(settings, reason) {
       detached: true,
       env: mergeEnvironment(process.env, settings.env, {
         REMOTE_DEBUG_AGENT_PORT: String(settings.port),
+        REMOTE_DEBUG_AGENT_LIFETIME: "desktop",
       }),
       stdio: "ignore",
       windowsHide: true,
@@ -1033,8 +1138,7 @@ async function performEnsureAgentReady() {
         message: "External Remote Debug Agent URL configured; skipping local restart management.",
       });
     }
-    activeAgentSettings = settings;
-    return settings;
+    return activateAgentSettings(settings);
   }
 
   if (activeAgentSettings) {
@@ -1046,7 +1150,7 @@ async function performEnsureAgentReady() {
       sameSource &&
       agentStatusIsHealthy(activeProbe.status, activeAgentSettings)
     ) {
-      return activeAgentSettings;
+      return activateAgentSettings(activeAgentSettings);
     }
 
     if (activeProbe.kind === "agent") {
@@ -1065,7 +1169,7 @@ async function performEnsureAgentReady() {
         });
         await stopConfirmedAgent(previousSettings, activeProbe.status);
         await startAgent(previousSettings, "Restarting unhealthy fallback Remote Debug Agent.");
-        return previousSettings;
+        return activateAgentSettings(previousSettings);
       }
     } else {
       activeAgentSettings = null;
@@ -1074,8 +1178,7 @@ async function performEnsureAgentReady() {
 
   const probe = await probeAgent(settings);
   if (probe.kind === "agent" && agentStatusIsHealthy(probe.status, settings)) {
-    activeAgentSettings = settings;
-    return settings;
+    return activateAgentSettings(settings);
   }
 
   if (probe.kind === "agent") {
@@ -1093,22 +1196,19 @@ async function performEnsureAgentReady() {
       await stopConfirmedAgent(settings, probe.status);
     }
     await startAgent(settings, "Restarting unhealthy Remote Debug Agent.");
-    activeAgentSettings = settings;
-    return settings;
+    return activateAgentSettings(settings);
   }
 
   if (probe.kind === "unreachable") {
     await startAgent(settings, "Starting missing Remote Debug Agent.");
-    activeAgentSettings = settings;
-    return settings;
+    return activateAgentSettings(settings);
   }
 
   const fallback = await resolveFallbackAgentSettings(settings, probe);
   if (fallback.action === "start") {
     await startAgent(fallback.settings, "Starting Remote Debug Agent on fallback port.");
   }
-  activeAgentSettings = fallback.settings;
-  return fallback.settings;
+  return activateAgentSettings(fallback.settings);
 }
 
 let ensureAgentReadyPromise = null;
@@ -1453,4 +1553,10 @@ process.stdin.on("data", (chunk) => {
 
 process.stdin.on("error", (error) => {
   console.error(error);
+});
+
+process.stdin.on("close", () => {
+  releaseAgentLease().catch((error) => {
+    console.error("failed to release Remote Debug Agent lease", error);
+  });
 });

@@ -1,6 +1,10 @@
 import { loadConfig } from "./config.js";
 import { createApp } from "./server.js";
 import { checkSSHConnection } from "./ssh.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || "", 10);
@@ -23,6 +27,24 @@ function errorPayload(error) {
 async function runHealthCheck(config) {
   await checkSSHConnection(config);
   send({ type: "health", status: "healthy" });
+}
+
+function isEntrypointProcess() {
+  return Boolean(
+    process.argv[1] &&
+      path.resolve(__filename) === path.resolve(process.argv[1]),
+  );
+}
+
+export function installWorkerShutdownHandlers(shutdown, processObject = process) {
+  processObject.on("message", (message) => {
+    if (message?.type === "shutdown") {
+      shutdown(message.reason || "stopped", true);
+    }
+  });
+  processObject.once("disconnect", () => shutdown("manager-disconnect"));
+  processObject.once("SIGTERM", () => shutdown("SIGTERM"));
+  processObject.once("SIGINT", () => shutdown("SIGINT"));
 }
 
 async function main() {
@@ -80,16 +102,12 @@ async function main() {
     setTimeout(() => process.exit(0), 1000).unref?.();
   };
 
-  process.on("message", (message) => {
-    if (message?.type === "shutdown") {
-      shutdown(message.reason || "stopped", true);
-    }
-  });
-  process.once("SIGTERM", () => shutdown("SIGTERM"));
-  process.once("SIGINT", () => shutdown("SIGINT"));
+  installWorkerShutdownHandlers(shutdown);
 }
 
-main().catch((error) => {
-  send({ type: "ready", ok: false, error: errorPayload(error) });
-  process.exitCode = 1;
-});
+if (isEntrypointProcess()) {
+  main().catch((error) => {
+    send({ type: "ready", ok: false, error: errorPayload(error) });
+    process.exitCode = 1;
+  });
+}

@@ -6,6 +6,7 @@ const portRange = document.querySelector("#portRange");
 const defaultInstance = document.querySelector("#defaultInstance");
 const instanceRows = document.querySelector("#instanceRows");
 const emptyState = document.querySelector("#emptyState");
+const shutdownButton = document.querySelector("#shutdownButton");
 const reloadButton = document.querySelector("#reloadButton");
 const newButton = document.querySelector("#newButton");
 const modalBackdrop = document.querySelector("#modalBackdrop");
@@ -31,6 +32,7 @@ const statusLabels = {
 
 const state = {
   defaultInstanceId: "",
+  lifecycle: null,
   manager: null,
   editingId: "",
   instances: [],
@@ -129,6 +131,7 @@ async function loadInstances() {
     const data = await api("/api/instances", { cache: "no-store" });
     state.instances = data.instances || [];
     state.defaultInstanceId = data.defaultInstanceId || "";
+    state.lifecycle = data.lifecycle || null;
     state.manager = data.manager || null;
     setConnection("live", "主进程在线");
     render();
@@ -145,6 +148,9 @@ function updateMetrics() {
   runningCount.textContent = running.length;
   portRange.textContent = range ? `${range.start}-${range.end}` : "--";
   defaultInstance.textContent = state.defaultInstanceId || "--";
+  if (shutdownButton) {
+    shutdownButton.hidden = state.lifecycle?.lifetime !== "manual";
+  }
 }
 
 function statusPill(status) {
@@ -438,6 +444,21 @@ instanceRows.addEventListener("click", (event) => {
 
 reloadButton.addEventListener("click", loadInstances);
 newButton.addEventListener("click", () => openModal());
+shutdownButton?.addEventListener("click", async () => {
+  if (!window.confirm("关闭 Manager 会停止所有 worker，并断开当前 dashboard。确定关闭吗？")) {
+    return;
+  }
+
+  try {
+    shutdownButton.disabled = true;
+    await api("/api/shutdown", { method: "POST" });
+    showToast("Manager 正在关闭");
+    setConnection("offline", "主进程正在关闭");
+  } catch (error) {
+    shutdownButton.disabled = false;
+    showToast(`${error.code || "ERROR"}: ${error.message}`);
+  }
+});
 closeModalButton.addEventListener("click", closeModal);
 cancelModalButton.addEventListener("click", closeModal);
 modalBackdrop.addEventListener("click", (event) => {

@@ -30,6 +30,13 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const DEFAULT_AGENT_LIFETIME = "manual";
+const DESKTOP_AGENT_LIFETIME = "desktop";
+const DEFAULT_MANAGER_LEASE_TTL_MS = 45_000;
+const MIN_MANAGER_LEASE_TTL_MS = 10_000;
+const MAX_MANAGER_LEASE_TTL_MS = 120_000;
+const DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5_000;
+const DEFAULT_DESKTOP_STARTUP_GRACE_MS = 60_000;
 
 function durationSince(startedAt) {
   return Math.round(performance.now() - startedAt);
@@ -685,7 +692,171 @@ function respondManagerError(response, error) {
   response.status(error.statusCode || error.status || 500).json(managerErrorPayload(error));
 }
 
-function managerPublicStatus(config, workerManager, registry) {
+function managerRouteError(message, code, statusCode = 500, details = {}) {
+  const error = new Error(message);
+  error.code = code;
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+}
+
+function normalizeAgentLifetime(value) {
+  return value === DESKTOP_AGENT_LIFETIME ? DESKTOP_AGENT_LIFETIME : DEFAULT_AGENT_LIFETIME;
+}
+
+function clampNumber(value, fallback, min, max) {
+  const parsed = Number.parseInt(value, 10);
+  const normalized = Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+  return Math.min(max, Math.max(min, normalized));
+}
+
+function publicLease(lease) {
+  return {
+    clientId: lease.clientId,
+    ttlMs: lease.ttlMs,
+    source: lease.source,
+    pid: lease.pid,
+    expiresAt: new Date(lease.expiresAt).toISOString(),
+  };
+}
+
+export function createManagerLifecycle(options = {}) {
+  const lifetime = normalizeAgentLifetime(options.lifetime);
+  const leases = new Map();
+  const now = options.now || (() => Date.now());
+  const setIntervalFn = options.setInterval || setInterval;
+  const clearIntervalFn = options.clearInterval || clearInterval;
+  const requestShutdown = options.requestShutdown || (() => Promise.resolve());
+  const startupGraceMs = clampNumber(
+    options.startupGraceMs,
+    DEFAULT_DESKTOP_STARTUP_GRACE_MS,
+    0,
+    MAX_MANAGER_LEASE_TTL_MS,
+  );
+  const checkIntervalMs = clampNumber(
+    options.checkIntervalMs,
+    DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS,
+    1,
+    MAX_MANAGER_LEASE_TTL_MS,
+  );
+  const minLeaseTtlMs = clampNumber(
+    options.minLeaseTtlMs,
+    MIN_MANAGER_LEASE_TTL_MS,
+    1,
+    MAX_MANAGER_LEASE_TTL_MS,
+  );
+  const maxLeaseTtlMs = clampNumber(
+    options.maxLeaseTtlMs,
+    MAX_MANAGER_LEASE_TTL_MS,
+    minLeaseTtlMs,
+    MAX_MANAGER_LEASE_TTL_MS,
+  );
+  const startupDeadline = now() + startupGraceMs;
+  let timer = null;
+  let hadLease = false;
+  let shuttingDown = false;
+
+  function pruneExpiredLeases() {
+    const current = now();
+    for (const [clientId, lease] of leases.entries()) {
+      if (lease.expiresAt <= current) {
+        leases.delete(clientId);
+      }
+    }
+  }
+
+  function activeLeaseCount() {
+    pruneExpiredLeases();
+    return leases.size;
+  }
+
+  function publicStatus() {
+    return {
+      lifetime,
+      activeLeaseCount: activeLeaseCount(),
+    };
+  }
+
+  async function checkLeases() {
+    if (lifetime !== DESKTOP_AGENT_LIFETIME || shuttingDown) {
+      return;
+    }
+
+    const activeCount = activeLeaseCount();
+    if (activeCount > 0) {
+      return;
+    }
+
+    if (!hadLease && now() < startupDeadline) {
+      return;
+    }
+
+    shuttingDown = true;
+    stop();
+    await requestShutdown(hadLease ? "lease-expired" : "lease-missing");
+  }
+
+  function start() {
+    if (lifetime !== DESKTOP_AGENT_LIFETIME || timer) {
+      return;
+    }
+
+    timer = setIntervalFn(() => {
+      checkLeases().catch((error) => {
+        console.error("failed to check manager leases", error);
+      });
+    }, checkIntervalMs);
+    timer.unref?.();
+  }
+
+  function stop() {
+    if (timer) {
+      clearIntervalFn(timer);
+      timer = null;
+    }
+  }
+
+  function registerLease(payload = {}) {
+    const clientId = typeof payload.clientId === "string" ? payload.clientId.trim() : "";
+    if (!clientId) {
+      throw managerRouteError("lease clientId is required", "LEASE_CLIENT_ID_REQUIRED", 400);
+    }
+
+    const ttlMs = clampNumber(
+      payload.ttlMs,
+      DEFAULT_MANAGER_LEASE_TTL_MS,
+      minLeaseTtlMs,
+      maxLeaseTtlMs,
+    );
+    const lease = {
+      clientId,
+      ttlMs,
+      source: requestText(payload.source, 80) || "unknown",
+      pid: Number.isInteger(payload.pid) ? payload.pid : null,
+      expiresAt: now() + ttlMs,
+    };
+
+    leases.set(clientId, lease);
+    hadLease = true;
+    return publicLease(lease);
+  }
+
+  function releaseLease(clientId) {
+    return leases.delete(clientId);
+  }
+
+  start();
+
+  return {
+    checkLeases,
+    publicStatus,
+    registerLease,
+    releaseLease,
+    stop,
+  };
+}
+
+function managerPublicStatus(config, workerManager, registry, lifecycle) {
   return {
     ok: true,
     name: "remote-debug-agent",
@@ -701,6 +872,7 @@ function managerPublicStatus(config, workerManager, registry) {
     },
     target: publicTarget(config),
     security: publicSecurity(config),
+    lifecycle: lifecycle.publicStatus(),
     instances: workerManager.publicInstances(),
   };
 }
@@ -739,11 +911,20 @@ export function createManagerApp(options = {}) {
       fetchImpl: options.fetchImpl,
     });
   const activity = options.activity || createActivityLog();
+  const shutdownController = options.shutdownController || {};
+  const lifecycle =
+    options.lifecycle ||
+    createManagerLifecycle({
+      lifetime: config.lifecycle?.lifetime,
+      requestShutdown: (reason) => shutdownController.request?.(reason),
+      ...options.lifecycleOptions,
+    });
   const app = express();
   const publicDir = path.join(__dirname, "public");
 
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
+  app.locals.lifecycle = lifecycle;
   app.use(express.json({ limit: "512kb" }));
 
   app.get("/", (_request, response) => {
@@ -766,7 +947,7 @@ export function createManagerApp(options = {}) {
 
   app.get("/status", (_request, response) => {
     response.json({
-      ...managerPublicStatus(config, workerManager, registry),
+      ...managerPublicStatus(config, workerManager, registry, lifecycle),
       recentEvents: activity.list().slice(-20),
     });
   });
@@ -780,9 +961,51 @@ export function createManagerApp(options = {}) {
       ok: true,
       defaultInstanceId: registry.registry.defaultInstanceId,
       manager: registry.managerConfig(),
+      lifecycle: lifecycle.publicStatus(),
       instances: workerManager.publicInstances(),
     });
   });
+
+  app.post("/api/leases", managerAsync(async (request, response) => {
+    const lease = lifecycle.registerLease(request.body || {});
+    activity.publish({ type: "lifecycle", stage: "lease-renewed", clientId: lease.clientId });
+    response.json({
+      ok: true,
+      lease,
+      lifecycle: lifecycle.publicStatus(),
+    });
+  }));
+
+  app.delete("/api/leases/:clientId", managerAsync(async (request, response) => {
+    const released = lifecycle.releaseLease(request.params.clientId);
+    activity.publish({
+      type: "lifecycle",
+      stage: released ? "lease-released" : "lease-missing",
+      clientId: request.params.clientId,
+    });
+    response.json({
+      ok: true,
+      released,
+      lifecycle: lifecycle.publicStatus(),
+    });
+  }));
+
+  app.post("/api/shutdown", managerAsync(async (_request, response) => {
+    if (lifecycle.publicStatus().lifetime !== DEFAULT_AGENT_LIFETIME) {
+      throw managerRouteError(
+        "manager lifecycle is controlled by Codex Desktop",
+        "LIFECYCLE_MANAGED_BY_CODEX",
+        409,
+      );
+    }
+
+    response.status(202).json({ ok: true, status: "shutting-down" });
+    setImmediate(() => {
+      shutdownController.request?.("manual-api")?.catch((error) => {
+        console.error("failed to shut down manager", error);
+      });
+    });
+  }));
 
   app.post("/api/instances", managerAsync(async (request, response) => {
     const instance = registry.create(request.body || {});
@@ -965,8 +1188,10 @@ function listenHttpServer(app, config, eventFactory) {
 }
 
 export function startServer(config = loadConfig(), options = {}) {
-  const app = createManagerApp({ config, ...options });
+  const shutdownController = options.shutdownController || {};
+  const app = createManagerApp({ config, ...options, shutdownController });
   const workerManager = app.locals.workerManager;
+  const lifecycle = app.locals.lifecycle;
   const server = listenHttpServer(app, config, (port, startedAt) => ({
     status: "listening",
     role: "manager",
@@ -975,13 +1200,65 @@ export function startServer(config = loadConfig(), options = {}) {
     instanceCount: workerManager.publicInstances().length,
   }));
 
-  const shutdown = () => {
-    workerManager.shutdownAll().catch((error) => {
+  const closeServer = () =>
+    new Promise((resolve) => {
+      if (!server.listening) {
+        resolve();
+        return;
+      }
+
+      server.close((error) => {
+        if (error) {
+          console.error("failed to close manager server", error);
+        }
+        resolve();
+      });
+    });
+
+  const exit = options.exit || ((code) => process.exit(code));
+  let shutdownPromise = null;
+  const gracefulShutdown = (reason = "shutdown", shutdownOptions = {}) => {
+    if (!shutdownPromise) {
+      shutdownPromise = (async () => {
+        lifecycle.stop();
+        await workerManager.shutdownAll().catch((error) => {
+          console.error("failed to stop worker processes", error);
+        });
+        if (shutdownOptions.closeServer !== false) {
+          await closeServer();
+        }
+        if (Number.isInteger(shutdownOptions.exitCode)) {
+          exit(shutdownOptions.exitCode);
+        }
+      })();
+      server.shutdownPromise = shutdownPromise;
+    }
+
+    return shutdownPromise;
+  };
+
+  shutdownController.request = (reason) => gracefulShutdown(reason);
+  server.gracefulShutdown = gracefulShutdown;
+  server.managerLifecycle = lifecycle;
+
+  server.once("close", () => {
+    gracefulShutdown("server-close", { closeServer: false }).catch((error) => {
       console.error("failed to stop worker processes", error);
     });
-  };
-  server.once("close", shutdown);
-  process.once("exit", shutdown);
+  });
+
+  const signalProcess = options.signalProcess || process;
+  const installSignalHandlers = options.installSignalHandlers ?? isEntrypointProcess();
+  if (installSignalHandlers) {
+    const handleSignal = (signal) => {
+      gracefulShutdown(signal, { exitCode: 0 }).catch((error) => {
+        console.error("failed to gracefully shut down manager", error);
+        exit(1);
+      });
+    };
+    signalProcess.once("SIGINT", handleSignal);
+    signalProcess.once("SIGTERM", handleSignal);
+  }
 
   return server;
 }

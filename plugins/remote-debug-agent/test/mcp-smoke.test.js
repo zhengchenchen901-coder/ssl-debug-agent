@@ -104,6 +104,7 @@ function createJsonLineMessageReader(child) {
 
 function startAgentStub() {
   const drafts = new Map();
+  const leaseRequests = [];
   const server = http.createServer((request, response) => {
     if (request.method === "GET" && request.url === "/api/instances") {
       response.writeHead(200, { "Content-Type": "application/json" });
@@ -203,10 +204,18 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/api/leases") {
+        leaseRequests.push(parsed);
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true }));
+        return;
+      }
+
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({ ok: false, error: { code: "UNKNOWN_ROUTE" } }));
     });
   });
+  server.leaseRequests = leaseRequests;
 
   return new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -283,20 +292,27 @@ async function getFreeConsecutivePorts() {
   throw new Error("failed to find consecutive free ports");
 }
 
-async function waitForStatus(port) {
+async function waitForStatus(port, predicate = () => true) {
   const deadline = Date.now() + 5000;
   let lastError;
+  let lastStatus;
 
   while (Date.now() < deadline) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/status`);
-      return await response.json();
+      lastStatus = await response.json();
+      if (predicate(lastStatus)) {
+        return lastStatus;
+      }
     } catch (error) {
       lastError = error;
-      await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
+  if (lastStatus) {
+    throw new Error(`timed out waiting for fake agent on ${port} to match predicate`);
+  }
   throw lastError || new Error(`timed out waiting for fake agent on ${port}`);
 }
 
@@ -385,6 +401,9 @@ function configFingerprint() {
     .digest("hex");
 }
 
+const leases = new Map();
+let leaseRequestCount = 0;
+
 const server = http.createServer((request, response) => {
   if (request.method === "GET" && request.url === "/status") {
     response.writeHead(200, { "Content-Type": "application/json" });
@@ -393,10 +412,24 @@ const server = http.createServer((request, response) => {
       name: "remote-debug-agent",
       mode: "manager",
       agent: { port, pid: process.pid, configFingerprint: configFingerprint() },
+      lifecycle: {
+        lifetime: process.env.REMOTE_DEBUG_AGENT_LIFETIME || "manual",
+        activeLeaseCount: leases.size,
+        leaseRequestCount,
+        clients: Array.from(leases.keys())
+      },
       target: empty
         ? { host: "", port: sshPort(), username: "" }
         : { host: process.env.REMOTE_DEBUG_HOST || "", port: sshPort(), username: process.env.REMOTE_DEBUG_USER || "" }
     }));
+    return;
+  }
+
+  if (request.method === "DELETE" && request.url.startsWith("/api/leases/")) {
+    const clientId = decodeURIComponent(request.url.slice("/api/leases/".length));
+    const released = leases.delete(clientId);
+    response.writeHead(200, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({ ok: true, released }));
     return;
   }
 
@@ -413,6 +446,26 @@ const server = http.createServer((request, response) => {
         exitCode: 0,
         durationMs: 1,
         timedOut: false
+      }));
+    });
+    return;
+  }
+
+  if (request.method === "POST" && request.url === "/api/leases") {
+    let body = "";
+    request.on("data", (chunk) => { body += chunk; });
+    request.on("end", () => {
+      const parsed = JSON.parse(body);
+      leaseRequestCount += 1;
+      leases.set(parsed.clientId, parsed);
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({
+        ok: true,
+        lease: parsed,
+        lifecycle: {
+          lifetime: process.env.REMOTE_DEBUG_AGENT_LIFETIME || "manual",
+          activeLeaseCount: leases.size
+        }
       }));
     });
     return;
@@ -555,6 +608,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     );
     const instances = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(instances.instances[0].id, "default");
+    assert.equal(agentStub.leaseRequests.length, 0);
   } finally {
     child.kill();
     await close(agentStub);
@@ -678,6 +732,70 @@ test("MCP starts the local agent from .env port when no service is listening", a
     child.kill();
     const status = await waitForStatus(port);
     process.kill(status.agent.pid);
+  }
+});
+
+test("MCP registers and renews a desktop lease for plugin-started local agents", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-lease-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const port = await getFreePort();
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+  });
+  const readMessage = createMessageReader(child);
+
+  try {
+    child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 1, method: "initialize" }));
+    await readMessage();
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_run_command",
+          arguments: { cmd: "netstat -tlnp" },
+        },
+      }),
+    );
+    const call = await readMessage();
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_list_instances",
+          arguments: {},
+        },
+      }),
+    );
+    await readMessage();
+    const status = await waitForStatus(
+      port,
+      (candidate) =>
+        candidate.lifecycle?.activeLeaseCount === 1 &&
+        candidate.lifecycle?.leaseRequestCount >= 2,
+    );
+    assert.equal(status.lifecycle.lifetime, "desktop");
+    assert.equal(status.lifecycle.clients.length, 1);
+    process.kill(status.agent.pid);
+  } finally {
+    child.kill();
   }
 });
 
