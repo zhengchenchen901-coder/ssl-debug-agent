@@ -1078,12 +1078,22 @@ export function createManagerApp(options = {}) {
 
     try {
       const result = await workerManager.callInstance(instanceId, pathName, payload, request.headers);
+      let memory = null;
+      const instance = registry.getInternal(result.instanceId);
+      if (instance && workerManager.memoryStore) {
+        try {
+          memory = await workerManager.memoryStore.recordToolObservation(instance, pathName, payload, result);
+        } catch (error) {
+          console.error("failed to update instance memory", error);
+          memory = workerManager.memoryStore.summary(instance);
+        }
+      }
       publishStage(activity, operation, "completed", {
         ok: true,
         instanceId: result.instanceId,
         durationMs: durationSince(startedAt),
       });
-      response.json(result);
+      response.json(memory ? { ...result, memory } : result);
     } catch (error) {
       publishStage(activity, operation, "failed", {
         ok: false,

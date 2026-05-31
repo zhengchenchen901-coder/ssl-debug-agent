@@ -1,6 +1,7 @@
 import { loadConfig } from "./config.js";
 import { createApp } from "./server.js";
 import { checkSSHConnection } from "./ssh.js";
+import { discoverMemory } from "./memory-discovery.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,9 +25,61 @@ function errorPayload(error) {
   };
 }
 
+function parseBooleanFlag(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
 async function runHealthCheck(config) {
   await checkSSHConnection(config);
   send({ type: "health", status: "healthy" });
+}
+
+export async function runMemoryInit(config, options = {}) {
+  const env = options.env || process.env;
+  const sendMessage = options.send || send;
+  const discover = options.discoverMemory || discoverMemory;
+  if (!parseBooleanFlag(env.REMOTE_DEBUG_MEMORY_INIT)) {
+    return null;
+  }
+
+  try {
+    const memory = await discover(config, options.discovery || {});
+    sendMessage({
+      type: "memory:update",
+      ok: true,
+      memory,
+    });
+    return memory;
+  } catch (error) {
+    const payload = errorPayload(error);
+    sendMessage({
+      type: "memory:update",
+      ok: false,
+      error: payload,
+    });
+    return {
+      status: "failed",
+      lastError: payload,
+    };
+  }
+}
+
+export function scheduleMemoryInit(config, options = {}) {
+  const schedule = options.schedule || setImmediate;
+  const sendMessage = options.send || send;
+  const run = options.run || (() => runMemoryInit(config, options.runOptions || {}));
+
+  schedule(() =>
+    Promise.resolve()
+      .then(run)
+      .catch((error) => {
+        sendMessage({
+          type: "memory:update",
+          ok: false,
+          error: errorPayload(error),
+        });
+      }),
+  );
 }
 
 function isEntrypointProcess() {
@@ -71,6 +124,7 @@ async function main() {
       pid: process.pid,
       port: config.agent.port,
     });
+    scheduleMemoryInit(config);
   });
 
   server.on("error", (error) => {
