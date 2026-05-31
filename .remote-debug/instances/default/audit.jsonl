@@ -79,3 +79,10 @@
 {"time":"2026-05-31T10:39:03.418Z","tool":"run","cmd":"tail -n 100 /var/log/redis/redis-server.log","ok":true,"durationMs":11102,"stdoutLength":1301,"stderrLength":0,"contentLength":0}
 {"time":"2026-05-31T10:39:08.581Z","tool":"run","cmd":"free -m","ok":true,"durationMs":5136,"stdoutLength":204,"stderrLength":0,"contentLength":0}
 {"time":"2026-05-31T10:39:14.726Z","tool":"run","cmd":"df -h","ok":true,"durationMs":6120,"stdoutLength":373,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T11:25:21.863Z","tool":"run","cmd":"systemctl status mongod","ok":true,"durationMs":6575,"stdoutLength":0,"stderrLength":40,"contentLength":0}
+{"time":"2026-05-31T11:25:24.665Z","tool":"run","cmd":"systemctl status mongodb","ok":false,"durationMs":0,"stdoutLength":0,"stderrLength":0,"contentLength":0,"errorCode":"UNSUPPORTED_COMMAND_ARGUMENTS"}
+{"time":"2026-05-31T11:25:34.599Z","tool":"run","cmd":"netstat -tlnp","ok":true,"durationMs":6935,"stdoutLength":1255,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T11:25:46.275Z","tool":"run","cmd":"ps aux","ok":true,"durationMs":6236,"stdoutLength":16792,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T11:25:57.947Z","tool":"run","cmd":"mongosh --version","ok":true,"durationMs":4581,"stdoutLength":0,"stderrLength":33,"contentLength":0}
+{"time":"2026-05-31T11:26:05.795Z","tool":"run","cmd":"mongo --version","ok":true,"durationMs":4872,"stdoutLength":0,"stderrLength":31,"contentLength":0}
+{"time":"2026-05-31T11:26:14.437Z","tool":"run","cmd":"mongodump --version","ok":true,"durationMs":4874,"stdoutLength":0,"stderrLength":35,"contentLength":0}
