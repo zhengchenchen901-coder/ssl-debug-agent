@@ -1,10 +1,11 @@
 {
-  "mcpServers": {
-    "remote-debug-agent": {
-      "command": "node",
-      "args": [
-        "./mcp-server.js"
-      ]
-    }
+  "remote-debug-agent": {
+    "command": "node",
+    "args": [
+      "./mcp-server.js"
+    ],
+    "cwd": "D:\\Projects\\ssl-debug-agent\\plugins\\remote-debug-agent",
+    "startup_timeout_sec": 30,
+    "tool_timeout_sec": 60
   }
 }

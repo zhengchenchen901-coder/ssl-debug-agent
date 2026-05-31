@@ -18,6 +18,10 @@ function encodeMessage(message) {
   ]);
 }
 
+function encodeJsonLineMessage(message) {
+  return `${JSON.stringify(message)}\n`;
+}
+
 function createMessageReader(child) {
   let buffer = Buffer.alloc(0);
   const queue = [];
@@ -50,6 +54,43 @@ function createMessageReader(child) {
   child.stdout.on("data", (chunk) => {
     buffer = Buffer.concat([buffer, chunk]);
     parse();
+  });
+
+  return function readMessage() {
+    if (queue.length > 0) {
+      return Promise.resolve(queue.shift());
+    }
+
+    return new Promise((resolve) => waiters.push(resolve));
+  };
+}
+
+function createJsonLineMessageReader(child) {
+  let buffer = "";
+  const queue = [];
+  const waiters = [];
+
+  function deliver(message) {
+    const waiter = waiters.shift();
+    if (waiter) {
+      waiter(message);
+    } else {
+      queue.push(message);
+    }
+  }
+
+  child.stdout.on("data", (chunk) => {
+    buffer += chunk.toString("utf8");
+    while (true) {
+      const lineEnd = buffer.indexOf("\n");
+      if (lineEnd === -1) return;
+
+      const line = buffer.slice(0, lineEnd).trim();
+      buffer = buffer.slice(lineEnd + 1);
+      if (line) {
+        deliver(JSON.parse(line));
+      }
+    }
   });
 
   return function readMessage() {
@@ -415,6 +456,17 @@ async function callRunToolWithReader(child, readMessage, id) {
   return readMessage();
 }
 
+function assertStrictCompatibleSchema(schema, path = "inputSchema") {
+  assert.equal(typeof schema, "object", `${path} is an object`);
+  assert.equal(schema.additionalProperties, false, `${path} disables extra properties`);
+
+  const properties = schema.properties || {};
+  const required = schema.required || [];
+  for (const propertyName of Object.keys(properties)) {
+    assert.ok(required.includes(propertyName), `${path}.${propertyName} is required`);
+  }
+}
+
 test("MCP server exposes remote debug tools and forwards calls", async () => {
   const agentStub = await startAgentStub();
   const port = agentStub.address().port;
@@ -439,6 +491,13 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_execute_command_draft",
       ],
     );
+    for (const tool of list.result.tools) {
+      assertStrictCompatibleSchema(tool.inputSchema, `${tool.name}.inputSchema`);
+    }
+    const runCommand = list.result.tools.find((tool) => tool.name === "remote_debug_run_command");
+    assert.equal(runCommand.inputSchema.properties.timeoutMs, undefined);
+    const readFile = list.result.tools.find((tool) => tool.name === "remote_debug_read_file");
+    assert.equal(readFile.inputSchema.properties.maxBytes, undefined);
 
     child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 3, method: "resources/list" }));
     const resources = await readMessage();
@@ -457,6 +516,29 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     );
     const call = await readMessage();
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+  } finally {
+    child.kill();
+    await close(agentStub);
+  }
+});
+
+test("MCP server supports newline-delimited stdio clients", async () => {
+  const agentStub = await startAgentStub();
+  const port = agentStub.address().port;
+  const child = startMcp({ REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${port}` });
+  const readMessage = createJsonLineMessageReader(child);
+
+  try {
+    child.stdin.write(encodeJsonLineMessage({ jsonrpc: "2.0", id: 1, method: "initialize" }));
+    const initialize = await readMessage();
+    assert.equal(initialize.result.serverInfo.name, "remote-debug-agent");
+
+    child.stdin.write(encodeJsonLineMessage({ jsonrpc: "2.0", id: 2, method: "tools/list" }));
+    const list = await readMessage();
+    assert.ok(
+      list.result.tools.some((tool) => tool.name === "remote_debug_run_command"),
+      "tools/list includes remote_debug_run_command",
+    );
   } finally {
     child.kill();
     await close(agentStub);
