@@ -371,6 +371,13 @@ export class WorkerManager {
         event(runtime, "health", { status: "healthy" });
         return;
       }
+      if (message.status === "stopped") {
+        runtime.intentionalStop = true;
+        runtime.status = "stopped";
+        runtime.lastError = null;
+        event(runtime, "health", { status: "stopped", reason: message.reason });
+        return;
+      }
 
       runtime.lastError = message.error || {
         code: "WORKER_UNHEALTHY",
@@ -439,10 +446,15 @@ export class WorkerManager {
   }
 
   async stopInstance(id, reason = "stopped") {
+    const instance = this.registry.get(id);
+    if (!instance) {
+      throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
+    }
+
     const runtime = this.runtime.get(id);
     if (!runtime) {
       return {
-        instance: this.registry.get(id),
+        instance,
         runtime: publicRuntime(null),
       };
     }

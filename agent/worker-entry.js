@@ -64,8 +64,16 @@ async function main() {
   }, healthIntervalMs);
   healthTimer.unref?.();
 
-  const shutdown = () => {
+  let shuttingDown = false;
+  const shutdown = (reason = "stopped", reportStopped = false) => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
     clearInterval(healthTimer);
+    if (reportStopped) {
+      send({ type: "health", status: "stopped", reason });
+    }
     server.close(() => {
       process.exit(0);
     });
@@ -74,11 +82,11 @@ async function main() {
 
   process.on("message", (message) => {
     if (message?.type === "shutdown") {
-      shutdown();
+      shutdown(message.reason || "stopped", true);
     }
   });
-  process.once("SIGTERM", shutdown);
-  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
 
 main().catch((error) => {

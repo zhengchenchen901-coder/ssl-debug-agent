@@ -305,6 +305,22 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
     assert.equal(updated.body.instance.name, "Staging Updated");
     assert.equal(updated.body.instance.hasPassphrase, true);
 
+    const stopped = await postJson(server, "/api/instances/staging/stop", {});
+    assert.equal(stopped.status, 200);
+    assert.equal(stopped.body.instance.id, "staging");
+    assert.equal(stopped.body.runtime.status, "stopped");
+    assert.equal(stopped.body.runtime.pid, null);
+    assert.equal(stopped.body.runtime.workerPort, null);
+
+    const afterStop = await getJson(server, "/api/instances");
+    assert.equal(afterStop.status, 200);
+    assert.equal(afterStop.body.instances.length, 1);
+    assert.equal(afterStop.body.instances[0].id, "staging");
+
+    const missingStop = await postJson(server, "/api/instances/missing/stop", {});
+    assert.equal(missingStop.status, 404);
+    assert.equal(missingStop.body.error.code, "INSTANCE_NOT_FOUND");
+
     const removed = await postJson(server, "/api/instances/staging", {}, {}, "DELETE");
     assert.equal(removed.status, 200);
     assert.equal(removed.body.instance.id, "staging");
