@@ -10,6 +10,7 @@ const serverPath = path.resolve(pluginRoot, "mcp-server.js");
 const logPath = path.resolve(pluginRoot, ".runtime", "mcp-error.log");
 const pluginName = "remote-debug-agent";
 const expectedTools = [
+  "remote_debug_list_instances",
   "remote_debug_run_command",
   "remote_debug_read_file",
   "remote_debug_list_dir",

@@ -15,6 +15,7 @@ described below.
 - `remote_debug_run_command`: run whitelisted diagnostic commands.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
+- `remote_debug_list_instances`: list configured instances and runtime status.
 - `remote_debug_prepare_command_draft`: generate exact commands for user review;
   this does not execute anything.
 - `remote_debug_get_command_draft`: view a generated command draft.
@@ -28,6 +29,11 @@ actually exposes the `remote_debug_*` MCP tools. If those tools are not
 callable in the current session, do not complete the user's remote diagnostic
 task through direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`,
 or `/list-dir`.
+
+For multi-instance setups, call `remote_debug_list_instances` first when the
+target instance is not obvious. Pass `instanceId` to operation tools when
+multiple instances are configured. If only one instance exists, the manager can
+route to it automatically.
 
 When the MCP tools are missing, only troubleshoot plugin visibility: run
 `npm run diagnose` from `plugins/remote-debug-agent`, inspect the MCP runtime

@@ -19,6 +19,8 @@ import {
   normalizeTimeoutMs,
   validateCommand,
 } from "./security.js";
+import { InstanceRegistry } from "./instance-registry.js";
+import { WorkerManager } from "./worker-manager.js";
 import {
   listRemoteDir as defaultListRemoteDir,
   readRemoteFile as defaultReadRemoteFile,
@@ -194,6 +196,10 @@ export function createApp(options = {}) {
 
   app.get("/", (_request, response) => {
     response.sendFile(path.join(publicDir, "dashboard.html"));
+  });
+
+  app.get("/favicon.ico", (_request, response) => {
+    response.status(204).end();
   });
 
   app.use(express.static(publicDir, { index: false, maxAge: 0 }));
@@ -663,6 +669,218 @@ export function createApp(options = {}) {
   return app;
 }
 
+function managerErrorPayload(error) {
+  return {
+    ok: false,
+    error: {
+      code: error.code || "REMOTE_DEBUG_MANAGER_ERROR",
+      message: error.message || "remote debug manager operation failed",
+    },
+    instances: error.instances,
+    details: error.payload || error.details,
+  };
+}
+
+function respondManagerError(response, error) {
+  response.status(error.statusCode || error.status || 500).json(managerErrorPayload(error));
+}
+
+function managerPublicStatus(config, workerManager, registry) {
+  return {
+    ok: true,
+    name: "remote-debug-agent",
+    mode: "manager",
+    agent: {
+      ...publicAgent(config),
+      role: "manager",
+    },
+    manager: {
+      defaultInstanceId: registry.registry.defaultInstanceId,
+      registryPath: registry.registryPath,
+      worker: registry.managerConfig(),
+    },
+    target: publicTarget(config),
+    security: publicSecurity(config),
+    instances: workerManager.publicInstances(),
+  };
+}
+
+function managerAsync(handler) {
+  return (request, response) => {
+    Promise.resolve(handler(request, response)).catch((error) => {
+      respondManagerError(response, error);
+    });
+  };
+}
+
+function bodyWithoutInstanceId(body = {}) {
+  const { instanceId, ...payload } = body || {};
+  return payload;
+}
+
+export function createManagerApp(options = {}) {
+  const config = options.config || loadConfig();
+  const registry =
+    options.registry ||
+    new InstanceRegistry({
+      cwd: options.cwd || process.cwd(),
+      env: options.env || process.env,
+      managerPort: config.agent.port,
+      registryPath: options.registryPath,
+    });
+  const workerManager =
+    options.workerManager ||
+    new WorkerManager({
+      registry,
+      managerPort: config.agent.port,
+      cwd: options.cwd || process.cwd(),
+      workerEntryPath: options.workerEntryPath,
+      forkWorker: options.forkWorker,
+      fetchImpl: options.fetchImpl,
+    });
+  const activity = options.activity || createActivityLog();
+  const app = express();
+  const publicDir = path.join(__dirname, "public");
+
+  app.locals.registry = registry;
+  app.locals.workerManager = workerManager;
+  app.use(express.json({ limit: "512kb" }));
+
+  app.get("/", (_request, response) => {
+    response.sendFile(path.join(publicDir, "dashboard.html"));
+  });
+
+  app.get("/favicon.ico", (_request, response) => {
+    response.status(204).end();
+  });
+
+  app.use(express.static(publicDir, { index: false, maxAge: 0 }));
+
+  app.get("/health", (_request, response) => {
+    response.json({
+      ok: true,
+      name: "remote-debug-agent",
+      mode: "manager",
+    });
+  });
+
+  app.get("/status", (_request, response) => {
+    response.json({
+      ...managerPublicStatus(config, workerManager, registry),
+      recentEvents: activity.list().slice(-20),
+    });
+  });
+
+  app.get("/events", (request, response) => {
+    activity.stream(request, response);
+  });
+
+  app.get("/api/instances", (_request, response) => {
+    response.json({
+      ok: true,
+      defaultInstanceId: registry.registry.defaultInstanceId,
+      manager: registry.managerConfig(),
+      instances: workerManager.publicInstances(),
+    });
+  });
+
+  app.post("/api/instances", managerAsync(async (request, response) => {
+    const instance = registry.create(request.body || {});
+    activity.publish({ type: "instance", stage: "created", instanceId: instance.id });
+    response.status(201).json({
+      ok: true,
+      instance,
+      runtime: workerManager.runtimeFor(instance.id),
+    });
+  }));
+
+  app.put("/api/instances/:id", managerAsync(async (request, response) => {
+    const instance = registry.update(request.params.id, request.body || {});
+    activity.publish({ type: "instance", stage: "updated", instanceId: instance.id });
+    response.json({
+      ok: true,
+      instance,
+      runtime: workerManager.runtimeFor(instance.id),
+    });
+  }));
+
+  app.delete("/api/instances/:id", managerAsync(async (request, response) => {
+    const instance = await workerManager.deleteInstance(request.params.id);
+    activity.publish({ type: "instance", stage: "deleted", instanceId: instance.id });
+    response.json({ ok: true, instance });
+  }));
+
+  app.post("/api/instances/:id/start", managerAsync(async (request, response) => {
+    const result = await workerManager.startInstance(request.params.id);
+    activity.publish({ type: "instance", stage: "started", instanceId: request.params.id });
+    response.json({ ok: true, ...result });
+  }));
+
+  app.post("/api/instances/:id/refresh", managerAsync(async (request, response) => {
+    const result = await workerManager.refreshInstance(request.params.id);
+    activity.publish({ type: "instance", stage: "refreshed", instanceId: request.params.id });
+    response.json({ ok: true, ...result });
+  }));
+
+  app.post("/api/instances/:id/pause", (_request, response) => {
+    response.status(501).json({
+      ok: false,
+      error: {
+        code: "NOT_IMPLEMENTED",
+        message: "pause is reserved for a later release",
+      },
+    });
+  });
+
+  async function proxyToInstance(pathName, request, response) {
+    const startedAt = performance.now();
+    const instanceId = request.body?.instanceId;
+    const payload = bodyWithoutInstanceId(request.body);
+    const operation = {
+      type: "proxy",
+      operationId: randomUUID(),
+      tool: pathName.replace(/^\//, ""),
+      source: sourceFrom(request),
+      request: {
+        instanceId,
+      },
+    };
+    publishStage(activity, operation, "started");
+
+    try {
+      const result = await workerManager.callInstance(instanceId, pathName, payload, request.headers);
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        instanceId: result.instanceId,
+        durationMs: durationSince(startedAt),
+      });
+      response.json(result);
+    } catch (error) {
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs: durationSince(startedAt),
+        error: {
+          code: error.code || "INSTANCE_PROXY_FAILED",
+          message: error.message,
+        },
+      });
+      respondManagerError(response, error);
+    }
+  }
+
+  app.post("/run", (request, response) => proxyToInstance("/run", request, response));
+  app.post("/read-file", (request, response) => proxyToInstance("/read-file", request, response));
+  app.post("/list-dir", (request, response) => proxyToInstance("/list-dir", request, response));
+  app.post("/approved-command-drafts", (request, response) =>
+    proxyToInstance("/approved-command-drafts", request, response));
+  app.post("/approved-command-drafts/get", (request, response) =>
+    proxyToInstance("/approved-command-drafts/get", request, response));
+  app.post("/approved-command-drafts/execute", (request, response) =>
+    proxyToInstance("/approved-command-drafts/execute", request, response));
+
+  return app;
+}
+
 function isEntrypointProcess() {
   return Boolean(
     process.argv[1] &&
@@ -670,22 +888,27 @@ function isEntrypointProcess() {
   );
 }
 
-export function startServer(config = loadConfig()) {
+export function startWorkerServer(config = loadConfig()) {
   const app = createApp({ config });
+  return listenHttpServer(app, config, (port, startedAt) => ({
+    status: "listening",
+    role: "worker",
+    startedAt,
+    port,
+    hasTargetHost: Boolean(config.ssh.host),
+    hasTargetUser: Boolean(config.ssh.username),
+    hasPrivateKeyPath: Boolean(config.ssh.privateKeyPath),
+  }));
+}
+
+function listenHttpServer(app, config, eventFactory) {
   const startedAt = new Date().toISOString();
   let failedToListen = false;
   let listeningStateTimer;
   const server = app.listen(config.agent.port, config.agent.host, () => {
     const address = server.address();
     const port = typeof address === "object" && address ? address.port : config.agent.port;
-    const event = {
-      status: "listening",
-      startedAt,
-      port,
-      hasTargetHost: Boolean(config.ssh.host),
-      hasTargetUser: Boolean(config.ssh.username),
-      hasPrivateKeyPath: Boolean(config.ssh.privateKeyPath),
-    };
+    const event = eventFactory(port, startedAt);
 
     listeningStateTimer = setTimeout(() => {
       if (failedToListen) {
@@ -697,6 +920,7 @@ export function startServer(config = loadConfig()) {
       });
       console.log(JSON.stringify({
         name: "remote-debug-agent",
+        role: event.role || "agent",
         pid: process.pid,
         host: config.agent.host,
         port,
@@ -714,6 +938,7 @@ export function startServer(config = loadConfig()) {
     }
     const payload = {
       status: "error",
+      role: "manager",
       startedAt,
       lastError: {
         code: error.code || "AGENT_LISTEN_ERROR",
@@ -729,6 +954,28 @@ export function startServer(config = loadConfig()) {
       process.exitCode = 1;
     }
   });
+
+  return server;
+}
+
+export function startServer(config = loadConfig(), options = {}) {
+  const app = createManagerApp({ config, ...options });
+  const workerManager = app.locals.workerManager;
+  const server = listenHttpServer(app, config, (port, startedAt) => ({
+    status: "listening",
+    role: "manager",
+    startedAt,
+    port,
+    instanceCount: workerManager.publicInstances().length,
+  }));
+
+  const shutdown = () => {
+    workerManager.shutdownAll().catch((error) => {
+      console.error("failed to stop worker processes", error);
+    });
+  };
+  server.once("close", shutdown);
+  process.once("exit", shutdown);
 
   return server;
 }

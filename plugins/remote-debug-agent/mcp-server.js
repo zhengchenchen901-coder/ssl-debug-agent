@@ -97,7 +97,24 @@ function resolveProjectRoot() {
 const projectRoot = resolveProjectRoot();
 let activeAgentSettings = null;
 
+const instanceIdProperty = {
+  type: "string",
+  description:
+    "Remote Debug Agent instance id. Optional only when exactly one instance is configured.",
+};
+
 const tools = [
+  {
+    name: "remote_debug_list_instances",
+    description:
+      "List configured Remote Debug Agent instances and their runtime status before choosing an instanceId.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: [],
+      properties: {},
+    },
+  },
   {
     name: "remote_debug_run_command",
     description:
@@ -112,6 +129,7 @@ const tools = [
           description:
             "Command such as 'netstat -tlnp', 'systemctl status nginx', or 'tail -n 100 /var/log/nginx/error.log'.",
         },
+        instanceId: instanceIdProperty,
       },
     },
   },
@@ -128,6 +146,7 @@ const tools = [
           type: "string",
           description: "Absolute remote file path.",
         },
+        instanceId: instanceIdProperty,
       },
     },
   },
@@ -144,6 +163,7 @@ const tools = [
           type: "string",
           description: "Absolute remote directory path.",
         },
+        instanceId: instanceIdProperty,
       },
     },
   },
@@ -166,6 +186,7 @@ const tools = [
           items: { type: "string" },
           description: "Exact remote shell commands to show to the user for approval.",
         },
+        instanceId: instanceIdProperty,
       },
     },
   },
@@ -182,6 +203,7 @@ const tools = [
           type: "string",
           description: "The draftId returned by remote_debug_prepare_command_draft.",
         },
+        instanceId: instanceIdProperty,
       },
     },
   },
@@ -206,6 +228,7 @@ const tools = [
           type: "string",
           description: "Must exactly equal 使用命令.",
         },
+        instanceId: instanceIdProperty,
       },
     },
   },
@@ -426,6 +449,9 @@ function agentSettings() {
   const runtimeDir = path.resolve(__dirname, ".runtime");
   const target = publicTargetFromEnv(env);
   const configFingerprint = configFingerprintFromEnv(env, agentDir, port);
+  const managerFingerprint = createHash("sha256")
+    .update(JSON.stringify({ agentDir, agentUrl, port, explicitUrl }))
+    .digest("hex");
 
   return {
     env,
@@ -435,7 +461,7 @@ function agentSettings() {
     preferredPort: port,
     target,
     configFingerprint,
-    sourceFingerprint: configFingerprint,
+    sourceFingerprint: managerFingerprint,
     agentDir,
     serverPath: path.resolve(agentDir, "server.js"),
     statePath,
@@ -502,8 +528,13 @@ function logSettings() {
 }
 
 function toolArgumentSummary(name, args = {}) {
+  if (name === "remote_debug_list_instances") {
+    return {};
+  }
+
   if (name === "remote_debug_run_command") {
     return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       cmd: typeof args.cmd === "string" ? args.cmd.slice(0, 256) : undefined,
       timeoutMs: args.timeoutMs,
     };
@@ -511,6 +542,7 @@ function toolArgumentSummary(name, args = {}) {
 
   if (name === "remote_debug_read_file") {
     return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
       maxBytes: args.maxBytes,
     };
@@ -518,12 +550,14 @@ function toolArgumentSummary(name, args = {}) {
 
   if (name === "remote_debug_list_dir") {
     return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
     };
   }
 
   if (name === "remote_debug_prepare_command_draft") {
     return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       purpose: typeof args.purpose === "string" ? args.purpose.slice(0, 256) : undefined,
       commandCount: Array.isArray(args.commands) ? args.commands.length : undefined,
     };
@@ -531,12 +565,14 @@ function toolArgumentSummary(name, args = {}) {
 
   if (name === "remote_debug_get_command_draft") {
     return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       draftId: typeof args.draftId === "string" ? args.draftId.slice(0, 128) : undefined,
     };
   }
 
   if (name === "remote_debug_execute_command_draft") {
     return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       draftId: typeof args.draftId === "string" ? args.draftId.slice(0, 128) : undefined,
       commandHash: typeof args.commandHash === "string" ? args.commandHash.slice(0, 128) : undefined,
       timeoutMs: args.timeoutMs,
@@ -637,18 +673,11 @@ async function probeAgent(settings) {
 function agentStatusIsHealthy(status, settings) {
   const agentPort = status?.agent?.port;
   const portMatches = agentPort === undefined || agentPort === settings.port;
-  const target = status?.target || {};
-  const targetMatches =
-    target.host === settings.target.host &&
-    target.port === settings.target.port &&
-    target.username === settings.target.username;
-  const fingerprintMatches = status?.agent?.configFingerprint === settings.configFingerprint;
 
   return Boolean(
     status?.name === "remote-debug-agent" &&
-      portMatches &&
-      targetMatches &&
-      fingerprintMatches,
+      status?.mode === "manager" &&
+      portMatches,
   );
 }
 
@@ -1128,19 +1157,20 @@ function scheduleAgentPrewarm(trigger) {
   });
 }
 
-async function callAgent(pathName, payload) {
+async function requestAgent(pathName, payload, options = {}) {
   const settings = await ensureAgentReady();
+  const method = options.method || "POST";
   let response;
   let parsed;
 
   try {
     const result = await fetchJson(new URL(pathName, settings.agentUrl), {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         "X-Remote-Debug-Source": "codex-plugin",
       },
-      body: JSON.stringify(payload),
+      body: method === "GET" ? undefined : JSON.stringify(payload),
       timeoutMs: payload?.timeoutMs || 30_000,
     });
     response = result.response;
@@ -1168,9 +1198,23 @@ async function callAgent(pathName, payload) {
   return parsed;
 }
 
+async function callAgent(pathName, payload) {
+  return requestAgent(pathName, payload);
+}
+
+async function getAgent(pathName) {
+  return requestAgent(pathName, undefined, { method: "GET" });
+}
+
 async function callTool(name, args) {
+  if (name === "remote_debug_list_instances") {
+    const result = await getAgent("/api/instances");
+    return result;
+  }
+
   if (name === "remote_debug_run_command") {
     return callAgent("/run", {
+      instanceId: args?.instanceId,
       cmd: args?.cmd,
       timeoutMs: args?.timeoutMs,
     });
@@ -1178,6 +1222,7 @@ async function callTool(name, args) {
 
   if (name === "remote_debug_read_file") {
     return callAgent("/read-file", {
+      instanceId: args?.instanceId,
       path: args?.path,
       maxBytes: args?.maxBytes,
     });
@@ -1185,12 +1230,14 @@ async function callTool(name, args) {
 
   if (name === "remote_debug_list_dir") {
     return callAgent("/list-dir", {
+      instanceId: args?.instanceId,
       path: args?.path,
     });
   }
 
   if (name === "remote_debug_prepare_command_draft") {
     return callAgent("/approved-command-drafts", {
+      instanceId: args?.instanceId,
       purpose: args?.purpose,
       commands: args?.commands,
     });
@@ -1198,12 +1245,14 @@ async function callTool(name, args) {
 
   if (name === "remote_debug_get_command_draft") {
     return callAgent("/approved-command-drafts/get", {
+      instanceId: args?.instanceId,
       draftId: args?.draftId,
     });
   }
 
   if (name === "remote_debug_execute_command_draft") {
     return callAgent("/approved-command-drafts/execute", {
+      instanceId: args?.instanceId,
       draftId: args?.draftId,
       commandHash: args?.commandHash,
       confirmation: args?.confirmation,

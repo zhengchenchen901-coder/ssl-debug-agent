@@ -70,6 +70,12 @@ async function connect(config) {
   });
 }
 
+export async function checkSSHConnection(config) {
+  const client = await connect(config);
+  client.end();
+  return true;
+}
+
 function openSftp(client) {
   return new Promise((resolve, reject) => {
     client.sftp((error, sftp) => {

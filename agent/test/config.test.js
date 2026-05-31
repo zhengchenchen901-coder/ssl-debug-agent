@@ -38,6 +38,31 @@ test(".env overrides inherited environment for remote debug config", async () =>
   assert.equal(config.ssh.host, "from-file");
 });
 
+test("worker process env overrides .env for manager-assigned ports", async () => {
+  const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-worker-config-"));
+  await fs.writeFile(
+    path.join(projectDir, ".env"),
+    [
+      "REMOTE_DEBUG_HOST=from-file.example.com",
+      "REMOTE_DEBUG_AGENT_PORT=4343",
+    ].join("\n"),
+  );
+
+  const config = loadConfig(
+    {
+      REMOTE_DEBUG_WORKER: "1",
+      REMOTE_DEBUG_HOST: "worker.example.com",
+      REMOTE_DEBUG_AGENT_PORT: "4400",
+      REMOTE_DEBUG_USER: "app",
+      REMOTE_DEBUG_PRIVATE_KEY_PATH: "C:\\Users\\you\\.ssh\\id_ed25519",
+    },
+    projectDir,
+  );
+
+  assert.equal(config.ssh.host, "worker.example.com");
+  assert.equal(config.agent.port, 4400);
+});
+
 test("agent .env can override project root .env for local experiments", async () => {
   const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-config-"));
   const agentDir = path.join(projectDir, "agent");

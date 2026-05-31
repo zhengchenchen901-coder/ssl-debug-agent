@@ -46,3 +46,23 @@
 {"time":"2026-05-30T14:29:40.041Z","instanceId":"default","instanceName":"default","tool":"run","cmd":"netstat -tlnp","ok":true,"durationMs":4741,"stdoutLength":1356,"stderrLength":0,"contentLength":0}
 {"time":"2026-05-30T14:29:45.293Z","instanceId":"default","instanceName":"default","tool":"run","cmd":"netstat -tlnp","ok":true,"durationMs":5105,"stdoutLength":1356,"stderrLength":0,"contentLength":0}
 {"time":"2026-05-30T14:29:49.683Z","instanceId":"default","instanceName":"default","tool":"run","cmd":"netstat -tlnp","ok":true,"durationMs":4280,"stdoutLength":1356,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:26.950Z","tool":"run","cmd":"systemctl status nginx --no-pager --lines=20","ok":true,"durationMs":4254,"stdoutLength":2830,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:27.379Z","tool":"run","cmd":"free -m","ok":true,"durationMs":4698,"stdoutLength":204,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:27.388Z","tool":"run","cmd":"systemctl status mongod --no-pager --lines=20","ok":true,"durationMs":4686,"stdoutLength":0,"stderrLength":40,"contentLength":0}
+{"time":"2026-05-31T09:31:28.092Z","tool":"run","cmd":"df -h","ok":true,"durationMs":5414,"stdoutLength":373,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:28.995Z","tool":"run","cmd":"pm2 list","ok":true,"durationMs":6314,"stdoutLength":1844,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:51.176Z","tool":"run","cmd":"netstat -tlnp","ok":true,"durationMs":5005,"stdoutLength":1255,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:51.387Z","tool":"run","cmd":"systemctl is-enabled nginx","ok":true,"durationMs":5194,"stdoutLength":8,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:51.643Z","tool":"run","cmd":"systemctl is-active nginx","ok":true,"durationMs":5471,"stdoutLength":7,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:31:52.420Z","tool":"run","cmd":"nginx -t","ok":true,"durationMs":6246,"stdoutLength":0,"stderrLength":132,"contentLength":0}
+{"time":"2026-05-31T09:52:34.826Z","tool":"run","cmd":"netstat -tlnp","ok":true,"durationMs":7532,"stdoutLength":1255,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:52:40.361Z","tool":"run","cmd":"ps aux","ok":true,"durationMs":5508,"stdoutLength":16957,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:52:50.861Z","tool":"run","cmd":"df -h","ok":true,"durationMs":10474,"stdoutLength":373,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:52:57.348Z","tool":"run","cmd":"free -m","ok":true,"durationMs":6462,"stdoutLength":204,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:53:02.164Z","tool":"run","cmd":"systemctl status nginx","ok":true,"durationMs":4794,"stdoutLength":1544,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:53:20.629Z","tool":"run","cmd":"nginx -t","ok":true,"durationMs":5866,"stdoutLength":0,"stderrLength":132,"contentLength":0}
+{"time":"2026-05-31T09:53:32.106Z","tool":"run","cmd":"tail -n 100 /var/log/nginx/error.log","ok":true,"durationMs":11450,"stdoutLength":21550,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:53:38.587Z","tool":"run","cmd":"systemctl status mongod","ok":true,"durationMs":6455,"stdoutLength":0,"stderrLength":40,"contentLength":0}
+{"time":"2026-05-31T09:53:47.432Z","tool":"list-dir","path":"/root/.pm2/logs","ok":true,"durationMs":8824,"stdoutLength":0,"stderrLength":0,"contentLength":1526}
+{"time":"2026-05-31T09:54:04.324Z","tool":"run","cmd":"tail -n 100 /root/.pm2/logs/YenneferBE-Next-A-error-0.log","ok":true,"durationMs":9922,"stdoutLength":7719,"stderrLength":0,"contentLength":0}
+{"time":"2026-05-31T09:54:19.662Z","tool":"run","cmd":"tail -n 100 /root/.pm2/logs/YenneferBE-Next-B-error-1.log","ok":true,"durationMs":15310,"stdoutLength":12941,"stderrLength":0,"contentLength":0}

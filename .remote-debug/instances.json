@@ -1,5 +1,15 @@
 {
-  "version": 1,
+  "version": 2,
+  "manager": {
+    "host": "127.0.0.1",
+    "workerPortRange": {
+      "start": 4400,
+      "end": 4499
+    },
+    "healthIntervalMs": 15000,
+    "startTimeoutMs": 10000,
+    "stopTimeoutMs": 5000
+  },
   "defaultInstanceId": "default",
   "instances": [
     {
@@ -10,12 +20,13 @@
       "port": 22,
       "username": "root",
       "privateKeyPath": "D:\\YJ-ssh-tool\\od_prod\\od_prod_ed25519",
-      "agentPort": 4343,
       "approvedCommands": {
         "enabled": true,
-        "timeoutMs": "30000",
-        "maxTimeoutMs": "300000"
-      }
+        "timeoutMs": 30000,
+        "maxTimeoutMs": 300000
+      },
+      "createdAt": "2026-05-31T09:25:22.196Z",
+      "updatedAt": "2026-05-31T09:25:22.196Z"
     },
     {
       "id": "test-server",
@@ -25,11 +36,12 @@
       "port": 22,
       "username": "root",
       "privateKeyPath": "D:\\YJ-ssh-tool\\od_dev\\id_ed25519",
-      "agentPort": 4344,
       "auditLog": "D:\\Projects\\ssl-debug-agent\\.remote-debug\\instances\\test-server\\audit.jsonl",
       "approvedCommands": {
         "enabled": true
-      }
+      },
+      "createdAt": "2026-05-31T09:25:22.196Z",
+      "updatedAt": "2026-05-31T09:25:22.196Z"
     }
   ]
 }
