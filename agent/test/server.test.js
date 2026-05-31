@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import http from "node:http";
@@ -28,6 +29,26 @@ function close(server) {
   });
 }
 
+async function closeIfListening(server) {
+  if (server?.listening) {
+    await close(server);
+  }
+}
+
+async function waitFor(predicate, message = "condition") {
+  const deadline = Date.now() + 3000;
+
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+
+  throw new Error(`timed out waiting for ${message}`);
+}
+
 function makeConfig(logPath) {
   return {
     agent: { host: "127.0.0.1", port: 0 },
@@ -41,6 +62,20 @@ function makeConfig(logPath) {
     },
     audit: { logPath },
     runtime: { statePath: path.join(path.dirname(logPath), "agent-state.json") },
+  };
+}
+
+function makeWorkerManagerStub() {
+  const state = {
+    shutdownCount: 0,
+  };
+  return {
+    state,
+    publicInstances: () => [],
+    runtimeFor: () => ({ status: "stopped" }),
+    shutdownAll: async () => {
+      state.shutdownCount += 1;
+    },
   };
 }
 
@@ -326,6 +361,186 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
     assert.equal(removed.body.instance.id, "staging");
   } finally {
     await close(server);
+  }
+});
+
+test("manual manager lifetime does not shut down when no lease exists", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manual-lifecycle-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "manual" };
+  const workerManager = makeWorkerManagerStub();
+  const server = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+    lifecycleOptions: {
+      startupGraceMs: 20,
+      checkIntervalMs: 5,
+    },
+  });
+
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    assert.equal(server.listening, true);
+    assert.equal(workerManager.state.shutdownCount, 0);
+  } finally {
+    await server.gracefulShutdown("test");
+  }
+});
+
+test("desktop manager lifetime shuts down when no lease arrives", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-desktop-no-lease-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "desktop" };
+  const workerManager = makeWorkerManagerStub();
+  const server = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+    lifecycleOptions: {
+      startupGraceMs: 20,
+      checkIntervalMs: 5,
+    },
+  });
+
+  try {
+    await waitFor(
+      () => !server.listening && workerManager.state.shutdownCount === 1,
+      "desktop manager shutdown without lease",
+    );
+  } finally {
+    await closeIfListening(server);
+  }
+});
+
+test("desktop manager lifetime shuts down after lease expiry", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-desktop-lease-expiry-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "desktop" };
+  const workerManager = makeWorkerManagerStub();
+  const server = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+    lifecycleOptions: {
+      startupGraceMs: 1000,
+      checkIntervalMs: 5,
+      minLeaseTtlMs: 5,
+      maxLeaseTtlMs: 50,
+    },
+  });
+
+  try {
+    await waitFor(() => Boolean(server.address()), "manager listen");
+    const lease = await postJson(server, "/api/leases", {
+      clientId: "test-client",
+      ttlMs: 5,
+      source: "test",
+      pid: 1234,
+    });
+    assert.equal(lease.status, 200);
+    assert.equal(lease.body.lifecycle.activeLeaseCount, 1);
+
+    await waitFor(
+      () => !server.listening && workerManager.state.shutdownCount === 1,
+      "desktop manager shutdown after lease expiry",
+    );
+  } finally {
+    await closeIfListening(server);
+  }
+});
+
+test("manual manager shutdown API triggers graceful shutdown", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manual-shutdown-api-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "manual" };
+  const workerManager = makeWorkerManagerStub();
+  const server = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+  });
+
+  try {
+    await waitFor(() => Boolean(server.address()), "manager listen");
+    const shutdown = await postJson(server, "/api/shutdown", {});
+    assert.equal(shutdown.status, 202);
+    assert.equal(shutdown.body.status, "shutting-down");
+    await waitFor(
+      () => !server.listening && workerManager.state.shutdownCount === 1,
+      "manual manager shutdown",
+    );
+  } finally {
+    await closeIfListening(server);
+  }
+});
+
+test("desktop manager shutdown API is rejected", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-desktop-shutdown-api-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "desktop" };
+  const workerManager = makeWorkerManagerStub();
+  const server = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+    lifecycleOptions: {
+      startupGraceMs: 1000,
+      checkIntervalMs: 5,
+    },
+  });
+
+  try {
+    await waitFor(() => Boolean(server.address()), "manager listen");
+    const shutdown = await postJson(server, "/api/shutdown", {});
+    assert.equal(shutdown.status, 409);
+    assert.equal(shutdown.body.error.code, "LIFECYCLE_MANAGED_BY_CODEX");
+    assert.equal(server.listening, true);
+    assert.equal(workerManager.state.shutdownCount, 0);
+  } finally {
+    await server.gracefulShutdown("test");
+  }
+});
+
+test("manager signal handlers perform graceful shutdown", { skip: !depsInstalled }, async () => {
+  const { startServer } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-signal-shutdown-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "manual" };
+  const signalProcess = new EventEmitter();
+  const workerManager = makeWorkerManagerStub();
+  let exitCode = null;
+  let resolveExit;
+  const exitPromise = new Promise((resolve) => {
+    resolveExit = resolve;
+  });
+  const server = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+    installSignalHandlers: true,
+    signalProcess,
+    exit: (code) => {
+      exitCode = code;
+      resolveExit();
+    },
+  });
+
+  await waitFor(() => Boolean(server.address()), "manager listen");
+  signalProcess.emit("SIGTERM", "SIGTERM");
+  await exitPromise;
+
+  try {
+    assert.equal(exitCode, 0);
+    assert.equal(workerManager.state.shutdownCount, 1);
+    assert.equal(server.listening, false);
+  } finally {
+    await closeIfListening(server);
   }
 });
 

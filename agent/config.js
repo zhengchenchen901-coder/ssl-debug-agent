@@ -17,6 +17,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_TIMEOUT_MS = 30_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
+const DEFAULT_AGENT_LIFETIME = "manual";
 
 function parseEnvFile(contents) {
   const parsed = {};
@@ -104,6 +105,19 @@ function parseBooleanFlag(value) {
   return ["1", "true", "yes", "on"].includes(String(value).trim().toLowerCase());
 }
 
+function parseAgentLifetime(value) {
+  if (value === undefined || value === "") {
+    return DEFAULT_AGENT_LIFETIME;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "manual" || normalized === "desktop") {
+    return normalized;
+  }
+
+  throw new Error("REMOTE_DEBUG_AGENT_LIFETIME must be manual or desktop");
+}
+
 export function loadConfig(env = process.env, cwd = process.cwd()) {
   const dotEnv = loadDotEnv(cwd);
   const mergedEnv = parseBooleanFlag(env.REMOTE_DEBUG_WORKER)
@@ -138,6 +152,10 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
     ),
     approvedCommandMaxTimeoutMs,
   );
+  const lifetimeValue =
+    env.REMOTE_DEBUG_AGENT_LIFETIME === undefined || env.REMOTE_DEBUG_AGENT_LIFETIME === ""
+      ? mergedEnv.REMOTE_DEBUG_AGENT_LIFETIME
+      : env.REMOTE_DEBUG_AGENT_LIFETIME;
 
   return {
     agent: {
@@ -176,6 +194,9 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       statePath:
         mergedEnv.REMOTE_DEBUG_RUNTIME_STATE_PATH ||
         path.resolve(cwd, ".runtime", "agent-state.json"),
+    },
+    lifecycle: {
+      lifetime: parseAgentLifetime(lifetimeValue),
     },
   };
 }
