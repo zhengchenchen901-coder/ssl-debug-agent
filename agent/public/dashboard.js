@@ -34,6 +34,7 @@ const state = {
   manager: null,
   editingId: "",
   instances: [],
+  pendingActions: new Set(),
   toastTimer: null,
 };
 
@@ -148,6 +149,24 @@ function button(label, action, instance, className = "button") {
   return item;
 }
 
+function actionKey(action, id) {
+  return `${action}:${id}`;
+}
+
+function isActionPending(action, id) {
+  return state.pendingActions.has(actionKey(action, id));
+}
+
+function setActionPending(action, id, pending) {
+  const key = actionKey(action, id);
+  if (pending) {
+    state.pendingActions.add(key);
+  } else {
+    state.pendingActions.delete(key);
+  }
+  render();
+}
+
 function renderRow(instance) {
   const runtime = runtimeOf(instance);
   const row = document.createElement("tr");
@@ -184,8 +203,11 @@ function renderRow(instance) {
 
   const actions = createElement("td");
   const actionWrap = createElement("div", "record-actions");
-  const start = button("启动", "start", instance);
-  start.disabled = ["running", "starting"].includes(runtime.status);
+  const startLoading = isActionPending("start", instance.id) || runtime.status === "starting";
+  const start = button(startLoading ? "启动中" : "启动", "start", instance);
+  start.disabled = startLoading || runtime.status === "running";
+  start.classList.toggle("is-loading", startLoading);
+  start.setAttribute("aria-busy", String(startLoading));
   actionWrap.append(
     button("查看", "view", instance),
     button("编辑", "edit", instance),
@@ -375,12 +397,17 @@ async function runAction(action, id) {
   const method = action === "delete" ? "DELETE" : "POST";
 
   try {
+    setActionPending(action, id, true);
     await api(routeByAction[action], { method });
     showToast(action === "pause" ? "暂停功能后续支持" : "操作已完成");
   } catch (error) {
     showToast(`${error.code || "ERROR"}: ${error.message}`);
   } finally {
-    await loadInstances();
+    try {
+      await loadInstances();
+    } finally {
+      setActionPending(action, id, false);
+    }
   }
 }
 
