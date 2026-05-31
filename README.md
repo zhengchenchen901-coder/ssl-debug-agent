@@ -1,6 +1,6 @@
 # Remote Debug Agent
 
-Remote Debug Agent is a Codex Desktop plugin plus a local HTTP agent for safe
+Remote Debug Agent is a Codex Desktop plugin plus a local HTTP manager for safe
 Linux server debugging over SSH.
 
 Architecture:
@@ -9,12 +9,13 @@ Architecture:
 Codex Desktop
   -> Codex plugin
   -> local MCP wrapper
-  -> local Node HTTP agent
+  -> local Node HTTP manager
+  -> per-instance worker process
   -> SSH
   -> remote Linux server
 ```
 
-The local HTTP agent is the security boundary. Codex never receives arbitrary
+The local HTTP manager and worker are the security boundary. Codex never receives arbitrary
 shell access; it can only call the exposed MCP tools, and the agent validates
 commands and paths before anything reaches SSH.
 
@@ -43,7 +44,8 @@ remote-debug-agent/
 
 Create `remote-debug-agent/.env` or set these environment variables before
 using the plugin. Values in `.env` take precedence for `REMOTE_DEBUG_*`
-settings so the plugin and local agent use the same target and port.
+settings. On first startup, the manager migrates this single-target config into
+`.remote-debug/instances.json` as the `default` instance.
 
 ```powershell
 $env:REMOTE_DEBUG_HOST = "example.com"
@@ -84,9 +86,10 @@ after the MCP server initializes.
 For manual debugging, run `npm start` in the `agent` directory. The agent listens
 on `http://127.0.0.1:4343` by default, or `REMOTE_DEBUG_AGENT_PORT` when set.
 
-Open `http://127.0.0.1:4343/` to view the local dashboard. It shows live
-agent activity from the Codex plugin through Server-Sent Events, including
-operation start, validation, streamed command output, completion, and failures.
+Open `http://127.0.0.1:4343/` to view the local dashboard. It shows configured
+instances and lets you create, edit, start, refresh, inspect, and delete remote
+connection workers. The manager keeps the main port; workers receive ports from
+the configured registry range.
 
 ## Install The Codex Plugin
 
@@ -158,7 +161,8 @@ server path, MCP runtime log path, and the installed cache's latest
 should list:
 
 ```text
-remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir,
+remote_debug_list_instances, remote_debug_run_command,
+remote_debug_read_file, remote_debug_list_dir,
 remote_debug_prepare_command_draft, remote_debug_get_command_draft,
 remote_debug_execute_command_draft
 ```
@@ -236,19 +240,25 @@ codex plugin marketplace add .
 
 Install or enable `remote-debug-agent` from Codex Desktop's plugin marketplace
 UI, then restart Codex Desktop or open a new Codex thread after installation.
-The plugin will start the local HTTP agent from `.env`; `npm start` is only
-needed when you want to debug the agent manually.
+The plugin will start the local HTTP manager from `.env`; `npm start` is only
+needed when you want to debug the manager manually.
 
 ## Exposed Tools
 
 - `remote_debug_run_command`: run a whitelisted read-only diagnostic command.
 - `remote_debug_read_file`: read a file under an allowed remote path.
 - `remote_debug_list_dir`: list a directory under an allowed remote path.
+- `remote_debug_list_instances`: list configured instances and runtime status.
 - `remote_debug_prepare_command_draft`: generate an exact command draft for
   user review. It never executes commands.
 - `remote_debug_get_command_draft`: view a previously generated command draft.
 - `remote_debug_execute_command_draft`: execute a one-time command draft after
   the user explicitly chooses `使用命令`.
+
+Operation tools accept an optional `instanceId`. If only one instance is
+configured, the manager routes to it automatically. If multiple instances exist
+and `instanceId` is missing, the tool returns `INSTANCE_ID_REQUIRED` with the
+available instance summaries.
 
 ## Approved Command Drafts
 
@@ -323,26 +333,28 @@ Allowed path roots:
 
 ## Architecture And Command Security
 
-The plugin is an MCP wrapper and local agent launcher. It does not execute SSH
+The plugin is an MCP wrapper and local manager launcher. It does not execute SSH
 commands directly. The command path is:
 
 ```text
 Codex
   -> plugins/remote-debug-agent/mcp-server.js
-  -> agent/server.js local HTTP API
+  -> agent/server.js local HTTP manager
+  -> agent/worker-entry.js per-instance worker
   -> agent/ssh.js SSH or SFTP client
   -> remote Linux server
 ```
 
 `mcp-server.js` exposes the MCP tools, resolves `.env`, discovers or starts the
-local HTTP agent, and forwards tool calls to `http://127.0.0.1:<port>`.
-`remote_debug_run_command` forwards `cmd` and `timeoutMs` to the agent's `/run`
-endpoint. `remote_debug_read_file` and `remote_debug_list_dir` use the agent's
-SFTP-backed file endpoints. The approved-command tools use
+local HTTP manager, and forwards tool calls to `http://127.0.0.1:<port>`.
+`remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
+manager's `/run` endpoint. `remote_debug_read_file` and
+`remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.
+The approved-command tools use
 `/approved-command-drafts`, `/approved-command-drafts/get`, and
 `/approved-command-drafts/execute`.
 
-The local HTTP agent is the security boundary. For `/run`, `agent/server.js`
+The local HTTP manager and worker are the security boundary. For `/run`, `agent/server.js`
 calls `validateCommand` from `agent/security.js` before any SSH command is
 executed. Only the normalized command returned by validation is passed to
 `agent/ssh.js`.

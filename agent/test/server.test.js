@@ -89,10 +89,10 @@ async function getJson(server, route) {
   };
 }
 
-async function postJson(server, route, body, headers = {}) {
+async function postJson(server, route, body, headers = {}, method = "POST") {
   const address = server.address();
   const response = await fetch(`http://127.0.0.1:${address.port}${route}`, {
-    method: "POST",
+    method,
     headers: {
       "Content-Type": "application/json",
       ...headers,
@@ -256,6 +256,63 @@ test("dashboard serves status and streams remote interaction activity", { skip: 
   }
 });
 
+test("manager API creates, lists, updates, and deletes instances", { skip: !depsInstalled }, async () => {
+  const { createManagerApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manager-api-"));
+  const app = createManagerApp({
+    config: makeConfig(path.join(dir, "audit.jsonl")),
+    cwd: dir,
+    env: {},
+    registryPath: path.join(dir, "instances.json"),
+  });
+  const server = await listen(app);
+
+  try {
+    const created = await postJson(server, "/api/instances", {
+      id: "staging",
+      name: "Staging",
+      host: "staging.example.com",
+      port: 22,
+      username: "app",
+      privateKeyPath: "C:\\Users\\you\\.ssh\\staging",
+      passphrase: "secret",
+    });
+    assert.equal(created.status, 201);
+    assert.equal(created.body.instance.id, "staging");
+    assert.equal(created.body.instance.hasPassphrase, true);
+    assert.equal(created.body.instance.passphrase, undefined);
+
+    const listed = await getJson(server, "/api/instances");
+    assert.equal(listed.status, 200);
+    assert.equal(listed.body.instances.length, 1);
+    assert.equal(listed.body.instances[0].runtime.status, "stopped");
+
+    const updated = await postJson(
+      server,
+      "/api/instances/staging",
+      {
+        name: "Staging Updated",
+        host: "staging.example.com",
+        port: 22,
+        username: "app",
+        privateKeyPath: "C:\\Users\\you\\.ssh\\staging",
+        passphrase: "",
+      },
+      {},
+      "PUT",
+    );
+    assert.equal(updated.status, 200);
+    assert.equal(updated.body.instance.name, "Staging Updated");
+    assert.equal(updated.body.instance.hasPassphrase, true);
+
+    const removed = await postJson(server, "/api/instances/staging", {}, {}, "DELETE");
+    assert.equal(removed.status, 200);
+    assert.equal(removed.body.instance.id, "staging");
+  } finally {
+    await close(server);
+  }
+});
+
 test("startServer records port binding errors in runtime state", { skip: !depsInstalled }, async () => {
   const { startServer } = await import("../server.js");
   const blocker = http.createServer((_request, response) => response.end("busy"));
@@ -267,7 +324,10 @@ test("startServer records port binding errors in runtime state", { skip: !depsIn
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-bind-"));
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.agent.port = blocker.address().port;
-  const failedServer = startServer(config);
+  const failedServer = startServer(config, {
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+  });
 
   try {
     const state = await waitForFileJson(

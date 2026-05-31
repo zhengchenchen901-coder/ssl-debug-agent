@@ -105,10 +105,16 @@ function parseBooleanFlag(value) {
 }
 
 export function loadConfig(env = process.env, cwd = process.cwd()) {
-  const mergedEnv = {
-    ...env,
-    ...loadDotEnv(cwd),
-  };
+  const dotEnv = loadDotEnv(cwd);
+  const mergedEnv = parseBooleanFlag(env.REMOTE_DEBUG_WORKER)
+    ? {
+        ...dotEnv,
+        ...env,
+      }
+    : {
+        ...env,
+        ...dotEnv,
+      };
   const agentPort = parsePositiveInt(
     mergedEnv.REMOTE_DEBUG_AGENT_PORT,
     DEFAULT_AGENT_PORT,
@@ -167,7 +173,9 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
         path.resolve(cwd, "audit", "remote-debug-agent.jsonl"),
     },
     runtime: {
-      statePath: path.resolve(cwd, ".runtime", "agent-state.json"),
+      statePath:
+        mergedEnv.REMOTE_DEBUG_RUNTIME_STATE_PATH ||
+        path.resolve(cwd, ".runtime", "agent-state.json"),
     },
   };
 }

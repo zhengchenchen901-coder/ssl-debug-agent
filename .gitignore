@@ -7,4 +7,6 @@ npm-debug.log*
 agent/audit/
 agent/.runtime/
 plugins/remote-debug-agent/.runtime/
+.remote-debug/
+.playwright-cli/
 *.log

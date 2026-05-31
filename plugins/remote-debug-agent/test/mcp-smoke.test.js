@@ -105,6 +105,25 @@ function createJsonLineMessageReader(child) {
 function startAgentStub() {
   const drafts = new Map();
   const server = http.createServer((request, response) => {
+    if (request.method === "GET" && request.url === "/api/instances") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(
+        JSON.stringify({
+          ok: true,
+          defaultInstanceId: "default",
+          instances: [
+            {
+              id: "default",
+              name: "default",
+              host: "prod.example.com",
+              runtime: { status: "running", workerPort: 4400, pid: 1234 },
+            },
+          ],
+        }),
+      );
+      return;
+    }
+
     if (request.method !== "POST") {
       response.writeHead(404).end();
       return;
@@ -372,6 +391,7 @@ const server = http.createServer((request, response) => {
     response.end(JSON.stringify({
       ok: true,
       name: "remote-debug-agent",
+      mode: "manager",
       agent: { port, pid: process.pid, configFingerprint: configFingerprint() },
       target: empty
         ? { host: "", port: sshPort(), username: "" }
@@ -463,6 +483,9 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
   const properties = schema.properties || {};
   const required = schema.required || [];
   for (const propertyName of Object.keys(properties)) {
+    if (propertyName === "instanceId") {
+      continue;
+    }
     assert.ok(required.includes(propertyName), `${path}.${propertyName} is required`);
   }
 }
@@ -483,6 +506,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.deepEqual(
       list.result.tools.map((tool) => tool.name),
       [
+        "remote_debug_list_instances",
         "remote_debug_run_command",
         "remote_debug_read_file",
         "remote_debug_list_dir",
@@ -498,6 +522,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.equal(runCommand.inputSchema.properties.timeoutMs, undefined);
     const readFile = list.result.tools.find((tool) => tool.name === "remote_debug_read_file");
     assert.equal(readFile.inputSchema.properties.maxBytes, undefined);
+    assert.ok(readFile.inputSchema.properties.instanceId);
 
     child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 3, method: "resources/list" }));
     const resources = await readMessage();
@@ -516,6 +541,20 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     );
     const call = await readMessage();
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_list_instances",
+          arguments: {},
+        },
+      }),
+    );
+    const instances = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(instances.instances[0].id, "default");
   } finally {
     child.kill();
     await close(agentStub);
@@ -777,7 +816,7 @@ test("MCP resolves project root from Codex local marketplace config when running
   }
 });
 
-test("MCP restarts an unhealthy Remote Debug Agent on the configured port", async () => {
+test("MCP reuses an online manager even when target fields differ", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-restart-"));
   const agentDir = path.join(dir, "agent");
   const envPath = path.join(dir, ".env");
@@ -792,7 +831,7 @@ test("MCP restarts an unhealthy Remote Debug Agent on the configured port", asyn
     ].join("\n"),
   );
 
-  const unhealthy = spawn(process.execPath, [path.join(agentDir, "server.js")], {
+  const managerLike = spawn(process.execPath, [path.join(agentDir, "server.js")], {
     cwd: agentDir,
     env: {
       ...process.env,
@@ -813,17 +852,17 @@ test("MCP restarts an unhealthy Remote Debug Agent on the configured port", asyn
     const call = await callRunTool(child);
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
     const status = await waitForStatus(port);
-    assert.notEqual(status.agent.pid, unhealthy.pid);
+    assert.equal(status.agent.pid, managerLike.pid);
     process.kill(status.agent.pid);
   } finally {
     child.kill();
-    if (!unhealthy.killed) {
-      unhealthy.kill();
+    if (!managerLike.killed) {
+      managerLike.kill();
     }
   }
 });
 
-test("MCP restarts the local agent when .env target config changes", async () => {
+test("MCP keeps the manager process when .env target config changes", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-env-change-"));
   const agentDir = path.join(dir, "agent");
   const envPath = path.join(dir, ".env");
@@ -866,9 +905,9 @@ test("MCP restarts the local agent when .env target config changes", async () =>
     const secondCall = await callRunToolWithReader(child, readMessage, 3);
     assert.match(secondCall.result.content[0].text, /ran:netstat -tlnp/);
     secondStatus = await waitForStatus(port);
-    assert.equal(secondStatus.target.host, "staging.example.com");
-    assert.notEqual(secondStatus.agent.pid, firstStatus.agent.pid);
-    assert.notEqual(secondStatus.agent.configFingerprint, firstStatus.agent.configFingerprint);
+    assert.equal(secondStatus.target.host, "prod.example.com");
+    assert.equal(secondStatus.agent.pid, firstStatus.agent.pid);
+    assert.equal(secondStatus.agent.configFingerprint, firstStatus.agent.configFingerprint);
   } finally {
     child.kill();
     killPid(secondStatus?.agent?.pid);
