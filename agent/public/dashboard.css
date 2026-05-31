@@ -80,6 +80,35 @@ input {
   cursor: not-allowed;
 }
 
+.button.is-loading {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.button.is-loading::before {
+  animation: spin 0.75s linear infinite;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-right-color: transparent;
+  content: "";
+  height: 12px;
+  width: 12px;
+}
+
+.button.is-loading:disabled {
+  background: var(--blue-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  cursor: wait;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .icon-button {
   align-items: center;
   display: inline-flex;
@@ -516,5 +545,11 @@ main {
 
   .toolbar-actions .button {
     flex: 1 1 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button.is-loading::before {
+    animation: none;
   }
 }
