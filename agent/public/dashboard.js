@@ -30,6 +30,15 @@ const statusLabels = {
   unhealthy: "不健康",
 };
 
+const memoryStatusLabels = {
+  missing: "未初始化",
+  initializing: "初始化中",
+  ready: "已就绪",
+  partial: "部分可用",
+  failed: "初始化失败",
+  stale: "目标已变化",
+};
+
 const state = {
   defaultInstanceId: "",
   lifecycle: null,
@@ -69,6 +78,14 @@ function targetLabel(instance) {
 
 function runtimeOf(instance) {
   return instance.runtime || { status: "stopped" };
+}
+
+function memoryOf(instance) {
+  return instance.memory || { status: "missing", updatedAt: null, summary: {} };
+}
+
+function memoryStatusOf(memory) {
+  return memory?.status || "missing";
 }
 
 function formatClock(value) {
@@ -157,6 +174,11 @@ function statusPill(status) {
   return createElement("span", `status-pill status-${status}`, statusLabels[status] || status);
 }
 
+function memoryStatusPill(memory) {
+  const status = memoryStatusOf(memory);
+  return createElement("span", `status-pill memory-status-${status}`, memoryStatusLabels[status] || status);
+}
+
 function button(label, action, instance, className = "button") {
   const item = document.createElement("button");
   item.type = "button";
@@ -206,6 +228,13 @@ function renderRow(instance) {
   const status = createElement("td");
   status.append(statusPill(runtime.status || "stopped"));
 
+  const memoryInfo = memoryOf(instance);
+  const memory = createElement("td");
+  const memoryMain = createElement("div", "cell-main");
+  memoryMain.append(memoryStatusPill(memoryInfo));
+  memoryMain.append(createElement("span", "", formatClock(memoryInfo.updatedAt)));
+  memory.append(memoryMain);
+
   const worker = createElement("td");
   const workerMain = createElement("div", "cell-main");
   workerMain.append(createElement("span", "mono", `port ${text(runtime.workerPort)}`));
@@ -241,7 +270,7 @@ function renderRow(instance) {
   );
   actions.append(actionWrap);
 
-  row.append(name, target, user, ssh, status, worker, heartbeat, error, actions);
+  row.append(name, target, user, ssh, status, memory, worker, heartbeat, error, actions);
   return row;
 }
 
@@ -349,8 +378,31 @@ function detailRow(label, value) {
   return row;
 }
 
+function compactOverview(items) {
+  const parts = items
+    .map(([label, value]) => [label, text(value, "")])
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${value}`);
+  return parts.length > 0 ? parts.join(" / ") : "--";
+}
+
+function compactPathList(values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return "--";
+  }
+  const visible = values.slice(0, 3).map((value) => String(value));
+  if (values.length > visible.length) {
+    visible.push(`等 ${values.length} 项`);
+  }
+  return visible.join("，");
+}
+
 function openDrawer(instance) {
   const runtime = runtimeOf(instance);
+  const memory = memoryOf(instance);
+  const memorySummary = memory.summary || {};
+  const resources = memorySummary.resources || {};
+  const services = memorySummary.services || {};
   drawerTitle.textContent = instance.name;
   const details = createElement("section", "detail-list");
   details.append(
@@ -365,6 +417,13 @@ function openDrawer(instance) {
     detailRow("进程 ID", runtime.pid),
     detailRow("最近心跳", formatClock(runtime.lastHeartbeatAt)),
     detailRow("最近错误", runtime.lastError ? `${runtime.lastError.code}: ${runtime.lastError.message}` : "--"),
+    detailRow("Memory 状态", memoryStatusLabels[memoryStatusOf(memory)] || memoryStatusOf(memory)),
+    detailRow("Memory 更新时间", formatClock(memory.updatedAt)),
+    detailRow("系统摘要", memorySummary.system),
+    detailRow("资源概览", compactOverview([["磁盘", resources.disk], ["内存", resources.memory]])),
+    detailRow("服务概览", compactOverview([["nginx", services.nginx], ["mongod", services.mongod], ["pm2", services.pm2]])),
+    detailRow("配置路径", compactPathList(memorySummary.configPaths)),
+    detailRow("日志路径", compactPathList(memorySummary.logPaths)),
   );
 
   const eventList = createElement("section", "event-list");

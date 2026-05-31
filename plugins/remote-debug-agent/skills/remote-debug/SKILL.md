@@ -22,6 +22,11 @@ described below.
 - `remote_debug_execute_command_draft`: execute a generated draft only after the
   user explicitly chooses `使用命令`.
 
+Tool results may include a per-instance `memory` summary. Use it as a quick map
+of known target facts such as common config paths, log paths, service status,
+and shallow directory summaries. Memory is cached context, not live evidence; if
+the current state matters, verify it with the appropriate `remote_debug_*` tool.
+
 ## Tool Visibility
 
 Before inspecting the remote server, confirm that the current Codex tool table

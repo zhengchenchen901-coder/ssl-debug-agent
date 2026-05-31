@@ -261,7 +261,7 @@ main {
 
 .pro-table {
   border-collapse: collapse;
-  min-width: 1180px;
+  min-width: 1280px;
   width: 100%;
 }
 
@@ -334,6 +334,32 @@ main {
 }
 
 .status-stopped {
+  background: #f2f4f7;
+  color: var(--muted);
+}
+
+.memory-status-ready {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.memory-status-initializing {
+  background: var(--blue-soft);
+  color: var(--primary);
+}
+
+.memory-status-partial,
+.memory-status-stale {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.memory-status-failed {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.memory-status-missing {
   background: #f2f4f7;
   color: var(--muted);
 }

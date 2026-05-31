@@ -3,6 +3,7 @@ import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isPortInRange } from "./instance-registry.js";
+import { MemoryStore } from "./memory-store.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,7 +98,7 @@ function projectRootFrom(cwd) {
   return path.basename(normalized).toLowerCase() === "agent" ? path.dirname(normalized) : normalized;
 }
 
-function configEnv(instance, port, manager, cwd) {
+function configEnv(instance, port, manager, cwd, memoryInit) {
   const instanceDir = path.resolve(projectRootFrom(cwd), ".remote-debug", "instances", instance.id);
   return {
     REMOTE_DEBUG_WORKER: "1",
@@ -122,6 +123,7 @@ function configEnv(instance, port, manager, cwd) {
         : String(instance.approvedCommands.maxTimeoutMs),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
     REMOTE_DEBUG_RUNTIME_STATE_PATH: path.resolve(instanceDir, ".runtime", "agent-state.json"),
+    REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0",
   };
 }
 
@@ -136,6 +138,7 @@ export class WorkerManager {
     this.forkWorker = options.forkWorker || ((entryPath, forkOptions) => fork(entryPath, [], forkOptions));
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
+    this.memoryStore = options.memoryStore || new MemoryStore({ cwd: this.cwd });
     this.runtime = new Map();
     this.portOwners = new Map();
     const monitorEveryMs = Math.max(1000, Math.floor(this.managerConfig().healthIntervalMs || 15_000));
@@ -151,10 +154,21 @@ export class WorkerManager {
     return this.registry.managerConfig();
   }
 
+  publicInstance(id) {
+    const instance = this.registry.get(id);
+    return instance
+      ? {
+          ...instance,
+          memory: this.memoryStore.summary(instance),
+        }
+      : null;
+  }
+
   publicInstances() {
     return this.registry.list().map((instance) => ({
       ...instance,
       runtime: publicRuntime(this.runtime.get(instance.id)),
+      memory: this.memoryStore.summary(instance),
     }));
   }
 
@@ -222,13 +236,14 @@ export class WorkerManager {
     const current = this.runtime.get(id);
     if (current?.status === "running" || current?.status === "starting") {
       return {
-        instance: this.registry.get(id),
+        instance: this.publicInstance(id),
         runtime: publicRuntime(current),
       };
     }
 
     const manager = this.managerConfig();
     const workerPort = await this.allocatePort(instance);
+    let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
       child: null,
@@ -242,6 +257,21 @@ export class WorkerManager {
     };
     this.runtime.set(id, runtime);
     event(runtime, "starting", { workerPort });
+    if (shouldInitializeMemory) {
+      try {
+        await this.memoryStore.markInitializing(instance);
+        event(runtime, "memory-initializing");
+      } catch (error) {
+        shouldInitializeMemory = false;
+        event(runtime, "memory-init-skipped", {
+          error: {
+            code: error.code || "MEMORY_INIT_STATE_FAILED",
+            message: error.message,
+          },
+        });
+        console.error("failed to prepare instance memory", error);
+      }
+    }
 
     let child;
     try {
@@ -249,7 +279,7 @@ export class WorkerManager {
         cwd: this.cwd,
         env: {
           ...process.env,
-          ...configEnv(instance, workerPort, manager, this.cwd),
+          ...configEnv(instance, workerPort, manager, this.cwd, shouldInitializeMemory),
         },
         execPath: this.nodePath,
         silent: true,
@@ -258,11 +288,17 @@ export class WorkerManager {
     } catch (error) {
       this.releasePort(workerPort);
       this.runtime.delete(id);
-      throw managerError(
+      const wrapped = managerError(
         `worker process could not be spawned: ${error.message}`,
         "WORKER_SPAWN_FAILED",
         500,
       );
+      if (shouldInitializeMemory) {
+        await this.memoryStore.markFailed(instance, wrapped, "worker-spawn-failed").catch((memoryError) => {
+          console.error("failed to mark instance memory failed", memoryError);
+        });
+      }
+      throw wrapped;
     }
 
     runtime.child = child;
@@ -287,7 +323,7 @@ export class WorkerManager {
       runtime.lastError = null;
       event(runtime, "running", { pid: child.pid, workerPort });
       return {
-        instance: this.registry.get(id),
+        instance: this.publicInstance(id),
         runtime: publicRuntime(runtime),
       };
     } catch (error) {
@@ -296,6 +332,11 @@ export class WorkerManager {
         message: error.message,
       };
       event(runtime, "start-failed", { error: runtime.lastError });
+      if (shouldInitializeMemory) {
+        await this.memoryStore.markFailed(instance, error, "worker-start-failed").catch((memoryError) => {
+          console.error("failed to mark instance memory failed", memoryError);
+        });
+      }
       await this.stopInstance(id, "start-failed");
       throw error;
     }
@@ -386,6 +427,35 @@ export class WorkerManager {
       runtime.status = "unhealthy";
       event(runtime, "health", { status: "unhealthy", error: runtime.lastError });
       await this.stopInstance(id, "unhealthy");
+      return;
+    }
+
+    if (message.type === "memory:update") {
+      const instance = this.registry.getInternal(id);
+      if (!instance) {
+        return;
+      }
+      try {
+        if (message.ok === false) {
+          await this.memoryStore.markFailed(instance, message.error, "worker-init");
+          event(runtime, "memory-failed", { error: message.error });
+          return;
+        }
+
+        const memory = await this.memoryStore.merge(instance, message.memory || {}, "worker-init");
+        event(runtime, "memory-updated", {
+          status: memory.status,
+          changedSections: memory.changedSections,
+        });
+      } catch (error) {
+        event(runtime, "memory-update-failed", {
+          error: {
+            code: error.code || "MEMORY_UPDATE_FAILED",
+            message: error.message,
+          },
+        });
+        console.error("failed to update instance memory", error);
+      }
     }
   }
 
@@ -454,7 +524,7 @@ export class WorkerManager {
     const runtime = this.runtime.get(id);
     if (!runtime) {
       return {
-        instance,
+        instance: this.publicInstance(id),
         runtime: publicRuntime(null),
       };
     }
@@ -486,7 +556,7 @@ export class WorkerManager {
     event(runtime, runtime.status, { reason });
 
     return {
-      instance: this.registry.get(id),
+      instance: this.publicInstance(id),
       runtime: publicRuntime(runtime),
     };
   }
@@ -500,6 +570,7 @@ export class WorkerManager {
     await this.stopInstance(id, "delete");
     const removed = this.registry.delete(id);
     this.runtime.delete(id);
+    await this.memoryStore.deleteInstance(id);
     return removed;
   }
 

@@ -364,6 +364,71 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
   }
 });
 
+test("manager API includes memory and updates it from proxied tool results", { skip: !depsInstalled }, async () => {
+  const { createManagerApp } = await import("../server.js");
+  const { InstanceRegistry } = await import("../instance-registry.js");
+  const { MemoryStore } = await import("../memory-store.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manager-memory-api-"));
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {},
+  });
+  registry.create({
+    id: "a",
+    name: "a",
+    host: "prod.example.com",
+    port: 22,
+    username: "app",
+    privateKeyPath: "C:\\a",
+  });
+  const memoryStore = new MemoryStore({ memoryRoot: path.join(dir, "memory") });
+  const workerManager = {
+    memoryStore,
+    publicInstances: () =>
+      registry.list().map((instance) => ({
+        ...instance,
+        runtime: { status: "running" },
+        memory: memoryStore.summary(instance),
+      })),
+    runtimeFor: () => ({ status: "running" }),
+    shutdownAll: async () => {},
+    callInstance: async (_instanceId, _pathName, payload) => ({
+      ok: true,
+      instanceId: "a",
+      path: payload.path,
+      entries: [{ name: "nginx.conf", size: 10, modifyTime: 1, permissions: 33188 }],
+      durationMs: 1,
+    }),
+  };
+  const app = createManagerApp({
+    config: makeConfig(path.join(dir, "audit.jsonl")),
+    cwd: dir,
+    registry,
+    workerManager,
+  });
+  const server = await listen(app);
+
+  try {
+    const before = await getJson(server, "/api/instances");
+    assert.equal(before.status, 200);
+    assert.equal(before.body.instances[0].memory.status, "missing");
+
+    const listed = await postJson(server, "/list-dir", {
+      instanceId: "a",
+      path: "/etc/nginx",
+    });
+    assert.equal(listed.status, 200);
+    assert.equal(listed.body.memory.status, "partial");
+    assert.deepEqual(listed.body.memory.summary.configPaths, ["/etc/nginx/nginx.conf"]);
+
+    const after = await getJson(server, "/api/instances");
+    assert.equal(after.body.instances[0].memory.summary.configPaths[0], "/etc/nginx/nginx.conf");
+  } finally {
+    await close(server);
+  }
+});
+
 test("manual manager lifetime does not shut down when no lease exists", { skip: !depsInstalled }, async () => {
   const { startServer } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manual-lifecycle-"));

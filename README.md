@@ -260,6 +260,33 @@ configured, the manager routes to it automatically. If multiple instances exist
 and `instanceId` is missing, the tool returns `INSTANCE_ID_REQUIRED` with the
 available instance summaries.
 
+## Instance Memory
+
+The manager keeps a small per-instance memory cache at
+`.remote-debug/instances/<instanceId>/memory.json`. The cache is owned by the
+manager process and is written atomically; workers report discoveries over IPC
+instead of writing the file directly.
+
+When a worker starts, the manager asks it to run a background init discovery if
+the instance has no usable memory, if the previous memory failed, or if the
+target host, port, or username changed. Worker readiness only waits for SSH and
+the local HTTP listener; memory may remain `initializing` until the background
+probe finishes. The first version collects conservative metadata only: target
+summary, system/resource summaries, shallow listings under allowed roots, common
+nginx/log/PM2 paths, and MongoDB service/client presence. Probe failures make
+the memory `partial`; they do not stop the worker after SSH readiness has
+succeeded.
+
+Tool responses from the manager include a `memory` summary when an instance is
+known. Successful `/run`, `/read-file`, and `/list-dir` results also update the
+cache with newly observed config paths, log paths, service status, and directory
+summaries.
+
+Memory is context, not live truth. Treat it as a starting point and verify with
+the tools when the exact current state matters. The cache is intentionally
+sanitized before it is saved: private keys, passphrases, tokens, passwords,
+credentials, and connection strings are redacted.
+
 ## Approved Command Drafts
 
 The approved-command channel is for cases where Codex should present a minimal
