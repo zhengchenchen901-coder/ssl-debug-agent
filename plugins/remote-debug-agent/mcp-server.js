@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
-const PLUGIN_VERSION = "1.0.6";
+const PLUGIN_VERSION = "1.0.6+codex.20260531063929";
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
 const PROBE_TIMEOUT_MS = 1500;
@@ -112,10 +112,6 @@ const tools = [
           description:
             "Command such as 'netstat -tlnp', 'systemctl status nginx', or 'tail -n 100 /var/log/nginx/error.log'.",
         },
-        timeoutMs: {
-          type: "number",
-          description: "Optional timeout in milliseconds. The agent clamps it to the configured maximum.",
-        },
       },
     },
   },
@@ -131,10 +127,6 @@ const tools = [
         path: {
           type: "string",
           description: "Absolute remote file path.",
-        },
-        maxBytes: {
-          type: "number",
-          description: "Optional maximum bytes to return. The agent clamps it to the configured maximum.",
         },
       },
     },
@@ -213,10 +205,6 @@ const tools = [
         confirmation: {
           type: "string",
           description: "Must exactly equal 使用命令.",
-        },
-        timeoutMs: {
-          type: "number",
-          description: "Optional per-command timeout in milliseconds. The agent clamps it to the approved-command maximum.",
         },
       },
     },
@@ -573,8 +561,15 @@ async function logMcpLifecycle(code, message, event = {}) {
   await appendPluginLog(settings, details);
 }
 
+let outputFraming = "content-length";
+
 function sendMessage(message) {
   const body = Buffer.from(JSON.stringify(message), "utf8");
+  if (outputFraming === "json-line") {
+    process.stdout.write(`${body.toString("utf8")}\n`);
+    return;
+  }
+
   process.stdout.write(`Content-Length: ${body.length}\r\n\r\n`);
   process.stdout.write(body);
 }
@@ -1345,8 +1340,38 @@ async function handleRequest(message) {
 
 let inputBuffer = Buffer.alloc(0);
 
+function dispatchMessage(message) {
+  if (message.method && message.id === undefined) {
+    return;
+  }
+
+  handleRequest(message).catch((error) => {
+    if (message.id !== undefined) {
+      sendError(message.id, -32603, error.message);
+    }
+  });
+}
+
 function parseMessages() {
   while (true) {
+    const bufferStart = inputBuffer.subarray(0, Math.min(inputBuffer.length, 32)).toString("utf8");
+    if (!bufferStart.startsWith("Content-Length:")) {
+      const lineEnd = inputBuffer.indexOf("\n");
+      if (lineEnd === -1) {
+        return;
+      }
+
+      const line = inputBuffer.subarray(0, lineEnd).toString("utf8").trim();
+      inputBuffer = inputBuffer.subarray(lineEnd + 1);
+      if (!line) {
+        continue;
+      }
+
+      outputFraming = "json-line";
+      dispatchMessage(JSON.parse(line));
+      continue;
+    }
+
     const headerEnd = inputBuffer.indexOf("\r\n\r\n");
     if (headerEnd === -1) {
       return;
@@ -1367,17 +1392,8 @@ function parseMessages() {
 
     const body = inputBuffer.subarray(bodyStart, bodyEnd).toString("utf8");
     inputBuffer = inputBuffer.subarray(bodyEnd);
-    const message = JSON.parse(body);
-
-    if (message.method && message.id === undefined) {
-      continue;
-    }
-
-    handleRequest(message).catch((error) => {
-      if (message.id !== undefined) {
-        sendError(message.id, -32603, error.message);
-      }
-    });
+    outputFraming = "content-length";
+    dispatchMessage(JSON.parse(body));
   }
 }
 

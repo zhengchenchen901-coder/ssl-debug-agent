@@ -106,6 +106,12 @@ function pluginNameFromSection(sectionName) {
 
 function readPluginVersion() {
   try {
+    return JSON.parse(fs.readFileSync(path.resolve(pluginRoot, ".codex-plugin", "plugin.json"), "utf8")).version || "unknown";
+  } catch {
+    // Fall back to package.json for older local checkouts.
+  }
+
+  try {
     return JSON.parse(fs.readFileSync(path.resolve(pluginRoot, "package.json"), "utf8")).version || "unknown";
   } catch {
     return "unknown";

@@ -1,0 +1,22 @@
+{
+  "name": "remote-debug-agent",
+  "instance": {
+    "id": "default",
+    "name": "default"
+  },
+  "pid": 33504,
+  "host": "127.0.0.1",
+  "port": 4343,
+  "target": {
+    "host": "8.209.117.139",
+    "port": 22,
+    "username": "root"
+  },
+  "configFingerprint": "30a86fe5c045b09e31ce7d1fa5d9bfabf881f5b815042927414d5ab1ec301de2",
+  "status": "listening",
+  "startedAt": "2026-05-31T02:09:00.129Z",
+  "hasTargetHost": true,
+  "hasTargetUser": true,
+  "hasPrivateKeyPath": true,
+  "updatedAt": "2026-05-31T02:09:00.177Z"
+}
