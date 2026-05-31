@@ -103,7 +103,19 @@ async function api(path, options = {}) {
       ...options.headers,
     },
   });
-  const data = await response.json();
+  const raw = await response.text();
+  let data;
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = {
+      ok: false,
+      error: {
+        code: `HTTP_${response.status || "ERROR"}`,
+        message: response.ok ? "响应不是有效 JSON" : `HTTP ${response.status}`,
+      },
+    };
+  }
   if (!response.ok || data.ok === false) {
     const error = new Error(data.error?.message || `HTTP ${response.status}`);
     error.code = data.error?.code || "REQUEST_FAILED";
@@ -208,11 +220,16 @@ function renderRow(instance) {
   start.disabled = startLoading || runtime.status === "running";
   start.classList.toggle("is-loading", startLoading);
   start.setAttribute("aria-busy", String(startLoading));
+  const stopLoading = isActionPending("stop", instance.id) || runtime.status === "stopping";
+  const stop = button(stopLoading ? "停止中" : "停止", "stop", instance);
+  stop.disabled = stopLoading || runtime.status === "stopped" || (!runtime.pid && !runtime.workerPort);
+  stop.classList.toggle("is-loading", stopLoading);
+  stop.setAttribute("aria-busy", String(stopLoading));
   actionWrap.append(
     button("查看", "view", instance),
     button("编辑", "edit", instance),
     start,
-    button("暂停", "pause", instance),
+    stop,
     button("删除", "delete", instance, "button danger"),
     button("刷新", "refresh", instance),
   );
@@ -390,7 +407,7 @@ async function runAction(action, id) {
 
   const routeByAction = {
     start: `/api/instances/${encodeURIComponent(id)}/start`,
-    pause: `/api/instances/${encodeURIComponent(id)}/pause`,
+    stop: `/api/instances/${encodeURIComponent(id)}/stop`,
     delete: `/api/instances/${encodeURIComponent(id)}`,
     refresh: `/api/instances/${encodeURIComponent(id)}/refresh`,
   };
@@ -399,7 +416,7 @@ async function runAction(action, id) {
   try {
     setActionPending(action, id, true);
     await api(routeByAction[action], { method });
-    showToast(action === "pause" ? "暂停功能后续支持" : "操作已完成");
+    showToast(action === "stop" ? "实例已停止" : "操作已完成");
   } catch (error) {
     showToast(`${error.code || "ERROR"}: ${error.message}`);
   } finally {

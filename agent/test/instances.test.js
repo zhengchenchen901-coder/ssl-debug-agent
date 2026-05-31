@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -8,6 +9,47 @@ import { WorkerManager } from "../worker-manager.js";
 
 async function tempDir(prefix) {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix));
+}
+
+class FakeWorkerProcess extends EventEmitter {
+  constructor(pid) {
+    super();
+    this.pid = pid;
+    this.connected = true;
+    this.exitCode = null;
+    this.signalCode = null;
+    this.sent = [];
+    this.stdout = { resume() {} };
+    this.stderr = { resume() {} };
+  }
+
+  send(message) {
+    this.sent.push(message);
+    if (message?.type === "shutdown") {
+      this.connected = false;
+      setImmediate(() => {
+        this.emit("message", {
+          type: "health",
+          status: "stopped",
+          reason: message.reason,
+        });
+        this.exitCode = 0;
+        this.emit("exit", 0, null);
+      });
+    }
+    return true;
+  }
+
+  kill() {
+    this.connected = false;
+    if (this.exitCode === null && this.signalCode === null) {
+      this.signalCode = "SIGTERM";
+      setImmediate(() => {
+        this.emit("exit", null, "SIGTERM");
+      });
+    }
+    return true;
+  }
 }
 
 test("registry migrates v1 instance records to v2 manager config", async () => {
@@ -261,6 +303,107 @@ test("worker manager ignores preferred worker ports outside the manager range", 
 
     assert.equal(port, 4510);
     assert.deepEqual(checkedPorts, [4510]);
+  } finally {
+    await manager.shutdownAll();
+  }
+});
+
+test("worker manager stops workers after stopped health and reuses released ports", async () => {
+  const dir = await tempDir("remote-debug-worker-stop-");
+  const registryPath = path.join(dir, "instances.json");
+  await fs.writeFile(
+    registryPath,
+    JSON.stringify({
+      version: 2,
+      manager: {
+        workerPortRange: { start: 4520, end: 4520 },
+        healthIntervalMs: 1000,
+        startTimeoutMs: 1000,
+        stopTimeoutMs: 1000,
+      },
+      defaultInstanceId: "a",
+      instances: [
+        {
+          id: "a",
+          name: "a",
+          host: "a.example.com",
+          port: 22,
+          username: "app",
+          privateKeyPath: "C:\\a",
+        },
+      ],
+    }),
+  );
+
+  const workers = [];
+  let nextPid = 1000;
+  const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    canBindPort: async (port) => port === 4520,
+    forkWorker: () => {
+      const child = new FakeWorkerProcess(nextPid);
+      nextPid += 1;
+      workers.push(child);
+      setImmediate(() => {
+        child.emit("message", { type: "ready", ok: true });
+      });
+      return child;
+    },
+  });
+
+  try {
+    const started = await manager.startInstance("a");
+    assert.equal(started.runtime.status, "running");
+    assert.equal(started.runtime.workerPort, 4520);
+    assert.equal(started.runtime.pid, 1000);
+
+    const stopped = await manager.stopInstance("a", "stopped");
+    assert.deepEqual(workers[0].sent[0], { type: "shutdown", reason: "stopped" });
+    assert.equal(stopped.instance.id, "a");
+    assert.equal(stopped.runtime.status, "stopped");
+    assert.equal(stopped.runtime.pid, null);
+    assert.equal(stopped.runtime.workerPort, null);
+    assert.equal(registry.get("a").id, "a");
+    assert.ok(
+      stopped.runtime.events.some((item) => item.type === "health" && item.status === "stopped"),
+    );
+
+    const listed = manager.publicInstances();
+    assert.equal(listed.length, 1);
+    assert.equal(listed[0].runtime.status, "stopped");
+
+    const restarted = await manager.startInstance("a");
+    assert.equal(restarted.runtime.status, "running");
+    assert.equal(restarted.runtime.workerPort, 4520);
+    assert.equal(workers.length, 2);
+  } finally {
+    await manager.shutdownAll();
+  }
+});
+
+test("worker manager rejects stop for missing instances", async () => {
+  const dir = await tempDir("remote-debug-worker-stop-missing-");
+  const registryPath = path.join(dir, "instances.json");
+  await fs.writeFile(
+    registryPath,
+    JSON.stringify({
+      version: 2,
+      manager: { workerPortRange: { start: 4530, end: 4530 } },
+      defaultInstanceId: "",
+      instances: [],
+    }),
+  );
+  const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
+  const manager = new WorkerManager({ registry, managerPort: 4343, cwd: dir });
+
+  try {
+    await assert.rejects(
+      () => manager.stopInstance("missing"),
+      (error) => error.code === "INSTANCE_NOT_FOUND" && error.statusCode === 404,
+    );
   } finally {
     await manager.shutdownAll();
   }

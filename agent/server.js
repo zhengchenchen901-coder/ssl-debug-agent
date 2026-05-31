@@ -822,6 +822,12 @@ export function createManagerApp(options = {}) {
     response.json({ ok: true, ...result });
   }));
 
+  app.post("/api/instances/:id/stop", managerAsync(async (request, response) => {
+    const result = await workerManager.stopInstance(request.params.id, "stopped");
+    activity.publish({ type: "instance", stage: "stopped", instanceId: request.params.id });
+    response.json({ ok: true, ...result });
+  }));
+
   app.post("/api/instances/:id/pause", (_request, response) => {
     response.status(501).json({
       ok: false,
