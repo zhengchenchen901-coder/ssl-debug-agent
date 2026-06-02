@@ -100,6 +100,7 @@ const projectRoot = resolveProjectRoot();
 let activeAgentSettings = null;
 const leaseClientId = `codex-mcp-${process.pid}-${randomUUID()}`;
 let activeAgentLease = null;
+let activeAgentRecoveryPromise = null;
 
 const instanceIdProperty = {
   type: "string",
@@ -735,9 +736,16 @@ async function syncAgentLease(settings) {
     };
     await renewAgentLease(settings, "registration");
     activeAgentLease.timer = setInterval(() => {
-      renewAgentLease(settings, "heartbeat").catch((error) => {
-        console.error("failed to renew Remote Debug Agent lease", error);
-      });
+      renewAgentLease(settings, "heartbeat")
+        .then((ok) => {
+          if (!ok) {
+            return recoverAgentLease(settings, "heartbeat");
+          }
+          return null;
+        })
+        .catch((error) => {
+          console.error("failed to recover Remote Debug Agent lease", error);
+        });
     }, AGENT_LEASE_HEARTBEAT_MS);
     activeAgentLease.timer.unref?.();
     return;
@@ -1221,6 +1229,47 @@ function ensureAgentReady() {
   }
 
   return ensureAgentReadyPromise;
+}
+
+function recoverAgentLease(settings, phase) {
+  if (settings.explicitUrl) {
+    return Promise.resolve(null);
+  }
+
+  if (!activeAgentRecoveryPromise) {
+    activeAgentRecoveryPromise = (async () => {
+      await appendPluginLog(settings, {
+        level: "info",
+        code: "AGENT_LEASE_RECOVERY_STARTED",
+        message: `Recovering Remote Debug Agent after lease ${phase} failure.`,
+      });
+
+      const recoveredSettings = await ensureAgentReady();
+      await appendPluginLog(recoveredSettings, {
+        level: "info",
+        code: "AGENT_LEASE_RECOVERY_READY",
+        message: "Remote Debug Agent recovered after lease failure.",
+      });
+      return recoveredSettings;
+    })()
+      .catch(async (error) => {
+        await appendPluginLog(settings, {
+          level: "error",
+          code: "AGENT_LEASE_RECOVERY_FAILED",
+          message: `Remote Debug Agent lease recovery failed: ${error.message}`,
+          details: {
+            code: error.code,
+            payload: error.payload,
+          },
+        });
+        throw error;
+      })
+      .finally(() => {
+        activeAgentRecoveryPromise = null;
+      });
+  }
+
+  return activeAgentRecoveryPromise;
 }
 
 function scheduleAgentPrewarm(trigger) {

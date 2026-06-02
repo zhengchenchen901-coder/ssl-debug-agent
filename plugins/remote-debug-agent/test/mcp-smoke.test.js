@@ -292,8 +292,8 @@ async function getFreeConsecutivePorts() {
   throw new Error("failed to find consecutive free ports");
 }
 
-async function waitForStatus(port, predicate = () => true) {
-  const deadline = Date.now() + 5000;
+async function waitForStatus(port, predicate = () => true, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
   let lastError;
   let lastStatus;
 
@@ -794,6 +794,51 @@ test("MCP registers and renews a desktop lease for plugin-started local agents",
     assert.equal(status.lifecycle.lifetime, "desktop");
     assert.equal(status.lifecycle.clients.length, 1);
     process.kill(status.agent.pid);
+  } finally {
+    child.kill();
+  }
+});
+
+test("MCP heartbeat restarts a missing plugin-started local agent", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-heartbeat-recovery-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const port = await getFreePort();
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+  });
+
+  try {
+    const call = await callRunTool(child);
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    const firstStatus = await waitForStatus(
+      port,
+      (candidate) => candidate.lifecycle?.activeLeaseCount === 1,
+    );
+
+    killPid(firstStatus.agent.pid);
+
+    const recoveredStatus = await waitForStatus(
+      port,
+      (candidate) =>
+        candidate.agent?.pid !== firstStatus.agent.pid &&
+        candidate.lifecycle?.activeLeaseCount === 1,
+      25_000,
+    );
+    assert.equal(recoveredStatus.lifecycle.lifetime, "desktop");
+    killPid(recoveredStatus.agent.pid);
   } finally {
     child.kill();
   }

@@ -176,7 +176,7 @@ function updateMetrics() {
   const running = state.instances.filter((instance) => runtimeOf(instance).status === "running");
   const range = state.manager?.workerPortRange;
   totalCount.textContent = state.instances.length;
-  runningCount.textContent = running.length;
+  runningCount.textContent = state.online ? running.length : "--";
   portRange.textContent = range ? `${range.start}-${range.end}` : "--";
   defaultInstance.textContent = state.defaultInstanceId || "--";
   if (tableHint) {
@@ -199,13 +199,40 @@ function updateMetrics() {
   }
 }
 
+function statusLabel(status) {
+  return statusLabels[status] || status;
+}
+
+function memoryStatusLabel(memory) {
+  const status = memoryStatusOf(memory);
+  return memoryStatusLabels[status] || status;
+}
+
 function statusPill(status) {
-  return createElement("span", `status-pill status-${status}`, statusLabels[status] || status);
+  const label = statusLabel(status);
+  const pill = createElement(
+    "span",
+    `status-pill status-${state.online ? status : "stopped"}`,
+    state.online ? label : `上次：${label}`,
+  );
+  if (!state.online) {
+    pill.title = "主进程不可用，显示上次刷新状态";
+  }
+  return pill;
 }
 
 function memoryStatusPill(memory) {
   const status = memoryStatusOf(memory);
-  return createElement("span", `status-pill memory-status-${status}`, memoryStatusLabels[status] || status);
+  const label = memoryStatusLabel(memory);
+  const pill = createElement(
+    "span",
+    `status-pill memory-status-${status}`,
+    state.online ? label : `缓存：${label}`,
+  );
+  if (!state.online) {
+    pill.title = "主进程不可用，显示本地缓存的 Memory 状态";
+  }
+  return pill;
 }
 
 function button(label, action, instance, className = "button") {
@@ -458,12 +485,12 @@ function openDrawer(instance) {
     detailRow("私钥路径", instance.privateKeyPath),
     detailRow("私钥口令", instance.hasPassphrase ? "已配置" : "未配置"),
     detailRow("审计日志", instance.auditLog || "默认"),
-    detailRow("状态", statusLabels[runtime.status] || runtime.status),
+    detailRow("状态", state.online ? statusLabel(runtime.status) : `上次：${statusLabel(runtime.status)}`),
     detailRow("Worker 端口", runtime.workerPort),
     detailRow("进程 ID", runtime.pid),
     detailRow("最近心跳", formatClock(runtime.lastHeartbeatAt)),
     detailRow("最近错误", runtime.lastError ? `${runtime.lastError.code}: ${runtime.lastError.message}` : "--"),
-    detailRow("Memory 状态", memoryStatusLabels[memoryStatusOf(memory)] || memoryStatusOf(memory)),
+    detailRow("Memory 状态", state.online ? memoryStatusLabel(memory) : `缓存：${memoryStatusLabel(memory)}`),
     detailRow("Memory 更新时间", formatClock(memory.updatedAt)),
     detailRow("系统摘要", memorySummary.system),
     detailRow("资源概览", compactOverview([["磁盘", resources.disk], ["内存", resources.memory]])),
