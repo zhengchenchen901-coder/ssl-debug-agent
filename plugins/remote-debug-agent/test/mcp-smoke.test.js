@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -316,6 +317,55 @@ async function waitForStatus(port, predicate = () => true, timeoutMs = 5000) {
   throw lastError || new Error(`timed out waiting for fake agent on ${port}`);
 }
 
+function managerSourceFingerprint(agentDir, agentUrl, port, explicitUrl = "") {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      agentDir: path.resolve(agentDir),
+      agentUrl,
+      port,
+      explicitUrl,
+    }))
+    .digest("hex");
+}
+
+function agentStartLockPath(runtimeDir, agentUrl, sourceFingerprint) {
+  const hash = createHash("sha256")
+    .update(JSON.stringify({ agentUrl, sourceFingerprint }))
+    .digest("hex");
+  return path.resolve(runtimeDir, `agent-start-${hash}.lock`);
+}
+
+async function readMarkerPids(markerPath) {
+  try {
+    const text = await fs.readFile(markerPath, "utf8");
+    return text
+      .split(/\r?\n/)
+      .map((line) => Number.parseInt(line.trim(), 10))
+      .filter((pid) => Number.isInteger(pid));
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+}
+
+async function readMcpLogEvents(targetServerPath = serverPath) {
+  const logPath = path.resolve(path.dirname(targetServerPath), ".runtime", "mcp-error.log");
+  try {
+    const text = await fs.readFile(logPath, "utf8");
+    return text
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+}
+
 function killPid(pid) {
   if (!Number.isInteger(pid)) {
     return;
@@ -334,12 +384,19 @@ async function writeFakeAgent(agentDir) {
     path.join(agentDir, "server.js"),
     `
 import { createHash } from "node:crypto";
+import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
 const port = Number(process.env.REMOTE_DEBUG_AGENT_PORT);
 const empty = process.env.FAKE_AGENT_EMPTY === "1";
+const startDelayMs = Number.parseInt(process.env.FAKE_AGENT_START_DELAY_MS || "0", 10);
+const startMarkerPath = process.env.FAKE_AGENT_START_MARKER || "";
 const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
+
+if (startMarkerPath) {
+  fs.appendFileSync(startMarkerPath, \`\${process.pid}\\n\`, "utf8");
+}
 
 function sshPort() {
   return Number.parseInt(process.env.REMOTE_DEBUG_PORT || "22", 10);
@@ -474,7 +531,9 @@ const server = http.createServer((request, response) => {
   response.writeHead(404).end();
 });
 
-server.listen(port, "127.0.0.1");
+setTimeout(() => {
+  server.listen(port, "127.0.0.1");
+}, Number.isInteger(startDelayMs) && startDelayMs > 0 ? startDelayMs : 0);
 `,
     "utf8",
   );
@@ -732,6 +791,119 @@ test("MCP starts the local agent from .env port when no service is listening", a
     child.kill();
     const status = await waitForStatus(port);
     process.kill(status.agent.pid);
+  }
+});
+
+test("MCP serializes concurrent local agent startup across processes", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-lock-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const markerPath = path.join(dir, "agent-starts.txt");
+  const port = await getFreePort();
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const env = {
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+    FAKE_AGENT_START_DELAY_MS: "1000",
+    FAKE_AGENT_START_MARKER: markerPath,
+  };
+  const first = startMcp(env);
+  const second = startMcp(env);
+
+  try {
+    const [firstCall, secondCall] = await Promise.all([
+      callRunTool(first),
+      callRunTool(second),
+    ]);
+    assert.match(firstCall.result.content[0].text, /ran:netstat -tlnp/);
+    assert.match(secondCall.result.content[0].text, /ran:netstat -tlnp/);
+
+    const status = await waitForStatus(port);
+    const markerPids = await readMarkerPids(markerPath);
+    assert.equal(new Set(markerPids).size, 1);
+
+    const events = await readMcpLogEvents();
+    assert.ok(events.some((event) => event.code === "AGENT_START_LOCK_ACQUIRED"));
+    assert.ok(events.some((event) => event.code === "AGENT_START_LOCK_WAITING"));
+    assert.ok(events.some((event) => event.code === "AGENT_START_LOCK_RELEASED"));
+
+    killPid(status.agent.pid);
+  } finally {
+    first.kill();
+    second.kill();
+  }
+});
+
+test("MCP clears stale startup locks before starting the local agent", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-mcp-stale-lock-"));
+  const agentDir = path.join(dir, "agent");
+  const envPath = path.join(dir, ".env");
+  const markerPath = path.join(dir, "agent-starts.txt");
+  const port = await getFreePort();
+  const agentUrl = `http://127.0.0.1:${port}`;
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const runtimeDir = path.resolve(path.dirname(serverPath), ".runtime");
+  await fs.mkdir(runtimeDir, { recursive: true });
+  const sourceFingerprint = managerSourceFingerprint(agentDir, agentUrl, port);
+  const lockPath = agentStartLockPath(runtimeDir, agentUrl, sourceFingerprint);
+  await fs.writeFile(
+    lockPath,
+    `${JSON.stringify(
+      {
+        lockId: "stale-test-lock",
+        mcpPid: 1,
+        agentUrl,
+        serverPath: path.join(agentDir, "server.js"),
+        reason: "stale test",
+        createdAt: new Date(Date.now() - 31_000).toISOString(),
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+    FAKE_AGENT_START_MARKER: markerPath,
+  });
+
+  try {
+    const call = await callRunTool(child);
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    const status = await waitForStatus(port);
+    const markerPids = await readMarkerPids(markerPath);
+    assert.equal(new Set(markerPids).size, 1);
+
+    const events = await readMcpLogEvents();
+    assert.ok(
+      events.some((event) => event.code === "AGENT_START_LOCK_STALE" && event.lockPath === lockPath),
+    );
+
+    killPid(status.agent.pid);
+  } finally {
+    child.kill();
   }
 });
 

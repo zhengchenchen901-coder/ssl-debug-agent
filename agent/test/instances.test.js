@@ -311,6 +311,8 @@ test("worker manager ignores preferred worker ports outside the manager range", 
 test("worker manager stops workers after stopped health and reuses released ports", async () => {
   const dir = await tempDir("remote-debug-worker-stop-");
   const registryPath = path.join(dir, "instances.json");
+  const restoreSnapshotPath = path.join(dir, ".remote-debug", "manager-runtime.json");
+  const restoreSnapshotDiagnosticPath = path.join(dir, ".remote-debug", "manager-runtime.last.json");
   await fs.writeFile(
     registryPath,
     JSON.stringify({
@@ -342,6 +344,8 @@ test("worker manager stops workers after stopped health and reuses released port
     registry,
     managerPort: 4343,
     cwd: dir,
+    restoreSnapshotPath,
+    restoreSnapshotDiagnosticPath,
     canBindPort: async (port) => port === 4520,
     forkWorker: () => {
       const child = new FakeWorkerProcess(nextPid);
@@ -359,6 +363,14 @@ test("worker manager stops workers after stopped health and reuses released port
     assert.equal(started.runtime.status, "running");
     assert.equal(started.runtime.workerPort, 4520);
     assert.equal(started.runtime.pid, 1000);
+    const runningSnapshot = JSON.parse(await fs.readFile(restoreSnapshotPath, "utf8"));
+    assert.equal(runningSnapshot.reason, "active-runtime");
+    assert.equal(runningSnapshot.ownerPid, process.pid);
+    assert.equal(runningSnapshot.sourcePid, process.pid);
+    assert.equal(runningSnapshot.lastAction, "running");
+    assert.equal(runningSnapshot.lastReason, "active-runtime");
+    assert.ok(runningSnapshot.updatedAt);
+    assert.deepEqual(runningSnapshot.instances.map((item) => item.id), ["a"]);
 
     const stopped = await manager.stopInstance("a", "stopped");
     assert.deepEqual(workers[0].sent[0], { type: "shutdown", reason: "stopped" });
@@ -370,6 +382,30 @@ test("worker manager stops workers after stopped health and reuses released port
     assert.ok(
       stopped.runtime.events.some((item) => item.type === "health" && item.status === "stopped"),
     );
+    await assert.rejects(() => fs.readFile(restoreSnapshotPath, "utf8"), /ENOENT/);
+    const lastSnapshotDiagnostic = JSON.parse(await fs.readFile(restoreSnapshotDiagnosticPath, "utf8"));
+    assert.equal(lastSnapshotDiagnostic.status, "cleared");
+    assert.equal(lastSnapshotDiagnostic.clearedByPid, process.pid);
+    assert.equal(lastSnapshotDiagnostic.clearedByReason, "empty");
+    assert.equal(lastSnapshotDiagnostic.previousSnapshotSummary.instanceCount, 1);
+    assert.deepEqual(lastSnapshotDiagnostic.previousSnapshotSummary.instanceIds, ["a"]);
+
+    const diagnosticManager = new WorkerManager({
+      registry,
+      managerPort: 4343,
+      cwd: dir,
+      restoreSnapshotPath,
+      restoreSnapshotDiagnosticPath,
+    });
+    try {
+      const checked = await diagnosticManager.restoreInstancesFromSnapshot();
+      assert.equal(checked.diagnostic.status, "missing");
+      assert.equal(checked.diagnostic.clearedByReason, "empty");
+      assert.equal(checked.diagnostic.clearedByPid, process.pid);
+      assert.deepEqual(checked.diagnostic.previousSnapshotSummary.instanceIds, ["a"]);
+    } finally {
+      await diagnosticManager.shutdownAll();
+    }
 
     const listed = manager.publicInstances();
     assert.equal(listed.length, 1);
@@ -384,7 +420,7 @@ test("worker manager stops workers after stopped health and reuses released port
   }
 });
 
-test("worker manager restores running workers from a lease-expiry snapshot", async () => {
+test("worker manager restores running workers from a maintained runtime snapshot", async () => {
   const dir = await tempDir("remote-debug-worker-restore-");
   const registryPath = path.join(dir, "instances.json");
   const restoreSnapshotPath = path.join(dir, ".remote-debug", "manager-runtime.json");
@@ -433,21 +469,20 @@ test("worker manager restores running workers from a lease-expiry snapshot", asy
     forkWorker,
   });
 
-  let snapshotWritten = false;
   try {
     const started = await manager.startInstance("a");
     assert.equal(started.runtime.status, "running");
 
-    await manager.shutdownAll("lease-expired");
-    snapshotWritten = true;
     const snapshot = JSON.parse(await fs.readFile(restoreSnapshotPath, "utf8"));
-    assert.equal(snapshot.reason, "lease-expired");
+    assert.equal(snapshot.reason, "active-runtime");
+    assert.equal(snapshot.ownerPid, process.pid);
+    assert.equal(snapshot.sourcePid, process.pid);
+    assert.equal(snapshot.lastAction, "running");
+    assert.equal(snapshot.lastReason, "active-runtime");
+    assert.ok(snapshot.updatedAt);
     assert.deepEqual(snapshot.instances.map((item) => item.id), ["a"]);
-    assert.equal(workers[0].sent[0].reason, "lease-expired");
   } finally {
-    if (!snapshotWritten) {
-      await manager.shutdownAll();
-    }
+    clearInterval(manager.monitorTimer);
   }
 
   const nextRegistry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
@@ -467,9 +502,78 @@ test("worker manager restores running workers from a lease-expiry snapshot", asy
     assert.deepEqual(restored.failed, []);
     assert.equal(nextManager.publicInstances()[0].runtime.status, "running");
     assert.equal(nextManager.publicInstances()[0].runtime.pid, 2001);
-    await assert.rejects(() => fs.readFile(restoreSnapshotPath, "utf8"), /ENOENT/);
+    const refreshedSnapshot = JSON.parse(await fs.readFile(restoreSnapshotPath, "utf8"));
+    assert.equal(refreshedSnapshot.reason, "active-runtime");
+    assert.equal(refreshedSnapshot.ownerPid, process.pid);
+    assert.equal(refreshedSnapshot.sourcePid, process.pid);
+    assert.equal(refreshedSnapshot.lastAction, "running");
+    assert.equal(refreshedSnapshot.lastReason, "active-runtime");
+    assert.deepEqual(refreshedSnapshot.instances.map((item) => item.id), ["a"]);
   } finally {
     await nextManager.shutdownAll();
+  }
+});
+
+test("worker manager preserves lease-expiry snapshots while stopping workers", async () => {
+  const dir = await tempDir("remote-debug-worker-lease-snapshot-");
+  const registryPath = path.join(dir, "instances.json");
+  const restoreSnapshotPath = path.join(dir, ".remote-debug", "manager-runtime.json");
+  const restoreSnapshotDiagnosticPath = path.join(dir, ".remote-debug", "manager-runtime.last.json");
+  await fs.writeFile(
+    registryPath,
+    JSON.stringify({
+      version: 2,
+      manager: {
+        workerPortRange: { start: 4545, end: 4545 },
+        healthIntervalMs: 1000,
+        startTimeoutMs: 1000,
+        stopTimeoutMs: 1000,
+      },
+      defaultInstanceId: "a",
+      instances: [
+        {
+          id: "a",
+          name: "a",
+          host: "a.example.com",
+          port: 22,
+          username: "app",
+          privateKeyPath: "C:\\a",
+        },
+      ],
+    }),
+  );
+
+  const workers = [];
+  const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    restoreSnapshotPath,
+    restoreSnapshotDiagnosticPath,
+    canBindPort: async (port) => port === 4545,
+    forkWorker: () => {
+      const child = new FakeWorkerProcess(2500);
+      workers.push(child);
+      setImmediate(() => {
+        child.emit("message", { type: "ready", ok: true });
+      });
+      return child;
+    },
+  });
+
+  try {
+    await manager.startInstance("a");
+    await manager.shutdownAll("lease-expired");
+    const snapshot = JSON.parse(await fs.readFile(restoreSnapshotPath, "utf8"));
+    assert.equal(snapshot.reason, "lease-expired");
+    assert.equal(snapshot.lastAction, "shutdown");
+    assert.equal(snapshot.lastReason, "lease-expired");
+    assert.deepEqual(snapshot.instances.map((item) => item.id), ["a"]);
+    assert.equal(workers[0].sent[0].reason, "lease-expired");
+    await assert.rejects(() => fs.readFile(restoreSnapshotDiagnosticPath, "utf8"), /ENOENT/);
+  } finally {
+    clearInterval(manager.monitorTimer);
   }
 });
 

@@ -11,6 +11,8 @@ const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
 const PROBE_TIMEOUT_MS = 1500;
 const START_TIMEOUT_MS = 7000;
+const AGENT_START_LOCK_TTL_MS = 30_000;
+const AGENT_START_LOCK_POLL_MS = 250;
 const FALLBACK_PORT_ATTEMPTS = 100;
 const AGENT_LEASE_TTL_MS = 45_000;
 const AGENT_LEASE_HEARTBEAT_MS = 15_000;
@@ -923,7 +925,156 @@ async function stopConfirmedAgent(settings, status, reason = "Stopping unhealthy
   }
 }
 
-async function startAgent(settings, reason) {
+function agentStartLockPath(settings) {
+  const hash = createHash("sha256")
+    .update(JSON.stringify({
+      agentUrl: settings.agentUrl,
+      sourceFingerprint: settings.sourceFingerprint,
+    }))
+    .digest("hex");
+  return path.resolve(settings.runtimeDir, `agent-start-${hash}.lock`);
+}
+
+async function readAgentStartLock(lockPath) {
+  try {
+    return JSON.parse(await fsp.readFile(lockPath, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return null;
+    }
+    return {
+      lockId: "",
+      createdAt: null,
+      readError: {
+        code: error.code || "AGENT_START_LOCK_READ_ERROR",
+        message: error.message,
+      },
+    };
+  }
+}
+
+function summarizeAgentStartLock(lock) {
+  if (!lock) {
+    return null;
+  }
+  return {
+    lockId: lock.lockId || "",
+    mcpPid: Number.isInteger(lock.mcpPid) ? lock.mcpPid : null,
+    agentUrl: lock.agentUrl || "",
+    serverPath: lock.serverPath || "",
+    reason: lock.reason || "",
+    createdAt: lock.createdAt || null,
+    readError: lock.readError || undefined,
+  };
+}
+
+function agentStartLockAgeMs(lock) {
+  const createdAtMs = Date.parse(lock?.createdAt || "");
+  if (Number.isNaN(createdAtMs)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return Date.now() - createdAtMs;
+}
+
+async function acquireAgentStartLock(settings, reason, startupAttemptId) {
+  await fsp.mkdir(settings.runtimeDir, { recursive: true });
+  const lockPath = agentStartLockPath(settings);
+  const lock = {
+    lockId: startupAttemptId,
+    mcpPid: process.pid,
+    agentUrl: settings.agentUrl,
+    serverPath: settings.serverPath,
+    reason,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const handle = await fsp.open(lockPath, "wx");
+    try {
+      await handle.writeFile(`${JSON.stringify(lock, null, 2)}\n`, "utf8");
+    } finally {
+      await handle.close();
+    }
+    await appendPluginLog(settings, {
+      level: "info",
+      code: "AGENT_START_LOCK_ACQUIRED",
+      message: "Acquired Remote Debug Agent startup lock.",
+      startupAttemptId,
+      lockPath,
+      lock: summarizeAgentStartLock(lock),
+    });
+    return { acquired: true, lockPath, lock };
+  } catch (error) {
+    if (error?.code !== "EEXIST") {
+      await appendPluginLog(settings, {
+        level: "error",
+        code: "AGENT_START_LOCK_FAILED",
+        message: `Remote Debug Agent startup lock could not be acquired: ${error.message}`,
+        startupAttemptId,
+        lockPath,
+        details: {
+          code: error.code || "AGENT_START_LOCK_ERROR",
+          message: error.message,
+        },
+      });
+      throw error;
+    }
+
+    const currentLock = await readAgentStartLock(lockPath);
+    await appendPluginLog(settings, {
+      level: "info",
+      code: "AGENT_START_LOCK_WAITING",
+      message: "Waiting for another MCP process to start Remote Debug Agent.",
+      startupAttemptId,
+      lockPath,
+      lock: summarizeAgentStartLock(currentLock),
+      lockAgeMs: agentStartLockAgeMs(currentLock),
+    });
+    return { acquired: false, lockPath, lock: currentLock };
+  }
+}
+
+async function releaseAgentStartLock(settings, lockPath, startupAttemptId) {
+  const currentLock = await readAgentStartLock(lockPath);
+  if (currentLock?.lockId !== startupAttemptId) {
+    return;
+  }
+
+  await fsp.rm(lockPath, { force: true });
+  await appendPluginLog(settings, {
+    level: "info",
+    code: "AGENT_START_LOCK_RELEASED",
+    message: "Released Remote Debug Agent startup lock.",
+    startupAttemptId,
+    lockPath,
+  });
+}
+
+async function markAgentStartLockStale(settings, lockPath, lock, startupAttemptId) {
+  await fsp.rm(lockPath, { force: true });
+  await appendPluginLog(settings, {
+    level: "warn",
+    code: "AGENT_START_LOCK_STALE",
+    message: "Remote Debug Agent startup lock was stale and has been cleared.",
+    startupAttemptId,
+    lockPath,
+    lock: summarizeAgentStartLock(lock),
+    lockAgeMs: agentStartLockAgeMs(lock),
+  });
+}
+
+async function logAgentReadyAfterLockWait(settings, startupAttemptId, status) {
+  await appendPluginLog(settings, {
+    level: "info",
+    code: "AGENT_READY",
+    message: "Remote Debug Agent is ready after waiting for startup lock.",
+    startupAttemptId,
+    waitedForStartLock: true,
+    pid: status?.agent?.pid,
+  });
+}
+
+async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
   if (!fs.existsSync(settings.serverPath)) {
     const error = new Error(`Remote Debug Agent server not found: ${settings.serverPath}`);
     error.code = "AGENT_SERVER_NOT_FOUND";
@@ -935,6 +1086,7 @@ async function startAgent(settings, reason) {
     level: "info",
     code: "AGENT_STARTING",
     message: reason,
+    startupAttemptId,
     serverPath: settings.serverPath,
   });
 
@@ -965,6 +1117,7 @@ async function startAgent(settings, reason) {
       level: "error",
       code: wrapped.code,
       message: wrapped.message,
+      startupAttemptId,
       details: wrapped.payload,
     });
     throw wrapped;
@@ -983,6 +1136,7 @@ async function startAgent(settings, reason) {
       level: "error",
       code: "AGENT_SPAWN_ERROR",
       message: `Remote Debug Agent process emitted an error: ${error.message}`,
+      startupAttemptId,
       details: {
         serverPath: settings.serverPath,
         agentDir: settings.agentDir,
@@ -1005,6 +1159,7 @@ async function startAgent(settings, reason) {
       message: agentReady
         ? "Remote Debug Agent process exited after readiness."
         : "Remote Debug Agent process exited before readiness.",
+      startupAttemptId,
       details: childExit,
     }).catch((logError) => {
       console.error("failed to write MCP process exit log", logError);
@@ -1028,6 +1183,7 @@ async function startAgent(settings, reason) {
         level: "info",
         code: "AGENT_READY",
         message: "Remote Debug Agent is ready.",
+        startupAttemptId,
         pid: lastProbe.status?.agent?.pid,
       });
       return;
@@ -1052,9 +1208,58 @@ async function startAgent(settings, reason) {
     level: "error",
     code: error.code,
     message: error.message,
+    startupAttemptId,
     details: error.payload,
   });
   throw error;
+}
+
+async function startAgentWithLock(settings, reason) {
+  const startupAttemptId = randomUUID();
+
+  while (true) {
+    const readyProbe = await probeAgent(settings);
+    if (readyProbe.kind === "agent" && agentStatusIsHealthy(readyProbe.status, settings)) {
+      await logAgentReadyAfterLockWait(settings, startupAttemptId, readyProbe.status);
+      return;
+    }
+
+    const lockAttempt = await acquireAgentStartLock(settings, reason, startupAttemptId);
+    if (lockAttempt.acquired) {
+      try {
+        const probeAfterLock = await probeAgent(settings);
+        if (probeAfterLock.kind === "agent" && agentStatusIsHealthy(probeAfterLock.status, settings)) {
+          await logAgentReadyAfterLockWait(settings, startupAttemptId, probeAfterLock.status);
+          return;
+        }
+        await startAgent(settings, reason, startupAttemptId);
+        return;
+      } finally {
+        await releaseAgentStartLock(settings, lockAttempt.lockPath, startupAttemptId);
+      }
+    }
+
+    let currentLock = lockAttempt.lock;
+    while (true) {
+      await new Promise((resolve) => setTimeout(resolve, AGENT_START_LOCK_POLL_MS));
+
+      const probe = await probeAgent(settings);
+      if (probe.kind === "agent" && agentStatusIsHealthy(probe.status, settings)) {
+        await logAgentReadyAfterLockWait(settings, startupAttemptId, probe.status);
+        return;
+      }
+
+      currentLock = await readAgentStartLock(lockAttempt.lockPath);
+      if (!currentLock) {
+        break;
+      }
+
+      if (agentStartLockAgeMs(currentLock) > AGENT_START_LOCK_TTL_MS) {
+        await markAgentStartLockStale(settings, lockAttempt.lockPath, currentLock, startupAttemptId);
+        break;
+      }
+    }
+  }
 }
 
 async function resolveFallbackAgentSettings(settings, initialProbe) {
@@ -1176,7 +1381,7 @@ async function performEnsureAgentReady() {
           expected: expectedSummary(previousSettings),
         });
         await stopConfirmedAgent(previousSettings, activeProbe.status);
-        await startAgent(previousSettings, "Restarting unhealthy fallback Remote Debug Agent.");
+        await startAgentWithLock(previousSettings, "Restarting unhealthy fallback Remote Debug Agent.");
         return activateAgentSettings(previousSettings);
       }
     } else {
@@ -1203,18 +1408,18 @@ async function performEnsureAgentReady() {
       });
       await stopConfirmedAgent(settings, probe.status);
     }
-    await startAgent(settings, "Restarting unhealthy Remote Debug Agent.");
+    await startAgentWithLock(settings, "Restarting unhealthy Remote Debug Agent.");
     return activateAgentSettings(settings);
   }
 
   if (probe.kind === "unreachable") {
-    await startAgent(settings, "Starting missing Remote Debug Agent.");
+    await startAgentWithLock(settings, "Starting missing Remote Debug Agent.");
     return activateAgentSettings(settings);
   }
 
   const fallback = await resolveFallbackAgentSettings(settings, probe);
   if (fallback.action === "start") {
-    await startAgent(fallback.settings, "Starting Remote Debug Agent on fallback port.");
+    await startAgentWithLock(fallback.settings, "Starting Remote Debug Agent on fallback port.");
   }
   return activateAgentSettings(fallback.settings);
 }

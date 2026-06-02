@@ -10,7 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const RESTORE_SNAPSHOT_VERSION = 1;
 const RESTORE_SHUTDOWN_REASONS = new Set(["lease-expired"]);
+const RESTORE_SNAPSHOT_REASONS = new Set(["active-runtime", ...RESTORE_SHUTDOWN_REASONS]);
 const RESTORE_RUNTIME_STATUSES = new Set(["running", "starting"]);
+const RESTORE_PRESERVING_STOP_REASONS = new Set(["lease-expired"]);
 
 function nowIso() {
   return new Date().toISOString();
@@ -106,6 +108,10 @@ function defaultRestoreSnapshotPath(cwd) {
   return path.resolve(projectRootFrom(cwd), ".remote-debug", "manager-runtime.json");
 }
 
+function defaultRestoreSnapshotDiagnosticPath(cwd) {
+  return path.resolve(projectRootFrom(cwd), ".remote-debug", "manager-runtime.last.json");
+}
+
 function configEnv(instance, port, manager, cwd, memoryInit) {
   const instanceDir = path.resolve(projectRootFrom(cwd), ".remote-debug", "instances", instance.id);
   return {
@@ -148,7 +154,10 @@ export class WorkerManager {
     this.canBindPort = options.canBindPort || canBindPort;
     this.memoryStore = options.memoryStore || new MemoryStore({ cwd: this.cwd });
     this.restoreSnapshotPath = options.restoreSnapshotPath || defaultRestoreSnapshotPath(this.cwd);
+    this.restoreSnapshotDiagnosticPath =
+      options.restoreSnapshotDiagnosticPath || defaultRestoreSnapshotDiagnosticPath(this.cwd);
     this.restorePromise = null;
+    this.restoreSnapshotWritePromise = Promise.resolve();
     this.runtime = new Map();
     this.portOwners = new Map();
     const monitorEveryMs = Math.max(1000, Math.floor(this.managerConfig().healthIntervalMs || 15_000));
@@ -204,7 +213,95 @@ export class WorkerManager {
     return instances;
   }
 
-  async clearRestoreSnapshot() {
+  restoreSnapshotSummary(snapshot) {
+    const instances = Array.isArray(snapshot?.instances) ? snapshot.instances : [];
+    return {
+      version: snapshot?.version ?? null,
+      reason: snapshot?.reason || null,
+      createdAt: snapshot?.createdAt || null,
+      updatedAt: snapshot?.updatedAt || null,
+      ownerPid: Number.isInteger(snapshot?.ownerPid) ? snapshot.ownerPid : null,
+      sourcePid: Number.isInteger(snapshot?.sourcePid) ? snapshot.sourcePid : null,
+      lastAction: snapshot?.lastAction || null,
+      lastReason: snapshot?.lastReason || null,
+      instanceCount: instances.length,
+      instanceIds: instances
+        .map((item) => (typeof item?.id === "string" ? item.id : ""))
+        .filter(Boolean),
+    };
+  }
+
+  async readRestoreSnapshotDiagnostic() {
+    try {
+      return JSON.parse(await fsp.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        console.error("failed to read manager restore snapshot diagnostic", error);
+      }
+      return null;
+    }
+  }
+
+  async writeRestoreSnapshotDiagnostic(diagnostic) {
+    try {
+      await fsp.mkdir(path.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
+      const tempPath = `${this.restoreSnapshotDiagnosticPath}.${process.pid}.${Date.now()}.tmp`;
+      await fsp.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}\n`, "utf8");
+      await fsp.rename(tempPath, this.restoreSnapshotDiagnosticPath);
+    } catch (error) {
+      console.error("failed to write manager restore snapshot diagnostic", error);
+    }
+  }
+
+  async diagnosticFromLastSnapshot(baseDiagnostic) {
+    const last = await this.readRestoreSnapshotDiagnostic();
+    if (!last) {
+      return baseDiagnostic;
+    }
+    return {
+      ...baseDiagnostic,
+      lastDiagnosticPath: this.restoreSnapshotDiagnosticPath,
+      clearedAt: last.clearedAt || null,
+      clearedByPid: Number.isInteger(last.clearedByPid) ? last.clearedByPid : null,
+      clearedByReason: last.clearedByReason || null,
+      previousSnapshotSummary: last.previousSnapshotSummary || null,
+    };
+  }
+
+  async clearRestoreSnapshot(options = {}) {
+    const {
+      reason = "cleared",
+      action = "clear",
+      writeDiagnostic = true,
+    } = options;
+    let previousSnapshot = null;
+    let previousSnapshotReadError = null;
+    try {
+      previousSnapshot = JSON.parse(await fsp.readFile(this.restoreSnapshotPath, "utf8"));
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        previousSnapshotReadError = {
+          code: error.code || "RESTORE_SNAPSHOT_READ_ERROR",
+          message: error.message,
+        };
+      }
+    }
+
+    if (writeDiagnostic && (previousSnapshot || previousSnapshotReadError)) {
+      await this.writeRestoreSnapshotDiagnostic({
+        version: RESTORE_SNAPSHOT_VERSION,
+        status: "cleared",
+        path: this.restoreSnapshotPath,
+        diagnosticPath: this.restoreSnapshotDiagnosticPath,
+        clearedAt: nowIso(),
+        clearedByPid: process.pid,
+        clearedByReason: reason,
+        lastAction: action,
+        previousSnapshotSummary: previousSnapshot ? this.restoreSnapshotSummary(previousSnapshot) : null,
+        previousSnapshotReadError,
+      });
+    }
+
     try {
       await fsp.rm(this.restoreSnapshotPath, { force: true });
     } catch (error) {
@@ -212,28 +309,70 @@ export class WorkerManager {
     }
   }
 
-  async saveRestoreSnapshotForShutdown(reason) {
-    if (!RESTORE_SHUTDOWN_REASONS.has(reason)) {
-      await this.clearRestoreSnapshot();
-      return;
-    }
-
+  async writeRestoreSnapshot(reason = "active-runtime", action = "maintain") {
     const instances = this.restoreCandidates();
     if (instances.length === 0) {
-      await this.clearRestoreSnapshot();
-      return;
+      await this.clearRestoreSnapshot({ reason: "empty", action });
+      return { written: false, reason: "empty", instances: [] };
     }
 
+    const timestamp = nowIso();
     const snapshot = {
       version: RESTORE_SNAPSHOT_VERSION,
       reason,
-      createdAt: nowIso(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      ownerPid: process.pid,
+      sourcePid: process.pid,
+      lastAction: action,
+      lastReason: reason,
       instances,
     };
     await fsp.mkdir(path.dirname(this.restoreSnapshotPath), { recursive: true });
     const tempPath = `${this.restoreSnapshotPath}.${process.pid}.${Date.now()}.tmp`;
     await fsp.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
     await fsp.rename(tempPath, this.restoreSnapshotPath);
+    return {
+      written: true,
+      reason,
+      instances: instances.map((instance) => instance.id),
+    };
+  }
+
+  queueRestoreSnapshotTask(task) {
+    const queued = this.restoreSnapshotWritePromise.then(task, task);
+    this.restoreSnapshotWritePromise = queued.catch(() => {});
+    return queued;
+  }
+
+  async maintainRestoreSnapshot(reason = "active-runtime", action = "maintain") {
+    try {
+      return await this.queueRestoreSnapshotTask(() => this.writeRestoreSnapshot(reason, action));
+    } catch (error) {
+      console.error("failed to update manager restore snapshot", error);
+      return { written: false, reason: "error", error };
+    }
+  }
+
+  async discardRestoreSnapshot(reason = "cleared", action = "discard") {
+    try {
+      return await this.queueRestoreSnapshotTask(async () => {
+        await this.clearRestoreSnapshot({ reason, action });
+        return { written: false, reason, instances: [] };
+      });
+    } catch (error) {
+      console.error("failed to clear manager restore snapshot", error);
+      return { written: false, reason: "error", error };
+    }
+  }
+
+  async saveRestoreSnapshotForShutdown(reason) {
+    if (!RESTORE_SHUTDOWN_REASONS.has(reason)) {
+      await this.discardRestoreSnapshot(reason, "shutdown");
+      return;
+    }
+
+    await this.maintainRestoreSnapshot(reason, "shutdown");
   }
 
   async readRestoreSnapshot() {
@@ -243,20 +382,71 @@ export class WorkerManager {
     } catch (error) {
       if (error?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot", error);
+        return {
+          snapshot: null,
+          diagnostic: {
+            status: "read-error",
+            path: this.restoreSnapshotPath,
+            error: {
+              code: error.code || "RESTORE_SNAPSHOT_READ_ERROR",
+              message: error.message,
+            },
+          },
+        };
       }
-      return null;
+      console.info("manager restore snapshot missing", { path: this.restoreSnapshotPath });
+      return {
+        snapshot: null,
+        diagnostic: await this.diagnosticFromLastSnapshot({
+          status: "missing",
+          path: this.restoreSnapshotPath,
+        }),
+      };
     }
 
     if (
       parsed?.version !== RESTORE_SNAPSHOT_VERSION ||
-      !RESTORE_SHUTDOWN_REASONS.has(parsed.reason) ||
+      !RESTORE_SNAPSHOT_REASONS.has(parsed.reason) ||
       !Array.isArray(parsed.instances)
     ) {
-      await this.clearRestoreSnapshot();
-      return null;
+      await this.clearRestoreSnapshot({ reason: "invalid", action: "read" });
+      console.warn("manager restore snapshot invalid", { path: this.restoreSnapshotPath });
+      return {
+        snapshot: null,
+        diagnostic: await this.diagnosticFromLastSnapshot({
+          status: "invalid",
+          path: this.restoreSnapshotPath,
+        }),
+      };
     }
 
-    return parsed;
+    if (parsed.instances.length === 0) {
+      await this.clearRestoreSnapshot({ reason: "empty", action: "read" });
+      console.info("manager restore snapshot empty", { path: this.restoreSnapshotPath });
+      return {
+        snapshot: null,
+        diagnostic: await this.diagnosticFromLastSnapshot({
+          status: "empty",
+          path: this.restoreSnapshotPath,
+        }),
+      };
+    }
+
+    return {
+      snapshot: parsed,
+      diagnostic: {
+        status: "ready",
+        path: this.restoreSnapshotPath,
+        reason: parsed.reason,
+        instanceCount: parsed.instances.length,
+        createdAt: parsed.createdAt,
+        updatedAt: parsed.updatedAt,
+        ownerPid: parsed.ownerPid,
+        sourcePid: parsed.sourcePid,
+        lastAction: parsed.lastAction,
+        lastReason: parsed.lastReason,
+      },
+    };
   }
 
   recordRestoreFailure(id, error) {
@@ -274,6 +464,7 @@ export class WorkerManager {
       lastHeartbeatAt: null,
       lastError: null,
       intentionalStop: true,
+      preserveRestoreSnapshot: false,
       events: [],
     };
     runtime.status = "stopped";
@@ -288,12 +479,12 @@ export class WorkerManager {
   async restoreInstancesFromSnapshot() {
     if (!this.restorePromise) {
       this.restorePromise = (async () => {
-        const snapshot = await this.readRestoreSnapshot();
+        const { snapshot, diagnostic } = await this.readRestoreSnapshot();
         if (!snapshot) {
-          return { restored: [], skipped: [], failed: [] };
+          return { restored: [], skipped: [], failed: [], diagnostic };
         }
 
-        await this.clearRestoreSnapshot();
+        await this.clearRestoreSnapshot({ reason: "restore-consumed", action: "restore" });
 
         const restored = [];
         const skipped = [];
@@ -333,7 +524,19 @@ export class WorkerManager {
           }
         }
 
-        return { restored, skipped, failed };
+        const result = {
+          restored,
+          skipped,
+          failed,
+          diagnostic: {
+            ...diagnostic,
+            status: "processed",
+          },
+        };
+        if (restored.length > 0 || skipped.length > 0 || failed.length > 0) {
+          console.info("manager restore snapshot processed", result);
+        }
+        return result;
       })().finally(() => {
         this.restorePromise = null;
       });
@@ -401,6 +604,7 @@ export class WorkerManager {
 
     const current = this.runtime.get(id);
     if (current?.status === "running" || current?.status === "starting") {
+      await this.maintainRestoreSnapshot("active-runtime", "start-reused");
       return {
         instance: this.publicInstance(id),
         runtime: publicRuntime(current),
@@ -419,10 +623,12 @@ export class WorkerManager {
       lastHeartbeatAt: null,
       lastError: null,
       intentionalStop: false,
+      preserveRestoreSnapshot: false,
       events: [],
     };
     this.runtime.set(id, runtime);
     event(runtime, "starting", { workerPort });
+    await this.maintainRestoreSnapshot("active-runtime", "starting");
     if (shouldInitializeMemory) {
       try {
         await this.memoryStore.markInitializing(instance);
@@ -454,6 +660,7 @@ export class WorkerManager {
     } catch (error) {
       this.releasePort(workerPort);
       this.runtime.delete(id);
+      await this.maintainRestoreSnapshot("active-runtime", "start-failed");
       const wrapped = managerError(
         `worker process could not be spawned: ${error.message}`,
         "WORKER_SPAWN_FAILED",
@@ -488,6 +695,7 @@ export class WorkerManager {
       runtime.lastHeartbeatAt = nowIso();
       runtime.lastError = null;
       event(runtime, "running", { pid: child.pid, workerPort });
+      await this.maintainRestoreSnapshot("active-runtime", "running");
       return {
         instance: this.publicInstance(id),
         runtime: publicRuntime(runtime),
@@ -572,10 +780,15 @@ export class WorkerManager {
       runtime.lastHeartbeatAt = nowIso();
       if (message.status === "healthy") {
         runtime.lastError = null;
+        let statusChanged = false;
         if (runtime.status !== "starting") {
           runtime.status = "running";
+          statusChanged = true;
         }
         event(runtime, "health", { status: "healthy" });
+        if (statusChanged) {
+          await this.maintainRestoreSnapshot("active-runtime", "health-running");
+        }
         return;
       }
       if (message.status === "stopped") {
@@ -583,6 +796,9 @@ export class WorkerManager {
         runtime.status = "stopped";
         runtime.lastError = null;
         event(runtime, "health", { status: "stopped", reason: message.reason });
+        if (!runtime.preserveRestoreSnapshot) {
+          await this.maintainRestoreSnapshot("active-runtime", "health-stopped");
+        }
         return;
       }
 
@@ -645,6 +861,9 @@ export class WorkerManager {
           message: `worker exited (code ${code ?? "null"}, signal ${signal ?? "null"})`,
         };
     event(runtime, "exit", { code, signal, stopped });
+    if (!runtime.preserveRestoreSnapshot) {
+      void this.maintainRestoreSnapshot("active-runtime", "worker-exit");
+    }
   }
 
   markUnhealthy(id, error) {
@@ -658,6 +877,7 @@ export class WorkerManager {
       message: error.message || "worker became unhealthy",
     };
     event(runtime, "unhealthy", { error: runtime.lastError });
+    void this.maintainRestoreSnapshot("active-runtime", "worker-unhealthy");
   }
 
   async checkStaleWorkers() {
@@ -698,6 +918,7 @@ export class WorkerManager {
     const manager = this.managerConfig();
     const child = runtime.child;
     runtime.intentionalStop = true;
+    runtime.preserveRestoreSnapshot = RESTORE_PRESERVING_STOP_REASONS.has(reason);
     runtime.status = reason === "unhealthy" ? "unhealthy" : "stopping";
     event(runtime, "stopping", { reason });
 
@@ -720,6 +941,9 @@ export class WorkerManager {
       runtime.lastError = null;
     }
     event(runtime, runtime.status, { reason });
+    if (!RESTORE_PRESERVING_STOP_REASONS.has(reason)) {
+      await this.maintainRestoreSnapshot("active-runtime", `stop:${reason}`);
+    }
 
     return {
       instance: this.publicInstance(id),
@@ -736,6 +960,7 @@ export class WorkerManager {
     await this.stopInstance(id, "delete");
     const removed = this.registry.delete(id);
     this.runtime.delete(id);
+    await this.maintainRestoreSnapshot("active-runtime", "delete");
     await this.memoryStore.deleteInstance(id);
     return removed;
   }

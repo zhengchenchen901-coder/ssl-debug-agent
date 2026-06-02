@@ -926,6 +926,7 @@ export function createManagerApp(options = {}) {
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
   app.use(express.json({ limit: "512kb" }));
+  let restoreCheckScheduled = false;
 
   app.get("/", (_request, response) => {
     response.sendFile(path.join(publicDir, "dashboard.html"));
@@ -970,23 +971,28 @@ export function createManagerApp(options = {}) {
     if (typeof workerManager.restoreInstancesFromSnapshot !== "function") {
       return;
     }
+    if (restoreCheckScheduled) {
+      return;
+    }
+    restoreCheckScheduled = true;
 
     setImmediate(() => {
       workerManager.restoreInstancesFromSnapshot().then((result) => {
         const restored = result.restored || [];
         const skipped = result.skipped || [];
         const failed = result.failed || [];
-        if (restored.length === 0 && skipped.length === 0 && failed.length === 0) {
-          return;
-        }
+        const diagnostic = result.diagnostic || { status: "unknown" };
 
         activity.publish({
           type: "lifecycle",
-          stage: "instances-restored",
+          stage: restored.length > 0 || skipped.length > 0 || failed.length > 0
+            ? "instances-restored"
+            : "instances-restore-checked",
           clientId: lease.clientId,
           restored,
           skipped,
           failed,
+          diagnostic,
         });
       }).catch((error) => {
         console.error("failed to restore manager instances", error);

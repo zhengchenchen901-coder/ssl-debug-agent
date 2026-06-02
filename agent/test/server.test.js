@@ -467,6 +467,71 @@ test("manager lease registration schedules instance restore", { skip: !depsInsta
   }
 });
 
+test("manager lease restore check publishes missing snapshot diagnostics", { skip: !depsInstalled }, async () => {
+  const { createManagerApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manager-lease-missing-snapshot-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "desktop" };
+  const workerManager = {
+    ...makeWorkerManagerStub(),
+    restoreCount: 0,
+    restoreInstancesFromSnapshot: async () => {
+      workerManager.restoreCount += 1;
+      return {
+        restored: [],
+        skipped: [],
+        failed: [],
+        diagnostic: {
+          status: "missing",
+          path: path.join(dir, ".remote-debug", "manager-runtime.json"),
+          clearedAt: "2026-06-02T08:00:00.000Z",
+          clearedByPid: 4321,
+          clearedByReason: "empty",
+          previousSnapshotSummary: {
+            instanceCount: 1,
+            instanceIds: ["a"],
+          },
+        },
+      };
+    },
+  };
+  const app = createManagerApp({
+    config,
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+  });
+  const server = await listen(app);
+
+  try {
+    const lease = await postJson(server, "/api/leases", {
+      clientId: "test-client",
+      ttlMs: 30_000,
+      source: "test",
+      pid: 1234,
+    });
+    assert.equal(lease.status, 200);
+
+    await waitFor(() => workerManager.restoreCount === 1, "manager missing snapshot restore check");
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const status = await getJson(server, "/status");
+    assert.equal(status.status, 200);
+    assert.ok(
+      status.body.recentEvents.some(
+        (event) =>
+          event.stage === "instances-restore-checked" &&
+          event.diagnostic?.status === "missing" &&
+          event.diagnostic?.clearedByReason === "empty" &&
+          event.diagnostic?.previousSnapshotSummary?.instanceIds?.[0] === "a",
+      ),
+    );
+  } finally {
+    await close(server);
+    app.locals.lifecycle.stop();
+  }
+});
+
 test("manual manager lifetime does not shut down when no lease exists", { skip: !depsInstalled }, async () => {
   const { startServer } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manual-lifecycle-"));
