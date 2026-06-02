@@ -384,6 +384,149 @@ test("worker manager stops workers after stopped health and reuses released port
   }
 });
 
+test("worker manager restores running workers from a lease-expiry snapshot", async () => {
+  const dir = await tempDir("remote-debug-worker-restore-");
+  const registryPath = path.join(dir, "instances.json");
+  const restoreSnapshotPath = path.join(dir, ".remote-debug", "manager-runtime.json");
+  await fs.writeFile(
+    registryPath,
+    JSON.stringify({
+      version: 2,
+      manager: {
+        workerPortRange: { start: 4540, end: 4540 },
+        healthIntervalMs: 1000,
+        startTimeoutMs: 1000,
+        stopTimeoutMs: 1000,
+      },
+      defaultInstanceId: "a",
+      instances: [
+        {
+          id: "a",
+          name: "a",
+          host: "a.example.com",
+          port: 22,
+          username: "app",
+          privateKeyPath: "C:\\a",
+        },
+      ],
+    }),
+  );
+
+  const workers = [];
+  let nextPid = 2000;
+  const forkWorker = () => {
+    const child = new FakeWorkerProcess(nextPid);
+    nextPid += 1;
+    workers.push(child);
+    setImmediate(() => {
+      child.emit("message", { type: "ready", ok: true });
+    });
+    return child;
+  };
+  const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    restoreSnapshotPath,
+    canBindPort: async (port) => port === 4540,
+    forkWorker,
+  });
+
+  let snapshotWritten = false;
+  try {
+    const started = await manager.startInstance("a");
+    assert.equal(started.runtime.status, "running");
+
+    await manager.shutdownAll("lease-expired");
+    snapshotWritten = true;
+    const snapshot = JSON.parse(await fs.readFile(restoreSnapshotPath, "utf8"));
+    assert.equal(snapshot.reason, "lease-expired");
+    assert.deepEqual(snapshot.instances.map((item) => item.id), ["a"]);
+    assert.equal(workers[0].sent[0].reason, "lease-expired");
+  } finally {
+    if (!snapshotWritten) {
+      await manager.shutdownAll();
+    }
+  }
+
+  const nextRegistry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
+  const nextManager = new WorkerManager({
+    registry: nextRegistry,
+    managerPort: 4343,
+    cwd: dir,
+    restoreSnapshotPath,
+    canBindPort: async (port) => port === 4540,
+    forkWorker,
+  });
+
+  try {
+    const restored = await nextManager.restoreInstancesFromSnapshot();
+    assert.deepEqual(restored.restored, ["a"]);
+    assert.deepEqual(restored.skipped, []);
+    assert.deepEqual(restored.failed, []);
+    assert.equal(nextManager.publicInstances()[0].runtime.status, "running");
+    assert.equal(nextManager.publicInstances()[0].runtime.pid, 2001);
+    await assert.rejects(() => fs.readFile(restoreSnapshotPath, "utf8"), /ENOENT/);
+  } finally {
+    await nextManager.shutdownAll();
+  }
+});
+
+test("worker manager does not restore instances stopped before lease expiry", async () => {
+  const dir = await tempDir("remote-debug-worker-restore-stopped-");
+  const registryPath = path.join(dir, "instances.json");
+  const restoreSnapshotPath = path.join(dir, ".remote-debug", "manager-runtime.json");
+  await fs.writeFile(
+    registryPath,
+    JSON.stringify({
+      version: 2,
+      manager: {
+        workerPortRange: { start: 4550, end: 4550 },
+        healthIntervalMs: 1000,
+        startTimeoutMs: 1000,
+        stopTimeoutMs: 1000,
+      },
+      defaultInstanceId: "a",
+      instances: [
+        {
+          id: "a",
+          name: "a",
+          host: "a.example.com",
+          port: 22,
+          username: "app",
+          privateKeyPath: "C:\\a",
+        },
+      ],
+    }),
+  );
+
+  const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    restoreSnapshotPath,
+    canBindPort: async (port) => port === 4550,
+    forkWorker: () => {
+      const child = new FakeWorkerProcess(3000);
+      setImmediate(() => {
+        child.emit("message", { type: "ready", ok: true });
+      });
+      return child;
+    },
+  });
+
+  try {
+    await manager.startInstance("a");
+    await manager.stopInstance("a", "stopped");
+    await manager.shutdownAll("lease-expired");
+    await assert.rejects(() => fs.readFile(restoreSnapshotPath, "utf8"), /ENOENT/);
+  } finally {
+    await manager.shutdownAll();
+  }
+});
+
 test("worker manager rejects stop for missing instances", async () => {
   const dir = await tempDir("remote-debug-worker-stop-missing-");
   const registryPath = path.join(dir, "instances.json");

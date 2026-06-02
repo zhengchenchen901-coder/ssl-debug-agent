@@ -966,9 +966,47 @@ export function createManagerApp(options = {}) {
     });
   });
 
+  function scheduleRestoreInstancesAfterLease(lease) {
+    if (typeof workerManager.restoreInstancesFromSnapshot !== "function") {
+      return;
+    }
+
+    setImmediate(() => {
+      workerManager.restoreInstancesFromSnapshot().then((result) => {
+        const restored = result.restored || [];
+        const skipped = result.skipped || [];
+        const failed = result.failed || [];
+        if (restored.length === 0 && skipped.length === 0 && failed.length === 0) {
+          return;
+        }
+
+        activity.publish({
+          type: "lifecycle",
+          stage: "instances-restored",
+          clientId: lease.clientId,
+          restored,
+          skipped,
+          failed,
+        });
+      }).catch((error) => {
+        console.error("failed to restore manager instances", error);
+        activity.publish({
+          type: "lifecycle",
+          stage: "restore-failed",
+          clientId: lease.clientId,
+          error: {
+            code: error.code || "INSTANCE_RESTORE_FAILED",
+            message: error.message || "failed to restore manager instances",
+          },
+        });
+      });
+    });
+  }
+
   app.post("/api/leases", managerAsync(async (request, response) => {
     const lease = lifecycle.registerLease(request.body || {});
     activity.publish({ type: "lifecycle", stage: "lease-renewed", clientId: lease.clientId });
+    scheduleRestoreInstancesAfterLease(lease);
     response.json({
       ok: true,
       lease,
@@ -1231,7 +1269,7 @@ export function startServer(config = loadConfig(), options = {}) {
     if (!shutdownPromise) {
       shutdownPromise = (async () => {
         lifecycle.stop();
-        await workerManager.shutdownAll().catch((error) => {
+        await workerManager.shutdownAll(reason).catch((error) => {
           console.error("failed to stop worker processes", error);
         });
         if (shutdownOptions.closeServer !== false) {

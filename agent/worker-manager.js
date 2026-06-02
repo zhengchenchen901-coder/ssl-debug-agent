@@ -1,4 +1,5 @@
 import { fork } from "node:child_process";
+import fsp from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,9 @@ import { MemoryStore } from "./memory-store.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const RESTORE_SNAPSHOT_VERSION = 1;
+const RESTORE_SHUTDOWN_REASONS = new Set(["lease-expired"]);
+const RESTORE_RUNTIME_STATUSES = new Set(["running", "starting"]);
 
 function nowIso() {
   return new Date().toISOString();
@@ -98,6 +102,10 @@ function projectRootFrom(cwd) {
   return path.basename(normalized).toLowerCase() === "agent" ? path.dirname(normalized) : normalized;
 }
 
+function defaultRestoreSnapshotPath(cwd) {
+  return path.resolve(projectRootFrom(cwd), ".remote-debug", "manager-runtime.json");
+}
+
 function configEnv(instance, port, manager, cwd, memoryInit) {
   const instanceDir = path.resolve(projectRootFrom(cwd), ".remote-debug", "instances", instance.id);
   return {
@@ -139,6 +147,8 @@ export class WorkerManager {
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
     this.memoryStore = options.memoryStore || new MemoryStore({ cwd: this.cwd });
+    this.restoreSnapshotPath = options.restoreSnapshotPath || defaultRestoreSnapshotPath(this.cwd);
+    this.restorePromise = null;
     this.runtime = new Map();
     this.portOwners = new Map();
     const monitorEveryMs = Math.max(1000, Math.floor(this.managerConfig().healthIntervalMs || 15_000));
@@ -174,6 +184,162 @@ export class WorkerManager {
 
   runtimeFor(id) {
     return publicRuntime(this.runtime.get(id));
+  }
+
+  restoreCandidates() {
+    const instances = [];
+    for (const [id, runtime] of this.runtime.entries()) {
+      if (!RESTORE_RUNTIME_STATUSES.has(runtime?.status)) {
+        continue;
+      }
+      const instance = this.registry.get(id);
+      if (!instance) {
+        continue;
+      }
+      instances.push({
+        id,
+        runtime: publicRuntime(runtime),
+      });
+    }
+    return instances;
+  }
+
+  async clearRestoreSnapshot() {
+    try {
+      await fsp.rm(this.restoreSnapshotPath, { force: true });
+    } catch (error) {
+      console.error("failed to clear manager restore snapshot", error);
+    }
+  }
+
+  async saveRestoreSnapshotForShutdown(reason) {
+    if (!RESTORE_SHUTDOWN_REASONS.has(reason)) {
+      await this.clearRestoreSnapshot();
+      return;
+    }
+
+    const instances = this.restoreCandidates();
+    if (instances.length === 0) {
+      await this.clearRestoreSnapshot();
+      return;
+    }
+
+    const snapshot = {
+      version: RESTORE_SNAPSHOT_VERSION,
+      reason,
+      createdAt: nowIso(),
+      instances,
+    };
+    await fsp.mkdir(path.dirname(this.restoreSnapshotPath), { recursive: true });
+    const tempPath = `${this.restoreSnapshotPath}.${process.pid}.${Date.now()}.tmp`;
+    await fsp.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
+    await fsp.rename(tempPath, this.restoreSnapshotPath);
+  }
+
+  async readRestoreSnapshot() {
+    let parsed;
+    try {
+      parsed = JSON.parse(await fsp.readFile(this.restoreSnapshotPath, "utf8"));
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        console.error("failed to read manager restore snapshot", error);
+      }
+      return null;
+    }
+
+    if (
+      parsed?.version !== RESTORE_SNAPSHOT_VERSION ||
+      !RESTORE_SHUTDOWN_REASONS.has(parsed.reason) ||
+      !Array.isArray(parsed.instances)
+    ) {
+      await this.clearRestoreSnapshot();
+      return null;
+    }
+
+    return parsed;
+  }
+
+  recordRestoreFailure(id, error) {
+    const instance = this.registry.get(id);
+    if (!instance) {
+      return;
+    }
+
+    const runtime = this.runtime.get(id) || {
+      status: "stopped",
+      child: null,
+      pid: null,
+      workerPort: null,
+      startedAt: null,
+      lastHeartbeatAt: null,
+      lastError: null,
+      intentionalStop: true,
+      events: [],
+    };
+    runtime.status = "stopped";
+    runtime.lastError = {
+      code: error.code || "RESTORE_FAILED",
+      message: error.message || "worker restore failed",
+    };
+    event(runtime, "restore-failed", { error: runtime.lastError });
+    this.runtime.set(id, runtime);
+  }
+
+  async restoreInstancesFromSnapshot() {
+    if (!this.restorePromise) {
+      this.restorePromise = (async () => {
+        const snapshot = await this.readRestoreSnapshot();
+        if (!snapshot) {
+          return { restored: [], skipped: [], failed: [] };
+        }
+
+        await this.clearRestoreSnapshot();
+
+        const restored = [];
+        const skipped = [];
+        const failed = [];
+        const ids = [
+          ...new Set(
+            snapshot.instances
+              .map((item) => (typeof item?.id === "string" ? item.id : ""))
+              .filter(Boolean),
+          ),
+        ];
+
+        for (const id of ids) {
+          const instance = this.registry.getInternal(id);
+          if (!instance) {
+            skipped.push({ id, reason: "missing" });
+            continue;
+          }
+          if (!instance.enabled) {
+            skipped.push({ id, reason: "disabled" });
+            this.recordRestoreFailure(id, managerError(`instance is disabled: ${id}`, "INSTANCE_DISABLED", 409));
+            continue;
+          }
+
+          try {
+            await this.startInstance(id);
+            restored.push(id);
+          } catch (error) {
+            failed.push({
+              id,
+              error: {
+                code: error.code || "RESTORE_FAILED",
+                message: error.message || "worker restore failed",
+              },
+            });
+            this.recordRestoreFailure(id, error);
+          }
+        }
+
+        return { restored, skipped, failed };
+      })().finally(() => {
+        this.restorePromise = null;
+      });
+    }
+
+    return this.restorePromise;
   }
 
   async allocatePort(instance) {
@@ -639,8 +805,13 @@ export class WorkerManager {
     };
   }
 
-  async shutdownAll() {
+  async shutdownAll(reason = "manager-shutdown") {
+    try {
+      await this.saveRestoreSnapshotForShutdown(reason);
+    } catch (error) {
+      console.error("failed to save manager restore snapshot", error);
+    }
     clearInterval(this.monitorTimer);
-    await Promise.all([...this.runtime.keys()].map((id) => this.stopInstance(id, "manager-shutdown")));
+    await Promise.all([...this.runtime.keys()].map((id) => this.stopInstance(id, reason)));
   }
 }

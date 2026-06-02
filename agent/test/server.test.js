@@ -429,6 +429,44 @@ test("manager API includes memory and updates it from proxied tool results", { s
   }
 });
 
+test("manager lease registration schedules instance restore", { skip: !depsInstalled }, async () => {
+  const { createManagerApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manager-lease-restore-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.lifecycle = { lifetime: "desktop" };
+  const workerManager = {
+    ...makeWorkerManagerStub(),
+    restoreCount: 0,
+    restoreInstancesFromSnapshot: async () => {
+      workerManager.restoreCount += 1;
+      return { restored: ["a"], skipped: [], failed: [] };
+    },
+  };
+  const app = createManagerApp({
+    config,
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    workerManager,
+  });
+  const server = await listen(app);
+
+  try {
+    const lease = await postJson(server, "/api/leases", {
+      clientId: "test-client",
+      ttlMs: 30_000,
+      source: "test",
+      pid: 1234,
+    });
+    assert.equal(lease.status, 200);
+    assert.equal(lease.body.lifecycle.activeLeaseCount, 1);
+
+    await waitFor(() => workerManager.restoreCount === 1, "manager restore after lease");
+  } finally {
+    await close(server);
+    app.locals.lifecycle.stop();
+  }
+});
+
 test("manual manager lifetime does not shut down when no lease exists", { skip: !depsInstalled }, async () => {
   const { startServer } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manual-lifecycle-"));

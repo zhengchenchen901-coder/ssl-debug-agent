@@ -6,6 +6,7 @@ const portRange = document.querySelector("#portRange");
 const defaultInstance = document.querySelector("#defaultInstance");
 const instanceRows = document.querySelector("#instanceRows");
 const emptyState = document.querySelector("#emptyState");
+const tableHint = document.querySelector("#tableHint");
 const shutdownButton = document.querySelector("#shutdownButton");
 const reloadButton = document.querySelector("#reloadButton");
 const newButton = document.querySelector("#newButton");
@@ -15,6 +16,7 @@ const cancelModalButton = document.querySelector("#cancelModalButton");
 const modalTitle = document.querySelector("#modalTitle");
 const instanceForm = document.querySelector("#instanceForm");
 const formMessage = document.querySelector("#formMessage");
+const saveFormButton = instanceForm.querySelector('button[type="submit"]');
 const drawer = document.querySelector("#drawer");
 const drawerMask = document.querySelector("#drawerMask");
 const closeDrawerButton = document.querySelector("#closeDrawerButton");
@@ -45,7 +47,9 @@ const state = {
   manager: null,
   editingId: "",
   instances: [],
+  online: false,
   pendingActions: new Set(),
+  lastConnectionError: "",
   toastTimer: null,
 };
 
@@ -150,11 +154,21 @@ async function loadInstances() {
     state.defaultInstanceId = data.defaultInstanceId || "";
     state.lifecycle = data.lifecycle || null;
     state.manager = data.manager || null;
+    state.online = true;
+    state.lastConnectionError = "";
     setConnection("live", "主进程在线");
     render();
   } catch (error) {
+    const message = error.message || "连接失败";
+    state.online = false;
+    state.lifecycle = null;
+    state.manager = null;
     setConnection("offline", "主进程不可用");
-    showToast(error.message);
+    render();
+    if (state.lastConnectionError !== message) {
+      state.lastConnectionError = message;
+      showToast(message);
+    }
   }
 }
 
@@ -165,8 +179,23 @@ function updateMetrics() {
   runningCount.textContent = running.length;
   portRange.textContent = range ? `${range.start}-${range.end}` : "--";
   defaultInstance.textContent = state.defaultInstanceId || "--";
+  if (tableHint) {
+    tableHint.textContent = state.online
+      ? "管理本地 worker 与远端 SSH 连接"
+      : "主进程不可用，保留上次实例状态供查看";
+  }
+  if (newButton) {
+    newButton.disabled = !state.online;
+    newButton.title = state.online ? "" : "主进程不可用";
+  }
+  if (saveFormButton) {
+    saveFormButton.disabled = !state.online;
+    saveFormButton.title = state.online ? "" : "主进程不可用";
+  }
   if (shutdownButton) {
     shutdownButton.hidden = state.lifecycle?.lifetime !== "manual";
+    shutdownButton.disabled = !state.online;
+    shutdownButton.title = state.online ? "" : "主进程不可用";
   }
 }
 
@@ -209,6 +238,7 @@ function setActionPending(action, id, pending) {
 
 function renderRow(instance) {
   const runtime = runtimeOf(instance);
+  const canUseManager = state.online;
   const row = document.createElement("tr");
 
   const name = createElement("td");
@@ -250,23 +280,35 @@ function renderRow(instance) {
 
   const actions = createElement("td");
   const actionWrap = createElement("div", "record-actions");
+  const view = button("查看", "view", instance);
+  const edit = button("编辑", "edit", instance);
+  edit.disabled = !canUseManager;
+  edit.title = canUseManager ? "" : "主进程不可用";
   const startLoading = isActionPending("start", instance.id) || runtime.status === "starting";
   const start = button(startLoading ? "启动中" : "启动", "start", instance);
-  start.disabled = startLoading || runtime.status === "running";
+  start.disabled = !canUseManager || startLoading || runtime.status === "running";
+  start.title = canUseManager ? "" : "主进程不可用";
   start.classList.toggle("is-loading", startLoading);
   start.setAttribute("aria-busy", String(startLoading));
   const stopLoading = isActionPending("stop", instance.id) || runtime.status === "stopping";
   const stop = button(stopLoading ? "停止中" : "停止", "stop", instance);
-  stop.disabled = stopLoading || runtime.status === "stopped" || (!runtime.pid && !runtime.workerPort);
+  stop.disabled = !canUseManager || stopLoading || runtime.status === "stopped" || (!runtime.pid && !runtime.workerPort);
+  stop.title = canUseManager ? "" : "主进程不可用";
   stop.classList.toggle("is-loading", stopLoading);
   stop.setAttribute("aria-busy", String(stopLoading));
+  const deleteButton = button("删除", "delete", instance, "button danger");
+  deleteButton.disabled = !canUseManager;
+  deleteButton.title = canUseManager ? "" : "主进程不可用";
+  const refresh = button("刷新", "refresh", instance);
+  refresh.disabled = !canUseManager;
+  refresh.title = canUseManager ? "" : "主进程不可用";
   actionWrap.append(
-    button("查看", "view", instance),
-    button("编辑", "edit", instance),
+    view,
+    edit,
     start,
     stop,
-    button("删除", "delete", instance, "button danger"),
-    button("刷新", "refresh", instance),
+    deleteButton,
+    refresh,
   );
   actions.append(actionWrap);
 
@@ -349,6 +391,10 @@ function formPayload() {
 async function submitForm(event) {
   event.preventDefault();
   formMessage.textContent = "";
+  if (!state.online) {
+    formMessage.textContent = "主进程不可用，恢复后再保存";
+    return;
+  }
   const payload = formPayload();
   try {
     if (state.editingId) {
@@ -452,9 +498,16 @@ function closeDrawer() {
   drawerMask.hidden = true;
 }
 
+const managerActions = new Set(["edit", "delete", "start", "stop", "refresh"]);
+
 async function runAction(action, id) {
   const instance = findInstance(id);
   if (!instance) {
+    return;
+  }
+
+  if (!state.online && managerActions.has(action)) {
+    showToast("主进程不可用，恢复后再操作");
     return;
   }
 
@@ -504,6 +557,10 @@ instanceRows.addEventListener("click", (event) => {
 reloadButton.addEventListener("click", loadInstances);
 newButton.addEventListener("click", () => openModal());
 shutdownButton?.addEventListener("click", async () => {
+  if (!state.online) {
+    showToast("主进程不可用，恢复后再操作");
+    return;
+  }
   if (!window.confirm("关闭 Manager 会停止所有 worker，并断开当前 dashboard。确定关闭吗？")) {
     return;
   }
