@@ -52,7 +52,7 @@ class FakeWorkerProcess extends EventEmitter {
   }
 }
 
-test("registry migrates v1 instance records to v2 manager config", async () => {
+test("registry migrates v1 instance records to v3 manager config", async () => {
   const dir = await tempDir("remote-debug-registry-");
   const registryPath = path.join(dir, "instances.json");
   await fs.writeFile(
@@ -71,7 +71,7 @@ test("registry migrates v1 instance records to v2 manager config", async () => {
             username: "app",
             privateKeyPath: "C:\\Users\\you\\.ssh\\id_ed25519",
             agentPort: 4444,
-            approvedCommands: { enabled: true },
+            approvedCommands: { enabled: true, timeoutMs: 30_000, maxTimeoutMs: 300_000 },
           },
         ],
       },
@@ -82,11 +82,14 @@ test("registry migrates v1 instance records to v2 manager config", async () => {
 
   const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
 
-  assert.equal(registry.registry.version, 2);
+  assert.equal(registry.registry.version, 3);
   assert.equal(registry.managerConfig().workerPortRange.start, 4400);
   assert.equal(registry.get("default").name, "默认实例");
   assert.equal(registry.get("default").passphrase, undefined);
   assert.equal(registry.getInternal("default").preferredWorkerPort, 4444);
+  assert.equal(registry.getInternal("default").approvedCommands.executionTimeoutMs, 30_000);
+  assert.equal(registry.getInternal("default").approvedCommands.maxExecutionTimeoutMs, 300_000);
+  assert.equal(registry.getInternal("default").approvedCommands.timeoutMs, undefined);
 });
 
 test("registry creates a default instance from env when no registry exists", async () => {
@@ -218,6 +221,27 @@ test("worker manager requires instanceId only when multiple instances are config
   );
 
   assert.equal(manager.resolveInstanceId("b"), "b");
+  await manager.shutdownAll();
+});
+
+test("worker manager rejects a worker without protocolVersion 2", async () => {
+  const dir = await tempDir("remote-debug-worker-protocol-");
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {
+      REMOTE_DEBUG_HOST: "a.example.com",
+      REMOTE_DEBUG_USER: "app",
+      REMOTE_DEBUG_PRIVATE_KEY_PATH: "C:\\a",
+    },
+  });
+  const manager = new WorkerManager({ registry, managerPort: 4343, cwd: dir });
+  const child = new FakeWorkerProcess(1234);
+  const ready = manager.waitForReady("default", child, 1_000);
+  setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 1 }));
+
+  await assert.rejects(ready, (error) => error.code === "WORKER_PROTOCOL_MISMATCH");
+  await manager.shutdownAll();
 });
 
 test("worker manager allocates only from the manager range and excludes manager port", async () => {
@@ -352,7 +376,7 @@ test("worker manager stops workers after stopped health and reuses released port
       nextPid += 1;
       workers.push(child);
       setImmediate(() => {
-        child.emit("message", { type: "ready", ok: true });
+        child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
       });
       return child;
     },
@@ -455,7 +479,7 @@ test("worker manager restores running workers from a maintained runtime snapshot
     nextPid += 1;
     workers.push(child);
     setImmediate(() => {
-      child.emit("message", { type: "ready", ok: true });
+      child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
     });
     return child;
   };
@@ -556,7 +580,7 @@ test("worker manager preserves lease-expiry snapshots while stopping workers", a
       const child = new FakeWorkerProcess(2500);
       workers.push(child);
       setImmediate(() => {
-        child.emit("message", { type: "ready", ok: true });
+        child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
       });
       return child;
     },
@@ -615,7 +639,7 @@ test("worker manager does not restore instances stopped before lease expiry", as
     forkWorker: () => {
       const child = new FakeWorkerProcess(3000);
       setImmediate(() => {
-        child.emit("message", { type: "ready", ok: true });
+        child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
       });
       return child;
     },

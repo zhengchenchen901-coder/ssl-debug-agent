@@ -76,20 +76,20 @@ test("agent .env can override project root .env for local experiments", async ()
 test("approved command execution is disabled by default and enabled by explicit env flag", () => {
   const disabled = loadConfig({}, "C:\\remote-debug-agent\\agent");
   assert.equal(disabled.approvedCommands.enabled, false);
-  assert.equal(disabled.approvedCommands.defaultTimeoutMs, 30_000);
-  assert.equal(disabled.approvedCommands.maxTimeoutMs, 300_000);
+  assert.equal(disabled.approvedCommands.executionTimeoutMs, 300_000);
+  assert.equal(disabled.approvedCommands.maxExecutionTimeoutMs, 900_000);
 
   const enabled = loadConfig(
     {
       REMOTE_DEBUG_APPROVED_COMMANDS: "1",
-      REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS: "60000",
-      REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS: "120000",
+      REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: "60000",
+      REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: "120000",
     },
     "C:\\remote-debug-agent\\agent",
   );
   assert.equal(enabled.approvedCommands.enabled, true);
-  assert.equal(enabled.approvedCommands.defaultTimeoutMs, 60_000);
-  assert.equal(enabled.approvedCommands.maxTimeoutMs, 120_000);
+  assert.equal(enabled.approvedCommands.executionTimeoutMs, 60_000);
+  assert.equal(enabled.approvedCommands.maxExecutionTimeoutMs, 120_000);
 });
 
 test("runtime config fingerprint changes when sensitive .env-backed settings change", () => {

@@ -2,10 +2,10 @@ import fs from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import {
-  DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
+  DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
   DEFAULT_APPROVED_COMMAND_TTL_MS,
   MAX_APPROVED_COMMAND_LENGTH,
-  MAX_APPROVED_COMMAND_TIMEOUT_MS,
+  MAX_APPROVED_EXECUTION_TIMEOUT_MS,
   MAX_APPROVED_COMMANDS,
 } from "./approved-commands.js";
 
@@ -13,8 +13,10 @@ export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/r
 
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
-const DEFAULT_TIMEOUT_MS = 10_000;
-const MAX_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
+const MAX_TIMEOUT_MS = 120_000;
+const DEFAULT_FILE_TIMEOUT_MS = 60_000;
+const MAX_FILE_TIMEOUT_MS = 300_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
 const DEFAULT_AGENT_LIFETIME = "manual";
@@ -139,18 +141,18 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
     DEFAULT_SSH_PORT,
     "REMOTE_DEBUG_PORT",
   );
-  const approvedCommandMaxTimeoutMs = parsePositiveInt(
-    mergedEnv.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS,
-    MAX_APPROVED_COMMAND_TIMEOUT_MS,
-    "REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS",
+  const approvedExecutionMaxTimeoutMs = parsePositiveInt(
+    mergedEnv.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
+    MAX_APPROVED_EXECUTION_TIMEOUT_MS,
+    "REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS",
   );
-  const approvedCommandDefaultTimeoutMs = Math.min(
+  const approvedExecutionTimeoutMs = Math.min(
     parsePositiveInt(
-      mergedEnv.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS,
-      DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
-      "REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS",
+      mergedEnv.REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS,
+      DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
+      "REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS",
     ),
-    approvedCommandMaxTimeoutMs,
+    approvedExecutionMaxTimeoutMs,
   );
   const lifetimeValue =
     env.REMOTE_DEBUG_AGENT_LIFETIME === undefined || env.REMOTE_DEBUG_AGENT_LIFETIME === ""
@@ -174,14 +176,16 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       allowedPaths: DEFAULT_ALLOWED_PATHS,
       defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
       maxTimeoutMs: MAX_TIMEOUT_MS,
+      defaultFileTimeoutMs: DEFAULT_FILE_TIMEOUT_MS,
+      maxFileTimeoutMs: MAX_FILE_TIMEOUT_MS,
       defaultReadMaxBytes: DEFAULT_READ_MAX_BYTES,
       maxCommandOutputBytes: MAX_COMMAND_OUTPUT_BYTES,
     },
     approvedCommands: {
       enabled: parseBooleanFlag(mergedEnv.REMOTE_DEBUG_APPROVED_COMMANDS),
       ttlMs: DEFAULT_APPROVED_COMMAND_TTL_MS,
-      defaultTimeoutMs: approvedCommandDefaultTimeoutMs,
-      maxTimeoutMs: approvedCommandMaxTimeoutMs,
+      executionTimeoutMs: approvedExecutionTimeoutMs,
+      maxExecutionTimeoutMs: approvedExecutionMaxTimeoutMs,
       maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
       maxCommands: MAX_APPROVED_COMMANDS,
     },
@@ -197,6 +201,30 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
     },
     lifecycle: {
       lifetime: parseAgentLifetime(lifetimeValue),
+    },
+    sshNetwork: {
+      keepaliveIntervalMs: parsePositiveInt(
+        mergedEnv.REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS,
+        15_000,
+        "REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS",
+      ),
+      keepaliveCountMax: parsePositiveInt(
+        mergedEnv.REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX,
+        3,
+        "REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX",
+      ),
+      reconnectBaseMs: 1_000,
+      reconnectMaxMs: 30_000,
+      reconnectJitter: 0.2,
+      maxBusinessChannels: parsePositiveInt(
+        mergedEnv.REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS,
+        4,
+        "REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS",
+      ),
+      maxControlChannels: 1,
+      maxBackgroundChannels: 1,
+      maxQueueLength: 100,
+      backgroundStarvationMs: 10_000,
     },
   };
 }
@@ -214,13 +242,15 @@ export function publicSecurity(config) {
     allowedPaths: config.security.allowedPaths,
     defaultTimeoutMs: config.security.defaultTimeoutMs,
     maxTimeoutMs: config.security.maxTimeoutMs,
+    defaultFileTimeoutMs: config.security.defaultFileTimeoutMs,
+    maxFileTimeoutMs: config.security.maxFileTimeoutMs,
     defaultReadMaxBytes: config.security.defaultReadMaxBytes,
     maxCommandOutputBytes: config.security.maxCommandOutputBytes,
     approvedCommands: {
       enabled: Boolean(config.approvedCommands?.enabled),
       ttlMs: config.approvedCommands?.ttlMs,
-      defaultTimeoutMs: config.approvedCommands?.defaultTimeoutMs,
-      maxTimeoutMs: config.approvedCommands?.maxTimeoutMs,
+      executionTimeoutMs: config.approvedCommands?.executionTimeoutMs,
+      maxExecutionTimeoutMs: config.approvedCommands?.maxExecutionTimeoutMs,
       maxCommandLength: config.approvedCommands?.maxCommandLength,
       maxCommands: config.approvedCommands?.maxCommands,
     },

@@ -107,6 +107,23 @@ function startAgentStub() {
   const drafts = new Map();
   const leaseRequests = [];
   const server = http.createServer((request, response) => {
+    if (request.method === "GET" && request.url === "/status") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({
+        ok: true,
+        name: "remote-debug-agent",
+        mode: "manager",
+        apiVersion: 2,
+        capabilities: {
+          persistentSsh: true,
+          operationDeadlines: true,
+          cancellation: true,
+          structuredHealth: true,
+        },
+        agent: { port: server.address().port, pid: process.pid },
+      }));
+      return;
+    }
     if (request.method === "GET" && request.url === "/api/instances") {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(
@@ -317,6 +334,55 @@ async function waitForStatus(port, predicate = () => true, timeoutMs = 5000) {
   throw lastError || new Error(`timed out waiting for fake agent on ${port}`);
 }
 
+function startOperationAgentStub(mode) {
+  const server = http.createServer((request, response) => {
+    if (request.method === "GET" && request.url === "/status") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({
+        ok: true,
+        name: "remote-debug-agent",
+        mode: "manager",
+        apiVersion: 2,
+        capabilities: {
+          persistentSsh: true,
+          operationDeadlines: true,
+          cancellation: true,
+          structuredHealth: true,
+        },
+        agent: { port: server.address().port, pid: process.pid },
+      }));
+      return;
+    }
+    if (request.method !== "POST" || request.url !== "/run") {
+      response.writeHead(404).end();
+      return;
+    }
+    let body = "";
+    request.on("data", (chunk) => { body += chunk; });
+    request.on("end", () => {
+      const parsed = JSON.parse(body);
+      if (mode === "deadline") {
+        response.writeHead(408, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: false,
+          error: {
+            operationId: parsed.operationId,
+            code: "OPERATION_DEADLINE_EXCEEDED",
+            message: "command printed output but did not exit",
+            layer: "ssh",
+            phase: "exec",
+            retriable: false,
+          },
+        }));
+      }
+    });
+  });
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve(server));
+  });
+}
+
 function managerSourceFingerprint(agentDir, agentUrl, port, explicitUrl = "") {
   return createHash("sha256")
     .update(JSON.stringify({
@@ -390,6 +456,7 @@ import path from "node:path";
 
 const port = Number(process.env.REMOTE_DEBUG_AGENT_PORT);
 const empty = process.env.FAKE_AGENT_EMPTY === "1";
+const apiVersion = positiveInt(process.env.FAKE_AGENT_API_VERSION, 2);
 const startDelayMs = Number.parseInt(process.env.FAKE_AGENT_START_DELAY_MS || "0", 10);
 const startMarkerPath = process.env.FAKE_AGENT_START_MARKER || "";
 const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
@@ -412,9 +479,9 @@ function flag(value) {
 }
 
 function securityConfig() {
-  const approvedMaxTimeoutMs = positiveInt(process.env.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS, 300000);
+  const approvedMaxTimeoutMs = positiveInt(process.env.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS, 900000);
   const approvedDefaultTimeoutMs = Math.min(
-    positiveInt(process.env.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS, 30000),
+    positiveInt(process.env.REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS, 300000),
     approvedMaxTimeoutMs
   );
 
@@ -422,13 +489,15 @@ function securityConfig() {
     allowedPaths: DEFAULT_ALLOWED_PATHS,
     defaultTimeoutMs: 10000,
     maxTimeoutMs: 30000,
+    defaultFileTimeoutMs: 60000,
+    maxFileTimeoutMs: 300000,
     defaultReadMaxBytes: 256 * 1024,
     maxCommandOutputBytes: 1024 * 1024,
     approvedCommands: {
       enabled: flag(process.env.REMOTE_DEBUG_APPROVED_COMMANDS),
       ttlMs: 30 * 60 * 1000,
-      defaultTimeoutMs: approvedDefaultTimeoutMs,
-      maxTimeoutMs: approvedMaxTimeoutMs,
+      executionTimeoutMs: approvedDefaultTimeoutMs,
+      maxExecutionTimeoutMs: approvedMaxTimeoutMs,
       maxCommandLength: 16 * 1024,
       maxCommands: 20
     }
@@ -468,6 +537,13 @@ const server = http.createServer((request, response) => {
       ok: true,
       name: "remote-debug-agent",
       mode: "manager",
+      apiVersion,
+      capabilities: {
+        persistentSsh: true,
+        operationDeadlines: true,
+        cancellation: true,
+        structuredHealth: true
+      },
       agent: { port, pid: process.pid, configFingerprint: configFingerprint() },
       lifecycle: {
         lifetime: process.env.REMOTE_DEBUG_AGENT_LIFETIME || "manual",
@@ -595,7 +671,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
   const properties = schema.properties || {};
   const required = schema.required || [];
   for (const propertyName of Object.keys(properties)) {
-    if (propertyName === "instanceId") {
+    if (["instanceId", "timeoutMs", "maxBytes"].includes(propertyName)) {
       continue;
     }
     assert.ok(required.includes(propertyName), `${path}.${propertyName} is required`);
@@ -631,9 +707,10 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       assertStrictCompatibleSchema(tool.inputSchema, `${tool.name}.inputSchema`);
     }
     const runCommand = list.result.tools.find((tool) => tool.name === "remote_debug_run_command");
-    assert.equal(runCommand.inputSchema.properties.timeoutMs, undefined);
+    assert.equal(runCommand.inputSchema.properties.timeoutMs.maximum, 120_000);
     const readFile = list.result.tools.find((tool) => tool.name === "remote_debug_read_file");
-    assert.equal(readFile.inputSchema.properties.maxBytes, undefined);
+    assert.equal(readFile.inputSchema.properties.timeoutMs.maximum, 300_000);
+    assert.equal(readFile.inputSchema.properties.maxBytes.maximum, 256 * 1024);
     assert.ok(readFile.inputSchema.properties.instanceId);
 
     child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 3, method: "resources/list" }));
@@ -791,6 +868,61 @@ test("MCP starts the local agent from .env port when no service is listening", a
     child.kill();
     const status = await waitForStatus(port);
     process.kill(status.agent.pid);
+  }
+});
+
+test("MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE", async () => {
+  const agentStub = await startOperationAgentStub("deadline");
+  const port = agentStub.address().port;
+  const child = startMcp({ REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${port}` });
+  const readMessage = createMessageReader(child);
+
+  try {
+    await initializeMcp(child, readMessage);
+    const call = await callRunToolWithReader(child, readMessage, 2);
+    const payload = JSON.parse(call.result.content[0].text);
+    assert.equal(call.result.isError, true);
+    assert.equal(payload.error.code, "OPERATION_DEADLINE_EXCEEDED");
+    assert.equal(payload.error.layer, "ssh");
+    assert.equal(payload.error.phase, "exec");
+    assert.ok(payload.error.operationId);
+  } finally {
+    child.kill();
+    await close(agentStub);
+  }
+});
+
+test("MCP notifications/cancelled aborts an in-flight manager request", async () => {
+  const agentStub = await startOperationAgentStub("pending");
+  const port = agentStub.address().port;
+  const child = startMcp({ REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${port}` });
+  const readMessage = createMessageReader(child);
+
+  try {
+    await initializeMcp(child, readMessage);
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 9,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_run_command",
+        arguments: { cmd: "uptime", timeoutMs: 5_000 },
+      },
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      method: "notifications/cancelled",
+      params: { requestId: 9, reason: "test cancellation" },
+    }));
+    const call = await readMessage();
+    const payload = JSON.parse(call.result.content[0].text);
+    assert.equal(payload.error.code, "OPERATION_CANCELLED");
+    assert.equal(payload.error.layer, "mcp");
+    assert.ok(payload.error.operationId);
+  } finally {
+    child.kill();
+    await close(agentStub);
   }
 });
 
@@ -1106,7 +1238,7 @@ test("MCP resolves project root from Codex local marketplace config when running
     "cache",
     "remote-debug-local",
     "remote-debug-agent",
-    "1.0.6",
+    "2.0.0",
   );
   const installedServerPath = path.join(cacheDir, "mcp-server.js");
   const port = await getFreePort();
@@ -1148,6 +1280,54 @@ test("MCP resolves project root from Codex local marketplace config when running
     child.kill();
     const status = await waitForStatus(port);
     process.kill(status.agent.pid);
+  }
+});
+
+test("MCP replaces a confirmed V1 local manager with a V2 manager", async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-v2-upgrade-"));
+  const agentDir = path.join(tempRoot, "agent");
+  const envPath = path.join(tempRoot, ".env");
+  const port = await getFreePort();
+  await writeFakeAgent(agentDir);
+  await fs.writeFile(
+    envPath,
+    [
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      "REMOTE_DEBUG_PRIVATE_KEY_PATH=C:\\keys\\id_ed25519",
+    ].join("\n"),
+  );
+  const oldManager = spawn(process.execPath, [path.join(agentDir, "server.js")], {
+    cwd: agentDir,
+    env: {
+      ...process.env,
+      REMOTE_DEBUG_AGENT_PORT: String(port),
+      FAKE_AGENT_API_VERSION: "1",
+    },
+    stdio: "ignore",
+  });
+  const child = startMcp({
+    REMOTE_DEBUG_AGENT_URL: "",
+    REMOTE_DEBUG_AGENT_PORT: String(port),
+    REMOTE_DEBUG_AGENT_DIR: agentDir,
+    REMOTE_DEBUG_ENV_PATH: envPath,
+    FAKE_AGENT_API_VERSION: "",
+  });
+
+  try {
+    await waitForStatus(port, (status) => status.apiVersion === 1);
+    const call = await callRunTool(child);
+    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    const status = await waitForStatus(
+      port,
+      (candidate) => candidate.apiVersion === 2 && candidate.agent.pid !== oldManager.pid,
+    );
+    assert.equal(status.apiVersion, 2);
+    killPid(status.agent.pid);
+  } finally {
+    child.kill();
+    killPid(oldManager.pid);
   }
 });
 

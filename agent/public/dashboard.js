@@ -84,6 +84,15 @@ function runtimeOf(instance) {
   return instance.runtime || { status: "stopped" };
 }
 
+function healthOf(runtime) {
+  return runtime.health || {
+    overall: runtime.status === "running" ? "unknown" : "stopped",
+    transport: {},
+    authentication: {},
+    operations: {},
+  };
+}
+
 function memoryOf(instance) {
   return instance.memory || { status: "missing", updatedAt: null, summary: {} };
 }
@@ -265,6 +274,9 @@ function setActionPending(action, id, pending) {
 
 function renderRow(instance) {
   const runtime = runtimeOf(instance);
+  const health = healthOf(runtime);
+  const transportHealth = health.transport || {};
+  const operationHealth = health.operations || {};
   const canUseManager = state.online;
   const row = document.createElement("tr");
 
@@ -283,7 +295,18 @@ function renderRow(instance) {
   const user = createElement("td", "", text(instance.username));
   const ssh = createElement("td", "mono", String(instance.port || 22));
   const status = createElement("td");
-  status.append(statusPill(runtime.status || "stopped"));
+  const statusMain = createElement("div", "cell-main");
+  statusMain.append(
+    statusPill(runtime.status || "stopped"),
+    createElement("span", "mono", `SSH ${text(transportHealth.status)}`),
+    createElement(
+      "span",
+      "mono",
+      `active ${text(operationHealth.active, "0")} / queued ${text(operationHealth.queued, "0")}`,
+    ),
+    createElement("span", "mono", `reconnects ${text(transportHealth.reconnectCount, "0")}`),
+  );
+  status.append(statusMain);
 
   const memoryInfo = memoryOf(instance);
   const memory = createElement("td");
@@ -299,10 +322,11 @@ function renderRow(instance) {
   worker.append(workerMain);
 
   const heartbeat = createElement("td", "", formatClock(runtime.lastHeartbeatAt));
+  const recentError = runtime.lastError || transportHealth.lastError;
   const error = createElement(
     "td",
-    runtime.lastError ? "cell-main" : "muted",
-    runtime.lastError ? `${runtime.lastError.code || "ERROR"}: ${runtime.lastError.message || ""}` : "--",
+    recentError ? "cell-main" : "muted",
+    recentError ? `${recentError.code || "ERROR"}: ${recentError.message || ""}` : "--",
   );
 
   const actions = createElement("td");
@@ -472,6 +496,10 @@ function compactPathList(values) {
 
 function openDrawer(instance) {
   const runtime = runtimeOf(instance);
+  const health = healthOf(runtime);
+  const transportHealth = health.transport || {};
+  const authenticationHealth = health.authentication || {};
+  const operationHealth = health.operations || {};
   const memory = memoryOf(instance);
   const memorySummary = memory.summary || {};
   const resources = memorySummary.resources || {};
@@ -497,6 +525,18 @@ function openDrawer(instance) {
     detailRow("服务概览", compactOverview([["nginx", services.nginx], ["mongod", services.mongod], ["pm2", services.pm2]])),
     detailRow("配置路径", compactPathList(memorySummary.configPaths)),
     detailRow("日志路径", compactPathList(memorySummary.logPaths)),
+  );
+
+  details.append(
+    detailRow("Health overall", health.overall),
+    detailRow("SSH transport", transportHealth.status),
+    detailRow("SSH generation", transportHealth.generation),
+    detailRow("SSH reconnects", transportHealth.reconnectCount),
+    detailRow("SSH next retry", formatClock(transportHealth.nextRetryAt)),
+    detailRow("Authentication", authenticationHealth.status),
+    detailRow("Active operations", operationHealth.active),
+    detailRow("Queued operations", operationHealth.queued),
+    detailRow("Active SSH channels", operationHealth.activeChannels),
   );
 
   const eventList = createElement("section", "event-list");

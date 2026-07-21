@@ -2,8 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 
 export const APPROVED_COMMAND_CONFIRMATION = "使用命令";
 export const DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1000;
-export const DEFAULT_APPROVED_COMMAND_TIMEOUT_MS = 30_000;
-export const MAX_APPROVED_COMMAND_TIMEOUT_MS = 300_000;
+export const DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 300_000;
+export const MAX_APPROVED_EXECUTION_TIMEOUT_MS = 900_000;
 export const MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
 export const MAX_APPROVED_COMMANDS = 20;
 
@@ -46,9 +46,11 @@ export function redactCommand(command, maxChars = 512) {
   return `${redacted.slice(0, maxChars)}\n...[truncated ${redacted.length - maxChars} chars]`;
 }
 
-export function normalizeApprovedCommandTimeoutMs(value, settings) {
-  const defaultTimeoutMs = settings.defaultTimeoutMs || DEFAULT_APPROVED_COMMAND_TIMEOUT_MS;
-  const maxTimeoutMs = settings.maxTimeoutMs || MAX_APPROVED_COMMAND_TIMEOUT_MS;
+export function normalizeApprovedExecutionTimeoutMs(value, settings) {
+  const defaultTimeoutMs =
+    settings.executionTimeoutMs || DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS;
+  const maxTimeoutMs =
+    settings.maxExecutionTimeoutMs || MAX_APPROVED_EXECUTION_TIMEOUT_MS;
 
   if (value === undefined || value === null) {
     return Math.min(defaultTimeoutMs, maxTimeoutMs);

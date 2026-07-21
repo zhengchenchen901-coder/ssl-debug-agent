@@ -8,7 +8,6 @@ import { byteLength, createActivityLog, previewText } from "./activity.js";
 import {
   assertApprovedCommandsEnabled,
   createCommandDraftStore,
-  normalizeApprovedCommandTimeoutMs,
   redactCommand,
 } from "./approved-commands.js";
 import { configFingerprint, loadConfig, publicSecurity, publicTarget } from "./config.js";
@@ -16,11 +15,18 @@ import { writeAuditLog } from "./audit.js";
 import {
   assertPathAllowed,
   normalizeMaxBytes,
-  normalizeTimeoutMs,
   validateCommand,
 } from "./security.js";
 import { InstanceRegistry } from "./instance-registry.js";
 import { WorkerManager } from "./worker-manager.js";
+import {
+  API_VERSION,
+  createOperationController,
+  normalizeOperationEnvelope,
+  operationError,
+  operationErrorPayload,
+  operationPolicy,
+} from "./operation.js";
 import {
   listRemoteDir as defaultListRemoteDir,
   readRemoteFile as defaultReadRemoteFile,
@@ -49,10 +55,8 @@ function errorStatus(error) {
 function errorPayload(error) {
   return {
     ok: false,
-    error: {
-      code: error.code || "REMOTE_DEBUG_ERROR",
-      message: error.message || "remote debug operation failed",
-    },
+    error: operationErrorPayload(error),
+    details: error.details,
   };
 }
 
@@ -107,11 +111,55 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: randomUUID(),
+    operationId:
+      requestPayload?.operationId || request.body?.operationId || randomUUID(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
     request: requestPayload,
+  };
+}
+
+function createRequestOperation(request, response, pathName, config, layer = "worker") {
+  const envelope = normalizeOperationEnvelope(
+    request.body || {},
+    operationPolicy(pathName, config),
+  );
+  const upstream = new AbortController();
+  let cleaned = false;
+  const abortUpstream = () => {
+    if (!response.writableEnded && !upstream.signal.aborted) {
+      upstream.abort(operationError("upstream request was cancelled", {
+        code: "OPERATION_CANCELLED",
+        statusCode: 499,
+        operationId: envelope.operationId,
+        layer,
+        phase: "upstream-cancel",
+      }));
+    }
+  };
+  const controllerEnvelope = layer === "manager"
+    ? { ...envelope, deadlineAt: envelope.deadlineAt + 2_000 }
+    : envelope;
+  const linked = createOperationController(controllerEnvelope, upstream.signal, {
+    layer,
+    deadlinePhase: "operation",
+  });
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    request.off("aborted", abortUpstream);
+    response.off("close", abortUpstream);
+    linked.cleanup();
+  };
+  request.once("aborted", abortUpstream);
+  response.once("close", abortUpstream);
+  response.once("finish", cleanup);
+  response.once("close", cleanup);
+  return {
+    ...envelope,
+    signal: linked.signal,
+    cleanup,
   };
 }
 
@@ -190,10 +238,20 @@ async function audit(config, event) {
 
 export function createApp(options = {}) {
   const config = options.config || loadConfig();
-  const runSSH = options.runSSH || defaultRunSSH;
-  const readRemoteFile = options.readRemoteFile || defaultReadRemoteFile;
-  const listRemoteDir = options.listRemoteDir || defaultListRemoteDir;
-  const resolveRemotePaths = options.resolveRemotePaths || defaultResolveRemotePaths;
+  const sshSupervisor = options.sshSupervisor;
+  const runSSHImpl = options.runSSH || defaultRunSSH;
+  const readRemoteFileImpl = options.readRemoteFile || defaultReadRemoteFile;
+  const listRemoteDirImpl = options.listRemoteDir || defaultListRemoteDir;
+  const resolveRemotePathsImpl = options.resolveRemotePaths || defaultResolveRemotePaths;
+  const runSSH = (command, operationOptions) =>
+    runSSHImpl(command, { ...operationOptions, supervisor: sshSupervisor });
+  const readRemoteFile = (remotePath, operationOptions) =>
+    readRemoteFileImpl(remotePath, { ...operationOptions, supervisor: sshSupervisor });
+  const listRemoteDir = (remotePath, operationOptions) =>
+    listRemoteDirImpl(remotePath, { ...operationOptions, supervisor: sshSupervisor });
+  const resolveRemotePaths = (remotePaths, operationOptions) =>
+    resolveRemotePathsImpl(remotePaths, { ...operationOptions, supervisor: sshSupervisor });
+  const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = express();
@@ -212,13 +270,14 @@ export function createApp(options = {}) {
   app.use(express.static(publicDir, { index: false, maxAge: 0 }));
 
   app.get("/health", (_request, response) => {
-    response.json({ ok: true, name: "remote-debug-agent" });
+    response.json({ ok: true, name: "remote-debug-agent", apiVersion: API_VERSION });
   });
 
   app.get("/status", (_request, response) => {
     response.json({
       ok: true,
       name: "remote-debug-agent",
+      apiVersion: API_VERSION,
       agent: publicAgent(config),
       target: publicTarget(config),
       security: publicSecurity(config),
@@ -233,27 +292,33 @@ export function createApp(options = {}) {
   app.post("/run", async (request, response) => {
     const startedAt = performance.now();
     const rawCmd = request.body?.cmd;
+    const requestOperation = createRequestOperation(request, response, "/run", config);
     const operation = createOperation(request, config, "run", {
+      operationId: requestOperation.operationId,
       cmd: requestText(rawCmd),
-      timeoutMs: request.body?.timeoutMs,
+      timeoutMs: requestOperation.timeoutMs,
     });
     publishStage(activity, operation, "started");
 
     try {
       const validation = validateCommand(rawCmd, config.security);
-      const timeoutMs = normalizeTimeoutMs(request.body?.timeoutMs, config.security);
       operation.request = {
         cmd: validation.normalizedCommand,
-        timeoutMs,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
       };
       publishStage(activity, operation, "validated");
 
-      if (validation.absolutePaths.length > 0) {
-        await resolveRemotePaths(validation.absolutePaths, { config });
+      if (customPathResolver && validation.absolutePaths.length > 0) {
+        await resolveRemotePaths(validation.absolutePaths, {
+          config,
+          operation: requestOperation,
+        });
       }
       const result = await runSSH(validation.normalizedCommand, {
         config,
-        timeoutMs,
+        operation: requestOperation,
+        remotePaths: customPathResolver ? [] : validation.absolutePaths,
         onStdout: (chunk) => {
           publishStage(activity, operation, "stdout", {
             chunk: previewText(String(chunk)),
@@ -272,6 +337,8 @@ export function createApp(options = {}) {
         exitCode: result.exitCode,
         durationMs: durationSince(startedAt),
         timedOut: result.timedOut,
+        operationId: requestOperation.operationId,
+        timing: result.timing,
       };
 
       await audit(config, {
@@ -281,15 +348,19 @@ export function createApp(options = {}) {
         durationMs: payload.durationMs,
         stdout: payload.stdout,
         stderr: payload.stderr,
+        operationId: requestOperation.operationId,
+        ...result.timing,
       });
 
       publishStage(activity, operation, "completed", {
         ok: true,
+        ...result.timing,
         result: outputSummary(payload),
       });
 
       response.json(payload);
     } catch (error) {
+      error.operationId ||= requestOperation.operationId;
       const payload = errorPayload(error);
       const durationMs = durationSince(startedAt);
       await audit(config, {
@@ -298,10 +369,15 @@ export function createApp(options = {}) {
         ok: false,
         durationMs,
         errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
       });
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
         error: payload.error,
       });
       response.status(errorStatus(error)).json({ ...payload, durationMs });
@@ -404,20 +480,24 @@ export function createApp(options = {}) {
     const startedAt = performance.now();
     const rawDraftId = request.body?.draftId;
     const rawCommandHash = request.body?.commandHash;
+    const requestOperation = createRequestOperation(
+      request,
+      response,
+      "/approved-command-drafts/execute",
+      config,
+    );
     const operation = createOperation(request, config, "approved-command-execute", {
+      operationId: requestOperation.operationId,
       draftId: requestText(rawDraftId),
       commandHash: requestText(rawCommandHash),
-      timeoutMs: request.body?.timeoutMs,
+      timeoutMs: requestOperation.timeoutMs,
     });
     publishStage(activity, operation, "started");
 
     let claimedDraft;
+    const results = [];
     try {
       assertApprovedCommandsEnabled(config);
-      const timeoutMs = normalizeApprovedCommandTimeoutMs(
-        request.body?.timeoutMs,
-        config.approvedCommands,
-      );
       claimedDraft = commandDraftStore.claimDraft({
         draftId: rawDraftId,
         commandHash: rawCommandHash,
@@ -427,7 +507,8 @@ export function createApp(options = {}) {
         draftId: claimedDraft.draftId,
         commandHash: claimedDraft.commandHash,
         commandCount: claimedDraft.commandCount,
-        timeoutMs,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
       };
       publishStage(activity, operation, "validated");
 
@@ -438,9 +519,9 @@ export function createApp(options = {}) {
         commandCount: claimedDraft.commandCount,
         ok: true,
         durationMs: 0,
+        operationId: requestOperation.operationId,
       });
 
-      const results = [];
       let stopped;
       for (const [index, command] of claimedDraft.commands.entries()) {
         publishStage(activity, operation, "command-started", {
@@ -450,7 +531,7 @@ export function createApp(options = {}) {
         const commandStartedAt = performance.now();
         const result = await runSSH(command, {
           config,
-          timeoutMs,
+          operation: requestOperation,
           onStdout: (chunk) => {
             publishStage(activity, operation, "stdout", {
               commandIndex: index,
@@ -475,8 +556,14 @@ export function createApp(options = {}) {
           stdout: result.stdout,
           stderr: result.stderr,
           timedOut: result.timedOut,
+          timing: result.timing,
         };
         results.push(commandPayload);
+        publishStage(activity, operation, "command-completed", {
+          ok: commandOk,
+          commandIndex: index,
+          ...result.timing,
+        });
 
         await audit(config, {
           tool: "approved-command-execute",
@@ -493,6 +580,8 @@ export function createApp(options = {}) {
             : result.timedOut
               ? "APPROVED_COMMAND_TIMED_OUT"
               : "APPROVED_COMMAND_NON_ZERO_EXIT",
+          operationId: requestOperation.operationId,
+          ...result.timing,
         });
 
         if (!commandOk) {
@@ -516,6 +605,7 @@ export function createApp(options = {}) {
         results,
         stopped,
         durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
       };
 
       await audit(config, {
@@ -526,6 +616,7 @@ export function createApp(options = {}) {
         ok: payload.commandsOk,
         durationMs: payload.durationMs,
         errorCode: stopped ? `STOPPED_${stopped.reason.toUpperCase()}` : undefined,
+        operationId: requestOperation.operationId,
       });
 
       publishStage(activity, operation, "completed", {
@@ -535,6 +626,11 @@ export function createApp(options = {}) {
 
       response.json(payload);
     } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      error.details = {
+        ...(error.details || {}),
+        partialResults: results,
+      };
       if (claimedDraft) {
         commandDraftStore.finishDraft(claimedDraft.draftId, "failed");
       }
@@ -547,10 +643,15 @@ export function createApp(options = {}) {
         ok: false,
         durationMs,
         errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
       });
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
         error: payload.error,
       });
       response.status(errorStatus(error)).json({ ...payload, durationMs });
@@ -560,9 +661,12 @@ export function createApp(options = {}) {
   app.post("/read-file", async (request, response) => {
     const startedAt = performance.now();
     const rawPath = request.body?.path;
+    const requestOperation = createRequestOperation(request, response, "/read-file", config);
     const operation = createOperation(request, config, "read-file", {
+      operationId: requestOperation.operationId,
       path: requestText(rawPath),
       maxBytes: request.body?.maxBytes,
+      timeoutMs: requestOperation.timeoutMs,
     });
     publishStage(activity, operation, "started");
 
@@ -572,16 +676,24 @@ export function createApp(options = {}) {
       operation.request = {
         path: requestedPath,
         maxBytes,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
       };
       publishStage(activity, operation, "validated");
 
-      const result = await readRemoteFile(requestedPath, { config, maxBytes });
+      const result = await readRemoteFile(requestedPath, {
+        config,
+        maxBytes,
+        operation: requestOperation,
+      });
       const payload = {
         ok: true,
         path: result.path,
         content: result.content,
         truncated: result.truncated,
         durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing,
       };
 
       await audit(config, {
@@ -590,15 +702,19 @@ export function createApp(options = {}) {
         ok: true,
         durationMs: payload.durationMs,
         content: payload.content,
+        operationId: requestOperation.operationId,
+        ...result.timing,
       });
 
       publishStage(activity, operation, "completed", {
         ok: true,
+        ...result.timing,
         result: fileSummary(payload),
       });
 
       response.json(payload);
     } catch (error) {
+      error.operationId ||= requestOperation.operationId;
       const payload = errorPayload(error);
       const durationMs = durationSince(startedAt);
       await audit(config, {
@@ -607,10 +723,15 @@ export function createApp(options = {}) {
         ok: false,
         durationMs,
         errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
       });
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
         error: payload.error,
       });
       response.status(errorStatus(error)).json({ ...payload, durationMs });
@@ -620,8 +741,11 @@ export function createApp(options = {}) {
   app.post("/list-dir", async (request, response) => {
     const startedAt = performance.now();
     const rawPath = request.body?.path;
+    const requestOperation = createRequestOperation(request, response, "/list-dir", config);
     const operation = createOperation(request, config, "list-dir", {
+      operationId: requestOperation.operationId,
       path: requestText(rawPath),
+      timeoutMs: requestOperation.timeoutMs,
     });
     publishStage(activity, operation, "started");
 
@@ -629,15 +753,22 @@ export function createApp(options = {}) {
       const requestedPath = assertPathAllowed(rawPath, config.security.allowedPaths);
       operation.request = {
         path: requestedPath,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
       };
       publishStage(activity, operation, "validated");
 
-      const result = await listRemoteDir(requestedPath, { config });
+      const result = await listRemoteDir(requestedPath, {
+        config,
+        operation: requestOperation,
+      });
       const payload = {
         ok: true,
         path: result.path,
         entries: result.entries,
         durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing,
       };
 
       await audit(config, {
@@ -646,15 +777,19 @@ export function createApp(options = {}) {
         ok: true,
         durationMs: payload.durationMs,
         contentLength: JSON.stringify(payload.entries).length,
+        operationId: requestOperation.operationId,
+        ...result.timing,
       });
 
       publishStage(activity, operation, "completed", {
         ok: true,
+        ...result.timing,
         result: directorySummary(payload),
       });
 
       response.json(payload);
     } catch (error) {
+      error.operationId ||= requestOperation.operationId;
       const payload = errorPayload(error);
       const durationMs = durationSince(startedAt);
       await audit(config, {
@@ -663,10 +798,15 @@ export function createApp(options = {}) {
         ok: false,
         durationMs,
         errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
       });
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
         error: payload.error,
       });
       response.status(errorStatus(error)).json({ ...payload, durationMs });
@@ -679,10 +819,11 @@ export function createApp(options = {}) {
 function managerErrorPayload(error) {
   return {
     ok: false,
-    error: {
-      code: error.code || "REMOTE_DEBUG_MANAGER_ERROR",
-      message: error.message || "remote debug manager operation failed",
-    },
+    error: operationErrorPayload(error, {
+      code: "REMOTE_DEBUG_MANAGER_ERROR",
+      message: "remote debug manager operation failed",
+      layer: "manager",
+    }),
     instances: error.instances,
     details: error.payload || error.details,
   };
@@ -860,7 +1001,14 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
   return {
     ok: true,
     name: "remote-debug-agent",
+    apiVersion: API_VERSION,
     mode: "manager",
+    capabilities: {
+      persistentSsh: true,
+      operationDeadlines: true,
+      cancellation: true,
+      structuredHealth: true,
+    },
     agent: {
       ...publicAgent(config),
       role: "manager",
@@ -942,6 +1090,7 @@ export function createManagerApp(options = {}) {
     response.json({
       ok: true,
       name: "remote-debug-agent",
+      apiVersion: API_VERSION,
       mode: "manager",
     });
   });
@@ -1108,20 +1257,40 @@ export function createManagerApp(options = {}) {
   async function proxyToInstance(pathName, request, response) {
     const startedAt = performance.now();
     const instanceId = request.body?.instanceId;
-    const payload = bodyWithoutInstanceId(request.body);
+    const requestOperation = createRequestOperation(
+      request,
+      response,
+      pathName,
+      config,
+      "manager",
+    );
+    const payload = {
+      ...bodyWithoutInstanceId(request.body),
+      operationId: requestOperation.operationId,
+      timeoutMs: requestOperation.timeoutMs,
+      deadlineAt: requestOperation.deadlineAt,
+    };
     const operation = {
       type: "proxy",
-      operationId: randomUUID(),
+      operationId: requestOperation.operationId,
       tool: pathName.replace(/^\//, ""),
       source: sourceFrom(request),
       request: {
         instanceId,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
       },
     };
     publishStage(activity, operation, "started");
 
     try {
-      const result = await workerManager.callInstance(instanceId, pathName, payload, request.headers);
+      const result = await workerManager.callInstance(
+        instanceId,
+        pathName,
+        payload,
+        request.headers,
+        { signal: requestOperation.signal },
+      );
       let memory = null;
       const instance = registry.getInternal(result.instanceId);
       if (instance && workerManager.memoryStore) {
@@ -1136,16 +1305,20 @@ export function createManagerApp(options = {}) {
         ok: true,
         instanceId: result.instanceId,
         durationMs: durationSince(startedAt),
+        ...result.timing,
       });
       response.json(memory ? { ...result, memory } : result);
     } catch (error) {
+      error.operationId ||= requestOperation.operationId;
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs: durationSince(startedAt),
-        error: {
-          code: error.code || "INSTANCE_PROXY_FAILED",
-          message: error.message,
-        },
+        errorLayer: error.layer,
+        errorPhase: error.phase,
+        error: operationErrorPayload(error, {
+          code: "INSTANCE_PROXY_FAILED",
+          layer: "manager",
+        }),
       });
       respondManagerError(response, error);
     }

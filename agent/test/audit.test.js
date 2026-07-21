@@ -14,6 +14,11 @@ test("builds audit entries without secret material", () => {
       durationMs: 12,
       stdout: "hello",
       stderr: "",
+      operationId: "operation-1",
+      connectionGeneration: 2,
+      queueMs: 3,
+      connectMs: 4,
+      executionMs: 5,
     },
     () => new Date("2026-05-07T10:00:00.000Z"),
   );
@@ -29,6 +34,11 @@ test("builds audit entries without secret material", () => {
     stderrLength: 0,
     contentLength: 0,
     errorCode: undefined,
+    operationId: "operation-1",
+    connectionGeneration: 2,
+    queueMs: 3,
+    connectMs: 4,
+    executionMs: 5,
   });
 });
 

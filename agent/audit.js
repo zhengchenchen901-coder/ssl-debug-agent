@@ -19,7 +19,21 @@ export function buildAuditEntry(event, now = () => new Date()) {
     errorCode: event.errorCode,
   };
 
-  for (const key of ["draftId", "commandHash", "commandIndex", "commandCount", "commandPreview"]) {
+  for (const key of [
+    "draftId",
+    "commandHash",
+    "commandIndex",
+    "commandCount",
+    "commandPreview",
+    "operationId",
+    "connectionGeneration",
+    "queueMs",
+    "connectMs",
+    "validationMs",
+    "executionMs",
+    "errorLayer",
+    "errorPhase",
+  ]) {
     if (event[key] !== undefined) {
       entry[key] = event[key];
     }

@@ -6,7 +6,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
-const PLUGIN_VERSION = "1.0.6+codex.20260531063929";
+const PLUGIN_VERSION = "2.0.0";
+const AGENT_API_VERSION = 2;
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
 const PROBE_TIMEOUT_MS = 1500;
@@ -16,13 +17,15 @@ const AGENT_START_LOCK_POLL_MS = 250;
 const FALLBACK_PORT_ATTEMPTS = 100;
 const AGENT_LEASE_TTL_MS = 45_000;
 const AGENT_LEASE_HEARTBEAT_MS = 15_000;
-const DEFAULT_TIMEOUT_MS = 10_000;
-const MAX_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
+const MAX_TIMEOUT_MS = 120_000;
+const DEFAULT_FILE_TIMEOUT_MS = 60_000;
+const MAX_FILE_TIMEOUT_MS = 300_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
 const DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1000;
-const DEFAULT_APPROVED_COMMAND_TIMEOUT_MS = 30_000;
-const MAX_APPROVED_COMMAND_TIMEOUT_MS = 300_000;
+const DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 300_000;
+const MAX_APPROVED_EXECUTION_TIMEOUT_MS = 900_000;
 const MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
 const MAX_APPROVED_COMMANDS = 20;
 const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
@@ -103,12 +106,95 @@ let activeAgentSettings = null;
 const leaseClientId = `codex-mcp-${process.pid}-${randomUUID()}`;
 let activeAgentLease = null;
 let activeAgentRecoveryPromise = null;
+const inFlightToolCalls = new Map();
+
+const toolOperationPolicies = {
+  remote_debug_run_command: { defaultMs: DEFAULT_TIMEOUT_MS, maxMs: MAX_TIMEOUT_MS },
+  remote_debug_read_file: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_list_dir: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_execute_command_draft: {
+    defaultMs: DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
+    maxMs: MAX_APPROVED_EXECUTION_TIMEOUT_MS,
+  },
+};
+
+function normalizeToolTimeoutMs(toolName, value) {
+  const policy = toolOperationPolicies[toolName] || {
+    defaultMs: DEFAULT_TIMEOUT_MS,
+    maxMs: MAX_FILE_TIMEOUT_MS,
+  };
+  if (value === undefined || value === null) {
+    return policy.defaultMs;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    const error = new Error("timeoutMs must be a positive integer");
+    error.code = "INVALID_TIMEOUT";
+    throw error;
+  }
+  return Math.min(value, policy.maxMs);
+}
+
+function createToolOperation(toolName, args = {}) {
+  const timeoutMs = normalizeToolTimeoutMs(toolName, args.timeoutMs);
+  const controller = new AbortController();
+  return {
+    operationId: randomUUID(),
+    timeoutMs,
+    deadlineAt: Date.now() + timeoutMs,
+    controller,
+    signal: controller.signal,
+  };
+}
+
+function toolOperationError(operation, code, message, phase, cause) {
+  const error = new Error(message);
+  error.code = code;
+  error.operationId = operation?.operationId;
+  error.layer = "mcp";
+  error.phase = phase;
+  error.retriable = !["OPERATION_CANCELLED", "OPERATION_DEADLINE_EXCEEDED"].includes(code);
+  error.cause = cause?.message || cause;
+  error.payload = {
+    operationId: error.operationId,
+    code,
+    layer: error.layer,
+    phase,
+    retriable: error.retriable,
+    cause: error.cause,
+  };
+  return error;
+}
+
+function cancelToolOperation(requestId, reason) {
+  const operation = inFlightToolCalls.get(requestId);
+  if (!operation || operation.signal.aborted) {
+    return;
+  }
+  operation.controller.abort(
+    toolOperationError(
+      operation,
+      "OPERATION_CANCELLED",
+      "operation cancelled by MCP client",
+      "cancel",
+      reason,
+    ),
+  );
+}
 
 const instanceIdProperty = {
   type: "string",
   description:
     "Remote Debug Agent instance id. Optional only when exactly one instance is configured.",
 };
+
+function timeoutProperty(defaultMs, maxMs) {
+  return {
+    type: "integer",
+    minimum: 1,
+    maximum: maxMs,
+    description: `Total operation budget in milliseconds, including queueing, connection, execution, and cleanup. Defaults to ${defaultMs}.`,
+  };
+}
 
 const tools = [
   {
@@ -137,6 +223,7 @@ const tools = [
             "Command such as 'netstat -tlnp', 'systemctl status nginx', or 'tail -n 100 /var/log/nginx/error.log'.",
         },
         instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(30_000, 120_000),
       },
     },
   },
@@ -154,6 +241,13 @@ const tools = [
           description: "Absolute remote file path.",
         },
         instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(60_000, 300_000),
+        maxBytes: {
+          type: "integer",
+          minimum: 1,
+          maximum: DEFAULT_READ_MAX_BYTES,
+          description: `Maximum bytes to return. Defaults to ${DEFAULT_READ_MAX_BYTES}.`,
+        },
       },
     },
   },
@@ -171,6 +265,7 @@ const tools = [
           description: "Absolute remote directory path.",
         },
         instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(60_000, 300_000),
       },
     },
   },
@@ -236,6 +331,7 @@ const tools = [
           description: "Must exactly equal 使用命令.",
         },
         instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(300_000, 900_000),
       },
     },
   },
@@ -391,13 +487,13 @@ function publicTargetFromEnv(env) {
 
 function publicSecurityConfig(env = {}) {
   const approvedMaxTimeoutMs = parsePositiveInt(
-    env.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS,
-    MAX_APPROVED_COMMAND_TIMEOUT_MS,
+    env.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
+    MAX_APPROVED_EXECUTION_TIMEOUT_MS,
   );
   const approvedDefaultTimeoutMs = Math.min(
     parsePositiveInt(
-      env.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS,
-      DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
+      env.REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS,
+      DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
     ),
     approvedMaxTimeoutMs,
   );
@@ -406,13 +502,15 @@ function publicSecurityConfig(env = {}) {
     allowedPaths: DEFAULT_ALLOWED_PATHS,
     defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
     maxTimeoutMs: MAX_TIMEOUT_MS,
+    defaultFileTimeoutMs: DEFAULT_FILE_TIMEOUT_MS,
+    maxFileTimeoutMs: MAX_FILE_TIMEOUT_MS,
     defaultReadMaxBytes: DEFAULT_READ_MAX_BYTES,
     maxCommandOutputBytes: MAX_COMMAND_OUTPUT_BYTES,
     approvedCommands: {
       enabled: parseBooleanFlag(env.REMOTE_DEBUG_APPROVED_COMMANDS),
       ttlMs: DEFAULT_APPROVED_COMMAND_TTL_MS,
-      defaultTimeoutMs: approvedDefaultTimeoutMs,
-      maxTimeoutMs: approvedMaxTimeoutMs,
+      executionTimeoutMs: approvedDefaultTimeoutMs,
+      maxExecutionTimeoutMs: approvedMaxTimeoutMs,
       maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
       maxCommands: MAX_APPROVED_COMMANDS,
     },
@@ -552,6 +650,7 @@ function toolArgumentSummary(name, args = {}) {
       instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
       maxBytes: args.maxBytes,
+      timeoutMs: args.timeoutMs,
     };
   }
 
@@ -559,6 +658,7 @@ function toolArgumentSummary(name, args = {}) {
     return {
       instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+      timeoutMs: args.timeoutMs,
     };
   }
 
@@ -633,11 +733,24 @@ function protocolVersionFor(params) {
 
 async function fetchJson(url, options = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs || PROBE_TIMEOUT_MS);
+  const upstreamSignal = options.signal;
+  const abortFromUpstream = () => {
+    if (!controller.signal.aborted) {
+      controller.abort(upstreamSignal.reason || new Error("request cancelled"));
+    }
+  };
+  if (upstreamSignal?.aborted) abortFromUpstream();
+  else upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
+  const timer = setTimeout(() => {
+    const error = new Error("request timeout");
+    error.code = "FETCH_TIMEOUT";
+    controller.abort(error);
+  }, options.timeoutMs ?? PROBE_TIMEOUT_MS);
 
   try {
+    const { timeoutMs: _timeoutMs, ...fetchOptions } = options;
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       signal: controller.signal,
     });
     const text = await response.text();
@@ -652,6 +765,7 @@ async function fetchJson(url, options = {}) {
     return { response, parsed };
   } finally {
     clearTimeout(timer);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
   }
 }
 
@@ -786,11 +900,17 @@ async function probeAgent(settings) {
 
 function agentStatusIsHealthy(status, settings) {
   const agentPort = status?.agent?.port;
-  const portMatches = agentPort === undefined || agentPort === settings.port;
+  const portMatches = settings.explicitUrl || agentPort === undefined || agentPort === settings.port;
+  const capabilities = status?.capabilities || {};
 
   return Boolean(
     status?.name === "remote-debug-agent" &&
       status?.mode === "manager" &&
+      status?.apiVersion === AGENT_API_VERSION &&
+      capabilities.persistentSsh === true &&
+      capabilities.operationDeadlines === true &&
+      capabilities.cancellation === true &&
+      capabilities.structuredHealth === true &&
       portMatches,
   );
 }
@@ -1340,6 +1460,22 @@ async function resolveFallbackAgentSettings(settings, initialProbe) {
 async function performEnsureAgentReady() {
   const settings = agentSettings();
   if (settings.explicitUrl) {
+    const probe = await probeAgent(settings);
+    if (!agentStatusIsHealthy(probe.status, settings)) {
+      const error = new Error(
+        `Remote Debug Agent at ${settings.agentUrl} does not implement the required V2 protocol.`,
+      );
+      error.code = probe.kind === "unreachable"
+        ? "AGENT_UNAVAILABLE"
+        : "AGENT_PROTOCOL_MISMATCH";
+      error.payload = {
+        agentUrl: settings.agentUrl,
+        expectedApiVersion: AGENT_API_VERSION,
+        actualApiVersion: probe.status?.apiVersion,
+        status: probe.status,
+      };
+      throw error;
+    }
     if (
       !activeAgentSettings ||
       activeAgentSettings.agentUrl !== settings.agentUrl ||
@@ -1512,27 +1648,104 @@ function scheduleAgentPrewarm(trigger) {
 }
 
 async function requestAgent(pathName, payload, options = {}) {
-  const settings = await ensureAgentReady();
+  const operation = options.operation;
+  if (operation?.signal.aborted) {
+    throw operation.signal.reason;
+  }
+  if (operation && Date.now() >= operation.deadlineAt) {
+    throw toolOperationError(
+      operation,
+      "OPERATION_DEADLINE_EXCEEDED",
+      "operation deadline exceeded before contacting manager",
+      "manager_connect",
+    );
+  }
+
+  let settings;
+  try {
+    settings = await ensureAgentReady();
+  } catch (error) {
+    error.operationId ||= operation?.operationId;
+    error.layer ||= "mcp";
+    error.phase ||= "manager_connect";
+    if (error.retriable === undefined) {
+      error.retriable = error.code === "AGENT_UNAVAILABLE";
+    }
+    error.payload = {
+      operationId: error.operationId,
+      code: error.code || "AGENT_START_FAILED",
+      layer: error.layer,
+      phase: error.phase,
+      retriable: error.retriable,
+      ...(error.payload || {}),
+    };
+    throw error;
+  }
   const method = options.method || "POST";
   let response;
   let parsed;
 
   try {
+    const requestPayload = method === "GET"
+      ? undefined
+      : {
+          ...(payload || {}),
+          ...(operation
+            ? { operationId: operation.operationId, deadlineAt: operation.deadlineAt }
+            : {}),
+        };
+    const remainingMs = operation
+      ? Math.max(1, operation.deadlineAt - Date.now())
+      : payload?.timeoutMs || DEFAULT_TIMEOUT_MS;
     const result = await fetchJson(new URL(pathName, settings.agentUrl), {
       method,
       headers: {
         "Content-Type": "application/json",
         "X-Remote-Debug-Source": "codex-plugin",
+        ...(operation ? { "X-Remote-Debug-Operation-Id": operation.operationId } : {}),
       },
-      body: method === "GET" ? undefined : JSON.stringify(payload),
-      timeoutMs: payload?.timeoutMs || 30_000,
+      body: method === "GET" ? undefined : JSON.stringify(requestPayload),
+      timeoutMs: remainingMs + 5_000,
+      signal: operation?.signal,
     });
     response = result.response;
     parsed = result.parsed;
   } catch (error) {
+    if (operation?.signal.aborted) {
+      throw operation.signal.reason || toolOperationError(
+        operation,
+        "OPERATION_CANCELLED",
+        "operation cancelled",
+        "request",
+        error,
+      );
+    }
+    if (error?.code === "FETCH_TIMEOUT") {
+      throw toolOperationError(
+        operation,
+        "OPERATION_DEADLINE_EXCEEDED",
+        "operation deadline exceeded while waiting for manager response",
+        "request",
+        error,
+      );
+    }
     const wrapped = new Error(`Remote Debug Agent is unavailable at ${settings.agentUrl}: ${error.message}`);
     wrapped.code = "AGENT_UNAVAILABLE";
-    wrapped.payload = { agentUrl: settings.agentUrl, port: settings.port };
+    wrapped.operationId = operation?.operationId;
+    wrapped.layer = "mcp";
+    wrapped.phase = "manager_connect";
+    wrapped.retriable = true;
+    wrapped.cause = error.message;
+    wrapped.payload = {
+      operationId: operation?.operationId,
+      code: wrapped.code,
+      layer: wrapped.layer,
+      phase: wrapped.phase,
+      retriable: true,
+      cause: wrapped.cause,
+      agentUrl: settings.agentUrl,
+      port: settings.port,
+    };
     throw wrapped;
   }
 
@@ -1541,6 +1754,11 @@ async function requestAgent(pathName, payload, options = {}) {
     const code = parsed.error?.code || "AGENT_REQUEST_FAILED";
     const error = new Error(message);
     error.code = code;
+    error.operationId = parsed.error?.operationId || operation?.operationId;
+    error.layer = parsed.error?.layer;
+    error.phase = parsed.error?.phase;
+    error.retriable = parsed.error?.retriable;
+    error.cause = parsed.error?.cause;
     error.payload = {
       agentUrl: settings.agentUrl,
       port: settings.port,
@@ -1552,17 +1770,17 @@ async function requestAgent(pathName, payload, options = {}) {
   return parsed;
 }
 
-async function callAgent(pathName, payload) {
-  return requestAgent(pathName, payload);
+async function callAgent(pathName, payload, operation) {
+  return requestAgent(pathName, payload, { operation });
 }
 
-async function getAgent(pathName) {
-  return requestAgent(pathName, undefined, { method: "GET" });
+async function getAgent(pathName, operation) {
+  return requestAgent(pathName, undefined, { method: "GET", operation });
 }
 
-async function callTool(name, args) {
+async function callTool(name, args, operation) {
   if (name === "remote_debug_list_instances") {
-    const result = await getAgent("/api/instances");
+    const result = await getAgent("/api/instances", operation);
     return result;
   }
 
@@ -1571,7 +1789,7 @@ async function callTool(name, args) {
       instanceId: args?.instanceId,
       cmd: args?.cmd,
       timeoutMs: args?.timeoutMs,
-    });
+    }, operation);
   }
 
   if (name === "remote_debug_read_file") {
@@ -1579,14 +1797,16 @@ async function callTool(name, args) {
       instanceId: args?.instanceId,
       path: args?.path,
       maxBytes: args?.maxBytes,
-    });
+      timeoutMs: args?.timeoutMs,
+    }, operation);
   }
 
   if (name === "remote_debug_list_dir") {
     return callAgent("/list-dir", {
       instanceId: args?.instanceId,
       path: args?.path,
-    });
+      timeoutMs: args?.timeoutMs,
+    }, operation);
   }
 
   if (name === "remote_debug_prepare_command_draft") {
@@ -1594,14 +1814,14 @@ async function callTool(name, args) {
       instanceId: args?.instanceId,
       purpose: args?.purpose,
       commands: args?.commands,
-    });
+    }, operation);
   }
 
   if (name === "remote_debug_get_command_draft") {
     return callAgent("/approved-command-drafts/get", {
       instanceId: args?.instanceId,
       draftId: args?.draftId,
-    });
+    }, operation);
   }
 
   if (name === "remote_debug_execute_command_draft") {
@@ -1611,7 +1831,7 @@ async function callTool(name, args) {
       commandHash: args?.commandHash,
       confirmation: args?.confirmation,
       timeoutMs: args?.timeoutMs,
-    });
+    }, operation);
   }
 
   const error = new Error(`unknown tool: ${name}`);
@@ -1671,17 +1891,21 @@ async function handleRequest(message) {
     const startedAt = Date.now();
     const toolName = params?.name;
     const toolArguments = params?.arguments || {};
+    const operation = createToolOperation(toolName, toolArguments);
+    inFlightToolCalls.set(id, operation);
     await logMcpLifecycle("MCP_TOOLS_CALL_STARTED", "MCP tools/call started.", {
       requestId: id,
+      operationId: operation.operationId,
       method,
       toolName,
       arguments: toolArgumentSummary(toolName, toolArguments),
     });
 
     try {
-      const result = await callTool(toolName, toolArguments);
+      const result = await callTool(toolName, toolArguments, operation);
       await logMcpLifecycle("MCP_TOOLS_CALL_COMPLETED", "MCP tools/call completed.", {
         requestId: id,
+        operationId: operation.operationId,
         method,
         toolName,
         durationMs: Date.now() - startedAt,
@@ -1698,6 +1922,7 @@ async function handleRequest(message) {
     } catch (error) {
       await logMcpLifecycle("MCP_TOOLS_CALL_FAILED", "MCP tools/call failed.", {
         requestId: id,
+        operationId: operation.operationId,
         method,
         toolName,
         durationMs: Date.now() - startedAt,
@@ -1716,8 +1941,13 @@ async function handleRequest(message) {
               {
                 ok: false,
                 error: {
+                  operationId: error.operationId || operation.operationId,
                   code: error.code || "TOOL_CALL_FAILED",
                   message: error.message,
+                  layer: error.layer,
+                  phase: error.phase,
+                  retriable: error.retriable,
+                  cause: error.cause,
                 },
                 details: error.payload,
               },
@@ -1727,6 +1957,8 @@ async function handleRequest(message) {
           },
         ],
       });
+    } finally {
+      inFlightToolCalls.delete(id);
     }
     return;
   }
@@ -1745,6 +1977,9 @@ let inputBuffer = Buffer.alloc(0);
 
 function dispatchMessage(message) {
   if (message.method && message.id === undefined) {
+    if (message.method === "notifications/cancelled") {
+      cancelToolOperation(message.params?.requestId, message.params?.reason);
+    }
     return;
   }
 
@@ -1810,6 +2045,9 @@ process.stdin.on("error", (error) => {
 });
 
 process.stdin.on("close", () => {
+  for (const [requestId] of inFlightToolCalls) {
+    cancelToolOperation(requestId, "MCP stdin closed");
+  }
   releaseAgentLease().catch((error) => {
     console.error("failed to release Remote Debug Agent lease", error);
   });

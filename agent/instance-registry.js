@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { loadDotEnv } from "./config.js";
 
-export const REGISTRY_VERSION = 2;
+export const REGISTRY_VERSION = 3;
 export const DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 export const DEFAULT_HEALTH_INTERVAL_MS = 15_000;
 export const DEFAULT_START_TIMEOUT_MS = 10_000;
@@ -78,6 +78,7 @@ function assertInstanceId(value) {
 
 function managerDefaults(rawManager = {}) {
   const range = rawManager.workerPortRange || {};
+  const rawNetwork = rawManager.sshNetwork || {};
   const start = parsePort(range.start, DEFAULT_WORKER_PORT_RANGE.start, "workerPortRange.start");
   const end = parsePort(range.end, DEFAULT_WORKER_PORT_RANGE.end, "workerPortRange.end");
   if (end < start) {
@@ -105,18 +106,61 @@ function managerDefaults(rawManager = {}) {
       DEFAULT_STOP_TIMEOUT_MS,
       "stopTimeoutMs",
     ),
+    sshNetwork: {
+      keepaliveIntervalMs: parsePositiveInt(
+        rawNetwork.keepaliveIntervalMs,
+        15_000,
+        "sshNetwork.keepaliveIntervalMs",
+      ),
+      keepaliveCountMax: parsePositiveInt(
+        rawNetwork.keepaliveCountMax,
+        3,
+        "sshNetwork.keepaliveCountMax",
+      ),
+      reconnectBaseMs: parsePositiveInt(
+        rawNetwork.reconnectBaseMs,
+        1_000,
+        "sshNetwork.reconnectBaseMs",
+      ),
+      reconnectMaxMs: parsePositiveInt(
+        rawNetwork.reconnectMaxMs,
+        30_000,
+        "sshNetwork.reconnectMaxMs",
+      ),
+      reconnectJitter: 0.2,
+      maxBusinessChannels: parsePositiveInt(
+        rawNetwork.maxBusinessChannels,
+        4,
+        "sshNetwork.maxBusinessChannels",
+      ),
+      maxControlChannels: 1,
+      maxBackgroundChannels: 1,
+      maxQueueLength: 100,
+      backgroundStarvationMs: 10_000,
+    },
   };
 }
 
 function normalizeApprovedCommands(value = {}) {
+  const executionTimeoutMs = value.executionTimeoutMs ?? value.timeoutMs;
+  const maxExecutionTimeoutMs = value.maxExecutionTimeoutMs ?? value.maxTimeoutMs;
   return {
     enabled: parseBooleanFlag(value.enabled, false),
-    timeoutMs: value.timeoutMs === undefined || value.timeoutMs === ""
+    executionTimeoutMs: executionTimeoutMs === undefined || executionTimeoutMs === ""
       ? undefined
-      : parsePositiveInt(value.timeoutMs, undefined, "approvedCommands.timeoutMs"),
-    maxTimeoutMs: value.maxTimeoutMs === undefined || value.maxTimeoutMs === ""
+      : parsePositiveInt(
+          executionTimeoutMs,
+          undefined,
+          "approvedCommands.executionTimeoutMs",
+        ),
+    maxExecutionTimeoutMs:
+      maxExecutionTimeoutMs === undefined || maxExecutionTimeoutMs === ""
       ? undefined
-      : parsePositiveInt(value.maxTimeoutMs, undefined, "approvedCommands.maxTimeoutMs"),
+      : parsePositiveInt(
+          maxExecutionTimeoutMs,
+          undefined,
+          "approvedCommands.maxExecutionTimeoutMs",
+        ),
   };
 }
 
@@ -253,8 +297,8 @@ function envDefaultInstance(env, cwd) {
     auditLog: merged.REMOTE_DEBUG_AUDIT_LOG,
     approvedCommands: {
       enabled: merged.REMOTE_DEBUG_APPROVED_COMMANDS,
-      timeoutMs: merged.REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS,
-      maxTimeoutMs: merged.REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS,
+      executionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS,
+      maxExecutionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
     },
   });
 }

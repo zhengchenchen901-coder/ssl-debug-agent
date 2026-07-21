@@ -11,7 +11,8 @@ Codex Desktop
   -> local MCP wrapper
   -> local Node HTTP manager
   -> per-instance worker process
-  -> SSH
+  -> SshConnectionSupervisor (one persistent transport per running instance)
+  -> channel scheduler (4 business permits + 1 control permit)
   -> remote Linux server
 ```
 
@@ -61,8 +62,11 @@ Optional:
 $env:REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE = "..."
 $env:REMOTE_DEBUG_AUDIT_LOG = "C:\path\to\remote-debug-audit.jsonl"
 $env:REMOTE_DEBUG_APPROVED_COMMANDS = "0"
-$env:REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS = "30000"
-$env:REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS = "300000"
+$env:REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS = "300000"
+$env:REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS = "900000"
+$env:REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS = "15000"
+$env:REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX = "3"
+$env:REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS = "4"
 ```
 
 Do not commit secrets or private keys. This project intentionally reads SSH
@@ -260,6 +264,16 @@ configured, the manager routes to it automatically. If multiple instances exist
 and `instanceId` is missing, the tool returns `INSTANCE_ID_REQUIRED` with the
 available instance summaries.
 
+`timeoutMs` is one end-to-end operation budget measured from MCP receipt. It
+includes manager/worker routing, channel queueing, SSH connection recovery,
+path validation, execution, and cancellation cleanup. Defaults and limits are:
+
+- `remote_debug_run_command`: 30 seconds by default, 120 seconds maximum.
+- `remote_debug_read_file` and `remote_debug_list_dir`: 60 seconds by default,
+  300 seconds maximum. `remote_debug_read_file` also exposes `maxBytes`.
+- `remote_debug_execute_command_draft`: 300 seconds by default, 900 seconds
+  maximum for the entire command batch.
+
 ## Instance Memory
 
 The manager keeps a small per-instance memory cache at
@@ -310,8 +324,8 @@ The flow is:
    `commandHash`, and the exact confirmation phrase `使用命令`.
 
 Drafts are one-time use and expire after 30 minutes. Execution runs commands in
-order with the approved-command timeout. A non-zero exit code or timeout stops
-the remaining commands. This channel bypasses the read-only command allowlist,
+order under one shared operation deadline. A non-zero exit code or exhausted
+deadline stops the remaining commands. This channel bypasses the read-only command allowlist,
 but it does not bypass SSH configuration, timeouts, output limits, the one-time
 hash check, or audit logging. Audit entries store command hashes and redacted
 command previews instead of raw password-bearing command text.
@@ -368,7 +382,9 @@ Codex
   -> plugins/remote-debug-agent/mcp-server.js
   -> agent/server.js local HTTP manager
   -> agent/worker-entry.js per-instance worker
-  -> agent/ssh.js SSH or SFTP client
+  -> agent/ssh-connection-supervisor.js persistent SSH transport
+  -> agent/channel-scheduler.js channel permits
+  -> agent/ssh.js exec/SFTP operations
   -> remote Linux server
 ```
 
@@ -380,6 +396,29 @@ manager's `/run` endpoint. `remote_debug_read_file` and
 The approved-command tools use
 `/approved-command-drafts`, `/approved-command-drafts/get`, and
 `/approved-command-drafts/execute`.
+
+The V2 MCP only accepts a manager whose `/status` reports `apiVersion: 2` and
+the required capabilities. The manager only accepts workers whose ready IPC
+message reports `protocolVersion: 2`. Registry files are migrated to version 3;
+legacy approved-command `timeoutMs` fields are converted to the new shared
+execution budget fields when the registry is loaded.
+
+Each running worker owns one persistent `ssh2.Client`. SSH keepalive runs every
+15 seconds with three missed responses allowed. Transport loss degrades the
+instance without stopping the worker; reconnect uses jittered exponential
+backoff from 1 to 30 seconds and rereads the private key for every attempt.
+Interactive operations have priority, background work is limited to one
+business channel, and a background request waiting 10 seconds receives a
+scheduling opportunity. Exec channels are never retried after opening; SFTP is
+retried once only before data has been returned.
+
+Errors carry `operationId`, `code`, `layer`, `phase`, `retriable`, and `cause`
+across MCP, manager, worker, scheduler, and SSH. `AGENT_UNAVAILABLE` is reserved
+for an unreachable manager and `WORKER_UNAVAILABLE` for an unreachable worker
+HTTP endpoint. `/status`, instance APIs, and the dashboard expose worker,
+transport, authentication, target, and operation health. Audit records add
+connection generation plus queue, connect, validation, execution, and error
+layer/phase timing fields without persisting complete stdout.
 
 The local HTTP manager and worker are the security boundary. For `/run`, `agent/server.js`
 calls `validateCommand` from `agent/security.js` before any SSH command is

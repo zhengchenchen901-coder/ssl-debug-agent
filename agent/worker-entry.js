@@ -1,7 +1,9 @@
 import { loadConfig } from "./config.js";
 import { createApp } from "./server.js";
-import { checkSSHConnection } from "./ssh.js";
+import { createSSHOperations } from "./ssh.js";
+import { SshConnectionSupervisor } from "./ssh-connection-supervisor.js";
 import { discoverMemory } from "./memory-discovery.js";
+import { API_VERSION } from "./operation.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,9 +31,25 @@ function parseBooleanFlag(value) {
   return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
 }
 
-async function runHealthCheck(config) {
-  await checkSSHConnection(config);
-  send({ type: "health", status: "healthy" });
+function healthSnapshot(supervisor) {
+  const health = supervisor.snapshot();
+  return {
+    ...health,
+    worker: {
+      status: "healthy",
+      pid: process.pid,
+      lastHeartbeatAt: new Date().toISOString(),
+    },
+  };
+}
+
+async function runHealthCheck(supervisor) {
+  send({
+    type: "health",
+    status: "healthy",
+    apiVersion: API_VERSION,
+    health: healthSnapshot(supervisor),
+  });
 }
 
 export async function runMemoryInit(config, options = {}) {
@@ -102,20 +120,23 @@ export function installWorkerShutdownHandlers(shutdown, processObject = process)
 
 async function main() {
   const config = loadConfig();
+  const supervisor = new SshConnectionSupervisor(config);
+  const sshOperations = createSSHOperations(supervisor);
+  const backgroundSshOperations = createSSHOperations(supervisor, { priority: "background" });
   const healthIntervalMs = parsePositiveInt(
     process.env.REMOTE_DEBUG_HEALTH_INTERVAL_MS,
     15_000,
   );
 
   try {
-    await checkSSHConnection(config);
+    await supervisor.start();
   } catch (error) {
-    send({ type: "ready", ok: false, error: errorPayload(error) });
+    send({ type: "ready", ok: false, apiVersion: API_VERSION, error: errorPayload(error) });
     process.exitCode = 1;
     return;
   }
 
-  const app = createApp({ config });
+  const app = createApp({ config, sshSupervisor: supervisor, ...sshOperations });
   const server = app.listen(config.agent.port, config.agent.host, () => {
     send({
       type: "ready",
@@ -123,8 +144,14 @@ async function main() {
       instanceId: process.env.REMOTE_DEBUG_INSTANCE_ID || "",
       pid: process.pid,
       port: config.agent.port,
+      protocolVersion: API_VERSION,
+      health: healthSnapshot(supervisor),
     });
-    scheduleMemoryInit(config);
+    scheduleMemoryInit(config, {
+      runOptions: {
+        discovery: backgroundSshOperations,
+      },
+    });
   });
 
   server.on("error", (error) => {
@@ -133,12 +160,23 @@ async function main() {
     setTimeout(() => process.exit(1), 0);
   });
 
-  const healthTimer = setInterval(() => {
-    runHealthCheck(config).catch((error) => {
-      send({ type: "health", status: "unhealthy", error: errorPayload(error) });
+  const reportHealth = () => {
+    runHealthCheck(supervisor).catch((error) => {
+      send({
+        type: "health",
+        status: "healthy",
+        apiVersion: API_VERSION,
+        health: {
+          ...healthSnapshot(supervisor),
+          overall: "degraded",
+          lastError: errorPayload(error),
+        },
+      });
     });
-  }, healthIntervalMs);
+  };
+  const healthTimer = setInterval(reportHealth, healthIntervalMs);
   healthTimer.unref?.();
+  supervisor.on("state", reportHealth);
 
   let shuttingDown = false;
   const shutdown = (reason = "stopped", reportStopped = false) => {
@@ -147,11 +185,14 @@ async function main() {
     }
     shuttingDown = true;
     clearInterval(healthTimer);
+    supervisor.off("state", reportHealth);
     if (reportStopped) {
       send({ type: "health", status: "stopped", reason });
     }
-    server.close(() => {
-      process.exit(0);
+    supervisor.stop(reason).finally(() => {
+      server.close(() => {
+        process.exit(0);
+      });
     });
     setTimeout(() => process.exit(0), 1000).unref?.();
   };

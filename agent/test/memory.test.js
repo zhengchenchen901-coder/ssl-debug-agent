@@ -131,7 +131,7 @@ test("worker manager requests memory init when cache is missing and persists wor
     canBindPort: async () => true,
     forkWorker: (_entryPath, options) => {
       forkEnv = options.env;
-      setImmediate(() => worker.emit("message", { type: "ready", ok: true }));
+      setImmediate(() => worker.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
       return worker;
     },
   });
@@ -182,7 +182,7 @@ test("worker manager skips init when usable memory exists", async () => {
     forkWorker: (_entryPath, options) => {
       forkEnv = options.env;
       const worker = new FakeWorkerProcess();
-      setImmediate(() => worker.emit("message", { type: "ready", ok: true }));
+      setImmediate(() => worker.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
       return worker;
     },
   });

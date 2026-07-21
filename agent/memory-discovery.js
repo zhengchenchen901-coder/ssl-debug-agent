@@ -111,9 +111,9 @@ async function probeCommand(command, { config, runSSH, timeoutMs }) {
   }
 }
 
-async function probeDirectory(remotePath, { config, listRemoteDir }) {
+async function probeDirectory(remotePath, { config, listRemoteDir, timeoutMs }) {
   try {
-    const result = await listRemoteDir(remotePath, { config });
+    const result = await listRemoteDir(remotePath, { config, timeoutMs, priority: "background" });
     const entries = Array.isArray(result.entries) ? result.entries : [];
     return {
       ok: true,
@@ -228,7 +228,7 @@ export async function discoverMemory(config, options = {}) {
   }
 
   for (const remotePath of DISCOVERY_DIRECTORIES.filter((item) => directoryAllowed(item, allowedPaths))) {
-    const probe = await probeDirectory(remotePath, { config, listRemoteDir });
+    const probe = await probeDirectory(remotePath, { config, listRemoteDir, timeoutMs });
     sections.probes.directories[remotePath] = probe;
     if (!probe.ok) {
       failedProbeCount += 1;

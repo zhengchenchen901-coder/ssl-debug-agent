@@ -5,6 +5,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isPortInRange } from "./instance-registry.js";
 import { MemoryStore } from "./memory-store.js";
+import {
+  API_VERSION,
+  operationError,
+  operationErrorForSignal,
+  remainingOperationMs,
+} from "./operation.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +45,10 @@ function publicRuntime(runtime) {
       startedAt: null,
       lastHeartbeatAt: null,
       lastError: null,
+      health: {
+        overall: "stopped",
+        worker: { status: "stopped", lastHeartbeatAt: null },
+      },
       events: [],
     };
   }
@@ -50,6 +60,7 @@ function publicRuntime(runtime) {
     startedAt: runtime.startedAt || null,
     lastHeartbeatAt: runtime.lastHeartbeatAt || null,
     lastError: runtime.lastError || null,
+    health: runtime.health || null,
     events: runtime.events.slice(-20),
   };
 }
@@ -127,14 +138,17 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_AUDIT_LOG:
       instance.auditLog || path.resolve(instanceDir, "audit.jsonl"),
     REMOTE_DEBUG_APPROVED_COMMANDS: instance.approvedCommands?.enabled ? "1" : "0",
-    REMOTE_DEBUG_APPROVED_COMMAND_TIMEOUT_MS:
-      instance.approvedCommands?.timeoutMs === undefined
+    REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS:
+      instance.approvedCommands?.executionTimeoutMs === undefined
         ? ""
-        : String(instance.approvedCommands.timeoutMs),
-    REMOTE_DEBUG_APPROVED_COMMAND_MAX_TIMEOUT_MS:
-      instance.approvedCommands?.maxTimeoutMs === undefined
+        : String(instance.approvedCommands.executionTimeoutMs),
+    REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS:
+      instance.approvedCommands?.maxExecutionTimeoutMs === undefined
         ? ""
-        : String(instance.approvedCommands.maxTimeoutMs),
+        : String(instance.approvedCommands.maxExecutionTimeoutMs),
+    REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS: String(manager.sshNetwork.keepaliveIntervalMs),
+    REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
+    REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
     REMOTE_DEBUG_RUNTIME_STATE_PATH: path.resolve(instanceDir, ".runtime", "agent-state.json"),
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0",
@@ -622,6 +636,10 @@ export class WorkerManager {
       startedAt: nowIso(),
       lastHeartbeatAt: null,
       lastError: null,
+      health: {
+        overall: "unhealthy",
+        worker: { status: "starting", lastHeartbeatAt: null },
+      },
       intentionalStop: false,
       preserveRestoreSnapshot: false,
       events: [],
@@ -735,7 +753,20 @@ export class WorkerManager {
           return;
         }
         if (message.ok) {
-          finish();
+          if (message.protocolVersion !== API_VERSION) {
+            finish(
+              managerError(
+                `worker protocol version mismatch: expected ${API_VERSION}, received ${message.protocolVersion ?? "missing"}`,
+                "WORKER_PROTOCOL_MISMATCH",
+                502,
+              ),
+            );
+          } else {
+            if (runtime && message.health) {
+              runtime.health = message.health;
+            }
+            finish();
+          }
         } else {
           finish(
             managerError(
@@ -778,14 +809,28 @@ export class WorkerManager {
 
     if (message.type === "health") {
       runtime.lastHeartbeatAt = nowIso();
+      if (message.health) {
+        runtime.health = {
+          ...message.health,
+          worker: {
+            ...(message.health.worker || {}),
+            status: "healthy",
+            lastHeartbeatAt: runtime.lastHeartbeatAt,
+          },
+        };
+      }
       if (message.status === "healthy") {
-        runtime.lastError = null;
+        runtime.lastError = message.health?.transport?.lastError || null;
         let statusChanged = false;
         if (runtime.status !== "starting") {
           runtime.status = "running";
           statusChanged = true;
         }
-        event(runtime, "health", { status: "healthy" });
+        event(runtime, "health", {
+          status: "healthy",
+          overall: runtime.health?.overall || "healthy",
+          transport: runtime.health?.transport?.status,
+        });
         if (statusChanged) {
           await this.maintainRestoreSnapshot("active-runtime", "health-running");
         }
@@ -807,6 +852,14 @@ export class WorkerManager {
         message: "worker reported unhealthy status",
       };
       runtime.status = "unhealthy";
+      runtime.health = {
+        ...(runtime.health || {}),
+        overall: "unhealthy",
+        worker: {
+          status: "unhealthy",
+          lastHeartbeatAt: runtime.lastHeartbeatAt,
+        },
+      };
       event(runtime, "health", { status: "unhealthy", error: runtime.lastError });
       await this.stopInstance(id, "unhealthy");
       return;
@@ -896,6 +949,15 @@ export class WorkerManager {
         code: "WORKER_HEARTBEAT_TIMEOUT",
         message: "worker heartbeat timed out",
       };
+      runtime.health = {
+        ...(runtime.health || {}),
+        overall: "unhealthy",
+        worker: {
+          status: "unhealthy",
+          lastHeartbeatAt: runtime.lastHeartbeatAt,
+          lastError: runtime.lastError,
+        },
+      };
       event(runtime, "heartbeat-timeout", { error: runtime.lastError });
       await this.stopInstance(id, "unhealthy");
     }
@@ -937,6 +999,14 @@ export class WorkerManager {
     runtime.pid = null;
     runtime.workerPort = null;
     runtime.status = reason === "unhealthy" ? "unhealthy" : "stopped";
+    runtime.health = {
+      ...(runtime.health || {}),
+      overall: reason === "unhealthy" ? "unhealthy" : "stopped",
+      worker: {
+        status: reason === "unhealthy" ? "unhealthy" : "stopped",
+        lastHeartbeatAt: runtime.lastHeartbeatAt,
+      },
+    };
     if (!["unhealthy", "start-failed"].includes(reason)) {
       runtime.lastError = null;
     }
@@ -969,7 +1039,7 @@ export class WorkerManager {
     return this.registry.resolveId(instanceId);
   }
 
-  async callInstance(instanceId, pathName, payload, headers = {}) {
+  async callInstance(instanceId, pathName, payload, headers = {}, options = {}) {
     const resolvedId = this.resolveInstanceId(instanceId);
     const runtime = this.runtime.get(resolvedId);
     if (!runtime || runtime.status !== "running" || !runtime.workerPort) {
@@ -984,44 +1054,94 @@ export class WorkerManager {
     }
 
     const url = `http://${this.managerConfig().host}:${runtime.workerPort}${pathName}`;
+    const operation = {
+      operationId: payload?.operationId || `manager-${Date.now()}`,
+      deadlineAt: Number.isInteger(payload?.deadlineAt)
+        ? payload.deadlineAt
+        : Date.now() + (payload?.timeoutMs || 30_000),
+    };
     const controller = new AbortController();
-    const timeoutMs = payload?.timeoutMs || 30_000;
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let deadlineExpired = false;
+    const abortFromUpstream = () => {
+      if (!controller.signal.aborted) {
+        controller.abort(operationErrorForSignal(options.signal, operation, {
+          layer: "manager",
+          phase: "worker-request",
+        }));
+      }
+    };
+    if (options.signal?.aborted) abortFromUpstream();
+    else options.signal?.addEventListener("abort", abortFromUpstream, { once: true });
+    const timer = setTimeout(() => {
+      deadlineExpired = true;
+      controller.abort(operationError("worker response cleanup grace exceeded", {
+        code: "OPERATION_DEADLINE_EXCEEDED",
+        statusCode: 408,
+        operationId: operation.operationId,
+        layer: "manager",
+        phase: "worker-response",
+      }));
+    }, remainingOperationMs(operation) + 2_000);
+    timer.unref?.();
     let response;
+    let parsed;
     try {
       response = await this.fetchImpl(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Remote-Debug-Source": headers["x-remote-debug-source"] || headers["X-Remote-Debug-Source"] || "http-api",
+          "X-Remote-Debug-Operation-Id": operation.operationId,
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+      const text = await response.text();
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = { ok: false, raw: text };
+      }
     } catch (error) {
-      throw managerError(
-        `worker is unavailable for instance ${resolvedId}: ${error.message}`,
-        "WORKER_UNAVAILABLE",
-        502,
-      );
+      if (options.signal?.aborted) {
+        throw operationErrorForSignal(options.signal, operation, {
+          layer: "manager",
+          phase: "worker-request",
+        });
+      }
+      if (deadlineExpired || controller.signal.reason?.code === "OPERATION_DEADLINE_EXCEEDED") {
+        throw controller.signal.reason;
+      }
+      throw operationError(`worker is unavailable for instance ${resolvedId}: ${error.message}`, {
+        code: "WORKER_UNAVAILABLE",
+        statusCode: 502,
+        operationId: operation.operationId,
+        layer: "manager",
+        phase: "worker-request",
+        retriable: true,
+        cause: error,
+      });
     } finally {
       clearTimeout(timer);
-    }
-    const text = await response.text();
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = { ok: false, raw: text };
+      options.signal?.removeEventListener("abort", abortFromUpstream);
     }
 
     if (!response.ok || parsed.ok === false) {
-      throw managerError(
+      const error = operationError(
         parsed.error?.message || `worker request failed with HTTP ${response.status}`,
-        parsed.error?.code || "WORKER_REQUEST_FAILED",
-        response.status || 502,
-        { payload: parsed },
+        {
+          code: parsed.error?.code || "WORKER_REQUEST_FAILED",
+          statusCode: response.status || 502,
+          operationId: parsed.error?.operationId || operation.operationId,
+          layer: parsed.error?.layer || "worker",
+          phase: parsed.error?.phase || "request",
+          retriable: parsed.error?.retriable,
+          cause: parsed.error?.cause,
+          details: parsed.details,
+        },
       );
+      error.payload = parsed;
+      throw error;
     }
 
     return {

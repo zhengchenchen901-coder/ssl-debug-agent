@@ -8,10 +8,10 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   APPROVED_COMMAND_CONFIRMATION,
-  DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
+  DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
   DEFAULT_APPROVED_COMMAND_TTL_MS,
   MAX_APPROVED_COMMAND_LENGTH,
-  MAX_APPROVED_COMMAND_TIMEOUT_MS,
+  MAX_APPROVED_EXECUTION_TIMEOUT_MS,
   MAX_APPROVED_COMMANDS,
 } from "../approved-commands.js";
 import { DEFAULT_ALLOWED_PATHS } from "../config.js";
@@ -49,8 +49,8 @@ function makeConfig(logPath, approvedCommands = {}) {
     approvedCommands: {
       enabled: false,
       ttlMs: DEFAULT_APPROVED_COMMAND_TTL_MS,
-      defaultTimeoutMs: DEFAULT_APPROVED_COMMAND_TIMEOUT_MS,
-      maxTimeoutMs: MAX_APPROVED_COMMAND_TIMEOUT_MS,
+      executionTimeoutMs: DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
+      maxExecutionTimeoutMs: MAX_APPROVED_EXECUTION_TIMEOUT_MS,
       maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
       maxCommands: MAX_APPROVED_COMMANDS,
       ...approvedCommands,
@@ -252,6 +252,37 @@ test("non-zero or timed-out commands stop the remaining draft commands", { skip:
     assert.equal(execute.body.commandsOk, false);
     assert.equal(execute.body.stopped.reason, "non_zero_exit");
     assert.deepEqual(executed, ["echo ok", "echo fail"]);
+  } finally {
+    await close(server);
+  }
+});
+
+test("approved command batches share one deadline and skip remaining commands", { skip: !depsInstalled }, async () => {
+  const executed = [];
+  const { server } = await startApprovedApp({
+    approvedCommands: { enabled: true },
+    runSSH: async (command, options) => {
+      executed.push(command);
+      return new Promise((_resolve, reject) => {
+        const rejectFromSignal = () => reject(options.operation.signal.reason);
+        if (options.operation.signal.aborted) rejectFromSignal();
+        else options.operation.signal.addEventListener("abort", rejectFromSignal, { once: true });
+      });
+    },
+  });
+
+  try {
+    const prepare = await prepareDraft(server, ["echo first", "echo skipped"]);
+    const execute = await postJson(server, "/approved-command-drafts/execute", {
+      draftId: prepare.body.draftId,
+      commandHash: prepare.body.commandHash,
+      confirmation: APPROVED_COMMAND_CONFIRMATION,
+      timeoutMs: 20,
+    });
+    assert.equal(execute.status, 408);
+    assert.equal(execute.body.error.code, "OPERATION_DEADLINE_EXCEEDED");
+    assert.ok(execute.body.error.operationId);
+    assert.deepEqual(executed, ["echo first"]);
   } finally {
     await close(server);
   }
