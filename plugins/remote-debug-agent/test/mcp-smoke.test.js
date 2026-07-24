@@ -10,6 +10,13 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const serverPath = path.resolve(here, "..", "mcp-server.js");
+const pluginManifest = JSON.parse(
+  await fs.readFile(path.resolve(here, "..", ".codex-plugin", "plugin.json"), "utf8"),
+);
+const developmentRuntimeId = `development:${pluginManifest.version}`;
+const sharedTestDataDir = await fs.mkdtemp(
+  path.join(os.tmpdir(), "remote-debug-mcp-test-data-"),
+);
 
 function encodeMessage(message) {
   const body = Buffer.from(JSON.stringify(message), "utf8");
@@ -334,6 +341,17 @@ async function waitForStatus(port, predicate = () => true, timeoutMs = 5000) {
   throw lastError || new Error(`timed out waiting for fake agent on ${port}`);
 }
 
+async function waitForPortRelease(port, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await canBindPort(port)) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`timed out waiting for port ${port} to be released`);
+}
+
 function startOperationAgentStub(mode) {
   const server = http.createServer((request, response) => {
     if (request.method === "GET" && request.url === "/status") {
@@ -383,10 +401,10 @@ function startOperationAgentStub(mode) {
   });
 }
 
-function managerSourceFingerprint(agentDir, agentUrl, port, explicitUrl = "") {
+function managerSourceFingerprint(agentUrl, port, explicitUrl = "") {
   return createHash("sha256")
     .update(JSON.stringify({
-      agentDir: path.resolve(agentDir),
+      runtimeId: developmentRuntimeId,
       agentUrl,
       port,
       explicitUrl,
@@ -416,8 +434,8 @@ async function readMarkerPids(markerPath) {
   }
 }
 
-async function readMcpLogEvents(targetServerPath = serverPath) {
-  const logPath = path.resolve(path.dirname(targetServerPath), ".runtime", "mcp-error.log");
+async function readMcpLogEvents(dataDir = sharedTestDataDir) {
+  const logPath = path.resolve(dataDir, "logs", "mcp-error.log");
   try {
     const text = await fs.readFile(logPath, "utf8");
     return text
@@ -544,7 +562,12 @@ const server = http.createServer((request, response) => {
         cancellation: true,
         structuredHealth: true
       },
-      agent: { port, pid: process.pid, configFingerprint: configFingerprint() },
+      agent: {
+        port,
+        pid: process.pid,
+        configFingerprint: configFingerprint(),
+        runtimeId: process.env.REMOTE_DEBUG_RUNTIME_ID || ${JSON.stringify(developmentRuntimeId)}
+      },
       lifecycle: {
         lifetime: process.env.REMOTE_DEBUG_AGENT_LIFETIME || "manual",
         activeLeaseCount: leases.size,
@@ -620,6 +643,7 @@ function startMcp(env, targetServerPath = serverPath) {
     cwd: path.dirname(targetServerPath),
     env: {
       ...process.env,
+      REMOTE_DEBUG_DATA_DIR: sharedTestDataDir,
       ...env,
     },
     stdio: ["pipe", "pipe", "pipe"],
@@ -638,6 +662,24 @@ async function callRunTool(child) {
       params: {
         name: "remote_debug_run_command",
         arguments: { cmd: "netstat -tlnp" },
+      },
+    }),
+  );
+  return readMessage();
+}
+
+async function callListInstances(child) {
+  const readMessage = createMessageReader(child);
+  child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 1, method: "initialize" }));
+  await readMessage();
+  child.stdin.write(
+    encodeMessage({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_list_instances",
+        arguments: {},
       },
     }),
   );
@@ -993,9 +1035,9 @@ test("MCP clears stale startup locks before starting the local agent", async () 
     ].join("\n"),
   );
 
-  const runtimeDir = path.resolve(path.dirname(serverPath), ".runtime");
+  const runtimeDir = path.resolve(sharedTestDataDir, "logs");
   await fs.mkdir(runtimeDir, { recursive: true });
-  const sourceFingerprint = managerSourceFingerprint(agentDir, agentUrl, port);
+  const sourceFingerprint = managerSourceFingerprint(agentUrl, port);
   const lockPath = agentStartLockPath(runtimeDir, agentUrl, sourceFingerprint);
   await fs.writeFile(
     lockPath,
@@ -1020,11 +1062,13 @@ test("MCP clears stale startup locks before starting the local agent", async () 
     REMOTE_DEBUG_AGENT_DIR: agentDir,
     FAKE_AGENT_START_MARKER: markerPath,
   });
+  let agentPid;
 
   try {
     const call = await callRunTool(child);
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
     const status = await waitForStatus(port);
+    agentPid = status.agent.pid;
     const markerPids = await readMarkerPids(markerPath);
     assert.equal(new Set(markerPids).size, 1);
 
@@ -1033,8 +1077,8 @@ test("MCP clears stale startup locks before starting the local agent", async () 
       events.some((event) => event.code === "AGENT_START_LOCK_STALE" && event.lockPath === lockPath),
     );
 
-    killPid(status.agent.pid);
   } finally {
+    killPid(agentPid);
     child.kill();
   }
 });
@@ -1228,32 +1272,57 @@ test("MCP prewarms the local agent after initialize", async () => {
   }
 });
 
-test("MCP resolves project root from Codex local marketplace config when running from cache", async () => {
-  const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-project-"));
-  const codexHome = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-codex-home-"));
-  const agentDir = path.join(projectDir, "agent");
+test("bundled MCP runs from an isolated cache after the clone directory is renamed", async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-cache-"));
+  const projectDir = path.join(tempRoot, "源码 克隆");
+  const renamedProjectDir = path.join(tempRoot, "源码 克隆 已移除");
+  const codexHome = path.join(tempRoot, "Codex Home");
+  const dataDir = path.join(tempRoot, "用户 数据");
   const cacheDir = path.join(
     codexHome,
     "plugins",
     "cache",
     "remote-debug-local",
     "remote-debug-agent",
-    "2.0.0",
+    "2.1.0",
   );
   const installedServerPath = path.join(cacheDir, "mcp-server.js");
   const port = await getFreePort();
+  const pluginRoot = path.resolve(here, "..");
+  const legacyStateDir = path.join(projectDir, ".remote-debug");
 
-  await writeFakeAgent(agentDir);
-  await fs.mkdir(cacheDir, { recursive: true });
-  await fs.copyFile(serverPath, installedServerPath);
+  await fs.mkdir(legacyStateDir, { recursive: true });
+  await fs.cp(pluginRoot, cacheDir, { recursive: true });
   await fs.writeFile(
     path.join(projectDir, ".env"),
     [
       "REMOTE_DEBUG_HOST=prod.example.com",
       "REMOTE_DEBUG_USER=app",
+      "REMOTE_DEBUG_PRIVATE_KEY_PATH=C:\\keys\\id_ed25519",
       `REMOTE_DEBUG_AGENT_PORT=${port}`,
     ].join("\n"),
   );
+  await fs.writeFile(
+    path.join(legacyStateDir, "instances.json"),
+    JSON.stringify({
+      version: 3,
+      defaultInstanceId: "legacy-instance",
+      instances: [
+        {
+          id: "legacy-instance",
+          name: "Legacy Instance",
+          enabled: true,
+          host: "prod.example.com",
+          port: 22,
+          username: "app",
+          privateKeyPath: "C:\\keys\\id_ed25519",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    }),
+  );
+  await fs.mkdir(codexHome, { recursive: true });
   await fs.writeFile(
     path.join(codexHome, "config.toml"),
     [
@@ -1266,6 +1335,8 @@ test("MCP resolves project root from Codex local marketplace config when running
   const child = startMcp(
     {
       CODEX_HOME: codexHome,
+      NODE_PATH: "",
+      REMOTE_DEBUG_DATA_DIR: dataDir,
       REMOTE_DEBUG_AGENT_URL: "",
       REMOTE_DEBUG_AGENT_DIR: "",
       REMOTE_DEBUG_ENV_PATH: "",
@@ -1274,16 +1345,143 @@ test("MCP resolves project root from Codex local marketplace config when running
   );
 
   try {
-    const call = await callRunTool(child);
-    assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+    const call = await callListInstances(child);
+    const instances = JSON.parse(call.result.content[0].text);
+    assert.equal(instances.instances[0].id, "legacy-instance");
+    assert.equal(
+      await fs.readFile(path.join(dataDir, "config.env"), "utf8"),
+      await fs.readFile(path.join(projectDir, ".env"), "utf8"),
+    );
+
+    const status = await waitForStatus(port);
+    assert.match(status.agent.runtimeId, /^2\.1\.0:[a-f0-9]{64}$/);
+    killPid(status.agent.pid);
+    await waitForPortRelease(port);
+    child.kill();
+
+    await fs.rename(projectDir, renamedProjectDir);
+    const restarted = startMcp(
+      {
+        CODEX_HOME: codexHome,
+        NODE_PATH: "",
+        REMOTE_DEBUG_DATA_DIR: dataDir,
+        REMOTE_DEBUG_AGENT_URL: "",
+        REMOTE_DEBUG_AGENT_DIR: "",
+        REMOTE_DEBUG_ENV_PATH: "",
+      },
+      installedServerPath,
+    );
+    try {
+      const restartedCall = await callListInstances(restarted);
+      const restartedInstances = JSON.parse(restartedCall.result.content[0].text);
+      assert.equal(restartedInstances.instances[0].id, "legacy-instance");
+      const restartedStatus = await waitForStatus(port);
+      assert.match(restartedStatus.agent.runtimeId, /^2\.1\.0:[a-f0-9]{64}$/);
+      killPid(restartedStatus.agent.pid);
+    } finally {
+      restarted.kill();
+    }
   } finally {
     child.kill();
-    const status = await waitForStatus(port);
-    process.kill(status.agent.pid);
+    try {
+      const status = await waitForStatus(port, () => true, 500);
+      killPid(status.agent.pid);
+    } catch {
+      // The test already stopped the bundled manager.
+    }
   }
 });
 
-test("MCP replaces a confirmed V1 local manager with a V2 manager", async () => {
+test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-missing-runtime-"));
+  const cacheDir = path.join(tempRoot, "插件 缓存");
+  const dataDir = path.join(tempRoot, "用户 数据");
+  const installedServerPath = path.join(cacheDir, "mcp-server.js");
+  const port = await getFreePort();
+
+  await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.copyFile(serverPath, installedServerPath);
+  await fs.copyFile(
+    path.resolve(here, "..", "runtime-support.js"),
+    path.join(cacheDir, "runtime-support.js"),
+  );
+  await fs.copyFile(
+    path.resolve(here, "..", ".codex-plugin", "plugin.json"),
+    path.join(cacheDir, ".codex-plugin", "plugin.json"),
+  );
+  await fs.writeFile(
+    path.join(dataDir, "config.env"),
+    [
+      "REMOTE_DEBUG_HOST=prod.example.com",
+      "REMOTE_DEBUG_USER=app",
+      "REMOTE_DEBUG_PRIVATE_KEY_PATH=C:\\keys\\id_ed25519",
+      `REMOTE_DEBUG_AGENT_PORT=${port}`,
+    ].join("\n"),
+  );
+
+  const child = startMcp(
+    {
+      NODE_PATH: "",
+      REMOTE_DEBUG_DATA_DIR: dataDir,
+      REMOTE_DEBUG_AGENT_URL: "",
+      REMOTE_DEBUG_AGENT_DIR: "",
+      REMOTE_DEBUG_ENV_PATH: "",
+    },
+    installedServerPath,
+  );
+
+  try {
+    const call = await callListInstances(child);
+    const result = JSON.parse(call.result.content[0].text);
+    assert.equal(call.result.isError, true);
+    assert.equal(result.error.code, "BUNDLED_AGENT_NOT_FOUND");
+    assert.match(result.error.message, /runtime was not found/i);
+  } finally {
+    child.kill();
+  }
+});
+
+test("external V2 agent URLs remain usable without a bundled runtime", async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-external-v2-"));
+  const cacheDir = path.join(tempRoot, "插件 缓存");
+  const dataDir = path.join(tempRoot, "用户 数据");
+  const installedServerPath = path.join(cacheDir, "mcp-server.js");
+  const agentStub = await startAgentStub();
+
+  await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
+  await fs.copyFile(serverPath, installedServerPath);
+  await fs.copyFile(
+    path.resolve(here, "..", "runtime-support.js"),
+    path.join(cacheDir, "runtime-support.js"),
+  );
+  await fs.copyFile(
+    path.resolve(here, "..", ".codex-plugin", "plugin.json"),
+    path.join(cacheDir, ".codex-plugin", "plugin.json"),
+  );
+
+  const child = startMcp(
+    {
+      NODE_PATH: "",
+      REMOTE_DEBUG_DATA_DIR: dataDir,
+      REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${agentStub.address().port}`,
+      REMOTE_DEBUG_AGENT_DIR: "",
+      REMOTE_DEBUG_ENV_PATH: "",
+    },
+    installedServerPath,
+  );
+
+  try {
+    const call = await callListInstances(child);
+    const result = JSON.parse(call.result.content[0].text);
+    assert.equal(result.instances[0].id, "default");
+  } finally {
+    child.kill();
+    await close(agentStub);
+  }
+});
+
+test("MCP replaces an outdated source manager when the runtime id differs", async () => {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-v2-upgrade-"));
   const agentDir = path.join(tempRoot, "agent");
   const envPath = path.join(tempRoot, ".env");
@@ -1303,27 +1501,31 @@ test("MCP replaces a confirmed V1 local manager with a V2 manager", async () => 
     env: {
       ...process.env,
       REMOTE_DEBUG_AGENT_PORT: String(port),
-      FAKE_AGENT_API_VERSION: "1",
+      REMOTE_DEBUG_RUNTIME_ID: "development:2.0.0",
     },
     stdio: "ignore",
   });
   const child = startMcp({
     REMOTE_DEBUG_AGENT_URL: "",
-    REMOTE_DEBUG_AGENT_PORT: String(port),
-    REMOTE_DEBUG_AGENT_DIR: agentDir,
-    REMOTE_DEBUG_ENV_PATH: envPath,
-    FAKE_AGENT_API_VERSION: "",
-  });
+      REMOTE_DEBUG_AGENT_PORT: String(port),
+      REMOTE_DEBUG_AGENT_DIR: agentDir,
+      REMOTE_DEBUG_ENV_PATH: envPath,
+    });
 
   try {
-    await waitForStatus(port, (status) => status.apiVersion === 1);
+    await waitForStatus(
+      port,
+      (status) => status.agent.runtimeId === "development:2.0.0",
+    );
     const call = await callRunTool(child);
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
     const status = await waitForStatus(
       port,
-      (candidate) => candidate.apiVersion === 2 && candidate.agent.pid !== oldManager.pid,
+      (candidate) =>
+        candidate.agent.runtimeId === developmentRuntimeId &&
+        candidate.agent.pid !== oldManager.pid,
     );
-    assert.equal(status.apiVersion, 2);
+    assert.equal(status.agent.runtimeId, developmentRuntimeId);
     killPid(status.agent.pid);
   } finally {
     child.kill();

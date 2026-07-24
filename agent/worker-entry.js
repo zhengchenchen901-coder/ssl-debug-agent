@@ -7,7 +7,8 @@ import { API_VERSION } from "./operation.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
+const moduleFilePath =
+  typeof __filename === "string" ? __filename : fileURLToPath(import.meta.url);
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || "", 10);
@@ -103,7 +104,7 @@ export function scheduleMemoryInit(config, options = {}) {
 function isEntrypointProcess() {
   return Boolean(
     process.argv[1] &&
-      path.resolve(__filename) === path.resolve(process.argv[1]),
+      path.resolve(moduleFilePath) === path.resolve(process.argv[1]),
   );
 }
 

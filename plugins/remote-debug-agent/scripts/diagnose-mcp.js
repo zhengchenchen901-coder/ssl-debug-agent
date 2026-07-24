@@ -2,12 +2,17 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  normalizeWindowsExtendedPath,
+  readRuntimeManifest,
+  resolveConfigPath,
+  resolveDataDir,
+} from "../runtime-support.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const pluginRoot = path.resolve(__dirname, "..");
 const serverPath = path.resolve(pluginRoot, "mcp-server.js");
-const logPath = path.resolve(pluginRoot, ".runtime", "mcp-error.log");
 const pluginName = "remote-debug-agent";
 const expectedTools = [
   "remote_debug_list_instances",
@@ -18,10 +23,6 @@ const expectedTools = [
   "remote_debug_get_command_draft",
   "remote_debug_execute_command_draft",
 ];
-
-function normalizeWindowsExtendedPath(inputPath) {
-  return inputPath.replace(/^\\\\\?\\/, "");
-}
 
 function codexHomeDir() {
   return process.env.CODEX_HOME ||
@@ -162,10 +163,6 @@ function installedCachePath(marketplaceName, version) {
 
   const candidate = path.join(codexHomeDir(), "plugins", "cache", marketplaceName, pluginName, version);
   return fs.existsSync(candidate) ? candidate : "";
-}
-
-function installedRuntimeLogPath(cachePath) {
-  return cachePath ? path.join(cachePath, ".runtime", "mcp-error.log") : "";
 }
 
 function parseJsonLine(line) {
@@ -366,10 +363,8 @@ function readEnvFile(envPath) {
 }
 
 function effectiveRemoteDebugEnv() {
-  const dotEnv = {
-    ...readEnvFile(path.resolve(projectRoot, ".env")),
-    ...readEnvFile(path.resolve(projectRoot, "agent", ".env")),
-  };
+  const dataDir = resolveDataDir(process.env);
+  const dotEnv = readEnvFile(resolveConfigPath(process.env, dataDir));
   const env = { ...process.env };
 
   for (const [key, value] of Object.entries(dotEnv)) {
@@ -421,6 +416,10 @@ function printLine(label, value) {
 
 async function main() {
   const env = effectiveRemoteDebugEnv();
+  const dataDir = resolveDataDir(process.env);
+  const configPath = resolveConfigPath(process.env, dataDir);
+  const logPath = path.resolve(dataDir, "logs", "mcp-error.log");
+  const runtime = readRuntimeManifest(pluginRoot);
   const agentUrl = agentUrlFromEnv(env);
   const child = spawn(process.execPath, [serverPath], {
     cwd: pluginRoot,
@@ -459,9 +458,8 @@ async function main() {
     const missingTools = expectedTools.filter((name) => !toolNames.includes(name));
     const pluginVersion = readPluginVersion();
     const cachePath = installedCachePath(marketplace?.name, pluginVersion);
-    const cacheLogPath = installedRuntimeLogPath(cachePath);
-    const cacheInitialize = latestLogEvent(cacheLogPath, "MCP_INITIALIZE");
-    const cacheToolsList = latestLogEvent(cacheLogPath, "MCP_TOOLS_LIST");
+    const cacheInitialize = latestLogEvent(logPath, "MCP_INITIALIZE");
+    const cacheToolsList = latestLogEvent(logPath, "MCP_TOOLS_LIST");
 
     printLine("Source root", projectRoot);
     printLine("Installed cache", cachePath || "not found");
@@ -472,10 +470,13 @@ async function main() {
         : "not configured",
     );
     printLine("MCP server", serverPath);
+    printLine("Bundled runtime", runtime.manifest?.runtimeId || "not found");
+    printLine("Config", configPath);
+    printLine("Data", dataDir);
     printLine("MCP initialize", `ok (${initialize.result?.serverInfo?.name || "unknown"} ${initialize.result?.serverInfo?.version || ""})`);
     printLine("MCP tools", toolNames.length > 0 ? toolNames.join(", ") : "none");
     printLine("Source wrapper self-test", "ok");
-    printLine("Installed cache MCP log", cacheLogPath || "not found");
+    printLine("MCP log", logPath);
     printLine("Installed cache last initialize", formatLifecycleEvent(cacheInitialize));
     printLine("Installed cache last tools/list", formatLifecycleEvent(cacheToolsList));
 
@@ -494,7 +495,6 @@ async function main() {
       printLine("HTTP agent", `warning (${agentUrl}, ${error.message})`);
     }
 
-    printLine("MCP log", logPath);
     printLine(
       "Current thread",
       "diagnose verifies the MCP wrapper only; if this Codex thread still cannot see remote_debug_* tools, restart Codex Desktop or open a new thread after reinstalling/re-enabling the plugin.",

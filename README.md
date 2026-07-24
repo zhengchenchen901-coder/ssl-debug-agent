@@ -37,81 +37,88 @@ remote-debug-agent/
       .codex-plugin/plugin.json
       .mcp.json
       mcp-server.js
+      runtime-support.js
+      runtime/agent/
+        runtime-manifest.json
+        server.cjs
+        worker-entry.cjs
       package.json
       skills/remote-debug/SKILL.md
+  scripts/
+    install.ps1
 ```
 
 ## Configure SSH
 
-Create `remote-debug-agent/.env` or set these environment variables before
-using the plugin. Values in `.env` take precedence for `REMOTE_DEBUG_*`
-settings. On first startup, the manager migrates this single-target config into
-`.remote-debug/instances.json` as the `default` instance.
+For a fresh clone, copy `.env.example` to `.env` and edit the required SSH
+values before running the installer. The installer validates the configuration
+and copies it to `%LOCALAPPDATA%\RemoteDebugAgent\config.env`; the installed
+plugin does not depend on the clone afterward.
 
 ```powershell
-$env:REMOTE_DEBUG_HOST = "example.com"
-$env:REMOTE_DEBUG_PORT = "22"
-$env:REMOTE_DEBUG_USER = "app"
-$env:REMOTE_DEBUG_PRIVATE_KEY_PATH = "C:\Users\you\.ssh\id_ed25519"
-$env:REMOTE_DEBUG_AGENT_PORT = "4343"
+Copy-Item .env.example .env
+notepad .env
 ```
 
-Optional:
+Configuration path precedence is `REMOTE_DEBUG_ENV_PATH`, then
+`<data-dir>\config.env`. Data directory precedence is
+`REMOTE_DEBUG_DATA_DIR`, `REMOTE_DEBUG_PROJECT_ROOT` for compatibility, then
+`%LOCALAPPDATA%\RemoteDebugAgent`. Set these bootstrap path variables in the
+Windows environment before running the installer; do not place them inside the
+SSH config file.
+
+Optional settings include:
 
 ```powershell
-$env:REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE = "..."
-$env:REMOTE_DEBUG_AUDIT_LOG = "C:\path\to\remote-debug-audit.jsonl"
-$env:REMOTE_DEBUG_APPROVED_COMMANDS = "0"
-$env:REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS = "300000"
-$env:REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS = "900000"
-$env:REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS = "15000"
-$env:REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX = "3"
-$env:REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS = "4"
+REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE=...
+REMOTE_DEBUG_AUDIT_LOG=C:\path\to\remote-debug-audit.jsonl
+REMOTE_DEBUG_APPROVED_COMMANDS=0
+REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS=300000
+REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS=900000
+REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS=15000
+REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX=3
+REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS=4
 ```
 
 Do not commit secrets or private keys. This project intentionally reads SSH
-credentials only from `.env` or environment variables.
+credentials only from the selected config file or environment variables.
 
-## Start The Agent
+## Install The Codex Plugin
 
-Use Node `22.18.0` for local development:
-
-```powershell
-nvm use 22.18.0
-```
+Windows 10/11 and Node `22.18+` from the Node 22 release line are required.
+From the repository root, run:
 
 ```powershell
-cd remote-debug-agent\agent
-npm install
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
 
-The Codex plugin prewarms, starts, and repairs the local agent automatically from `.env`
-after the MCP server initializes.
-For manual debugging, run `npm start` in the `agent` directory. The agent listens
-on `http://127.0.0.1:4343` by default, or `REMOTE_DEBUG_AGENT_PORT` when set.
+The script is idempotent. It checks Node and Codex Marketplace support,
+validates every bundled runtime file, initializes user configuration, migrates
+persistent legacy data without overwriting existing files, and registers the
+absolute repository path with Codex Marketplace. It does not run npm and does
+not start the Agent.
+
+To validate prerequisites and configuration without changing files or Codex
+configuration, run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -CheckOnly
+```
+
+Use `-ConfigPath C:\path\to\remote-debug.env` to initialize from another
+configuration file. If no configuration exists, the installer writes a
+template to the user data directory and stops; edit it, then rerun the script.
+
+After the script succeeds, install or enable `remote-debug-agent` in Codex
+Desktop and open a new task. Codex copies the plugin and its prebuilt Manager,
+Worker, and dashboard into its plugin cache. The MCP wrapper starts that cached
+runtime automatically, so the clone can be renamed or removed after
+installation.
 
 Open `http://127.0.0.1:4343/` to view the local dashboard. It shows configured
 instances and lets you create, edit, start, refresh, inspect, and delete remote
 connection workers. The manager keeps the main port; workers receive ports from
 the configured registry range.
-
-## Install The Codex Plugin
-
-From the `remote-debug-agent` directory:
-
-```powershell
-codex plugin marketplace add .
-```
-
-Then install or enable `remote-debug-agent` from Codex Desktop's plugin
-marketplace UI. The plugin starts `mcp-server.js`, which reads `.env`, checks
-the configured local agent port, starts the agent when it is missing, and only
-restarts an existing process when it can confirm that process is Remote Debug
-Agent.
-The bundled `.mcp.json` starts Node with the `node` command, so make sure Node is
-available on your `PATH` in the environment where Codex Desktop runs. If Codex
-cannot find Node, change `plugins\remote-debug-agent\.mcp.json` to use the full
-path to your local `node.exe`.
 
 ## Update The Codex Plugin
 
@@ -119,7 +126,7 @@ For users who installed this plugin from a local clone:
 
 ```powershell
 git pull
-codex plugin marketplace add .
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
 
 Then reinstall or re-enable `remote-debug-agent` in Codex Desktop, and restart
@@ -129,9 +136,8 @@ If Codex logs still reference an older cache path such as
 `remote-debug-agent/1.0.0`, the old installed plugin is still active.
 
 `codex plugin marketplace upgrade remote-debug-local` is only for Git-backed
-marketplaces. Local marketplaces must be updated with `git pull` and
-`codex plugin marketplace add .`, then reinstalled or re-enabled in Codex
-Desktop.
+marketplaces. Local marketplaces must be updated with `git pull` and the
+installer, then reinstalled or re-enabled in Codex Desktop.
 
 For users who configured a Git-backed marketplace, use:
 
@@ -146,7 +152,7 @@ loading path in three separate layers:
 
 1. Plugin configuration: Codex has the plugin installed and enabled.
 2. MCP wrapper self-test: `mcp-server.js` can answer `initialize` and
-   `tools/list` with the six expected tools.
+   `tools/list` with the seven expected tools.
 3. Current session tool table: the active Codex thread actually exposes
    callable `remote_debug_*` tools to the model.
 
@@ -172,9 +178,9 @@ remote_debug_execute_command_draft
 ```
 
 The MCP wrapper writes lifecycle events to
-`plugins\remote-debug-agent\.runtime\mcp-error.log`, including `initialize`,
-`tools/list`, `tools/call`, the resolved project root, agent URL, and plugin
-version.
+`%LOCALAPPDATA%\RemoteDebugAgent\logs\mcp-error.log` by default, including
+`initialize`, `tools/list`, `tools/call`, the data directory, runtime ID, agent
+URL, and plugin version.
 
 Passing diagnose means the plugin is configured and the wrapper process can
 expose the tools. It does not prove that an already-open Codex thread has
@@ -204,48 +210,41 @@ to complete the user's remote task. Normal Codex usage should go through the
 ## Use From A Fresh Clone
 
 Another Codex Desktop user can install this plugin directly from the Git
-repository:
+repository without installing npm packages:
 
 ```powershell
 git clone https://github.com/zhengchenchen901-coder/ssl-debug-agent.git
 cd ssl-debug-agent
+Copy-Item .env.example .env
+notepad .env
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
 
-Install and start the local agent:
+Install or enable `remote-debug-agent` from Codex Desktop's plugin marketplace
+UI, then open a new task. The cached plugin starts its bundled local HTTP
+manager automatically. Do not run `npm install` or `npm start` for normal
+installation.
+
+## Development
+
+Source development uses Node `22.18.0`:
 
 ```powershell
 cd agent
 npm install
-npm start
+npm run check:runtime
+npm test
+cd ..\plugins\remote-debug-agent
+npm test
 ```
 
-In another terminal, configure SSH credentials from the repository root:
+The generated runtime under `plugins\remote-debug-agent\runtime\agent` is
+committed. Run `npm run build:runtime` after Manager, Worker, dependency, or
+dashboard changes, then verify a second build leaves no Git diff.
 
-```powershell
-cd ..
-Copy-Item .env.example .env
-```
-
-Edit `.env` with the target server details:
-
-```text
-REMOTE_DEBUG_HOST=example.com
-REMOTE_DEBUG_PORT=22
-REMOTE_DEBUG_USER=app
-REMOTE_DEBUG_PRIVATE_KEY_PATH=C:\Users\you\.ssh\id_ed25519
-REMOTE_DEBUG_AGENT_PORT=4343
-```
-
-Then install the Codex Desktop plugin from the repository root:
-
-```powershell
-codex plugin marketplace add .
-```
-
-Install or enable `remote-debug-agent` from Codex Desktop's plugin marketplace
-UI, then restart Codex Desktop or open a new Codex thread after installation.
-The plugin will start the local HTTP manager from `.env`; `npm start` is only
-needed when you want to debug the manager manually.
+For manual Manager debugging only, run `npm start` from `agent`. Set
+`REMOTE_DEBUG_AGENT_DIR` to the source `agent` directory to make the MCP wrapper
+use source files instead of the bundled runtime.
 
 ## Exposed Tools
 
@@ -277,9 +276,9 @@ path validation, execution, and cancellation cleanup. Defaults and limits are:
 ## Instance Memory
 
 The manager keeps a small per-instance memory cache at
-`.remote-debug/instances/<instanceId>/memory.json`. The cache is owned by the
-manager process and is written atomically; workers report discoveries over IPC
-instead of writing the file directly.
+`%LOCALAPPDATA%\RemoteDebugAgent\.remote-debug\instances\<instanceId>\memory.json`
+by default. The cache is owned by the manager process and is written atomically;
+workers report discoveries over IPC instead of writing the file directly.
 
 When a worker starts, the manager asks it to run a background init discovery if
 the instance has no usable memory, if the previous memory failed, or if the
@@ -388,8 +387,9 @@ Codex
   -> remote Linux server
 ```
 
-`mcp-server.js` exposes the MCP tools, resolves `.env`, discovers or starts the
-local HTTP manager, and forwards tool calls to `http://127.0.0.1:<port>`.
+`mcp-server.js` exposes the MCP tools, resolves `config.env`, discovers or
+starts the bundled local HTTP manager, and forwards tool calls to
+`http://127.0.0.1:<port>`.
 `remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
 manager's `/run` endpoint. `remote_debug_read_file` and
 `remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.
@@ -397,11 +397,14 @@ The approved-command tools use
 `/approved-command-drafts`, `/approved-command-drafts/get`, and
 `/approved-command-drafts/execute`.
 
-The V2 MCP only accepts a manager whose `/status` reports `apiVersion: 2` and
-the required capabilities. The manager only accepts workers whose ready IPC
-message reports `protocolVersion: 2`. Registry files are migrated to version 3;
-legacy approved-command `timeoutMs` fields are converted to the new shared
-execution budget fields when the registry is loaded.
+The V2 MCP only accepts a manager whose `/status` reports `apiVersion: 2`, the
+required capabilities, and the current bundled `agent.runtimeId`. A confirmed
+local Manager with an older runtime ID is safely replaced; an external
+`REMOTE_DEBUG_AGENT_URL` remains compatible with any existing V2 runtime. The
+manager only accepts workers whose ready IPC message reports
+`protocolVersion: 2`. Registry files are migrated to version 3; legacy
+approved-command `timeoutMs` fields are converted to the new shared execution
+budget fields when the registry is loaded.
 
 Each running worker owns one persistent `ssh2.Client`. SSH keepalive runs every
 15 seconds with three missed responses allowed. Transport loss degrades the
@@ -472,8 +475,13 @@ success or failure.
 ## Tests
 
 ```powershell
-cd remote-debug-agent\agent
+cd agent
+npm run check:runtime
+npm test
+cd ..\plugins\remote-debug-agent
 npm test
 ```
 
-The test suite uses Node's built-in test runner and mocks SSH/SFTP where needed.
+The test suites use Node's built-in test runner and mock SSH/SFTP where needed.
+The plugin smoke tests also run the prebuilt runtime from an isolated cache with
+no `node_modules` or `NODE_PATH`.

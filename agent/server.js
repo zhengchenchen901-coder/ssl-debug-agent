@@ -34,8 +34,10 @@ import {
   runSSH as defaultRunSSH,
 } from "./ssh.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const moduleFilePath =
+  typeof __filename === "string" ? __filename : fileURLToPath(import.meta.url);
+const moduleDirectory =
+  typeof __dirname === "string" ? __dirname : path.dirname(moduleFilePath);
 const DEFAULT_AGENT_LIFETIME = "manual";
 const DESKTOP_AGENT_LIFETIME = "desktop";
 const DEFAULT_MANAGER_LEASE_TTL_MS = 45_000;
@@ -66,6 +68,7 @@ function publicAgent(config) {
     port: config.agent.port,
     pid: process.pid,
     configFingerprint: configFingerprint(config),
+    runtimeId: config.runtime?.runtimeId || "development",
   };
 }
 
@@ -82,6 +85,7 @@ async function writeRuntimeState(config, event) {
     port: config.agent.port,
     target: publicTarget(config),
     configFingerprint: configFingerprint(config),
+    runtimeId: config.runtime?.runtimeId || "development",
     ...event,
     updatedAt: new Date().toISOString(),
   };
@@ -255,7 +259,7 @@ export function createApp(options = {}) {
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = express();
-  const publicDir = path.join(__dirname, "public");
+  const publicDir = path.join(moduleDirectory, "public");
 
   app.use(express.json({ limit: "512kb" }));
 
@@ -1068,7 +1072,7 @@ export function createManagerApp(options = {}) {
       ...options.lifecycleOptions,
     });
   const app = express();
-  const publicDir = path.join(__dirname, "public");
+  const publicDir = path.join(moduleDirectory, "public");
 
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
@@ -1337,10 +1341,18 @@ export function createManagerApp(options = {}) {
   return app;
 }
 
-function isEntrypointProcess() {
+function isEnabledFlag(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
+export function isServerEntrypointProcess(options = {}) {
+  const argv = options.argv || process.argv;
+  const env = options.env || process.env;
+  const filePath = options.filePath || moduleFilePath;
   return Boolean(
-    process.argv[1] &&
-      path.resolve(__filename) === path.resolve(process.argv[1]),
+    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) &&
+      argv[1] &&
+      path.resolve(filePath) === path.resolve(argv[1]),
   );
 }
 
@@ -1406,7 +1418,7 @@ function listenHttpServer(app, config, eventFactory) {
       console.error("failed to write runtime state", stateError);
     });
     console.error(error);
-    if (isEntrypointProcess()) {
+    if (isServerEntrypointProcess()) {
       process.exitCode = 1;
     }
   });
@@ -1475,7 +1487,7 @@ export function startServer(config = loadConfig(), options = {}) {
   });
 
   const signalProcess = options.signalProcess || process;
-  const installSignalHandlers = options.installSignalHandlers ?? isEntrypointProcess();
+  const installSignalHandlers = options.installSignalHandlers ?? isServerEntrypointProcess();
   if (installSignalHandlers) {
     const handleSignal = (signal) => {
       gracefulShutdown(signal, { exitCode: 0 }).catch((error) => {
@@ -1490,7 +1502,7 @@ export function startServer(config = loadConfig(), options = {}) {
   return server;
 }
 
-if (isEntrypointProcess()) {
+if (isServerEntrypointProcess()) {
   try {
     startServer();
   } catch (error) {

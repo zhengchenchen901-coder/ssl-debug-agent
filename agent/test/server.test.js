@@ -15,6 +15,22 @@ const depsInstalled =
   fs.existsSync(path.resolve(here, "..", "node_modules", "express")) &&
   fs.existsSync(path.resolve(here, "..", "node_modules", "ssh2"));
 
+test("server entrypoint is disabled inside worker mode", { skip: !depsInstalled }, async () => {
+  const { isServerEntrypointProcess } = await import("../server.js");
+  const filePath = path.resolve("runtime", "agent", "worker-entry.cjs");
+  const argv = ["node", filePath];
+
+  assert.equal(
+    isServerEntrypointProcess({
+      argv,
+      env: { REMOTE_DEBUG_WORKER: "1" },
+      filePath,
+    }),
+    false,
+  );
+  assert.equal(isServerEntrypointProcess({ argv, env: {}, filePath }), true);
+});
+
 function listen(app) {
   return new Promise((resolve, reject) => {
     const server = http.createServer(app);
@@ -61,7 +77,10 @@ function makeConfig(logPath) {
       maxCommandOutputBytes: 1024 * 1024,
     },
     audit: { logPath },
-    runtime: { statePath: path.join(path.dirname(logPath), "agent-state.json") },
+    runtime: {
+      statePath: path.join(path.dirname(logPath), "agent-state.json"),
+      runtimeId: "2.1.0:test-runtime",
+    },
   };
 }
 
@@ -262,6 +281,7 @@ test("dashboard serves status and streams remote interaction activity", { skip: 
     const status = await getJson(server, "/status");
     assert.equal(status.status, 200);
     assert.equal(status.body.agent.pid, process.pid);
+    assert.equal(status.body.agent.runtimeId, "2.1.0:test-runtime");
     assert.equal(typeof status.body.agent.configFingerprint, "string");
     assert.deepEqual(status.body.security.allowedPaths, DEFAULT_ALLOWED_PATHS);
 

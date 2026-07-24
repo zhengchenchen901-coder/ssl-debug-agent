@@ -5,7 +5,7 @@
       "args": [
         "./mcp-server.js"
       ],
-      "cwd": "D:\\Projects\\ssl-debug-agent\\plugins\\remote-debug-agent",
+      "cwd": ".",
       "startup_timeout_sec": 30,
       "tool_timeout_sec": 910
     }

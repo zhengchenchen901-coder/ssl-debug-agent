@@ -4,9 +4,15 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  migrateLegacyData,
+  normalizeWindowsExtendedPath,
+  readRuntimeManifest,
+  resolveConfigPath,
+  resolveDataDir,
+} from "./runtime-support.js";
 
 const DEFAULT_PROTOCOL_VERSION = "2024-11-05";
-const PLUGIN_VERSION = "2.0.0";
 const AGENT_API_VERSION = 2;
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
@@ -33,9 +39,18 @@ const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function normalizeWindowsExtendedPath(inputPath) {
-  return inputPath.replace(/^\\\\\?\\/, "");
+function readPluginVersion() {
+  try {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, ".codex-plugin", "plugin.json"), "utf8"),
+    );
+    return manifest.version || "unknown";
+  } catch {
+    return "unknown";
+  }
 }
+
+const PLUGIN_VERSION = readPluginVersion();
 
 function codexHomeDir() {
   return process.env.CODEX_HOME ||
@@ -102,6 +117,7 @@ function resolveProjectRoot() {
 }
 
 const projectRoot = resolveProjectRoot();
+let latestMigration = null;
 let activeAgentSettings = null;
 const leaseClientId = `codex-mcp-${process.pid}-${randomUUID()}`;
 let activeAgentLease = null;
@@ -382,15 +398,13 @@ function readEnvFile(envPath) {
 }
 
 function loadDotEnv() {
-  const explicitEnvPath = process.env.REMOTE_DEBUG_ENV_PATH;
-  if (explicitEnvPath) {
-    return readEnvFile(explicitEnvPath);
-  }
-
-  return {
-    ...readEnvFile(path.resolve(projectRoot, ".env")),
-    ...readEnvFile(path.resolve(projectRoot, "agent", ".env")),
-  };
+  const dataDir = resolveDataDir(process.env);
+  latestMigration = migrateLegacyData({
+    legacyRoot: projectRoot,
+    dataDir,
+    env: process.env,
+  });
+  return readEnvFile(resolveConfigPath(process.env, dataDir));
 }
 
 function loadRemoteDebugEnv() {
@@ -517,7 +531,7 @@ function publicSecurityConfig(env = {}) {
   };
 }
 
-function fingerprintConfigFromEnv(env, agentDir, port) {
+function fingerprintConfigFromEnv(env, dataDir, port) {
   return {
     agent: {
       host: "127.0.0.1",
@@ -533,33 +547,60 @@ function fingerprintConfigFromEnv(env, agentDir, port) {
     },
     security: publicSecurityConfig(env),
     audit: {
-      logPath: env.REMOTE_DEBUG_AUDIT_LOG || path.resolve(agentDir, "audit", "remote-debug-agent.jsonl"),
+      logPath:
+        env.REMOTE_DEBUG_AUDIT_LOG ||
+        path.resolve(dataDir, ".remote-debug", "audit", "remote-debug-agent.jsonl"),
     },
   };
 }
 
-function configFingerprintFromEnv(env, agentDir, port) {
+function configFingerprintFromEnv(env, dataDir, port) {
   return createHash("sha256")
-    .update(JSON.stringify(fingerprintConfigFromEnv(env, agentDir, port)))
+    .update(JSON.stringify(fingerprintConfigFromEnv(env, dataDir, port)))
     .digest("hex");
 }
 
 function agentSettings() {
   const env = loadRemoteDebugEnv();
+  const dataDir = resolveDataDir(process.env);
+  const configPath = resolveConfigPath(process.env, dataDir);
   const explicitUrl = env.REMOTE_DEBUG_AGENT_URL || "";
   const port = parsePositivePort(env.REMOTE_DEBUG_AGENT_PORT, DEFAULT_AGENT_PORT);
   const agentUrl = explicitUrl || `http://127.0.0.1:${port}`;
-  const agentDir = path.resolve(env.REMOTE_DEBUG_AGENT_DIR || path.resolve(projectRoot, "agent"));
-  const statePath = path.resolve(agentDir, ".runtime", "agent-state.json");
-  const runtimeDir = path.resolve(__dirname, ".runtime");
+  const explicitAgentDir = env.REMOTE_DEBUG_AGENT_DIR || "";
+  const runtime = readRuntimeManifest(__dirname);
+  if (!explicitUrl && !explicitAgentDir && !runtime.manifest) {
+    const error = new Error(
+      `Bundled Remote Debug Agent runtime was not found: ${runtime.manifestPath}`,
+    );
+    error.code = "BUNDLED_AGENT_NOT_FOUND";
+    error.payload = { manifestPath: runtime.manifestPath };
+    throw error;
+  }
+  const agentDir = path.resolve(
+    explicitAgentDir || path.resolve(__dirname, "runtime", "agent"),
+  );
+  const runtimeId = explicitAgentDir
+    ? env.REMOTE_DEBUG_RUNTIME_ID || `development:${PLUGIN_VERSION}`
+    : runtime.manifest?.runtimeId || `external:${PLUGIN_VERSION}`;
+  const serverFile = explicitAgentDir
+    ? "server.js"
+    : runtime.manifest?.server || "server.cjs";
+  const workerFile = explicitAgentDir
+    ? "worker-entry.js"
+    : runtime.manifest?.worker || "worker-entry.cjs";
+  const statePath = path.resolve(dataDir, ".runtime", "agent-state.json");
+  const runtimeDir = path.resolve(dataDir, "logs");
   const target = publicTargetFromEnv(env);
-  const configFingerprint = configFingerprintFromEnv(env, agentDir, port);
+  const configFingerprint = configFingerprintFromEnv(env, dataDir, port);
   const managerFingerprint = createHash("sha256")
-    .update(JSON.stringify({ agentDir, agentUrl, port, explicitUrl }))
+    .update(JSON.stringify({ runtimeId, agentUrl, port, explicitUrl }))
     .digest("hex");
 
   return {
     env,
+    dataDir,
+    configPath,
     explicitUrl: Boolean(explicitUrl),
     agentUrl,
     port,
@@ -567,8 +608,11 @@ function agentSettings() {
     target,
     configFingerprint,
     sourceFingerprint: managerFingerprint,
+    runtimeId,
     agentDir,
-    serverPath: path.resolve(agentDir, "server.js"),
+    agentCwd: dataDir,
+    serverPath: path.resolve(agentDir, serverFile),
+    workerEntryPath: path.resolve(agentDir, workerFile),
     statePath,
     runtimeDir,
     logPath: path.resolve(runtimeDir, "mcp-error.log"),
@@ -580,7 +624,7 @@ function agentSettingsWithPort(settings, port) {
     ...settings,
     agentUrl: `http://127.0.0.1:${port}`,
     port,
-    configFingerprint: configFingerprintFromEnv(settings.env, settings.agentDir, port),
+    configFingerprint: configFingerprintFromEnv(settings.env, settings.dataDir, port),
   };
 }
 
@@ -595,6 +639,9 @@ async function appendPluginLog(settings, event) {
     agentUrl: settings.agentUrl,
     port: settings.port,
     agentDir: settings.agentDir,
+    dataDir: settings.dataDir,
+    runtimeId: settings.runtimeId,
+    migration: latestMigration,
     explicitAgentUrl: settings.explicitUrl,
     ...event,
   };
@@ -608,12 +655,14 @@ async function appendPluginLog(settings, event) {
 }
 
 function fallbackLogSettings(error) {
-  const runtimeDir = path.resolve(__dirname, ".runtime");
+  const dataDir = resolveDataDir(process.env);
+  const runtimeDir = path.resolve(dataDir, "logs");
 
   return {
     agentUrl: "",
     port: null,
     agentDir: "",
+    dataDir,
     explicitUrl: false,
     runtimeDir,
     logPath: path.resolve(runtimeDir, "mcp-error.log"),
@@ -901,6 +950,8 @@ async function probeAgent(settings) {
 function agentStatusIsHealthy(status, settings) {
   const agentPort = status?.agent?.port;
   const portMatches = settings.explicitUrl || agentPort === undefined || agentPort === settings.port;
+  const runtimeMatches =
+    settings.explicitUrl || status?.agent?.runtimeId === settings.runtimeId;
   const capabilities = status?.capabilities || {};
 
   return Boolean(
@@ -911,6 +962,7 @@ function agentStatusIsHealthy(status, settings) {
       capabilities.operationDeadlines === true &&
       capabilities.cancellation === true &&
       capabilities.structuredHealth === true &&
+      runtimeMatches &&
       portMatches,
   );
 }
@@ -924,6 +976,7 @@ function statusSummary(status) {
     pid: status?.agent?.pid,
     port: status?.agent?.port,
     configFingerprint: status?.agent?.configFingerprint,
+    runtimeId: status?.agent?.runtimeId,
     target: status?.target,
   };
 }
@@ -934,6 +987,7 @@ function expectedSummary(settings) {
     preferredPort: settings.preferredPort,
     configFingerprint: settings.configFingerprint,
     sourceFingerprint: settings.sourceFingerprint,
+    runtimeId: settings.runtimeId,
     target: settings.target,
   };
 }
@@ -1197,7 +1251,9 @@ async function logAgentReadyAfterLockWait(settings, startupAttemptId, status) {
 async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
   if (!fs.existsSync(settings.serverPath)) {
     const error = new Error(`Remote Debug Agent server not found: ${settings.serverPath}`);
-    error.code = "AGENT_SERVER_NOT_FOUND";
+    error.code = settings.env.REMOTE_DEBUG_AGENT_DIR
+      ? "AGENT_SERVER_NOT_FOUND"
+      : "BUNDLED_AGENT_NOT_FOUND";
     error.payload = { agentDir: settings.agentDir, serverPath: settings.serverPath };
     throw error;
   }
@@ -1213,11 +1269,22 @@ async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
   let child;
   try {
     child = spawn(process.execPath, [settings.serverPath], {
-      cwd: settings.agentDir,
+      cwd: settings.agentCwd,
       detached: true,
       env: mergeEnvironment(process.env, settings.env, {
         REMOTE_DEBUG_AGENT_PORT: String(settings.port),
         REMOTE_DEBUG_AGENT_LIFETIME: "desktop",
+        REMOTE_DEBUG_PROJECT_ROOT: settings.dataDir,
+        REMOTE_DEBUG_RUNTIME_ID: settings.runtimeId,
+        REMOTE_DEBUG_WORKER_ENTRY_PATH: settings.workerEntryPath,
+        REMOTE_DEBUG_AUDIT_LOG:
+          settings.env.REMOTE_DEBUG_AUDIT_LOG ||
+          path.resolve(
+            settings.dataDir,
+            ".remote-debug",
+            "audit",
+            "remote-debug-agent.jsonl",
+          ),
       }),
       stdio: "ignore",
       windowsHide: true,

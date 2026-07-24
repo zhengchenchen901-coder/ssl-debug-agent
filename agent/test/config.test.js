@@ -63,6 +63,15 @@ test("worker process env overrides .env for manager-assigned ports", async () =>
   assert.equal(config.agent.port, 4400);
 });
 
+test("runtime id is loaded from the manager environment", () => {
+  const config = loadConfig(
+    { REMOTE_DEBUG_RUNTIME_ID: "2.1.0:test-runtime" },
+    "C:\\remote-debug-agent\\data",
+  );
+
+  assert.equal(config.runtime.runtimeId, "2.1.0:test-runtime");
+});
+
 test("agent .env can override project root .env for local experiments", async () => {
   const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-config-"));
   const agentDir = path.join(projectDir, "agent");

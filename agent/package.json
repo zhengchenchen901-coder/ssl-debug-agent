@@ -1,11 +1,13 @@
 {
   "name": "remote-debug-agent-local-agent",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "Local HTTP security boundary for the Codex Remote Debug Agent.",
   "main": "server.js",
   "scripts": {
+    "build:runtime": "node scripts/build-runtime.mjs",
+    "check:runtime": "npm run build:runtime && git diff --exit-code -- ../plugins/remote-debug-agent/runtime/agent",
     "start": "node server.js",
     "test": "node --test \"test/*.test.js\""
   },
@@ -13,8 +15,11 @@
     "express": "^5.1.0",
     "ssh2": "^1.16.0"
   },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  },
   "engines": {
-    "node": ">=18.17"
+    "node": ">=22.18 <23"
   }
 }
 

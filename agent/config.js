@@ -198,6 +198,7 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       statePath:
         mergedEnv.REMOTE_DEBUG_RUNTIME_STATE_PATH ||
         path.resolve(cwd, ".runtime", "agent-state.json"),
+      runtimeId: mergedEnv.REMOTE_DEBUG_RUNTIME_ID || "development",
     },
     lifecycle: {
       lifetime: parseAgentLifetime(lifetimeValue),

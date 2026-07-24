@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "pluginVersion": "2.1.0+codex.20260724063529",
+  "runtimeId": "2.1.0:9d8c2f0c17e67a069a280807885f4af472596fd9153d39c02b62da7b23410060",
+  "node": ">=22.18 <23",
+  "server": "server.cjs",
+  "worker": "worker-entry.cjs",
+  "hashes": {
+    "server.cjs": "ade0d13448948976ee0c6f96b6bdf3bda468dd5caa2194b15a259fa2a67b2812",
+    "worker-entry.cjs": "df972d7928b4f7e742ac1671faa53584e7199a6c302e2294092f0d9c0b1556de",
+    "public/dashboard.css": "c06cf0ebc05eb03cbc8bfcbf9e47a4040dae37509c0d73ca837e8f000477c0fc",
+    "public/dashboard.html": "e11b9b754b845925581722e01e9d065f426752feff12f75e57a51ab53a49e55e",
+    "public/dashboard.js": "abdd1a837276192c2fe6b12d418dfa1a94a69667c212dd2ad25fc863843bdb73"
+  }
+}

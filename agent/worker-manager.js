@@ -12,13 +12,16 @@ import {
   remainingOperationMs,
 } from "./operation.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const moduleFilePath =
+  typeof __filename === "string" ? __filename : fileURLToPath(import.meta.url);
+const moduleDirectory =
+  typeof __dirname === "string" ? __dirname : path.dirname(moduleFilePath);
 const RESTORE_SNAPSHOT_VERSION = 1;
 const RESTORE_SHUTDOWN_REASONS = new Set(["lease-expired"]);
 const RESTORE_SNAPSHOT_REASONS = new Set(["active-runtime", ...RESTORE_SHUTDOWN_REASONS]);
 const RESTORE_RUNTIME_STATUSES = new Set(["running", "starting"]);
 const RESTORE_PRESERVING_STOP_REASONS = new Set(["lease-expired"]);
+const WORKER_STDERR_TAIL_MAX_LENGTH = 4096;
 
 function nowIso() {
   return new Date().toISOString();
@@ -76,6 +79,11 @@ function event(runtime, type, payload = {}) {
     runtime.events.splice(0, runtime.events.length - 50);
   }
   return entry;
+}
+
+function appendOutputTail(current, chunk, maxLength = WORKER_STDERR_TAIL_MAX_LENGTH) {
+  const next = `${current || ""}${Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk)}`;
+  return next.length > maxLength ? next.slice(-maxLength) : next;
 }
 
 function canBindPort(port, host) {
@@ -151,6 +159,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
     REMOTE_DEBUG_RUNTIME_STATE_PATH: path.resolve(instanceDir, ".runtime", "agent-state.json"),
+    REMOTE_DEBUG_RUNTIME_ID: process.env.REMOTE_DEBUG_RUNTIME_ID || "development",
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0",
   };
 }
@@ -162,7 +171,9 @@ export class WorkerManager {
     this.cwd = options.cwd || process.cwd();
     this.nodePath = options.nodePath || process.execPath;
     this.workerEntryPath =
-      options.workerEntryPath || path.resolve(__dirname, "worker-entry.js");
+      options.workerEntryPath ||
+      process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH ||
+      path.resolve(moduleDirectory, "worker-entry.js");
     this.forkWorker = options.forkWorker || ((entryPath, forkOptions) => fork(entryPath, [], forkOptions));
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
@@ -636,6 +647,7 @@ export class WorkerManager {
       startedAt: nowIso(),
       lastHeartbeatAt: null,
       lastError: null,
+      stderrTail: "",
       health: {
         overall: "unhealthy",
         worker: { status: "starting", lastHeartbeatAt: null },
@@ -696,6 +708,9 @@ export class WorkerManager {
     runtime.pid = child.pid;
     event(runtime, "spawned", { pid: child.pid });
     child.stdout?.resume();
+    child.stderr?.on?.("data", (chunk) => {
+      runtime.stderrTail = appendOutputTail(runtime.stderrTail, chunk);
+    });
     child.stderr?.resume();
 
     child.on("message", (message) => {
@@ -903,6 +918,7 @@ export class WorkerManager {
     const lastPort = runtime.workerPort;
     this.releasePort(lastPort);
     const stopped = runtime.intentionalStop;
+    const stderrTail = runtime.stderrTail.trim();
     runtime.child = null;
     runtime.pid = null;
     runtime.workerPort = null;
@@ -912,8 +928,14 @@ export class WorkerManager {
       : {
           code: "WORKER_EXITED",
           message: `worker exited (code ${code ?? "null"}, signal ${signal ?? "null"})`,
+          ...(stderrTail ? { stderrTail } : {}),
         };
-    event(runtime, "exit", { code, signal, stopped });
+    event(runtime, "exit", {
+      code,
+      signal,
+      stopped,
+      ...(stderrTail ? { stderrTail } : {}),
+    });
     if (!runtime.preserveRestoreSnapshot) {
       void this.maintainRestoreSnapshot("active-runtime", "worker-exit");
     }

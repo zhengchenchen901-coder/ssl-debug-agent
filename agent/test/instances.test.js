@@ -19,8 +19,10 @@ class FakeWorkerProcess extends EventEmitter {
     this.exitCode = null;
     this.signalCode = null;
     this.sent = [];
-    this.stdout = { resume() {} };
-    this.stderr = { resume() {} };
+    this.stdout = new EventEmitter();
+    this.stdout.resume = () => {};
+    this.stderr = new EventEmitter();
+    this.stderr.resume = () => {};
   }
 
   send(message) {
@@ -242,6 +244,46 @@ test("worker manager rejects a worker without protocolVersion 2", async () => {
 
   await assert.rejects(ready, (error) => error.code === "WORKER_PROTOCOL_MISMATCH");
   await manager.shutdownAll();
+});
+
+test("worker manager preserves bounded stderr when a worker exits", async () => {
+  const dir = await tempDir("remote-debug-worker-stderr-");
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {
+      REMOTE_DEBUG_HOST: "a.example.com",
+      REMOTE_DEBUG_USER: "app",
+      REMOTE_DEBUG_PRIVATE_KEY_PATH: "C:\\a",
+    },
+  });
+  const child = new FakeWorkerProcess(1235);
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    canBindPort: async () => true,
+    forkWorker: () => {
+      setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
+      return child;
+    },
+  });
+
+  try {
+    await manager.startInstance("default");
+    child.stderr.emit("data", Buffer.from(`${"x".repeat(5000)}EADDRINUSE 127.0.0.1:4400`));
+    child.exitCode = 1;
+    child.emit("exit", 1, null);
+
+    const runtime = manager.runtimeFor("default");
+    assert.equal(runtime.status, "unhealthy");
+    assert.equal(runtime.lastError.code, "WORKER_EXITED");
+    assert.match(runtime.lastError.stderrTail, /EADDRINUSE 127\.0\.0\.1:4400$/);
+    assert.ok(runtime.lastError.stderrTail.length <= 4096);
+    assert.equal(runtime.events.at(-1).stderrTail, runtime.lastError.stderrTail);
+  } finally {
+    await manager.shutdownAll();
+  }
 });
 
 test("worker manager allocates only from the manager range and excludes manager port", async () => {

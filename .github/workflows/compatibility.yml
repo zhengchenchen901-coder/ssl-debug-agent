@@ -1,0 +1,33 @@
+name: Compatibility
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows-node-22:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18.0
+          cache: npm
+          cache-dependency-path: agent/package-lock.json
+
+      - name: Install development dependencies
+        working-directory: agent
+        run: npm ci
+
+      - name: Verify bundled runtime
+        working-directory: agent
+        run: npm run check:runtime
+
+      - name: Test Agent
+        working-directory: agent
+        run: npm test
+
+      - name: Test plugin and installer
+        working-directory: plugins/remote-debug-agent
+        run: npm test

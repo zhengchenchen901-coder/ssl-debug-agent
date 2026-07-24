@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Remote Debug Agent</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/dashboard.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="title-block">
+        <p class="eyebrow">Remote Debug Agent</p>
+        <h1>连接实例管理</h1>
+      </div>
+      <div class="connection" aria-live="polite">
+        <span id="connectionDot" class="dot pending"></span>
+        <span id="connectionText">加载中</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="metrics" aria-label="运行状态">
+        <div class="metric">
+          <span>实例总数</span>
+          <strong id="totalCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>运行中</span>
+          <strong id="runningCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>端口范围</span>
+          <strong id="portRange">--</strong>
+        </div>
+        <div class="metric">
+          <span>默认实例</span>
+          <strong id="defaultInstance">--</strong>
+        </div>
+      </section>
+
+      <section class="table-panel" aria-label="实例列表">
+        <div class="table-toolbar">
+          <div>
+            <h2>实例列表</h2>
+            <p id="tableHint">管理本地 worker 与远端 SSH 连接</p>
+          </div>
+          <div class="toolbar-actions">
+            <button id="shutdownButton" class="button danger" type="button" hidden>关闭 Manager</button>
+            <button id="reloadButton" class="button" type="button">刷新列表</button>
+            <button id="newButton" class="button primary" type="button">新建实例</button>
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty-state" hidden>
+          当前还没有连接实例。
+        </div>
+        <div class="table-scroll">
+          <table class="pro-table">
+            <thead>
+              <tr>
+                <th>实例</th>
+                <th>目标</th>
+                <th>用户</th>
+                <th>SSH</th>
+                <th>状态</th>
+                <th>Memory</th>
+                <th>Worker</th>
+                <th>最近心跳</th>
+                <th>最近错误</th>
+                <th class="actions-col">操作</th>
+              </tr>
+            </thead>
+            <tbody id="instanceRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="modalBackdrop" class="overlay" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header">
+          <h2 id="modalTitle">新建实例</h2>
+          <button id="closeModalButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <form id="instanceForm" class="form-grid">
+          <label>
+            <span>实例 ID</span>
+            <input name="id" autocomplete="off" placeholder="default" />
+          </label>
+          <label>
+            <span>实例名称</span>
+            <input name="name" autocomplete="off" required placeholder="生产服务器" />
+          </label>
+          <label>
+            <span>远端 Host</span>
+            <input name="host" autocomplete="off" required placeholder="example.com" />
+          </label>
+          <label>
+            <span>SSH 端口</span>
+            <input name="port" type="number" min="1" max="65535" required value="22" />
+          </label>
+          <label>
+            <span>用户名</span>
+            <input name="username" autocomplete="off" required placeholder="app" />
+          </label>
+          <label class="wide">
+            <span>私钥路径</span>
+            <input name="privateKeyPath" autocomplete="off" required placeholder="C:\Users\you\.ssh\id_ed25519" />
+          </label>
+          <label class="wide">
+            <span>私钥口令</span>
+            <input name="passphrase" type="password" autocomplete="new-password" placeholder="编辑时留空表示不修改" />
+          </label>
+          <label>
+            <span>首选 Worker 端口</span>
+            <input name="preferredWorkerPort" type="number" min="1" max="65535" placeholder="可选" />
+          </label>
+          <label class="wide">
+            <span>审计日志路径</span>
+            <input name="auditLog" autocomplete="off" placeholder="可选" />
+          </label>
+          <label class="switch-row">
+            <input name="enabled" type="checkbox" checked />
+            <span>启用实例</span>
+          </label>
+          <label class="switch-row">
+            <input name="approvedCommandsEnabled" type="checkbox" />
+            <span>启用 approved-command</span>
+          </label>
+          <div id="formMessage" class="form-message" aria-live="polite"></div>
+          <div class="modal-actions">
+            <button id="cancelModalButton" class="button" type="button">取消</button>
+            <button class="button primary" type="submit">保存</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <aside id="drawer" class="drawer" aria-label="实例详情" hidden>
+      <div class="drawer-header">
+        <div>
+          <p class="eyebrow">Instance Detail</p>
+          <h2 id="drawerTitle">实例详情</h2>
+        </div>
+        <button id="closeDrawerButton" class="icon-button" type="button" aria-label="关闭">×</button>
+      </div>
+      <div id="drawerBody" class="drawer-body"></div>
+    </aside>
+    <div id="drawerMask" class="drawer-mask" hidden></div>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="/dashboard.js" type="module"></script>
+  </body>
+</html>
