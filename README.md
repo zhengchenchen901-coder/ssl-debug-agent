@@ -44,6 +44,7 @@ remote-debug-agent/
         worker-entry.cjs
       package.json
       skills/remote-debug/SKILL.md
+      skills/update-instance-memory/SKILL.md
   scripts/
     install.ps1
 ```
@@ -171,7 +172,8 @@ server path, MCP runtime log path, and the installed cache's latest
 should list:
 
 ```text
-remote_debug_list_instances, remote_debug_run_command,
+remote_debug_list_instances, remote_debug_update_memory,
+remote_debug_run_command,
 remote_debug_read_file, remote_debug_list_dir,
 remote_debug_prepare_command_draft, remote_debug_get_command_draft,
 remote_debug_execute_command_draft
@@ -252,6 +254,8 @@ use source files instead of the bundled runtime.
 - `remote_debug_read_file`: read a file under an allowed remote path.
 - `remote_debug_list_dir`: list a directory under an allowed remote path.
 - `remote_debug_list_instances`: list configured instances and runtime status.
+- `remote_debug_update_memory`: persist a verified, redacted operational note
+  when the user explicitly asks Codex to remember or update instance facts.
 - `remote_debug_prepare_command_draft`: generate an exact command draft for
   user review. It never executes commands.
 - `remote_debug_get_command_draft`: view a previously generated command draft.
@@ -294,6 +298,11 @@ Tool responses from the manager include a `memory` summary when an instance is
 known. Successful `/run`, `/read-file`, and `/list-dir` results also update the
 cache with newly observed config paths, log paths, service status, and directory
 summaries.
+
+Explicit user-requested notes are written through `remote_debug_update_memory`
+and returned under `memory.summary.notes`. The tool updates manager-owned local
+metadata only; it does not execute a remote command. Do not edit `memory.json`
+directly.
 
 Memory is context, not live truth. Treat it as a starting point and verify with
 the tools when the exact current state matters. The cache is intentionally
@@ -393,6 +402,7 @@ starts the bundled local HTTP manager, and forwards tool calls to
 `remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
 manager's `/run` endpoint. `remote_debug_read_file` and
 `remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.
+`remote_debug_update_memory` writes sanitized notes through `/api/memory`.
 The approved-command tools use
 `/approved-command-drafts`, `/approved-command-drafts/get`, and
 `/approved-command-drafts/execute`.

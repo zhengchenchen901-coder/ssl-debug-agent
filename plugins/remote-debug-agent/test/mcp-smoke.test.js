@@ -176,6 +176,23 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/api/memory") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(
+          JSON.stringify({
+            ok: true,
+            instanceId: parsed.instanceId || "default",
+            note: {
+              topic: parsed.topic,
+              summary: parsed.summary,
+              facts: parsed.facts,
+              updatedAt: "2026-07-25T00:00:00.000Z",
+            },
+          }),
+        );
+        return;
+      }
+
       if (request.url === "/approved-command-drafts") {
         const draft = {
           ok: true,
@@ -737,6 +754,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       list.result.tools.map((tool) => tool.name),
       [
         "remote_debug_list_instances",
+        "remote_debug_update_memory",
         "remote_debug_run_command",
         "remote_debug_read_file",
         "remote_debug_list_dir",
@@ -787,6 +805,26 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     const instances = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(instances.instances[0].id, "default");
     assert.equal(agentStub.leaseRequests.length, 0);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_update_memory",
+          arguments: {
+            instanceId: "default",
+            topic: "database",
+            summary: "Production database metadata",
+            facts: ["database=yenneferbak"],
+          },
+        },
+      }),
+    );
+    const memory = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(memory.note.topic, "database");
+    assert.deepEqual(memory.note.facts, ["database=yenneferbak"]);
   } finally {
     child.kill();
     await close(agentStub);

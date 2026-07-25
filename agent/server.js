@@ -1258,6 +1258,35 @@ export function createManagerApp(options = {}) {
     });
   });
 
+  app.post("/api/memory", managerAsync(async (request, response) => {
+    const instanceId = registry.resolveId(request.body?.instanceId);
+    const instance = registry.getInternal(instanceId);
+    if (!workerManager.memoryStore?.upsertNote) {
+      throw managerRouteError(
+        "instance memory updates are unavailable",
+        "MEMORY_UPDATE_UNAVAILABLE",
+        501,
+      );
+    }
+
+    const result = await workerManager.memoryStore.upsertNote(
+      instance,
+      request.body || {},
+      `mcp:${sourceFrom(request)}`,
+    );
+    activity.publish({
+      type: "memory",
+      stage: "note-updated",
+      instanceId,
+      topic: result.note.topic,
+    });
+    response.json({
+      ok: true,
+      instanceId,
+      ...result,
+    });
+  }));
+
   async function proxyToInstance(pathName, request, response) {
     const startedAt = performance.now();
     const instanceId = request.body?.instanceId;

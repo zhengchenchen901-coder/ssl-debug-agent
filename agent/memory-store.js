@@ -17,6 +17,10 @@ const MAX_CHANGES = 50;
 const MAX_STRING_LENGTH = 2048;
 const MAX_ARRAY_LENGTH = 200;
 const MAX_DEPTH = 8;
+const MAX_MEMORY_NOTES = 20;
+const MAX_NOTE_FACTS = 20;
+const MAX_NOTE_FACT_LENGTH = 512;
+const NOTE_TOPIC_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const REDACTED = "[redacted]";
 const SENSITIVE_KEY_PATTERN = /pass(word|phrase)?|secret|token|credential|auth|private.?key|connection.?string|dsn/i;
 const SENSITIVE_VALUE_PATTERN =
@@ -149,6 +153,74 @@ function publicPathList(values) {
   return Array.isArray(values) ? values.slice(0, 20) : [];
 }
 
+function memoryNoteError(message, code = "INVALID_MEMORY_NOTE") {
+  const error = new Error(message);
+  error.code = code;
+  error.statusCode = 400;
+  return error;
+}
+
+export function normalizeMemoryNote(input = {}, updatedAt = nowIso()) {
+  const topic = String(input.topic || "").trim().toLowerCase();
+  const summary = String(input.summary || "").trim();
+  const facts = input.facts;
+
+  if (!NOTE_TOPIC_PATTERN.test(topic)) {
+    throw memoryNoteError(
+      "topic must be 1-64 lowercase letters, digits, dots, underscores, or hyphens",
+      "INVALID_MEMORY_NOTE_TOPIC",
+    );
+  }
+  if (!summary || summary.length > MAX_STRING_LENGTH) {
+    throw memoryNoteError(
+      `summary must be 1-${MAX_STRING_LENGTH} characters`,
+      "INVALID_MEMORY_NOTE_SUMMARY",
+    );
+  }
+  if (!Array.isArray(facts) || facts.length > MAX_NOTE_FACTS) {
+    throw memoryNoteError(
+      `facts must be an array with at most ${MAX_NOTE_FACTS} items`,
+      "INVALID_MEMORY_NOTE_FACTS",
+    );
+  }
+
+  const normalizedFacts = facts.map((fact, index) => {
+    if (typeof fact !== "string") {
+      throw memoryNoteError(
+        `facts[${index}] must be a string`,
+        "INVALID_MEMORY_NOTE_FACT",
+      );
+    }
+    const normalized = fact.trim();
+    if (!normalized || normalized.length > MAX_NOTE_FACT_LENGTH) {
+      throw memoryNoteError(
+        `facts[${index}] must be 1-${MAX_NOTE_FACT_LENGTH} characters`,
+        "INVALID_MEMORY_NOTE_FACT",
+      );
+    }
+    return normalized;
+  });
+
+  return sanitizeMemoryValue({
+    topic,
+    summary,
+    facts: normalizedFacts,
+    updatedAt,
+  });
+}
+
+function publicMemoryNotes(notes = {}) {
+  return Object.entries(notes)
+    .map(([topic, note]) => ({
+      topic,
+      summary: note?.summary || "",
+      facts: Array.isArray(note?.facts) ? note.facts : [],
+      updatedAt: note?.updatedAt || null,
+    }))
+    .sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")))
+    .slice(0, MAX_MEMORY_NOTES);
+}
+
 function buildSummary(memory) {
   const sections = memory?.sections || {};
   const target = sections.target || {};
@@ -173,6 +245,7 @@ function buildSummary(memory) {
       clients: database.clients || {},
       service: database.service || "",
     },
+    notes: publicMemoryNotes(sections.notes),
     configPaths: publicPathList(filesystem.configPaths),
     logPaths: publicPathList(filesystem.logPaths),
     directories: publicDirectorySummary(filesystem),
@@ -562,14 +635,41 @@ export class MemoryStore {
       return this.summary(instance);
     }
 
+    const currentStatus = this.summary(instance).status;
     return this.merge(
       instance,
       {
-        status: this.summary(instance).status === "missing" ? "partial" : undefined,
+        status: ["missing", "partial"].includes(currentStatus) ? "partial" : undefined,
         sections: patch,
       },
       `tool:${pathName}`,
     );
+  }
+
+  async upsertNote(instance, input, source = "mcp:memory-update") {
+    const note = normalizeMemoryNote(input, this.now());
+    const currentStatus = this.summary(instance).status;
+    const memory = await this.merge(
+      instance,
+      {
+        status: ["missing", "partial"].includes(currentStatus) ? "partial" : undefined,
+        sections: {
+          notes: {
+            [note.topic]: {
+              summary: note.summary,
+              facts: note.facts,
+              updatedAt: note.updatedAt,
+            },
+          },
+        },
+      },
+      source,
+    );
+
+    return {
+      note: memory.summary.notes.find((candidate) => candidate.topic === note.topic),
+      memory,
+    };
   }
 
   async deleteInstance(instanceId) {

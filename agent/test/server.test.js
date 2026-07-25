@@ -434,6 +434,17 @@ test("manager API includes memory and updates it from proxied tool results", { s
     assert.equal(before.status, 200);
     assert.equal(before.body.instances[0].memory.status, "missing");
 
+    const updatedMemory = await postJson(server, "/api/memory", {
+      instanceId: "a",
+      topic: "database",
+      summary: "Production database metadata",
+      facts: ["database=yenneferbak"],
+    });
+    assert.equal(updatedMemory.status, 200);
+    assert.equal(updatedMemory.body.note.topic, "database");
+    assert.equal(updatedMemory.body.memory.status, "partial");
+    assert.equal(updatedMemory.body.memory.summary.notes[0].facts[0], "database=yenneferbak");
+
     const listed = await postJson(server, "/list-dir", {
       instanceId: "a",
       path: "/etc/nginx",
@@ -444,6 +455,7 @@ test("manager API includes memory and updates it from proxied tool results", { s
 
     const after = await getJson(server, "/api/instances");
     assert.equal(after.body.instances[0].memory.summary.configPaths[0], "/etc/nginx/nginx.conf");
+    assert.equal(after.body.instances[0].memory.summary.notes[0].topic, "database");
   } finally {
     await close(server);
   }

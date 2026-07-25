@@ -225,6 +225,36 @@ const tools = [
     },
   },
   {
+    name: "remote_debug_update_memory",
+    description:
+      "Persist a verified, redacted operational note in one instance's local memory. Use only when the user explicitly asks to remember or update instance facts; this does not execute a remote command.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["topic", "summary", "facts"],
+      properties: {
+        topic: {
+          type: "string",
+          pattern: "^[a-z0-9][a-z0-9._-]{0,63}$",
+          description: "Stable lowercase note key such as database or deployment.",
+        },
+        summary: {
+          type: "string",
+          minLength: 1,
+          maxLength: 2048,
+          description: "Concise durable summary. Never include credentials or connection strings.",
+        },
+        facts: {
+          type: "array",
+          maxItems: 20,
+          items: { type: "string", minLength: 1, maxLength: 512 },
+          description: "Verified stable facts used by later diagnostics or approved-command drafts.",
+        },
+        instanceId: instanceIdProperty,
+      },
+    },
+  },
+  {
     name: "remote_debug_run_command",
     description:
       "Run a whitelisted read-only Linux diagnostic command through the local Remote Debug Agent.",
@@ -684,6 +714,14 @@ function logSettings() {
 function toolArgumentSummary(name, args = {}) {
   if (name === "remote_debug_list_instances") {
     return {};
+  }
+
+  if (name === "remote_debug_update_memory") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      topic: typeof args.topic === "string" ? args.topic.slice(0, 64) : undefined,
+      factCount: Array.isArray(args.facts) ? args.facts.length : undefined,
+    };
   }
 
   if (name === "remote_debug_run_command") {
@@ -1849,6 +1887,15 @@ async function callTool(name, args, operation) {
   if (name === "remote_debug_list_instances") {
     const result = await getAgent("/api/instances", operation);
     return result;
+  }
+
+  if (name === "remote_debug_update_memory") {
+    return callAgent("/api/memory", {
+      instanceId: args?.instanceId,
+      topic: args?.topic,
+      summary: args?.summary,
+      facts: args?.facts,
+    }, operation);
   }
 
   if (name === "remote_debug_run_command") {

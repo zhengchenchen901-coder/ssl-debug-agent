@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Instance Memory"
+  short_description: "Store verified, redacted remote instance facts"
+  default_prompt: "Use $update-instance-memory to save verified database connection facts for the default instance."

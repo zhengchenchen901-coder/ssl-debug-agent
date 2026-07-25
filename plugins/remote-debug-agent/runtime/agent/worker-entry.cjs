@@ -1795,7 +1795,7 @@ var require_utf32 = __commonJS({
     }
     Utf32Encoder.prototype.write = function(str) {
       var src = Buffer2.from(str, "ucs2");
-      var dst = Buffer2.alloc(src.length * 2);
+      var dst = Buffer2.alloc(src.length * 2 + 4);
       var write32 = this.isLE ? dst.writeUInt32LE : dst.writeUInt32BE;
       var offset = 0;
       for (var i = 0; i < src.length; i += 2) {
@@ -1862,9 +1862,9 @@ var require_utf32 = __commonJS({
         }
         if (overflow.length === 4) {
           if (isLE) {
-            codepoint = overflow[i] | overflow[i + 1] << 8 | overflow[i + 2] << 16 | overflow[i + 3] << 24;
+            codepoint = overflow[0] | overflow[1] << 8 | overflow[2] << 16 | overflow[3] << 24;
           } else {
-            codepoint = overflow[i + 3] | overflow[i + 2] << 8 | overflow[i + 1] << 16 | overflow[i] << 24;
+            codepoint = overflow[3] | overflow[2] << 8 | overflow[1] << 16 | overflow[0] << 24;
           }
           overflow.length = 0;
           offset = _writeCodepoint(dst, offset, codepoint, badChar);
@@ -1899,7 +1899,11 @@ var require_utf32 = __commonJS({
       return offset;
     }
     Utf32Decoder.prototype.end = function() {
+      if (this.overflow.length === 0) {
+        return;
+      }
       this.overflow.length = 0;
+      return String.fromCharCode(this.badChar);
     };
     exports2.utf32 = Utf32AutoCodec;
     exports2.ucs4 = "utf32";
@@ -2524,6 +2528,8 @@ var require_sbcs_data = __commonJS({
       elot928: "iso88597",
       hebrew: "iso88598",
       hebrew8: "iso88598",
+      iso88598i: "iso88598",
+      iso88598e: "iso88598",
       turkish: "iso88599",
       turkish8: "iso88599",
       thai: "iso885911",
@@ -5630,106 +5636,133 @@ var require_on_finished = __commonJS({
   }
 });
 
-// node_modules/content-type/index.js
-var require_content_type = __commonJS({
-  "node_modules/content-type/index.js"(exports2) {
+// node_modules/type-is/node_modules/content-type/dist/index.js
+var require_dist = __commonJS({
+  "node_modules/type-is/node_modules/content-type/dist/index.js"(exports2) {
     "use strict";
-    var PARAM_REGEXP = /; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) */g;
-    var TEXT_REGEXP = /^[\u000b\u0020-\u007e\u0080-\u00ff]+$/;
-    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    var QESC_REGEXP = /\\([\u000b\u0020-\u00ff])/g;
-    var QUOTE_REGEXP = /([\\"])/g;
-    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.format = format;
     exports2.parse = parse;
+    var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
+    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var QUOTE_REGEXP = /[\\"]/g;
+    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var NullObject = /* @__PURE__ */ (() => {
+      const C = function() {
+      };
+      C.prototype = /* @__PURE__ */ Object.create(null);
+      return C;
+    })();
     function format(obj) {
-      if (!obj || typeof obj !== "object") {
-        throw new TypeError("argument obj is required");
-      }
-      var parameters = obj.parameters;
-      var type = obj.type;
+      const { type, parameters } = obj;
       if (!type || !TYPE_REGEXP.test(type)) {
-        throw new TypeError("invalid type");
+        throw new TypeError(`Invalid type: ${type}`);
       }
-      var string = type;
-      if (parameters && typeof parameters === "object") {
-        var param;
-        var params = Object.keys(parameters).sort();
-        for (var i = 0; i < params.length; i++) {
-          param = params[i];
+      let result = type;
+      if (parameters) {
+        for (const param of Object.keys(parameters)) {
           if (!TOKEN_REGEXP.test(param)) {
-            throw new TypeError("invalid parameter name");
+            throw new TypeError(`Invalid parameter name: ${param}`);
           }
-          string += "; " + param + "=" + qstring(parameters[param]);
+          result += `; ${param}=${qstring(parameters[param])}`;
         }
       }
-      return string;
+      return result;
     }
-    function parse(string) {
-      if (!string) {
-        throw new TypeError("argument string is required");
-      }
-      var header = typeof string === "object" ? getcontenttype(string) : string;
-      if (typeof header !== "string") {
-        throw new TypeError("argument string is required to be a string");
-      }
-      var index = header.indexOf(";");
-      var type = index !== -1 ? header.slice(0, index).trim() : header.trim();
-      if (!TYPE_REGEXP.test(type)) {
-        throw new TypeError("invalid media type");
-      }
-      var obj = new ContentType(type.toLowerCase());
-      if (index !== -1) {
-        var key;
-        var match;
-        var value;
-        PARAM_REGEXP.lastIndex = index;
-        while (match = PARAM_REGEXP.exec(header)) {
-          if (match.index !== index) {
-            throw new TypeError("invalid parameter format");
-          }
-          index += match[0].length;
-          key = match[1].toLowerCase();
-          value = match[2];
-          if (value.charCodeAt(0) === 34) {
-            value = value.slice(1, -1);
-            if (value.indexOf("\\") !== -1) {
-              value = value.replace(QESC_REGEXP, "$1");
+    function parse(header, options) {
+      const len = header.length;
+      let index = skipOWS(header, 0, len);
+      const valueStart = index;
+      index = skipValue(header, index, len);
+      const valueEnd = trailingOWS(header, valueStart, index);
+      const type = header.slice(valueStart, valueEnd).toLowerCase();
+      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
+      return { type, parameters };
+    }
+    var SP = 32;
+    var HTAB = 9;
+    var SEMI = 59;
+    var EQ = 61;
+    var DQUOTE = 34;
+    var BSLASH = 92;
+    function parseParameters(header, index, len) {
+      const parameters = new NullObject();
+      parameter: while (index < len) {
+        index = skipOWS(header, index + 1, len);
+        const keyStart = index;
+        while (index < len) {
+          const code = header.charCodeAt(index);
+          if (code === SEMI)
+            continue parameter;
+          if (code === EQ) {
+            const keyEnd = trailingOWS(header, keyStart, index);
+            const key = header.slice(keyStart, keyEnd).toLowerCase();
+            index = skipOWS(header, index + 1, len);
+            if (index < len && header.charCodeAt(index) === DQUOTE) {
+              index++;
+              let value = "";
+              while (index < len) {
+                const code2 = header.charCodeAt(index++);
+                if (code2 === DQUOTE) {
+                  index = skipValue(header, index, len);
+                  if (parameters[key] === void 0)
+                    parameters[key] = value;
+                  break;
+                }
+                if (code2 === BSLASH && index < len) {
+                  value += header[index++];
+                  continue;
+                }
+                value += String.fromCharCode(code2);
+              }
+              continue parameter;
             }
+            const valueStart = index;
+            index = skipValue(header, index, len);
+            if (parameters[key] === void 0) {
+              const valueEnd = trailingOWS(header, valueStart, index);
+              parameters[key] = header.slice(valueStart, valueEnd);
+            }
+            continue parameter;
           }
-          obj.parameters[key] = value;
-        }
-        if (index !== header.length) {
-          throw new TypeError("invalid parameter format");
+          index++;
         }
       }
-      return obj;
+      return parameters;
     }
-    function getcontenttype(obj) {
-      var header;
-      if (typeof obj.getHeader === "function") {
-        header = obj.getHeader("content-type");
-      } else if (typeof obj.headers === "object") {
-        header = obj.headers && obj.headers["content-type"];
+    function skipValue(str, index, len) {
+      while (index < len) {
+        const char = str.charCodeAt(index);
+        if (char === SEMI)
+          break;
+        index++;
       }
-      if (typeof header !== "string") {
-        throw new TypeError("content-type header is missing from object");
-      }
-      return header;
+      return index;
     }
-    function qstring(val) {
-      var str = String(val);
-      if (TOKEN_REGEXP.test(str)) {
+    function skipOWS(header, index, len) {
+      while (index < len) {
+        const char = header.charCodeAt(index);
+        if (char !== SP && char !== HTAB)
+          break;
+        index++;
+      }
+      return index;
+    }
+    function trailingOWS(header, start, end) {
+      while (end > start) {
+        const char = header.charCodeAt(end - 1);
+        if (char !== SP && char !== HTAB)
+          break;
+        end--;
+      }
+      return end;
+    }
+    function qstring(str) {
+      if (TOKEN_REGEXP.test(str))
         return str;
-      }
-      if (str.length > 0 && !TEXT_REGEXP.test(str)) {
-        throw new TypeError("invalid parameter value");
-      }
-      return '"' + str.replace(QUOTE_REGEXP, "\\$1") + '"';
-    }
-    function ContentType(type) {
-      this.parameters = /* @__PURE__ */ Object.create(null);
-      this.type = type;
+      if (TEXT_REGEXP.test(str))
+        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
+      throw new TypeError(`Invalid parameter value: ${str}`);
     }
   }
 });
@@ -15272,18 +15305,12 @@ var require_media_typer = __commonJS({
       return string;
     }
     function test(string) {
-      if (!string) {
-        throw new TypeError("argument string is required");
-      }
       if (typeof string !== "string") {
         throw new TypeError("argument string is required to be a string");
       }
       return TYPE_REGEXP.test(string.toLowerCase());
     }
     function parse(string) {
-      if (!string) {
-        throw new TypeError("argument string is required");
-      }
       if (typeof string !== "string") {
         throw new TypeError("argument string is required to be a string");
       }
@@ -15313,7 +15340,7 @@ var require_media_typer = __commonJS({
 var require_type_is = __commonJS({
   "node_modules/type-is/index.js"(exports2, module2) {
     "use strict";
-    var contentType = require_content_type();
+    var contentType = require_dist();
     var mime = require_mime_types();
     var typer = require_media_typer();
     module2.exports = typeofrequest;
@@ -15322,9 +15349,12 @@ var require_type_is = __commonJS({
     module2.exports.normalize = normalize;
     module2.exports.match = mimeMatch;
     function typeis(value, types_) {
+      if (value && typeof value === "object") {
+        value = value.headers["content-type"];
+      }
       var i;
       var types = types_;
-      var val = tryNormalizeType(value);
+      var val = normalizeType(value);
       if (!val) {
         return false;
       }
@@ -15390,15 +15420,140 @@ var require_type_is = __commonJS({
       return true;
     }
     function normalizeType(value) {
-      var type = contentType.parse(value).type;
+      if (!value) return null;
+      var type = contentType.parse(value, { parameters: false }).type;
       return typer.test(type) ? type : null;
     }
-    function tryNormalizeType(value) {
-      try {
-        return value ? normalizeType(value) : null;
-      } catch (err) {
-        return null;
+  }
+});
+
+// node_modules/body-parser/node_modules/content-type/dist/index.js
+var require_dist2 = __commonJS({
+  "node_modules/body-parser/node_modules/content-type/dist/index.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.format = format;
+    exports2.parse = parse;
+    var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
+    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var QUOTE_REGEXP = /[\\"]/g;
+    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var NullObject = /* @__PURE__ */ (() => {
+      const C = function() {
+      };
+      C.prototype = /* @__PURE__ */ Object.create(null);
+      return C;
+    })();
+    function format(obj) {
+      const { type, parameters } = obj;
+      if (!type || !TYPE_REGEXP.test(type)) {
+        throw new TypeError(`Invalid type: ${type}`);
       }
+      let result = type;
+      if (parameters) {
+        for (const param of Object.keys(parameters)) {
+          if (!TOKEN_REGEXP.test(param)) {
+            throw new TypeError(`Invalid parameter name: ${param}`);
+          }
+          result += `; ${param}=${qstring(parameters[param])}`;
+        }
+      }
+      return result;
+    }
+    function parse(header, options) {
+      const len = header.length;
+      let index = skipOWS(header, 0, len);
+      const valueStart = index;
+      index = skipValue(header, index, len);
+      const valueEnd = trailingOWS(header, valueStart, index);
+      const type = header.slice(valueStart, valueEnd).toLowerCase();
+      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
+      return { type, parameters };
+    }
+    var SP = 32;
+    var HTAB = 9;
+    var SEMI = 59;
+    var EQ = 61;
+    var DQUOTE = 34;
+    var BSLASH = 92;
+    function parseParameters(header, index, len) {
+      const parameters = new NullObject();
+      parameter: while (index < len) {
+        index = skipOWS(header, index + 1, len);
+        const keyStart = index;
+        while (index < len) {
+          const code = header.charCodeAt(index);
+          if (code === SEMI)
+            continue parameter;
+          if (code === EQ) {
+            const keyEnd = trailingOWS(header, keyStart, index);
+            const key = header.slice(keyStart, keyEnd).toLowerCase();
+            index = skipOWS(header, index + 1, len);
+            if (index < len && header.charCodeAt(index) === DQUOTE) {
+              index++;
+              let value = "";
+              while (index < len) {
+                const code2 = header.charCodeAt(index++);
+                if (code2 === DQUOTE) {
+                  index = skipValue(header, index, len);
+                  if (parameters[key] === void 0)
+                    parameters[key] = value;
+                  break;
+                }
+                if (code2 === BSLASH && index < len) {
+                  value += header[index++];
+                  continue;
+                }
+                value += String.fromCharCode(code2);
+              }
+              continue parameter;
+            }
+            const valueStart = index;
+            index = skipValue(header, index, len);
+            if (parameters[key] === void 0) {
+              const valueEnd = trailingOWS(header, valueStart, index);
+              parameters[key] = header.slice(valueStart, valueEnd);
+            }
+            continue parameter;
+          }
+          index++;
+        }
+      }
+      return parameters;
+    }
+    function skipValue(str, index, len) {
+      while (index < len) {
+        const char = str.charCodeAt(index);
+        if (char === SEMI)
+          break;
+        index++;
+      }
+      return index;
+    }
+    function skipOWS(header, index, len) {
+      while (index < len) {
+        const char = header.charCodeAt(index);
+        if (char !== SP && char !== HTAB)
+          break;
+        index++;
+      }
+      return index;
+    }
+    function trailingOWS(header, start, end) {
+      while (end > start) {
+        const char = header.charCodeAt(end - 1);
+        if (char !== SP && char !== HTAB)
+          break;
+        end--;
+      }
+      return end;
+    }
+    function qstring(str) {
+      if (TOKEN_REGEXP.test(str))
+        return str;
+      if (TEXT_REGEXP.test(str))
+        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
+      throw new TypeError(`Invalid parameter value: ${str}`);
     }
   }
 });
@@ -15408,7 +15563,7 @@ var require_utils = __commonJS({
   "node_modules/body-parser/lib/utils.js"(exports2, module2) {
     "use strict";
     var bytes = require_bytes();
-    var contentType = require_content_type();
+    var contentType = require_dist2();
     var typeis = require_type_is();
     module2.exports = {
       getCharset,
@@ -15416,11 +15571,9 @@ var require_utils = __commonJS({
       passthrough
     };
     function getCharset(req) {
-      try {
-        return (contentType.parse(req).parameters.charset || "").toLowerCase();
-      } catch {
-        return void 0;
-      }
+      const header = req.headers["content-type"];
+      if (!header) return void 0;
+      return contentType.parse(header).parameters.charset?.toLowerCase();
     }
     function typeChecker(type) {
       return function checkType(req) {
@@ -15431,15 +15584,18 @@ var require_utils = __commonJS({
       if (!defaultType) {
         throw new TypeError("defaultType must be provided");
       }
-      var inflate = options?.inflate !== false;
-      var limit = typeof options?.limit !== "number" ? bytes.parse(options?.limit || "100kb") : options?.limit;
-      var type = options?.type || defaultType;
-      var verify = options?.verify || false;
-      var defaultCharset = options?.defaultCharset || "utf-8";
+      const inflate = options?.inflate !== false;
+      const limit = typeof options?.limit === "undefined" || options?.limit === null ? 102400 : bytes.parse(options.limit);
+      const type = options?.type || defaultType;
+      const verify = options?.verify || false;
+      const defaultCharset = options?.defaultCharset || "utf-8";
+      if (limit === null) {
+        throw new TypeError(`option limit "${String(options.limit)}" is invalid`);
+      }
       if (verify !== false && typeof verify !== "function") {
         throw new TypeError("option verify must be function");
       }
-      var shouldParse = typeof type !== "function" ? typeChecker(type) : type;
+      const shouldParse = typeof type !== "function" ? typeChecker(type) : type;
       return {
         inflate,
         limit,
@@ -15486,7 +15642,7 @@ var require_read = __commonJS({
         next();
         return;
       }
-      var encoding = null;
+      let encoding = null;
       if (options?.skipCharset !== true) {
         encoding = getCharset(req) || options.defaultCharset;
         if (!!options?.isValidCharset && !options.isValidCharset(encoding)) {
@@ -15498,10 +15654,10 @@ var require_read = __commonJS({
           return;
         }
       }
-      var length;
-      var opts = options;
-      var stream;
-      var verify = opts.verify;
+      let length;
+      const opts = options;
+      let stream;
+      const verify = opts.verify;
       try {
         stream = contentstream(req, debug, opts.inflate);
         length = stream.length;
@@ -15520,7 +15676,7 @@ var require_read = __commonJS({
       debug("read body");
       getBody(stream, opts, function(error, body) {
         if (error) {
-          var _error;
+          let _error;
           if (error.type === "encoding.unsupported") {
             _error = createError(415, 'unsupported charset "' + encoding.toUpperCase() + '"', {
               charset: encoding.toLowerCase(),
@@ -15550,7 +15706,7 @@ var require_read = __commonJS({
             return;
           }
         }
-        var str = body;
+        let str = body;
         try {
           debug("parse body");
           str = typeof body !== "string" && encoding !== null ? iconv.decode(body, encoding) : body;
@@ -15566,8 +15722,8 @@ var require_read = __commonJS({
       });
     }
     function contentstream(req, debug, inflate) {
-      var encoding = (req.headers["content-encoding"] || "identity").toLowerCase();
-      var length = req.headers["content-length"];
+      const encoding = (req.headers["content-encoding"] || "identity").toLowerCase();
+      const length = req.headers["content-length"];
       debug('content-encoding "%s"', encoding);
       if (inflate === false && encoding !== "identity") {
         throw createError(415, "content encoding unsupported", {
@@ -15579,7 +15735,7 @@ var require_read = __commonJS({
         req.length = length;
         return req;
       }
-      var stream = createDecompressionStream(encoding, debug);
+      const stream = createDecompressionStream(encoding, debug);
       req.pipe(stream);
       return stream;
     }
@@ -15625,18 +15781,43 @@ var require_json = __commonJS({
     var JSON_SYNTAX_REGEXP = /#+/g;
     function json(options) {
       const normalizedOptions = normalizeOptions(options, "application/json");
-      var reviver = options?.reviver;
-      var strict = options?.strict !== false;
-      function parse(body) {
-        if (body.length === 0) {
-          return {};
-        }
-        if (strict) {
-          var first = firstchar(body);
+      const parse = createJsonParser(options);
+      const readOptions = {
+        ...normalizedOptions,
+        // assert charset per RFC 7159 sec 8.1
+        isValidCharset: (charset) => charset.slice(0, 4) === "utf-"
+      };
+      return function jsonParser(req, res, next) {
+        read(req, res, next, parse, debug, readOptions);
+      };
+    }
+    function createJsonParser(options) {
+      const reviver = options?.reviver;
+      const strict = options?.strict !== false;
+      if (strict) {
+        return function parse(body) {
+          if (body.length === 0) {
+            return {};
+          }
+          const first = firstchar(body);
           if (first !== "{" && first !== "[") {
             debug("strict violation");
             throw createStrictSyntaxError(body, first);
           }
+          try {
+            debug("parse json");
+            return JSON.parse(body, reviver);
+          } catch (e) {
+            throw normalizeJsonSyntaxError(e, {
+              message: e.message,
+              stack: e.stack
+            });
+          }
+        };
+      }
+      return function parse(body) {
+        if (body.length === 0) {
+          return {};
         }
         try {
           debug("parse json");
@@ -15647,19 +15828,11 @@ var require_json = __commonJS({
             stack: e.stack
           });
         }
-      }
-      const readOptions = {
-        ...normalizedOptions,
-        // assert charset per RFC 7159 sec 8.1
-        isValidCharset: (charset) => charset.slice(0, 4) === "utf-"
-      };
-      return function jsonParser(req, res, next) {
-        read(req, res, next, parse, debug, readOptions);
       };
     }
     function createStrictSyntaxError(str, char) {
-      var index = str.indexOf(char);
-      var partial = "";
+      const index = str.indexOf(char);
+      let partial = "";
       if (index !== -1) {
         partial = str.substring(0, index) + JSON_SYNTAX_CHAR.repeat(str.length - index);
       }
@@ -15676,13 +15849,13 @@ var require_json = __commonJS({
       }
     }
     function firstchar(str) {
-      var match = FIRST_CHAR_REGEXP.exec(str);
+      const match = FIRST_CHAR_REGEXP.exec(str);
       return match ? match[1] : void 0;
     }
     function normalizeJsonSyntaxError(error, obj) {
-      var keys = Object.getOwnPropertyNames(error);
-      for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
+      const keys = Object.getOwnPropertyNames(error);
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
         if (key !== "stack" && key !== "message") {
           delete error[key];
         }
@@ -17334,7 +17507,8 @@ var require_side_channel = __commonJS({
       var channel = {
         assert: function(key) {
           if (!channel.has(key)) {
-            throw new $TypeError("Side channel does not contain " + inspect(key));
+            var keyDesc = key && Object(key) === key ? "the given object key" : inspect(key);
+            throw new $TypeError("Side channel does not contain " + keyDesc);
           }
         },
         "delete": function(key) {
@@ -17390,6 +17564,7 @@ var require_utils2 = __commonJS({
     "use strict";
     var formats = require_formats();
     var getSideChannel = require_side_channel();
+    var defineProperty = require_es_define_property();
     var has = Object.prototype.hasOwnProperty;
     var isArray = Array.isArray;
     var overflowChannel = getSideChannel();
@@ -17437,6 +17612,18 @@ var require_utils2 = __commonJS({
       }
       return obj;
     };
+    var setProperty = function setProperty2(obj, key, value) {
+      if (key === "__proto__" && defineProperty) {
+        defineProperty(obj, key, {
+          configurable: true,
+          enumerable: true,
+          value,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
+      }
+    };
     var merge = function merge2(target, source, options) {
       if (!source) {
         return target;
@@ -17444,7 +17631,10 @@ var require_utils2 = __commonJS({
       if (typeof source !== "object" && typeof source !== "function") {
         if (isArray(target)) {
           var nextIndex = target.length;
-          if (options && typeof options.arrayLimit === "number" && nextIndex > options.arrayLimit) {
+          if (options && typeof options.arrayLimit === "number" && nextIndex >= options.arrayLimit) {
+            if (options.throwOnLimitExceeded) {
+              throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+            }
             return markOverflow(arrayToObject(target.concat(source), options), nextIndex);
           }
           target[nextIndex] = source;
@@ -17475,6 +17665,9 @@ var require_utils2 = __commonJS({
         }
         var combined = [target].concat(source);
         if (options && typeof options.arrayLimit === "number" && combined.length > options.arrayLimit) {
+          if (options.throwOnLimitExceeded) {
+            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+          }
           return markOverflow(arrayToObject(combined, options), combined.length - 1);
         }
         return combined;
@@ -17496,14 +17689,20 @@ var require_utils2 = __commonJS({
             target[i] = item;
           }
         });
+        if (options && typeof options.arrayLimit === "number" && target.length > options.arrayLimit) {
+          if (options.throwOnLimitExceeded) {
+            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+          }
+          return markOverflow(arrayToObject(target, options), target.length - 1);
+        }
         return target;
       }
       return Object.keys(source).reduce(function(acc, key) {
         var value = source[key];
         if (has.call(acc, key)) {
-          acc[key] = merge2(acc[key], value, options);
+          setProperty(acc, key, merge2(acc[key], value, options));
         } else {
-          acc[key] = value;
+          setProperty(acc, key, value);
         }
         if (isOverflow(source) && !isOverflow(acc)) {
           markOverflow(acc, getMaxIndex(source));
@@ -17519,7 +17718,7 @@ var require_utils2 = __commonJS({
     };
     var assign = function assignSingleSource(target, source) {
       return Object.keys(source).reduce(function(acc, key) {
-        acc[key] = source[key];
+        setProperty(acc, key, source[key]);
         return acc;
       }, target);
     };
@@ -17553,6 +17752,13 @@ var require_utils2 = __commonJS({
       var out = "";
       for (var j = 0; j < string.length; j += limit) {
         var segment = string.length >= limit ? string.slice(j, j + limit) : string;
+        if (j + limit < string.length) {
+          var last = segment.charCodeAt(segment.length - 1);
+          if (last >= 55296 && last <= 56319) {
+            segment = segment.slice(0, -1);
+            j -= 1;
+          }
+        }
         var arr = [];
         for (var i = 0; i < segment.length; ++i) {
           var c = segment.charCodeAt(i);
@@ -17582,7 +17788,7 @@ var require_utils2 = __commonJS({
     };
     var compact = function compact2(value) {
       var queue = [{ obj: { o: value }, prop: "o" }];
-      var refs = [];
+      var refs = getSideChannel();
       for (var i = 0; i < queue.length; ++i) {
         var item = queue[i];
         var obj = item.obj[item.prop];
@@ -17590,9 +17796,9 @@ var require_utils2 = __commonJS({
         for (var j = 0; j < keys.length; ++j) {
           var key = keys[j];
           var val = obj[key];
-          if (typeof val === "object" && val !== null && refs.indexOf(val) === -1) {
+          if (typeof val === "object" && val !== null && !refs.has(val)) {
             queue[queue.length] = { obj, prop: key };
-            refs[refs.length] = val;
+            refs.set(val, true);
           }
         }
       }
@@ -17608,8 +17814,11 @@ var require_utils2 = __commonJS({
       }
       return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
     };
-    var combine = function combine2(a, b, arrayLimit, plainObjects) {
+    var combine = function combine2(a, b, arrayLimit, plainObjects, throwOnLimitExceeded) {
       if (isOverflow(a)) {
+        if (throwOnLimitExceeded) {
+          throw new RangeError("Array limit exceeded. Only " + arrayLimit + " element" + (arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+        }
         var newIndex = getMaxIndex(a) + 1;
         a[newIndex] = b;
         setMaxIndex(a, newIndex);
@@ -17617,6 +17826,9 @@ var require_utils2 = __commonJS({
       }
       var result = [].concat(a, b);
       if (result.length > arrayLimit) {
+        if (throwOnLimitExceeded) {
+          throw new RangeError("Array limit exceeded. Only " + arrayLimit + " element" + (arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+        }
         return markOverflow(arrayToObject(result, { plainObjects }), result.length - 1);
       }
       return result;
@@ -17736,7 +17948,7 @@ var require_stringify = __commonJS({
       }
       if (obj === null) {
         if (strictNullHandling) {
-          return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix;
+          return formatter(encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix);
         }
         obj = "";
       }
@@ -17754,7 +17966,9 @@ var require_stringify = __commonJS({
       var objKeys;
       if (generateArrayPrefix === "comma" && isArray(obj)) {
         if (encodeValuesOnly && encoder) {
-          obj = utils.maybeMap(obj, encoder);
+          obj = utils.maybeMap(obj, function(v) {
+            return v == null ? v : encoder(v);
+          });
         }
         objKeys = [{ value: obj.length > 0 ? obj.join(",") || null : void 0 }];
       } else if (isArray(filter)) {
@@ -17892,6 +18106,9 @@ var require_stringify = __commonJS({
       var sideChannel = getSideChannel();
       for (var i = 0; i < objKeys.length; ++i) {
         var key = objKeys[i];
+        if (typeof key === "undefined" || key === null) {
+          continue;
+        }
         var value = obj[key];
         if (options.skipNulls && value === null) {
           continue;
@@ -17921,9 +18138,9 @@ var require_stringify = __commonJS({
       var prefix = options.addQueryPrefix === true ? "?" : "";
       if (options.charsetSentinel) {
         if (options.charset === "iso-8859-1") {
-          prefix += "utf8=%26%2310003%3B&";
+          prefix += "utf8=%26%2310003%3B" + options.delimiter;
         } else {
-          prefix += "utf8=%E2%9C%93&";
+          prefix += "utf8=%E2%9C%93" + options.delimiter;
         }
       }
       return joined.length > 0 ? prefix + joined : "";
@@ -17967,8 +18184,19 @@ var require_parse = __commonJS({
         return String.fromCharCode(parseInt(numberStr, 10));
       });
     };
-    var parseArrayValue = function(val, options, currentArrayLength) {
+    var parseArrayValue = function(val, options, currentArrayLength, isFlatArrayValue) {
       if (val && typeof val === "string" && options.comma && val.indexOf(",") > -1) {
+        if (isFlatArrayValue && options.throwOnLimitExceeded) {
+          var commaCount = 0;
+          var commaIndex = val.indexOf(",");
+          while (commaIndex > -1) {
+            commaCount += 1;
+            if (commaCount >= options.arrayLimit) {
+              throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+            }
+            commaIndex = val.indexOf(",", commaIndex + 1);
+          }
+        }
         return val.split(",");
       }
       if (options.throwOnLimitExceeded && currentArrayLength >= options.arrayLimit) {
@@ -18025,7 +18253,8 @@ var require_parse = __commonJS({
               parseArrayValue(
                 part.slice(pos + 1),
                 options,
-                isArray(obj[key]) ? obj[key].length : 0
+                isArray(obj[key]) ? obj[key].length : 0,
+                part.indexOf("[]=") === -1
               ),
               function(encodedVal) {
                 return options.decoder(encodedVal, defaults.decoder, charset, "value");
@@ -18040,10 +18269,7 @@ var require_parse = __commonJS({
           val = isArray(val) ? [val] : val;
         }
         if (options.comma && isArray(val) && val.length > options.arrayLimit) {
-          if (options.throwOnLimitExceeded) {
-            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-          }
-          val = utils.combine([], val, options.arrayLimit, options.plainObjects);
+          val = utils.combine([], val, options.arrayLimit, options.plainObjects, options.throwOnLimitExceeded);
         }
         if (key !== null) {
           var existing = has.call(obj, key);
@@ -18052,7 +18278,8 @@ var require_parse = __commonJS({
               obj[key],
               val,
               options.arrayLimit,
-              options.plainObjects
+              options.plainObjects,
+              options.throwOnLimitExceeded
             );
           } else if (!existing || options.duplicates === "last") {
             obj[key] = val;
@@ -18079,7 +18306,8 @@ var require_parse = __commonJS({
               [],
               leaf,
               options.arrayLimit,
-              options.plainObjects
+              options.plainObjects,
+              options.throwOnLimitExceeded
             );
           }
         } else {
@@ -18106,8 +18334,8 @@ var require_parse = __commonJS({
       }
       return leaf;
     };
-    var splitKeyIntoSegments = function splitKeyIntoSegments2(givenKey, options) {
-      var key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, "[$1]") : givenKey;
+    var splitKeyIntoSegments = function splitKeyIntoSegments2(originalKey, options) {
+      var key = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
       if (options.depth <= 0) {
         if (!options.plainObjects && has.call(Object.prototype, key)) {
           if (!options.allowPrototypes) {
@@ -18116,37 +18344,56 @@ var require_parse = __commonJS({
         }
         return [key];
       }
-      var brackets = /(\[[^[\]]*])/;
-      var child = /(\[[^[\]]*])/g;
-      var segment = brackets.exec(key);
-      var parent = segment ? key.slice(0, segment.index) : key;
-      var keys = [];
+      var segments = [];
+      var first = key.indexOf("[");
+      var parent = first >= 0 ? key.slice(0, first) : key;
       if (parent) {
         if (!options.plainObjects && has.call(Object.prototype, parent)) {
           if (!options.allowPrototypes) {
             return;
           }
         }
-        keys[keys.length] = parent;
+        segments[segments.length] = parent;
       }
-      var i = 0;
-      while ((segment = child.exec(key)) !== null && i < options.depth) {
-        i += 1;
-        var segmentContent = segment[1].slice(1, -1);
-        if (!options.plainObjects && has.call(Object.prototype, segmentContent)) {
-          if (!options.allowPrototypes) {
-            return;
+      var n = key.length;
+      var open = first;
+      var collected = 0;
+      while (open >= 0 && collected < options.depth) {
+        var level = 1;
+        var i = open + 1;
+        var close = -1;
+        while (i < n && close < 0) {
+          var cu = key.charCodeAt(i);
+          if (cu === 91) {
+            level += 1;
+          } else if (cu === 93) {
+            level -= 1;
+            if (level === 0) {
+              close = i;
+            }
           }
+          i += 1;
         }
-        keys[keys.length] = segment[1];
+        if (close < 0) {
+          segments[segments.length] = "[" + key.slice(open) + "]";
+          return segments;
+        }
+        var seg = key.slice(open, close + 1);
+        var content = seg.slice(1, -1);
+        if (!options.plainObjects && has.call(Object.prototype, content) && !options.allowPrototypes) {
+          return;
+        }
+        segments[segments.length] = seg;
+        collected += 1;
+        open = key.indexOf("[", close + 1);
       }
-      if (segment) {
+      if (open >= 0) {
         if (options.strictDepth === true) {
           throw new RangeError("Input depth exceeded depth option of " + options.depth + " and strictDepth is true");
         }
-        keys[keys.length] = "[" + key.slice(segment.index) + "]";
+        segments[segments.length] = "[" + key.slice(open) + "]";
       }
-      return keys;
+      return segments;
     };
     var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
       if (!givenKey) {
@@ -18260,10 +18507,7 @@ var require_urlencoded = __commonJS({
       if (normalizedOptions.defaultCharset !== "utf-8" && normalizedOptions.defaultCharset !== "iso-8859-1") {
         throw new TypeError("option defaultCharset must be either utf-8 or iso-8859-1");
       }
-      var queryparse = createQueryParser(options);
-      function parse(body, encoding) {
-        return body.length ? queryparse(body, encoding) : {};
-      }
+      const parse = createQueryParser(options);
       const readOptions = {
         ...normalizedOptions,
         // assert charset
@@ -18274,11 +18518,11 @@ var require_urlencoded = __commonJS({
       };
     }
     function createQueryParser(options) {
-      var extended = Boolean(options?.extended);
-      var parameterLimit = options?.parameterLimit !== void 0 ? options?.parameterLimit : 1e3;
-      var charsetSentinel = options?.charsetSentinel;
-      var interpretNumericEntities = options?.interpretNumericEntities;
-      var depth = extended ? options?.depth !== void 0 ? options?.depth : 32 : 0;
+      const extended = Boolean(options?.extended);
+      let parameterLimit = options?.parameterLimit !== void 0 ? options?.parameterLimit : 1e3;
+      const charsetSentinel = options?.charsetSentinel;
+      const interpretNumericEntities = options?.interpretNumericEntities;
+      const depth = extended ? options?.depth !== void 0 ? options?.depth : 32 : 0;
       if (isNaN(parameterLimit) || parameterLimit < 1) {
         throw new TypeError("option parameterLimit must be a positive number");
       }
@@ -18288,15 +18532,16 @@ var require_urlencoded = __commonJS({
       if (isFinite(parameterLimit)) {
         parameterLimit = parameterLimit | 0;
       }
-      return function queryparse(body, encoding) {
-        var paramCount = parameterCount(body, parameterLimit);
+      return function parse(body, encoding) {
+        if (!body.length) return {};
+        const paramCount = parameterCount(body, parameterLimit);
         if (paramCount === void 0) {
           debug("too many parameters");
           throw createError(413, "too many parameters", {
             type: "parameters.too.many"
           });
         }
-        var arrayLimit = extended ? Math.max(100, paramCount) : paramCount;
+        const arrayLimit = extended ? Math.max(100, paramCount) : paramCount;
         debug("parse " + (extended ? "extended " : "") + "urlencoding");
         try {
           return qs.parse(body, {
@@ -18338,26 +18583,10 @@ var require_body_parser = __commonJS({
   "node_modules/body-parser/index.js"(exports2, module2) {
     "use strict";
     exports2 = module2.exports = bodyParser;
-    Object.defineProperty(exports2, "json", {
-      configurable: true,
-      enumerable: true,
-      get: () => require_json()
-    });
-    Object.defineProperty(exports2, "raw", {
-      configurable: true,
-      enumerable: true,
-      get: () => require_raw()
-    });
-    Object.defineProperty(exports2, "text", {
-      configurable: true,
-      enumerable: true,
-      get: () => require_text()
-    });
-    Object.defineProperty(exports2, "urlencoded", {
-      configurable: true,
-      enumerable: true,
-      get: () => require_urlencoded()
-    });
+    exports2.json = require_json();
+    exports2.raw = require_raw();
+    exports2.text = require_text();
+    exports2.urlencoded = require_urlencoded();
     function bodyParser() {
       throw new Error("The bodyParser() generic has been split into individual middleware to use instead.");
     }
@@ -18750,6 +18979,110 @@ var require_view = __commonJS({
       } catch (e) {
         return void 0;
       }
+    }
+  }
+});
+
+// node_modules/content-type/index.js
+var require_content_type = __commonJS({
+  "node_modules/content-type/index.js"(exports2) {
+    "use strict";
+    var PARAM_REGEXP = /; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) */g;
+    var TEXT_REGEXP = /^[\u000b\u0020-\u007e\u0080-\u00ff]+$/;
+    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var QESC_REGEXP = /\\([\u000b\u0020-\u00ff])/g;
+    var QUOTE_REGEXP = /([\\"])/g;
+    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    exports2.format = format;
+    exports2.parse = parse;
+    function format(obj) {
+      if (!obj || typeof obj !== "object") {
+        throw new TypeError("argument obj is required");
+      }
+      var parameters = obj.parameters;
+      var type = obj.type;
+      if (!type || !TYPE_REGEXP.test(type)) {
+        throw new TypeError("invalid type");
+      }
+      var string = type;
+      if (parameters && typeof parameters === "object") {
+        var param;
+        var params = Object.keys(parameters).sort();
+        for (var i = 0; i < params.length; i++) {
+          param = params[i];
+          if (!TOKEN_REGEXP.test(param)) {
+            throw new TypeError("invalid parameter name");
+          }
+          string += "; " + param + "=" + qstring(parameters[param]);
+        }
+      }
+      return string;
+    }
+    function parse(string) {
+      if (!string) {
+        throw new TypeError("argument string is required");
+      }
+      var header = typeof string === "object" ? getcontenttype(string) : string;
+      if (typeof header !== "string") {
+        throw new TypeError("argument string is required to be a string");
+      }
+      var index = header.indexOf(";");
+      var type = index !== -1 ? header.slice(0, index).trim() : header.trim();
+      if (!TYPE_REGEXP.test(type)) {
+        throw new TypeError("invalid media type");
+      }
+      var obj = new ContentType(type.toLowerCase());
+      if (index !== -1) {
+        var key;
+        var match;
+        var value;
+        PARAM_REGEXP.lastIndex = index;
+        while (match = PARAM_REGEXP.exec(header)) {
+          if (match.index !== index) {
+            throw new TypeError("invalid parameter format");
+          }
+          index += match[0].length;
+          key = match[1].toLowerCase();
+          value = match[2];
+          if (value.charCodeAt(0) === 34) {
+            value = value.slice(1, -1);
+            if (value.indexOf("\\") !== -1) {
+              value = value.replace(QESC_REGEXP, "$1");
+            }
+          }
+          obj.parameters[key] = value;
+        }
+        if (index !== header.length) {
+          throw new TypeError("invalid parameter format");
+        }
+      }
+      return obj;
+    }
+    function getcontenttype(obj) {
+      var header;
+      if (typeof obj.getHeader === "function") {
+        header = obj.getHeader("content-type");
+      } else if (typeof obj.headers === "object") {
+        header = obj.headers && obj.headers["content-type"];
+      }
+      if (typeof header !== "string") {
+        throw new TypeError("content-type header is missing from object");
+      }
+      return header;
+    }
+    function qstring(val) {
+      var str = String(val);
+      if (TOKEN_REGEXP.test(str)) {
+        return str;
+      }
+      if (str.length > 0 && !TEXT_REGEXP.test(str)) {
+        throw new TypeError("invalid parameter value");
+      }
+      return '"' + str.replace(QUOTE_REGEXP, "\\$1") + '"';
+    }
+    function ContentType(type) {
+      this.parameters = /* @__PURE__ */ Object.create(null);
+      this.type = type;
     }
   }
 });
@@ -19837,7 +20170,7 @@ var require_is_promise = __commonJS({
 });
 
 // node_modules/path-to-regexp/dist/index.js
-var require_dist = __commonJS({
+var require_dist3 = __commonJS({
   "node_modules/path-to-regexp/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -20210,7 +20543,7 @@ var require_layer = __commonJS({
   "node_modules/router/lib/layer.js"(exports2, module2) {
     "use strict";
     var isPromise = require_is_promise();
-    var pathRegexp = require_dist();
+    var pathRegexp = require_dist3();
     var debug = require_src()("router:layer");
     var deprecate = require_depd()("router");
     var TRAILING_SLASH_REGEXP = /\/+$/;
@@ -21817,19 +22150,27 @@ var require_range_parser = __commonJS({
       var ranges = [];
       ranges.type = str.slice(0, index);
       for (var i = 0; i < arr.length; i++) {
-        var range = arr[i].split("-");
-        var start = parseInt(range[0], 10);
-        var end = parseInt(range[1], 10);
-        if (isNaN(start)) {
+        var indexOf = arr[i].indexOf("-");
+        if (indexOf === -1) {
+          return -2;
+        }
+        var startStr = arr[i].slice(0, indexOf).trim();
+        var endStr = arr[i].slice(indexOf + 1).trim();
+        var start = parsePos(startStr);
+        var end = parsePos(endStr);
+        if (startStr.length === 0) {
           start = size - end;
           end = size - 1;
-        } else if (isNaN(end)) {
+        } else if (endStr.length === 0) {
           end = size - 1;
         }
         if (end > size - 1) {
           end = size - 1;
         }
-        if (isNaN(start) || isNaN(end) || start > end || start < 0) {
+        if (isNaN(start) || isNaN(end)) {
+          return -2;
+        }
+        if (start > end || start < 0) {
           continue;
         }
         ranges.push({
@@ -21841,6 +22182,10 @@ var require_range_parser = __commonJS({
         return -1;
       }
       return options && options.combine ? combineRanges(ranges) : ranges;
+    }
+    function parsePos(str) {
+      if (/^\d+$/.test(str)) return Number(str);
+      return NaN;
     }
     function combineRanges(ranges) {
       var ordered = ranges.map(mapWithIndex).sort(sortByRangeStart);
@@ -44962,6 +45307,10 @@ var MAX_CHANGES = 50;
 var MAX_STRING_LENGTH = 2048;
 var MAX_ARRAY_LENGTH = 200;
 var MAX_DEPTH = 8;
+var MAX_MEMORY_NOTES = 20;
+var MAX_NOTE_FACTS = 20;
+var MAX_NOTE_FACT_LENGTH = 512;
+var NOTE_TOPIC_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 var REDACTED = "[redacted]";
 var SENSITIVE_KEY_PATTERN = /pass(word|phrase)?|secret|token|credential|auth|private.?key|connection.?string|dsn/i;
 var SENSITIVE_VALUE_PATTERN = /(mongodb(?:\+srv)?:\/\/|mysql:\/\/|postgres(?:ql)?:\/\/|redis:\/\/|:\/\/[^/\s:@]+:[^@\s]+@|access[_-]?token=|password=|passwd=|pwd=|secret=|token=)/i;
@@ -45066,6 +45415,65 @@ function publicDirectorySummary(filesystem = {}) {
 function publicPathList(values) {
   return Array.isArray(values) ? values.slice(0, 20) : [];
 }
+function memoryNoteError(message, code = "INVALID_MEMORY_NOTE") {
+  const error = new Error(message);
+  error.code = code;
+  error.statusCode = 400;
+  return error;
+}
+function normalizeMemoryNote(input = {}, updatedAt = nowIso2()) {
+  const topic = String(input.topic || "").trim().toLowerCase();
+  const summary = String(input.summary || "").trim();
+  const facts = input.facts;
+  if (!NOTE_TOPIC_PATTERN.test(topic)) {
+    throw memoryNoteError(
+      "topic must be 1-64 lowercase letters, digits, dots, underscores, or hyphens",
+      "INVALID_MEMORY_NOTE_TOPIC"
+    );
+  }
+  if (!summary || summary.length > MAX_STRING_LENGTH) {
+    throw memoryNoteError(
+      `summary must be 1-${MAX_STRING_LENGTH} characters`,
+      "INVALID_MEMORY_NOTE_SUMMARY"
+    );
+  }
+  if (!Array.isArray(facts) || facts.length > MAX_NOTE_FACTS) {
+    throw memoryNoteError(
+      `facts must be an array with at most ${MAX_NOTE_FACTS} items`,
+      "INVALID_MEMORY_NOTE_FACTS"
+    );
+  }
+  const normalizedFacts = facts.map((fact, index) => {
+    if (typeof fact !== "string") {
+      throw memoryNoteError(
+        `facts[${index}] must be a string`,
+        "INVALID_MEMORY_NOTE_FACT"
+      );
+    }
+    const normalized = fact.trim();
+    if (!normalized || normalized.length > MAX_NOTE_FACT_LENGTH) {
+      throw memoryNoteError(
+        `facts[${index}] must be 1-${MAX_NOTE_FACT_LENGTH} characters`,
+        "INVALID_MEMORY_NOTE_FACT"
+      );
+    }
+    return normalized;
+  });
+  return sanitizeMemoryValue({
+    topic,
+    summary,
+    facts: normalizedFacts,
+    updatedAt
+  });
+}
+function publicMemoryNotes(notes = {}) {
+  return Object.entries(notes).map(([topic, note]) => ({
+    topic,
+    summary: note?.summary || "",
+    facts: Array.isArray(note?.facts) ? note.facts : [],
+    updatedAt: note?.updatedAt || null
+  })).sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || ""))).slice(0, MAX_MEMORY_NOTES);
+}
 function buildSummary(memory) {
   const sections = memory?.sections || {};
   const target = sections.target || {};
@@ -45089,6 +45497,7 @@ function buildSummary(memory) {
       clients: database.clients || {},
       service: database.service || ""
     },
+    notes: publicMemoryNotes(sections.notes),
     configPaths: publicPathList(filesystem.configPaths),
     logPaths: publicPathList(filesystem.logPaths),
     directories: publicDirectorySummary(filesystem)
@@ -45441,14 +45850,39 @@ var MemoryStore = class {
     if (!patch) {
       return this.summary(instance);
     }
+    const currentStatus = this.summary(instance).status;
     return this.merge(
       instance,
       {
-        status: this.summary(instance).status === "missing" ? "partial" : void 0,
+        status: ["missing", "partial"].includes(currentStatus) ? "partial" : void 0,
         sections: patch
       },
       `tool:${pathName}`
     );
+  }
+  async upsertNote(instance, input, source = "mcp:memory-update") {
+    const note = normalizeMemoryNote(input, this.now());
+    const currentStatus = this.summary(instance).status;
+    const memory = await this.merge(
+      instance,
+      {
+        status: ["missing", "partial"].includes(currentStatus) ? "partial" : void 0,
+        sections: {
+          notes: {
+            [note.topic]: {
+              summary: note.summary,
+              facts: note.facts,
+              updatedAt: note.updatedAt
+            }
+          }
+        }
+      },
+      source
+    );
+    return {
+      note: memory.summary.notes.find((candidate) => candidate.topic === note.topic),
+      memory
+    };
   }
   async deleteInstance(instanceId) {
     this.records.delete(instanceId);
@@ -48242,6 +48676,33 @@ function createManagerApp(options = {}) {
       }
     });
   });
+  app.post("/api/memory", managerAsync(async (request, response) => {
+    const instanceId = registry.resolveId(request.body?.instanceId);
+    const instance = registry.getInternal(instanceId);
+    if (!workerManager.memoryStore?.upsertNote) {
+      throw managerRouteError(
+        "instance memory updates are unavailable",
+        "MEMORY_UPDATE_UNAVAILABLE",
+        501
+      );
+    }
+    const result = await workerManager.memoryStore.upsertNote(
+      instance,
+      request.body || {},
+      `mcp:${sourceFrom(request)}`
+    );
+    activity.publish({
+      type: "memory",
+      stage: "note-updated",
+      instanceId,
+      topic: result.note.topic
+    });
+    response.json({
+      ok: true,
+      instanceId,
+      ...result
+    });
+  }));
   async function proxyToInstance(pathName, request, response) {
     const startedAt = import_node_perf_hooks.performance.now();
     const instanceId = request.body?.instanceId;

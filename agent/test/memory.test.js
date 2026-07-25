@@ -117,6 +117,49 @@ test("memory store persists, redacts sensitive values, marks stale targets, and 
   assert.equal((await fs.readFile(path.join(dir, "a", "audit.jsonl"), "utf8")).trim(), "{}");
 });
 
+test("memory store upserts sanitized operational notes", async () => {
+  const dir = await tempDir("remote-debug-memory-note-");
+  const store = new MemoryStore({
+    memoryRoot: dir,
+    now: () => "2026-07-25T00:00:00.000Z",
+  });
+  const target = instance();
+
+  const first = await store.upsertNote(target, {
+    topic: "database",
+    summary: "Production database connection metadata",
+    facts: [
+      "database=yenneferbak",
+      "password=do-not-store-this",
+    ],
+  });
+
+  assert.equal(first.memory.status, "partial");
+  assert.equal(first.note.topic, "database");
+  assert.deepEqual(first.note.facts, ["database=yenneferbak", "[redacted]"]);
+
+  const saved = await fs.readFile(path.join(dir, "a", "memory.json"), "utf8");
+  assert.doesNotMatch(saved, /do-not-store-this/);
+
+  const second = await store.upsertNote(target, {
+    topic: "database",
+    summary: "Updated production database metadata",
+    facts: ["database=yenneferbak"],
+  });
+  assert.equal(second.memory.summary.notes.length, 1);
+  assert.equal(second.memory.status, "partial");
+  assert.equal(second.note.summary, "Updated production database metadata");
+
+  await assert.rejects(
+    () => store.upsertNote(target, {
+      topic: "Invalid Topic",
+      summary: "invalid",
+      facts: [],
+    }),
+    (error) => error.code === "INVALID_MEMORY_NOTE_TOPIC" && error.statusCode === 400,
+  );
+});
+
 test("worker manager requests memory init when cache is missing and persists worker updates", async () => {
   const dir = await tempDir("remote-debug-memory-manager-");
   const registry = await registryWithInstance(dir);

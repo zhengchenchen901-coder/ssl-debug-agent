@@ -16,6 +16,9 @@ described below.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
 - `remote_debug_list_instances`: list configured instances and runtime status.
+- `remote_debug_update_memory`: persist a verified, redacted operational note only
+  when the user explicitly asks Codex to remember or update instance facts. Follow
+  the `update-instance-memory` skill for the full workflow.
 - `remote_debug_prepare_command_draft`: generate exact commands for user review;
   this does not execute anything.
 - `remote_debug_get_command_draft`: view a generated command draft.
@@ -26,6 +29,7 @@ Tool results may include a per-instance `memory` summary. Use it as a quick map
 of known target facts such as common config paths, log paths, service status,
 and shallow directory summaries. Memory is cached context, not live evidence; if
 the current state matters, verify it with the appropriate `remote_debug_*` tool.
+Persisted user notes appear under `memory.summary.notes`.
 
 ## Tool Visibility
 
@@ -103,6 +107,9 @@ service, or writing a helper script.
 - Direct local HTTP agent calls are development diagnostics only. Do not treat
   them as equivalent to callable `remote_debug_*` tools for real remote server
   work.
+- Do not edit `memory.json` directly. Use `remote_debug_update_memory`; if the
+  tool is unavailable, update or reinstall the plugin instead of bypassing the
+  manager's in-memory cache and sanitization.
 - MongoDB client commands in the read-only allowlist are limited to
   `mongodump --version`, `mongo --version`, and `mongosh --version`. Real
   database queries must not be disguised as read-only diagnostics; wait for the
