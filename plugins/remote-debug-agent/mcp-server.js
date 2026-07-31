@@ -225,6 +225,17 @@ const tools = [
     },
   },
   {
+    name: "remote_debug_get_capabilities",
+    description:
+      "Read the authoritative Remote Debug Agent security capabilities, policy version, command constraints, approved paths, and limits. This performs no remote operation.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: [],
+      properties: {},
+    },
+  },
+  {
     name: "remote_debug_update_memory",
     description:
       "Persist a verified, redacted operational note in one instance's local memory. Use only when the user explicitly asks to remember or update instance facts; this does not execute a remote command.",
@@ -712,7 +723,7 @@ function logSettings() {
 }
 
 function toolArgumentSummary(name, args = {}) {
-  if (name === "remote_debug_list_instances") {
+  if (name === "remote_debug_list_instances" || name === "remote_debug_get_capabilities") {
     return {};
   }
 
@@ -1887,6 +1898,10 @@ async function callTool(name, args, operation) {
   if (name === "remote_debug_list_instances") {
     const result = await getAgent("/api/instances", operation);
     return result;
+  }
+
+  if (name === "remote_debug_get_capabilities") {
+    return getAgent("/api/capabilities", operation);
   }
 
   if (name === "remote_debug_update_memory") {

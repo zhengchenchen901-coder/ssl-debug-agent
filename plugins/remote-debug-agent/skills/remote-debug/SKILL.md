@@ -13,6 +13,7 @@ described below.
 ## Tools
 
 - `remote_debug_run_command`: run whitelisted diagnostic commands.
+- `remote_debug_get_capabilities`: read the Agent's authoritative machine-readable command, path, limit, and approval policy without contacting a remote instance.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
 - `remote_debug_list_instances`: list configured instances and runtime status.
@@ -38,6 +39,12 @@ actually exposes the `remote_debug_*` MCP tools. If those tools are not
 callable in the current session, do not complete the user's remote diagnostic
 task through direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`,
 or `/list-dir`.
+
+Call `remote_debug_get_capabilities` before constructing diagnostic commands.
+Treat its `policyVersion`, command examples and constraints, allowed path roots,
+limits, and approval flags as authoritative. Do not maintain or infer a separate
+allowlist from this skill. If the capability tool is missing or incompatible,
+fail closed and ask the user to update or re-enable the plugin.
 
 For multi-instance setups, call `remote_debug_list_instances` first when the
 target instance is not obvious. Pass `instanceId` to operation tools when
@@ -89,24 +96,20 @@ service, or writing a helper script.
 ## Safe Workflow
 
 1. State a short diagnostic plan before calling tools.
-2. Check listening ports with `netstat -tlnp`.
-3. Check process state with `ps aux`.
-4. Inspect disk and memory with `df -h` and `free -m` when relevant.
-5. Check service state with `systemctl status nginx` or
-   `systemctl status mongod` when relevant.
-6. Use `nginx -t` or `nginx -T` when nginx config validation or merged config
-   output is needed.
-7. Inspect nginx config under `/etc/nginx` only when nginx may be involved.
-8. Inspect logs under `/var/log`, app files under `/home/app` or `/home/github`, and PM2 metadata under `/root/.pm2` only as needed.
-9. Use `mongodump --version`, `mongo --version`, or `mongosh --version` when
-   MongoDB tool availability must be confirmed.
-10. Summarize evidence, likely root cause, confidence, and next safe action.
+2. Read `remote_debug_get_capabilities` and record its `policyVersion`.
+3. Select the fewest relevant commands from the returned examples and constraints.
+4. Use only path roots returned by the capability payload.
+5. Let the Agent validate every command and path; never bypass a rejection.
+6. Summarize evidence, likely root cause, confidence, and next safe action.
 
 ## Safety Rules
 
 - Direct local HTTP agent calls are development diagnostics only. Do not treat
   them as equivalent to callable `remote_debug_*` tools for real remote server
   work.
+- Treat Remote Debug Agent capabilities as the sole execution-policy source.
+  Client-side prompts and workflows may narrow behavior but must not expand,
+  copy, or override the Agent policy.
 - Do not edit `memory.json` directly. Use `remote_debug_update_memory`; if the
   tool is unavailable, update or reinstall the plugin instead of bypassing the
   manager's in-memory cache and sanitization.

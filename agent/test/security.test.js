@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  ALLOWED_COMMANDS,
   assertPathAllowed,
   isPathAllowed,
   normalizeTimeoutMs,
+  securityCapabilities,
   validateCommand,
 } from "../security.js";
 
@@ -34,6 +36,29 @@ test("allows whitelisted diagnostic commands", () => {
   const tail = validateCommand("tail -n 100 /var/log/nginx/error.log", security);
   assert.equal(tail.normalizedCommand, "tail -n 100 /var/log/nginx/error.log");
   assert.deepEqual(tail.absolutePaths, ["/var/log/nginx/error.log"]);
+});
+
+test("publishes machine-readable capabilities from the enforced policy", () => {
+  const capabilities = securityCapabilities({
+    security: {
+      ...security,
+      defaultFileTimeoutMs: 20_000,
+      maxFileTimeoutMs: 60_000,
+      defaultReadMaxBytes: 256 * 1024,
+      maxCommandOutputBytes: 1024 * 1024,
+    },
+    approvedCommands: { enabled: false, ttlMs: 1_000 },
+  });
+
+  assert.equal(capabilities.authority, "remote-debug-agent");
+  assert.equal(capabilities.schemaVersion, 1);
+  assert.match(capabilities.policyVersion, /^[a-f0-9]{64}$/);
+  assert.deepEqual(capabilities.commands.allowedExecutables, [...ALLOWED_COMMANDS]);
+  assert.deepEqual(capabilities.paths.allowedRoots, security.allowedPaths);
+  assert.equal(capabilities.approvedCommands.enabled, false);
+  for (const example of capabilities.commands.examples) {
+    assert.doesNotThrow(() => validateCommand(example, security), example);
+  }
 });
 
 test("rejects dangerous commands", () => {

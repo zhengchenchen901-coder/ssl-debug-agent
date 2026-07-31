@@ -1,42 +1,127 @@
 import posixPath from "node:path/posix";
+import { createHash } from "node:crypto";
 
-export const ALLOWED_COMMANDS = new Set([
-  "ls",
-  "cat",
-  "ps",
-  "netstat",
-  "df",
-  "free",
-  "tail",
-  "grep",
-  "mongodump",
-  "mongo",
-  "mongosh",
-  "systemctl",
-  "nginx",
-  "which",
-  "pm2",
-]);
+const SECURITY_POLICY = {
+  schemaVersion: 1,
+  allowedExecutables: [
+    "ls",
+    "cat",
+    "ps",
+    "netstat",
+    "df",
+    "free",
+    "tail",
+    "grep",
+    "mongodump",
+    "mongo",
+    "mongosh",
+    "systemctl",
+    "nginx",
+    "which",
+    "pm2",
+  ],
+  deniedExecutables: ["rm", "shutdown", "reboot", "mkfs", "sudo", "chmod", "chown"],
+  commandsRequiringAllowedAbsolutePath: ["ls", "cat", "tail", "grep"],
+  versionOnlyExecutables: ["mongodump", "mongo", "mongosh"],
+  systemctl: {
+    actions: ["status", "is-active", "is-enabled"],
+    units: ["mongod", "mongod.service", "nginx", "nginx.service"],
+    options: ["--no-pager", "--plain", "--full"],
+    additionalOptionPatterns: ["--lines=<positive integer>"],
+  },
+  nginxArguments: ["-t", "-T", "-v", "-V"],
+  pm2: {
+    actions: ["list", "describe <app-name-or-id>", "env <numeric-process-id>"],
+  },
+  constraints: [
+    "Commands are parsed as tokens and never executed through a shell.",
+    "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
+    "Commands that read paths require at least one absolute path under an allowed root.",
+    "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
+    "Database clients are limited to their --version diagnostic; real queries require an approved-command draft.",
+  ],
+  examples: [
+    "netstat -tlnp",
+    "ps aux",
+    "df -h",
+    "free -m",
+    "ls /var/log",
+    "cat /var/log/app.log",
+    "tail -n 100 /var/log/nginx/error.log",
+    "grep error /var/log/app.log",
+    "systemctl --no-pager status nginx.service",
+    "nginx -t",
+    "which node",
+    "pm2 list",
+    "pm2 describe api-server",
+    "pm2 env 1",
+    "mongosh --version",
+  ],
+};
 
-export const DENIED_COMMANDS = new Set([
-  "rm",
-  "shutdown",
-  "reboot",
-  "mkfs",
-  "sudo",
-  "chmod",
-  "chown",
-]);
+const SECURITY_POLICY_VERSION = createHash("sha256")
+  .update(JSON.stringify(SECURITY_POLICY))
+  .digest("hex");
+
+export const ALLOWED_COMMANDS = new Set(SECURITY_POLICY.allowedExecutables);
+export const DENIED_COMMANDS = new Set(SECURITY_POLICY.deniedExecutables);
 
 const SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
 const SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/;
-const VERSION_ONLY_COMMANDS = new Set(["mongodump", "mongo", "mongosh"]);
-const ALLOWED_SYSTEMCTL_ACTIONS = new Set(["status", "is-active", "is-enabled"]);
-const ALLOWED_SYSTEMCTL_UNITS = new Set(["mongod", "mongod.service", "nginx", "nginx.service"]);
-const ALLOWED_SYSTEMCTL_OPTIONS = new Set(["--no-pager", "--plain", "--full"]);
+const VERSION_ONLY_COMMANDS = new Set(SECURITY_POLICY.versionOnlyExecutables);
+const ALLOWED_SYSTEMCTL_ACTIONS = new Set(SECURITY_POLICY.systemctl.actions);
+const ALLOWED_SYSTEMCTL_UNITS = new Set(SECURITY_POLICY.systemctl.units);
+const ALLOWED_SYSTEMCTL_OPTIONS = new Set(SECURITY_POLICY.systemctl.options);
 const SYSTEMCTL_LINES_PATTERN = /^--lines=\d+$/;
-const ALLOWED_NGINX_ARGS = new Set(["-t", "-T", "-v", "-V"]);
+const ALLOWED_NGINX_ARGS = new Set(SECURITY_POLICY.nginxArguments);
 const PM2_ID_PATTERN = /^\d+$/;
+
+export function securityCapabilities(config = {}) {
+  const security = config.security || config;
+  const approvedCommands = config.approvedCommands || {};
+  return {
+    schemaVersion: SECURITY_POLICY.schemaVersion,
+    policyVersion: SECURITY_POLICY_VERSION,
+    authority: "remote-debug-agent",
+    commands: {
+      allowedExecutables: [...SECURITY_POLICY.allowedExecutables],
+      deniedExecutables: [...SECURITY_POLICY.deniedExecutables],
+      commandsRequiringAllowedAbsolutePath: [
+        ...SECURITY_POLICY.commandsRequiringAllowedAbsolutePath,
+      ],
+      versionOnlyExecutables: [...SECURITY_POLICY.versionOnlyExecutables],
+      systemctl: {
+        actions: [...SECURITY_POLICY.systemctl.actions],
+        units: [...SECURITY_POLICY.systemctl.units],
+        options: [...SECURITY_POLICY.systemctl.options],
+        additionalOptionPatterns: [...SECURITY_POLICY.systemctl.additionalOptionPatterns],
+      },
+      nginxArguments: [...SECURITY_POLICY.nginxArguments],
+      pm2: { actions: [...SECURITY_POLICY.pm2.actions] },
+      constraints: [...SECURITY_POLICY.constraints],
+      examples: [...SECURITY_POLICY.examples],
+    },
+    paths: {
+      allowedRoots: [...(security.allowedPaths || [])],
+    },
+    limits: {
+      defaultCommandTimeoutMs: security.defaultTimeoutMs,
+      maxCommandTimeoutMs: security.maxTimeoutMs,
+      defaultFileTimeoutMs: security.defaultFileTimeoutMs,
+      maxFileTimeoutMs: security.maxFileTimeoutMs,
+      defaultReadMaxBytes: security.defaultReadMaxBytes,
+      maxCommandOutputBytes: security.maxCommandOutputBytes,
+    },
+    approvedCommands: {
+      enabled: Boolean(approvedCommands.enabled),
+      ttlMs: approvedCommands.ttlMs,
+      executionTimeoutMs: approvedCommands.executionTimeoutMs,
+      maxExecutionTimeoutMs: approvedCommands.maxExecutionTimeoutMs,
+      maxCommandLength: approvedCommands.maxCommandLength,
+      maxCommands: approvedCommands.maxCommands,
+    },
+  };
+}
 
 export class SecurityError extends Error {
   constructor(message, code = "SECURITY_REJECTED") {
@@ -112,9 +197,8 @@ function containsDeniedCommand(token) {
 }
 
 function validatePathArguments(command, tokens, allowedPaths) {
-  const commandsThatMayReadPaths = new Set(["ls", "cat", "tail", "grep"]);
   const absolutePaths = [];
-  if (!commandsThatMayReadPaths.has(command)) {
+  if (!SECURITY_POLICY.commandsRequiringAllowedAbsolutePath.includes(command)) {
     return absolutePaths;
   }
 

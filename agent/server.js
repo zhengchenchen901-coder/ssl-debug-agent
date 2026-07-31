@@ -15,6 +15,7 @@ import { writeAuditLog } from "./audit.js";
 import {
   assertPathAllowed,
   normalizeMaxBytes,
+  securityCapabilities,
   validateCommand,
 } from "./security.js";
 import { InstanceRegistry } from "./instance-registry.js";
@@ -275,6 +276,10 @@ export function createApp(options = {}) {
 
   app.get("/health", (_request, response) => {
     response.json({ ok: true, name: "remote-debug-agent", apiVersion: API_VERSION });
+  });
+
+  app.get("/api/capabilities", (_request, response) => {
+    response.json({ ok: true, capabilities: securityCapabilities(config) });
   });
 
   app.get("/status", (_request, response) => {
@@ -1256,6 +1261,10 @@ export function createManagerApp(options = {}) {
         message: "pause is reserved for a later release",
       },
     });
+  });
+
+  app.get("/api/capabilities", (_request, response) => {
+    response.json({ ok: true, capabilities: securityCapabilities(config) });
   });
 
   app.post("/api/memory", managerAsync(async (request, response) => {

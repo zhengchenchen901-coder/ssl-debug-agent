@@ -172,7 +172,8 @@ server path, MCP runtime log path, and the installed cache's latest
 should list:
 
 ```text
-remote_debug_list_instances, remote_debug_update_memory,
+remote_debug_list_instances, remote_debug_get_capabilities,
+remote_debug_update_memory,
 remote_debug_run_command,
 remote_debug_read_file, remote_debug_list_dir,
 remote_debug_prepare_command_draft, remote_debug_get_command_draft,
@@ -250,6 +251,10 @@ use source files instead of the bundled runtime.
 
 ## Exposed Tools
 
+- `remote_debug_get_capabilities`: return the authoritative machine-readable
+  security policy version, command constraints and examples, allowed path roots,
+  resource limits, and approved-command availability without contacting a
+  remote instance.
 - `remote_debug_run_command`: run a whitelisted read-only diagnostic command.
 - `remote_debug_read_file`: read a file under an allowed remote path.
 - `remote_debug_list_dir`: list a directory under an allowed remote path.
@@ -399,6 +404,9 @@ Codex
 `mcp-server.js` exposes the MCP tools, resolves `config.env`, discovers or
 starts the bundled local HTTP manager, and forwards tool calls to
 `http://127.0.0.1:<port>`.
+`remote_debug_get_capabilities` reads `/api/capabilities`; the payload is built
+from the same declarative policy used by command and path validation, so MCP
+clients do not need to copy the Agent allowlists.
 `remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
 manager's `/run` endpoint. `remote_debug_read_file` and
 `remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.

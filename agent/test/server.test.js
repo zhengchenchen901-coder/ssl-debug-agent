@@ -342,6 +342,13 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
     assert.equal(listed.body.instances.length, 1);
     assert.equal(listed.body.instances[0].runtime.status, "stopped");
 
+    const capabilities = await getJson(server, "/api/capabilities");
+    assert.equal(capabilities.status, 200);
+    assert.equal(capabilities.body.capabilities.authority, "remote-debug-agent");
+    assert.match(capabilities.body.capabilities.policyVersion, /^[a-f0-9]{64}$/);
+    assert.ok(capabilities.body.capabilities.commands.allowedExecutables.includes("netstat"));
+    assert.deepEqual(capabilities.body.capabilities.paths.allowedRoots, DEFAULT_ALLOWED_PATHS);
+
     const updated = await postJson(
       server,
       "/api/instances/staging",

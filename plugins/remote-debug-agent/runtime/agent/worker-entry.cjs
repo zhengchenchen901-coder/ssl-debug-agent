@@ -30384,7 +30384,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv,
       createECDH,
-      createHash: createHash4,
+      createHash: createHash5,
       createHmac,
       createSign,
       createVerify,
@@ -31072,11 +31072,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash4("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash5("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash4("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash5("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -31241,8 +31241,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash4("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash4("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash5("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash5("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -31282,7 +31282,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash4("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash5("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -33604,7 +33604,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash4,
+      createHash: createHash5,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -34030,7 +34030,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash4(this.hashName);
+          const hash = createHash5(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -35038,9 +35038,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest = createHash4(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest = createHash5(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest.length < len) {
-          const chunk = createHash4(hashName).update(secret).update(exchangeHash).update(digest).digest();
+          const chunk = createHash5(hashName).update(secret).update(exchangeHash).update(digest).digest();
           const extended = Buffer.allocUnsafe(digest.length + chunk.length);
           extended.set(digest, 0);
           extended.set(chunk, digest.length);
@@ -40475,7 +40475,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash4,
+      createHash: createHash5,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -40697,7 +40697,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash4(hashAlgo).update(key).digest("hex");
+              key = createHash5(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -44475,7 +44475,7 @@ function assertSshConfig(config) {
 
 // server.js
 var import_express = __toESM(require_express2(), 1);
-var import_node_crypto7 = require("node:crypto");
+var import_node_crypto8 = require("node:crypto");
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path6 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
@@ -44606,41 +44606,122 @@ async function writeAuditLog(logPath, event2, now) {
 
 // security.js
 var import_posix = __toESM(require("node:path/posix"), 1);
-var ALLOWED_COMMANDS = /* @__PURE__ */ new Set([
-  "ls",
-  "cat",
-  "ps",
-  "netstat",
-  "df",
-  "free",
-  "tail",
-  "grep",
-  "mongodump",
-  "mongo",
-  "mongosh",
-  "systemctl",
-  "nginx",
-  "which",
-  "pm2"
-]);
-var DENIED_COMMANDS = /* @__PURE__ */ new Set([
-  "rm",
-  "shutdown",
-  "reboot",
-  "mkfs",
-  "sudo",
-  "chmod",
-  "chown"
-]);
+var import_node_crypto4 = require("node:crypto");
+var SECURITY_POLICY = {
+  schemaVersion: 1,
+  allowedExecutables: [
+    "ls",
+    "cat",
+    "ps",
+    "netstat",
+    "df",
+    "free",
+    "tail",
+    "grep",
+    "mongodump",
+    "mongo",
+    "mongosh",
+    "systemctl",
+    "nginx",
+    "which",
+    "pm2"
+  ],
+  deniedExecutables: ["rm", "shutdown", "reboot", "mkfs", "sudo", "chmod", "chown"],
+  commandsRequiringAllowedAbsolutePath: ["ls", "cat", "tail", "grep"],
+  versionOnlyExecutables: ["mongodump", "mongo", "mongosh"],
+  systemctl: {
+    actions: ["status", "is-active", "is-enabled"],
+    units: ["mongod", "mongod.service", "nginx", "nginx.service"],
+    options: ["--no-pager", "--plain", "--full"],
+    additionalOptionPatterns: ["--lines=<positive integer>"]
+  },
+  nginxArguments: ["-t", "-T", "-v", "-V"],
+  pm2: {
+    actions: ["list", "describe <app-name-or-id>", "env <numeric-process-id>"]
+  },
+  constraints: [
+    "Commands are parsed as tokens and never executed through a shell.",
+    "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
+    "Commands that read paths require at least one absolute path under an allowed root.",
+    "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
+    "Database clients are limited to their --version diagnostic; real queries require an approved-command draft."
+  ],
+  examples: [
+    "netstat -tlnp",
+    "ps aux",
+    "df -h",
+    "free -m",
+    "ls /var/log",
+    "cat /var/log/app.log",
+    "tail -n 100 /var/log/nginx/error.log",
+    "grep error /var/log/app.log",
+    "systemctl --no-pager status nginx.service",
+    "nginx -t",
+    "which node",
+    "pm2 list",
+    "pm2 describe api-server",
+    "pm2 env 1",
+    "mongosh --version"
+  ]
+};
+var SECURITY_POLICY_VERSION = (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
+var ALLOWED_COMMANDS = new Set(SECURITY_POLICY.allowedExecutables);
+var DENIED_COMMANDS = new Set(SECURITY_POLICY.deniedExecutables);
 var SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
 var SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/;
-var VERSION_ONLY_COMMANDS = /* @__PURE__ */ new Set(["mongodump", "mongo", "mongosh"]);
-var ALLOWED_SYSTEMCTL_ACTIONS = /* @__PURE__ */ new Set(["status", "is-active", "is-enabled"]);
-var ALLOWED_SYSTEMCTL_UNITS = /* @__PURE__ */ new Set(["mongod", "mongod.service", "nginx", "nginx.service"]);
-var ALLOWED_SYSTEMCTL_OPTIONS = /* @__PURE__ */ new Set(["--no-pager", "--plain", "--full"]);
+var VERSION_ONLY_COMMANDS = new Set(SECURITY_POLICY.versionOnlyExecutables);
+var ALLOWED_SYSTEMCTL_ACTIONS = new Set(SECURITY_POLICY.systemctl.actions);
+var ALLOWED_SYSTEMCTL_UNITS = new Set(SECURITY_POLICY.systemctl.units);
+var ALLOWED_SYSTEMCTL_OPTIONS = new Set(SECURITY_POLICY.systemctl.options);
 var SYSTEMCTL_LINES_PATTERN = /^--lines=\d+$/;
-var ALLOWED_NGINX_ARGS = /* @__PURE__ */ new Set(["-t", "-T", "-v", "-V"]);
+var ALLOWED_NGINX_ARGS = new Set(SECURITY_POLICY.nginxArguments);
 var PM2_ID_PATTERN = /^\d+$/;
+function securityCapabilities(config = {}) {
+  const security = config.security || config;
+  const approvedCommands = config.approvedCommands || {};
+  return {
+    schemaVersion: SECURITY_POLICY.schemaVersion,
+    policyVersion: SECURITY_POLICY_VERSION,
+    authority: "remote-debug-agent",
+    commands: {
+      allowedExecutables: [...SECURITY_POLICY.allowedExecutables],
+      deniedExecutables: [...SECURITY_POLICY.deniedExecutables],
+      commandsRequiringAllowedAbsolutePath: [
+        ...SECURITY_POLICY.commandsRequiringAllowedAbsolutePath
+      ],
+      versionOnlyExecutables: [...SECURITY_POLICY.versionOnlyExecutables],
+      systemctl: {
+        actions: [...SECURITY_POLICY.systemctl.actions],
+        units: [...SECURITY_POLICY.systemctl.units],
+        options: [...SECURITY_POLICY.systemctl.options],
+        additionalOptionPatterns: [...SECURITY_POLICY.systemctl.additionalOptionPatterns]
+      },
+      nginxArguments: [...SECURITY_POLICY.nginxArguments],
+      pm2: { actions: [...SECURITY_POLICY.pm2.actions] },
+      constraints: [...SECURITY_POLICY.constraints],
+      examples: [...SECURITY_POLICY.examples]
+    },
+    paths: {
+      allowedRoots: [...security.allowedPaths || []]
+    },
+    limits: {
+      defaultCommandTimeoutMs: security.defaultTimeoutMs,
+      maxCommandTimeoutMs: security.maxTimeoutMs,
+      defaultFileTimeoutMs: security.defaultFileTimeoutMs,
+      maxFileTimeoutMs: security.maxFileTimeoutMs,
+      defaultReadMaxBytes: security.defaultReadMaxBytes,
+      maxCommandOutputBytes: security.maxCommandOutputBytes
+    },
+    approvedCommands: {
+      enabled: Boolean(approvedCommands.enabled),
+      ttlMs: approvedCommands.ttlMs,
+      executionTimeoutMs: approvedCommands.executionTimeoutMs,
+      maxExecutionTimeoutMs: approvedCommands.maxExecutionTimeoutMs,
+      maxCommandLength: approvedCommands.maxCommandLength,
+      maxCommands: approvedCommands.maxCommands
+    }
+  };
+}
 var SecurityError = class extends Error {
   constructor(message, code = "SECURITY_REJECTED") {
     super(message);
@@ -44698,9 +44779,8 @@ function containsDeniedCommand(token) {
   return DENIED_COMMANDS.has(token) || [...DENIED_COMMANDS].some((cmd) => token.includes(`/${cmd}`));
 }
 function validatePathArguments(command, tokens, allowedPaths) {
-  const commandsThatMayReadPaths = /* @__PURE__ */ new Set(["ls", "cat", "tail", "grep"]);
   const absolutePaths = [];
-  if (!commandsThatMayReadPaths.has(command)) {
+  if (!SECURITY_POLICY.commandsRequiringAllowedAbsolutePath.includes(command)) {
     return absolutePaths;
   }
   for (const token of tokens.slice(1)) {
@@ -44873,7 +44953,7 @@ function normalizeMaxBytes(value, securityConfig) {
 // instance-registry.js
 var import_node_fs2 = __toESM(require("node:fs"), 1);
 var import_node_path3 = __toESM(require("node:path"), 1);
-var import_node_crypto4 = require("node:crypto");
+var import_node_crypto5 = require("node:crypto");
 var REGISTRY_VERSION = 3;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 var DEFAULT_HEALTH_INTERVAL_MS = 15e3;
@@ -45010,7 +45090,7 @@ function normalizeApprovedCommands(value = {}) {
   };
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto4.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto5.randomUUID)());
   assertInstanceId(id);
   const name = String(input.name ?? existing.name ?? id).trim();
   if (!name) {
@@ -45290,7 +45370,7 @@ var import_node_path5 = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // memory-store.js
-var import_node_crypto5 = require("node:crypto");
+var import_node_crypto6 = require("node:crypto");
 var import_node_fs3 = __toESM(require("node:fs"), 1);
 var import_promises2 = __toESM(require("node:fs/promises"), 1);
 var import_node_path4 = __toESM(require("node:path"), 1);
@@ -45368,7 +45448,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto5.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto6.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -45719,7 +45799,7 @@ var MemoryStore = class {
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
     await import_promises2.default.mkdir(import_node_path4.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto5.randomUUID)()}.tmp`;
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto6.randomUUID)()}.tmp`;
     await import_promises2.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
     await import_promises2.default.rename(tempPath, filePath);
@@ -45891,7 +45971,7 @@ var MemoryStore = class {
 };
 
 // operation.js
-var import_node_crypto6 = require("node:crypto");
+var import_node_crypto7 = require("node:crypto");
 var API_VERSION = 2;
 var OPERATION_TIMEOUTS = Object.freeze({
   run: Object.freeze({ defaultMs: 3e4, maxMs: 12e4 }),
@@ -45973,7 +46053,7 @@ function normalizeOperationEnvelope(payload = {}, policy, options = {}) {
   const maximumDeadline = nowMs + policy.maxMs;
   const deadlineAt = Number.isInteger(suppliedDeadline) ? Math.min(suppliedDeadline, maximumDeadline) : nowMs + timeoutMs;
   const suppliedOperationId = typeof payload.operationId === "string" ? payload.operationId.trim() : "";
-  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto6.randomUUID)();
+  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto7.randomUUID)();
   return {
     operationId,
     timeoutMs,
@@ -47637,7 +47717,7 @@ async function writeRuntimeState(config, event2) {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   await import_promises4.default.mkdir(import_node_path6.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto7.randomUUID)()}.tmp`;
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto8.randomUUID)()}.tmp`;
   await import_promises4.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises4.default.rename(tempPath, statePath);
@@ -47657,7 +47737,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto7.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto8.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -47795,6 +47875,9 @@ function createApp(options = {}) {
   app.use(import_express.default.static(publicDir, { index: false, maxAge: 0 }));
   app.get("/health", (_request, response) => {
     response.json({ ok: true, name: "remote-debug-agent", apiVersion: API_VERSION });
+  });
+  app.get("/api/capabilities", (_request, response) => {
+    response.json({ ok: true, capabilities: securityCapabilities(config) });
   });
   app.get("/status", (_request, response) => {
     response.json({
@@ -48675,6 +48758,9 @@ function createManagerApp(options = {}) {
         message: "pause is reserved for a later release"
       }
     });
+  });
+  app.get("/api/capabilities", (_request, response) => {
+    response.json({ ok: true, capabilities: securityCapabilities(config) });
   });
   app.post("/api/memory", managerAsync(async (request, response) => {
     const instanceId = registry.resolveId(request.body?.instanceId);

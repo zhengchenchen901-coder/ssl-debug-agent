@@ -149,6 +149,32 @@ function startAgentStub() {
       );
       return;
     }
+    if (request.method === "GET" && request.url === "/api/capabilities") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({
+        ok: true,
+        capabilities: {
+          schemaVersion: 1,
+          policyVersion: "test-policy",
+          authority: "remote-debug-agent",
+          commands: {
+            allowedExecutables: ["netstat", "ps"],
+            deniedExecutables: ["rm"],
+            commandsRequiringAllowedAbsolutePath: [],
+            versionOnlyExecutables: [],
+            systemctl: { actions: [], units: [], options: [], additionalOptionPatterns: [] },
+            nginxArguments: [],
+            pm2: { actions: [] },
+            constraints: ["no shell operators"],
+            examples: ["netstat -tlnp", "ps aux"],
+          },
+          paths: { allowedRoots: ["/var/log"] },
+          limits: { maxCommandTimeoutMs: 120000, maxFileTimeoutMs: 300000 },
+          approvedCommands: { enabled: false },
+        },
+      }));
+      return;
+    }
 
     if (request.method !== "POST") {
       response.writeHead(404).end();
@@ -754,6 +780,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       list.result.tools.map((tool) => tool.name),
       [
         "remote_debug_list_instances",
+        "remote_debug_get_capabilities",
         "remote_debug_update_memory",
         "remote_debug_run_command",
         "remote_debug_read_file",
@@ -805,6 +832,21 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     const instances = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(instances.instances[0].id, "default");
     assert.equal(agentStub.leaseRequests.length, 0);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 50,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_get_capabilities",
+          arguments: {},
+        },
+      }),
+    );
+    const capabilities = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(capabilities.capabilities.authority, "remote-debug-agent");
+    assert.deepEqual(capabilities.capabilities.commands.examples, ["netstat -tlnp", "ps aux"]);
 
     child.stdin.write(
       encodeMessage({
