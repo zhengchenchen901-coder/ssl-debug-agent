@@ -372,6 +372,25 @@ function executeChannel(client, command, operation, options, supervisor) {
           stderrTruncated: stderr.isTruncated(),
         });
       });
+
+      if (options.stdin !== undefined && options.stdin !== null) {
+        try {
+          if (typeof stream.end !== "function") {
+            throw new Error("SSH exec channel does not support stdin");
+          }
+          stream.end(options.stdin);
+        } catch (stdinError) {
+          finish(operationError(stdinError.message || "failed to write SSH stdin", {
+            code: "SSH_STDIN_FAILED",
+            statusCode: 502,
+            operationId: operation.operationId,
+            layer: "ssh",
+            phase: "stdin",
+            retriable: false,
+            cause: stdinError,
+          }));
+        }
+      }
     });
   });
 }

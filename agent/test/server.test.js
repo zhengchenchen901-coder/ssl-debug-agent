@@ -255,6 +255,68 @@ test("HTTP API works with mocked SSH", { skip: !depsInstalled }, async () => {
   }
 });
 
+test("HTTP MongoDB query endpoint is instance-scoped and read-only", { skip: !depsInstalled }, async () => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-mongodb-api-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.mongodb = {
+    enabled: true,
+    configPath: "/home/github/app/config.json",
+    driverPath: "/home/github/app/node_modules/mongodb",
+    configProfile: "test",
+    uriKey: "url",
+    database: "yennefer",
+  };
+  const calls = [];
+  const app = createApp({
+    config,
+    runMongoQuery: async (query) => {
+      calls.push(query);
+      return {
+        operation: query.operation,
+        database: query.database,
+        collection: query.collection,
+        data: [{ status: "open" }],
+        resultCount: 1,
+        timing: { queueMs: 0, connectMs: 0, executionMs: 1 },
+      };
+    },
+  });
+  const server = await listen(app);
+
+  try {
+    const query = await postJson(server, "/mongodb/query", {
+      operation: "find",
+      collection: "orders",
+      filter: { status: "open" },
+      limit: 2,
+    });
+    assert.equal(query.status, 200);
+    assert.equal(query.body.database, "yennefer");
+    assert.deepEqual(query.body.data, [{ status: "open" }]);
+    assert.equal(calls[0].limit, 2);
+
+    const rejected = await postJson(server, "/mongodb/query", {
+      operation: "find",
+      collection: "orders",
+      filter: { $where: "return true" },
+    });
+    assert.equal(rejected.status, 400);
+    assert.equal(rejected.body.error.code, "MONGODB_OPERATOR_REJECTED");
+    assert.equal(calls.length, 1);
+
+    const audit = (await fsPromises.readFile(config.audit.logPath, "utf8"))
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line));
+    assert.equal(audit[0].tool, "mongodb-query");
+    assert.equal(audit[0].operation, "find");
+    assert.equal(audit[0].resultCount, 1);
+  } finally {
+    await close(server);
+  }
+});
+
 test("dashboard serves status and streams remote interaction activity", { skip: !depsInstalled }, async () => {
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-dashboard-"));

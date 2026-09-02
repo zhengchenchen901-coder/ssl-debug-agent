@@ -44312,6 +44312,32 @@ function parseAgentLifetime(value) {
   }
   throw new Error("REMOTE_DEBUG_AGENT_LIFETIME must be manual or desktop");
 }
+function parseMongoConfig(value) {
+  if (value === void 0 || value === "") {
+    return void 0;
+  }
+  let parsed;
+  try {
+    parsed = typeof value === "string" ? JSON.parse(value) : value;
+  } catch (error) {
+    const wrapped = new Error(`REMOTE_DEBUG_MONGODB_CONFIG is not valid JSON: ${error.message}`);
+    wrapped.code = "INVALID_MONGODB_CONFIG";
+    throw wrapped;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    const error = new Error("REMOTE_DEBUG_MONGODB_CONFIG must be a JSON object");
+    error.code = "INVALID_MONGODB_CONFIG";
+    throw error;
+  }
+  return {
+    enabled: parsed.enabled !== false,
+    configPath: parsed.configPath || "",
+    driverPath: parsed.driverPath || "",
+    configProfile: parsed.configProfile || "",
+    uriKey: parsed.uriKey || "url",
+    database: parsed.database || ""
+  };
+}
 function loadConfig(env = process.env, cwd = process.cwd()) {
   const dotEnv = loadDotEnv(cwd);
   const mergedEnv = parseBooleanFlag(env.REMOTE_DEBUG_WORKER) ? {
@@ -44358,6 +44384,7 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
       passphrase: mergedEnv.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || void 0,
       readyTimeout: 1e4
     },
+    mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
     security: {
       allowedPaths: DEFAULT_ALLOWED_PATHS,
       defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
@@ -44452,6 +44479,14 @@ function fingerprintConfig(config) {
       readyTimeout: config.ssh.readyTimeout
     },
     security: publicSecurity(config),
+    mongodb: config.mongodb ? {
+      enabled: Boolean(config.mongodb.enabled),
+      configPath: config.mongodb.configPath,
+      driverPath: config.mongodb.driverPath,
+      configProfile: config.mongodb.configProfile,
+      uriKey: config.mongodb.uriKey,
+      database: config.mongodb.database
+    } : null,
     audit: {
       logPath: config.audit.logPath
     }
@@ -44588,7 +44623,11 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
     "validationMs",
     "executionMs",
     "errorLayer",
-    "errorPhase"
+    "errorPhase",
+    "operation",
+    "database",
+    "collection",
+    "resultCount"
   ]) {
     if (event2[key] !== void 0) {
       entry[key] = event2[key];
@@ -44605,8 +44644,747 @@ async function writeAuditLog(logPath, event2, now) {
 }
 
 // security.js
+var import_posix2 = __toESM(require("node:path/posix"), 1);
+var import_node_crypto5 = require("node:crypto");
+
+// mongodb.js
 var import_posix = __toESM(require("node:path/posix"), 1);
+
+// operation.js
 var import_node_crypto4 = require("node:crypto");
+var API_VERSION = 2;
+var OPERATION_TIMEOUTS = Object.freeze({
+  run: Object.freeze({ defaultMs: 3e4, maxMs: 12e4 }),
+  file: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
+  mongodb: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
+  approvedExecution: Object.freeze({ defaultMs: 3e5, maxMs: 9e5 }),
+  manager: Object.freeze({ defaultMs: 3e4, maxMs: 3e5 })
+});
+function errorCause(cause) {
+  if (!cause) {
+    return void 0;
+  }
+  if (typeof cause === "string") {
+    return { message: cause };
+  }
+  return {
+    code: cause.code,
+    message: cause.message || String(cause),
+    layer: cause.layer,
+    phase: cause.phase
+  };
+}
+var OperationError = class extends Error {
+  constructor(message, options = {}) {
+    super(message);
+    this.name = "OperationError";
+    this.code = options.code || "OPERATION_FAILED";
+    this.statusCode = options.statusCode || 500;
+    this.operationId = options.operationId;
+    this.layer = options.layer;
+    this.phase = options.phase;
+    this.retriable = Boolean(options.retriable);
+    this.details = options.details;
+    this.cause = errorCause(options.cause);
+  }
+};
+function operationError(message, options = {}) {
+  return new OperationError(message, options);
+}
+function normalizeTimeoutMs(value, policy) {
+  if (value === void 0 || value === null || value === "") {
+    return policy.defaultMs;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw operationError("timeoutMs must be a positive integer", {
+      code: "INVALID_OPERATION_TIMEOUT",
+      statusCode: 400,
+      layer: "operation",
+      phase: "validation"
+    });
+  }
+  return Math.min(parsed, policy.maxMs);
+}
+function operationPolicy(pathName, config = {}) {
+  if (pathName === "/run") {
+    return {
+      defaultMs: config.security?.defaultTimeoutMs || OPERATION_TIMEOUTS.run.defaultMs,
+      maxMs: config.security?.maxTimeoutMs || OPERATION_TIMEOUTS.run.maxMs
+    };
+  }
+  if (pathName === "/read-file" || pathName === "/list-dir") {
+    return {
+      defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
+      maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs
+    };
+  }
+  if (pathName === "/mongodb/query") {
+    return {
+      defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
+      maxMs: OPERATION_TIMEOUTS.mongodb.maxMs
+    };
+  }
+  if (pathName === "/approved-command-drafts/execute") {
+    return {
+      defaultMs: config.approvedCommands?.executionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.defaultMs,
+      maxMs: config.approvedCommands?.maxExecutionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.maxMs
+    };
+  }
+  return OPERATION_TIMEOUTS.manager;
+}
+function normalizeOperationEnvelope(payload = {}, policy, options = {}) {
+  const nowMs = options.nowMs ?? Date.now();
+  const timeoutMs = normalizeTimeoutMs(payload.timeoutMs, policy);
+  const suppliedDeadline = Number.parseInt(payload.deadlineAt, 10);
+  const maximumDeadline = nowMs + policy.maxMs;
+  const deadlineAt = Number.isInteger(suppliedDeadline) ? Math.min(suppliedDeadline, maximumDeadline) : nowMs + timeoutMs;
+  const suppliedOperationId = typeof payload.operationId === "string" ? payload.operationId.trim() : "";
+  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto4.randomUUID)();
+  return {
+    operationId,
+    timeoutMs,
+    deadlineAt
+  };
+}
+function remainingOperationMs(operation, nowMs = Date.now()) {
+  return Math.max(0, Number(operation?.deadlineAt || 0) - nowMs);
+}
+function assertOperationActive(operation, signal, options = {}) {
+  if (signal?.aborted) {
+    throw operationErrorForSignal(signal, operation, options);
+  }
+  if (remainingOperationMs(operation) <= 0) {
+    throw operationError("operation deadline exceeded", {
+      code: "OPERATION_DEADLINE_EXCEEDED",
+      statusCode: 408,
+      operationId: operation?.operationId,
+      layer: options.layer || "operation",
+      phase: options.phase || "deadline",
+      retriable: false
+    });
+  }
+}
+function operationErrorForSignal(signal, operation, options = {}) {
+  const reason = signal?.reason;
+  if (reason?.code === "OPERATION_DEADLINE_EXCEEDED") {
+    return reason;
+  }
+  if (reason?.code === "OPERATION_CANCELLED") {
+    return reason;
+  }
+  return operationError(reason?.message || "operation cancelled", {
+    code: "OPERATION_CANCELLED",
+    statusCode: 499,
+    operationId: operation?.operationId,
+    layer: options.layer || "operation",
+    phase: options.phase || "cancel",
+    retriable: false,
+    cause: reason
+  });
+}
+function createOperationController(operation, parentSignal, options = {}) {
+  const controller = new AbortController();
+  const layer = options.layer || "operation";
+  const abortFromParent = () => {
+    if (!controller.signal.aborted) {
+      controller.abort(operationErrorForSignal(parentSignal, operation, {
+        layer,
+        phase: options.cancelPhase || "upstream-cancel"
+      }));
+    }
+  };
+  if (parentSignal?.aborted) {
+    abortFromParent();
+  } else {
+    parentSignal?.addEventListener("abort", abortFromParent, { once: true });
+  }
+  const remainingMs = remainingOperationMs(operation);
+  const deadlineTimer = setTimeout(() => {
+    if (!controller.signal.aborted) {
+      controller.abort(operationError("operation deadline exceeded", {
+        code: "OPERATION_DEADLINE_EXCEEDED",
+        statusCode: 408,
+        operationId: operation.operationId,
+        layer,
+        phase: options.deadlinePhase || "deadline",
+        retriable: false
+      }));
+    }
+  }, remainingMs);
+  deadlineTimer.unref?.();
+  return {
+    controller,
+    signal: controller.signal,
+    cleanup() {
+      clearTimeout(deadlineTimer);
+      parentSignal?.removeEventListener("abort", abortFromParent);
+    }
+  };
+}
+function operationErrorPayload(error, fallback = {}) {
+  return {
+    code: error?.code || fallback.code || "REMOTE_DEBUG_ERROR",
+    message: error?.message || fallback.message || "remote debug operation failed",
+    operationId: error?.operationId || fallback.operationId,
+    layer: error?.layer || fallback.layer,
+    phase: error?.phase || fallback.phase,
+    retriable: Boolean(error?.retriable),
+    cause: error?.cause
+  };
+}
+
+// mongodb.js
+var MONGODB_QUERY_OPERATIONS = Object.freeze([
+  "ping",
+  "listDatabases",
+  "listCollections",
+  "find",
+  "findOne",
+  "countDocuments",
+  "aggregate"
+]);
+var MONGODB_REMOTE_COMMAND = "node";
+var MONGODB_CONFIG_ROOTS = Object.freeze(["/home/app", "/home/github"]);
+var DEFAULT_MONGODB_LIMIT = 50;
+var MAX_MONGODB_LIMIT = 500;
+var MAX_MONGODB_SKIP = 1e5;
+var MAX_MONGODB_PIPELINE_STAGES = 20;
+var MAX_MONGODB_QUERY_BYTES = 64 * 1024;
+var MAX_MONGODB_SCRIPT_BYTES = 128 * 1024;
+var MAX_MONGODB_RESULT_BYTES = 512 * 1024;
+var MAX_MONGODB_ERROR_BYTES = 4096;
+var MONGODB_RESULT_MARKER = "__REMOTE_DEBUG_MONGODB_RESULT__";
+var SAFE_CONFIG_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,127}$/;
+var SAFE_DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+var SAFE_COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
+var BLOCKED_OPERATORS = /* @__PURE__ */ new Set([
+  "$where",
+  "$function",
+  "$accumulator",
+  "$out",
+  "$merge",
+  "$planCacheStats",
+  "$currentOp"
+]);
+function byteLength2(value) {
+  return Buffer.byteLength(String(value), "utf8");
+}
+function mongoError(message, code, statusCode = 400, details = {}) {
+  const error = new Error(message);
+  error.code = code;
+  error.statusCode = statusCode;
+  error.layer = "mongodb";
+  error.phase = "validation";
+  error.retriable = false;
+  Object.assign(error, details);
+  return error;
+}
+function normalizeString(value, fieldName, options = {}) {
+  if (typeof value !== "string") {
+    throw mongoError(`${fieldName} must be a string`, "INVALID_MONGODB_CONFIG");
+  }
+  const normalized = value.trim();
+  if (!normalized && options.allowEmpty !== true) {
+    throw mongoError(`${fieldName} must not be empty`, "INVALID_MONGODB_CONFIG");
+  }
+  if (normalized.length > (options.maxLength || 4096)) {
+    throw mongoError(`${fieldName} is too long`, "INVALID_MONGODB_CONFIG");
+  }
+  if (options.pattern && !options.pattern.test(normalized)) {
+    throw mongoError(`${fieldName} has an invalid format`, "INVALID_MONGODB_CONFIG");
+  }
+  return normalized;
+}
+function normalizeRemoteConfigPath(value, fieldName) {
+  const normalized = import_posix.default.normalize(normalizeString(value, fieldName));
+  if (!normalized.startsWith("/")) {
+    throw mongoError(`${fieldName} must be an absolute path`, "INVALID_MONGODB_CONFIG");
+  }
+  const allowed = MONGODB_CONFIG_ROOTS.some(
+    (root) => normalized === root || normalized.startsWith(`${root}/`)
+  );
+  if (!allowed) {
+    throw mongoError(
+      `${fieldName} must be under ${MONGODB_CONFIG_ROOTS.join(", ")}`,
+      "MONGODB_CONFIG_PATH_NOT_ALLOWED",
+      400
+    );
+  }
+  return normalized;
+}
+function normalizeMongoConfig(value = {}) {
+  if (!value || value.enabled === false) {
+    throw mongoError(
+      "MongoDB access is not enabled for this instance",
+      "MONGODB_NOT_CONFIGURED",
+      503
+    );
+  }
+  const configPath = normalizeRemoteConfigPath(value.configPath, "mongodb.configPath");
+  const driverPath = normalizeRemoteConfigPath(value.driverPath, "mongodb.driverPath");
+  const configProfile = normalizeString(value.configProfile, "mongodb.configProfile", {
+    maxLength: 128,
+    pattern: SAFE_CONFIG_KEY_PATTERN
+  });
+  const uriKey = normalizeString(value.uriKey || "url", "mongodb.uriKey", {
+    maxLength: 128,
+    pattern: SAFE_CONFIG_KEY_PATTERN
+  });
+  const database = value.database === void 0 || value.database === "" ? "" : normalizeString(value.database, "mongodb.database", {
+    maxLength: 128,
+    pattern: SAFE_DATABASE_PATTERN
+  });
+  return {
+    enabled: true,
+    configPath,
+    driverPath,
+    configProfile,
+    uriKey,
+    database
+  };
+}
+function assertPlainObject(value, fieldName) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw mongoError(`${fieldName} must be an object`, "INVALID_MONGODB_QUERY");
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    throw mongoError(`${fieldName} must be a plain object`, "INVALID_MONGODB_QUERY");
+  }
+}
+function assertSafeJson(value, fieldName = "$", depth = 0) {
+  if (depth > 12) {
+    throw mongoError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_QUERY");
+  }
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
+    return;
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw mongoError(`${fieldName} contains a non-finite number`, "INVALID_MONGODB_QUERY");
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertSafeJson(item, `${fieldName}[${index}]`, depth + 1));
+    return;
+  }
+  if (typeof value !== "object") {
+    throw mongoError(`${fieldName} contains an unsupported value`, "INVALID_MONGODB_QUERY");
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (["__proto__", "constructor", "prototype"].includes(key)) {
+      throw mongoError(`${fieldName} contains a forbidden key`, "INVALID_MONGODB_QUERY");
+    }
+    if (BLOCKED_OPERATORS.has(key)) {
+      throw mongoError(`${key} is not allowed by the read-only MongoDB tool`, "MONGODB_OPERATOR_REJECTED");
+    }
+    assertSafeJson(child, `${fieldName}.${key}`, depth + 1);
+  }
+}
+function normalizeQueryObject(value, fieldName, fallback = {}) {
+  const normalized = value === void 0 ? fallback : value;
+  assertPlainObject(normalized, fieldName);
+  assertSafeJson(normalized, fieldName);
+  if (byteLength2(JSON.stringify(normalized)) > MAX_MONGODB_QUERY_BYTES) {
+    throw mongoError(`${fieldName} is too large`, "MONGODB_QUERY_TOO_LARGE", 413);
+  }
+  return normalized;
+}
+function normalizeLimit(value) {
+  if (value === void 0 || value === null) {
+    return DEFAULT_MONGODB_LIMIT;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw mongoError("limit must be a positive integer", "INVALID_MONGODB_QUERY");
+  }
+  return Math.min(value, MAX_MONGODB_LIMIT);
+}
+function normalizeSkip(value) {
+  if (value === void 0 || value === null) {
+    return 0;
+  }
+  if (!Number.isInteger(value) || value < 0) {
+    throw mongoError("skip must be a non-negative integer", "INVALID_MONGODB_QUERY");
+  }
+  return Math.min(value, MAX_MONGODB_SKIP);
+}
+function normalizeDatabase(value, fallback) {
+  const database = value === void 0 || value === "" ? fallback || "" : value;
+  if (!database) {
+    return "";
+  }
+  if (typeof database !== "string" || !SAFE_DATABASE_PATTERN.test(database)) {
+    throw mongoError("database has an invalid format", "INVALID_MONGODB_QUERY");
+  }
+  return database;
+}
+function normalizeCollection(value) {
+  if (typeof value !== "string" || !SAFE_COLLECTION_PATTERN.test(value)) {
+    throw mongoError(
+      "collection must use letters, numbers, underscore, dot, dollar, or dash",
+      "INVALID_MONGODB_QUERY"
+    );
+  }
+  return value;
+}
+function normalizeMongoQuery(input = {}, config = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw mongoError("MongoDB query must be an object", "INVALID_MONGODB_QUERY");
+  }
+  const mongodb = normalizeMongoConfig(config);
+  const operation = input.operation;
+  if (!MONGODB_QUERY_OPERATIONS.includes(operation)) {
+    throw mongoError(
+      `operation must be one of ${MONGODB_QUERY_OPERATIONS.join(", ")}`,
+      "INVALID_MONGODB_OPERATION"
+    );
+  }
+  const database = normalizeDatabase(input.database, mongodb.database);
+  const requiresDatabase = ["listCollections", "find", "findOne", "countDocuments", "aggregate"];
+  if (requiresDatabase.includes(operation) && !database) {
+    throw mongoError(
+      "database is required or must be configured for this instance",
+      "MONGODB_DATABASE_REQUIRED"
+    );
+  }
+  const requiresCollection = ["find", "findOne", "countDocuments", "aggregate"];
+  const collection = requiresCollection.includes(operation) ? normalizeCollection(input.collection) : input.collection === void 0 || input.collection === "" ? "" : normalizeCollection(input.collection);
+  const filter = requiresCollection.includes(operation) ? normalizeQueryObject(input.filter, "filter") : {};
+  const projection = input.projection === void 0 ? void 0 : normalizeQueryObject(input.projection, "projection");
+  const sort = input.sort === void 0 ? void 0 : normalizeQueryObject(input.sort, "sort");
+  const pipeline = input.pipeline === void 0 ? [] : input.pipeline;
+  if (!Array.isArray(pipeline)) {
+    throw mongoError("pipeline must be an array", "INVALID_MONGODB_QUERY");
+  }
+  if (pipeline.length > MAX_MONGODB_PIPELINE_STAGES) {
+    throw mongoError(
+      `pipeline cannot contain more than ${MAX_MONGODB_PIPELINE_STAGES} stages`,
+      "MONGODB_PIPELINE_TOO_LARGE"
+    );
+  }
+  assertSafeJson(pipeline, "pipeline");
+  if (byteLength2(JSON.stringify(pipeline)) > MAX_MONGODB_QUERY_BYTES) {
+    throw mongoError("pipeline is too large", "MONGODB_QUERY_TOO_LARGE", 413);
+  }
+  if (operation === "aggregate" && pipeline.some((stage) => {
+    const limit = stage && typeof stage === "object" ? stage.$limit : void 0;
+    return limit !== void 0 && (!Number.isInteger(limit) || limit <= 0 || limit > MAX_MONGODB_LIMIT);
+  })) {
+    throw mongoError(
+      `aggregate $limit must be between 1 and ${MAX_MONGODB_LIMIT}`,
+      "MONGODB_LIMIT_REJECTED"
+    );
+  }
+  return {
+    operation,
+    database,
+    collection,
+    filter,
+    projection,
+    sort,
+    pipeline,
+    limit: normalizeLimit(input.limit),
+    skip: normalizeSkip(input.skip)
+  };
+}
+function summarizeMongoQuery(query = {}) {
+  const keyList = (value) => value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).slice(0, 50) : [];
+  return {
+    operation: typeof query.operation === "string" ? query.operation.slice(0, 64) : void 0,
+    database: typeof query.database === "string" ? query.database.slice(0, 128) : void 0,
+    collection: typeof query.collection === "string" ? query.collection.slice(0, 128) : void 0,
+    filterKeys: keyList(query.filter),
+    projectionKeys: keyList(query.projection),
+    sortKeys: keyList(query.sort),
+    pipelineLength: Array.isArray(query.pipeline) ? query.pipeline.length : 0,
+    limit: query.limit,
+    skip: query.skip
+  };
+}
+function safeLiteral(value) {
+  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+function buildMongoScript(query, config) {
+  const normalizedConfig = normalizeMongoConfig(config);
+  const normalizedQuery = normalizeMongoQuery(query, normalizedConfig);
+  const script = `
+const __fs = require("fs");
+const __configPath = ${safeLiteral(normalizedConfig.configPath)};
+const __driverPath = ${safeLiteral(normalizedConfig.driverPath)};
+const __profileName = ${safeLiteral(normalizedConfig.configProfile)};
+const __uriKey = ${safeLiteral(normalizedConfig.uriKey)};
+const __request = ${safeLiteral(normalizedQuery)};
+const __marker = ${safeLiteral(MONGODB_RESULT_MARKER)};
+const __maxTimeMs = 15000;
+let __bson;
+try {
+  __bson = require(require.resolve("bson", { paths: [__driverPath] }));
+} catch (_error) {
+  __bson = null;
+}
+
+function __fallbackReplacer(_key, value) {
+  if (value && typeof value === "object" && value._bsontype === "ObjectID" && typeof value.toHexString === "function") {
+    return { $oid: value.toHexString() };
+  }
+  if (value && typeof value === "object" && value._bsontype === "Long" && typeof value.toString === "function") {
+    return { $numberLong: value.toString() };
+  }
+  if (value && typeof value === "object" && value._bsontype === "Decimal128" && typeof value.toString === "function") {
+    return { $numberDecimal: value.toString() };
+  }
+  if (Buffer.isBuffer(value)) {
+    return { $binary: { base64: value.toString("base64"), subType: "00" } };
+  }
+  return value;
+}
+
+function __decode(value) {
+  if (value === undefined || !__bson || !__bson.EJSON || !__bson.EJSON.parse) {
+    return value;
+  }
+  return __bson.EJSON.parse(JSON.stringify(value));
+}
+
+function __encode(value) {
+  if (__bson && __bson.EJSON && __bson.EJSON.stringify) {
+    return JSON.parse(__bson.EJSON.stringify(value));
+  }
+  return JSON.parse(JSON.stringify(value, __fallbackReplacer));
+}
+
+function __getPath(value, keyPath) {
+  return keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
+}
+
+function __emit(payload) {
+  process.stdout.write(__marker + JSON.stringify(payload) + "\\n");
+}
+
+function __errorPayload(error) {
+  return {
+    name: (error && error.name) || "Error",
+    message: String((error && error.message) || error).slice(0, 2000),
+  };
+}
+
+(async () => {
+  let __client;
+  try {
+    const __fileConfig = JSON.parse(__fs.readFileSync(__configPath, "utf8"));
+    const __profile = __fileConfig && __fileConfig[__profileName];
+    if (!__profile || typeof __profile !== "object") {
+      throw new Error("MongoDB config profile was not found");
+    }
+    const __uri = __getPath(__profile, __uriKey);
+    const __database = __request.database || __profile.database || __profile.databaseName || "";
+    if (typeof __uri !== "string" || !__uri) {
+      throw new Error("MongoDB URI was not found in the configured profile");
+    }
+    if (["listCollections", "find", "findOne", "countDocuments", "aggregate"].includes(__request.operation) && !__database) {
+      throw new Error("MongoDB database is not configured");
+    }
+
+    const __driver = require(__driverPath);
+    const __MongoClient = __driver.MongoClient || (__driver.default && __driver.default.MongoClient);
+    if (!__MongoClient) {
+      throw new Error("MongoDB driver does not export MongoClient");
+    }
+    __client = new __MongoClient(__uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: __maxTimeMs,
+    });
+    await __client.connect();
+
+    let __data;
+    if (__request.operation === "ping") {
+      __data = await __client.db("admin").command({ ping: 1 });
+    } else if (__request.operation === "listDatabases") {
+      const __listed = await __client.db("admin").admin().listDatabases({ nameOnly: true });
+      __data = {
+        databases: (__listed.databases || []).slice(0, __request.limit).map((item) => ({ name: item.name })),
+      };
+    } else if (__request.operation === "listCollections") {
+      const __db = __client.db(__database);
+      __data = (await __db.listCollections({}, { nameOnly: true }).toArray())
+        .slice(0, __request.limit)
+        .map((item) => ({ name: item.name, type: item.type }));
+    } else {
+      const __collection = __client.db(__database).collection(__request.collection);
+      const __filter = __decode(__request.filter || {});
+      const __projection = __request.projection ? __decode(__request.projection) : undefined;
+      if (__request.operation === "find") {
+        const __options = __projection ? { projection: __projection } : {};
+        let __cursor = __collection.find(__filter, __options);
+        if (__request.sort) __cursor = __cursor.sort(__decode(__request.sort));
+        if (__request.skip) __cursor = __cursor.skip(__request.skip);
+        __cursor = __cursor.limit(__request.limit);
+        if (typeof __cursor.maxTimeMS === "function") __cursor.maxTimeMS(__maxTimeMs);
+        __data = await __cursor.toArray();
+      } else if (__request.operation === "findOne") {
+        const __options = { maxTimeMS: __maxTimeMs };
+        if (__projection) __options.projection = __projection;
+        __data = await __collection.findOne(__filter, __options);
+      } else if (__request.operation === "countDocuments") {
+        __data = await __collection.countDocuments(__filter, { maxTimeMS: __maxTimeMs });
+      } else if (__request.operation === "aggregate") {
+        const __pipeline = __decode(__request.pipeline || []).slice();
+        __pipeline.push({ $limit: __request.limit });
+        const __cursor = __collection.aggregate(__pipeline, { allowDiskUse: false });
+        if (typeof __cursor.maxTimeMS === "function") __cursor.maxTimeMS(__maxTimeMs);
+        __data = await __cursor.toArray();
+      }
+    }
+
+    __emit({
+      ok: true,
+      operation: __request.operation,
+      database: __database || null,
+      collection: __request.collection || null,
+      data: __encode(__data),
+    });
+  } catch (error) {
+    __emit({
+      ok: false,
+      operation: __request.operation,
+      error: __errorPayload(error),
+    });
+    process.exitCode = 1;
+  } finally {
+    if (__client) {
+      await __client.close().catch(() => {});
+    }
+  }
+})();
+`;
+  if (byteLength2(script) > MAX_MONGODB_SCRIPT_BYTES) {
+    throw mongoError("MongoDB query script is too large", "MONGODB_QUERY_TOO_LARGE", 413);
+  }
+  return script;
+}
+function redactMongoSecrets(value, maxLength = MAX_MONGODB_ERROR_BYTES) {
+  const redacted = String(value || "").replace(/(mongodb(?:\+srv)?:\/\/)([^@\s]+)@/gi, "$1[REDACTED]@").replace(/((?:password|passwd|pwd|secret|token)=)[^&\s]+/gi, "$1[REDACTED]");
+  return redacted.length <= maxLength ? redacted : `${redacted.slice(0, maxLength)}
+...[truncated ${redacted.length - maxLength} chars]`;
+}
+function runtimeMongoError(message, options = {}) {
+  const error = operationError(message, {
+    code: options.code || "MONGODB_QUERY_FAILED",
+    statusCode: options.statusCode || 502,
+    operationId: options.operation?.operationId,
+    layer: "mongodb",
+    phase: options.phase || "query",
+    retriable: options.retriable === true,
+    cause: options.cause ? redactMongoSecrets(options.cause.message || options.cause) : void 0
+  });
+  error.details = options.details;
+  return error;
+}
+function resultCount(data) {
+  if (data === null || data === void 0) return 0;
+  if (Array.isArray(data)) return data.length;
+  if (typeof data === "number") return data;
+  if (Array.isArray(data.databases)) return data.databases.length;
+  return 1;
+}
+function markerPayload(stdout) {
+  const lines = String(stdout || "").split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (!lines[index].startsWith(MONGODB_RESULT_MARKER)) continue;
+    try {
+      return JSON.parse(lines[index].slice(MONGODB_RESULT_MARKER.length));
+    } catch {
+      throw runtimeMongoError(
+        "MongoDB helper returned invalid JSON",
+        { code: "MONGODB_INVALID_RESPONSE", phase: "response-parse" }
+      );
+    }
+  }
+  return null;
+}
+async function runMongoQuery(query, options = {}) {
+  const normalizedConfig = normalizeMongoConfig(options.config?.mongodb);
+  const normalizedQuery = normalizeMongoQuery(query, normalizedConfig);
+  if (typeof options.runSSH !== "function") {
+    throw runtimeMongoError("MongoDB SSH runner is not configured", {
+      code: "MONGODB_RUNNER_UNAVAILABLE",
+      statusCode: 500,
+      phase: "configuration",
+      operation: options.operation
+    });
+  }
+  const stdin = buildMongoScript(normalizedQuery, normalizedConfig);
+  let remoteResult;
+  try {
+    remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
+      config: options.config,
+      operation: options.operation,
+      stdin
+    });
+  } catch (error) {
+    if (options.operation?.signal?.aborted) {
+      throw operationErrorForSignal(options.operation.signal, options.operation, {
+        layer: "mongodb",
+        phase: "query"
+      });
+    }
+    throw runtimeMongoError("MongoDB remote helper could not be executed", {
+      code: error.code || "MONGODB_QUERY_FAILED",
+      statusCode: error.statusCode || 502,
+      phase: error.phase || "remote-exec",
+      retriable: error.retriable === true,
+      cause: error,
+      operation: options.operation,
+      details: { cause: redactMongoSecrets(error.message) }
+    });
+  }
+  if (remoteResult?.stdoutTruncated || byteLength2(remoteResult?.stdout || "") > MAX_MONGODB_RESULT_BYTES) {
+    throw runtimeMongoError("MongoDB result exceeded the response limit", {
+      code: "MONGODB_RESULT_TOO_LARGE",
+      statusCode: 413,
+      phase: "response-size",
+      operation: options.operation
+    });
+  }
+  const payload = markerPayload(remoteResult?.stdout);
+  if (!payload) {
+    throw runtimeMongoError("MongoDB helper returned no structured response", {
+      code: remoteResult?.exitCode === 127 ? "MONGODB_NODE_NOT_FOUND" : "MONGODB_INVALID_RESPONSE",
+      phase: "response-parse",
+      operation: options.operation,
+      details: {
+        exitCode: remoteResult?.exitCode,
+        stderr: redactMongoSecrets(remoteResult?.stderr)
+      }
+    });
+  }
+  if (payload.ok !== true || remoteResult?.exitCode !== 0 || remoteResult?.timedOut) {
+    const helperError = payload.error?.message || redactMongoSecrets(remoteResult?.stderr) || "MongoDB query failed";
+    throw runtimeMongoError(redactMongoSecrets(helperError), {
+      code: remoteResult?.timedOut ? "MONGODB_QUERY_TIMEOUT" : "MONGODB_QUERY_FAILED",
+      phase: remoteResult?.timedOut ? "query-timeout" : "database",
+      operation: options.operation,
+      retriable: remoteResult?.timedOut === true,
+      details: {
+        exitCode: remoteResult?.exitCode,
+        stderr: redactMongoSecrets(remoteResult?.stderr)
+      }
+    });
+  }
+  return {
+    operation: normalizedQuery.operation,
+    database: payload.database || normalizedQuery.database || null,
+    collection: payload.collection || normalizedQuery.collection || null,
+    data: payload.data,
+    resultCount: resultCount(payload.data),
+    timing: remoteResult.timing
+  };
+}
+
+// security.js
 var SECURITY_POLICY = {
   schemaVersion: 1,
   allowedExecutables: [
@@ -44639,12 +45417,25 @@ var SECURITY_POLICY = {
   pm2: {
     actions: ["list", "describe <app-name-or-id>", "env <numeric-process-id>"]
   },
+  mongodb: {
+    readOnly: true,
+    operations: [...MONGODB_QUERY_OPERATIONS],
+    maxLimit: MAX_MONGODB_LIMIT,
+    allowedConfigRoots: [...MONGODB_CONFIG_ROOTS]
+  },
+  lifecycle: {
+    instanceRestart: {
+      allowedFrom: ["stopped", "unhealthy"],
+      runningBehavior: "no-op",
+      transitionalBehavior: "reject"
+    }
+  },
   constraints: [
     "Commands are parsed as tokens and never executed through a shell.",
     "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
     "Commands that read paths require at least one absolute path under an allowed root.",
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
-    "Database clients are limited to their --version diagnostic; real queries require an approved-command draft."
+    "The dedicated MongoDB tool is read-only and bounded; database writes require an approved-command draft."
   ],
   examples: [
     "netstat -tlnp",
@@ -44664,7 +45455,7 @@ var SECURITY_POLICY = {
     "mongosh --version"
   ]
 };
-var SECURITY_POLICY_VERSION = (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
+var SECURITY_POLICY_VERSION = (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
 var ALLOWED_COMMANDS = new Set(SECURITY_POLICY.allowedExecutables);
 var DENIED_COMMANDS = new Set(SECURITY_POLICY.deniedExecutables);
 var SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
@@ -44719,6 +45510,20 @@ function securityCapabilities(config = {}) {
       maxExecutionTimeoutMs: approvedCommands.maxExecutionTimeoutMs,
       maxCommandLength: approvedCommands.maxCommandLength,
       maxCommands: approvedCommands.maxCommands
+    },
+    mongodb: {
+      enabled: true,
+      configured: Boolean(config.mongodb?.enabled),
+      ...SECURITY_POLICY.mongodb,
+      operations: [...SECURITY_POLICY.mongodb.operations],
+      allowedConfigRoots: [...SECURITY_POLICY.mongodb.allowedConfigRoots]
+    },
+    lifecycle: {
+      instanceRestart: {
+        allowedFrom: [...SECURITY_POLICY.lifecycle.instanceRestart.allowedFrom],
+        runningBehavior: SECURITY_POLICY.lifecycle.instanceRestart.runningBehavior,
+        transitionalBehavior: SECURITY_POLICY.lifecycle.instanceRestart.transitionalBehavior
+      }
     }
   };
 }
@@ -44740,7 +45545,7 @@ function normalizeRemotePath(inputPath) {
   if (!inputPath.startsWith("/")) {
     throw new SecurityError("path must be absolute", "INVALID_PATH");
   }
-  const normalized = import_posix.default.normalize(inputPath);
+  const normalized = import_posix2.default.normalize(inputPath);
   return normalized.length > 1 && normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
 }
 function isPathAllowed(inputPath, allowedPaths) {
@@ -44953,7 +45758,7 @@ function normalizeMaxBytes(value, securityConfig) {
 // instance-registry.js
 var import_node_fs2 = __toESM(require("node:fs"), 1);
 var import_node_path3 = __toESM(require("node:path"), 1);
-var import_node_crypto5 = require("node:crypto");
+var import_node_crypto6 = require("node:crypto");
 var REGISTRY_VERSION = 3;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 var DEFAULT_HEALTH_INTERVAL_MS = 15e3;
@@ -45089,8 +45894,59 @@ function normalizeApprovedCommands(value = {}) {
     )
   };
 }
+function normalizeMongoSettings(input, existing) {
+  if (input === null) {
+    return void 0;
+  }
+  if (input === void 0 && existing === void 0) {
+    return void 0;
+  }
+  if (input !== void 0 && (!input || typeof input !== "object" || Array.isArray(input))) {
+    const error = new Error("mongodb must be an object or null");
+    error.code = "INVALID_INSTANCE_FIELD";
+    error.statusCode = 400;
+    throw error;
+  }
+  const raw = { ...existing || {}, ...input || {} };
+  const enabled = parseBooleanFlag2(raw.enabled, existing?.enabled ?? true);
+  const configPath = String(raw.configPath ?? "").trim();
+  const driverPath = String(raw.driverPath ?? "").trim();
+  const configProfile = String(raw.configProfile ?? raw.profile ?? "").trim();
+  const uriKey = String(raw.uriKey ?? "url").trim();
+  const database = String(raw.database ?? raw.databaseName ?? "").trim();
+  if (enabled && (!configPath || !driverPath || !configProfile || !uriKey)) {
+    const error = new Error(
+      "enabled MongoDB settings require configPath, driverPath, configProfile, and uriKey"
+    );
+    error.code = "INVALID_INSTANCE_FIELD";
+    error.statusCode = 400;
+    throw error;
+  }
+  for (const [fieldName, value, maxLength] of [
+    ["mongodb.configPath", configPath, 4096],
+    ["mongodb.driverPath", driverPath, 4096],
+    ["mongodb.configProfile", configProfile, 128],
+    ["mongodb.uriKey", uriKey, 128],
+    ["mongodb.database", database, 128]
+  ]) {
+    if (value.length > maxLength) {
+      const error = new Error(`${fieldName} is too long`);
+      error.code = "INVALID_INSTANCE_FIELD";
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+  return {
+    enabled,
+    configPath,
+    driverPath,
+    configProfile,
+    uriKey: uriKey || "url",
+    database
+  };
+}
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto5.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto6.randomUUID)());
   assertInstanceId(id);
   const name = String(input.name ?? existing.name ?? id).trim();
   if (!name) {
@@ -45110,6 +45966,7 @@ function normalizeInstance(input, existing = {}) {
   }
   const passphrase = input.passphrase === "" || input.passphrase === void 0 ? existing.passphrase : input.passphrase;
   const preferredWorkerPort = input.preferredWorkerPort ?? input.workerPort ?? input.agentPort;
+  const mongodb = normalizeMongoSettings(input.mongodb, existing.mongodb);
   return {
     id,
     name,
@@ -45125,6 +45982,7 @@ function normalizeInstance(input, existing = {}) {
       ...existing.approvedCommands,
       ...input.approvedCommands
     }),
+    ...mongodb ? { mongodb } : {},
     createdAt: existing.createdAt || input.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
     updatedAt: input.updatedAt || (/* @__PURE__ */ new Date()).toISOString()
   };
@@ -45224,10 +46082,20 @@ function normalizeRegistry(raw, cwd, env, managerPort) {
   };
 }
 function publicInstance(instance) {
-  const { passphrase, ...rest } = instance;
+  const { passphrase, mongodb, ...rest } = instance;
   return {
     ...rest,
-    hasPassphrase: Boolean(passphrase)
+    hasPassphrase: Boolean(passphrase),
+    ...mongodb ? {
+      mongodb: {
+        enabled: Boolean(mongodb.enabled),
+        configPath: mongodb.configPath,
+        driverPath: mongodb.driverPath,
+        configProfile: mongodb.configProfile,
+        uriKey: mongodb.uriKey,
+        database: mongodb.database
+      }
+    } : {}
   };
 }
 var InstanceRegistry = class {
@@ -45370,7 +46238,7 @@ var import_node_path5 = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // memory-store.js
-var import_node_crypto6 = require("node:crypto");
+var import_node_crypto7 = require("node:crypto");
 var import_node_fs3 = __toESM(require("node:fs"), 1);
 var import_promises2 = __toESM(require("node:fs/promises"), 1);
 var import_node_path4 = __toESM(require("node:path"), 1);
@@ -45448,7 +46316,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto6.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto7.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -45799,7 +46667,7 @@ var MemoryStore = class {
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
     await import_promises2.default.mkdir(import_node_path4.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto6.randomUUID)()}.tmp`;
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto7.randomUUID)()}.tmp`;
     await import_promises2.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
     await import_promises2.default.rename(tempPath, filePath);
@@ -45970,183 +46838,6 @@ var MemoryStore = class {
   }
 };
 
-// operation.js
-var import_node_crypto7 = require("node:crypto");
-var API_VERSION = 2;
-var OPERATION_TIMEOUTS = Object.freeze({
-  run: Object.freeze({ defaultMs: 3e4, maxMs: 12e4 }),
-  file: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
-  approvedExecution: Object.freeze({ defaultMs: 3e5, maxMs: 9e5 }),
-  manager: Object.freeze({ defaultMs: 3e4, maxMs: 3e5 })
-});
-function errorCause(cause) {
-  if (!cause) {
-    return void 0;
-  }
-  if (typeof cause === "string") {
-    return { message: cause };
-  }
-  return {
-    code: cause.code,
-    message: cause.message || String(cause),
-    layer: cause.layer,
-    phase: cause.phase
-  };
-}
-var OperationError = class extends Error {
-  constructor(message, options = {}) {
-    super(message);
-    this.name = "OperationError";
-    this.code = options.code || "OPERATION_FAILED";
-    this.statusCode = options.statusCode || 500;
-    this.operationId = options.operationId;
-    this.layer = options.layer;
-    this.phase = options.phase;
-    this.retriable = Boolean(options.retriable);
-    this.details = options.details;
-    this.cause = errorCause(options.cause);
-  }
-};
-function operationError(message, options = {}) {
-  return new OperationError(message, options);
-}
-function normalizeTimeoutMs(value, policy) {
-  if (value === void 0 || value === null || value === "") {
-    return policy.defaultMs;
-  }
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw operationError("timeoutMs must be a positive integer", {
-      code: "INVALID_OPERATION_TIMEOUT",
-      statusCode: 400,
-      layer: "operation",
-      phase: "validation"
-    });
-  }
-  return Math.min(parsed, policy.maxMs);
-}
-function operationPolicy(pathName, config = {}) {
-  if (pathName === "/run") {
-    return {
-      defaultMs: config.security?.defaultTimeoutMs || OPERATION_TIMEOUTS.run.defaultMs,
-      maxMs: config.security?.maxTimeoutMs || OPERATION_TIMEOUTS.run.maxMs
-    };
-  }
-  if (pathName === "/read-file" || pathName === "/list-dir") {
-    return {
-      defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
-      maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs
-    };
-  }
-  if (pathName === "/approved-command-drafts/execute") {
-    return {
-      defaultMs: config.approvedCommands?.executionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.defaultMs,
-      maxMs: config.approvedCommands?.maxExecutionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.maxMs
-    };
-  }
-  return OPERATION_TIMEOUTS.manager;
-}
-function normalizeOperationEnvelope(payload = {}, policy, options = {}) {
-  const nowMs = options.nowMs ?? Date.now();
-  const timeoutMs = normalizeTimeoutMs(payload.timeoutMs, policy);
-  const suppliedDeadline = Number.parseInt(payload.deadlineAt, 10);
-  const maximumDeadline = nowMs + policy.maxMs;
-  const deadlineAt = Number.isInteger(suppliedDeadline) ? Math.min(suppliedDeadline, maximumDeadline) : nowMs + timeoutMs;
-  const suppliedOperationId = typeof payload.operationId === "string" ? payload.operationId.trim() : "";
-  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto7.randomUUID)();
-  return {
-    operationId,
-    timeoutMs,
-    deadlineAt
-  };
-}
-function remainingOperationMs(operation, nowMs = Date.now()) {
-  return Math.max(0, Number(operation?.deadlineAt || 0) - nowMs);
-}
-function assertOperationActive(operation, signal, options = {}) {
-  if (signal?.aborted) {
-    throw operationErrorForSignal(signal, operation, options);
-  }
-  if (remainingOperationMs(operation) <= 0) {
-    throw operationError("operation deadline exceeded", {
-      code: "OPERATION_DEADLINE_EXCEEDED",
-      statusCode: 408,
-      operationId: operation?.operationId,
-      layer: options.layer || "operation",
-      phase: options.phase || "deadline",
-      retriable: false
-    });
-  }
-}
-function operationErrorForSignal(signal, operation, options = {}) {
-  const reason = signal?.reason;
-  if (reason?.code === "OPERATION_DEADLINE_EXCEEDED") {
-    return reason;
-  }
-  if (reason?.code === "OPERATION_CANCELLED") {
-    return reason;
-  }
-  return operationError(reason?.message || "operation cancelled", {
-    code: "OPERATION_CANCELLED",
-    statusCode: 499,
-    operationId: operation?.operationId,
-    layer: options.layer || "operation",
-    phase: options.phase || "cancel",
-    retriable: false,
-    cause: reason
-  });
-}
-function createOperationController(operation, parentSignal, options = {}) {
-  const controller = new AbortController();
-  const layer = options.layer || "operation";
-  const abortFromParent = () => {
-    if (!controller.signal.aborted) {
-      controller.abort(operationErrorForSignal(parentSignal, operation, {
-        layer,
-        phase: options.cancelPhase || "upstream-cancel"
-      }));
-    }
-  };
-  if (parentSignal?.aborted) {
-    abortFromParent();
-  } else {
-    parentSignal?.addEventListener("abort", abortFromParent, { once: true });
-  }
-  const remainingMs = remainingOperationMs(operation);
-  const deadlineTimer = setTimeout(() => {
-    if (!controller.signal.aborted) {
-      controller.abort(operationError("operation deadline exceeded", {
-        code: "OPERATION_DEADLINE_EXCEEDED",
-        statusCode: 408,
-        operationId: operation.operationId,
-        layer,
-        phase: options.deadlinePhase || "deadline",
-        retriable: false
-      }));
-    }
-  }, remainingMs);
-  deadlineTimer.unref?.();
-  return {
-    controller,
-    signal: controller.signal,
-    cleanup() {
-      clearTimeout(deadlineTimer);
-      parentSignal?.removeEventListener("abort", abortFromParent);
-    }
-  };
-}
-function operationErrorPayload(error, fallback = {}) {
-  return {
-    code: error?.code || fallback.code || "REMOTE_DEBUG_ERROR",
-    message: error?.message || fallback.message || "remote debug operation failed",
-    operationId: error?.operationId || fallback.operationId,
-    layer: error?.layer || fallback.layer,
-    phase: error?.phase || fallback.phase,
-    retriable: Boolean(error?.retriable),
-    cause: error?.cause
-  };
-}
-
 // worker-manager.js
 var moduleFilePath = typeof __filename === "string" ? __filename : (0, import_node_url.fileURLToPath)(void 0);
 var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path5.default.dirname(moduleFilePath);
@@ -46266,6 +46957,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_APPROVED_COMMANDS: instance.approvedCommands?.enabled ? "1" : "0",
     REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.executionTimeoutMs),
     REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.maxExecutionTimeoutMs),
+    REMOTE_DEBUG_MONGODB_CONFIG: instance.mongodb ? JSON.stringify(instance.mongodb) : "",
     REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS: String(manager.sshNetwork.keepaliveIntervalMs),
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
@@ -47072,6 +47764,47 @@ var WorkerManager = class {
     await this.stopInstance(id, "refresh");
     return this.startInstance(id);
   }
+  async restartInstance(id) {
+    const instance = this.registry.getInternal(id);
+    if (!instance) {
+      throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
+    }
+    this.ensureRunnable(instance);
+    const previousStatus = this.runtime.get(id)?.status || "stopped";
+    if (previousStatus === "running") {
+      return {
+        restarted: false,
+        action: "not-needed",
+        previousStatus,
+        instance: this.publicInstance(id),
+        runtime: publicRuntime(this.runtime.get(id))
+      };
+    }
+    if (previousStatus === "starting" || previousStatus === "stopping") {
+      throw managerError(
+        `instance lifecycle transition is already in progress: ${id} (${previousStatus})`,
+        "INSTANCE_TRANSITION_IN_PROGRESS",
+        409
+      );
+    }
+    if (previousStatus !== "stopped" && previousStatus !== "unhealthy") {
+      throw managerError(
+        `instance restart is not allowed from status ${previousStatus}: ${id}`,
+        "INSTANCE_RESTART_NOT_ALLOWED",
+        409
+      );
+    }
+    if (previousStatus === "unhealthy") {
+      await this.stopInstance(id, "restart-recovery");
+    }
+    const result = await this.startInstance(id);
+    return {
+      restarted: true,
+      action: "restarted",
+      previousStatus,
+      ...result
+    };
+  }
   async deleteInstance(id) {
     await this.stopInstance(id, "delete");
     const removed = this.registry.delete(id);
@@ -47542,6 +48275,24 @@ function executeChannel(client, command, operation, options, supervisor) {
           stderrTruncated: stderr.isTruncated()
         });
       });
+      if (options.stdin !== void 0 && options.stdin !== null) {
+        try {
+          if (typeof stream.end !== "function") {
+            throw new Error("SSH exec channel does not support stdin");
+          }
+          stream.end(options.stdin);
+        } catch (stdinError) {
+          finish(operationError(stdinError.message || "failed to write SSH stdin", {
+            code: "SSH_STDIN_FAILED",
+            statusCode: 502,
+            operationId: operation.operationId,
+            layer: "ssh",
+            phase: "stdin",
+            retriable: false,
+            cause: stdinError
+          }));
+        }
+      }
     });
   });
 }
@@ -47819,6 +48570,15 @@ function directorySummary(payload) {
     entriesPreview: payload.entries.slice(0, 50)
   };
 }
+function mongoSummary(payload) {
+  return {
+    operation: payload.operation,
+    database: payload.database,
+    collection: payload.collection,
+    resultCount: payload.resultCount,
+    durationMs: payload.durationMs
+  };
+}
 function approvedDraftSummary(payload) {
   return {
     draftId: payload.draftId,
@@ -47856,10 +48616,16 @@ function createApp(options = {}) {
   const readRemoteFileImpl = options.readRemoteFile || readRemoteFile;
   const listRemoteDirImpl = options.listRemoteDir || listRemoteDir;
   const resolveRemotePathsImpl = options.resolveRemotePaths || resolveRemotePaths;
+  const runMongoQueryImpl = options.runMongoQuery || runMongoQuery;
   const runSSH2 = (command, operationOptions) => runSSHImpl(command, { ...operationOptions, supervisor: sshSupervisor });
   const readRemoteFile2 = (remotePath, operationOptions) => readRemoteFileImpl(remotePath, { ...operationOptions, supervisor: sshSupervisor });
   const listRemoteDir2 = (remotePath, operationOptions) => listRemoteDirImpl(remotePath, { ...operationOptions, supervisor: sshSupervisor });
   const resolveRemotePaths2 = (remotePaths, operationOptions) => resolveRemotePathsImpl(remotePaths, { ...operationOptions, supervisor: sshSupervisor });
+  const runMongoQuery2 = (query, operationOptions) => runMongoQueryImpl(query, {
+    ...operationOptions,
+    config,
+    runSSH: runSSH2
+  });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -48376,6 +49142,82 @@ function createApp(options = {}) {
       response.status(errorStatus(error)).json({ ...payload, durationMs });
     }
   });
+  app.post("/mongodb/query", async (request, response) => {
+    const startedAt = import_node_perf_hooks.performance.now();
+    const rawQuery = request.body || {};
+    const requestOperation = createRequestOperation(request, response, "/mongodb/query", config);
+    const operation = createOperation(request, config, "mongodb-query", {
+      operationId: requestOperation.operationId,
+      ...summarizeMongoQuery(rawQuery),
+      timeoutMs: requestOperation.timeoutMs
+    });
+    publishStage(activity, operation, "started");
+    try {
+      const query = normalizeMongoQuery(rawQuery, config.mongodb);
+      operation.request = {
+        ...summarizeMongoQuery(query),
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt
+      };
+      publishStage(activity, operation, "validated");
+      const result = await runMongoQuery2(query, {
+        operation: requestOperation
+      });
+      const payload = {
+        ok: true,
+        operation: result.operation,
+        database: result.database,
+        collection: result.collection,
+        data: result.data,
+        resultCount: result.resultCount,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing
+      };
+      await audit(config, {
+        tool: "mongodb-query",
+        operation: payload.operation,
+        database: payload.database,
+        collection: payload.collection,
+        resultCount: payload.resultCount,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+        ...result.timing
+      });
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        ...result.timing,
+        result: mongoSummary(payload)
+      });
+      response.json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      const summary = summarizeMongoQuery(rawQuery);
+      await audit(config, {
+        tool: "mongodb-query",
+        operation: summary.operation,
+        database: summary.database,
+        collection: summary.collection,
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+        error: payload.error
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
   return app;
 }
 function managerErrorPayload(error) {
@@ -48745,6 +49587,16 @@ function createManagerApp(options = {}) {
     activity.publish({ type: "instance", stage: "refreshed", instanceId: request.params.id });
     response.json({ ok: true, ...result });
   }));
+  app.post("/api/instances/:id/restart", managerAsync(async (request, response) => {
+    const result = await workerManager.restartInstance(request.params.id);
+    activity.publish({
+      type: "instance",
+      stage: result.restarted ? "restarted" : "restart-not-needed",
+      instanceId: request.params.id,
+      previousStatus: result.previousStatus
+    });
+    response.json({ ok: true, ...result });
+  }));
   app.post("/api/instances/:id/stop", managerAsync(async (request, response) => {
     const result = await workerManager.stopInstance(request.params.id, "stopped");
     activity.publish({ type: "instance", stage: "stopped", instanceId: request.params.id });
@@ -48860,6 +49712,7 @@ function createManagerApp(options = {}) {
   app.post("/run", (request, response) => proxyToInstance("/run", request, response));
   app.post("/read-file", (request, response) => proxyToInstance("/read-file", request, response));
   app.post("/list-dir", (request, response) => proxyToInstance("/list-dir", request, response));
+  app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/approved-command-drafts", (request, response) => proxyToInstance("/approved-command-drafts", request, response));
   app.post("/approved-command-drafts/get", (request, response) => proxyToInstance("/approved-command-drafts/get", request, response));
   app.post("/approved-command-drafts/execute", (request, response) => proxyToInstance("/approved-command-drafts/execute", request, response));

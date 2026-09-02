@@ -101,6 +101,31 @@ test("approved command execution is disabled by default and enabled by explicit 
   assert.equal(enabled.approvedCommands.maxExecutionTimeoutMs, 120_000);
 });
 
+test("loads the selected instance MongoDB profile without accepting a URI", () => {
+  const config = loadConfig(
+    {
+      REMOTE_DEBUG_MONGODB_CONFIG: JSON.stringify({
+        enabled: true,
+        configPath: "/home/github/app/config.json",
+        driverPath: "/home/github/app/node_modules/mongodb",
+        configProfile: "test",
+        uriKey: "url",
+        database: "yennefer",
+      }),
+    },
+    "C:\\remote-debug-agent\\agent",
+  );
+
+  assert.deepEqual(config.mongodb, {
+    enabled: true,
+    configPath: "/home/github/app/config.json",
+    driverPath: "/home/github/app/node_modules/mongodb",
+    configProfile: "test",
+    uriKey: "url",
+    database: "yennefer",
+  });
+});
+
 test("runtime config fingerprint changes when sensitive .env-backed settings change", () => {
   const baseEnv = {
     REMOTE_DEBUG_HOST: "prod.example.com",

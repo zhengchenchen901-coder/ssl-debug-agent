@@ -43,6 +43,7 @@ remote-debug-agent/
         server.cjs
         worker-entry.cjs
       package.json
+      skills/mongodb/SKILL.md
       skills/remote-debug/SKILL.md
       skills/update-instance-memory/SKILL.md
   scripts/
@@ -153,7 +154,7 @@ loading path in three separate layers:
 
 1. Plugin configuration: Codex has the plugin installed and enabled.
 2. MCP wrapper self-test: `mcp-server.js` can answer `initialize` and
-   `tools/list` with the seven expected tools.
+   `tools/list` with the expected tools.
 3. Current session tool table: the active Codex thread actually exposes
    callable `remote_debug_*` tools to the model.
 
@@ -173,6 +174,7 @@ should list:
 
 ```text
 remote_debug_list_instances, remote_debug_get_capabilities,
+remote_debug_mongodb_query,
 remote_debug_update_memory,
 remote_debug_run_command,
 remote_debug_read_file, remote_debug_list_dir,
@@ -259,6 +261,9 @@ use source files instead of the bundled runtime.
 - `remote_debug_read_file`: read a file under an allowed remote path.
 - `remote_debug_list_dir`: list a directory under an allowed remote path.
 - `remote_debug_list_instances`: list configured instances and runtime status.
+- `remote_debug_mongodb_query`: run a bounded, read-only MongoDB operation on
+  the selected instance through its remote application configuration and
+  existing Node MongoDB driver.
 - `remote_debug_update_memory`: persist a verified, redacted operational note
   when the user explicitly asks Codex to remember or update instance facts.
 - `remote_debug_prepare_command_draft`: generate an exact command draft for
@@ -279,8 +284,43 @@ path validation, execution, and cancellation cleanup. Defaults and limits are:
 - `remote_debug_run_command`: 30 seconds by default, 120 seconds maximum.
 - `remote_debug_read_file` and `remote_debug_list_dir`: 60 seconds by default,
   300 seconds maximum. `remote_debug_read_file` also exposes `maxBytes`.
+- `remote_debug_mongodb_query`: 60 seconds by default, 300 seconds maximum;
+  returned documents are limited to 500 items and 512 KiB.
 - `remote_debug_execute_command_draft`: 300 seconds by default, 900 seconds
   maximum for the entire command batch.
+
+## MongoDB Read-Only Access
+
+MongoDB access is a dedicated MCP tool, not an unrestricted shell command. The
+tool always runs through the selected instance's SSH worker, so `default` and
+`test-server` cannot accidentally share a local connection. It loads the URI
+from the remote application's JSON configuration on that instance and uses the
+existing remote `mongodb` Node driver; the URI and credentials are never part of
+the MCP request, command arguments, response, memory cache, or audit record.
+
+Configure the non-secret connection metadata under each instance in
+`.remote-debug/instances.json` (the file is normally under the local data
+directory):
+
+```json
+{
+  "id": "default",
+  "mongodb": {
+    "enabled": true,
+    "configPath": "/home/github/.../config.json",
+    "driverPath": "/home/github/.../node_modules/mongodb",
+    "configProfile": "production",
+    "uriKey": "url",
+    "database": "yenneferbak"
+  }
+}
+```
+
+`configProfile` and `database` are per-instance values. The tool supports
+`ping`, `listDatabases`, `listCollections`, `find`, `findOne`,
+`countDocuments`, and `aggregate`. It rejects arbitrary JavaScript, write-like
+aggregation stages, and unbounded results. Writes, deletes, exports, restores,
+and index changes remain in the explicit approved-command workflow.
 
 ## Instance Memory
 
@@ -351,9 +391,9 @@ ls cat ps netstat df free tail grep mongodump mongo mongosh systemctl nginx whic
 
 Additional command constraints:
 
-- MongoDB client/tool commands are limited to `--version`. Real database
-  queries must not be disguised as read-only diagnostics; wait for the MCP
-  approved-command draft tools and present the exact command for user review.
+- MongoDB client/tool commands remain limited to `--version` in the generic
+  command tool. Read-only queries must use `remote_debug_mongodb_query`; writes
+  and maintenance still require an approved-command draft.
 - `systemctl` is limited to read-only `status`, `is-active`, and `is-enabled`
   checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
 - `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.
@@ -410,6 +450,9 @@ clients do not need to copy the Agent allowlists.
 `remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
 manager's `/run` endpoint. `remote_debug_read_file` and
 `remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.
+`remote_debug_mongodb_query` forwards the selected instance and a validated
+read-only query to `/mongodb/query`; the worker executes a fixed Node helper
+over SSH and reads the remote profile at execution time.
 `remote_debug_update_memory` writes sanitized notes through `/api/memory`.
 The approved-command tools use
 `/approved-command-drafts`, `/approved-command-drafts/get`, and
@@ -457,7 +500,9 @@ Command validation applies these checks:
 - Dangerous commands are denied even if they appear inside a token, including
   `rm`, `sudo`, `shutdown`, `reboot`, `mkfs`, `chmod`, and `chown`.
 - `tail -f` and `tail --follow` are rejected.
-- `mongodump`, `mongo`, and `mongosh` are limited to `--version`.
+- `mongodump`, `mongo`, and `mongosh` remain limited to `--version` when used
+  through the generic command tool; MongoDB reads use
+  `remote_debug_mongodb_query`.
 - `systemctl` is limited to read-only `status`, `is-active`, and `is-enabled`
   checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
 - `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.

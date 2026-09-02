@@ -16,6 +16,8 @@ described below.
 - `remote_debug_get_capabilities`: read the Agent's authoritative machine-readable command, path, limit, and approval policy without contacting a remote instance.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
+- `remote_debug_mongodb_query`: run bounded, read-only MongoDB operations on
+  the selected instance.
 - `remote_debug_list_instances`: list configured instances and runtime status.
 - `remote_debug_update_memory`: persist a verified, redacted operational note only
   when the user explicitly asks Codex to remember or update instance facts. Follow
@@ -113,10 +115,11 @@ service, or writing a helper script.
 - Do not edit `memory.json` directly. Use `remote_debug_update_memory`; if the
   tool is unavailable, update or reinstall the plugin instead of bypassing the
   manager's in-memory cache and sanitization.
-- MongoDB client commands in the read-only allowlist are limited to
-  `mongodump --version`, `mongo --version`, and `mongosh --version`. Real
-  database queries must not be disguised as read-only diagnostics; wait for the
-  MCP approved-command draft tools and present the command for user review.
+- MongoDB client commands in the generic read-only command allowlist are limited
+  to `mongodump --version`, `mongo --version`, and `mongosh --version`. Use
+  `remote_debug_mongodb_query` for bounded read-only database queries; writes,
+  exports, restores, and other maintenance still require an approved-command
+  draft.
 
 - Never request arbitrary shell execution.
 - For non-read-only commands, use approved-command drafts; never execute a draft

@@ -154,6 +154,9 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
       instance.approvedCommands?.maxExecutionTimeoutMs === undefined
         ? ""
         : String(instance.approvedCommands.maxExecutionTimeoutMs),
+    REMOTE_DEBUG_MONGODB_CONFIG: instance.mongodb
+      ? JSON.stringify(instance.mongodb)
+      : "",
     REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS: String(manager.sshNetwork.keepaliveIntervalMs),
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
@@ -1046,6 +1049,50 @@ export class WorkerManager {
   async refreshInstance(id) {
     await this.stopInstance(id, "refresh");
     return this.startInstance(id);
+  }
+
+  async restartInstance(id) {
+    const instance = this.registry.getInternal(id);
+    if (!instance) {
+      throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
+    }
+    this.ensureRunnable(instance);
+
+    const previousStatus = this.runtime.get(id)?.status || "stopped";
+    if (previousStatus === "running") {
+      return {
+        restarted: false,
+        action: "not-needed",
+        previousStatus,
+        instance: this.publicInstance(id),
+        runtime: publicRuntime(this.runtime.get(id)),
+      };
+    }
+    if (previousStatus === "starting" || previousStatus === "stopping") {
+      throw managerError(
+        `instance lifecycle transition is already in progress: ${id} (${previousStatus})`,
+        "INSTANCE_TRANSITION_IN_PROGRESS",
+        409,
+      );
+    }
+    if (previousStatus !== "stopped" && previousStatus !== "unhealthy") {
+      throw managerError(
+        `instance restart is not allowed from status ${previousStatus}: ${id}`,
+        "INSTANCE_RESTART_NOT_ALLOWED",
+        409,
+      );
+    }
+
+    if (previousStatus === "unhealthy") {
+      await this.stopInstance(id, "restart-recovery");
+    }
+    const result = await this.startInstance(id);
+    return {
+      restarted: true,
+      action: "restarted",
+      previousStatus,
+      ...result,
+    };
   }
 
   async deleteInstance(id) {

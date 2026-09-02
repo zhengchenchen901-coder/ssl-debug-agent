@@ -1,0 +1,4 @@
+interface:
+  display_name: "Restart Remote Instance"
+  short_description: "Safely recover a stopped Remote Debug instance"
+  default_prompt: "Use $restart-instance to inspect and safely restart a stopped Remote Debug Agent instance."

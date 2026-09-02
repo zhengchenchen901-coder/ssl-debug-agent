@@ -164,6 +164,65 @@ function normalizeApprovedCommands(value = {}) {
   };
 }
 
+function normalizeMongoSettings(input, existing) {
+  if (input === null) {
+    return undefined;
+  }
+  if (input === undefined && existing === undefined) {
+    return undefined;
+  }
+  if (input !== undefined && (!input || typeof input !== "object" || Array.isArray(input))) {
+    const error = new Error("mongodb must be an object or null");
+    error.code = "INVALID_INSTANCE_FIELD";
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const raw = { ...(existing || {}), ...(input || {}) };
+  const enabled = parseBooleanFlag(raw.enabled, existing?.enabled ?? true);
+  const configPath = String(raw.configPath ?? "").trim();
+  const driverPath = String(raw.driverPath ?? "").trim();
+  const configProfile = String(raw.configProfile ?? raw.profile ?? "").trim();
+  const uriKey = String(raw.uriKey ?? "url").trim();
+  const database = String(raw.database ?? raw.databaseName ?? "").trim();
+
+  if (
+    enabled &&
+    (!configPath || !driverPath || !configProfile || !uriKey)
+  ) {
+    const error = new Error(
+      "enabled MongoDB settings require configPath, driverPath, configProfile, and uriKey",
+    );
+    error.code = "INVALID_INSTANCE_FIELD";
+    error.statusCode = 400;
+    throw error;
+  }
+
+  for (const [fieldName, value, maxLength] of [
+    ["mongodb.configPath", configPath, 4096],
+    ["mongodb.driverPath", driverPath, 4096],
+    ["mongodb.configProfile", configProfile, 128],
+    ["mongodb.uriKey", uriKey, 128],
+    ["mongodb.database", database, 128],
+  ]) {
+    if (value.length > maxLength) {
+      const error = new Error(`${fieldName} is too long`);
+      error.code = "INVALID_INSTANCE_FIELD";
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  return {
+    enabled,
+    configPath,
+    driverPath,
+    configProfile,
+    uriKey: uriKey || "url",
+    database,
+  };
+}
+
 function normalizeInstance(input, existing = {}) {
   const id = input.id || existing.id || slugify(input.name || input.host || randomUUID());
   assertInstanceId(id);
@@ -191,6 +250,7 @@ function normalizeInstance(input, existing = {}) {
       ? existing.passphrase
       : input.passphrase;
   const preferredWorkerPort = input.preferredWorkerPort ?? input.workerPort ?? input.agentPort;
+  const mongodb = normalizeMongoSettings(input.mongodb, existing.mongodb);
 
   return {
     id,
@@ -209,6 +269,7 @@ function normalizeInstance(input, existing = {}) {
       ...existing.approvedCommands,
       ...input.approvedCommands,
     }),
+    ...(mongodb ? { mongodb } : {}),
     createdAt: existing.createdAt || input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
   };
@@ -345,10 +406,22 @@ function normalizeRegistry(raw, cwd, env, managerPort) {
 }
 
 function publicInstance(instance) {
-  const { passphrase, ...rest } = instance;
+  const { passphrase, mongodb, ...rest } = instance;
   return {
     ...rest,
     hasPassphrase: Boolean(passphrase),
+    ...(mongodb
+      ? {
+          mongodb: {
+            enabled: Boolean(mongodb.enabled),
+            configPath: mongodb.configPath,
+            driverPath: mongodb.driverPath,
+            configProfile: mongodb.configProfile,
+            uriKey: mongodb.uriKey,
+            database: mongodb.database,
+          },
+        }
+      : {}),
   };
 }
 

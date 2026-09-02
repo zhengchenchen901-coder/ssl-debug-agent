@@ -1,5 +1,10 @@
 import posixPath from "node:path/posix";
 import { createHash } from "node:crypto";
+import {
+  MONGODB_CONFIG_ROOTS,
+  MONGODB_QUERY_OPERATIONS,
+  MAX_MONGODB_LIMIT,
+} from "./mongodb.js";
 
 const SECURITY_POLICY = {
   schemaVersion: 1,
@@ -33,12 +38,25 @@ const SECURITY_POLICY = {
   pm2: {
     actions: ["list", "describe <app-name-or-id>", "env <numeric-process-id>"],
   },
+  mongodb: {
+    readOnly: true,
+    operations: [...MONGODB_QUERY_OPERATIONS],
+    maxLimit: MAX_MONGODB_LIMIT,
+    allowedConfigRoots: [...MONGODB_CONFIG_ROOTS],
+  },
+  lifecycle: {
+    instanceRestart: {
+      allowedFrom: ["stopped", "unhealthy"],
+      runningBehavior: "no-op",
+      transitionalBehavior: "reject",
+    },
+  },
   constraints: [
     "Commands are parsed as tokens and never executed through a shell.",
     "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
     "Commands that read paths require at least one absolute path under an allowed root.",
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
-    "Database clients are limited to their --version diagnostic; real queries require an approved-command draft.",
+    "The dedicated MongoDB tool is read-only and bounded; database writes require an approved-command draft.",
   ],
   examples: [
     "netstat -tlnp",
@@ -119,6 +137,20 @@ export function securityCapabilities(config = {}) {
       maxExecutionTimeoutMs: approvedCommands.maxExecutionTimeoutMs,
       maxCommandLength: approvedCommands.maxCommandLength,
       maxCommands: approvedCommands.maxCommands,
+    },
+    mongodb: {
+      enabled: true,
+      configured: Boolean(config.mongodb?.enabled),
+      ...SECURITY_POLICY.mongodb,
+      operations: [...SECURITY_POLICY.mongodb.operations],
+      allowedConfigRoots: [...SECURITY_POLICY.mongodb.allowedConfigRoots],
+    },
+    lifecycle: {
+      instanceRestart: {
+        allowedFrom: [...SECURITY_POLICY.lifecycle.instanceRestart.allowedFrom],
+        runningBehavior: SECURITY_POLICY.lifecycle.instanceRestart.runningBehavior,
+        transitionalBehavior: SECURITY_POLICY.lifecycle.instanceRestart.transitionalBehavior,
+      },
     },
   };
 }

@@ -79,6 +79,51 @@ test("exec and path validation reuse one persistent SSH transport", async () => 
   await supervisor.stop();
 });
 
+test("SSH exec forwards optional stdin and closes the channel", async () => {
+  const config = makeConfig();
+  let receivedStdin = "";
+
+  class FakeClient extends EventEmitter {
+    connect() {
+      setImmediate(() => this.emit("ready"));
+    }
+
+    exec(_command, callback) {
+      const stream = new EventEmitter();
+      stream.stderr = new EventEmitter();
+      stream.signal = () => {};
+      stream.end = (input) => {
+        receivedStdin = Buffer.isBuffer(input) ? input.toString("utf8") : String(input);
+        setImmediate(() => {
+          stream.emit("data", Buffer.from("done"));
+          stream.emit("close", 0);
+        });
+      };
+      setImmediate(() => callback(null, stream));
+    }
+
+    end() {}
+  }
+
+  const supervisor = new SshConnectionSupervisor(config, {
+    ClientClass: FakeClient,
+    readFile: async () => "key",
+  });
+  await supervisor.start();
+
+  try {
+    const result = await runSSH("node", {
+      config,
+      supervisor,
+      stdin: "read-only helper",
+    });
+    assert.equal(receivedStdin, "read-only helper");
+    assert.equal(result.stdout, "done");
+  } finally {
+    await supervisor.stop();
+  }
+});
+
 test("a command that prints output but never exits returns the real deadline error", async () => {
   const config = makeConfig();
   let receivedSignal;

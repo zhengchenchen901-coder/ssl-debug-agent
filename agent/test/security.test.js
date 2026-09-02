@@ -53,6 +53,14 @@ test("publishes machine-readable capabilities from the enforced policy", () => {
   assert.equal(capabilities.authority, "remote-debug-agent");
   assert.equal(capabilities.schemaVersion, 1);
   assert.match(capabilities.policyVersion, /^[a-f0-9]{64}$/);
+  assert.deepEqual(capabilities.lifecycle.instanceRestart, {
+    allowedFrom: ["stopped", "unhealthy"],
+    runningBehavior: "no-op",
+    transitionalBehavior: "reject",
+  });
+  assert.equal(capabilities.mongodb.readOnly, true);
+  assert.ok(capabilities.mongodb.operations.includes("find"));
+  assert.equal(capabilities.mongodb.maxLimit, 500);
   assert.deepEqual(capabilities.commands.allowedExecutables, [...ALLOWED_COMMANDS]);
   assert.deepEqual(capabilities.paths.allowedRoots, security.allowedPaths);
   assert.equal(capabilities.approvedCommands.enabled, false);

@@ -120,6 +120,36 @@ function parseAgentLifetime(value) {
   throw new Error("REMOTE_DEBUG_AGENT_LIFETIME must be manual or desktop");
 }
 
+function parseMongoConfig(value) {
+  if (value === undefined || value === "") {
+    return undefined;
+  }
+
+  let parsed;
+  try {
+    parsed = typeof value === "string" ? JSON.parse(value) : value;
+  } catch (error) {
+    const wrapped = new Error(`REMOTE_DEBUG_MONGODB_CONFIG is not valid JSON: ${error.message}`);
+    wrapped.code = "INVALID_MONGODB_CONFIG";
+    throw wrapped;
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    const error = new Error("REMOTE_DEBUG_MONGODB_CONFIG must be a JSON object");
+    error.code = "INVALID_MONGODB_CONFIG";
+    throw error;
+  }
+
+  return {
+    enabled: parsed.enabled !== false,
+    configPath: parsed.configPath || "",
+    driverPath: parsed.driverPath || "",
+    configProfile: parsed.configProfile || "",
+    uriKey: parsed.uriKey || "url",
+    database: parsed.database || "",
+  };
+}
+
 export function loadConfig(env = process.env, cwd = process.cwd()) {
   const dotEnv = loadDotEnv(cwd);
   const mergedEnv = parseBooleanFlag(env.REMOTE_DEBUG_WORKER)
@@ -172,6 +202,7 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       passphrase: mergedEnv.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || undefined,
       readyTimeout: 10_000,
     },
+    mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
     security: {
       allowedPaths: DEFAULT_ALLOWED_PATHS,
       defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
@@ -273,6 +304,16 @@ function fingerprintConfig(config) {
       readyTimeout: config.ssh.readyTimeout,
     },
     security: publicSecurity(config),
+    mongodb: config.mongodb
+      ? {
+          enabled: Boolean(config.mongodb.enabled),
+          configPath: config.mongodb.configPath,
+          driverPath: config.mongodb.driverPath,
+          configProfile: config.mongodb.configProfile,
+          uriKey: config.mongodb.uriKey,
+          database: config.mongodb.database,
+        }
+      : null,
     audit: {
       logPath: config.audit.logPath,
     },

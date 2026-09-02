@@ -33,6 +33,10 @@ export function buildAuditEntry(event, now = () => new Date()) {
     "executionMs",
     "errorLayer",
     "errorPhase",
+    "operation",
+    "database",
+    "collection",
+    "resultCount",
   ]) {
     if (event[key] !== undefined) {
       entry[key] = event[key];

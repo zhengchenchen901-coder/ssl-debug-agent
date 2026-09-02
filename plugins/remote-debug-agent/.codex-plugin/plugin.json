@@ -1,6 +1,6 @@
 {
   "name": "remote-debug-agent",
-  "version": "2.1.0+codex.20260731103730",
+  "version": "2.1.0+codex.20260902054204",
   "description": "Safe remote Linux debugging through a local SSH-backed agent.",
   "author": {
     "name": "Local Developer"
@@ -13,14 +13,16 @@
     "ssh",
     "devops",
     "nginx",
-    "logs"
+    "logs",
+    "mongodb",
+    "database"
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Remote Debug Agent",
     "shortDescription": "Debug Linux servers through a safe local SSH agent",
-    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. It can also prepare one-time command drafts for explicit user-approved execution when enabled. The local agent enforces command allowlists, path boundaries, SSH configuration, timeouts, one-time draft hashes, and audit logging.",
+    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. It also provides bounded read-only MongoDB queries through each instance's remote application configuration and can prepare one-time command drafts for explicit user-approved execution when enabled. The local agent enforces command allowlists, path boundaries, SSH configuration, timeouts, one-time draft hashes, and audit logging.",
     "developerName": "Local Developer",
     "category": "Coding",
     "capabilities": [
@@ -34,7 +36,8 @@
     "defaultPrompt": [
       "Why is port 9000 unreachable?",
       "Check nginx errors safely",
-      "Inspect app logs under /home/app"
+      "Inspect app logs under /home/app",
+      "Check MongoDB records on test-server"
     ],
     "brandColor": "#0F766E",
     "screenshots": []

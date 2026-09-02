@@ -27,6 +27,8 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 120_000;
 const DEFAULT_FILE_TIMEOUT_MS = 60_000;
 const MAX_FILE_TIMEOUT_MS = 300_000;
+const DEFAULT_MONGODB_TIMEOUT_MS = 60_000;
+const MAX_MONGODB_TIMEOUT_MS = 300_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
 const DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1000;
@@ -128,6 +130,10 @@ const toolOperationPolicies = {
   remote_debug_run_command: { defaultMs: DEFAULT_TIMEOUT_MS, maxMs: MAX_TIMEOUT_MS },
   remote_debug_read_file: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
   remote_debug_list_dir: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_mongodb_query: {
+    defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_TIMEOUT_MS,
+  },
   remote_debug_execute_command_draft: {
     defaultMs: DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
     maxMs: MAX_APPROVED_EXECUTION_TIMEOUT_MS,
@@ -233,6 +239,93 @@ const tools = [
       additionalProperties: false,
       required: [],
       properties: {},
+    },
+  },
+  {
+    name: "remote_debug_mongodb_query",
+    description:
+      "Run one bounded read-only MongoDB operation through the selected instance's SSH worker. The worker reads the configured remote application profile and uses its existing MongoDB driver; it never accepts arbitrary JavaScript or shell commands.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["operation"],
+      properties: {
+        operation: {
+          type: "string",
+          enum: [
+            "ping",
+            "listDatabases",
+            "listCollections",
+            "find",
+            "findOne",
+            "countDocuments",
+            "aggregate",
+          ],
+          description: "Read-only MongoDB operation.",
+        },
+        instanceId: instanceIdProperty,
+        database: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Optional database name; defaults to the selected instance profile.",
+        },
+        collection: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Collection name for find, findOne, countDocuments, or aggregate.",
+        },
+        filter: {
+          type: "object",
+          description: "MongoDB filter document. Extended JSON values are supported where the remote driver supports them.",
+        },
+        projection: {
+          type: "object",
+          description: "Optional projection document for find or findOne.",
+        },
+        sort: {
+          type: "object",
+          description: "Optional sort document for find.",
+        },
+        pipeline: {
+          type: "array",
+          maxItems: 20,
+          items: { type: "object" },
+          description: "Aggregation pipeline; write-like stages are rejected and a bounded limit is appended.",
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: 500,
+          description: "Maximum number of returned documents or names. Defaults to 50.",
+        },
+        skip: {
+          type: "integer",
+          minimum: 0,
+          maximum: 100000,
+          description: "Number of matching documents to skip for find.",
+        },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_TIMEOUT_MS, MAX_MONGODB_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_restart_instance",
+    description:
+      "Recover one explicitly selected Remote Debug Agent instance only when it is stopped or unhealthy. A running instance is left unchanged and transitional states are rejected. The caller owns retry limits.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["instanceId"],
+      properties: {
+        instanceId: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Exact Remote Debug Agent instance id returned by remote_debug_list_instances.",
+        },
+      },
     },
   },
   {
@@ -725,6 +818,28 @@ function logSettings() {
 function toolArgumentSummary(name, args = {}) {
   if (name === "remote_debug_list_instances" || name === "remote_debug_get_capabilities") {
     return {};
+  }
+
+  if (name === "remote_debug_mongodb_query") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      operation: typeof args.operation === "string" ? args.operation.slice(0, 64) : undefined,
+      database: typeof args.database === "string" ? args.database.slice(0, 128) : undefined,
+      collection: typeof args.collection === "string" ? args.collection.slice(0, 128) : undefined,
+      filterKeys: args.filter && typeof args.filter === "object" && !Array.isArray(args.filter)
+        ? Object.keys(args.filter).slice(0, 50)
+        : [],
+      pipelineLength: Array.isArray(args.pipeline) ? args.pipeline.length : 0,
+      limit: args.limit,
+      skip: args.skip,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_restart_instance") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+    };
   }
 
   if (name === "remote_debug_update_memory") {
@@ -1902,6 +2017,25 @@ async function callTool(name, args, operation) {
 
   if (name === "remote_debug_get_capabilities") {
     return getAgent("/api/capabilities", operation);
+  }
+
+  if (name === "remote_debug_mongodb_query") {
+    return callAgent("/mongodb/query", {
+      instanceId: args?.instanceId,
+      operation: args?.operation,
+      database: args?.database,
+      collection: args?.collection,
+      filter: args?.filter,
+      projection: args?.projection,
+      sort: args?.sort,
+      pipeline: args?.pipeline,
+      limit: args?.limit,
+      skip: args?.skip,
+    }, operation);
+  }
+
+  if (name === "remote_debug_restart_instance") {
+    return callAgent(`/api/instances/${encodeURIComponent(args.instanceId)}/restart`, {}, operation);
   }
 
   if (name === "remote_debug_update_memory") {

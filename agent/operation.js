@@ -5,6 +5,7 @@ export const API_VERSION = 2;
 export const OPERATION_TIMEOUTS = Object.freeze({
   run: Object.freeze({ defaultMs: 30_000, maxMs: 120_000 }),
   file: Object.freeze({ defaultMs: 60_000, maxMs: 300_000 }),
+  mongodb: Object.freeze({ defaultMs: 60_000, maxMs: 300_000 }),
   approvedExecution: Object.freeze({ defaultMs: 300_000, maxMs: 900_000 }),
   manager: Object.freeze({ defaultMs: 30_000, maxMs: 300_000 }),
 });
@@ -70,6 +71,12 @@ export function operationPolicy(pathName, config = {}) {
     return {
       defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
       maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs,
+    };
+  }
+  if (pathName === "/mongodb/query") {
+    return {
+      defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
+      maxMs: OPERATION_TIMEOUTS.mongodb.maxMs,
     };
   }
   if (pathName === "/approved-command-drafts/execute") {

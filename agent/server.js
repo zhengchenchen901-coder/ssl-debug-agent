@@ -18,6 +18,11 @@ import {
   securityCapabilities,
   validateCommand,
 } from "./security.js";
+import {
+  normalizeMongoQuery,
+  runMongoQuery as defaultRunMongoQuery,
+  summarizeMongoQuery,
+} from "./mongodb.js";
 import { InstanceRegistry } from "./instance-registry.js";
 import { WorkerManager } from "./worker-manager.js";
 import {
@@ -207,6 +212,16 @@ function directorySummary(payload) {
   };
 }
 
+function mongoSummary(payload) {
+  return {
+    operation: payload.operation,
+    database: payload.database,
+    collection: payload.collection,
+    resultCount: payload.resultCount,
+    durationMs: payload.durationMs,
+  };
+}
+
 function approvedDraftSummary(payload) {
   return {
     draftId: payload.draftId,
@@ -248,6 +263,7 @@ export function createApp(options = {}) {
   const readRemoteFileImpl = options.readRemoteFile || defaultReadRemoteFile;
   const listRemoteDirImpl = options.listRemoteDir || defaultListRemoteDir;
   const resolveRemotePathsImpl = options.resolveRemotePaths || defaultResolveRemotePaths;
+  const runMongoQueryImpl = options.runMongoQuery || defaultRunMongoQuery;
   const runSSH = (command, operationOptions) =>
     runSSHImpl(command, { ...operationOptions, supervisor: sshSupervisor });
   const readRemoteFile = (remotePath, operationOptions) =>
@@ -256,6 +272,12 @@ export function createApp(options = {}) {
     listRemoteDirImpl(remotePath, { ...operationOptions, supervisor: sshSupervisor });
   const resolveRemotePaths = (remotePaths, operationOptions) =>
     resolveRemotePathsImpl(remotePaths, { ...operationOptions, supervisor: sshSupervisor });
+  const runMongoQuery = (query, operationOptions) =>
+    runMongoQueryImpl(query, {
+      ...operationOptions,
+      config,
+      runSSH,
+    });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -822,6 +844,88 @@ export function createApp(options = {}) {
     }
   });
 
+  app.post("/mongodb/query", async (request, response) => {
+    const startedAt = performance.now();
+    const rawQuery = request.body || {};
+    const requestOperation = createRequestOperation(request, response, "/mongodb/query", config);
+    const operation = createOperation(request, config, "mongodb-query", {
+      operationId: requestOperation.operationId,
+      ...summarizeMongoQuery(rawQuery),
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      const query = normalizeMongoQuery(rawQuery, config.mongodb);
+      operation.request = {
+        ...summarizeMongoQuery(query),
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      publishStage(activity, operation, "validated");
+
+      const result = await runMongoQuery(query, {
+        operation: requestOperation,
+      });
+      const payload = {
+        ok: true,
+        operation: result.operation,
+        database: result.database,
+        collection: result.collection,
+        data: result.data,
+        resultCount: result.resultCount,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing,
+      };
+
+      await audit(config, {
+        tool: "mongodb-query",
+        operation: payload.operation,
+        database: payload.database,
+        collection: payload.collection,
+        resultCount: payload.resultCount,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+        ...result.timing,
+      });
+
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        ...result.timing,
+        result: mongoSummary(payload),
+      });
+
+      response.json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      const summary = summarizeMongoQuery(rawQuery);
+      await audit(config, {
+        tool: "mongodb-query",
+        operation: summary.operation,
+        database: summary.database,
+        collection: summary.collection,
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
   return app;
 }
 
@@ -1247,6 +1351,17 @@ export function createManagerApp(options = {}) {
     response.json({ ok: true, ...result });
   }));
 
+  app.post("/api/instances/:id/restart", managerAsync(async (request, response) => {
+    const result = await workerManager.restartInstance(request.params.id);
+    activity.publish({
+      type: "instance",
+      stage: result.restarted ? "restarted" : "restart-not-needed",
+      instanceId: request.params.id,
+      previousStatus: result.previousStatus,
+    });
+    response.json({ ok: true, ...result });
+  }));
+
   app.post("/api/instances/:id/stop", managerAsync(async (request, response) => {
     const result = await workerManager.stopInstance(request.params.id, "stopped");
     activity.publish({ type: "instance", stage: "stopped", instanceId: request.params.id });
@@ -1369,6 +1484,7 @@ export function createManagerApp(options = {}) {
   app.post("/run", (request, response) => proxyToInstance("/run", request, response));
   app.post("/read-file", (request, response) => proxyToInstance("/read-file", request, response));
   app.post("/list-dir", (request, response) => proxyToInstance("/list-dir", request, response));
+  app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/approved-command-drafts", (request, response) =>
     proxyToInstance("/approved-command-drafts", request, response));
   app.post("/approved-command-drafts/get", (request, response) =>

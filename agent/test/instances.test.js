@@ -114,6 +114,88 @@ test("registry creates a default instance from env when no registry exists", asy
   assert.equal(registry.get("default").approvedCommands.enabled, true);
 });
 
+test("registry preserves per-instance MongoDB profile metadata", async () => {
+  const dir = await tempDir("remote-debug-mongodb-registry-");
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {},
+  });
+  const created = registry.create({
+    id: "test-server",
+    name: "test-server",
+    host: "test.example.com",
+    port: 22,
+    username: "app",
+    privateKeyPath: "C:\\test",
+    mongodb: {
+      enabled: true,
+      configPath: "/home/github/app/config.json",
+      driverPath: "/home/github/app/node_modules/mongodb",
+      configProfile: "test",
+      uriKey: "url",
+      database: "yennefer",
+    },
+  });
+
+  assert.equal(created.mongodb.configProfile, "test");
+  assert.equal(created.mongodb.database, "yennefer");
+  assert.equal(created.mongodb.uri, undefined);
+  assert.equal(registry.getInternal("test-server").mongodb.driverPath, "/home/github/app/node_modules/mongodb");
+});
+
+test("worker manager forwards MongoDB profile metadata to the selected worker", async () => {
+  const dir = await tempDir("remote-debug-mongodb-worker-");
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {},
+  });
+  registry.create({
+    id: "default",
+    name: "default",
+    host: "prod.example.com",
+    port: 22,
+    username: "app",
+    privateKeyPath: "C:\\prod",
+    mongodb: {
+      enabled: true,
+      configPath: "/home/github/app/config.json",
+      driverPath: "/home/github/app/node_modules/mongodb",
+      configProfile: "production",
+      uriKey: "url",
+      database: "yenneferbak",
+    },
+  });
+  let workerEnv;
+  const child = new FakeWorkerProcess(4321);
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    canBindPort: async () => true,
+    forkWorker: (_entryPath, options) => {
+      workerEnv = options.env;
+      setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
+      return child;
+    },
+  });
+
+  try {
+    await manager.startInstance("default");
+    assert.deepEqual(JSON.parse(workerEnv.REMOTE_DEBUG_MONGODB_CONFIG), {
+      enabled: true,
+      configPath: "/home/github/app/config.json",
+      driverPath: "/home/github/app/node_modules/mongodb",
+      configProfile: "production",
+      uriKey: "url",
+      database: "yenneferbak",
+    });
+  } finally {
+    await manager.shutdownAll();
+  }
+});
+
 test("registry drops preferred worker ports outside the manager range", async () => {
   const dir = await tempDir("remote-debug-registry-range-");
   const registryPath = path.join(dir, "instances.json");
@@ -244,6 +326,55 @@ test("worker manager rejects a worker without protocolVersion 2", async () => {
 
   await assert.rejects(ready, (error) => error.code === "WORKER_PROTOCOL_MISMATCH");
   await manager.shutdownAll();
+});
+
+test("worker manager restart recovers stopped instances without disrupting running ones", async () => {
+  const dir = await tempDir("remote-debug-worker-restart-");
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {
+      REMOTE_DEBUG_HOST: "a.example.com",
+      REMOTE_DEBUG_USER: "app",
+      REMOTE_DEBUG_PRIVATE_KEY_PATH: "C:\\a",
+    },
+  });
+  let nextPid = 2000;
+  const children = [];
+  const manager = new WorkerManager({
+    registry,
+    managerPort: 4343,
+    cwd: dir,
+    canBindPort: async () => true,
+    forkWorker: () => {
+      const child = new FakeWorkerProcess(nextPid += 1);
+      children.push(child);
+      setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
+      return child;
+    },
+  });
+
+  try {
+    const recovered = await manager.restartInstance("default");
+    assert.equal(recovered.restarted, true);
+    assert.equal(recovered.previousStatus, "stopped");
+    assert.equal(recovered.runtime.status, "running");
+    assert.equal(children.length, 1);
+
+    const running = await manager.restartInstance("default");
+    assert.equal(running.restarted, false);
+    assert.equal(running.action, "not-needed");
+    assert.equal(children.length, 1);
+
+    await manager.stopInstance("default", "stopped");
+    const restarted = await manager.restartInstance("default");
+    assert.equal(restarted.restarted, true);
+    assert.equal(restarted.previousStatus, "stopped");
+    assert.equal(restarted.runtime.status, "running");
+    assert.equal(children.length, 2);
+  } finally {
+    await manager.shutdownAll();
+  }
 });
 
 test("worker manager preserves bounded stderr when a worker exits", async () => {

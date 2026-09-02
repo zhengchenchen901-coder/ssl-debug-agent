@@ -202,6 +202,21 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/mongodb/query") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          instanceId: parsed.instanceId || "default",
+          operation: parsed.operation,
+          database: parsed.database || "yennefer",
+          collection: parsed.collection || null,
+          data: parsed.operation === "ping" ? { ok: 1 } : [],
+          resultCount: parsed.operation === "ping" ? 1 : 0,
+          durationMs: 1,
+        }));
+        return;
+      }
+
       if (request.url === "/api/memory") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(
@@ -216,6 +231,19 @@ function startAgentStub() {
             },
           }),
         );
+        return;
+      }
+
+      if (request.url === "/api/instances/default/restart") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          restarted: true,
+          action: "restarted",
+          previousStatus: "stopped",
+          instance: { id: "default", name: "default" },
+          runtime: { status: "running", workerPort: 4400, pid: 1234 },
+        }));
         return;
       }
 
@@ -756,7 +784,19 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
   const properties = schema.properties || {};
   const required = schema.required || [];
   for (const propertyName of Object.keys(properties)) {
-    if (["instanceId", "timeoutMs", "maxBytes"].includes(propertyName)) {
+    if ([
+      "instanceId",
+      "timeoutMs",
+      "maxBytes",
+      "database",
+      "collection",
+      "filter",
+      "projection",
+      "sort",
+      "pipeline",
+      "limit",
+      "skip",
+    ].includes(propertyName)) {
       continue;
     }
     assert.ok(required.includes(propertyName), `${path}.${propertyName} is required`);
@@ -781,6 +821,8 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       [
         "remote_debug_list_instances",
         "remote_debug_get_capabilities",
+        "remote_debug_mongodb_query",
+        "remote_debug_restart_instance",
         "remote_debug_update_memory",
         "remote_debug_run_command",
         "remote_debug_read_file",
@@ -821,6 +863,21 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     child.stdin.write(
       encodeMessage({
         jsonrpc: "2.0",
+        id: 41,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_mongodb_query",
+          arguments: { instanceId: "default", operation: "ping" },
+        },
+      }),
+    );
+    const mongo = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(mongo.instanceId, "default");
+    assert.equal(mongo.operation, "ping");
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
         id: 5,
         method: "tools/call",
         params: {
@@ -847,6 +904,21 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     const capabilities = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(capabilities.capabilities.authority, "remote-debug-agent");
     assert.deepEqual(capabilities.capabilities.commands.examples, ["netstat -tlnp", "ps aux"]);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 51,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_restart_instance",
+          arguments: { instanceId: "default" },
+        },
+      }),
+    );
+    const restarted = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(restarted.restarted, true);
+    assert.equal(restarted.runtime.status, "running");
 
     child.stdin.write(
       encodeMessage({
