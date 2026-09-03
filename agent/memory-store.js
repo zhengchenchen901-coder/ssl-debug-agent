@@ -359,6 +359,28 @@ function observationPatch(pathName, payload = {}, result = {}, observedAt = nowI
     return { filesystem };
   }
 
+  if (pathName === "/logs/list") {
+    const logPaths = (Array.isArray(result.entries) ? result.entries : [])
+      .map((entry) => entry?.path)
+      .filter((value) => typeof value === "string");
+    return {
+      filesystem: {
+        logPaths,
+      },
+    };
+  }
+
+  if (
+    (pathName === "/logs/archive-members" || pathName === "/logs/read") &&
+    typeof result.path === "string"
+  ) {
+    return {
+      filesystem: {
+        logPaths: [result.path],
+      },
+    };
+  }
+
   if (pathName === "/run" && typeof payload.cmd === "string") {
     const cmd = payload.cmd;
     const stdoutPreview = previewOutput(result.stdout);

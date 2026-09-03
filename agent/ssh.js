@@ -108,7 +108,7 @@ function openSftp(client, operation) {
   });
 }
 
-function sftpCall(sftp, method, args, operation, phase) {
+function sftpCall(sftp, method, args, operation, phase, options = {}) {
   return new Promise((resolve, reject) => {
     assertOperationActive(operation, operation.signal, { layer: "ssh", phase });
     let settled = false;
@@ -127,6 +127,8 @@ function sftpCall(sftp, method, args, operation, phase) {
     sftp[method](...args, (error, result) => {
       if (operation.signal?.aborted) {
         finish(operationErrorForSignal(operation.signal, operation, { layer: "ssh", phase }));
+      } else if (error && options.eof && (error.code === 1 || error.code === "EOF")) {
+        finish(null, false);
       } else if (error) {
         finish(operationError(error.message || `SFTP ${method} failed`, {
           code: "SSH_CHANNEL_OPEN_FAILED",
@@ -150,6 +152,12 @@ const sftpReaddir = (sftp, remotePath, operation) =>
   sftpCall(sftp, "readdir", [remotePath], operation, "sftp-readdir");
 const sftpStat = (sftp, remotePath, operation) =>
   sftpCall(sftp, "stat", [remotePath], operation, "sftp-stat");
+const sftpOpendir = (sftp, remotePath, operation) =>
+  sftpCall(sftp, "opendir", [remotePath], operation, "sftp-opendir");
+const sftpReaddirHandle = (sftp, handle, operation) =>
+  sftpCall(sftp, "readdir", [handle], operation, "sftp-readdir-handle", { eof: true });
+const sftpClose = (sftp, handle, operation) =>
+  sftpCall(sftp, "close", [handle], operation, "sftp-close");
 
 function matchingAllowedRoots(remotePath, allowedPaths) {
   const normalizedPath = normalizeRemotePath(remotePath);
@@ -212,7 +220,7 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
   });
 }
 
-async function withSftp(supervisor, operation, callback, options = {}) {
+export async function withSftp(supervisor, operation, callback, options = {}) {
   return supervisor.schedule(operation, async (timing) => {
     let lastError;
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -549,6 +557,110 @@ export async function listRemoteDir(remotePath, options) {
   }
 }
 
+function mapSftpDirectoryEntry(entry) {
+  return {
+    name: entry.filename,
+    longname: entry.longname,
+    size: entry.attrs?.size,
+    modifyTime: entry.attrs?.mtime,
+    permissions: entry.attrs?.mode,
+  };
+}
+
+export async function listRemoteDirPage(remotePath, options = {}) {
+  const supervisor = requireSupervisor(options);
+  const prepared = prepareOperation(options, OPERATION_TIMEOUTS.file);
+  const offset = Number.isInteger(options.offset) && options.offset >= 0 ? options.offset : 0;
+  const limit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : 200;
+
+  try {
+    return await withSftp(supervisor, prepared.operation, async (sftp, markProgress) => {
+      const canonicalPath = await resolveCanonicalRemotePath(
+        sftp,
+        remotePath,
+        prepared.operation,
+        options.config.security.allowedPaths,
+      );
+      const handle = await sftpOpendir(sftp, canonicalPath, prepared.operation);
+      const entries = [];
+      let seen = 0;
+      let hasMore = false;
+
+      try {
+        while (true) {
+          assertOperationActive(prepared.operation, prepared.operation.signal, {
+            layer: "ssh",
+            phase: "sftp-readdir-handle",
+          });
+          const batch = await sftpReaddirHandle(sftp, handle, prepared.operation);
+          if (batch === false) {
+            break;
+          }
+
+          for (const entry of Array.isArray(batch) ? batch : []) {
+            markProgress();
+            if (entry.filename === "." || entry.filename === "..") {
+              continue;
+            }
+            if (seen < offset) {
+              seen += 1;
+              continue;
+            }
+            if (entries.length >= limit) {
+              hasMore = true;
+              break;
+            }
+            entries.push(mapSftpDirectoryEntry(entry));
+            seen += 1;
+          }
+
+          if (hasMore) {
+            break;
+          }
+        }
+      } finally {
+        await sftpClose(sftp, handle, prepared.operation).catch(() => {});
+      }
+
+      return {
+        path: canonicalPath,
+        entries,
+        offset,
+        hasMore,
+        nextOffset: hasMore ? offset + entries.length : null,
+      };
+    }, options);
+  } finally {
+    prepared.cleanup();
+  }
+}
+
+export async function resolveCanonicalRemotePathForOperation(
+  sftp,
+  remotePath,
+  operation,
+  allowedPaths,
+) {
+  return resolveCanonicalRemotePath(sftp, remotePath, operation, allowedPaths);
+}
+
+export async function statRemotePathForOperation(sftp, remotePath, operation) {
+  return sftpStat(sftp, remotePath, operation);
+}
+
+export function createRemoteReadStream(sftp, remotePath, options = {}) {
+  return sftp.createReadStream(remotePath, options);
+}
+
+export {
+  resolveCanonicalRemotePath,
+  sftpRealpath,
+  sftpStat,
+  sftpOpendir,
+  sftpReaddirHandle,
+  sftpClose,
+};
+
 export function createSSHOperations(supervisor, defaults = {}) {
   const merge = (options = {}) => ({
     ...options,
@@ -561,5 +673,6 @@ export function createSSHOperations(supervisor, defaults = {}) {
     resolveRemotePaths: (paths, options) => resolveRemotePaths(paths, merge(options)),
     readRemoteFile: (remotePath, options) => readRemoteFile(remotePath, merge(options)),
     listRemoteDir: (remotePath, options) => listRemoteDir(remotePath, merge(options)),
+    listRemoteDirPage: (remotePath, options) => listRemoteDirPage(remotePath, merge(options)),
   };
 }

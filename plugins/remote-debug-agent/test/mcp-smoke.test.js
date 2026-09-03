@@ -202,6 +202,59 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/logs/list") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          category: parsed.category || "all",
+          entries: [{
+            name: "error.log",
+            path: "/var/log/nginx/error.log",
+            compression: "none",
+            readable: true,
+          }],
+          nextCursor: null,
+          hasMore: false,
+          truncated: false,
+          warnings: [],
+          scannedEntries: 1,
+          sourceCount: 1,
+        }));
+        return;
+      }
+
+      if (request.url === "/logs/archive-members") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          path: parsed.path,
+          compression: "tar-gzip",
+          members: [{ name: "error.log", size: 10, type: "file", readable: true }],
+          nextCursor: null,
+          hasMore: false,
+          truncated: false,
+          scannedBytes: 10,
+        }));
+        return;
+      }
+
+      if (request.url === "/logs/read") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          path: parsed.path,
+          memberPath: parsed.memberPath,
+          compression: parsed.memberPath ? "tar-gzip" : "none",
+          content: "ERROR\n",
+          truncated: false,
+          scannedTruncated: false,
+          scannedBytes: 6,
+          totalLines: 1,
+          matchedLines: 1,
+        }));
+        return;
+      }
+
       if (request.url === "/mongodb/query") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(JSON.stringify({
@@ -820,6 +873,13 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "pipeline",
       "limit",
       "skip",
+      "category",
+      "cursor",
+      "prefix",
+      "memberPath",
+      "tailLines",
+      "contains",
+      "caseSensitive",
     ].includes(propertyName)) {
       continue;
     }
@@ -851,6 +911,9 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_run_command",
         "remote_debug_read_file",
         "remote_debug_list_dir",
+        "remote_debug_list_logs",
+        "remote_debug_list_log_archive_members",
+        "remote_debug_read_log",
         "remote_debug_prepare_command_draft",
         "remote_debug_get_command_draft",
         "remote_debug_review_command_draft",
@@ -887,6 +950,47 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     );
     const call = await readMessage();
     assert.match(call.result.content[0].text, /ran:netstat -tlnp/);
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 40,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_list_logs",
+        arguments: { instanceId: "default", category: "nginx", limit: 1 },
+      },
+    }));
+    const logs = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(logs.entries[0].path, "/var/log/nginx/error.log");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 401,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_list_log_archive_members",
+        arguments: { instanceId: "default", path: "/home/github/logs.tar.gz" },
+      },
+    }));
+    const members = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(members.members[0].name, "error.log");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 402,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_read_log",
+        arguments: {
+          instanceId: "default",
+          path: "/home/github/logs.tar.gz",
+          memberPath: "error.log",
+          contains: "error",
+        },
+      },
+    }));
+    const readLogResult = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(readLogResult.content, "ERROR\n");
 
     child.stdin.write(
       encodeMessage({

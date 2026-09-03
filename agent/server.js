@@ -36,6 +36,16 @@ import {
   runMongoQuery as defaultRunMongoQuery,
   summarizeMongoQuery,
 } from "./mongodb.js";
+import {
+  listLogArchiveMembers as defaultListLogArchiveMembers,
+  listLogs as defaultListLogs,
+  readLog as defaultReadLog,
+} from "./logs.js";
+import {
+  normalizeArchiveMemberListOptions,
+  normalizeLogListOptions,
+  normalizeLogReadOptions,
+} from "./log-policy.js";
 import { InstanceRegistry } from "./instance-registry.js";
 import { WorkerManager } from "./worker-manager.js";
 import {
@@ -225,6 +235,43 @@ function directorySummary(payload) {
   };
 }
 
+function logListSummary(payload) {
+  return {
+    category: payload.category,
+    entryCount: payload.entries?.length || 0,
+    hasMore: Boolean(payload.hasMore),
+    truncated: Boolean(payload.truncated),
+    scannedEntries: payload.scannedEntries,
+    sourceCount: payload.sourceCount,
+    warningCount: payload.warnings?.length || 0,
+  };
+}
+
+function logArchiveSummary(payload) {
+  return {
+    path: payload.path,
+    compression: payload.compression,
+    memberCount: payload.members?.length || 0,
+    hasMore: Boolean(payload.hasMore),
+    truncated: Boolean(payload.truncated),
+    scannedBytes: payload.scannedBytes,
+  };
+}
+
+function logReadSummary(payload) {
+  return {
+    path: payload.path,
+    memberPath: payload.memberPath,
+    compression: payload.compression,
+    contentLength: byteLength(payload.content),
+    totalLines: payload.totalLines,
+    matchedLines: payload.matchedLines,
+    scannedBytes: payload.scannedBytes,
+    archiveScannedBytes: payload.archiveScannedBytes,
+    truncated: Boolean(payload.truncated),
+  };
+}
+
 function mongoSummary(payload) {
   return {
     operation: payload.operation,
@@ -299,6 +346,10 @@ export function createApp(options = {}) {
   const listRemoteDirImpl = options.listRemoteDir || defaultListRemoteDir;
   const resolveRemotePathsImpl = options.resolveRemotePaths || defaultResolveRemotePaths;
   const runMongoQueryImpl = options.runMongoQuery || defaultRunMongoQuery;
+  const listLogsImpl = options.listLogs || defaultListLogs;
+  const listLogArchiveMembersImpl =
+    options.listLogArchiveMembers || defaultListLogArchiveMembers;
+  const readLogImpl = options.readLog || defaultReadLog;
   const runSSH = (command, operationOptions) =>
     runSSHImpl(command, { ...operationOptions, supervisor: sshSupervisor });
   const readRemoteFile = (remotePath, operationOptions) =>
@@ -313,6 +364,21 @@ export function createApp(options = {}) {
       config,
       runSSH,
     });
+  const listLogs = (logOptions) => listLogsImpl({
+    ...logOptions,
+    config,
+    supervisor: sshSupervisor,
+  });
+  const listLogArchiveMembers = (logOptions) => listLogArchiveMembersImpl({
+    ...logOptions,
+    config,
+    supervisor: sshSupervisor,
+  });
+  const readLog = (logOptions) => readLogImpl({
+    ...logOptions,
+    config,
+    supervisor: sshSupervisor,
+  });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -879,6 +945,253 @@ export function createApp(options = {}) {
     }
   });
 
+  app.post("/logs/list", async (request, response) => {
+    const startedAt = performance.now();
+    const requestOperation = createRequestOperation(request, response, "/logs/list", config);
+    const operation = createOperation(request, config, "logs-list", {
+      operationId: requestOperation.operationId,
+      category: requestText(request.body?.category),
+      limit: request.body?.limit,
+      cursor: requestText(request.body?.cursor, 128),
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      const normalized = normalizeLogListOptions(request.body || {});
+      operation.request = {
+        ...normalized,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      publishStage(activity, operation, "validated");
+      const result = await listLogs({
+        ...normalized,
+        operation: requestOperation,
+      });
+      const payload = {
+        ok: true,
+        category: normalized.category,
+        ...result,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing,
+      };
+
+      await audit(config, {
+        tool: "logs-list",
+        category: normalized.category,
+        entryCount: payload.entries.length,
+        hasMore: payload.hasMore,
+        truncated: payload.truncated,
+        scannedEntries: payload.scannedEntries,
+        sourceCount: payload.sourceCount,
+        warningCount: payload.warnings?.length || 0,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+        ...result.timing,
+      });
+
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        ...result.timing,
+        result: logListSummary(payload),
+      });
+      response.json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "logs-list",
+        category: requestText(request.body?.category),
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
+  app.post("/logs/archive-members", async (request, response) => {
+    const startedAt = performance.now();
+    const requestOperation = createRequestOperation(
+      request,
+      response,
+      "/logs/archive-members",
+      config,
+    );
+    const operation = createOperation(request, config, "logs-archive-members", {
+      operationId: requestOperation.operationId,
+      path: requestText(request.body?.path),
+      prefix: requestText(request.body?.prefix, 128),
+      limit: request.body?.limit,
+      cursor: requestText(request.body?.cursor, 128),
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      const normalized = normalizeArchiveMemberListOptions(request.body || {});
+      operation.request = {
+        ...normalized,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      publishStage(activity, operation, "validated");
+      const result = await listLogArchiveMembers({
+        ...normalized,
+        operation: requestOperation,
+      });
+      const payload = {
+        ok: true,
+        ...result,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing,
+      };
+
+      await audit(config, {
+        tool: "logs-archive-members",
+        path: result.path,
+        compression: result.compression,
+        memberCount: payload.members.length,
+        hasMore: payload.hasMore,
+        truncated: payload.truncated,
+        scannedBytes: payload.scannedBytes,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+        ...result.timing,
+      });
+
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        ...result.timing,
+        result: logArchiveSummary(payload),
+      });
+      response.json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "logs-archive-members",
+        path: requestText(request.body?.path),
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
+  app.post("/logs/read", async (request, response) => {
+    const startedAt = performance.now();
+    const requestOperation = createRequestOperation(request, response, "/logs/read", config);
+    const operation = createOperation(request, config, "logs-read", {
+      operationId: requestOperation.operationId,
+      path: requestText(request.body?.path),
+      memberPath: requestText(request.body?.memberPath, 128),
+      tailLines: request.body?.tailLines,
+      maxBytes: request.body?.maxBytes,
+      contains: requestText(request.body?.contains, 128),
+      caseSensitive: request.body?.caseSensitive === true,
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      const normalized = normalizeLogReadOptions(request.body || {});
+      operation.request = {
+        ...normalized,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      publishStage(activity, operation, "validated");
+      const result = await readLog({
+        ...normalized,
+        operation: requestOperation,
+      });
+      const payload = {
+        ok: true,
+        ...result,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+        timing: result.timing,
+      };
+
+      await audit(config, {
+        tool: "logs-read",
+        path: result.path,
+        memberPath: result.memberPath,
+        compression: result.compression,
+        contentLength: byteLength(result.content),
+        totalLines: result.totalLines,
+        matchedLines: result.matchedLines,
+        scannedBytes: result.scannedBytes,
+        archiveScannedBytes: result.archiveScannedBytes,
+        truncated: result.truncated,
+        scannedTruncated: result.scannedTruncated,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+        ...result.timing,
+      });
+
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        ...result.timing,
+        result: logReadSummary(payload),
+      });
+      response.json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "logs-read",
+        path: requestText(request.body?.path),
+        memberPath: requestText(request.body?.memberPath, 128),
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  });
+
   app.post("/mongodb/query", async (request, response) => {
     const startedAt = performance.now();
     const rawQuery = request.body || {};
@@ -1156,6 +1469,7 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
       operationDeadlines: true,
       cancellation: true,
       structuredHealth: true,
+      logs: true,
     },
     agent: {
       ...publicAgent(config),
@@ -1838,6 +2152,10 @@ export function createManagerApp(options = {}) {
   app.post("/run", (request, response) => proxyToInstance("/run", request, response));
   app.post("/read-file", (request, response) => proxyToInstance("/read-file", request, response));
   app.post("/list-dir", (request, response) => proxyToInstance("/list-dir", request, response));
+  app.post("/logs/list", (request, response) => proxyToInstance("/logs/list", request, response));
+  app.post("/logs/archive-members", (request, response) =>
+    proxyToInstance("/logs/archive-members", request, response));
+  app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/approved-command-drafts", (request, response) =>
     proxyToInstance("/approved-command-drafts", request, response));

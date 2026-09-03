@@ -28,25 +28,25 @@ remote server. This skill is for the deployed backend at
   `/home/github/breBE/OD-Yennefer-BE/logs`.
 - Primary file: `YYYY-MM-DD-error.log`.
 - Context file when needed: `YYYY-MM-DD-info.log`.
+- Archived dates use `YYYY-MM-DD-logs.tar.gz`; list its members before reading
+  the matching error/info member.
 
 ## Workflow
 
 1. State the exact date and endpoint being checked.
-2. Confirm the target files exist with `remote_debug_list_dir` on the log root,
-   or proceed directly if the file names are already known from the request.
-3. Search the error log first.
-   - Do not use a grep pattern that starts with `/`, such as
-     `grep -n /v3/order_payment ...`; the agent may treat it as a path and
-     reject it.
-   - Use the final endpoint segment as the grep pattern, for example:
-     `grep -n order_payment /home/github/breBE/OD-Yennefer-BE/logs/2026-05-22-error.log`.
-   - After receiving grep output, locally parse/filter results so only records
-     whose JSON `path` exactly equals the requested endpoint are counted.
-4. If the error log has no exact matches, search the info log with the same safe
-   final-segment pattern to verify whether the route was hit without errors.
-5. If the user asks about gateway/upstream failures, or app logs do not explain
-   the symptom, inspect nginx logs separately under `/var/log/nginx` with a safe
-   bounded command.
+2. Call `remote_debug_list_logs` for the selected instance and locate the
+   application log directory and the date-specific error/info files.
+3. If the date is inside a `.tar.gz` archive, call
+   `remote_debug_list_log_archive_members` and choose the exact error member.
+4. Call `remote_debug_read_log` with `contains` set to the final endpoint
+   segment and locally parse/filter the returned JSON lines so only records
+   whose inner `path` exactly equals the requested endpoint are counted.
+5. If the error log has no exact matches, repeat against the info log to verify
+   whether the route was hit without errors.
+6. If the user asks about gateway/upstream failures, or app logs do not explain
+   the symptom, use `remote_debug_read_log` on the relevant `/var/log/nginx`
+   file and its compressed rotation instead of sending compressed bytes to
+   `remote_debug_read_file`.
 
 ## Parsing
 

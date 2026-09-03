@@ -132,6 +132,12 @@ const toolOperationPolicies = {
   remote_debug_run_command: { defaultMs: DEFAULT_TIMEOUT_MS, maxMs: MAX_TIMEOUT_MS },
   remote_debug_read_file: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
   remote_debug_list_dir: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_list_logs: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_list_log_archive_members: {
+    defaultMs: DEFAULT_FILE_TIMEOUT_MS,
+    maxMs: MAX_FILE_TIMEOUT_MS,
+  },
+  remote_debug_read_log: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
   remote_debug_mongodb_query: {
     defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
     maxMs: MAX_MONGODB_TIMEOUT_MS,
@@ -419,6 +425,114 @@ const tools = [
         path: {
           type: "string",
           description: "Absolute remote directory path.",
+        },
+        instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(60_000, 300_000),
+      },
+    },
+  },
+  {
+    name: "remote_debug_list_logs",
+    description:
+      "Discover bounded, categorized remote logs under approved system, nginx, application, and PM2 paths. Large directories use cursor pagination and unsupported compressed or binary files remain visible with a readability reason.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: [],
+      properties: {
+        instanceId: instanceIdProperty,
+        category: {
+          type: "string",
+          enum: ["all", "system", "nginx", "application", "pm2"],
+          description: "Log category; defaults to all.",
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: 500,
+          description: "Maximum log entries to return. Defaults to 200.",
+        },
+        cursor: {
+          type: "string",
+          maxLength: 4096,
+          description: "Cursor returned by an earlier call for the same category.",
+        },
+        timeoutMs: timeoutProperty(60_000, 300_000),
+      },
+    },
+  },
+  {
+    name: "remote_debug_list_log_archive_members",
+    description:
+      "List readable and non-readable members inside an approved .tar.gz or .tgz log archive without extracting it to the remote server.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["path"],
+      properties: {
+        path: {
+          type: "string",
+          description: "Absolute remote .tar.gz or .tgz log archive path.",
+        },
+        prefix: {
+          type: "string",
+          maxLength: 512,
+          description: "Optional safe relative member prefix.",
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: 5000,
+          description: "Maximum archive members to return. Defaults to 200.",
+        },
+        cursor: {
+          type: "string",
+          maxLength: 4096,
+          description: "Cursor returned by an earlier archive-member listing call.",
+        },
+        instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(60_000, 300_000),
+      },
+    },
+  },
+  {
+    name: "remote_debug_read_log",
+    description:
+      "Read the newest bounded lines from an approved plain or gzip log, or from a selected regular-file member of a .tar.gz/.tgz archive. Optional contains matching is line-based and case-insensitive by default.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["path"],
+      properties: {
+        path: {
+          type: "string",
+          description: "Absolute remote log or log archive path.",
+        },
+        memberPath: {
+          type: "string",
+          maxLength: 4096,
+          description: "Safe relative archive member path; required for tar.gz archives.",
+        },
+        tailLines: {
+          type: "integer",
+          minimum: 1,
+          maximum: 2000,
+          description: "Maximum newest matching lines. Defaults to 200.",
+        },
+        maxBytes: {
+          type: "integer",
+          minimum: 1,
+          maximum: DEFAULT_READ_MAX_BYTES,
+          description: `Maximum UTF-8 output bytes. Defaults to ${DEFAULT_READ_MAX_BYTES}.`,
+        },
+        contains: {
+          type: "string",
+          maxLength: 256,
+          description: "Optional plain-text substring to match in each log line.",
+        },
+        caseSensitive: {
+          type: "boolean",
+          description: "Whether contains matching is case-sensitive; defaults to false.",
         },
         instanceId: instanceIdProperty,
         timeoutMs: timeoutProperty(60_000, 300_000),
@@ -904,6 +1018,40 @@ function toolArgumentSummary(name, args = {}) {
     return {
       instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
       path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_list_logs") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      category: typeof args.category === "string" ? args.category.slice(0, 32) : undefined,
+      limit: args.limit,
+      hasCursor: typeof args.cursor === "string" && args.cursor.length > 0,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_list_log_archive_members") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+      prefix: typeof args.prefix === "string" ? args.prefix.slice(0, 128) : undefined,
+      limit: args.limit,
+      hasCursor: typeof args.cursor === "string" && args.cursor.length > 0,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_read_log") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      path: typeof args.path === "string" ? args.path.slice(0, 512) : undefined,
+      memberPath: typeof args.memberPath === "string" ? args.memberPath.slice(0, 256) : undefined,
+      tailLines: args.tailLines,
+      maxBytes: args.maxBytes,
+      contains: typeof args.contains === "string" ? args.contains.slice(0, 128) : undefined,
+      caseSensitive: args.caseSensitive === true,
       timeoutMs: args.timeoutMs,
     };
   }
@@ -2014,8 +2162,11 @@ async function requestAgent(pathName, payload, options = {}) {
   }
 
   if (!response.ok || parsed.ok === false) {
-    const message = parsed.error?.message || `agent request failed with HTTP ${response.status}`;
-    const code = parsed.error?.code || "AGENT_REQUEST_FAILED";
+    const logsUnsupported = response.status === 404 && pathName.startsWith("/logs/");
+    const message = parsed.error?.message || (logsUnsupported
+      ? "the connected Remote Debug Agent does not support log tools; reinstall or restart the bundled plugin"
+      : `agent request failed with HTTP ${response.status}`);
+    const code = parsed.error?.code || (logsUnsupported ? "LOGS_UNSUPPORTED" : "AGENT_REQUEST_FAILED");
     const error = new Error(message);
     error.code = code;
     error.operationId = parsed.error?.operationId || operation?.operationId;
@@ -2101,6 +2252,40 @@ async function callTool(name, args, operation) {
     return callAgent("/list-dir", {
       instanceId: args?.instanceId,
       path: args?.path,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_list_logs") {
+    return callAgent("/logs/list", {
+      instanceId: args?.instanceId,
+      category: args?.category,
+      limit: args?.limit,
+      cursor: args?.cursor,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_list_log_archive_members") {
+    return callAgent("/logs/archive-members", {
+      instanceId: args?.instanceId,
+      path: args?.path,
+      prefix: args?.prefix,
+      limit: args?.limit,
+      cursor: args?.cursor,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_read_log") {
+    return callAgent("/logs/read", {
+      instanceId: args?.instanceId,
+      path: args?.path,
+      memberPath: args?.memberPath,
+      tailLines: args?.tailLines,
+      maxBytes: args?.maxBytes,
+      contains: args?.contains,
+      caseSensitive: args?.caseSensitive,
       timeoutMs: args?.timeoutMs,
     }, operation);
   }

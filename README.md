@@ -205,6 +205,8 @@ remote_debug_mongodb_query,
 remote_debug_update_memory,
 remote_debug_run_command,
 remote_debug_read_file, remote_debug_list_dir,
+remote_debug_list_logs, remote_debug_list_log_archive_members,
+remote_debug_read_log,
 remote_debug_prepare_command_draft, remote_debug_get_command_draft,
 remote_debug_review_command_draft,
 remote_debug_execute_command_draft
@@ -233,8 +235,8 @@ plugin installation is broken, or that the remote target is unhealthy. Use the
 explicit `npm run diagnose` fields first, then state whether a conclusion is
 confirmed or still only suggested.
 
-Direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`, or
-`/list-dir`, or one-off Node scripts that import the local agent code, are
+Direct HTTP calls to `http://127.0.0.1:<port>/run`, `/read-file`, `/list-dir`,
+or `/logs/*`, or one-off Node scripts that import the local agent code, are
 development diagnostics only. If the current session cannot call
 `remote_debug_*`, stop after plugin visibility diagnosis instead of using HTTP
 to complete the user's remote task. Normal Codex usage should go through the
@@ -288,6 +290,12 @@ use source files instead of the bundled runtime.
 - `remote_debug_run_command`: run a whitelisted read-only diagnostic command.
 - `remote_debug_read_file`: read a file under an allowed remote path.
 - `remote_debug_list_dir`: list a directory under an allowed remote path.
+- `remote_debug_list_logs`: discover categorized system, nginx, application, and
+  PM2 logs with bounded cursor pagination.
+- `remote_debug_list_log_archive_members`: list members inside a `.tar.gz` or
+  `.tgz` log archive without extracting it remotely.
+- `remote_debug_read_log`: read the newest lines from plain/gzip logs or a
+  selected regular-file archive member, with optional substring filtering.
 - `remote_debug_list_instances`: list configured instances and runtime status.
 - `remote_debug_mongodb_query`: run a bounded, read-only MongoDB operation on
   the selected instance through its remote application configuration and
@@ -314,6 +322,10 @@ path validation, execution, and cancellation cleanup. Defaults and limits are:
 - `remote_debug_run_command`: 30 seconds by default, 120 seconds maximum.
 - `remote_debug_read_file` and `remote_debug_list_dir`: 60 seconds by default,
   300 seconds maximum. `remote_debug_read_file` also exposes `maxBytes`.
+- `remote_debug_list_logs`, `remote_debug_list_log_archive_members`, and
+  `remote_debug_read_log`: 60 seconds by default, 300 seconds maximum. Log
+  listings are limited to 500 entries per page; log reads return at most 2,000
+  lines and 256 KiB of UTF-8 output.
 - `remote_debug_mongodb_query`: 60 seconds by default, 300 seconds maximum;
   returned documents are limited to 500 items and 512 KiB.
 - `remote_debug_execute_command_draft`: 300 seconds by default, 900 seconds
@@ -321,6 +333,30 @@ path validation, execution, and cancellation cleanup. Defaults and limits are:
 - `remote_debug_review_command_draft`: 330 seconds by default, 930 seconds
   maximum for review plus the command batch; the Codex review itself is limited
   to 30 seconds with at most one retry.
+
+## Log Discovery And Compressed Reads
+
+Use `remote_debug_list_logs` before choosing a log path. It inspects the
+approved system, Nginx, application, and PM2 locations for the selected
+instance. The application scope combines configured source roots, PM2 working
+directories, and shallow log directories under `/home/github`; it includes the
+current and historical paths used by the Yennefer, Dambuster, EccoPOS, and
+DBScript deployments found on the configured hosts. Large directories such as
+`/root/.pm2/logs` are returned in cursor-paginated pages.
+
+Use `remote_debug_read_log` for text logs. It returns the newest lines by
+default, supports a bounded plain-text `contains` filter, and reads plain files
+or `.gz` files through SFTP. For `.tar.gz` or `.tgz`, call
+`remote_debug_list_log_archive_members` first and pass a regular-file
+`memberPath` to `remote_debug_read_log`. Archives are streamed and never
+extracted to the remote filesystem.
+
+The Agent supports `none`, `gzip`, and `tar-gzip`. `.xz`, `.bz2`, `.zip`,
+binary system logs, directories, and archive links remain visible in listings
+with `readable: false` and a reason, but reading them returns a structured
+unsupported-format or non-readable-member error. Archive member names are
+relative and path traversal is rejected. Log audit records contain metadata
+and result statistics, not the returned log body.
 
 ## MongoDB Read-Only Access
 
@@ -373,9 +409,9 @@ the memory `partial`; they do not stop the worker after SSH readiness has
 succeeded.
 
 Tool responses from the manager include a `memory` summary when an instance is
-known. Successful `/run`, `/read-file`, and `/list-dir` results also update the
-cache with newly observed config paths, log paths, service status, and directory
-summaries.
+known. Successful `/run`, `/read-file`, `/list-dir`, and `/logs/*` results also
+update the cache with newly observed config paths, log paths, service status,
+and directory summaries.
 
 Explicit user-requested notes are written through `remote_debug_update_memory`
 and returned under `memory.summary.notes`. The tool updates manager-owned local
@@ -504,6 +540,10 @@ allowlists.
 `remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
 manager's `/run` endpoint. `remote_debug_read_file` and
 `remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.
+The log tools use `/logs/list`, `/logs/archive-members`, and `/logs/read`;
+their worker-side implementation performs canonical SFTP checks, bounded
+directory paging, gzip decoding, and streaming tar parsing without remote shell
+commands or temporary extraction files.
 `remote_debug_mongodb_query` forwards the selected instance and a validated
 read-only query to `/mongodb/query`; the worker executes a fixed Node helper
 over SSH and reads the remote profile at execution time.

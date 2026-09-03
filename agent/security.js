@@ -5,6 +5,7 @@ import {
   MONGODB_QUERY_OPERATIONS,
   MAX_MONGODB_LIMIT,
 } from "./mongodb.js";
+import { LOG_CAPABILITIES } from "./log-policy.js";
 
 const SECURITY_POLICY = {
   schemaVersion: 1,
@@ -44,6 +45,7 @@ const SECURITY_POLICY = {
     maxLimit: MAX_MONGODB_LIMIT,
     allowedConfigRoots: [...MONGODB_CONFIG_ROOTS],
   },
+  logs: { ...LOG_CAPABILITIES },
   lifecycle: {
     instanceRestart: {
       allowedFrom: ["stopped", "unhealthy"],
@@ -56,6 +58,8 @@ const SECURITY_POLICY = {
     "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
     "Commands that read paths require at least one absolute path under an allowed root.",
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
+    "Log reads use bounded SFTP pagination and streaming plain/gzip/tar-gzip decoding without remote extraction.",
+    "Tar archive members must be relative regular files; unsupported compression and binary logs are reported without decoding.",
     "The dedicated MongoDB tool is read-only and bounded; database writes require an approved-command draft.",
     "Automatic command-draft execution requires the existing approved-command flag, the review flag, a hard-policy pass, and an explicit low-risk model approval.",
   ],
@@ -159,6 +163,12 @@ export function securityCapabilities(config = {}) {
       ...SECURITY_POLICY.mongodb,
       operations: [...SECURITY_POLICY.mongodb.operations],
       allowedConfigRoots: [...SECURITY_POLICY.mongodb.allowedConfigRoots],
+    },
+    logs: {
+      ...SECURITY_POLICY.logs,
+      categories: [...SECURITY_POLICY.logs.categories],
+      supportedCompression: [...SECURITY_POLICY.logs.supportedCompression],
+      unsupportedCompression: [...SECURITY_POLICY.logs.unsupportedCompression],
     },
     lifecycle: {
       instanceRestart: {

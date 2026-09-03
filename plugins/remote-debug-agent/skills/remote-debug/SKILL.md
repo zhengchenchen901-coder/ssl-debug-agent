@@ -16,6 +16,12 @@ described below.
 - `remote_debug_get_capabilities`: read the Agent's authoritative machine-readable command, path, limit, and approval policy without contacting a remote instance.
 - `remote_debug_read_file`: read approved files.
 - `remote_debug_list_dir`: list approved directories.
+- `remote_debug_list_logs`: discover categorized system, nginx, application,
+  and PM2 logs with bounded cursor pagination.
+- `remote_debug_list_log_archive_members`: list members of a `.tar.gz` or
+  `.tgz` log archive before reading one.
+- `remote_debug_read_log`: read recent plain/gzip logs or a selected archive
+  member, with optional plain-text substring filtering.
 - `remote_debug_mongodb_query`: run bounded, read-only MongoDB operations on
   the selected instance.
 - `remote_debug_list_instances`: list configured instances and runtime status.
@@ -39,6 +45,21 @@ Instance listings also expose labeled `sourceRoots` for projects such as `be`,
 `h5`, and `mgr`. Use those roots for source inspection and always pass the
 matching `instanceId`; source roots are read-only and are not a substitute for
 the approved-command workflow.
+
+For log work, prefer `remote_debug_list_logs` over a full
+`remote_debug_list_dir`. It discovers `/var/log` and service subdirectories,
+`/var/log/nginx`, `/root/.pm2`, PM2 application log paths, configured source-root
+log folders, and shallow application log folders under `/home/github` without
+loading a huge directory into one response. Follow `nextCursor` until
+`hasMore` is false when historical logs are required.
+
+Use `remote_debug_read_log` rather than `remote_debug_read_file` for log text.
+It returns recent lines by default and supports plain substring matching with
+`contains`. If a path ends in `.tar.gz` or `.tgz`, first call
+`remote_debug_list_log_archive_members`; then pass the selected regular-file
+member as `memberPath`. Supported decoding is plain, gzip, and tar-gzip. Files
+marked as unsupported compression or binary in a listing must be reported as
+unreadable rather than opened through another command path.
 
 ## Tool Visibility
 

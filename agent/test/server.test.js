@@ -228,6 +228,47 @@ test("HTTP API works with mocked SSH", { skip: !depsInstalled }, async () => {
       path: remotePath,
       entries: [{ name: "error.log", size: 10 }],
     }),
+    listLogs: async ({ category }) => ({
+      category,
+      entries: [{
+        name: "error.log.1.gz",
+        path: "/var/log/nginx/error.log.1.gz",
+        category,
+        source: "nginx:/var/log/nginx",
+        compression: "gzip",
+        kind: "log",
+        isArchive: false,
+        readable: true,
+        size: 10,
+        modifyTime: 1,
+      }],
+      nextCursor: null,
+      hasMore: false,
+      truncated: false,
+      warnings: [],
+      scannedEntries: 1,
+      sourceCount: 1,
+    }),
+    listLogArchiveMembers: async ({ path }) => ({
+      path,
+      compression: "tar-gzip",
+      members: [{ name: "error.log", size: 12, type: "file", readable: true }],
+      nextCursor: null,
+      hasMore: false,
+      truncated: false,
+      scannedBytes: 20,
+    }),
+    readLog: async ({ path, memberPath, contains }) => ({
+      path,
+      memberPath,
+      compression: memberPath ? "tar-gzip" : "gzip",
+      content: contains ? "ERROR\n" : "line\n",
+      truncated: false,
+      scannedTruncated: false,
+      scannedBytes: 5,
+      totalLines: 1,
+      matchedLines: 1,
+    }),
     resolveRemotePaths: async (remotePaths) => remotePaths,
   });
   const server = await listen(app);
@@ -250,6 +291,32 @@ test("HTTP API works with mocked SSH", { skip: !depsInstalled }, async () => {
     const list = await postJson(server, "/list-dir", { path: "/var/log" });
     assert.equal(list.status, 200);
     assert.equal(list.body.entries[0].name, "error.log");
+
+    const logs = await postJson(server, "/logs/list", { category: "nginx", limit: 1 });
+    assert.equal(logs.status, 200);
+    assert.equal(logs.body.entries[0].compression, "gzip");
+
+    const archive = await postJson(server, "/logs/archive-members", {
+      path: "/home/github/app-logs.tar.gz",
+    });
+    assert.equal(archive.status, 200);
+    assert.equal(archive.body.members[0].name, "error.log");
+
+    const log = await postJson(server, "/logs/read", {
+      path: "/home/github/app-logs.tar.gz",
+      memberPath: "error.log",
+      contains: "error",
+    });
+    assert.equal(log.status, 200);
+    assert.equal(log.body.content, "ERROR\n");
+
+    const audit = (await fsPromises.readFile(path.join(dir, "audit.jsonl"), "utf8"))
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line));
+    const logAudit = audit.find((entry) => entry.tool === "logs-read");
+    assert.equal(logAudit.content, undefined);
+    assert.equal(logAudit.memberPath, "error.log");
   } finally {
     await close(server);
   }
@@ -501,13 +568,32 @@ test("manager API includes memory and updates it from proxied tool results", { s
       })),
     runtimeFor: () => ({ status: "running" }),
     shutdownAll: async () => {},
-    callInstance: async (_instanceId, _pathName, payload) => ({
-      ok: true,
-      instanceId: "a",
-      path: payload.path,
-      entries: [{ name: "nginx.conf", size: 10, modifyTime: 1, permissions: 33188 }],
-      durationMs: 1,
-    }),
+    callInstance: async (_instanceId, pathName, payload) => pathName === "/logs/list"
+      ? {
+          ok: true,
+          instanceId: "a",
+          category: payload.category || "all",
+          entries: [{
+            name: "error.log",
+            path: "/var/log/nginx/error.log",
+            compression: "none",
+            readable: true,
+          }],
+          nextCursor: null,
+          hasMore: false,
+          truncated: false,
+          warnings: [],
+          scannedEntries: 1,
+          sourceCount: 1,
+          durationMs: 1,
+        }
+      : {
+          ok: true,
+          instanceId: "a",
+          path: payload.path,
+          entries: [{ name: "nginx.conf", size: 10, modifyTime: 1, permissions: 33188 }],
+          durationMs: 1,
+        },
   };
   const app = createManagerApp({
     config: makeConfig(path.join(dir, "audit.jsonl")),
@@ -532,6 +618,15 @@ test("manager API includes memory and updates it from proxied tool results", { s
     assert.equal(updatedMemory.body.note.topic, "database");
     assert.equal(updatedMemory.body.memory.status, "partial");
     assert.equal(updatedMemory.body.memory.summary.notes[0].facts[0], "database=yenneferbak");
+
+    const logs = await postJson(server, "/logs/list", {
+      instanceId: "a",
+      category: "nginx",
+      limit: 1,
+    });
+    assert.equal(logs.status, 200);
+    assert.equal(logs.body.entries[0].path, "/var/log/nginx/error.log");
+    assert.deepEqual(logs.body.memory.summary.logPaths, ["/var/log/nginx/error.log"]);
 
     const listed = await postJson(server, "/list-dir", {
       instanceId: "a",

@@ -68,7 +68,13 @@ export function operationPolicy(pathName, config = {}) {
       maxMs: config.security?.maxTimeoutMs || OPERATION_TIMEOUTS.run.maxMs,
     };
   }
-  if (pathName === "/read-file" || pathName === "/list-dir") {
+  if (
+    pathName === "/read-file" ||
+    pathName === "/list-dir" ||
+    pathName === "/logs/list" ||
+    pathName === "/logs/archive-members" ||
+    pathName === "/logs/read"
+  ) {
     return {
       defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
       maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs,

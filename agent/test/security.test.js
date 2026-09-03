@@ -65,6 +65,9 @@ test("publishes machine-readable capabilities from the enforced policy", () => {
   assert.equal(capabilities.mongodb.readOnly, true);
   assert.ok(capabilities.mongodb.operations.includes("find"));
   assert.equal(capabilities.mongodb.maxLimit, 500);
+  assert.deepEqual(capabilities.logs.supportedCompression, ["none", "gzip", "tar-gzip"]);
+  assert.equal(capabilities.logs.pagination, "cursor");
+  assert.ok(capabilities.logs.categories.includes("pm2"));
   assert.equal(capabilities.commandReview.autoExecuteEnabled, false);
   assert.deepEqual(capabilities.commands.allowedExecutables, [...ALLOWED_COMMANDS]);
   assert.deepEqual(capabilities.paths.allowedRoots, security.allowedPaths);
