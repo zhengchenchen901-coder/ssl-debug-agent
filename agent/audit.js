@@ -20,6 +20,7 @@ export function buildAuditEntry(event, now = () => new Date()) {
   };
 
   for (const key of [
+    "instanceId",
     "draftId",
     "commandHash",
     "commandIndex",
@@ -37,6 +38,14 @@ export function buildAuditEntry(event, now = () => new Date()) {
     "database",
     "collection",
     "resultCount",
+    "decision",
+    "reviewReason",
+    "staticViolationCodes",
+    "violationCodes",
+    "modelDecision",
+    "modelAttempts",
+    "modelDurationMs",
+    "execution",
   ]) {
     if (event[key] !== undefined) {
       entry[key] = event[key];

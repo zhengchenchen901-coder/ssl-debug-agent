@@ -144,6 +144,35 @@ test("registry preserves per-instance MongoDB profile metadata", async () => {
   assert.equal(registry.getInternal("test-server").mongodb.driverPath, "/home/github/app/node_modules/mongodb");
 });
 
+test("registry preserves labeled per-instance source roots", async () => {
+  const dir = await tempDir("remote-debug-source-roots-registry-");
+  const registry = new InstanceRegistry({
+    cwd: dir,
+    registryPath: path.join(dir, "instances.json"),
+    env: {},
+  });
+  const created = registry.create({
+    id: "test-server",
+    name: "test-server",
+    host: "test.example.com",
+    port: 22,
+    username: "app",
+    privateKeyPath: "C:\\test",
+    sourceRoots: {
+      be: "/home/github/app/current/",
+      h5: "/var/www/new_od_order",
+      mgr: "/var/www/ner_od_backoffice",
+    },
+  });
+
+  assert.deepEqual(created.sourceRoots, {
+    be: "/home/github/app/current",
+    h5: "/var/www/new_od_order",
+    mgr: "/var/www/ner_od_backoffice",
+  });
+  assert.deepEqual(registry.getInternal("test-server").sourceRoots, created.sourceRoots);
+});
+
 test("worker manager forwards MongoDB profile metadata to the selected worker", async () => {
   const dir = await tempDir("remote-debug-mongodb-worker-");
   const registry = new InstanceRegistry({
@@ -158,6 +187,10 @@ test("worker manager forwards MongoDB profile metadata to the selected worker", 
     port: 22,
     username: "app",
     privateKeyPath: "C:\\prod",
+    sourceRoots: {
+      be: "/home/github/app/current",
+      h5: "/var/www/new_od_order",
+    },
     mongodb: {
       enabled: true,
       configPath: "/home/github/app/config.json",
@@ -190,6 +223,10 @@ test("worker manager forwards MongoDB profile metadata to the selected worker", 
       configProfile: "production",
       uriKey: "url",
       database: "yenneferbak",
+    });
+    assert.deepEqual(JSON.parse(workerEnv.REMOTE_DEBUG_SOURCE_ROOTS), {
+      be: "/home/github/app/current",
+      h5: "/var/www/new_od_order",
     });
   } finally {
     await manager.shutdownAll();

@@ -44,6 +44,7 @@ remote-debug-agent/
         worker-entry.cjs
       package.json
       skills/mongodb/SKILL.md
+      skills/command-draft-review/SKILL.md
       skills/remote-debug/SKILL.md
       skills/update-instance-memory/SKILL.md
   scripts/
@@ -75,6 +76,10 @@ Optional settings include:
 REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE=...
 REMOTE_DEBUG_AUDIT_LOG=C:\path\to\remote-debug-audit.jsonl
 REMOTE_DEBUG_APPROVED_COMMANDS=0
+REMOTE_DEBUG_COMMAND_REVIEW_AUTO_EXECUTE=0
+# Set to 1 for one Manager start to regenerate the review config from Codex.
+REMOTE_DEBUG_COMMAND_REVIEW_REFRESH=0
+# REMOTE_DEBUG_COMMAND_REVIEW_CONFIG_PATH=C:\path\to\command-review.json
 REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS=300000
 REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS=900000
 REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS=15000
@@ -84,6 +89,28 @@ REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS=4
 
 Do not commit secrets or private keys. This project intentionally reads SSH
 credentials only from the selected config file or environment variables.
+
+## Per-Instance Source Reading
+
+Each instance may define labeled source roots in
+`<data-dir>\.remote-debug\instances.json`. The existing common read roots remain
+available, while `sourceRoots` is added only to the selected instance:
+
+```json
+{
+  "id": "test-server",
+  "sourceRoots": {
+    "be": "/home/github/OD-Yennefer-BE-next-release/current",
+    "h5": "/var/www/new_od_order",
+    "mgr": "/var/www/ner_od_backoffice"
+  }
+}
+```
+
+`remote_debug_read_file` and `remote_debug_list_dir` follow these roots through
+SFTP. A `current` symlink is resolved on the remote host for each operation;
+files that resolve outside the configured root are rejected. Source roots are
+read-only and do not grant command execution or remote write access.
 
 ## Install The Codex Plugin
 
@@ -179,6 +206,7 @@ remote_debug_update_memory,
 remote_debug_run_command,
 remote_debug_read_file, remote_debug_list_dir,
 remote_debug_prepare_command_draft, remote_debug_get_command_draft,
+remote_debug_review_command_draft,
 remote_debug_execute_command_draft
 ```
 
@@ -269,6 +297,8 @@ use source files instead of the bundled runtime.
 - `remote_debug_prepare_command_draft`: generate an exact command draft for
   user review. It never executes commands.
 - `remote_debug_get_command_draft`: view a previously generated command draft.
+- `remote_debug_review_command_draft`: run the local hard-policy and Codex
+  reviewer; safe drafts can be automatically executed when explicitly enabled.
 - `remote_debug_execute_command_draft`: execute a one-time command draft after
   the user explicitly chooses `使用命令`.
 
@@ -288,6 +318,9 @@ path validation, execution, and cancellation cleanup. Defaults and limits are:
   returned documents are limited to 500 items and 512 KiB.
 - `remote_debug_execute_command_draft`: 300 seconds by default, 900 seconds
   maximum for the entire command batch.
+- `remote_debug_review_command_draft`: 330 seconds by default, 930 seconds
+  maximum for review plus the command batch; the Codex review itself is limited
+  to 30 seconds with at most one retry.
 
 ## MongoDB Read-Only Access
 
@@ -357,31 +390,51 @@ credentials, and connection strings are redacted.
 ## Approved Command Drafts
 
 The approved-command channel is for cases where Codex should present a minimal
-set of remote write or maintenance commands, but a human must decide whether the
-plugin may execute them. It is disabled by default. To enable it, set:
+set of remote write or maintenance commands. It is disabled by default. To
+allow the new automatic reviewer to execute a draft, both the instance's
+approved-command setting and the global review setting must be enabled:
 
 ```text
 REMOTE_DEBUG_APPROVED_COMMANDS=1
+REMOTE_DEBUG_COMMAND_REVIEW_AUTO_EXECUTE=1
 ```
+
+Automatic execution is limited to commands that pass the existing read-only
+security policy and a separate Codex semantic review. Maintenance, write,
+delete, privilege, or uncertain commands are returned for human review.
+
+The reviewer configuration is stored at
+`<data-dir>/.remote-debug/command-review.json`. It contains only non-secret
+Codex connection metadata. The file is generated from `CODEX_HOME/config.toml`
+the first time it is needed. Set `REMOTE_DEBUG_COMMAND_REVIEW_REFRESH=1` for a
+single Manager start (then reset it to `0`) to explicitly refresh the snapshot.
+Codex authentication remains
+owned by the Codex CLI; API keys are not copied into this project or the review
+configuration.
 
 The flow is:
 
 1. Codex calls `remote_debug_prepare_command_draft` with a purpose and exact
    command list.
-2. The tool returns `draftId`, `commandHash`, `expiresAt`, and a command block
-   that can be reviewed in the Codex conversation.
-3. If the user chooses `只生成命令，不执行`, Codex must not call the execution
+2. Codex immediately calls `remote_debug_review_command_draft` with the returned
+   `draftId`; the review tool retrieves the immutable stored draft.
+3. If the local policy and Codex reviewer approve a low-risk read-only draft,
+   the Manager automatically executes it and returns the execution result.
+4. Otherwise the tool returns the complete draft, `draftId`, `commandHash`,
+   expiration, and indexed violation points for the current conversation.
+5. If the user chooses `只生成命令，不执行`, Codex must not call the execution
    tool and should leave the command block for manual execution.
-4. If the user chooses `使用命令`, Codex calls
+6. If the user chooses `使用命令`, Codex calls
    `remote_debug_execute_command_draft` with the same `draftId`,
    `commandHash`, and the exact confirmation phrase `使用命令`.
 
 Drafts are one-time use and expire after 30 minutes. Execution runs commands in
 order under one shared operation deadline. A non-zero exit code or exhausted
 deadline stops the remaining commands. This channel bypasses the read-only command allowlist,
-but it does not bypass SSH configuration, timeouts, output limits, the one-time
-hash check, or audit logging. Audit entries store command hashes and redacted
-command previews instead of raw password-bearing command text.
+but the automatic reviewer does not. Neither path bypasses SSH configuration,
+timeouts, output limits, the one-time hash check, or audit logging. Audit entries
+store command hashes, redacted command previews, and review summaries instead of
+raw password-bearing command text.
 
 Allowed commands:
 
@@ -445,8 +498,9 @@ Codex
 starts the bundled local HTTP manager, and forwards tool calls to
 `http://127.0.0.1:<port>`.
 `remote_debug_get_capabilities` reads `/api/capabilities`; the payload is built
-from the same declarative policy used by command and path validation, so MCP
-clients do not need to copy the Agent allowlists.
+from the same declarative policy used by command and path validation, including
+the per-instance source roots, so MCP clients do not need to copy the Agent
+allowlists.
 `remote_debug_run_command` forwards `instanceId`, `cmd`, and `timeoutMs` to the
 manager's `/run` endpoint. `remote_debug_read_file` and
 `remote_debug_list_dir` use the selected worker's SFTP-backed file endpoints.
@@ -455,8 +509,13 @@ read-only query to `/mongodb/query`; the worker executes a fixed Node helper
 over SSH and reads the remote profile at execution time.
 `remote_debug_update_memory` writes sanitized notes through `/api/memory`.
 The approved-command tools use
-`/approved-command-drafts`, `/approved-command-drafts/get`, and
-`/approved-command-drafts/execute`.
+`/approved-command-drafts`, `/approved-command-drafts/get`,
+`/approved-command-drafts/review`, and `/approved-command-drafts/execute`.
+The Manager owns `/approved-command-drafts/review`: it retrieves the stored
+draft from the selected Worker, runs the local hard-policy checks, and invokes
+an isolated `codex exec` subprocess for semantic review. The subprocess only
+returns structured review data; it never receives remote-debug tools or remote
+SSH access.
 
 The V2 MCP only accepts a manager whose `/status` reports `apiVersion: 2`, the
 required capabilities, and the current bundled `agent.runtimeId`. A confirmed
@@ -507,13 +566,15 @@ Command validation applies these checks:
   checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
 - `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.
 - Path-reading commands such as `ls`, `cat`, `tail`, and `grep` require at
-  least one allowed absolute path under `/var/log`, `/etc/nginx`, `/home/app`,
-  `/root/.pm2`, or `/home/github`.
+  least one allowed absolute path under the common roots or the selected
+  instance's configured source roots.
 
 Approved-command draft execution intentionally does not call `validateCommand`;
 it relies on `REMOTE_DEBUG_APPROVED_COMMANDS=1`, the one-time draft ID, the
 command hash, the exact confirmation phrase `使用命令`, timeouts, output limits,
-and audit logging. Use it only for commands the user has reviewed.
+and audit logging. The automatic review path calls `validateCommand` before the
+model and requires a low-risk read-only model approval. Use the unrestricted
+manual path only for commands the user has reviewed.
 
 If a command contains path arguments, the agent also resolves the remote
 canonical paths before execution to reduce symlink escape risk. Audit logs are
@@ -523,13 +584,16 @@ success or failure.
 ## Safety Rules
 
 - No arbitrary shell.
-- The only exception is the disabled-by-default approved-command draft workflow,
-  which requires a one-time draft ID, command hash, and exact user confirmation.
+- The disabled-by-default approved-command draft workflow is the only path for
+  write or maintenance commands; it requires a one-time draft ID, command hash,
+  and exact user confirmation. Automatic execution is narrower and requires the
+  local read-only policy plus a Codex review.
 - Read-only diagnostic commands cannot use shell control operators, pipes,
   redirects, command substitution, or newlines.
 - Read-only diagnostic commands reject dangerous tokens such as `rm`, `sudo`,
-  `shutdown`, `reboot`, `mkfs`, `chmod`, or `chown`. Approved draft commands
-  are not allowlist-validated and must be explicitly reviewed before execution.
+  `shutdown`, `reboot`, `mkfs`, `chmod`, or `chown`. Manual approved drafts are
+  not allowlist-validated; automatic review rejects anything that fails the
+  existing allowlist or exposes sensitive command material.
 - File and directory operations use SFTP and validate canonical remote paths to
   reduce symlink escape risk.
 - Audit logs are JSONL and record operation metadata, duration, result size, and

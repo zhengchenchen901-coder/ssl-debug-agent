@@ -104,6 +104,12 @@ export function migrateLegacyData({
     copied,
     skipped,
   );
+  copyFileIfMissing(
+    path.resolve(legacyStateDir, "command-review.json"),
+    path.resolve(targetStateDir, "command-review.json"),
+    copied,
+    skipped,
+  );
 
   for (const legacyAuditPath of [
     path.resolve(resolvedLegacyRoot, "agent", "audit", "remote-debug-agent.jsonl"),

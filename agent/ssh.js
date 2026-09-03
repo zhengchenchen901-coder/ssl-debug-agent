@@ -1,4 +1,4 @@
-import { assertPathAllowed } from "./security.js";
+import { assertPathAllowed, normalizeRemotePath } from "./security.js";
 import {
   OPERATION_TIMEOUTS,
   assertOperationActive,
@@ -151,6 +151,27 @@ const sftpReaddir = (sftp, remotePath, operation) =>
 const sftpStat = (sftp, remotePath, operation) =>
   sftpCall(sftp, "stat", [remotePath], operation, "sftp-stat");
 
+function matchingAllowedRoots(remotePath, allowedPaths) {
+  const normalizedPath = normalizeRemotePath(remotePath);
+  return allowedPaths.filter((allowedRoot) => {
+    const normalizedRoot = normalizeRemotePath(allowedRoot);
+    return normalizedPath === normalizedRoot || normalizedPath.startsWith(`${normalizedRoot}/`);
+  });
+}
+
+async function resolveCanonicalRemotePath(sftp, remotePath, operation, allowedPaths) {
+  const normalizedPath = assertPathAllowed(remotePath, allowedPaths);
+  const matchingRoots = matchingAllowedRoots(normalizedPath, allowedPaths);
+  const canonicalRoots = [];
+
+  for (const allowedRoot of matchingRoots) {
+    canonicalRoots.push(await sftpRealpath(sftp, allowedRoot, operation));
+  }
+
+  const canonicalPath = await sftpRealpath(sftp, normalizedPath, operation);
+  return assertPathAllowed(canonicalPath, canonicalRoots);
+}
+
 function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -245,8 +266,14 @@ async function validateRemotePathsWithClient(client, remotePaths, config, operat
   try {
     const canonicalPaths = [];
     for (const remotePath of remotePaths) {
-      const canonicalPath = await sftpRealpath(sftp, remotePath, operation);
-      canonicalPaths.push(assertPathAllowed(canonicalPath, config.security.allowedPaths));
+      canonicalPaths.push(
+        await resolveCanonicalRemotePath(
+          sftp,
+          remotePath,
+          operation,
+          config.security.allowedPaths,
+        ),
+      );
     }
     return canonicalPaths;
   } finally {
@@ -443,8 +470,14 @@ export async function resolveRemotePaths(remotePaths, options) {
     const result = await withSftp(supervisor, prepared.operation, async (sftp) => {
       const canonicalPaths = [];
       for (const remotePath of remotePaths) {
-        const canonicalPath = await sftpRealpath(sftp, remotePath, prepared.operation);
-        canonicalPaths.push(assertPathAllowed(canonicalPath, options.config.security.allowedPaths));
+        canonicalPaths.push(
+          await resolveCanonicalRemotePath(
+            sftp,
+            remotePath,
+            prepared.operation,
+            options.config.security.allowedPaths,
+          ),
+        );
       }
       return { canonicalPaths };
     }, options);
@@ -459,8 +492,12 @@ export async function readRemoteFile(remotePath, options) {
   const prepared = prepareOperation(options, OPERATION_TIMEOUTS.file);
   try {
     return await withSftp(supervisor, prepared.operation, async (sftp, markProgress) => {
-      const canonicalPath = await sftpRealpath(sftp, remotePath, prepared.operation);
-      assertPathAllowed(canonicalPath, options.config.security.allowedPaths);
+      const canonicalPath = await resolveCanonicalRemotePath(
+        sftp,
+        remotePath,
+        prepared.operation,
+        options.config.security.allowedPaths,
+      );
       const stats = await sftpStat(sftp, canonicalPath, prepared.operation);
       const truncated = Number.isFinite(stats.size) && stats.size > options.maxBytes;
       const stream = sftp.createReadStream(canonicalPath, {
@@ -489,8 +526,12 @@ export async function listRemoteDir(remotePath, options) {
   const prepared = prepareOperation(options, OPERATION_TIMEOUTS.file);
   try {
     return await withSftp(supervisor, prepared.operation, async (sftp) => {
-      const canonicalPath = await sftpRealpath(sftp, remotePath, prepared.operation);
-      assertPathAllowed(canonicalPath, options.config.security.allowedPaths);
+      const canonicalPath = await resolveCanonicalRemotePath(
+        sftp,
+        remotePath,
+        prepared.operation,
+        options.config.security.allowedPaths,
+      );
       const entries = await sftpReaddir(sftp, canonicalPath, prepared.operation);
       return {
         path: canonicalPath,

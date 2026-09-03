@@ -25,6 +25,8 @@ described below.
 - `remote_debug_prepare_command_draft`: generate exact commands for user review;
   this does not execute anything.
 - `remote_debug_get_command_draft`: view a generated command draft.
+- `remote_debug_review_command_draft`: run the local hard-policy and Codex
+  command-draft reviewer; safe drafts may be automatically executed.
 - `remote_debug_execute_command_draft`: execute a generated draft only after the
   user explicitly chooses `使用命令`.
 
@@ -33,6 +35,10 @@ of known target facts such as common config paths, log paths, service status,
 and shallow directory summaries. Memory is cached context, not live evidence; if
 the current state matters, verify it with the appropriate `remote_debug_*` tool.
 Persisted user notes appear under `memory.summary.notes`.
+Instance listings also expose labeled `sourceRoots` for projects such as `be`,
+`h5`, and `mgr`. Use those roots for source inspection and always pass the
+matching `instanceId`; source roots are read-only and are not a substitute for
+the approved-command workflow.
 
 ## Tool Visibility
 
@@ -68,13 +74,19 @@ service, or writing a helper script.
 
 1. Generate the minimal exact commands and call
    `remote_debug_prepare_command_draft` with a short purpose.
-2. Show the returned command block, `draftId`, `commandHash`, and expiration to
-   the user.
-3. If the user says `只生成命令，不执行`, do not call the execution tool.
-4. If the user says `使用命令`, call `remote_debug_execute_command_draft` with
+2. Immediately call `remote_debug_review_command_draft` with the returned
+   `draftId` and the selected `instanceId`; do not execute a draft directly
+   after preparation.
+3. If the reviewer returns `decision=auto_executed`, report the review and
+   execution result. Do not call the execution tool a second time.
+4. If the reviewer returns `decision=manual_review`, show the complete draft,
+   `draftId`, `commandHash`, expiration, and every returned violation point.
+   Wait for the user's explicit choice.
+5. If the user says `只生成命令，不执行`, do not call the execution tool.
+6. If the user says `使用命令`, call `remote_debug_execute_command_draft` with
    the returned `draftId`, `commandHash`, and exact confirmation phrase
    `使用命令`.
-5. If command text changes, create a new draft instead of executing the old one.
+7. If command text changes, create a new draft instead of executing the old one.
 
 ## Evidence Discipline
 
@@ -100,7 +112,8 @@ service, or writing a helper script.
 1. State a short diagnostic plan before calling tools.
 2. Read `remote_debug_get_capabilities` and record its `policyVersion`.
 3. Select the fewest relevant commands from the returned examples and constraints.
-4. Use only path roots returned by the capability payload.
+4. Use only common path roots or the selected instance's `sourceRoots` returned
+   by the capability/instance payload.
 5. Let the Agent validate every command and path; never bypass a rejection.
 6. Summarize evidence, likely root cause, confidence, and next safe action.
 
@@ -122,8 +135,12 @@ service, or writing a helper script.
   draft.
 
 - Never request arbitrary shell execution.
-- For non-read-only commands, use approved-command drafts; never execute a draft
-  unless the user explicitly chooses `使用命令`.
+- For non-read-only commands, use approved-command drafts and require the user's
+  explicit `使用命令`; the automatic reviewer is limited to commands that pass
+  the existing read-only policy.
+- When the command-draft reviewer is available, always use it immediately after
+  draft creation. The reviewer may auto-execute only when the local policy and
+  Codex reviewer both approve; a model response cannot expand the local policy.
 - Never use `rm`, `sudo`, `shutdown`, `reboot`, `mkfs`, `chmod`, or `chown`.
 - Never use shell operators such as `;`, `&&`, `|`, redirects, command
   substitution, or newlines.

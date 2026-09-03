@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Command Draft"
+  short_description: "Audit and safely execute command drafts"
+  default_prompt: "Use $command-draft-review after a Remote Debug Agent command draft is generated."

@@ -260,6 +260,9 @@ $targetStateRoot = Join-Path $dataRoot ".remote-debug"
 Copy-IfMissing `
   -Source (Join-Path $legacyStateRoot "instances.json") `
   -Destination (Join-Path $targetStateRoot "instances.json")
+Copy-IfMissing `
+  -Source (Join-Path $legacyStateRoot "command-review.json") `
+  -Destination (Join-Path $targetStateRoot "command-review.json")
 
 $legacyInstancesRoot = Join-Path $legacyStateRoot "instances"
 if (Test-Path -LiteralPath $legacyInstancesRoot -PathType Container) {

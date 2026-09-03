@@ -7,7 +7,7 @@
       ],
       "cwd": ".",
       "startup_timeout_sec": 30,
-      "tool_timeout_sec": 910
+      "tool_timeout_sec": 940
     }
   }
 }

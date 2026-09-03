@@ -7,10 +7,23 @@ import { fileURLToPath } from "node:url";
 import { byteLength, createActivityLog, previewText } from "./activity.js";
 import {
   assertApprovedCommandsEnabled,
+  APPROVED_COMMAND_CONFIRMATION,
   createCommandDraftStore,
   redactCommand,
 } from "./approved-commands.js";
-import { configFingerprint, loadConfig, publicSecurity, publicTarget } from "./config.js";
+import {
+  inspectCommandDraft,
+  isModelAutoApproval,
+  manualReviewViolation,
+  runCodexReview as defaultRunCodexReview,
+} from "./command-review.js";
+import {
+  allowedPathsForSourceRoots,
+  configFingerprint,
+  loadConfig,
+  publicSecurity,
+  publicTarget,
+} from "./config.js";
 import { writeAuditLog } from "./audit.js";
 import {
   assertPathAllowed,
@@ -241,6 +254,28 @@ function approvedExecutionSummary(payload) {
     commandCount: payload.results.length,
     stopped: payload.stopped,
     commandsOk: payload.commandsOk,
+  };
+}
+
+function commandReviewViolationSummary(violations = []) {
+  return violations.map((violation) => ({
+    commandIndex: violation.commandIndex,
+    code: violation.code,
+    severity: violation.severity,
+  }));
+}
+
+function commandReviewSummary(payload) {
+  return {
+    instanceId: payload.instanceId,
+    draftId: payload.draftId,
+    decision: payload.decision,
+    staticViolationCount: payload.review?.staticViolations?.length || 0,
+    violationCount: payload.review?.violations?.length || 0,
+    violationCodes: commandReviewViolationSummary(payload.review?.violations),
+    modelAttempts: payload.review?.model?.attempts,
+    modelDurationMs: payload.review?.model?.durationMs,
+    execution: payload.execution ? approvedExecutionSummary(payload.execution) : undefined,
   };
 }
 
@@ -1138,6 +1173,20 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
   };
 }
 
+function managerPathCapabilities(config, registry) {
+  const capabilities = securityCapabilities(config);
+  capabilities.paths.byInstance = Object.fromEntries(
+    registry.listInternal().map((instance) => {
+      const sourceRoots = { ...(instance.sourceRoots || {}) };
+      return [instance.id, {
+        sourceRoots,
+        allowedRoots: allowedPathsForSourceRoots(sourceRoots),
+      }];
+    }),
+  );
+  return capabilities;
+}
+
 function managerAsync(handler) {
   return (request, response) => {
     Promise.resolve(handler(request, response)).catch((error) => {
@@ -1171,6 +1220,9 @@ export function createManagerApp(options = {}) {
       forkWorker: options.forkWorker,
       fetchImpl: options.fetchImpl,
     });
+  const commandReviewConfig =
+    options.commandReviewConfig || config.commandReview || { status: "unavailable" };
+  const runCodexReview = options.runCodexReview || defaultRunCodexReview;
   const activity = options.activity || createActivityLog();
   const shutdownController = options.shutdownController || {};
   const lifecycle =
@@ -1182,6 +1234,7 @@ export function createManagerApp(options = {}) {
     });
   const app = express();
   const publicDir = path.join(moduleDirectory, "public");
+  let commandReviewInFlight = false;
 
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
@@ -1379,7 +1432,308 @@ export function createManagerApp(options = {}) {
   });
 
   app.get("/api/capabilities", (_request, response) => {
-    response.json({ ok: true, capabilities: securityCapabilities(config) });
+    response.json({ ok: true, capabilities: managerPathCapabilities(config, registry) });
+  });
+
+  app.post("/approved-command-drafts/review", async (request, response) => {
+    const startedAt = performance.now();
+    const rawDraftId = request.body?.draftId;
+    const rawInstanceId = request.body?.instanceId;
+    const requestOperation = createRequestOperation(
+      request,
+      response,
+      "/approved-command-drafts/review",
+      config,
+      "manager",
+    );
+    const operation = createOperation(request, config, "approved-command-review", {
+      operationId: requestOperation.operationId,
+      instanceId: requestText(rawInstanceId),
+      draftId: requestText(rawDraftId),
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    let instanceId;
+    let draft;
+    let staticReview;
+    let modelResult;
+    let reviewClaimed = false;
+
+    const responseForReview = ({
+      decision,
+      reason,
+      violations = [],
+      model,
+      execution,
+    }) => ({
+      ok: true,
+      instanceId,
+      decision,
+      draftId: draft?.draftId,
+      purpose: draft?.purpose,
+      commands: draft?.commands,
+      commandBlock: draft?.commandBlock,
+      commandHash: draft?.commandHash,
+      expiresAt: draft?.expiresAt,
+      draft,
+      review: {
+        reason,
+        staticViolations: staticReview?.violations || [],
+        violations,
+        model,
+      },
+      execution,
+      durationMs: durationSince(startedAt),
+      operationId: requestOperation.operationId,
+    });
+
+    const completeReview = async (payload) => {
+      await audit(config, {
+        tool: "approved-command-review",
+        instanceId,
+        draftId: payload.draftId,
+        commandHash: payload.commandHash,
+        commandCount: payload.commands?.length,
+        decision: payload.decision,
+        reviewReason: payload.review?.reason,
+        staticViolationCodes: commandReviewViolationSummary(payload.review?.staticViolations),
+        violationCodes: commandReviewViolationSummary(payload.review?.violations),
+        modelDecision: payload.review?.model?.decision,
+        modelAttempts: payload.review?.model?.attempts,
+        modelDurationMs: payload.review?.model?.durationMs,
+        execution: payload.execution ? approvedExecutionSummary(payload.execution) : undefined,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+      });
+      publishStage(activity, operation, "completed", {
+        ...commandReviewSummary(payload),
+        durationMs: payload.durationMs,
+      });
+      response.json(payload);
+    };
+
+    try {
+      instanceId = registry.resolveId(rawInstanceId);
+      const instance = registry.getInternal(instanceId);
+      assertApprovedCommandsEnabled({ approvedCommands: instance?.approvedCommands });
+      if (commandReviewInFlight) {
+        throw managerRouteError(
+          "another command draft review is already in progress",
+          "COMMAND_REVIEW_BUSY",
+          429,
+        );
+      }
+      commandReviewInFlight = true;
+      reviewClaimed = true;
+
+      draft = await workerManager.callInstance(
+        instanceId,
+        "/approved-command-drafts/get",
+        {
+          draftId: rawDraftId,
+          operationId: requestOperation.operationId,
+          timeoutMs: requestOperation.timeoutMs,
+          deadlineAt: requestOperation.deadlineAt,
+        },
+        request.headers,
+        { signal: requestOperation.signal },
+      );
+      staticReview = inspectCommandDraft(draft.commands, config.security);
+      operation.request = {
+        operationId: requestOperation.operationId,
+        instanceId,
+        draftId: draft.draftId,
+        commandHash: draft.commandHash,
+        commandCount: draft.commandCount,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      publishStage(activity, operation, "static-reviewed", {
+        eligible: staticReview.eligible,
+        violations: commandReviewViolationSummary(staticReview.violations),
+      });
+
+      if (!staticReview.eligible) {
+        await completeReview(responseForReview({
+          decision: "manual_review",
+          reason: "static_policy_rejected",
+          violations: staticReview.violations,
+        }));
+        return;
+      }
+
+      if (!commandReviewConfig.autoExecuteEnabled) {
+        const violation = manualReviewViolation(
+          "COMMAND_REVIEW_AUTO_EXECUTION_DISABLED",
+          "自动审核开关未启用，必须由人工确认后执行。",
+          {
+            severity: "medium",
+            rule: "自动执行必须同时启用现有 approved command 开关和草稿审核开关",
+          },
+        );
+        await completeReview(responseForReview({
+          decision: "manual_review",
+          reason: "auto_execution_disabled",
+          violations: [violation],
+        }));
+        return;
+      }
+
+      if (commandReviewConfig.status !== "ready") {
+        const violation = manualReviewViolation(
+          commandReviewConfig.error?.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE",
+          commandReviewConfig.error?.message || "Codex 审核配置不可用。",
+          {
+            severity: "high",
+            rule: "自动执行必须使用有效的 Codex 审核配置",
+          },
+        );
+        await completeReview(responseForReview({
+          decision: "manual_review",
+          reason: "review_config_unavailable",
+          violations: [violation],
+          model: {
+            status: "unavailable",
+            errorCode: commandReviewConfig.error?.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE",
+          },
+        }));
+        return;
+      }
+
+      try {
+        modelResult = await runCodexReview({
+          draft,
+          config: commandReviewConfig,
+          staticReview,
+          signal: requestOperation.signal,
+          options: options.commandReviewOptions,
+        });
+      } catch (error) {
+        if (["OPERATION_CANCELLED", "OPERATION_DEADLINE_EXCEEDED", "COMMAND_REVIEW_CANCELLED"].includes(error.code)) {
+          throw error;
+        }
+        const violation = manualReviewViolation(
+          error.code || "COMMAND_REVIEW_MODEL_UNAVAILABLE",
+          error.message || "Codex 审核没有返回可用结果。",
+          {
+            severity: "high",
+            rule: "模型审核失败或结果不可用时必须转人工",
+          },
+        );
+        await completeReview(responseForReview({
+          decision: "manual_review",
+          reason: "model_review_unavailable",
+          violations: [violation],
+          model: {
+            status: "error",
+            errorCode: error.code || "COMMAND_REVIEW_MODEL_UNAVAILABLE",
+            attempts: error.details?.attempts,
+            durationMs: error.details?.durationMs,
+          },
+        }));
+        return;
+      }
+
+      const modelReview = {
+        ...modelResult.review,
+        status: "completed",
+        attempts: modelResult.attempts,
+        durationMs: modelResult.durationMs,
+      };
+      if (!isModelAutoApproval(modelResult.review)) {
+        const violations = [
+          ...staticReview.violations,
+          ...modelResult.review.violations,
+        ];
+        if (violations.length === 0) {
+          violations.push(
+            manualReviewViolation(
+              "COMMAND_REVIEW_MODEL_DID_NOT_APPROVE",
+              modelResult.review.summary,
+              {
+                severity: modelResult.review.riskLevel === "high" ? "high" : "medium",
+                rule: "模型必须明确确认命令为低风险只读操作",
+              },
+            ),
+          );
+        }
+        await completeReview(responseForReview({
+          decision: "manual_review",
+          reason: "model_review_rejected",
+          violations,
+          model: modelReview,
+        }));
+        return;
+      }
+
+      publishStage(activity, operation, "model-approved", {
+        attempts: modelResult.attempts,
+        durationMs: modelResult.durationMs,
+      });
+      let execution;
+      try {
+        execution = await workerManager.callInstance(
+          instanceId,
+          "/approved-command-drafts/execute",
+          {
+            draftId: draft.draftId,
+            commandHash: draft.commandHash,
+            confirmation: APPROVED_COMMAND_CONFIRMATION,
+            operationId: requestOperation.operationId,
+            timeoutMs: requestOperation.timeoutMs,
+            deadlineAt: requestOperation.deadlineAt,
+          },
+          request.headers,
+          { signal: requestOperation.signal },
+        );
+      } catch (error) {
+        error.operationId ||= requestOperation.operationId;
+        error.details = {
+          ...(error.details || {}),
+          instanceId,
+          draft,
+          review: modelReview,
+          autoExecutionStarted: true,
+        };
+        throw error;
+      }
+
+      await completeReview(responseForReview({
+        decision: "auto_executed",
+        reason: "static_and_model_approved",
+        violations: [],
+        model: modelReview,
+        execution,
+      }));
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "approved-command-review",
+        instanceId,
+        draftId: draft?.draftId || (typeof rawDraftId === "string" ? rawDraftId : undefined),
+        commandHash: draft?.commandHash,
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    } finally {
+      if (reviewClaimed) {
+        commandReviewInFlight = false;
+      }
+    }
   });
 
   app.post("/api/memory", managerAsync(async (request, response) => {

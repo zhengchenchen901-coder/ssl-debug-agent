@@ -63,6 +63,39 @@ test("worker process env overrides .env for manager-assigned ports", async () =>
   assert.equal(config.agent.port, 4400);
 });
 
+test("loads instance source roots and adds them to the read policy", () => {
+  const config = loadConfig(
+    {
+      REMOTE_DEBUG_WORKER: "1",
+      REMOTE_DEBUG_SOURCE_ROOTS: JSON.stringify({
+        be: "/home/github/app/current/",
+        h5: "/var/www/new_od_order",
+      }),
+    },
+    "C:\\remote-debug-agent\\agent",
+  );
+
+  assert.deepEqual(config.security.sourceRoots, {
+    be: "/home/github/app/current",
+    h5: "/var/www/new_od_order",
+  });
+  assert.deepEqual(config.security.allowedPaths.slice(-2), [
+    "/home/github/app/current",
+    "/var/www/new_od_order",
+  ]);
+});
+
+test("rejects source roots that are not absolute project directories", () => {
+  assert.throws(
+    () => loadConfig({ REMOTE_DEBUG_SOURCE_ROOTS: JSON.stringify({ source: "/" }) }, "C:\\remote-debug-agent"),
+    (error) => error.code === "INVALID_SOURCE_ROOTS",
+  );
+  assert.throws(
+    () => loadConfig({ REMOTE_DEBUG_SOURCE_ROOTS: JSON.stringify({ source: "relative/path" }) }, "C:\\remote-debug-agent"),
+    (error) => error.code === "INVALID_SOURCE_ROOTS",
+  );
+});
+
 test("runtime id is loaded from the manager environment", () => {
   const config = loadConfig(
     { REMOTE_DEBUG_RUNTIME_ID: "2.1.0:test-runtime" },
@@ -82,23 +115,48 @@ test("agent .env can override project root .env for local experiments", async ()
   assert.equal(loadDotEnv(agentDir).REMOTE_DEBUG_HOST, "from-agent");
 });
 
-test("approved command execution is disabled by default and enabled by explicit env flag", () => {
-  const disabled = loadConfig({}, "C:\\remote-debug-agent\\agent");
-  assert.equal(disabled.approvedCommands.enabled, false);
-  assert.equal(disabled.approvedCommands.executionTimeoutMs, 300_000);
-  assert.equal(disabled.approvedCommands.maxExecutionTimeoutMs, 900_000);
+test("approved command execution is disabled by default and enabled by explicit env flag", async () => {
+  const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-review-flags-"));
+  try {
+    const disabled = loadConfig({}, projectDir);
+    assert.equal(disabled.approvedCommands.enabled, false);
+    assert.equal(disabled.approvedCommands.executionTimeoutMs, 300_000);
+    assert.equal(disabled.approvedCommands.maxExecutionTimeoutMs, 900_000);
+    assert.equal(disabled.commandReview.autoExecuteEnabled, false);
 
-  const enabled = loadConfig(
-    {
-      REMOTE_DEBUG_APPROVED_COMMANDS: "1",
-      REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: "60000",
-      REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: "120000",
-    },
-    "C:\\remote-debug-agent\\agent",
-  );
-  assert.equal(enabled.approvedCommands.enabled, true);
-  assert.equal(enabled.approvedCommands.executionTimeoutMs, 60_000);
-  assert.equal(enabled.approvedCommands.maxExecutionTimeoutMs, 120_000);
+    const reviewConfigPath = path.join(projectDir, "command-review.json");
+    await fs.writeFile(
+      reviewConfigPath,
+      JSON.stringify({
+        version: 1,
+        codex: {
+          codexHome: projectDir,
+          command: "codex",
+          provider: "OpenAI",
+          name: "OpenAI",
+          model: "review-model",
+          baseUrl: "https://api.example.test/v1",
+        },
+      }),
+      "utf8",
+    );
+    const enabled = loadConfig(
+      {
+        REMOTE_DEBUG_APPROVED_COMMANDS: "1",
+        REMOTE_DEBUG_COMMAND_REVIEW_AUTO_EXECUTE: "1",
+        REMOTE_DEBUG_COMMAND_REVIEW_CONFIG_PATH: reviewConfigPath,
+        REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: "60000",
+        REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: "120000",
+      },
+      projectDir,
+    );
+    assert.equal(enabled.approvedCommands.enabled, true);
+    assert.equal(enabled.approvedCommands.executionTimeoutMs, 60_000);
+    assert.equal(enabled.approvedCommands.maxExecutionTimeoutMs, 120_000);
+    assert.equal(enabled.commandReview.autoExecuteEnabled, true);
+  } finally {
+    await fs.rm(projectDir, { recursive: true, force: true });
+  }
 });
 
 test("loads the selected instance MongoDB profile without accepting a URI", () => {

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
+import posixPath from "node:path/posix";
 import {
   DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
   DEFAULT_APPROVED_COMMAND_TTL_MS,
@@ -8,8 +9,16 @@ import {
   MAX_APPROVED_EXECUTION_TIMEOUT_MS,
   MAX_APPROVED_COMMANDS,
 } from "./approved-commands.js";
+import {
+  publicCommandReviewConfig,
+  resolveCommandReviewConfig,
+} from "./command-review.js";
 
 export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
+
+const SOURCE_ROOT_KEY_PATTERN = /^[a-z][a-z0-9_-]{0,31}$/;
+const MAX_SOURCE_ROOTS = 20;
+const MAX_SOURCE_ROOT_LENGTH = 4096;
 
 const DEFAULT_AGENT_PORT = 4343;
 const DEFAULT_SSH_PORT = 22;
@@ -120,6 +129,73 @@ function parseAgentLifetime(value) {
   throw new Error("REMOTE_DEBUG_AGENT_LIFETIME must be manual or desktop");
 }
 
+function sourceRootsError(message, cause) {
+  const error = new Error(message);
+  error.code = "INVALID_SOURCE_ROOTS";
+  error.statusCode = 400;
+  if (cause) {
+    error.cause = cause;
+  }
+  return error;
+}
+
+export function normalizeSourceRoots(value) {
+  if (value === undefined || value === null || value === "") {
+    return {};
+  }
+
+  let parsed = value;
+  if (typeof value === "string") {
+    try {
+      parsed = JSON.parse(value);
+    } catch (error) {
+      throw sourceRootsError(`REMOTE_DEBUG_SOURCE_ROOTS is not valid JSON: ${error.message}`, error);
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw sourceRootsError("sourceRoots must be a JSON object");
+  }
+
+  const entries = Object.entries(parsed);
+  if (entries.length > MAX_SOURCE_ROOTS) {
+    throw sourceRootsError(`sourceRoots cannot contain more than ${MAX_SOURCE_ROOTS} entries`);
+  }
+
+  const normalized = {};
+  for (const [project, rawPath] of entries) {
+    if (!SOURCE_ROOT_KEY_PATTERN.test(project)) {
+      throw sourceRootsError(`sourceRoots project key is invalid: ${project}`);
+    }
+    if (typeof rawPath !== "string" || rawPath.trim() === "") {
+      throw sourceRootsError(`sourceRoots.${project} must be a non-empty absolute path`);
+    }
+
+    const trimmed = rawPath.trim();
+    if (!trimmed.startsWith("/")) {
+      throw sourceRootsError(`sourceRoots.${project} must be an absolute remote path`);
+    }
+    if (trimmed.length > MAX_SOURCE_ROOT_LENGTH) {
+      throw sourceRootsError(`sourceRoots.${project} is too long`);
+    }
+
+    const normalizedPath = posixPath.normalize(trimmed);
+    if (normalizedPath === "/") {
+      throw sourceRootsError(`sourceRoots.${project} cannot grant access to the remote root`);
+    }
+
+    normalized[project] = normalizedPath.endsWith("/")
+      ? normalizedPath.slice(0, -1)
+      : normalizedPath;
+  }
+
+  return normalized;
+}
+
+export function allowedPathsForSourceRoots(sourceRoots = {}) {
+  return [...new Set([...DEFAULT_ALLOWED_PATHS, ...Object.values(sourceRoots)])];
+}
+
 function parseMongoConfig(value) {
   if (value === undefined || value === "") {
     return undefined;
@@ -188,6 +264,7 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
     env.REMOTE_DEBUG_AGENT_LIFETIME === undefined || env.REMOTE_DEBUG_AGENT_LIFETIME === ""
       ? mergedEnv.REMOTE_DEBUG_AGENT_LIFETIME
       : env.REMOTE_DEBUG_AGENT_LIFETIME;
+  const sourceRoots = normalizeSourceRoots(mergedEnv.REMOTE_DEBUG_SOURCE_ROOTS);
 
   return {
     agent: {
@@ -204,7 +281,8 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
     security: {
-      allowedPaths: DEFAULT_ALLOWED_PATHS,
+      allowedPaths: allowedPathsForSourceRoots(sourceRoots),
+      sourceRoots,
       defaultTimeoutMs: DEFAULT_TIMEOUT_MS,
       maxTimeoutMs: MAX_TIMEOUT_MS,
       defaultFileTimeoutMs: DEFAULT_FILE_TIMEOUT_MS,
@@ -220,6 +298,10 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
       maxCommands: MAX_APPROVED_COMMANDS,
     },
+    commandReview: resolveCommandReviewConfig({
+      cwd,
+      env: mergedEnv,
+    }),
     audit: {
       logPath:
         mergedEnv.REMOTE_DEBUG_AUDIT_LOG ||
@@ -272,6 +354,7 @@ export function publicTarget(config) {
 export function publicSecurity(config) {
   return {
     allowedPaths: config.security.allowedPaths,
+    sourceRoots: { ...(config.security.sourceRoots || {}) },
     defaultTimeoutMs: config.security.defaultTimeoutMs,
     maxTimeoutMs: config.security.maxTimeoutMs,
     defaultFileTimeoutMs: config.security.defaultFileTimeoutMs,
@@ -286,10 +369,23 @@ export function publicSecurity(config) {
       maxCommandLength: config.approvedCommands?.maxCommandLength,
       maxCommands: config.approvedCommands?.maxCommands,
     },
+    commandReview: publicCommandReviewConfig(config.commandReview),
+  };
+}
+
+function commandReviewFingerprint(config = {}) {
+  return {
+    configPath: config.configPath,
+    autoExecuteEnabled: Boolean(config.autoExecuteEnabled),
+    refresh: Boolean(config.refresh),
+    reviewTimeoutMs: config.reviewTimeoutMs,
+    maxRetries: config.maxRetries,
   };
 }
 
 function fingerprintConfig(config) {
+  const security = publicSecurity(config);
+  security.commandReview = commandReviewFingerprint(config.commandReview);
   return {
     agent: {
       host: config.agent.host,
@@ -303,7 +399,7 @@ function fingerprintConfig(config) {
       passphrase: config.ssh.passphrase || "",
       readyTimeout: config.ssh.readyTimeout,
     },
-    security: publicSecurity(config),
+    security,
     mongodb: config.mongodb
       ? {
           enabled: Boolean(config.mongodb.enabled),
@@ -314,6 +410,7 @@ function fingerprintConfig(config) {
           database: config.mongodb.database,
         }
       : null,
+    commandReview: publicCommandReviewConfig(config.commandReview),
     audit: {
       logPath: config.audit.logPath,
     },

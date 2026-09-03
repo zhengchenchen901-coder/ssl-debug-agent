@@ -7,6 +7,7 @@ export const OPERATION_TIMEOUTS = Object.freeze({
   file: Object.freeze({ defaultMs: 60_000, maxMs: 300_000 }),
   mongodb: Object.freeze({ defaultMs: 60_000, maxMs: 300_000 }),
   approvedExecution: Object.freeze({ defaultMs: 300_000, maxMs: 900_000 }),
+  approvedReview: Object.freeze({ defaultMs: 330_000, maxMs: 930_000 }),
   manager: Object.freeze({ defaultMs: 30_000, maxMs: 300_000 }),
 });
 
@@ -87,6 +88,21 @@ export function operationPolicy(pathName, config = {}) {
       maxMs:
         config.approvedCommands?.maxExecutionTimeoutMs ||
         OPERATION_TIMEOUTS.approvedExecution.maxMs,
+    };
+  }
+  if (pathName === "/approved-command-drafts/review") {
+    const reviewTimeoutMs =
+      config.commandReview?.reviewTimeoutMs ||
+      OPERATION_TIMEOUTS.approvedReview.defaultMs - OPERATION_TIMEOUTS.approvedExecution.defaultMs;
+    const executionDefaultMs =
+      config.approvedCommands?.executionTimeoutMs ||
+      OPERATION_TIMEOUTS.approvedExecution.defaultMs;
+    const executionMaxMs =
+      config.approvedCommands?.maxExecutionTimeoutMs ||
+      OPERATION_TIMEOUTS.approvedExecution.maxMs;
+    return {
+      defaultMs: reviewTimeoutMs + executionDefaultMs,
+      maxMs: reviewTimeoutMs + executionMaxMs,
     };
   }
   return OPERATION_TIMEOUTS.manager;

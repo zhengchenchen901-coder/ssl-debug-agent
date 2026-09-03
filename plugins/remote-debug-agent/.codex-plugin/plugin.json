@@ -1,6 +1,6 @@
 {
   "name": "remote-debug-agent",
-  "version": "2.1.0+codex.20260902054204",
+  "version": "2.1.0+codex.20260902111148",
   "description": "Safe remote Linux debugging through a local SSH-backed agent.",
   "author": {
     "name": "Local Developer"
@@ -15,14 +15,15 @@
     "nginx",
     "logs",
     "mongodb",
-    "database"
+    "database",
+    "command-review"
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Remote Debug Agent",
     "shortDescription": "Debug Linux servers through a safe local SSH agent",
-    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. It also provides bounded read-only MongoDB queries through each instance's remote application configuration and can prepare one-time command drafts for explicit user-approved execution when enabled. The local agent enforces command allowlists, path boundaries, SSH configuration, timeouts, one-time draft hashes, and audit logging.",
+    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. It also provides bounded read-only MongoDB queries through each instance's remote application configuration, prepares one-time command drafts, and can review eligible read-only drafts with the local security policy and Codex reviewer before automatic execution when explicitly enabled. The local agent enforces command allowlists, path boundaries, SSH configuration, timeouts, one-time draft hashes, model-review bounds, and audit logging.",
     "developerName": "Local Developer",
     "category": "Coding",
     "capabilities": [

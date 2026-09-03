@@ -101,6 +101,7 @@ test(
     const legacyInstance = path.join(legacyState, "instances", "default");
     await fs.mkdir(legacyInstance, { recursive: true });
     await fs.writeFile(path.join(legacyState, "instances.json"), '{"legacy":true}\n');
+    await fs.writeFile(path.join(legacyState, "command-review.json"), '{"version":1}\n');
     await fs.writeFile(path.join(legacyState, "manager-runtime.json"), '{"pid":123}\n');
     await fs.writeFile(path.join(legacyInstance, "memory.json"), '{"memory":"legacy"}\n');
     await fs.writeFile(path.join(legacyInstance, "audit.jsonl"), '{"audit":"legacy"}\n');
@@ -121,6 +122,10 @@ test(
     assert.equal(
       await fs.readFile(path.join(dataDir, ".remote-debug", "instances.json"), "utf8"),
       '{"legacy":true}\n',
+    );
+    assert.equal(
+      await fs.readFile(path.join(dataDir, ".remote-debug", "command-review.json"), "utf8"),
+      '{"version":1}\n',
     );
     assert.equal(
       await fs.readFile(

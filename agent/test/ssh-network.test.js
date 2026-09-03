@@ -217,6 +217,77 @@ test("SFTP retries once before data is returned", async () => {
   await supervisor.stop();
 });
 
+test("SFTP follows a configured source-root symlink and rejects canonical escapes", async () => {
+  const config = makeConfig();
+  config.security.allowedPaths.push("/home/github/app-release/current");
+  const sourceRoot = "/home/github/app-release/current";
+  const sourceTarget = "/home/github/app-release/releases/2026090203";
+  const sourceFile = `${sourceRoot}/src/index.ts`;
+
+  class FakeClient extends EventEmitter {
+    connect() {
+      setImmediate(() => this.emit("ready"));
+    }
+
+    sftp(callback) {
+      const sftp = new EventEmitter();
+      sftp.realpath = (remotePath, done) => setImmediate(() => {
+        if (remotePath === sourceRoot) {
+          done(null, sourceTarget);
+          return;
+        }
+        if (remotePath === sourceFile) {
+          done(null, `${sourceTarget}/src/index.ts`);
+          return;
+        }
+        if (remotePath === `${sourceRoot}/escape.txt`) {
+          done(null, "/tmp/escape.txt");
+          return;
+        }
+        done(null, remotePath);
+      });
+      sftp.stat = (_remotePath, done) => setImmediate(() => done(null, { size: 2 }));
+      sftp.createReadStream = () => {
+        const stream = new EventEmitter();
+        stream.destroy = () => stream.emit("close");
+        setImmediate(() => stream.emit("data", Buffer.from("ok")));
+        setImmediate(() => stream.emit("end"));
+        return stream;
+      };
+      sftp.end = () => {};
+      setImmediate(() => callback(null, sftp));
+    }
+
+    end() {}
+  }
+
+  const supervisor = new SshConnectionSupervisor(config, {
+    ClientClass: FakeClient,
+    readFile: async () => "key",
+  });
+  await supervisor.start();
+
+  try {
+    const result = await readRemoteFile(sourceFile, {
+      config,
+      supervisor,
+      maxBytes: 100,
+    });
+    assert.equal(result.path, `${sourceTarget}/src/index.ts`);
+    assert.equal(result.content, "ok");
+    await assert.rejects(
+      readRemoteFile(`${sourceRoot}/escape.txt`, {
+        config,
+        supervisor,
+        maxBytes: 100,
+      }),
+      (error) => error.code === "PATH_NOT_ALLOWED",
+    );
+  } finally {
+    await supervisor.stop();
+  }
+});
+
 test("SFTP does not retry after file data has been returned", async () => {
   const config = makeConfig();
   let sftpCount = 0;

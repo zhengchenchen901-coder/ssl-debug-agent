@@ -42,6 +42,10 @@ test("publishes machine-readable capabilities from the enforced policy", () => {
   const capabilities = securityCapabilities({
     security: {
       ...security,
+      sourceRoots: {
+        be: "/home/github/app/current",
+        h5: "/var/www/new_od_order",
+      },
       defaultFileTimeoutMs: 20_000,
       maxFileTimeoutMs: 60_000,
       defaultReadMaxBytes: 256 * 1024,
@@ -61,8 +65,13 @@ test("publishes machine-readable capabilities from the enforced policy", () => {
   assert.equal(capabilities.mongodb.readOnly, true);
   assert.ok(capabilities.mongodb.operations.includes("find"));
   assert.equal(capabilities.mongodb.maxLimit, 500);
+  assert.equal(capabilities.commandReview.autoExecuteEnabled, false);
   assert.deepEqual(capabilities.commands.allowedExecutables, [...ALLOWED_COMMANDS]);
   assert.deepEqual(capabilities.paths.allowedRoots, security.allowedPaths);
+  assert.deepEqual(capabilities.paths.sourceRoots, {
+    be: "/home/github/app/current",
+    h5: "/var/www/new_od_order",
+  });
   assert.equal(capabilities.approvedCommands.enabled, false);
   for (const example of capabilities.commands.examples) {
     assert.doesNotThrow(() => validateCommand(example, security), example);

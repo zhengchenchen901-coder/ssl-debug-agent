@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { loadDotEnv } from "./config.js";
+import { loadDotEnv, normalizeSourceRoots } from "./config.js";
 
 export const REGISTRY_VERSION = 3;
 export const DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -251,6 +251,9 @@ function normalizeInstance(input, existing = {}) {
       : input.passphrase;
   const preferredWorkerPort = input.preferredWorkerPort ?? input.workerPort ?? input.agentPort;
   const mongodb = normalizeMongoSettings(input.mongodb, existing.mongodb);
+  const sourceRoots = normalizeSourceRoots(
+    input.sourceRoots === undefined ? existing.sourceRoots : input.sourceRoots,
+  );
 
   return {
     id,
@@ -270,6 +273,7 @@ function normalizeInstance(input, existing = {}) {
       ...input.approvedCommands,
     }),
     ...(mongodb ? { mongodb } : {}),
+    ...(Object.keys(sourceRoots).length > 0 ? { sourceRoots } : {}),
     createdAt: existing.createdAt || input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
   };
@@ -361,6 +365,7 @@ function envDefaultInstance(env, cwd) {
       executionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS,
       maxExecutionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
     },
+    sourceRoots: merged.REMOTE_DEBUG_SOURCE_ROOTS,
   });
 }
 

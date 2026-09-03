@@ -273,6 +273,30 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/approved-command-drafts/review") {
+        const draft = drafts.get(parsed.draftId);
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          instanceId: parsed.instanceId || "default",
+          decision: "manual_review",
+          draftId: draft?.draftId,
+          commands: draft?.commands,
+          commandHash: draft?.commandHash,
+          review: {
+            reason: "stub_manual_review",
+            staticViolations: [],
+            violations: [{
+              commandIndex: 0,
+              code: "STUB_REVIEW",
+              severity: "medium",
+              reason: "stub review requires human confirmation",
+            }],
+          },
+        }));
+        return;
+      }
+
       if (request.url === "/approved-command-drafts/execute") {
         const draft = drafts.get(parsed.draftId);
         response.writeHead(200, { "Content-Type": "application/json" });
@@ -829,6 +853,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_list_dir",
         "remote_debug_prepare_command_draft",
         "remote_debug_get_command_draft",
+        "remote_debug_review_command_draft",
         "remote_debug_execute_command_draft",
       ],
     );
@@ -841,6 +866,9 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.equal(readFile.inputSchema.properties.timeoutMs.maximum, 300_000);
     assert.equal(readFile.inputSchema.properties.maxBytes.maximum, 256 * 1024);
     assert.ok(readFile.inputSchema.properties.instanceId);
+    const reviewDraft = list.result.tools.find((tool) => tool.name === "remote_debug_review_command_draft");
+    assert.equal(reviewDraft.inputSchema.properties.timeoutMs.maximum, 930_000);
+    assert.deepEqual(reviewDraft.inputSchema.required, ["draftId"]);
 
     child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 3, method: "resources/list" }));
     const resources = await readMessage();
@@ -1014,6 +1042,21 @@ test("MCP forwards approved command draft tools", async () => {
       encodeMessage({
         jsonrpc: "2.0",
         id: 4,
+        method: "tools/call",
+        params: {
+          name: "remote_debug_review_command_draft",
+          arguments: { draftId: prepare.draftId },
+        },
+      }),
+    );
+    const review = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(review.decision, "manual_review");
+    assert.equal(review.draftId, prepare.draftId);
+
+    child.stdin.write(
+      encodeMessage({
+        jsonrpc: "2.0",
+        id: 5,
         method: "tools/call",
         params: {
           name: "remote_debug_execute_command_draft",

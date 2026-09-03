@@ -59,6 +59,7 @@ test("legacy migration copies only persistent data and never overwrites targets"
   await fs.mkdir(targetState, { recursive: true });
   await fs.writeFile(path.join(legacyRoot, ".env"), "REMOTE_DEBUG_HOST=legacy\n");
   await fs.writeFile(path.join(legacyState, "instances.json"), '{"legacy":true}\n');
+  await fs.writeFile(path.join(legacyState, "command-review.json"), '{"version":1}\n');
   await fs.writeFile(path.join(legacyInstance, "memory.json"), '{"memory":"legacy"}\n');
   await fs.writeFile(path.join(legacyInstance, "audit.jsonl"), '{"audit":"legacy"}\n');
   await fs.writeFile(
@@ -78,6 +79,10 @@ test("legacy migration copies only persistent data and never overwrites targets"
   assert.equal(
     await fs.readFile(path.join(targetState, "instances.json"), "utf8"),
     '{"target":true}\n',
+  );
+  assert.equal(
+    await fs.readFile(path.join(targetState, "command-review.json"), "utf8"),
+    '{"version":1}\n',
   );
   assert.equal(
     await fs.readFile(path.join(targetState, "instances", "default", "memory.json"), "utf8"),

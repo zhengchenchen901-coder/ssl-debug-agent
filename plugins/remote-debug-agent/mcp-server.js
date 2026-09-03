@@ -34,6 +34,8 @@ const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
 const DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1000;
 const DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 300_000;
 const MAX_APPROVED_EXECUTION_TIMEOUT_MS = 900_000;
+const DEFAULT_COMMAND_REVIEW_TIMEOUT_MS = 330_000;
+const MAX_COMMAND_REVIEW_TIMEOUT_MS = 930_000;
 const MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
 const MAX_APPROVED_COMMANDS = 20;
 const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
@@ -138,6 +140,10 @@ const toolOperationPolicies = {
     defaultMs: DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
     maxMs: MAX_APPROVED_EXECUTION_TIMEOUT_MS,
   },
+  remote_debug_review_command_draft: {
+    defaultMs: DEFAULT_COMMAND_REVIEW_TIMEOUT_MS,
+    maxMs: MAX_COMMAND_REVIEW_TIMEOUT_MS,
+  },
 };
 
 function normalizeToolTimeoutMs(toolName, value) {
@@ -222,7 +228,7 @@ const tools = [
   {
     name: "remote_debug_list_instances",
     description:
-      "List configured Remote Debug Agent instances and their runtime status before choosing an instanceId.",
+      "List configured Remote Debug Agent instances, their runtime status, and instance-specific source roots before choosing an instanceId.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -233,7 +239,7 @@ const tools = [
   {
     name: "remote_debug_get_capabilities",
     description:
-      "Read the authoritative Remote Debug Agent security capabilities, policy version, command constraints, approved paths, and limits. This performs no remote operation.",
+      "Read the authoritative Remote Debug Agent security capabilities, policy version, command constraints, common approved paths, per-instance source roots, and limits. This performs no remote operation.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -380,7 +386,7 @@ const tools = [
   {
     name: "remote_debug_read_file",
     description:
-      "Read a remote file under /var/log, /etc/nginx, /home/app, /root/.pm2, or /home/github through SFTP path checks.",
+      "Read a remote file under the common approved paths or the selected instance's configured source roots through SFTP path checks.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -404,7 +410,7 @@ const tools = [
   {
     name: "remote_debug_list_dir",
     description:
-      "List a remote directory under /var/log, /etc/nginx, /home/app, /root/.pm2, or /home/github through SFTP path checks.",
+      "List a remote directory under the common approved paths or the selected instance's configured source roots through SFTP path checks.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -422,7 +428,7 @@ const tools = [
   {
     name: "remote_debug_prepare_command_draft",
     description:
-      "Create a one-time approved-command draft for user review. This only generates commands; it never executes them.",
+      "Create a one-time approved-command draft. This only generates commands; it never executes them. Call remote_debug_review_command_draft immediately before deciding whether human confirmation is required.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -456,6 +462,24 @@ const tools = [
           description: "The draftId returned by remote_debug_prepare_command_draft.",
         },
         instanceId: instanceIdProperty,
+      },
+    },
+  },
+  {
+    name: "remote_debug_review_command_draft",
+    description:
+      "Review a generated command draft with the local security policy and Codex safety reviewer. Automatically executes only when both approval flags are enabled, every command passes the existing read-only policy, and Codex returns an explicit low-risk approval; otherwise returns the full draft and violation points for human review.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["draftId"],
+      properties: {
+        draftId: {
+          type: "string",
+          description: "The draftId returned by remote_debug_prepare_command_draft.",
+        },
+        instanceId: instanceIdProperty,
+        timeoutMs: timeoutProperty(DEFAULT_COMMAND_REVIEW_TIMEOUT_MS, MAX_COMMAND_REVIEW_TIMEOUT_MS),
       },
     },
   },
@@ -633,7 +657,7 @@ function publicTargetFromEnv(env) {
   };
 }
 
-function publicSecurityConfig(env = {}) {
+function publicSecurityConfig(env = {}, dataDir = resolveDataDir(env)) {
   const approvedMaxTimeoutMs = parsePositiveInt(
     env.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
     MAX_APPROVED_EXECUTION_TIMEOUT_MS,
@@ -662,6 +686,15 @@ function publicSecurityConfig(env = {}) {
       maxCommandLength: MAX_APPROVED_COMMAND_LENGTH,
       maxCommands: MAX_APPROVED_COMMANDS,
     },
+    commandReview: {
+      configPath:
+        env.REMOTE_DEBUG_COMMAND_REVIEW_CONFIG_PATH ||
+        path.resolve(dataDir, ".remote-debug", "command-review.json"),
+      autoExecuteEnabled: parseBooleanFlag(env.REMOTE_DEBUG_COMMAND_REVIEW_AUTO_EXECUTE),
+      refresh: parseBooleanFlag(env.REMOTE_DEBUG_COMMAND_REVIEW_REFRESH),
+      reviewTimeoutMs: 30_000,
+      maxRetries: 1,
+    },
   };
 }
 
@@ -679,7 +712,7 @@ function fingerprintConfigFromEnv(env, dataDir, port) {
       passphrase: env.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || "",
       readyTimeout: 10_000,
     },
-    security: publicSecurityConfig(env),
+    security: publicSecurityConfig(env, dataDir),
     audit: {
       logPath:
         env.REMOTE_DEBUG_AUDIT_LOG ||
@@ -2084,6 +2117,14 @@ async function callTool(name, args, operation) {
     return callAgent("/approved-command-drafts/get", {
       instanceId: args?.instanceId,
       draftId: args?.draftId,
+    }, operation);
+  }
+
+  if (name === "remote_debug_review_command_draft") {
+    return callAgent("/approved-command-drafts/review", {
+      instanceId: args?.instanceId,
+      draftId: args?.draftId,
+      timeoutMs: args?.timeoutMs,
     }, operation);
   }
 

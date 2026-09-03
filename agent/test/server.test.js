@@ -393,6 +393,10 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
       username: "app",
       privateKeyPath: "C:\\Users\\you\\.ssh\\staging",
       passphrase: "secret",
+      sourceRoots: {
+        be: "/home/github/staging-be",
+        h5: "/var/www/staging-h5",
+      },
     });
     assert.equal(created.status, 201);
     assert.equal(created.body.instance.id, "staging");
@@ -403,6 +407,10 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
     assert.equal(listed.status, 200);
     assert.equal(listed.body.instances.length, 1);
     assert.equal(listed.body.instances[0].runtime.status, "stopped");
+    assert.deepEqual(listed.body.instances[0].sourceRoots, {
+      be: "/home/github/staging-be",
+      h5: "/var/www/staging-h5",
+    });
 
     const capabilities = await getJson(server, "/api/capabilities");
     assert.equal(capabilities.status, 200);
@@ -410,6 +418,17 @@ test("manager API creates, lists, updates, and deletes instances", { skip: !deps
     assert.match(capabilities.body.capabilities.policyVersion, /^[a-f0-9]{64}$/);
     assert.ok(capabilities.body.capabilities.commands.allowedExecutables.includes("netstat"));
     assert.deepEqual(capabilities.body.capabilities.paths.allowedRoots, DEFAULT_ALLOWED_PATHS);
+    assert.deepEqual(capabilities.body.capabilities.paths.byInstance.staging, {
+      sourceRoots: {
+        be: "/home/github/staging-be",
+        h5: "/var/www/staging-h5",
+      },
+      allowedRoots: [
+        ...DEFAULT_ALLOWED_PATHS,
+        "/home/github/staging-be",
+        "/var/www/staging-h5",
+      ],
+    });
 
     const updated = await postJson(
       server,

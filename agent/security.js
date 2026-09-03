@@ -57,6 +57,7 @@ const SECURITY_POLICY = {
     "Commands that read paths require at least one absolute path under an allowed root.",
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
     "The dedicated MongoDB tool is read-only and bounded; database writes require an approved-command draft.",
+    "Automatic command-draft execution requires the existing approved-command flag, the review flag, a hard-policy pass, and an explicit low-risk model approval.",
   ],
   examples: [
     "netstat -tlnp",
@@ -121,6 +122,7 @@ export function securityCapabilities(config = {}) {
     },
     paths: {
       allowedRoots: [...(security.allowedPaths || [])],
+      sourceRoots: { ...(security.sourceRoots || {}) },
     },
     limits: {
       defaultCommandTimeoutMs: security.defaultTimeoutMs,
@@ -137,6 +139,19 @@ export function securityCapabilities(config = {}) {
       maxExecutionTimeoutMs: approvedCommands.maxExecutionTimeoutMs,
       maxCommandLength: approvedCommands.maxCommandLength,
       maxCommands: approvedCommands.maxCommands,
+    },
+    commandReview: {
+      status: config.commandReview?.status || "unavailable",
+      configPath: config.commandReview?.configPath,
+      codexConfigPath: config.commandReview?.codexConfigPath,
+      source: config.commandReview?.source,
+      autoExecuteEnabled: Boolean(config.commandReview?.autoExecuteEnabled),
+      reviewTimeoutMs: config.commandReview?.reviewTimeoutMs,
+      maxRetries: config.commandReview?.maxRetries,
+      provider: config.commandReview?.codex?.provider,
+      model: config.commandReview?.codex?.model,
+      wireApi: config.commandReview?.codex?.wireApi,
+      error: config.commandReview?.error,
     },
     mongodb: {
       enabled: true,
