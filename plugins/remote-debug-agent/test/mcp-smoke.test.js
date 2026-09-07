@@ -270,6 +270,46 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/mongodb/mutations/prepare") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          instanceId: parsed.instanceId || "default",
+          mutationId: "mutation-1",
+          planHash: "b".repeat(64),
+          kind: parsed.kind,
+          operation: parsed.operation,
+          status: "planned",
+          rollbackMode: parsed.kind === "index" ? "compensating" : "transactional",
+          affectedCount: 1,
+        }));
+        return;
+      }
+
+      if (request.url === "/mongodb/mutations/execute" || request.url === "/mongodb/mutations/rollback") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          instanceId: parsed.instanceId || "default",
+          mutationId: parsed.mutationId,
+          planHash: parsed.planHash,
+          status: request.url.endsWith("/rollback") ? "rolled_back" : "committed",
+          rollbackMode: "transactional",
+          affectedCount: 1,
+        }));
+        return;
+      }
+
+      if (request.url === "/mongodb/mutations/list") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({
+          ok: true,
+          instanceId: parsed.instanceId || "default",
+          entries: [],
+        }));
+        return;
+      }
+
       if (request.url === "/api/memory") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(
@@ -880,6 +920,19 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "tailLines",
       "contains",
       "caseSensitive",
+      "document",
+      "update",
+      "deletedField",
+      "deletedValue",
+      "maxAffected",
+      "expectedCount",
+      "rollbackTtlMs",
+      "purpose",
+      "name",
+      "key",
+      "options",
+      "status",
+      "operations",
     ].includes(propertyName)) {
       continue;
     }
@@ -906,6 +959,12 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_list_instances",
         "remote_debug_get_capabilities",
         "remote_debug_mongodb_query",
+        "remote_debug_mongodb_prepare_write",
+        "remote_debug_mongodb_prepare_index",
+        "remote_debug_mongodb_prepare_transaction",
+        "remote_debug_mongodb_execute_mutation",
+        "remote_debug_mongodb_rollback_mutation",
+        "remote_debug_mongodb_list_mutations",
         "remote_debug_restart_instance",
         "remote_debug_update_memory",
         "remote_debug_run_command",
@@ -1006,6 +1065,98 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     const mongo = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(mongo.instanceId, "default");
     assert.equal(mongo.operation, "ping");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 42,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_mongodb_prepare_write",
+        arguments: {
+          instanceId: "default",
+          operation: "insertOne",
+          collection: "members",
+          document: { _id: "m1", status: "active" },
+        },
+      },
+    }));
+    const preparedMutation = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(preparedMutation.mutationId, "mutation-1");
+    assert.equal(preparedMutation.status, "planned");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 43,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_mongodb_execute_mutation",
+        arguments: {
+          instanceId: "default",
+          mutationId: "mutation-1",
+          planHash: "b".repeat(64),
+          confirmation: "确认执行",
+        },
+      },
+    }));
+    const executedMutation = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(executedMutation.status, "committed");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 44,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_mongodb_rollback_mutation",
+        arguments: {
+          instanceId: "default",
+          mutationId: "mutation-1",
+          planHash: "b".repeat(64),
+          confirmation: "确认回滚",
+        },
+      },
+    }));
+    const rolledBackMutation = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(rolledBackMutation.status, "rolled_back");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 45,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_mongodb_prepare_index",
+        arguments: {
+          instanceId: "default",
+          operation: "createIndex",
+          collection: "members",
+          name: "member_status",
+          key: { status: 1 },
+        },
+      },
+    }));
+    const preparedIndex = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(preparedIndex.kind, "index");
+    assert.equal(preparedIndex.status, "planned");
+
+    child.stdin.write(encodeMessage({
+      jsonrpc: "2.0",
+      id: 46,
+      method: "tools/call",
+      params: {
+        name: "remote_debug_mongodb_prepare_transaction",
+        arguments: {
+          instanceId: "default",
+          database: "yennefer",
+          operations: [{
+            operation: "insertOne",
+            collection: "members",
+            document: { _id: "m2", status: "active" },
+          }],
+        },
+      },
+    }));
+    const preparedTransaction = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(preparedTransaction.kind, "transaction");
+    assert.equal(preparedTransaction.status, "planned");
 
     child.stdin.write(
       encodeMessage({

@@ -84,6 +84,21 @@ test("static draft review reuses the read-only command policy and reports indexe
   assert.equal(unsafe.violations.some((item) => item.commandIndex === 3 && item.code === "STREAMING_NOT_SUPPORTED"), true);
 });
 
+test("static draft review admits known maintenance commands for human confirmation only", () => {
+  const review = inspectCommandDraft(
+    ["systemctl --no-pager reload nginx.service", "pm2 reload api-server"],
+    security,
+  );
+  assert.equal(review.eligible, true);
+  assert.equal(review.autoEligible, false);
+  assert.equal(review.manualOnly, true);
+  assert.deepEqual(review.violations, []);
+  assert.deepEqual(
+    review.classifications.map((item) => item.executionMode),
+    ["manual", "manual"],
+  );
+});
+
 test("command review prompt treats draft text as data and does not expose static failures", () => {
   const prompt = buildCommandReviewPrompt({
     purpose: "inspect nginx",

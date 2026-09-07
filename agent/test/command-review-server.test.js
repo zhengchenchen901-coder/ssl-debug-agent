@@ -237,6 +237,33 @@ test("static violations return the complete draft and skip the model and worker 
   }
 });
 
+test("known maintenance commands return manual confirmation even when the model approves them", async () => {
+  const { server, state } = await startReviewServer({
+    commands: ["systemctl --no-pager reload nginx.service"],
+    modelReview: {
+      decision: "approve",
+      isReadOnly: false,
+      riskLevel: "medium",
+      summary: "The reload is limited to the approved nginx unit.",
+      violations: [],
+    },
+  });
+  try {
+    const result = await postJson(server, "/approved-command-drafts/review", {
+      instanceId: "prod",
+      draftId: "draft-1",
+    });
+
+    assert.equal(result.status, 200);
+    assert.equal(result.body.decision, "manual_review");
+    assert.equal(result.body.review.reason, "manual_confirmation_required");
+    assert.equal(result.body.review.violations[0].code, "COMMAND_REVIEW_HUMAN_CONFIRMATION_REQUIRED");
+    assert.equal(state.executed, false);
+  } finally {
+    await close(server);
+  }
+});
+
 test("model rejection is returned as human review with model violation points", async () => {
   const { server, state } = await startReviewServer({
     modelReview: {

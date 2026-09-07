@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan MongoDB Mutations"
+  short_description: "Safely prepare, commit, and roll back bounded database changes"
+  default_prompt: "Use $database-mutations for a structured MongoDB write, index change, transaction, or rollback."

@@ -37,6 +37,10 @@ import {
   summarizeMongoQuery,
 } from "./mongodb.js";
 import {
+  runMongoMutation as defaultRunMongoMutation,
+  summarizeMongoMutation,
+} from "./mongodb-mutations.js";
+import {
   listLogArchiveMembers as defaultListLogArchiveMembers,
   listLogs as defaultListLogs,
   readLog as defaultReadLog,
@@ -282,6 +286,31 @@ function mongoSummary(payload) {
   };
 }
 
+function mongoMutationSummary(payload) {
+  return {
+    instanceId: payload.instanceId,
+    mutationId: payload.mutationId,
+    operationId: payload.operationId,
+    kind: payload.kind,
+    operation: payload.operation,
+    database: payload.database,
+    collection: payload.collection,
+    name: payload.name,
+    status: payload.status,
+    rollbackMode: payload.rollbackMode,
+    riskLevel: payload.riskLevel,
+    requiresConfirmation: payload.requiresConfirmation,
+    purpose: payload.purpose,
+    createdAt: payload.createdAt,
+    committedAt: payload.committedAt,
+    rolledBackAt: payload.rolledBackAt,
+    rollbackExpiresAt: payload.rollbackExpiresAt,
+    planHash: payload.planHash,
+    affectedCount: payload.affectedCount,
+    changedFields: payload.changedFields,
+  };
+}
+
 function approvedDraftSummary(payload) {
   return {
     draftId: payload.draftId,
@@ -346,6 +375,7 @@ export function createApp(options = {}) {
   const listRemoteDirImpl = options.listRemoteDir || defaultListRemoteDir;
   const resolveRemotePathsImpl = options.resolveRemotePaths || defaultResolveRemotePaths;
   const runMongoQueryImpl = options.runMongoQuery || defaultRunMongoQuery;
+  const runMongoMutationImpl = options.runMongoMutation || defaultRunMongoMutation;
   const listLogsImpl = options.listLogs || defaultListLogs;
   const listLogArchiveMembersImpl =
     options.listLogArchiveMembers || defaultListLogArchiveMembers;
@@ -360,6 +390,12 @@ export function createApp(options = {}) {
     resolveRemotePathsImpl(remotePaths, { ...operationOptions, supervisor: sshSupervisor });
   const runMongoQuery = (query, operationOptions) =>
     runMongoQueryImpl(query, {
+      ...operationOptions,
+      config,
+      runSSH,
+    });
+  const runMongoMutation = (mutation, operationOptions) =>
+    runMongoMutationImpl(mutation, {
       ...operationOptions,
       config,
       runSSH,
@@ -1274,6 +1310,83 @@ export function createApp(options = {}) {
     }
   });
 
+  async function handleMongoMutation(request, response, mode, pathName) {
+    const startedAt = performance.now();
+    const raw = request.body || {};
+    const requestOperation = createRequestOperation(request, response, pathName, config);
+    const operation = createOperation(request, config, `mongodb-mutation-${mode}`, {
+      operationId: requestOperation.operationId,
+      ...summarizeMongoMutation(raw),
+      mutationId: requestText(raw.mutationId),
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+
+    try {
+      const result = await runMongoMutation(
+        { ...raw, mode },
+        { operation: requestOperation },
+      );
+      const payload = {
+        ok: true,
+        instanceId: process.env.REMOTE_DEBUG_INSTANCE_ID || undefined,
+        ...result,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+      };
+      operation.request = {
+        ...summarizeMongoMutation(raw),
+        mutationId: payload.mutationId,
+        planHash: payload.planHash,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      await audit(config, {
+        tool: `mongodb-mutation-${mode}`,
+        ...mongoMutationSummary(payload),
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+      });
+      publishStage(activity, operation, "completed", {
+        ok: true,
+        result: mongoMutationSummary(payload),
+      });
+      response.json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: `mongodb-mutation-${mode}`,
+        ...summarizeMongoMutation(raw),
+        mutationId: requestText(raw.mutationId),
+        planHash: requestText(raw.planHash),
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", {
+        ok: false,
+        durationMs,
+        error: payload.error,
+      });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  }
+
+  app.post("/mongodb/mutations/prepare", (request, response) =>
+    handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
+  app.post("/mongodb/mutations/execute", (request, response) =>
+    handleMongoMutation(request, response, "commit", "/mongodb/mutations/execute"));
+  app.post("/mongodb/mutations/rollback", (request, response) =>
+    handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
+  app.post("/mongodb/mutations/list", (request, response) =>
+    handleMongoMutation(request, response, "list", "/mongodb/mutations/list"));
+
   return app;
 }
 
@@ -1956,7 +2069,28 @@ export function createManagerApp(options = {}) {
         attempts: modelResult.attempts,
         durationMs: modelResult.durationMs,
       };
-      if (!isModelAutoApproval(modelResult.review)) {
+      const modelSemanticallyApproved =
+        modelResult.review.decision === "approve" &&
+        Array.isArray(modelResult.review.violations) &&
+        modelResult.review.violations.length === 0;
+      if (staticReview.manualOnly && modelSemanticallyApproved) {
+        const violation = manualReviewViolation(
+          "COMMAND_REVIEW_HUMAN_CONFIRMATION_REQUIRED",
+          "命令属于已识别的维护操作，语义审核通过，但状态变更仍必须由用户明确确认。",
+          {
+            severity: "medium",
+            rule: "已知有副作用的命令只能人工确认，不能自动执行",
+          },
+        );
+        await completeReview(responseForReview({
+          decision: "manual_review",
+          reason: "manual_confirmation_required",
+          violations: [violation],
+          model: modelReview,
+        }));
+        return;
+      }
+      if (!staticReview.autoEligible || !isModelAutoApproval(modelResult.review)) {
         const violations = [
           ...staticReview.violations,
           ...modelResult.review.violations,
@@ -2157,6 +2291,14 @@ export function createManagerApp(options = {}) {
     proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
+  app.post("/mongodb/mutations/prepare", (request, response) =>
+    proxyToInstance("/mongodb/mutations/prepare", request, response));
+  app.post("/mongodb/mutations/execute", (request, response) =>
+    proxyToInstance("/mongodb/mutations/execute", request, response));
+  app.post("/mongodb/mutations/rollback", (request, response) =>
+    proxyToInstance("/mongodb/mutations/rollback", request, response));
+  app.post("/mongodb/mutations/list", (request, response) =>
+    proxyToInstance("/mongodb/mutations/list", request, response));
   app.post("/approved-command-drafts", (request, response) =>
     proxyToInstance("/approved-command-drafts", request, response));
   app.post("/approved-command-drafts/get", (request, response) =>

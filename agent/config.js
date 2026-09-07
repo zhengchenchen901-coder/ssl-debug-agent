@@ -216,7 +216,7 @@ function parseMongoConfig(value) {
     throw error;
   }
 
-  return {
+  const config = {
     enabled: parsed.enabled !== false,
     configPath: parsed.configPath || "",
     driverPath: parsed.driverPath || "",
@@ -224,6 +224,22 @@ function parseMongoConfig(value) {
     uriKey: parsed.uriKey || "url",
     database: parsed.database || "",
   };
+
+  for (const key of [
+    "writeEnabled",
+    "mutationsEnabled",
+    "rollbackRoot",
+    "rollbackTtlMs",
+    "maxAffectedDocuments",
+    "allowedDatabases",
+    "allowedCollections",
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+      config[key] = parsed[key];
+    }
+  }
+
+  return config;
 }
 
 export function loadConfig(env = process.env, cwd = process.cwd()) {
@@ -408,6 +424,12 @@ function fingerprintConfig(config) {
           configProfile: config.mongodb.configProfile,
           uriKey: config.mongodb.uriKey,
           database: config.mongodb.database,
+          writeEnabled: Boolean(config.mongodb.writeEnabled || config.mongodb.mutationsEnabled),
+          rollbackRoot: config.mongodb.rollbackRoot,
+          rollbackTtlMs: config.mongodb.rollbackTtlMs,
+          maxAffectedDocuments: config.mongodb.maxAffectedDocuments,
+          allowedDatabases: config.mongodb.allowedDatabases,
+          allowedCollections: config.mongodb.allowedCollections,
         }
       : null,
     commandReview: publicCommandReviewConfig(config.commandReview),

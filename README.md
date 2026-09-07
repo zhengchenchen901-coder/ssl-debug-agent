@@ -202,6 +202,10 @@ should list:
 ```text
 remote_debug_list_instances, remote_debug_get_capabilities,
 remote_debug_mongodb_query,
+remote_debug_mongodb_prepare_write, remote_debug_mongodb_prepare_index,
+remote_debug_mongodb_prepare_transaction,
+remote_debug_mongodb_execute_mutation, remote_debug_mongodb_rollback_mutation,
+remote_debug_mongodb_list_mutations,
 remote_debug_update_memory,
 remote_debug_run_command,
 remote_debug_read_file, remote_debug_list_dir,
@@ -300,6 +304,21 @@ use source files instead of the bundled runtime.
 - `remote_debug_mongodb_query`: run a bounded, read-only MongoDB operation on
   the selected instance through its remote application configuration and
   existing Node MongoDB driver.
+- `remote_debug_mongodb_prepare_write`: create a bounded document mutation plan
+  without changing data. Only explicit `_id`-scoped writes and soft deletes are
+  supported, and the instance must allowlist writes, databases, and collections.
+- `remote_debug_mongodb_prepare_index`: prepare a separately confirmed index
+  creation or removal. Index changes are compensating operations rather than
+  MongoDB document transactions.
+- `remote_debug_mongodb_prepare_transaction`: prepare up to 20 bounded document
+  writes in one same-database MongoDB transaction for a composite operation.
+- `remote_debug_mongodb_execute_mutation`: commit a prepared document,
+  transaction, or index plan with the exact confirmation `确认执行`.
+- `remote_debug_mongodb_rollback_mutation`: roll back a committed mutation with
+  the exact plan hash and confirmation `确认回滚`; it stops on conflicts rather
+  than overwriting later changes.
+- `remote_debug_mongodb_list_mutations`: list available temporary mutation
+  journals without returning stored before-images.
 - `remote_debug_update_memory`: persist a verified, redacted operational note
   when the user explicitly asks Codex to remember or update instance facts.
 - `remote_debug_prepare_command_draft`: generate an exact command draft for
@@ -328,6 +347,13 @@ path validation, execution, and cancellation cleanup. Defaults and limits are:
   lines and 256 KiB of UTF-8 output.
 - `remote_debug_mongodb_query`: 60 seconds by default, 300 seconds maximum;
   returned documents are limited to 500 items and 512 KiB.
+- `remote_debug_mongodb_prepare_write`, `remote_debug_mongodb_prepare_index`,
+  `remote_debug_mongodb_prepare_transaction`,
+  `remote_debug_mongodb_execute_mutation`,
+  `remote_debug_mongodb_rollback_mutation`, and
+  `remote_debug_mongodb_list_mutations`: 120 seconds by default, 600 seconds
+  maximum. Mutation plans limit the affected documents to the instance policy;
+  transactions contain at most 20 child operations.
 - `remote_debug_execute_command_draft`: 300 seconds by default, 900 seconds
   maximum for the entire command batch.
 - `remote_debug_review_command_draft`: 330 seconds by default, 930 seconds
@@ -423,6 +449,60 @@ the tools when the exact current state matters. The cache is intentionally
 sanitized before it is saved: private keys, passphrases, tokens, passwords,
 credentials, and connection strings are redacted.
 
+## MongoDB Mutations And Rollback
+
+The MongoDB query tool remains read-only. Mutation tools are disabled unless the
+selected instance explicitly enables them and provides database and collection
+allowlists. A global `.env` example is:
+
+```text
+REMOTE_DEBUG_MONGODB_CONFIG={"enabled":true,"configPath":"/home/app/config.json","driverPath":"/home/app/node_modules/mongodb","configProfile":"production","uriKey":"url","database":"yennefer","writeEnabled":true,"allowedDatabases":["yennefer"],"allowedCollections":["restaurant_members"],"rollbackRoot":"/tmp/remote-debug-agent/mutations","maxAffectedDocuments":100}
+```
+
+The safe mutation flow is:
+
+```text
+prepare -> inspect affected count and fields -> 确认执行 -> commit -> verify
+                                                    |
+                                                    -> 确认回滚 -> rollback
+```
+
+`insertOne`, `_id`-scoped `updateOne`, bounded `_id.$in` `updateMany`, and
+`softDeleteOne` are stored as transaction-backed plans. A same-database
+`prepare_transaction` can combine up to 20 such child operations. The plan
+stores before-images remotely and rechecks them at commit and rollback time;
+later changes cause `MONGODB_ROLLBACK_CONFLICT` instead of an unsafe overwrite.
+
+Index creation and removal use the separate index tool. They are compensating
+operations, not part of the document transaction. An index must not be created
+implicitly by a business operation. Create required unique indexes as a schema
+migration first, then let the business tool verify that the prerequisite exists.
+
+The target worker writes owner-only manifests and a journal under
+`/tmp/remote-debug-agent/mutations/<mutationId>/`. The directory is temporary;
+reboot or cleanup can make an expired rollback unavailable. The journal does
+not appear in list responses with before-images, and normal output and audit
+records contain summaries rather than complete sensitive documents. Use a
+persistent protected journal or database operation record when a rollback window
+must survive a server restart.
+
+Mutation risk is exposed in every plan: single inserts and ID-scoped updates are
+`medium`, soft deletes and bounded batches are `high`, index removal is `high`,
+and a composite transaction is `high`. Every mutation still requires explicit
+`确认执行`; a risk label never grants automatic execution.
+
+Skills are orchestration only. Project-specific workflows such as adding a
+member to a restaurant should query and validate the entities, prepare a narrow
+domain mutation or a bounded transaction, show the preview, request confirmation,
+commit, and verify. They should not generate MongoDB shell scripts.
+
+For example, once a project has an allowlisted `restaurant_members` collection,
+an add-member workflow can combine an `insertOne` for the membership relation
+and an `_id`-scoped `updateOne` for a related counter in
+`remote_debug_mongodb_prepare_transaction`. Both changes then commit or roll
+back together. The collection names and fields must come from the project's
+verified schema; this plugin does not guess them.
+
 ## Approved Command Drafts
 
 The approved-command channel is for cases where Codex should present a minimal
@@ -436,8 +516,10 @@ REMOTE_DEBUG_COMMAND_REVIEW_AUTO_EXECUTE=1
 ```
 
 Automatic execution is limited to commands that pass the existing read-only
-security policy and a separate Codex semantic review. Maintenance, write,
-delete, privilege, or uncertain commands are returned for human review.
+security policy and a separate Codex semantic review. A small set of known
+maintenance commands can pass static and semantic review but remains
+`manual_confirmation`; delete, privilege, database-shell, or uncertain commands
+are not granted automatic execution.
 
 The reviewer configuration is stored at
 `<data-dir>/.remote-debug/command-review.json`. It contains only non-secret
@@ -481,11 +563,18 @@ ls cat ps netstat df free tail grep mongodump mongo mongosh systemctl nginx whic
 Additional command constraints:
 
 - MongoDB client/tool commands remain limited to `--version` in the generic
-  command tool. Read-only queries must use `remote_debug_mongodb_query`; writes
-  and maintenance still require an approved-command draft.
-- `systemctl` is limited to read-only `status`, `is-active`, and `is-enabled`
-  checks for `mongod`, `mongod.service`, `nginx`, and `nginx.service`.
-- `nginx` is limited to diagnostic flags `-t`, `-T`, `-v`, and `-V`.
+  command tool. Read-only queries must use `remote_debug_mongodb_query`; bounded
+  writes and index changes must use the structured MongoDB mutation tools.
+- Direct `remote_debug_run_command` keeps `systemctl` limited to read-only
+  `status`, `is-active`, and `is-enabled` checks. The command-draft reviewer
+  recognizes `reload` and `restart` for the same allowlisted units, but keeps
+  them manual confirmation.
+- Direct `remote_debug_run_command` keeps `nginx` limited to diagnostic flags
+  `-t`, `-T`, `-v`, and `-V`; the command-draft reviewer recognizes only manual
+  `nginx -s reload` as an additional maintenance profile.
+- The command-draft reviewer recognizes `pm2 reload <app>` and
+  `pm2 restart <app>` as manual-only profiles. Arbitrary database shells and
+  script interpreters are not a substitute for structured mutation tools.
 - Path-reading commands such as `ls`, `cat`, `tail`, and `grep` require at
   least one allowed absolute path.
 
@@ -547,6 +636,12 @@ commands or temporary extraction files.
 `remote_debug_mongodb_query` forwards the selected instance and a validated
 read-only query to `/mongodb/query`; the worker executes a fixed Node helper
 over SSH and reads the remote profile at execution time.
+The structured MongoDB mutation tools use `/mongodb/mutations/prepare`,
+`/mongodb/mutations/execute`, `/mongodb/mutations/rollback`, and
+`/mongodb/mutations/list`. The worker runs a fixed Node MongoDB helper, never
+accepts a URI or JavaScript from the caller, persists a protected temporary
+manifest on the target, and uses a same-database transaction for document
+mutations or a verified compensating action for index changes.
 `remote_debug_update_memory` writes sanitized notes through `/api/memory`.
 The approved-command tools use
 `/approved-command-drafts`, `/approved-command-drafts/get`,
@@ -609,12 +704,13 @@ Command validation applies these checks:
   least one allowed absolute path under the common roots or the selected
   instance's configured source roots.
 
-Approved-command draft execution intentionally does not call `validateCommand`;
-it relies on `REMOTE_DEBUG_APPROVED_COMMANDS=1`, the one-time draft ID, the
-command hash, the exact confirmation phrase `使用命令`, timeouts, output limits,
-and audit logging. The automatic review path calls `validateCommand` before the
-model and requires a low-risk read-only model approval. Use the unrestricted
-manual path only for commands the user has reviewed.
+Approved-command draft execution is reserved for explicitly reviewed
+maintenance commands. MongoDB shell mutations are rejected at draft creation;
+database writes should use the structured mutation tools. The one-time draft
+ID, command hash, exact confirmation phrase `使用命令`, timeouts, output limits,
+and audit logging remain in force. Automatic execution is still limited to
+read-only commands; known service-control profiles can reach semantic review
+but remain manual confirmation.
 
 If a command contains path arguments, the agent also resolves the remote
 canonical paths before execution to reduce symlink escape risk. Audit logs are
@@ -624,10 +720,14 @@ success or failure.
 ## Safety Rules
 
 - No arbitrary shell.
-- The disabled-by-default approved-command draft workflow is the only path for
-  write or maintenance commands; it requires a one-time draft ID, command hash,
+- The disabled-by-default approved-command draft workflow is for explicitly
+  reviewed maintenance commands and requires a one-time draft ID, command hash,
   and exact user confirmation. Automatic execution is narrower and requires the
   local read-only policy plus a Codex review.
+- MongoDB writes, soft deletes, and index changes use explicitly enabled,
+  allowlisted structured mutation tools. Document changes use a transaction;
+  index changes use a verified compensating rollback journal. A commit or
+  rollback must stop when the target no longer matches the recorded version.
 - Read-only diagnostic commands cannot use shell control operators, pipes,
   redirects, command substitution, or newlines.
 - Read-only diagnostic commands reject dangerous tokens such as `rm`, `sudo`,

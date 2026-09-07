@@ -87,6 +87,30 @@ function Copy-IfMissing {
   Write-Output "已迁移: $Destination"
 }
 
+function Get-FileSha256 {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$PathValue
+  )
+
+  $hashCommand = Get-Command Get-FileHash -CommandType Cmdlet -ErrorAction SilentlyContinue
+  if ($hashCommand) {
+    return (Get-FileHash -LiteralPath $PathValue -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+
+  $algorithm = [System.Security.Cryptography.SHA256]::Create()
+  $stream = $null
+  try {
+    $stream = [System.IO.File]::OpenRead($PathValue)
+    return ([System.BitConverter]::ToString($algorithm.ComputeHash($stream)) -replace "-", "").ToLowerInvariant()
+  } finally {
+    if ($stream) {
+      $stream.Dispose()
+    }
+    $algorithm.Dispose()
+  }
+}
+
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
   throw "当前安装脚本仅支持 Windows 10/11。"
 }
@@ -168,7 +192,7 @@ foreach ($hashProperty in $runtimeManifest.hashes.PSObject.Properties) {
   if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
     throw "缺少预构建文件: $artifactPath"
   }
-  $actualHash = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $actualHash = Get-FileSha256 -PathValue $artifactPath
   if ($actualHash -ne ([string]$hashProperty.Value).ToLowerInvariant()) {
     throw "预构建文件校验失败: $artifactPath"
   }
@@ -208,8 +232,8 @@ if (-not (Test-Path -LiteralPath $targetConfigPath -PathType Leaf)) {
     throw "请编辑配置文件后重新运行安装脚本: $targetConfigPath"
   }
 } elseif ($ConfigPath -and $sourceConfigPath -ne $targetConfigPath) {
-  $sourceHash = (Get-FileHash -LiteralPath $sourceConfigPath -Algorithm SHA256).Hash
-  $targetHash = (Get-FileHash -LiteralPath $targetConfigPath -Algorithm SHA256).Hash
+  $sourceHash = Get-FileSha256 -PathValue $sourceConfigPath
+  $targetHash = Get-FileSha256 -PathValue $targetConfigPath
   if ($sourceHash -ne $targetHash) {
     throw "目标配置已存在且与 -ConfigPath 不一致；为避免覆盖已停止安装: $targetConfigPath"
   }

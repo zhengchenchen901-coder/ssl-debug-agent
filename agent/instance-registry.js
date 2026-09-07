@@ -213,7 +213,7 @@ function normalizeMongoSettings(input, existing) {
     }
   }
 
-  return {
+  const normalized = {
     enabled,
     configPath,
     driverPath,
@@ -221,6 +221,37 @@ function normalizeMongoSettings(input, existing) {
     uriKey: uriKey || "url",
     database,
   };
+
+  if (raw.writeEnabled !== undefined) {
+    normalized.writeEnabled = parseBooleanFlag(raw.writeEnabled, false);
+  }
+  if (raw.mutationsEnabled !== undefined) {
+    normalized.mutationsEnabled = parseBooleanFlag(raw.mutationsEnabled, false);
+  }
+  if (raw.rollbackRoot !== undefined && raw.rollbackRoot !== "") {
+    normalized.rollbackRoot = String(raw.rollbackRoot).trim();
+  }
+  for (const [fieldName, fieldValue] of [
+    ["rollbackTtlMs", raw.rollbackTtlMs],
+    ["maxAffectedDocuments", raw.maxAffectedDocuments],
+  ]) {
+    if (fieldValue !== undefined && fieldValue !== "") {
+      normalized[fieldName] = parsePositiveInt(fieldValue, undefined, `mongodb.${fieldName}`);
+    }
+  }
+  for (const fieldName of ["allowedDatabases", "allowedCollections"]) {
+    if (raw[fieldName] !== undefined) {
+      if (!Array.isArray(raw[fieldName]) || raw[fieldName].length === 0) {
+        const error = new Error(`mongodb.${fieldName} must be a non-empty array`);
+        error.code = "INVALID_INSTANCE_FIELD";
+        error.statusCode = 400;
+        throw error;
+      }
+      normalized[fieldName] = raw[fieldName].map((value) => String(value).trim());
+    }
+  }
+
+  return normalized;
 }
 
 function normalizeInstance(input, existing = {}) {
@@ -350,6 +381,15 @@ function envDefaultInstance(env, cwd) {
     return null;
   }
 
+  let mongodb;
+  if (merged.REMOTE_DEBUG_MONGODB_CONFIG) {
+    try {
+      mongodb = JSON.parse(merged.REMOTE_DEBUG_MONGODB_CONFIG);
+    } catch {
+      mongodb = undefined;
+    }
+  }
+
   return normalizeInstance({
     id: "default",
     name: "default",
@@ -366,6 +406,7 @@ function envDefaultInstance(env, cwd) {
       maxExecutionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
     },
     sourceRoots: merged.REMOTE_DEBUG_SOURCE_ROOTS,
+    mongodb,
   });
 }
 
@@ -424,6 +465,13 @@ function publicInstance(instance) {
             configProfile: mongodb.configProfile,
             uriKey: mongodb.uriKey,
             database: mongodb.database,
+            ...(mongodb.writeEnabled === undefined ? {} : { writeEnabled: Boolean(mongodb.writeEnabled) }),
+            ...(mongodb.mutationsEnabled === undefined ? {} : { mutationsEnabled: Boolean(mongodb.mutationsEnabled) }),
+            ...(mongodb.rollbackRoot === undefined ? {} : { rollbackRoot: mongodb.rollbackRoot }),
+            ...(mongodb.rollbackTtlMs === undefined ? {} : { rollbackTtlMs: mongodb.rollbackTtlMs }),
+            ...(mongodb.maxAffectedDocuments === undefined ? {} : { maxAffectedDocuments: mongodb.maxAffectedDocuments }),
+            ...(mongodb.allowedDatabases === undefined ? {} : { allowedDatabases: [...mongodb.allowedDatabases] }),
+            ...(mongodb.allowedCollections === undefined ? {} : { allowedCollections: [...mongodb.allowedCollections] }),
           },
         }
       : {}),

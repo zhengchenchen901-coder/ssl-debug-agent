@@ -29,6 +29,8 @@ const DEFAULT_FILE_TIMEOUT_MS = 60_000;
 const MAX_FILE_TIMEOUT_MS = 300_000;
 const DEFAULT_MONGODB_TIMEOUT_MS = 60_000;
 const MAX_MONGODB_TIMEOUT_MS = 300_000;
+const DEFAULT_MONGODB_MUTATION_TIMEOUT_MS = 120_000;
+const MAX_MONGODB_MUTATION_TIMEOUT_MS = 600_000;
 const DEFAULT_READ_MAX_BYTES = 256 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 1024 * 1024;
 const DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1000;
@@ -141,6 +143,30 @@ const toolOperationPolicies = {
   remote_debug_mongodb_query: {
     defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
     maxMs: MAX_MONGODB_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_prepare_write: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_prepare_index: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_prepare_transaction: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_execute_mutation: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_rollback_mutation: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_list_mutations: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
   },
   remote_debug_execute_command_draft: {
     defaultMs: DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
@@ -319,6 +345,236 @@ const tools = [
           description: "Number of matching documents to skip for find.",
         },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_TIMEOUT_MS, MAX_MONGODB_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_prepare_write",
+    description:
+      "Prepare a bounded, structured MongoDB document mutation without changing data. Writes are disabled unless the selected instance explicitly enables MongoDB mutations and allowlists the database and collection. The returned mutationId and planHash are required for commit or rollback.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["operation", "collection"],
+      properties: {
+        operation: {
+          type: "string",
+          enum: ["insertOne", "updateOne", "updateMany", "softDeleteOne"],
+          description: "Bounded document mutation operation.",
+        },
+        instanceId: instanceIdProperty,
+        database: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Allowlisted database name; defaults to the selected instance profile.",
+        },
+        collection: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Allowlisted collection name.",
+        },
+        document: {
+          type: "object",
+          description: "Document for insertOne. It must contain an explicit _id.",
+        },
+        filter: {
+          type: "object",
+          description: "Document filter. updateOne and softDeleteOne require _id; updateMany requires _id.$in.",
+        },
+        update: {
+          type: "object",
+          description: "Only $set, $unset, and $inc are supported for updateOne/updateMany.",
+        },
+        deletedField: {
+          type: "string",
+          maxLength: 128,
+          description: "Field set by softDeleteOne; defaults to deletedAt.",
+        },
+        deletedValue: {
+          type: "string",
+          maxLength: 128,
+          description: "Optional value for deletedField; defaults to the prepare timestamp.",
+        },
+        maxAffected: {
+          type: "integer",
+          minimum: 1,
+          maximum: 1000,
+          description: "Maximum documents allowed for updateMany.",
+        },
+        expectedCount: {
+          type: "integer",
+          minimum: 1,
+          maximum: 1000,
+          description: "Optional exact match count required at commit time.",
+        },
+        rollbackTtlMs: {
+          type: "integer",
+          minimum: 1,
+          maximum: 604800000,
+          description: "Rollback retention window, capped by the instance policy.",
+        },
+        purpose: {
+          type: "string",
+          maxLength: 500,
+          description: "Human-readable reason for the mutation; it is stored only as redacted metadata.",
+        },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_prepare_index",
+    description:
+      "Prepare a bounded MongoDB index create or drop operation without changing data. Index changes are compensating operations, not part of a document transaction, and require explicit commit confirmation.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["operation", "collection", "name"],
+      properties: {
+        operation: {
+          type: "string",
+          enum: ["createIndex", "dropIndex"],
+          description: "Index migration operation.",
+        },
+        instanceId: instanceIdProperty,
+        database: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Allowlisted database name; defaults to the selected instance profile.",
+        },
+        collection: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Allowlisted collection name.",
+        },
+        name: {
+          type: "string",
+          pattern: "^[A-Za-z_][A-Za-z0-9_.-]{0,127}$",
+          description: "Exact non-_id_ index name.",
+        },
+        key: {
+          type: "object",
+          description: "Index key document. Each direction must be 1 or -1.",
+        },
+        options: {
+          type: "object",
+          description: "Only unique, sparse, and expireAfterSeconds options are supported.",
+        },
+        rollbackTtlMs: {
+          type: "integer",
+          minimum: 1,
+          maximum: 604800000,
+          description: "Rollback retention window, capped by the instance policy.",
+        },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_prepare_transaction",
+    description:
+      "Prepare up to 20 bounded MongoDB document mutations in one same-database transaction without changing data. Each child operation keeps its before-image so the committed transaction can be rolled back atomically.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["operations"],
+      properties: {
+        instanceId: instanceIdProperty,
+        database: {
+          type: "string",
+          minLength: 1,
+          maxLength: 128,
+          description: "Allowlisted database shared by every child operation.",
+        },
+        operations: {
+          type: "array",
+          minItems: 1,
+          maxItems: 20,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["operation", "collection"],
+            properties: {
+              operation: {
+                type: "string",
+                enum: ["insertOne", "updateOne", "updateMany", "softDeleteOne"],
+              },
+              collection: { type: "string", minLength: 1, maxLength: 128 },
+              document: { type: "object" },
+              filter: { type: "object" },
+              update: { type: "object" },
+              deletedField: { type: "string", maxLength: 128 },
+              deletedValue: { type: "string", maxLength: 128 },
+              maxAffected: { type: "integer", minimum: 1, maximum: 1000 },
+              expectedCount: { type: "integer", minimum: 1, maximum: 1000 },
+            },
+          },
+          description: "Each child must be an allowlisted bounded document mutation.",
+        },
+        rollbackTtlMs: {
+          type: "integer",
+          minimum: 1,
+          maximum: 604800000,
+        },
+        purpose: { type: "string", maxLength: 500 },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_execute_mutation",
+    description:
+      "Commit a prepared MongoDB document or index mutation. Requires the exact mutationId, planHash, and confirmation phrase 确认执行. Document mutations use a MongoDB transaction; index changes are verified compensating operations.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["mutationId", "planHash", "confirmation"],
+      properties: {
+        instanceId: instanceIdProperty,
+        mutationId: { type: "string", minLength: 1, maxLength: 128 },
+        planHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        confirmation: { type: "string", enum: ["确认执行"] },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_rollback_mutation",
+    description:
+      "Rollback a committed MongoDB mutation by its immutable journal. Requires the exact mutationId, planHash, and confirmation phrase 确认回滚. Rollback stops with a conflict if the target changed after commit.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["mutationId", "planHash", "confirmation"],
+      properties: {
+        instanceId: instanceIdProperty,
+        mutationId: { type: "string", minLength: 1, maxLength: 128 },
+        planHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        confirmation: { type: "string", enum: ["确认回滚"] },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_list_mutations",
+    description:
+      "List bounded MongoDB mutation journals on the selected instance without reading document before-images.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: [],
+      properties: {
+        instanceId: instanceIdProperty,
+        status: {
+          type: "string",
+          enum: ["planned", "committed", "rolled_back", "commit_failed", "rollback_failed"],
+          description: "Optional journal status filter.",
+        },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
       },
     },
   },
@@ -979,6 +1235,76 @@ function toolArgumentSummary(name, args = {}) {
       pipelineLength: Array.isArray(args.pipeline) ? args.pipeline.length : 0,
       limit: args.limit,
       skip: args.skip,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_mongodb_prepare_write") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      operation: typeof args.operation === "string" ? args.operation.slice(0, 64) : undefined,
+      database: typeof args.database === "string" ? args.database.slice(0, 128) : undefined,
+      collection: typeof args.collection === "string" ? args.collection.slice(0, 128) : undefined,
+      filterKeys: args.filter && typeof args.filter === "object" && !Array.isArray(args.filter)
+        ? Object.keys(args.filter).slice(0, 20)
+        : [],
+      documentKeys: args.document && typeof args.document === "object" && !Array.isArray(args.document)
+        ? Object.keys(args.document).slice(0, 50)
+        : [],
+      updateKeys: args.update && typeof args.update === "object" && !Array.isArray(args.update)
+        ? Object.keys(args.update).slice(0, 20)
+        : [],
+      maxAffected: args.maxAffected,
+      expectedCount: args.expectedCount,
+      rollbackTtlMs: args.rollbackTtlMs,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_mongodb_prepare_index") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      operation: typeof args.operation === "string" ? args.operation.slice(0, 64) : undefined,
+      database: typeof args.database === "string" ? args.database.slice(0, 128) : undefined,
+      collection: typeof args.collection === "string" ? args.collection.slice(0, 128) : undefined,
+      name: typeof args.name === "string" ? args.name.slice(0, 128) : undefined,
+      keyFields: args.key && typeof args.key === "object" && !Array.isArray(args.key)
+        ? Object.keys(args.key).slice(0, 20)
+        : [],
+      optionKeys: args.options && typeof args.options === "object" && !Array.isArray(args.options)
+        ? Object.keys(args.options).slice(0, 20)
+        : [],
+      rollbackTtlMs: args.rollbackTtlMs,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_mongodb_prepare_transaction") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      database: typeof args.database === "string" ? args.database.slice(0, 128) : undefined,
+      operationCount: Array.isArray(args.operations) ? args.operations.length : undefined,
+      collections: Array.isArray(args.operations)
+        ? [...new Set(args.operations.map((item) => item?.collection).filter((item) => typeof item === "string"))].slice(0, 20)
+        : [],
+      rollbackTtlMs: args.rollbackTtlMs,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_mongodb_execute_mutation" || name === "remote_debug_mongodb_rollback_mutation") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      mutationId: typeof args.mutationId === "string" ? args.mutationId.slice(0, 128) : undefined,
+      planHash: typeof args.planHash === "string" ? args.planHash.slice(0, 128) : undefined,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_mongodb_list_mutations") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      status: typeof args.status === "string" ? args.status.slice(0, 64) : undefined,
       timeoutMs: args.timeoutMs,
     };
   }
@@ -2215,6 +2541,81 @@ async function callTool(name, args, operation) {
       pipeline: args?.pipeline,
       limit: args?.limit,
       skip: args?.skip,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_prepare_write") {
+    return callAgent("/mongodb/mutations/prepare", {
+      instanceId: args?.instanceId,
+      kind: "document",
+      operation: args?.operation,
+      database: args?.database,
+      collection: args?.collection,
+      document: args?.document,
+      filter: args?.filter,
+      update: args?.update,
+      deletedField: args?.deletedField,
+      deletedValue: args?.deletedValue,
+      maxAffected: args?.maxAffected,
+      expectedCount: args?.expectedCount,
+      rollbackTtlMs: args?.rollbackTtlMs,
+      purpose: args?.purpose,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_prepare_index") {
+    return callAgent("/mongodb/mutations/prepare", {
+      instanceId: args?.instanceId,
+      kind: "index",
+      operation: args?.operation,
+      database: args?.database,
+      collection: args?.collection,
+      name: args?.name,
+      key: args?.key,
+      options: args?.options,
+      rollbackTtlMs: args?.rollbackTtlMs,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_prepare_transaction") {
+    return callAgent("/mongodb/mutations/prepare", {
+      instanceId: args?.instanceId,
+      kind: "transaction",
+      database: args?.database,
+      operations: args?.operations,
+      rollbackTtlMs: args?.rollbackTtlMs,
+      purpose: args?.purpose,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_execute_mutation") {
+    return callAgent("/mongodb/mutations/execute", {
+      instanceId: args?.instanceId,
+      mutationId: args?.mutationId,
+      planHash: args?.planHash,
+      confirmation: args?.confirmation,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_rollback_mutation") {
+    return callAgent("/mongodb/mutations/rollback", {
+      instanceId: args?.instanceId,
+      mutationId: args?.mutationId,
+      planHash: args?.planHash,
+      confirmation: args?.confirmation,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_list_mutations") {
+    return callAgent("/mongodb/mutations/list", {
+      instanceId: args?.instanceId,
+      status: args?.status,
+      timeoutMs: args?.timeoutMs,
     }, operation);
   }
 

@@ -154,6 +154,20 @@ test("creating and viewing a draft does not execute SSH", { skip: !depsInstalled
   }
 });
 
+test("generic approved drafts reject MongoDB shell mutations", { skip: !depsInstalled }, async () => {
+  const { server } = await startApprovedApp({
+    approvedCommands: { enabled: true },
+  });
+
+  try {
+    const result = await prepareDraft(server, ["mongosh --eval db.members.updateOne"]);
+    assert.equal(result.status, 400);
+    assert.equal(result.body.error.code, "MONGODB_SHELL_MUTATION_REJECTED");
+  } finally {
+    await close(server);
+  }
+});
+
 test("execution requires matching hash and exact confirmation phrase", { skip: !depsInstalled }, async () => {
   let executedCommand = "";
   const commands = ["printf ok | tee /tmp/approved-command-test"];

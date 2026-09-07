@@ -7,6 +7,25 @@ export const MAX_APPROVED_EXECUTION_TIMEOUT_MS = 900_000;
 export const MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
 export const MAX_APPROVED_COMMANDS = 20;
 
+const DATABASE_SHELLS = new Set(["mongo", "mongosh"]);
+
+function assertDatabaseShellIsNotUsedForMutation(command, index) {
+  const tokens = command.trim().split(/\s+/);
+  const shellIndex = tokens.findIndex((token) => DATABASE_SHELLS.has(token.split("/").pop()));
+  if (shellIndex === -1) {
+    return;
+  }
+
+  if (shellIndex === 0 && tokens.length === 2 && tokens[1] === "--version") {
+    return;
+  }
+
+  throw new ApprovedCommandError(
+    `database shell command at index ${index} must use the structured MongoDB mutation tools`,
+    "MONGODB_SHELL_MUTATION_REJECTED",
+  );
+}
+
 export class ApprovedCommandError extends Error {
   constructor(message, code = "APPROVED_COMMAND_REJECTED", statusCode = 400) {
     super(message);
@@ -135,6 +154,8 @@ function normalizeCommands(value, settings) {
         "APPROVED_COMMAND_TOO_LONG",
       );
     }
+
+    assertDatabaseShellIsNotUsedForMutation(normalized, index);
 
     return normalized;
   });

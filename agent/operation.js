@@ -6,6 +6,7 @@ export const OPERATION_TIMEOUTS = Object.freeze({
   run: Object.freeze({ defaultMs: 30_000, maxMs: 120_000 }),
   file: Object.freeze({ defaultMs: 60_000, maxMs: 300_000 }),
   mongodb: Object.freeze({ defaultMs: 60_000, maxMs: 300_000 }),
+  mongodbMutation: Object.freeze({ defaultMs: 120_000, maxMs: 600_000 }),
   approvedExecution: Object.freeze({ defaultMs: 300_000, maxMs: 900_000 }),
   approvedReview: Object.freeze({ defaultMs: 330_000, maxMs: 930_000 }),
   manager: Object.freeze({ defaultMs: 30_000, maxMs: 300_000 }),
@@ -84,6 +85,12 @@ export function operationPolicy(pathName, config = {}) {
     return {
       defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
       maxMs: OPERATION_TIMEOUTS.mongodb.maxMs,
+    };
+  }
+  if (pathName.startsWith("/mongodb/mutations/")) {
+    return {
+      defaultMs: OPERATION_TIMEOUTS.mongodbMutation.defaultMs,
+      maxMs: OPERATION_TIMEOUTS.mongodbMutation.maxMs,
     };
   }
   if (pathName === "/approved-command-drafts/execute") {

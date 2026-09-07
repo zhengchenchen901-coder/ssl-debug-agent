@@ -65,6 +65,9 @@ test("publishes machine-readable capabilities from the enforced policy", () => {
   assert.equal(capabilities.mongodb.readOnly, true);
   assert.ok(capabilities.mongodb.operations.includes("find"));
   assert.equal(capabilities.mongodb.maxLimit, 500);
+  assert.ok(capabilities.mongodb.mutations.operations.includes("updateOne"));
+  assert.ok(capabilities.mongodb.mutations.indexOperations.includes("createIndex"));
+  assert.equal(capabilities.mongodb.mutations.rollback, true);
   assert.deepEqual(capabilities.logs.supportedCompression, ["none", "gzip", "tar-gzip"]);
   assert.equal(capabilities.logs.pagination, "cursor");
   assert.ok(capabilities.logs.categories.includes("pm2"));
@@ -110,6 +113,25 @@ test("restricts newly allowed commands to read-only diagnostics", () => {
   assert.throws(() => validateCommand("pm2 env abc", security), /numeric process id/);
   assert.throws(() => validateCommand("pm2 describe", security), /requires exactly one/);
   assert.throws(() => validateCommand("pm2 list extra", security), /does not support additional/);
+});
+
+test("allows only explicitly recognized maintenance commands in approved mode", () => {
+  assert.equal(
+    validateCommand("systemctl --no-pager reload nginx.service", { ...security, mode: "approved" }).executionMode,
+    "manual",
+  );
+  assert.equal(
+    validateCommand("pm2 restart api-server", { ...security, mode: "approved" }).effect,
+    "service_control",
+  );
+  assert.equal(
+    validateCommand("nginx -s reload", { ...security, mode: "approved" }).riskLevel,
+    "medium",
+  );
+  assert.throws(
+    () => validateCommand("mongosh --eval db.members.updateOne", { ...security, mode: "approved" }),
+    /not whitelisted|only supports --version|unsupported/i,
+  );
 });
 
 test("enforces allowed path roots", () => {

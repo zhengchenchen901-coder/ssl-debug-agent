@@ -384,6 +384,78 @@ test("HTTP MongoDB query endpoint is instance-scoped and read-only", { skip: !de
   }
 });
 
+test("HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and list", { skip: !depsInstalled }, async () => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-mongodb-mutation-api-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.mongodb = {
+    enabled: true,
+    configPath: "/home/github/app/config.json",
+    driverPath: "/home/github/app/node_modules/mongodb",
+    configProfile: "test",
+    uriKey: "url",
+    database: "yennefer",
+    writeEnabled: true,
+    allowedDatabases: ["yennefer"],
+    allowedCollections: ["members"],
+  };
+  const calls = [];
+  const app = createApp({
+    config,
+    runMongoMutation: async (input) => {
+      calls.push(input);
+      if (input.mode === "list") {
+        return { entries: [] };
+      }
+      return {
+        mutationId: input.mutationId || "mutation-1",
+        operationId: "operation-1",
+        kind: input.kind || "document",
+        operation: input.operation || "insertOne",
+        status: input.mode === "commit" ? "committed" : input.mode === "rollback" ? "rolled_back" : "planned",
+        rollbackMode: "transactional",
+        planHash: input.planHash || "a".repeat(64),
+        affectedCount: 1,
+        changedFields: ["status"],
+      };
+    },
+  });
+  const server = await listen(app);
+
+  try {
+    const prepared = await postJson(server, "/mongodb/mutations/prepare", {
+      operation: "insertOne",
+      collection: "members",
+      document: { _id: "m1", status: "active" },
+    });
+    assert.equal(prepared.status, 200);
+    assert.equal(prepared.body.status, "planned");
+
+    const executed = await postJson(server, "/mongodb/mutations/execute", {
+      mutationId: "mutation-1",
+      planHash: "a".repeat(64),
+      confirmation: "确认执行",
+    });
+    assert.equal(executed.status, 200);
+    assert.equal(executed.body.status, "committed");
+
+    const rolledBack = await postJson(server, "/mongodb/mutations/rollback", {
+      mutationId: "mutation-1",
+      planHash: "a".repeat(64),
+      confirmation: "确认回滚",
+    });
+    assert.equal(rolledBack.status, 200);
+    assert.equal(rolledBack.body.status, "rolled_back");
+
+    const listed = await postJson(server, "/mongodb/mutations/list", {});
+    assert.equal(listed.status, 200);
+    assert.deepEqual(listed.body.entries, []);
+    assert.deepEqual(calls.map((item) => item.mode), ["prepare", "commit", "rollback", "list"]);
+  } finally {
+    await close(server);
+  }
+});
+
 test("dashboard serves status and streams remote interaction activity", { skip: !depsInstalled }, async () => {
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-dashboard-"));

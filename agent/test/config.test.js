@@ -184,6 +184,33 @@ test("loads the selected instance MongoDB profile without accepting a URI", () =
   });
 });
 
+test("loads explicit MongoDB mutation scope without accepting a URI", () => {
+  const config = loadConfig(
+    {
+      REMOTE_DEBUG_MONGODB_CONFIG: JSON.stringify({
+        enabled: true,
+        configPath: "/home/github/app/config.json",
+        driverPath: "/home/github/app/node_modules/mongodb",
+        configProfile: "test",
+        uriKey: "url",
+        database: "yennefer",
+        writeEnabled: true,
+        allowedDatabases: ["yennefer"],
+        allowedCollections: ["restaurant_members"],
+        rollbackRoot: "/tmp/remote-debug-agent/mutations",
+        maxAffectedDocuments: 20,
+      }),
+    },
+    "C:\\remote-debug-agent\\agent",
+  );
+
+  assert.equal(config.mongodb.writeEnabled, true);
+  assert.deepEqual(config.mongodb.allowedDatabases, ["yennefer"]);
+  assert.deepEqual(config.mongodb.allowedCollections, ["restaurant_members"]);
+  assert.equal(config.mongodb.rollbackRoot, "/tmp/remote-debug-agent/mutations");
+  assert.equal(config.mongodb.maxAffectedDocuments, 20);
+});
+
 test("runtime config fingerprint changes when sensitive .env-backed settings change", () => {
   const baseEnv = {
     REMOTE_DEBUG_HOST: "prod.example.com",

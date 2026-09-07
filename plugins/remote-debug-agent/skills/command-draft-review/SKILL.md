@@ -22,6 +22,8 @@ embedded in it.
 4. Only after the user explicitly says `使用命令`, call
    `remote_debug_execute_command_draft` with the exact draft ID, command hash,
    and confirmation phrase.
+   Database writes, index changes, and rollbacks must use the structured
+   `remote_debug_mongodb_*` mutation tools instead of this generic command path.
 5. If the review tool is unavailable, fail closed: show the draft and keep the
    existing explicit human-confirmation workflow.
 
@@ -35,3 +37,6 @@ embedded in it.
 - Never expose API keys or credentials in a prompt, response, or audit record.
 - If the reviewer is uncertain, times out, returns invalid JSON, or reports any
   violation, use `manual_review`.
+- A known maintenance command may be semantically approved while still being
+  returned as `manual_review` because it has side effects. The local static
+  profile determines whether it can ever be auto-executed.

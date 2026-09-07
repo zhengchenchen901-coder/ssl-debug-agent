@@ -5,6 +5,14 @@ import {
   MONGODB_QUERY_OPERATIONS,
   MAX_MONGODB_LIMIT,
 } from "./mongodb.js";
+import {
+  MONGODB_INDEX_OPERATIONS,
+  MAX_MONGODB_MUTATION_JOURNAL_BYTES,
+  MAX_MONGODB_MUTATION_MAX_AFFECTED,
+  MONGODB_MUTATION_SCHEMA_VERSION,
+  MONGODB_MUTATION_OPERATIONS,
+  MAX_MONGODB_TRANSACTION_OPERATIONS,
+} from "./mongodb-mutations.js";
 import { LOG_CAPABILITIES } from "./log-policy.js";
 
 const SECURITY_POLICY = {
@@ -31,19 +39,41 @@ const SECURITY_POLICY = {
   versionOnlyExecutables: ["mongodump", "mongo", "mongosh"],
   systemctl: {
     actions: ["status", "is-active", "is-enabled"],
+    manualActions: ["reload", "restart"],
     units: ["mongod", "mongod.service", "nginx", "nginx.service"],
     options: ["--no-pager", "--plain", "--full"],
     additionalOptionPatterns: ["--lines=<positive integer>"],
   },
   nginxArguments: ["-t", "-T", "-v", "-V"],
+  manualNginxArguments: ["-s reload"],
   pm2: {
     actions: ["list", "describe <app-name-or-id>", "env <numeric-process-id>"],
+    manualActions: ["reload <app-name-or-id>", "restart <app-name-or-id>"],
   },
   mongodb: {
     readOnly: true,
     operations: [...MONGODB_QUERY_OPERATIONS],
     maxLimit: MAX_MONGODB_LIMIT,
     allowedConfigRoots: [...MONGODB_CONFIG_ROOTS],
+    mutations: {
+      schemaVersion: MONGODB_MUTATION_SCHEMA_VERSION,
+      operations: [...MONGODB_MUTATION_OPERATIONS],
+      indexOperations: [...MONGODB_INDEX_OPERATIONS],
+      rollback: true,
+      rollbackModes: ["transactional", "compensating"],
+      riskLevels: {
+        insertOne: "medium",
+        updateOne: "medium",
+        updateMany: "high",
+        softDeleteOne: "high",
+        createIndex: "medium",
+        dropIndex: "high",
+        transaction: "high",
+      },
+      maxAffectedDocuments: MAX_MONGODB_MUTATION_MAX_AFFECTED,
+      maxTransactionOperations: MAX_MONGODB_TRANSACTION_OPERATIONS,
+      maxJournalBytes: MAX_MONGODB_MUTATION_JOURNAL_BYTES,
+    },
   },
   logs: { ...LOG_CAPABILITIES },
   lifecycle: {
@@ -60,7 +90,7 @@ const SECURITY_POLICY = {
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
     "Log reads use bounded SFTP pagination and streaming plain/gzip/tar-gzip decoding without remote extraction.",
     "Tar archive members must be relative regular files; unsupported compression and binary logs are reported without decoding.",
-    "The dedicated MongoDB tool is read-only and bounded; database writes require an approved-command draft.",
+    "The dedicated MongoDB query tool is read-only and bounded; database writes use explicitly enabled, allowlisted mutation tools with transaction or compensating rollback journals.",
     "Automatic command-draft execution requires the existing approved-command flag, the review flag, a hard-policy pass, and an explicit low-risk model approval.",
   ],
   examples: [
@@ -115,12 +145,17 @@ export function securityCapabilities(config = {}) {
       versionOnlyExecutables: [...SECURITY_POLICY.versionOnlyExecutables],
       systemctl: {
         actions: [...SECURITY_POLICY.systemctl.actions],
+        manualActions: [...SECURITY_POLICY.systemctl.manualActions],
         units: [...SECURITY_POLICY.systemctl.units],
         options: [...SECURITY_POLICY.systemctl.options],
         additionalOptionPatterns: [...SECURITY_POLICY.systemctl.additionalOptionPatterns],
       },
       nginxArguments: [...SECURITY_POLICY.nginxArguments],
-      pm2: { actions: [...SECURITY_POLICY.pm2.actions] },
+      manualNginxArguments: [...SECURITY_POLICY.manualNginxArguments],
+      pm2: {
+        actions: [...SECURITY_POLICY.pm2.actions],
+        manualActions: [...SECURITY_POLICY.pm2.manualActions],
+      },
       constraints: [...SECURITY_POLICY.constraints],
       examples: [...SECURITY_POLICY.examples],
     },
@@ -163,6 +198,23 @@ export function securityCapabilities(config = {}) {
       ...SECURITY_POLICY.mongodb,
       operations: [...SECURITY_POLICY.mongodb.operations],
       allowedConfigRoots: [...SECURITY_POLICY.mongodb.allowedConfigRoots],
+      mutations: {
+        ...SECURITY_POLICY.mongodb.mutations,
+        schemaVersion: MONGODB_MUTATION_SCHEMA_VERSION,
+        operations: [...SECURITY_POLICY.mongodb.mutations.operations],
+        indexOperations: [...SECURITY_POLICY.mongodb.mutations.indexOperations],
+        riskLevels: { ...SECURITY_POLICY.mongodb.mutations.riskLevels },
+        enabled: Boolean(config.mongodb?.writeEnabled || config.mongodb?.mutationsEnabled),
+        allowedDatabases: config.mongodb?.allowedDatabases
+          ? [...config.mongodb.allowedDatabases]
+          : undefined,
+        allowedCollections: config.mongodb?.allowedCollections
+          ? [...config.mongodb.allowedCollections]
+          : undefined,
+        rollbackRoot: config.mongodb?.rollbackRoot,
+        rollbackTtlMs: config.mongodb?.rollbackTtlMs,
+        maxAffectedDocuments: config.mongodb?.maxAffectedDocuments || MAX_MONGODB_MUTATION_MAX_AFFECTED,
+      },
     },
     logs: {
       ...SECURITY_POLICY.logs,
@@ -340,6 +392,53 @@ function validateSystemctl(tokens) {
   }
 }
 
+function validateManualSystemctl(tokens) {
+  const commandTokens = [];
+
+  for (const token of tokens.slice(1)) {
+    if (token.startsWith("-")) {
+      if (!isAllowedSystemctlOption(token)) {
+        throw new SecurityError(
+          `unsupported systemctl option: ${token}`,
+          "UNSUPPORTED_COMMAND_ARGUMENTS",
+        );
+      }
+      continue;
+    }
+
+    commandTokens.push(token);
+  }
+
+  if (commandTokens.length !== 2) {
+    throw new SecurityError(
+      "manual systemctl commands require one action and one supported unit",
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+
+  const [action, unit] = commandTokens;
+  if (!new Set(SECURITY_POLICY.systemctl.manualActions).has(action)) {
+    throw new SecurityError(
+      `unsupported manual systemctl action: ${action}`,
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+  if (!ALLOWED_SYSTEMCTL_UNITS.has(unit)) {
+    throw new SecurityError(
+      `unsupported systemctl unit: ${unit}`,
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+}
+
+function validateApprovedSystemctl(tokens) {
+  try {
+    validateSystemctl(tokens);
+  } catch {
+    validateManualSystemctl(tokens);
+  }
+}
+
 function validateNginx(tokens) {
   const args = tokens.slice(1);
   if (args.length === 0) {
@@ -356,6 +455,23 @@ function validateNginx(tokens) {
         "UNSUPPORTED_COMMAND_ARGUMENTS",
       );
     }
+  }
+}
+
+function validateManualNginx(tokens) {
+  if (tokens.length !== 3 || tokens[1] !== "-s" || tokens[2] !== "reload") {
+    throw new SecurityError(
+      "manual nginx commands only support -s reload",
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+}
+
+function validateApprovedNginx(tokens) {
+  try {
+    validateNginx(tokens);
+  } catch {
+    validateManualNginx(tokens);
   }
 }
 
@@ -398,8 +514,34 @@ function validatePm2(tokens) {
   );
 }
 
+function validateManualPm2(tokens) {
+  const [, action, subject, ...extra] = tokens;
+  if (!(action === "reload" || action === "restart") || subject === undefined || extra.length > 0) {
+    throw new SecurityError(
+      "manual pm2 commands require reload or restart and one app name or id",
+      "UNSUPPORTED_COMMAND_ARGUMENTS",
+    );
+  }
+
+  if (!/^[A-Za-z0-9_.:-]+$/.test(subject)) {
+    throw new SecurityError(
+      "manual pm2 app name or id contains unsupported characters",
+      "UNSAFE_TOKEN",
+    );
+  }
+}
+
+function validateApprovedPm2(tokens) {
+  try {
+    validatePm2(tokens);
+  } catch {
+    validateManualPm2(tokens);
+  }
+}
+
 export function validateCommand(command, options = {}) {
   const allowedPaths = options.allowedPaths || [];
+  const mode = options.mode || "read_only";
   const tokens = tokenizeCommand(command);
   const executable = tokens[0];
 
@@ -426,24 +568,46 @@ export function validateCommand(command, options = {}) {
   }
 
   if (executable === "systemctl") {
-    validateSystemctl(tokens);
+    if (mode === "approved") {
+      validateApprovedSystemctl(tokens);
+    } else {
+      validateSystemctl(tokens);
+    }
   }
 
   if (executable === "nginx") {
-    validateNginx(tokens);
+    if (mode === "approved") {
+      validateApprovedNginx(tokens);
+    } else {
+      validateNginx(tokens);
+    }
   }
 
   if (executable === "pm2") {
-    validatePm2(tokens);
+    if (mode === "approved") {
+      validateApprovedPm2(tokens);
+    } else {
+      validatePm2(tokens);
+    }
   }
 
   const absolutePaths = validatePathArguments(executable, tokens, allowedPaths);
+  const manualProfile =
+    mode === "approved" &&
+    (
+      (executable === "systemctl" && tokens.some((token) => SECURITY_POLICY.systemctl.manualActions.includes(token))) ||
+      (executable === "nginx" && tokens[1] === "-s" && tokens[2] === "reload") ||
+      (executable === "pm2" && ["reload", "restart"].includes(tokens[1]))
+    );
 
   return {
     executable,
     tokens,
     normalizedCommand: tokens.join(" "),
     absolutePaths,
+    executionMode: manualProfile ? "manual" : "auto",
+    effect: manualProfile ? "service_control" : "read_only",
+    riskLevel: manualProfile ? "medium" : "low",
   };
 }
 
