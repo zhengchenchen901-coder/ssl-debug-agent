@@ -204,6 +204,10 @@ remote_debug_list_instances, remote_debug_get_capabilities,
 remote_debug_mongodb_query,
 remote_debug_mongodb_prepare_write, remote_debug_mongodb_prepare_index,
 remote_debug_mongodb_prepare_transaction,
+remote_debug_mongodb_prepare_bulk_storage,
+remote_debug_mongodb_prepare_bulk, remote_debug_mongodb_execute_bulk,
+remote_debug_mongodb_get_bulk_job, remote_debug_mongodb_list_bulk_jobs,
+remote_debug_mongodb_control_bulk_job, remote_debug_mongodb_rollback_bulk_job,
 remote_debug_mongodb_execute_mutation, remote_debug_mongodb_rollback_mutation,
 remote_debug_mongodb_list_mutations,
 remote_debug_update_memory,
@@ -312,6 +316,15 @@ use source files instead of the bundled runtime.
   MongoDB document transactions.
 - `remote_debug_mongodb_prepare_transaction`: prepare up to 20 bounded document
   writes in one same-database MongoDB transaction for a composite operation.
+- `remote_debug_mongodb_prepare_import`: prepare bulk inserts in one allowlisted
+  collection, split automatically into independent batches of at most 2000
+  documents and 512 KiB. Each batch has its own commit and rollback plan.
+- `remote_debug_mongodb_prepare_bulk_storage`, `remote_debug_mongodb_prepare_bulk`,
+  `remote_debug_mongodb_execute_bulk`, `remote_debug_mongodb_get_bulk_job`,
+  `remote_debug_mongodb_list_bulk_jobs`, `remote_debug_mongodb_control_bulk_job`,
+  and `remote_debug_mongodb_rollback_bulk_job`: prepare the protected durable
+  receipt/log storage, then run a fixed cross-collection bulk plan as a resumable
+  background job with per-batch verification and guarded reverse rollback.
 - `remote_debug_mongodb_execute_mutation`: commit a prepared document,
   transaction, or index plan with the exact confirmation `确认执行`.
 - `remote_debug_mongodb_rollback_mutation`: roll back a committed mutation with
@@ -478,6 +491,69 @@ operations, not part of the document transaction. An index must not be created
 implicitly by a business operation. Create required unique indexes as a schema
 migration first, then let the business tool verify that the prerequisite exists.
 
+### Bulk imports
+
+Use `remote_debug_mongodb_prepare_import` for data seeding instead of thousands
+of `insertOne` child operations. It keeps the existing write enablement and
+database/collection allowlists. Ordinary transactions still allow 20 operations;
+their `maxAffectedDocuments` policy is unchanged. The independent instance setting
+`mongodb.maxImportBatchDocuments` defaults to 2000 and can lower the batch size
+(its hard maximum is 2000). Save it in the instance's MongoDB configuration and
+reload that instance to apply a change.
+
+```json
+{
+  "instanceId": "test-server",
+  "importId": "seed-members-chunk-001",
+  "database": "yennefer",
+  "collection": "restaurant_members",
+  "batchSize": 2000,
+  "purpose": "Test data import",
+  "documents": [
+    { "_id": "seed-members-000001", "memberId": "example-1" },
+    { "_id": "seed-members-000002", "memberId": "example-2" }
+  ]
+}
+```
+
+The example shows the request shape, not a verified business schema. Supply
+documents matching the target collection's schema and validators. Every document
+needs an explicit `_id`: a non-empty string of at most 256 characters, a safe
+integer, or Extended JSON `{"$oid":"..."}`. Duplicate IDs within the input are
+rejected, and existing database documents are never skipped or overwritten.
+
+One prepare call accepts at most 10000 documents and 4 MiB of UTF-8 JSON document
+data. Larger datasets must be sent in smaller input chunks, with a stable
+`importId` per chunk. Each chunk is split at the requested/instance document
+limit or 512 KiB, whichever is reached first (at most 100 batches per call).
+The dedicated HTTP prepare endpoint, `/mongodb/imports/prepare`, accepts 5 MiB
+including metadata; other HTTP request limits remain unchanged.
+
+Prepare returns `batches[]`, each with a `mutationId`, `planHash`, count, a sample
+of up to 10 IDs, and status. Review the plans and commit the chosen batches using
+`remote_debug_mongodb_execute_mutation` with `确认执行`. Each batch uses one
+`insertMany` inside a transaction with bulk pre/post checks. The target deployment
+must support MongoDB transactions and the configured driver must provide BSON
+EJSON support. Roll back an individual batch with the existing rollback tool and
+`确认回滚`; rollback verifies document hashes before removing anything.
+
+Atomicity is **per batch**, not for the entire input chunk or dataset. For 140000
+small documents, 2000 per batch means 70 transactions; larger documents need more
+batches because of the byte limit. A failed later batch does not undo earlier
+committed batches. There is no automatic commit during prepare.
+
+Retry prepare with the **exact same importId, input order, documents, batchSize,
+purpose and rollback options**, and unchanged batch policy, to recover the same
+journals. If preparation fails after some batches, `status: "prepare_partial"`
+returns the completed plans and `failedBatch`; do not treat this as a complete
+plan. Repeating a committed batch returns its saved result without reinserting.
+Failures before the commit command use `commit_retryable` (or
+`rollback_retryable`) and may be retried using the same plan. Connection loss
+during commit, or failure to save the outcome, produces an unknown/started state
+that blocks blind retry and rollback. Inspect it before recovery; matching data
+alone is not proof that this import owns it. Temporary journals and their expiry
+still bound the retry and rollback window.
+
 The target worker writes owner-only manifests and a journal under
 `/tmp/remote-debug-agent/mutations/<mutationId>/`. The directory is temporary;
 reboot or cleanup can make an expired rollback unavailable. The journal does
@@ -495,6 +571,55 @@ Skills are orchestration only. Project-specific workflows such as adding a
 member to a restaurant should query and validate the entities, prepare a narrow
 domain mutation or a bounded transaction, show the preview, request confirmation,
 commit, and verify. They should not generate MongoDB shell scripts.
+
+### Resumable cross-collection bulk jobs
+
+Use the general bulk tools for large, different-value updates or related writes
+that must commit together by business unit. This capability is disabled by
+default. Its instance policy must explicitly enable both MongoDB writes and bulk
+jobs, allowlist every business collection plus
+`__remote_debug_bulk_receipts`, and point `bulkRoot` at a persistent protected
+filesystem path. Configure `bulkBatchDocuments` from 1 to 2000 (default 500),
+`bulkConcurrency` from 1 to 4 (default 2), and a rollback window of at most seven
+days. For example, keep `bulkEnabled: false` until the target instance and
+storage initialization plan have been reviewed:
+
+```json
+{
+  "bulkEnabled": false,
+  "bulkRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+  "bulkReceiptsCollection": "__remote_debug_bulk_receipts",
+  "bulkBatchDocuments": 500,
+  "bulkConcurrency": 2,
+  "bulkRollbackTtlMs": 604800000
+}
+```
+
+Prepare the technical receipt collection/index and persistent directory as a
+separate explicitly confirmed storage mutation before preparing a business
+job. The storage-plan tool also requires `bulkEnabled: true`; enable it only for
+the reviewed storage setup or an authorized job, then turn it off when no new
+bulk work should start. Upload ordered chunks with stable `unitId` values and
+finish with an empty end-of-upload marker. A business unit is never split across transactions; no
+collection/document ID can occur twice in one job. Inserts require explicit
+`_id`; updates require original-value checks and support only `$set`, `$unset`,
+and `$inc`. One transaction writes all operations in its batch and a unique
+receipt together. The runner continues after the initiating request disconnects,
+pauses new batches on errors, resumes the same immutable plan after inspection,
+and verifies results before completion. Rollback proceeds from the newest
+committed batch to the oldest and stops on a later-change conflict.
+
+The default limits are 20 operations per business unit, 10,000 operations and
+4 MiB per upload, 100,000 operations and 40 MiB per job, 500 operations per
+batch (configurable to 2,000), 512 KiB batch input, 8 MiB rollback log per batch,
+and concurrency 2 (maximum 4). Existing ordinary transactions keep their
+20-operation limit. Setting `bulkEnabled` to false blocks new jobs and resume;
+job inspection, pause, and explicit rollback remain available while MongoDB
+writes, the allowlists, and the stored job path stay configured. No bulk
+capability or data mutation is enabled by this documentation example. Follow
+the [`database-mutations` skill bulk workflow](plugins/remote-debug-agent/skills/database-mutations/references/mongodb-bulk.md)
+for identity resolution, preflight, authorization, status recovery, examples,
+and delivery reports.
 
 For example, once a project has an allowlisted `restaurant_members` collection,
 an add-member workflow can combine an `insertOne` for the membership relation

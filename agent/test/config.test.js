@@ -199,6 +199,7 @@ test("loads explicit MongoDB mutation scope without accepting a URI", () => {
         allowedCollections: ["restaurant_members"],
         rollbackRoot: "/tmp/remote-debug-agent/mutations",
         maxAffectedDocuments: 20,
+        maxImportBatchDocuments: 2000,
       }),
     },
     "C:\\remote-debug-agent\\agent",
@@ -209,6 +210,8 @@ test("loads explicit MongoDB mutation scope without accepting a URI", () => {
   assert.deepEqual(config.mongodb.allowedCollections, ["restaurant_members"]);
   assert.equal(config.mongodb.rollbackRoot, "/tmp/remote-debug-agent/mutations");
   assert.equal(config.mongodb.maxAffectedDocuments, 20);
+  assert.equal(config.mongodb.maxImportBatchDocuments, 2000);
+  assert.notEqual(configFingerprint(config), configFingerprint({ ...config, mongodb: { ...config.mongodb, maxImportBatchDocuments: 500 } }));
 });
 
 test("runtime config fingerprint changes when sensitive .env-backed settings change", () => {

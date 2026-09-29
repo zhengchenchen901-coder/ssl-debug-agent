@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "pluginVersion": "2.1.0+codex.20260902111148",
-  "runtimeId": "2.1.0:51ed60a50b55cd962d5ff4b0dbab82f60564a02d5d76a9a3fab5496e1c18e6f4",
+  "pluginVersion": "2.2.0+codex.20260929105035",
+  "runtimeId": "2.2.0:fb4c82c4818827097c2f7005032ba9e90b9fbb19441eb83322ba7730c8928c9b",
   "node": ">=22.18 <23",
   "server": "server.cjs",
   "worker": "worker-entry.cjs",
   "hashes": {
-    "server.cjs": "b90ce7768817ff645d4d4a7955b48e01b35770823b8144fd29966b3ee5995e45",
-    "worker-entry.cjs": "9f298a0cf5a674fab95ab00a9b37a151f694384242025b860ca7e2d9dda832cc",
-    "public/dashboard.css": "c06cf0ebc05eb03cbc8bfcbf9e47a4040dae37509c0d73ca837e8f000477c0fc",
-    "public/dashboard.html": "e11b9b754b845925581722e01e9d065f426752feff12f75e57a51ab53a49e55e",
-    "public/dashboard.js": "abdd1a837276192c2fe6b12d418dfa1a94a69667c212dd2ad25fc863843bdb73"
+    "server.cjs": "d7c7d819ba1eeb3eaffdcb0fa815ff7e1fb007512b68dd5a8ab213db21ceae75",
+    "worker-entry.cjs": "942b58a31c084a7875bce97e91e34e84f5e6b3020c1678692dc4941bd50dacb7",
+    "public/dashboard.css": "e32718e293dbb30ca1e9ee008a36ea06508f1e89a4c2cea6956bc76795783213",
+    "public/dashboard.html": "a2b1bf9b35bd6cbe5c93b8b81aec9d7b78ecf85521c190038b08f07939000953",
+    "public/dashboard.js": "539358fdf6ebee34a74111e79fc34207a8337591673170e40089aac20950b8f6"
   }
 }

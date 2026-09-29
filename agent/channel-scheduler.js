@@ -20,6 +20,7 @@ export class ChannelScheduler {
     this.maxBusiness = options.maxBusiness || 4;
     this.maxControl = options.maxControl || 1;
     this.maxBackground = options.maxBackground || 1;
+    this.maxBulk = options.maxBulk === undefined ? 2 : options.maxBulk;
     this.maxQueue = options.maxQueue || 100;
     this.backgroundStarvationMs = options.backgroundStarvationMs || 10_000;
     this.now = options.now || (() => Date.now());
@@ -27,6 +28,7 @@ export class ChannelScheduler {
     this.activeBusiness = 0;
     this.activeControl = 0;
     this.activeBackground = 0;
+    this.activeBulk = 0;
     this.activeOperations = new Map();
     this.closed = false;
   }
@@ -117,6 +119,9 @@ export class ChannelScheduler {
     if (this.activeBusiness >= this.maxBusiness) {
       return false;
     }
+    if (item.priority === "bulk") {
+      return this.activeBulk < this.maxBulk;
+    }
     if (BACKGROUND_PRIORITIES.has(item.priority)) {
       return this.activeBackground < this.maxBackground;
     }
@@ -166,7 +171,8 @@ export class ChannelScheduler {
 
   startItem(item) {
     item.started = true;
-    const background = BACKGROUND_PRIORITIES.has(item.priority);
+    const background = item.priority === "background";
+    const bulk = item.priority === "bulk";
     if (item.priority === "control") {
       this.activeControl += 1;
     } else {
@@ -174,6 +180,7 @@ export class ChannelScheduler {
       if (background) {
         this.activeBackground += 1;
       }
+      if (bulk) this.activeBulk += 1;
     }
     const queueMs = Math.max(0, this.now() - item.enqueuedAt);
     this.activeOperations.set(item.operation.operationId, {
@@ -200,6 +207,7 @@ export class ChannelScheduler {
           if (background) {
             this.activeBackground -= 1;
           }
+          if (bulk) this.activeBulk -= 1;
         }
         this.pump();
       });
@@ -227,11 +235,13 @@ export class ChannelScheduler {
       activeBusiness: this.activeBusiness,
       activeControl: this.activeControl,
       activeBackground: this.activeBackground,
+      activeBulk: this.activeBulk,
       queued: this.queue.length,
       queuedByPriority: queuedCountByPriority(this.queue),
       maxBusiness: this.maxBusiness,
       maxControl: this.maxControl,
       maxBackground: this.maxBackground,
+      maxBulk: this.maxBulk,
       maxQueue: this.maxQueue,
     };
   }

@@ -13,6 +13,16 @@ import {
   MONGODB_MUTATION_OPERATIONS,
   MAX_MONGODB_TRANSACTION_OPERATIONS,
 } from "./mongodb-mutations.js";
+import {
+  DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS,
+  DEFAULT_MONGODB_BULK_ROOT,
+  MAX_MONGODB_BULK_BATCH_DOCUMENTS,
+  MAX_MONGODB_BULK_CHUNK_BYTES,
+  MAX_MONGODB_BULK_CHUNK_OPERATIONS,
+  MAX_MONGODB_BULK_JOB_BYTES,
+  MAX_MONGODB_BULK_JOB_OPERATIONS,
+  MAX_MONGODB_BULK_UNIT_OPERATIONS,
+} from "./mongodb-bulk.js";
 import { LOG_CAPABILITIES } from "./log-policy.js";
 
 const SECURITY_POLICY = {
@@ -73,6 +83,21 @@ const SECURITY_POLICY = {
       maxAffectedDocuments: MAX_MONGODB_MUTATION_MAX_AFFECTED,
       maxTransactionOperations: MAX_MONGODB_TRANSACTION_OPERATIONS,
       maxJournalBytes: MAX_MONGODB_MUTATION_JOURNAL_BYTES,
+    },
+    bulk: {
+      schemaVersion: 1,
+      enabledByDefault: false,
+      defaultBatchDocuments: DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS,
+      maxBatchDocuments: MAX_MONGODB_BULK_BATCH_DOCUMENTS,
+      maxUnitOperations: MAX_MONGODB_BULK_UNIT_OPERATIONS,
+      maxChunkOperations: MAX_MONGODB_BULK_CHUNK_OPERATIONS,
+      maxChunkBytes: MAX_MONGODB_BULK_CHUNK_BYTES,
+      maxJobOperations: MAX_MONGODB_BULK_JOB_OPERATIONS,
+      maxJobBytes: MAX_MONGODB_BULK_JOB_BYTES,
+      defaultStorageRoot: DEFAULT_MONGODB_BULK_ROOT,
+      transactionReceipts: true,
+      backgroundJobs: true,
+      persistentRollback: true,
     },
   },
   logs: { ...LOG_CAPABILITIES },
@@ -214,6 +239,15 @@ export function securityCapabilities(config = {}) {
         rollbackRoot: config.mongodb?.rollbackRoot,
         rollbackTtlMs: config.mongodb?.rollbackTtlMs,
         maxAffectedDocuments: config.mongodb?.maxAffectedDocuments || MAX_MONGODB_MUTATION_MAX_AFFECTED,
+      },
+      bulk: {
+        ...SECURITY_POLICY.mongodb.bulk,
+        enabled: Boolean(config.mongodb?.bulkEnabled),
+        storageRoot: config.mongodb?.bulkRoot || DEFAULT_MONGODB_BULK_ROOT,
+        receiptsCollection: config.mongodb?.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
+        batchDocuments: config.mongodb?.bulkBatchDocuments || DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS,
+        concurrency: config.mongodb?.bulkConcurrency || 2,
+        rollbackTtlMs: config.mongodb?.bulkRollbackTtlMs || 7 * 24 * 60 * 60 * 1000,
       },
     },
     logs: {

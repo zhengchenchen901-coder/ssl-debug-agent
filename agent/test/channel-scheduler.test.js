@@ -98,6 +98,30 @@ test("scheduler preserves FIFO and gives a starved background request one opport
   await secondPromise;
 });
 
+test("bulk permits are independent and leave a business SSH channel available", async () => {
+  const scheduler = new ChannelScheduler({ maxBusiness: 5, maxBulk: 4 });
+  const started = [];
+  const bulkTasks = Array.from({ length: 5 }, (_, index) => deferredTask(started, `bulk-${index}`));
+  const bulkPromises = bulkTasks.map((item, index) => scheduler.schedule(operation(`bulk-${index}`), item.task, { priority: "bulk" }));
+  const interactive = deferredTask(started, "interactive");
+  const interactivePromise = scheduler.schedule(operation("interactive"), interactive.task, { priority: "interactive" });
+
+  await turn();
+  assert.equal(scheduler.snapshot().activeBulk, 4);
+  assert.equal(scheduler.snapshot().activeBusiness, 5);
+  assert.ok(started.includes("interactive"));
+  assert.equal(scheduler.snapshot().queuedByPriority.bulk, 1);
+
+  bulkTasks[0].release();
+  await bulkPromises[0];
+  await turn();
+  assert.ok(started.includes("bulk-4"));
+  for (const task of bulkTasks.slice(1)) task.release();
+  interactive.release();
+  await Promise.all([...bulkPromises.slice(1), interactivePromise]);
+  assert.equal(scheduler.snapshot().active, 0);
+});
+
 test("scheduler rejects queue overflow and removes cancelled queued operations", async () => {
   const scheduler = new ChannelScheduler({ maxBusiness: 1, maxQueue: 1 });
   const started = [];

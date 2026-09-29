@@ -156,6 +156,38 @@ const toolOperationPolicies = {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
     maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
   },
+  remote_debug_mongodb_prepare_import: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_prepare_bulk_storage: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_prepare_bulk: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_execute_bulk: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_get_bulk_job: {
+    defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_list_bulk_jobs: {
+    defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_control_bulk_job: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
+  remote_debug_mongodb_rollback_bulk_job: {
+    defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
+    maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
+  },
   remote_debug_mongodb_execute_mutation: {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
     maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
@@ -342,7 +374,7 @@ const tools = [
           type: "integer",
           minimum: 0,
           maximum: 100000,
-          description: "Number of matching documents to skip for find.",
+          description: "Number of matching documents or sorted names to skip for find, listDatabases, or listCollections.",
         },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_TIMEOUT_MS, MAX_MONGODB_TIMEOUT_MS),
       },
@@ -526,6 +558,169 @@ const tools = [
     },
   },
   {
+    name: "remote_debug_mongodb_prepare_import",
+    description:
+      "Prepare an allowlisted bulk insert without writing data. Accepts up to 10000 documents / 4 MiB, automatically split into independent transactions of at most 2000 documents / 512 KiB. Reuse the exact importId and input to recover the same batch journals. Commit or roll back each returned mutationId and planHash using the existing mutation tools. Explicit _id values are required; existing documents are never overwritten. Atomicity is per batch, not per import.",
+    inputSchema: {
+      type: "object", additionalProperties: false,
+      required: ["importId", "collection", "documents"],
+      properties: {
+        instanceId: instanceIdProperty,
+        importId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$", description: "Stable identifier for this input chunk; reuse with identical input when retrying prepare." },
+        database: { type: "string", minLength: 1, maxLength: 128 },
+        collection: { type: "string", minLength: 1, maxLength: 128 },
+        documents: { type: "array", minItems: 1, maxItems: 10000, items: { type: "object", required: ["_id"] } },
+        batchSize: { type: "integer", minimum: 1, maximum: 2000, description: "Document count per transaction, further capped by bytes and instance maxImportBatchDocuments." },
+        rollbackTtlMs: { type: "integer", minimum: 1, maximum: 604800000 },
+        purpose: { type: "string", maxLength: 500 },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_prepare_bulk_storage",
+    description: "Prepare (without applying) a one-time initialization of the allowlisted bulk receipt collection, its expiry index, and the remote 0700 job-log directory. Review the returned scope, then commit it once with remote_debug_mongodb_execute_mutation and its mutationId, planHash, and 确认执行. Initialization records are retained and are not rollback-deleted.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: [],
+      properties: {
+        instanceId: instanceIdProperty,
+        purpose: { type: "string", maxLength: 500 },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_prepare_bulk",
+    description: "Upload one immutable chunk of a MongoDB bulk job. Use stable jobId and increasing chunkIndex; resend identical chunks to retry. Send an empty final chunk with endOfUpload=true to preflight all targets and create the fixed plan. Each unit is atomic and cannot be split. V1 supports explicit-id insertOne and expected-original-value updateOne using only $set/$unset/$inc. Bulk capability and every collection, including __remote_debug_bulk_receipts, must be enabled in instance policy.",
+    inputSchema: {
+      type: "object", additionalProperties: false,
+      required: ["jobId", "chunkIndex", "units"],
+      properties: {
+        instanceId: instanceIdProperty,
+        jobId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+        database: { type: "string", minLength: 1, maxLength: 128, description: "Must equal the instance's configured allowlisted default database." },
+        chunkIndex: { type: "integer", minimum: 0, maximum: 9999 },
+        chunkHash: { type: "string", pattern: "^[a-f0-9]{64}$", description: "Optional SHA-256 of normalized chunk content; the agent calculates and returns it when omitted." },
+        units: {
+          type: "array", maxItems: 10000,
+          items: {
+            type: "object", additionalProperties: false, required: ["unitId", "operations"],
+            properties: {
+              unitId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$" },
+              operations: {
+                type: "array", minItems: 1, maxItems: 20,
+                items: {
+                  oneOf: [
+                    {
+                      type: "object", additionalProperties: false, required: ["operation", "collection", "document"],
+                      properties: {
+                        operation: { type: "string", enum: ["insertOne"] },
+                        collection: { type: "string", minLength: 1, maxLength: 128 },
+                        document: { type: "object", required: ["_id"], description: "Complete document with an explicit _id." },
+                      },
+                    },
+                    {
+                      type: "object", additionalProperties: false, required: ["operation", "collection", "id", "expected", "update"],
+                      properties: {
+                        operation: { type: "string", enum: ["updateOne"] },
+                        collection: { type: "string", minLength: 1, maxLength: 128 },
+                        id: { description: "Exact target _id as a string, safe integer, or Extended JSON ObjectId/Long." },
+                        expected: {
+                          type: "object", minProperties: 1,
+                          description: "Map every changed path to {exists:false} or {exists:true,value:<original>}; this distinguishes a missing field from null.",
+                          patternProperties: { "^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*$": { type: "object", required: ["exists"], properties: { exists: { type: "boolean" }, value: {} } } },
+                          additionalProperties: false,
+                        },
+                        update: {
+                          type: "object", minProperties: 1, maxProperties: 3, additionalProperties: false,
+                          properties: { $set: { type: "object", minProperties: 1 }, $unset: { type: "object", minProperties: 1 }, $inc: { type: "object", minProperties: 1 } },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+        purpose: { type: "string", maxLength: 500 },
+        rollbackTtlMs: { type: "integer", minimum: 1, maximum: 604800000 },
+        endOfUpload: { type: "boolean", description: "Set true only on the final empty chunk after all numbered data chunks." },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_execute_bulk",
+    description: "Start the already prepared immutable MongoDB bulk job in the instance worker. Requires exact jobId and planHash plus 确认执行. Returns after accepting the background task; it continues after the MCP client disconnects. Failures pause the task. Poll remote_debug_mongodb_get_bulk_job to track it.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["jobId", "planHash", "confirmation"],
+      properties: {
+        instanceId: instanceIdProperty,
+        jobId: { type: "string", minLength: 1, maxLength: 64 },
+        planHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        confirmation: { type: "string", enum: ["确认执行"] },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_get_bulk_job",
+    description: "Read progress and bounded, paginated post-commit verification differences for one bulk job. Does not read business before-images.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["jobId"],
+      properties: {
+        instanceId: instanceIdProperty,
+        jobId: { type: "string", minLength: 1, maxLength: 64 },
+        includeDifferences: { type: "boolean" },
+        offset: { type: "integer", minimum: 0, maximum: 100000 },
+        limit: { type: "integer", minimum: 1, maximum: 100 },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_TIMEOUT_MS, MAX_MONGODB_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_list_bulk_jobs",
+    description: "List recent MongoDB bulk job summaries on an instance, including paused and restart-recovery jobs, without returning business snapshots.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: [],
+      properties: {
+        instanceId: instanceIdProperty,
+        offset: { type: "integer", minimum: 0, maximum: 100000 },
+        limit: { type: "integer", minimum: 1, maximum: 100 },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_TIMEOUT_MS, MAX_MONGODB_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_control_bulk_job",
+    description: "Request pause or resume for the same fixed job plan. A pause stops new batch dispatch and lets in-flight transactions settle. Resume requires the matching planHash and is rejected while another job owns the instance lease.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["jobId", "planHash", "command"],
+      properties: {
+        instanceId: instanceIdProperty,
+        jobId: { type: "string", minLength: 1, maxLength: 64 },
+        planHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        command: { type: "string", enum: ["pause", "resume"] },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_rollback_bulk_job",
+    description: "Start rollback of the job's committed batches in reverse order after checking current documents still match this job's post-images. Requires exact jobId, planHash, and 确认回滚. Conflicts pause rollback; expired or missing logs make rollback unavailable.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["jobId", "planHash", "confirmation"],
+      properties: {
+        instanceId: instanceIdProperty,
+        jobId: { type: "string", minLength: 1, maxLength: 64 },
+        planHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        confirmation: { type: "string", enum: ["确认回滚"] },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
     name: "remote_debug_mongodb_execute_mutation",
     description:
       "Commit a prepared MongoDB document or index mutation. Requires the exact mutationId, planHash, and confirmation phrase 确认执行. Document mutations use a MongoDB transaction; index changes are verified compensating operations.",
@@ -571,7 +766,7 @@ const tools = [
         instanceId: instanceIdProperty,
         status: {
           type: "string",
-          enum: ["planned", "committed", "rolled_back", "commit_failed", "rollback_failed"],
+          enum: ["planned", "committed", "rolled_back", "commit_failed", "rollback_failed", "commit_started", "rollback_started", "commit_retryable", "rollback_retryable", "commit_unknown", "rollback_unknown"],
           description: "Optional journal status filter.",
         },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
@@ -1288,6 +1483,38 @@ function toolArgumentSummary(name, args = {}) {
         ? [...new Set(args.operations.map((item) => item?.collection).filter((item) => typeof item === "string"))].slice(0, 20)
         : [],
       rollbackTtlMs: args.rollbackTtlMs,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name === "remote_debug_mongodb_prepare_import") {
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      importId: typeof args.importId === "string" ? args.importId.slice(0, 64) : undefined,
+      database: typeof args.database === "string" ? args.database.slice(0, 128) : undefined,
+      collection: typeof args.collection === "string" ? args.collection.slice(0, 128) : undefined,
+      documentCount: Array.isArray(args.documents) ? args.documents.length : undefined,
+      batchSize: args.batchSize,
+      timeoutMs: args.timeoutMs,
+    };
+  }
+
+  if (name.startsWith("remote_debug_mongodb_") && name.includes("_bulk")) {
+    const units = Array.isArray(args.units) ? args.units : [];
+    const operations = units.flatMap((unit) => Array.isArray(unit?.operations) ? unit.operations : []);
+    return {
+      instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
+      jobId: typeof args.jobId === "string" ? args.jobId.slice(0, 64) : undefined,
+      planHash: typeof args.planHash === "string" ? args.planHash.slice(0, 64) : undefined,
+      chunkIndex: args.chunkIndex,
+      unitCount: units.length,
+      operationCount: operations.length,
+      collections: [...new Set(operations.map((item) => item?.collection).filter((item) => typeof item === "string"))].slice(0, 20),
+      command: typeof args.command === "string" ? args.command.slice(0, 16) : undefined,
+      includeDifferences: args.includeDifferences === true,
+      offset: args.offset,
+      limit: args.limit,
+      endOfUpload: args.endOfUpload === true,
       timeoutMs: args.timeoutMs,
     };
   }
@@ -2587,6 +2814,94 @@ async function callTool(name, args, operation) {
       operations: args?.operations,
       rollbackTtlMs: args?.rollbackTtlMs,
       purpose: args?.purpose,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_prepare_import") {
+    return callAgent("/mongodb/imports/prepare", {
+      instanceId: args?.instanceId,
+      importId: args?.importId,
+      database: args?.database,
+      collection: args?.collection,
+      documents: args?.documents,
+      batchSize: args?.batchSize,
+      rollbackTtlMs: args?.rollbackTtlMs,
+      purpose: args?.purpose,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_prepare_bulk_storage") {
+    return callAgent("/mongodb/bulk/storage/prepare", {
+      instanceId: args?.instanceId,
+      kind: "bulk_storage",
+      purpose: args?.purpose,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_prepare_bulk") {
+    return callAgent("/mongodb/bulk/prepare", {
+      instanceId: args?.instanceId,
+      jobId: args?.jobId,
+      database: args?.database,
+      chunkIndex: args?.chunkIndex,
+      chunkHash: args?.chunkHash,
+      units: args?.units,
+      purpose: args?.purpose,
+      rollbackTtlMs: args?.rollbackTtlMs,
+      endOfUpload: args?.endOfUpload,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_execute_bulk") {
+    return callAgent("/mongodb/bulk/execute", {
+      instanceId: args?.instanceId,
+      jobId: args?.jobId,
+      planHash: args?.planHash,
+      confirmation: args?.confirmation,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_get_bulk_job") {
+    return callAgent("/mongodb/bulk/job", {
+      instanceId: args?.instanceId,
+      jobId: args?.jobId,
+      includeDifferences: args?.includeDifferences,
+      offset: args?.offset,
+      limit: args?.limit,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_list_bulk_jobs") {
+    return callAgent("/mongodb/bulk/jobs", {
+      instanceId: args?.instanceId,
+      offset: args?.offset,
+      limit: args?.limit,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_control_bulk_job") {
+    return callAgent("/mongodb/bulk/control", {
+      instanceId: args?.instanceId,
+      jobId: args?.jobId,
+      planHash: args?.planHash,
+      command: args?.command,
+      timeoutMs: args?.timeoutMs,
+    }, operation);
+  }
+
+  if (name === "remote_debug_mongodb_rollback_bulk_job") {
+    return callAgent("/mongodb/bulk/rollback", {
+      instanceId: args?.instanceId,
+      jobId: args?.jobId,
+      planHash: args?.planHash,
+      confirmation: args?.confirmation,
       timeoutMs: args?.timeoutMs,
     }, operation);
   }

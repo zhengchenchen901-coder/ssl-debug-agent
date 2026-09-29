@@ -30384,7 +30384,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv,
       createECDH,
-      createHash: createHash5,
+      createHash: createHash7,
       createHmac,
       createSign,
       createVerify,
@@ -31072,11 +31072,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash5("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash7("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash5("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash7("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -31241,8 +31241,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash5("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash5("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash7("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash7("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -31282,7 +31282,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash5("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash7("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -33604,7 +33604,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash5,
+      createHash: createHash7,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -34030,7 +34030,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash5(this.hashName);
+          const hash = createHash7(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -35038,9 +35038,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest = createHash5(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest = createHash7(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest.length < len) {
-          const chunk = createHash5(hashName).update(secret).update(exchangeHash).update(digest).digest();
+          const chunk = createHash7(hashName).update(secret).update(exchangeHash).update(digest).digest();
           const extended = Buffer.allocUnsafe(digest.length + chunk.length);
           extended.set(digest, 0);
           extended.set(chunk, digest.length);
@@ -40475,7 +40475,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash5,
+      createHash: createHash7,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -40697,7 +40697,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash5(hashAlgo).update(key).digest("hex");
+              key = createHash7(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -44008,9 +44008,9 @@ module.exports = __toCommonJS(worker_entry_exports);
 
 // config.js
 var import_node_fs2 = __toESM(require("node:fs"), 1);
-var import_node_crypto6 = require("node:crypto");
+var import_node_crypto7 = require("node:crypto");
 var import_node_path2 = __toESM(require("node:path"), 1);
-var import_posix5 = __toESM(require("node:path/posix"), 1);
+var import_posix6 = __toESM(require("node:path/posix"), 1);
 
 // approved-commands.js
 var import_node_crypto = require("node:crypto");
@@ -44249,14 +44249,188 @@ function createCommandDraftStore(options = {}) {
 
 // command-review.js
 var import_node_child_process = require("node:child_process");
-var import_node_crypto5 = require("node:crypto");
+var import_node_crypto6 = require("node:crypto");
 var import_node_fs = __toESM(require("node:fs"), 1);
 var import_node_os = __toESM(require("node:os"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
 
 // security.js
-var import_posix4 = __toESM(require("node:path/posix"), 1);
-var import_node_crypto4 = require("node:crypto");
+var import_posix5 = __toESM(require("node:path/posix"), 1);
+var import_node_crypto5 = require("node:crypto");
+
+// mongodb-codec.js
+var MONGODB_CODEC_SCRIPT = String.raw`
+function __codecError(message) {
+  const error = new Error(message);
+  error.code = "MONGODB_BSON_UNSUPPORTED";
+  throw error;
+}
+
+function __bsonConstructor(name) {
+  const driver = require(__driverPath);
+  return (__bson && (__bson[name] || (name === "ObjectId" && __bson.ObjectID))) ||
+    driver[name] || (name === "ObjectId" && driver.ObjectID);
+}
+
+function __uint32(value, label) {
+  var number = typeof value === "string" && /^[0-9]+$/.test(value) ? Number(value) : value;
+  if (!Number.isInteger(number) || number < 0 || number > 0xffffffff) return __codecError("invalid BSON timestamp " + label);
+  return number >>> 0;
+}
+
+function __int32(value, label) {
+  if (typeof value !== "string" || !/^-?[0-9]+$/.test(value)) return __codecError("invalid BSON integer " + label);
+  var number = Number(value);
+  if (!Number.isInteger(number) || number < -2147483648 || number > 2147483647) return __codecError("BSON integer is outside the Int32 range");
+  return number;
+}
+
+function __binaryBytes(value) {
+  var raw = value && value.buffer;
+  if (raw && typeof value.position === "number") return Buffer.from(raw.slice(0, value.position));
+  if (value && typeof value.value === "function") {
+    var returned = value.value(true);
+    if (Buffer.isBuffer(returned)) return Buffer.from(returned);
+  }
+  return __codecError("configured driver returned an unsupported BSON Binary value");
+}
+
+function __fallbackDecode(value) {
+  if (Array.isArray(value)) return value.map(__fallbackDecode);
+  if (!value || typeof value !== "object") return value;
+  const keys = Object.keys(value);
+  if (Object.prototype.hasOwnProperty.call(value, "$oid")) {
+    if (keys.length !== 1 || typeof value.$oid !== "string" || !/^[a-fA-F0-9]{24}$/.test(value.$oid)) {
+      return __codecError("ObjectId requires exactly one $oid containing 24 hexadecimal characters");
+    }
+    const ObjectId = __bsonConstructor("ObjectId");
+    if (typeof ObjectId !== "function") return __codecError("configured MongoDB/BSON driver has no ObjectId constructor");
+    return new ObjectId(value.$oid);
+  }
+  if (keys.length === 1 && keys[0] === "$date") {
+    const raw = value.$date;
+    const date = new Date(raw && typeof raw === "object" ? Number(raw.$numberLong) : raw);
+    if (!Number.isFinite(date.getTime())) return __codecError("invalid BSON date");
+    return date;
+  }
+  for (const pair of [["$numberLong", "Long"], ["$numberDecimal", "Decimal128"]]) {
+    if (keys.length === 1 && keys[0] === pair[0]) {
+      const Type = __bsonConstructor(pair[1]);
+      if (!Type || typeof Type.fromString !== "function") return __codecError("configured driver cannot decode " + pair[0]);
+      return Type.fromString(value[pair[0]]);
+    }
+  }
+  if (keys.length === 1 && keys[0] === "$numberInt") {
+    var Int32 = __bsonConstructor("Int32");
+    var int32Value = __int32(value.$numberInt, "$numberInt");
+    if (!Int32) return __codecError("configured driver cannot decode $numberInt");
+    return typeof Int32.fromString === "function" ? Int32.fromString(String(int32Value)) : new Int32(int32Value);
+  }
+  if (keys.length === 1 && keys[0] === "$numberDouble") {
+    var Double = __bsonConstructor("Double");
+    var doubleText = value.$numberDouble;
+    if (typeof doubleText !== "string" || !/^(?:NaN|Infinity|-Infinity|[-+]?(?:[0-9]+[.]?[0-9]*|[.][0-9]+)(?:[eE][-+]?[0-9]+)?)$/.test(doubleText)) {
+      return __codecError("invalid BSON double");
+    }
+    if (!Double) return __codecError("configured driver cannot decode $numberDouble");
+    return typeof Double.fromString === "function" ? Double.fromString(doubleText) : new Double(Number(doubleText));
+  }
+  if (keys.length === 1 && keys[0] === "$binary") {
+    var binary = value.$binary;
+    if (!binary || typeof binary !== "object" || Array.isArray(binary) || Object.keys(binary).length !== 2 ||
+        typeof binary.base64 !== "string" || typeof binary.subType !== "string" || !/^[a-fA-F0-9]{2}$/.test(binary.subType)) {
+      return __codecError("invalid canonical BSON binary");
+    }
+    var decodedBytes = Buffer.from(binary.base64, "base64");
+    if (decodedBytes.toString("base64").replace(/=+$/, "") !== binary.base64.replace(/=+$/, "")) return __codecError("invalid BSON binary base64");
+    var Binary = __bsonConstructor("Binary");
+    if (!Binary) return __codecError("configured driver cannot decode $binary");
+    return new Binary(decodedBytes, parseInt(binary.subType, 16));
+  }
+  if (keys.length === 1 && keys[0] === "$timestamp") {
+    var timestamp = value.$timestamp;
+    if (!timestamp || typeof timestamp !== "object" || Array.isArray(timestamp) || Object.keys(timestamp).some(function (key) { return key !== "t" && key !== "i"; }) ||
+        !Object.prototype.hasOwnProperty.call(timestamp, "t") || !Object.prototype.hasOwnProperty.call(timestamp, "i")) {
+      return __codecError("invalid BSON timestamp");
+    }
+    var Timestamp = __bsonConstructor("Timestamp");
+    var timestampSeconds = __uint32(timestamp.t, "seconds");
+    var timestampIncrement = __uint32(timestamp.i, "increment");
+    if (!Timestamp) return __codecError("configured driver cannot decode $timestamp");
+    if (typeof Timestamp.fromBits === "function") return Timestamp.fromBits(timestampIncrement | 0, timestampSeconds | 0);
+    return new Timestamp(timestampIncrement | 0, timestampSeconds | 0);
+  }
+  if (keys.length === 1 && (keys[0] === "$minKey" || keys[0] === "$maxKey")) {
+    if (value[keys[0]] !== 1) return __codecError("invalid " + keys[0]);
+    var KeyType = __bsonConstructor(keys[0] === "$minKey" ? "MinKey" : "MaxKey");
+    if (!KeyType) return __codecError("configured driver cannot decode " + keys[0]);
+    return new KeyType();
+  }
+  const result = {};
+  for (const key of keys) {
+    if (["$date", "$numberLong", "$numberDecimal", "$numberInt", "$numberDouble", "$binary", "$regularExpression", "$timestamp", "$minKey", "$maxKey", "$undefined", "$symbol", "$code", "$dbPointer"].indexOf(key) !== -1) {
+      return __codecError("configured driver requires EJSON.parse for " + key);
+    }
+    Object.defineProperty(result, key, { value: __fallbackDecode(value[key]), enumerable: true, writable: true, configurable: true });
+  }
+  return result;
+}
+
+function __fallbackEncode(value) {
+  if (Array.isArray(value)) return value.map(__fallbackEncode);
+  if (!value || typeof value !== "object") return value;
+  if ((value._bsontype === "ObjectID" || value._bsontype === "ObjectId") && typeof value.toHexString === "function") {
+    return { $oid: value.toHexString() };
+  }
+  if (Object.prototype.toString.call(value) === "[object Date]") return { $date: value.toISOString() };
+  if (value._bsontype === "Long") return { $numberLong: value.toString() };
+  if (value._bsontype === "Decimal128") return { $numberDecimal: value.toString() };
+  if (value._bsontype === "Int32") return { $numberInt: String(typeof value.value === "number" ? value.value : value.valueOf()) };
+  if (value._bsontype === "Double") return { $numberDouble: String(typeof value.value === "number" ? value.value : value.valueOf()) };
+  if (value._bsontype === "Binary") {
+    var binaryBytes = __binaryBytes(value);
+    var subtype = typeof value.sub_type === "number" ? value.sub_type : value._subtype;
+    if (!Number.isInteger(subtype) || subtype < 0 || subtype > 255) return __codecError("configured driver returned an invalid BSON Binary subtype");
+    return { $binary: { base64: binaryBytes.toString("base64"), subType: ("0" + subtype.toString(16)).slice(-2) } };
+  }
+  if (value._bsontype === "Timestamp") {
+    if (typeof value.getHighBitsUnsigned !== "function" && typeof value.getHighBits !== "function" ||
+        typeof value.getLowBitsUnsigned !== "function" && typeof value.getLowBits !== "function") {
+      return __codecError("configured driver returned an unsupported BSON Timestamp value");
+    }
+    var seconds = typeof value.getHighBitsUnsigned === "function" ? value.getHighBitsUnsigned() : value.getHighBits();
+    var increment = typeof value.getLowBitsUnsigned === "function" ? value.getLowBitsUnsigned() : value.getLowBits();
+    return { $timestamp: { t: seconds >>> 0, i: increment >>> 0 } };
+  }
+  if (value._bsontype === "MinKey") return { $minKey: 1 };
+  if (value._bsontype === "MaxKey") return { $maxKey: 1 };
+  // Refuse types that cannot be restored faithfully by the fallback decoder.
+  if (value._bsontype || Buffer.isBuffer(value) || Object.prototype.toString.call(value) === "[object RegExp]") {
+    return __codecError("configured driver requires EJSON support for this BSON value");
+  }
+  const result = {};
+  for (const key of Object.keys(value)) {
+    Object.defineProperty(result, key, { value: __fallbackEncode(value[key]), enumerable: true, writable: true, configurable: true });
+  }
+  return result;
+}
+
+function __decode(value) {
+  if (value === undefined) return value;
+  if (__bson && __bson.EJSON && typeof __bson.EJSON.parse === "function") {
+    return __bson.EJSON.parse(JSON.stringify(value));
+  }
+  return __fallbackDecode(value);
+}
+
+function __encode(value) {
+  if (__bson && __bson.EJSON && typeof __bson.EJSON.stringify === "function") {
+    return JSON.parse(__bson.EJSON.stringify(value));
+  }
+  // Walk BSON values before JSON.stringify calls their toJSON methods.
+  return JSON.parse(JSON.stringify(__fallbackEncode(value)));
+}
+`;
 
 // mongodb.js
 var import_posix = __toESM(require("node:path/posix"), 1);
@@ -44338,7 +44512,7 @@ function operationPolicy(pathName, config = {}) {
       maxMs: OPERATION_TIMEOUTS.mongodb.maxMs
     };
   }
-  if (pathName.startsWith("/mongodb/mutations/")) {
+  if (pathName.startsWith("/mongodb/mutations/") || pathName.startsWith("/mongodb/bulk/") || pathName === "/mongodb/imports/prepare") {
     return {
       defaultMs: OPERATION_TIMEOUTS.mongodbMutation.defaultMs,
       maxMs: OPERATION_TIMEOUTS.mongodbMutation.maxMs
@@ -44753,35 +44927,7 @@ try {
   __bson = null;
 }
 
-function __fallbackReplacer(_key, value) {
-  if (value && typeof value === "object" && value._bsontype === "ObjectID" && typeof value.toHexString === "function") {
-    return { $oid: value.toHexString() };
-  }
-  if (value && typeof value === "object" && value._bsontype === "Long" && typeof value.toString === "function") {
-    return { $numberLong: value.toString() };
-  }
-  if (value && typeof value === "object" && value._bsontype === "Decimal128" && typeof value.toString === "function") {
-    return { $numberDecimal: value.toString() };
-  }
-  if (Buffer.isBuffer(value)) {
-    return { $binary: { base64: value.toString("base64"), subType: "00" } };
-  }
-  return value;
-}
-
-function __decode(value) {
-  if (value === undefined || !__bson || !__bson.EJSON || !__bson.EJSON.parse) {
-    return value;
-  }
-  return __bson.EJSON.parse(JSON.stringify(value));
-}
-
-function __encode(value) {
-  if (__bson && __bson.EJSON && __bson.EJSON.stringify) {
-    return JSON.parse(__bson.EJSON.stringify(value));
-  }
-  return JSON.parse(JSON.stringify(value, __fallbackReplacer));
-}
+${MONGODB_CODEC_SCRIPT}
 
 function __getPath(value, keyPath) {
   return keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
@@ -44833,12 +44979,13 @@ function __errorPayload(error) {
     } else if (__request.operation === "listDatabases") {
       const __listed = await __client.db("admin").admin().listDatabases({ nameOnly: true });
       __data = {
-        databases: (__listed.databases || []).slice(0, __request.limit).map((item) => ({ name: item.name })),
+        databases: (__listed.databases || []).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0).slice(__request.skip, __request.skip + __request.limit).map((item) => ({ name: item.name })),
       };
     } else if (__request.operation === "listCollections") {
       const __db = __client.db(__database);
       __data = (await __db.listCollections({}, { nameOnly: true }).toArray())
-        .slice(0, __request.limit)
+        .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+        .slice(__request.skip, __request.skip + __request.limit)
         .map((item) => ({ name: item.name, type: item.type }));
     } else {
       const __collection = __client.db(__database).collection(__request.collection);
@@ -45012,9 +45159,1880 @@ async function runMongoQuery(query, options = {}) {
   };
 }
 
-// mongodb-mutations.js
+// mongodb-bulk.js
 var import_node_crypto3 = require("node:crypto");
 var import_posix2 = __toESM(require("node:path/posix"), 1);
+
+// mongodb-bulk-runtime.js
+var MONGODB_BULK_RUNTIME = String.raw`
+function __bulkFail(code, message, details) {
+  var error = new Error(message);
+  error.code = code;
+  error.details = details;
+  throw error;
+}
+
+function __bulkStable(value) {
+  if (Array.isArray(value)) return value.map(__bulkStable);
+  if (!value || typeof value !== "object") return value;
+  return Object.keys(value).sort().reduce(function (result, key) {
+    Object.defineProperty(result, key, { value: __bulkStable(value[key]), enumerable: true, writable: true, configurable: true });
+    return result;
+  }, {});
+}
+
+function __bulkHash(value) {
+  return __crypto.createHash("sha256").update(JSON.stringify(__bulkStable(value))).digest("hex");
+}
+
+function __bulkBytes(value) {
+  return Buffer.byteLength(typeof value === "string" ? value : JSON.stringify(value), "utf8");
+}
+
+function __bulkRoot() {
+  return __config.bulkRoot;
+}
+
+function __bulkJobId() {
+  var jobId = __request.jobId || (__request.chunk && __request.chunk.jobId);
+  if (typeof jobId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(jobId)) {
+    __bulkFail("MONGODB_BULK_JOB_ID_INVALID", "jobId has an invalid format");
+  }
+  return jobId;
+}
+
+function __bulkJobDir(jobId) {
+  var root = __bulkRoot();
+  return __path.join(root, jobId);
+}
+
+function __bulkEnsureRoot() {
+  var root = __bulkRoot();
+  if (!__fs.existsSync(root)) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "bulk storage has not been initialized");
+  var stat = __fs.lstatSync(root);
+  if (stat.isSymbolicLink() || !stat.isDirectory()) __bulkFail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
+  if ((stat.mode & 0o777) !== 0o700) __bulkFail("MONGODB_BULK_STORAGE_PERMISSIONS", "bulk storage root must have mode 0700");
+  var marker = __path.join(root, ".storage-v1.json");
+  if (!__fs.existsSync(marker) || __fs.lstatSync(marker).isSymbolicLink()) {
+    __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "bulk storage initialization record was not found");
+  }
+  if (!__fs.lstatSync(marker).isFile() || (__fs.lstatSync(marker).mode & 0o777) !== 0o600) {
+    __bulkFail("MONGODB_BULK_STORAGE_PERMISSIONS", "bulk storage initialization record must be a regular 0600 file");
+  }
+  var state = __bulkReadJson(marker, 64 * 1024);
+  if (!state || state.schemaVersion !== 1 || state.database !== __config.database || state.receiptsCollection !== __config.receiptsCollection) {
+    __bulkFail("MONGODB_BULK_STORAGE_CONFIG_MISMATCH", "bulk storage belongs to a different database configuration");
+  }
+  return root;
+}
+
+function __bulkEnsureJobDir(jobId) {
+  var root = __bulkEnsureRoot();
+  var directory = __bulkJobDir(jobId);
+  if (!__fs.existsSync(directory)) __fs.mkdirSync(directory, { mode: 0o700 });
+  var stat = __fs.lstatSync(directory);
+  if (stat.isSymbolicLink() || !stat.isDirectory()) __bulkFail("MONGODB_BULK_PATH_INVALID", "bulk job path must be a real directory");
+  if ((stat.mode & 0o777) !== 0o700) __fs.chmodSync(directory, 0o700);
+  if (__path.dirname(directory) !== root) __bulkFail("MONGODB_BULK_PATH_INVALID", "bulk job path escaped the configured storage root");
+  return directory;
+}
+
+function __bulkReadJson(filePath, maxBytes) {
+  if (!__fs.existsSync(filePath)) return null;
+  var stat = __fs.lstatSync(filePath);
+  if (stat.isSymbolicLink() || !stat.isFile()) __bulkFail("MONGODB_BULK_PATH_INVALID", "bulk metadata must be a regular file");
+  if (stat.size > maxBytes) __bulkFail("MONGODB_BULK_FILE_TOO_LARGE", "bulk metadata exceeds its size limit");
+  try {
+    return JSON.parse(__fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk metadata is damaged");
+  }
+}
+
+function __bulkFsyncDirectory(directory) {
+  var fd;
+  try {
+    fd = __fs.openSync(directory, "r");
+    __fs.fsyncSync(fd);
+  } catch (error) {
+    __bulkFail("MONGODB_BULK_DURABILITY_UNAVAILABLE", "bulk storage could not confirm a durable directory update");
+  } finally {
+    if (fd !== undefined) try { __fs.closeSync(fd); } catch (_error) {}
+  }
+}
+
+function __bulkWriteJson(filePath, value, maxBytes) {
+  var directory = __path.dirname(filePath);
+  var text = JSON.stringify(value, null, 2) + "\n";
+  if (__bulkBytes(text) > maxBytes) __bulkFail("MONGODB_BULK_JOURNAL_TOO_LARGE", "bulk rollback log exceeds 8 MiB");
+  var temporary = filePath + "." + process.pid + "." + __crypto.randomBytes(12).toString("hex") + ".tmp";
+  var fd;
+  try {
+    fd = __fs.openSync(temporary, "wx", 0o600);
+    __fs.writeFileSync(fd, text, "utf8");
+    __fs.fsyncSync(fd);
+    __fs.closeSync(fd);
+    fd = undefined;
+    __fs.renameSync(temporary, filePath);
+    __fs.chmodSync(filePath, 0o600);
+    __bulkFsyncDirectory(directory);
+  } catch (error) {
+    if (fd !== undefined) try { __fs.closeSync(fd); } catch (_closeError) {}
+    try { if (__fs.existsSync(temporary)) __fs.unlinkSync(temporary); } catch (_unlinkError) {}
+    if (error && error.code && /^MONGODB_/.test(error.code)) throw error;
+    __bulkFail("MONGODB_BULK_DURABILITY_UNAVAILABLE", "bulk log could not be written atomically");
+  }
+}
+
+function __bulkAppendJsonLine(filePath, value) {
+  var fd;
+  try {
+    fd = __fs.openSync(filePath, __fs.constants.O_CREAT | __fs.constants.O_APPEND | __fs.constants.O_WRONLY, 0o600);
+    __fs.writeFileSync(fd, JSON.stringify(value) + "\n", "utf8");
+    __fs.fsyncSync(fd);
+  } catch (_error) {
+    __bulkFail("MONGODB_BULK_DURABILITY_UNAVAILABLE", "bulk job event could not be durably recorded");
+  } finally {
+    if (fd !== undefined) try { __fs.closeSync(fd); } catch (_closeError) {}
+  }
+}
+
+function __bulkManifest(jobId, allowMissing) {
+  var directory = __bulkJobDir(jobId);
+  if (!__fs.existsSync(directory)) {
+    if (allowMissing) return null;
+    __bulkFail("MONGODB_BULK_JOB_NOT_FOUND", "bulk job was not found");
+  }
+  var manifest = __bulkReadJson(__path.join(directory, "manifest.json"), 4 * 1024 * 1024);
+  if (!manifest || manifest.schemaVersion !== 1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
+  return manifest;
+}
+
+function __bulkSaveManifest(manifest) {
+  __bulkWriteJson(__path.join(__bulkJobDir(manifest.jobId), "manifest.json"), manifest, 4 * 1024 * 1024);
+}
+
+function __bulkWithLock(lockPath, task) {
+  var token = process.pid + ":" + __crypto.randomBytes(12).toString("hex");
+  var startedAt = Date.now();
+  var waitBuffer = new Int32Array(new SharedArrayBuffer(4));
+  var fd;
+  while (fd === undefined) {
+    try {
+      fd = __fs.openSync(lockPath, "wx", 0o600);
+      __fs.writeFileSync(fd, token, "utf8");
+      __fs.fsyncSync(fd);
+      __fs.closeSync(fd);
+      fd = null;
+      __bulkFsyncDirectory(__path.dirname(lockPath));
+    } catch (error) {
+      if (fd !== undefined && fd !== null) try { __fs.closeSync(fd); } catch (_closeError) {}
+      fd = undefined;
+      if (!error || error.code !== "EEXIST") __bulkFail("MONGODB_BULK_LOCK_FAILED", "bulk state lock could not be acquired");
+      try {
+        var stat = __fs.lstatSync(lockPath);
+        if (stat.isSymbolicLink() || !stat.isFile()) __bulkFail("MONGODB_BULK_LOCK_FAILED", "bulk state lock is not a regular file");
+        if (Date.now() - stat.mtimeMs > 30000) __fs.unlinkSync(lockPath);
+      } catch (statError) {
+        if (statError && statError.code !== "ENOENT") throw statError;
+      }
+      if (Date.now() - startedAt > 10000) __bulkFail("MONGODB_BULK_LOCK_BUSY", "bulk state lock remained busy");
+      Atomics.wait(waitBuffer, 0, 0, 25);
+    }
+  }
+  try { return task(); }
+  finally {
+    try {
+      if (__fs.readFileSync(lockPath, "utf8") === token) {
+        __fs.unlinkSync(lockPath);
+        __bulkFsyncDirectory(__path.dirname(lockPath));
+      }
+    } catch (_error) {}
+  }
+}
+
+function __bulkManifestLockPath(jobId) {
+  return __path.join(__bulkJobDir(jobId), ".manifest.lock");
+}
+
+async function __bulkWithAsyncLock(lockPath, task) {
+  var token = process.pid + ":" + __crypto.randomBytes(12).toString("hex");
+  var startedAt = Date.now();
+  while (true) {
+    try {
+      var fd = __fs.openSync(lockPath, "wx", 0o600);
+      __fs.writeFileSync(fd, token, "utf8");
+      __fs.fsyncSync(fd);
+      __fs.closeSync(fd);
+      __bulkFsyncDirectory(__path.dirname(lockPath));
+      break;
+    } catch (error) {
+      if (!error || error.code !== "EEXIST") __bulkFail("MONGODB_BULK_LOCK_FAILED", "bulk preparation lock could not be acquired");
+      try {
+        var stat = __fs.lstatSync(lockPath);
+        if (stat.isSymbolicLink() || !stat.isFile()) __bulkFail("MONGODB_BULK_LOCK_FAILED", "bulk preparation lock is not a regular file");
+        if (Date.now() - stat.mtimeMs > 120000) __fs.unlinkSync(lockPath);
+      } catch (statError) {
+        if (statError && statError.code !== "ENOENT") throw statError;
+      }
+      if (Date.now() - startedAt > 600000) __bulkFail("MONGODB_BULK_LOCK_BUSY", "bulk preparation remained busy");
+      await new Promise(function (resolve) { setTimeout(resolve, 100); });
+    }
+  }
+  var heartbeat = setInterval(function () {
+    try {
+      if (__fs.readFileSync(lockPath, "utf8") === token) {
+        var now = new Date();
+        __fs.utimesSync(lockPath, now, now);
+      }
+    } catch (_error) {}
+  }, 10000);
+  if (heartbeat.unref) heartbeat.unref();
+  try { return await task(); }
+  finally {
+    clearInterval(heartbeat);
+    try {
+      if (__fs.readFileSync(lockPath, "utf8") === token) {
+        __fs.unlinkSync(lockPath);
+        __bulkFsyncDirectory(__path.dirname(lockPath));
+      }
+    } catch (_error) {}
+  }
+}
+
+function __bulkBatchPath(jobId, index) {
+  return __path.join(__bulkJobDir(jobId), "batch-" + String(index).padStart(6, "0") + ".json");
+}
+
+function __bulkLoadBatch(jobId, index) {
+  return __bulkReadJson(__bulkBatchPath(jobId, index), 8 * 1024 * 1024);
+}
+
+function __bulkLoadPlan(jobId, manifest) {
+  var plan = __bulkReadJson(__path.join(__bulkJobDir(jobId), "plan.json"), 8 * 1024 * 1024);
+  if (!plan || plan.schemaVersion !== 1 || plan.jobId !== jobId || plan.planHash !== manifest.planHash) {
+    __bulkFail("MONGODB_BULK_LOG_INVALID", "final bulk plan is missing or does not match the manifest");
+  }
+  var planHash = __bulkHash({
+    schemaVersion: plan.schemaVersion,
+    jobId: plan.jobId,
+    database: plan.database,
+    purpose: plan.purpose,
+    rollbackExpiresAt: plan.rollbackExpiresAt,
+    chunks: plan.chunks,
+    batches: plan.batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }),
+  });
+  if (planHash !== plan.planHash) __bulkFail("MONGODB_BULK_LOG_INVALID", "final bulk plan integrity check failed");
+  return plan;
+}
+
+function __bulkStatus(manifest, plan, options) {
+  var current = manifest.status;
+  if (current === "running" || current === "rolling_back" || current === "reviewing") {
+    var lease = __bulkReadJson(__path.join(__bulkRoot(), ".worker-lease.json"), 64 * 1024);
+    if (!lease || lease.jobId !== manifest.jobId || Date.now() - Date.parse(lease.heartbeatAt) > 60000) {
+      current = "recovery_required";
+    }
+  }
+  var offset = options && Number.isInteger(options.offset) ? Math.max(0, options.offset) : 0;
+  var limit = options && Number.isInteger(options.limit) ? Math.max(1, Math.min(100, options.limit)) : 20;
+  var differenceCount = manifest.differenceCount || 0;
+  var diffs = [];
+  if (options && options.includeDifferences && differenceCount > offset) {
+    var differenceCounts = manifest.differenceCounts || [];
+    var skipped = 0;
+    for (var i = 0; i < (manifest.batchCount || 0) && diffs.length < limit; i += 1) {
+      var partCount = differenceCounts[i];
+      if (!Number.isInteger(partCount)) {
+        var countPart = __bulkReadJson(__path.join(__bulkJobDir(manifest.jobId), "differences-" + String(i).padStart(6, "0") + ".json"), 8 * 1024 * 1024);
+        partCount = countPart && Array.isArray(countPart.items) ? countPart.items.length : 0;
+      }
+      if (skipped + partCount <= offset) { skipped += partCount; continue; }
+      var part = __bulkReadJson(__path.join(__bulkJobDir(manifest.jobId), "differences-" + String(i).padStart(6, "0") + ".json"), 8 * 1024 * 1024);
+      if (!part || !Array.isArray(part.items)) continue;
+      var localStart = Math.max(0, offset - skipped);
+      var available = limit - diffs.length;
+      diffs = diffs.concat(part.items.slice(localStart, localStart + available));
+      skipped += partCount;
+    }
+  }
+  var committed = manifest.committedBatchIndexes || [];
+  var rolledBack = manifest.rolledBackBatchIndexes || [];
+  var activeBatchIndexes = manifest.runningBatchIndexes || [];
+  var activePhase = manifest.activePhase || null;
+  var queuedBatchCount = 0;
+  if (activePhase === "execute") queuedBatchCount = Math.max(0, (manifest.batchCount || 0) - committed.length - activeBatchIndexes.length);
+  else if (activePhase === "verify") queuedBatchCount = Math.max(0, (manifest.batchCount || 0) - (manifest.verifiedBatchCount || 0) - activeBatchIndexes.length);
+  else if (activePhase === "rollback") queuedBatchCount = Math.max(0, committed.length - rolledBack.length - activeBatchIndexes.length);
+  var nextRollback = null;
+  for (var r = committed.length - 1; r >= 0; r -= 1) {
+    if (rolledBack.indexOf(committed[r]) === -1) { nextRollback = committed[r]; break; }
+  }
+  return {
+    jobId: manifest.jobId,
+    database: manifest.database,
+    status: current,
+    mode: manifest.mode || "execute",
+    desiredState: manifest.desiredState || "running",
+    createdAt: manifest.createdAt,
+    updatedAt: manifest.updatedAt,
+    planHash: manifest.planHash || undefined,
+    rollbackExpiresAt: manifest.rollbackExpiresAt || undefined,
+    operationCount: manifest.operationCount,
+    unitCount: manifest.unitCount,
+    batchCount: manifest.batchCount || 0,
+    nextBatch: manifest.nextBatch || 0,
+    nextVerifyBatch: manifest.nextVerifyBatch || 0,
+    nextRollbackBatch: nextRollback,
+    committedBatchCount: committed.length,
+    rolledBackBatchCount: rolledBack.length,
+    activeBatchIndexes: activeBatchIndexes,
+    activePhase: activePhase,
+    queuedBatchCount: queuedBatchCount,
+    committed: manifest.committed || { matched: 0, modified: 0, inserted: 0, unchanged: 0 },
+    verifiedBatchCount: manifest.verifiedBatchCount || 0,
+    differences: diffs,
+    differenceOffset: offset,
+    differenceLimit: limit,
+    differenceCount: differenceCount,
+    hasMoreDifferences: offset + diffs.length < differenceCount,
+    changedFields: manifest.changedFields || [],
+    pauseReason: manifest.pauseReason,
+    effectiveConcurrency: Math.min(__config.concurrency || 1, 4),
+    planPreview: plan ? plan.batches.map(function (batch) { return { batchIndex: batch.index, operationCount: batch.documents, unitCount: batch.unitCount, changedFields: batch.changedFields, sampleIds: batch.sampleIds, rollbackBytes: batch.rollbackBytes }; }) : undefined,
+  };
+}
+
+function __bulkGetPath(document, path) {
+  var current = document;
+  var parts = path.split(".");
+  for (var i = 0; i < parts.length; i += 1) {
+    if (current === null || current === undefined || !Object.prototype.hasOwnProperty.call(Object(current), parts[i])) return { exists: false };
+    current = current[parts[i]];
+  }
+  return { exists: true, value: current };
+}
+
+function __bulkEqual(left, right) {
+  return __bulkHash(__encode(left)) === __bulkHash(__encode(right));
+}
+
+function __bulkIdKey(value) {
+  return __bulkHash(__encode(value));
+}
+
+function __bulkIdSummary(value) {
+  var encoded = __encode(value);
+  return typeof encoded === "string" ? encoded.slice(0, 256) : encoded;
+}
+
+function __bulkUnitIdKey(unitId) {
+  return String(unitId);
+}
+
+function __bulkCheckExpected(document, operation) {
+  var expected = operation.expected || {};
+  var keys = Object.keys(expected);
+  for (var i = 0; i < keys.length; i += 1) {
+    var field = keys[i];
+    var current = __bulkGetPath(document, field);
+    var condition = expected[field];
+    if (condition.exists !== current.exists) return false;
+    if (condition.exists && !__bulkEqual(current.value, __decode(condition.value))) return false;
+  }
+  return true;
+}
+
+function __bulkUpdateSelector(operation) {
+  var filter = { _id: __decode(operation.id) };
+  var expected = operation.expected || {};
+  Object.keys(expected).forEach(function (field) {
+    var condition = expected[field];
+    filter[field] = condition.exists ? { $eq: __decode(condition.value), $exists: true } : { $exists: false };
+  });
+  return filter;
+}
+
+function __bulkOperationId(operation) {
+  return operation.operation === "insertOne" ? operation.document._id : operation.id;
+}
+
+function __bulkChangedFields(operations) {
+  var fields = {};
+  operations.forEach(function (operation) {
+    if (operation.operation === "insertOne") {
+      Object.keys(operation.document).forEach(function (field) { fields[field] = true; });
+    } else {
+      Object.keys(operation.update || {}).forEach(function (operator) {
+        Object.keys(operation.update[operator] || {}).forEach(function (field) { fields[field] = true; });
+      });
+    }
+  });
+  return Object.keys(fields).sort().slice(0, 100);
+}
+
+function __bulkSnapshotCollection(database, collectionName, operations, session) {
+  var collection = database.collection(collectionName);
+  var ids = operations.map(__bulkOperationId).map(__decode);
+  var cursor = collection.find({ _id: { $in: ids } }, session ? { session: session } : { readPreference: "primary" });
+  if (cursor && typeof cursor.maxTimeMS === "function") cursor.maxTimeMS(15000);
+  return cursor.toArray();
+}
+
+async function __bulkGetSnapshots(client, operations, session) {
+  var byCollection = {};
+  operations.forEach(function (operation) {
+    if (!byCollection[operation.collection]) byCollection[operation.collection] = [];
+    byCollection[operation.collection].push(operation);
+  });
+  var snapshots = {};
+  var collectionNames = Object.keys(byCollection);
+  for (var c = 0; c < collectionNames.length; c += 1) {
+    var collectionName = collectionNames[c];
+    snapshots[collectionName] = await __bulkSnapshotCollection(client.db(__config.database), collectionName, byCollection[collectionName], session);
+  }
+  return snapshots;
+}
+
+function __bulkFindById(documents, id) {
+  var key = __bulkIdKey(id);
+  for (var i = 0; i < documents.length; i += 1) if (__bulkIdKey(documents[i]._id) === key) return documents[i];
+  return null;
+}
+
+function __bulkVerifyPreimages(operations, snapshots) {
+  var before = [];
+  var seen = {};
+  operations.forEach(function (operation, index) {
+    var key = operation.collection + ":" + __bulkIdKey(__bulkOperationId(operation));
+    if (seen[key]) __bulkFail("MONGODB_BULK_DUPLICATE_TARGET", "one collection and document ID may appear only once in a job");
+    seen[key] = true;
+    var found = __bulkFindById(snapshots[operation.collection] || [], __bulkOperationId(operation));
+    if (operation.operation === "insertOne") {
+      if (found) __bulkFail("MONGODB_BULK_TARGET_EXISTS", "an insert target already exists");
+      before.push({ operationIndex: index, document: null });
+    } else {
+      if (!found) __bulkFail("MONGODB_BULK_TARGET_NOT_FOUND", "an update target does not exist");
+      if (!__bulkCheckExpected(found, operation)) __bulkFail("MONGODB_BULK_ORIGINAL_VALUE_MISMATCH", "an update original value does not match");
+      before.push({ operationIndex: index, document: __encode(found) });
+    }
+  });
+  return before;
+}
+
+function __bulkPlanSummary(manifest, plan) {
+  return {
+    jobId: manifest.jobId,
+    status: manifest.status,
+    database: manifest.database,
+    planHash: manifest.planHash,
+    unitCount: manifest.unitCount,
+    operationCount: manifest.operationCount,
+    batchCount: manifest.batchCount,
+    rollbackExpiresAt: manifest.rollbackExpiresAt,
+    changedFields: manifest.changedFields,
+    batches: plan.batches.map(function (batch) {
+      return { batchIndex: batch.index, operationCount: batch.documents, unitCount: batch.unitCount, changedFields: batch.changedFields, sampleIds: batch.sampleIds, rollbackBytes: batch.rollbackBytes };
+    }),
+    requiresConfirmation: true,
+    atomicity: "per_batch",
+  };
+}
+
+function __bulkChunkPath(jobId, index) {
+  return __path.join(__bulkJobDir(jobId), "chunk-" + String(index).padStart(6, "0") + ".json");
+}
+
+function __bulkLoadChunks(manifest) {
+  var units = [];
+  for (var i = 0; i < manifest.chunks.length; i += 1) {
+    var chunk = __bulkReadJson(__bulkChunkPath(manifest.jobId, i), 4 * 1024 * 1024);
+    if (!chunk || __bulkHash({ jobId: chunk.body.jobId, database: chunk.body.database, chunkIndex: chunk.body.chunkIndex, purpose: chunk.body.purpose, rollbackTtlMs: chunk.body.rollbackTtlMs, units: chunk.body.units }) !== chunk.hash || chunk.body.chunkIndex !== i) __bulkFail("MONGODB_BULK_LOG_INVALID", "an uploaded chunk is missing or has changed");
+    units = units.concat(chunk.body.units || []);
+  }
+  return units;
+}
+
+function __bulkPartition(units) {
+  var result = [];
+  var current = [];
+  var operations = 0;
+  var bytes = 2;
+  function flush() {
+    if (current.length) result.push(current);
+    current = [];
+    operations = 0;
+    bytes = 2;
+  }
+  units.forEach(function (unit) {
+    var unitOperations = unit.operations.length;
+    var unitBytes = __bulkBytes(unit);
+    if (unitOperations > __config.batchDocuments) __bulkFail("MONGODB_BULK_UNIT_EXCEEDS_BATCH", "one business unit exceeds the configured batch document limit");
+    if (unitBytes > 512 * 1024) __bulkFail("MONGODB_BULK_UNIT_EXCEEDS_BATCH", "one business unit exceeds the 512 KiB batch input limit");
+    if (current.length && (operations + unitOperations > __config.batchDocuments || bytes + unitBytes > 512 * 1024)) flush();
+    current.push(unit);
+    operations += unitOperations;
+    bytes += unitBytes;
+  });
+  flush();
+  return result;
+}
+
+function __bulkFlatten(units) {
+  var result = [];
+  units.forEach(function (unit) {
+    unit.operations.forEach(function (operation) { result.push(operation); });
+  });
+  return result;
+}
+
+function __bulkCheckStorageCollection(client) {
+  var collection = client.db(__config.database).collection(__config.receiptsCollection);
+  return collection.listIndexes().toArray().then(function (indexes) {
+    var valid = indexes.some(function (index) {
+      return index.name === "remote_debug_bulk_receipt_expiry" && index.key && index.key.expiresAt === 1 && index.expireAfterSeconds === 0;
+    });
+    if (!valid) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "the technical receipt expiry index is missing");
+    return collection;
+  });
+}
+
+async function __bulkLoadClient() {
+  var fileConfig;
+  try { fileConfig = JSON.parse(__fs.readFileSync(__config.configPath, "utf8")); }
+  catch (_error) { __bulkFail("MONGODB_CONFIG_UNREADABLE", "MongoDB application config could not be read"); }
+  var profile = fileConfig && fileConfig[__config.configProfile];
+  if (!profile || typeof profile !== "object") __bulkFail("MONGODB_PROFILE_NOT_FOUND", "MongoDB config profile was not found");
+  var uri = __config.uriKey.split(".").reduce(function (value, key) { return value == null ? undefined : value[key]; }, profile);
+  if (typeof uri !== "string" || !uri) __bulkFail("MONGODB_URI_NOT_FOUND", "MongoDB URI was not found in the configured profile");
+  var driver = require(__config.driverPath);
+  var MongoClient = driver.MongoClient || driver.default && driver.default.MongoClient;
+  if (!MongoClient) __bulkFail("MONGODB_DRIVER_INVALID", "MongoDB driver does not export MongoClient");
+  var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverSelectionTimeoutMS: 15000 });
+  await client.connect();
+  return client;
+}
+
+function __bulkReceiptId(jobId, index, action) {
+  return jobId + ":" + String(index) + ":" + action;
+}
+
+async function __bulkFindReceipt(client, jobId, index, action) {
+  var collection = client.db(__config.database).collection(__config.receiptsCollection);
+  return collection.findOne({ _id: __bulkReceiptId(jobId, index, action) }, { readPreference: "primary" });
+}
+
+function __bulkApplySummary(manifest, summary) {
+  manifest.committed = manifest.committed || { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
+  manifest.committed.matched += summary.matched || 0;
+  manifest.committed.modified += summary.modified || 0;
+  manifest.committed.inserted += summary.inserted || 0;
+  manifest.committed.unchanged += summary.unchanged || 0;
+}
+
+function __bulkMarkBatch(manifest, index, summary) {
+  return __bulkWithLock(__bulkManifestLockPath(manifest.jobId), function () {
+    manifest = __bulkManifest(manifest.jobId, false);
+    manifest.committedBatchIndexes = manifest.committedBatchIndexes || [];
+    if (manifest.committedBatchIndexes.indexOf(index) === -1) {
+      manifest.committedBatchIndexes.push(index);
+      manifest.committedBatchIndexes.sort(function (a, b) { return a - b; });
+      if (summary) __bulkApplySummary(manifest, summary);
+    }
+    var committed = {};
+    manifest.committedBatchIndexes.forEach(function (batchIndex) { committed[batchIndex] = true; });
+    var next = 0;
+    while (committed[next]) next += 1;
+    manifest.nextBatch = next;
+    manifest.updatedAt = new Date().toISOString();
+    var control = __bulkReadJson(__path.join(__bulkJobDir(manifest.jobId), "control.json"), 64 * 1024);
+    manifest.desiredState = control && control.desiredState || manifest.desiredState || "running";
+    manifest.status = manifest.desiredState === "pause" ? "pause_requested" : "running";
+    manifest.pauseReason = undefined;
+    __bulkSaveManifest(manifest);
+    return manifest;
+  });
+}
+
+function __bulkLeasePath() {
+  return __path.join(__bulkRoot(), ".worker-lease.json");
+}
+
+function __bulkLeaseLockPath() {
+  return __path.join(__bulkRoot(), ".worker-lease.lock");
+}
+
+function __bulkAssertLease(jobId, leaseId) {
+  return __bulkWithLock(__bulkLeaseLockPath(), function () {
+    var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
+    if (!lease || lease.jobId !== jobId || lease.leaseId !== leaseId) __bulkFail("MONGODB_BULK_LEASE_LOST", "bulk worker lease is no longer owned by this task");
+    lease.heartbeatAt = new Date().toISOString();
+    __bulkWriteJson(__bulkLeasePath(), lease, 64 * 1024);
+    return lease;
+  });
+}
+
+function __bulkSetDispatch(jobId, planHash, leaseId, phase, batchIndexes) {
+  var manifest = __bulkManifest(jobId, false);
+  __bulkCheckPlan(manifest, planHash);
+  __bulkAssertLease(jobId, leaseId);
+  var plan = __bulkLoadPlan(jobId, manifest);
+  if (["execute", "verify", "rollback"].indexOf(phase) === -1 || !Array.isArray(batchIndexes) || batchIndexes.length > 4) {
+    __bulkFail("MONGODB_BULK_DISPATCH_INVALID", "bulk batch dispatch metadata is invalid");
+  }
+  batchIndexes.forEach(function (index) {
+    if (!Number.isInteger(index) || index < 0 || index >= plan.batches.length) __bulkFail("MONGODB_BULK_DISPATCH_INVALID", "dispatched batch index is outside the fixed plan");
+  });
+  return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var latest = __bulkManifest(jobId, false);
+    if (latest.planHash !== planHash) __bulkFail("MONGODB_BULK_PLAN_HASH_MISMATCH", "planHash does not match the prepared job");
+    latest.runningBatchIndexes = batchIndexes.slice();
+    latest.activePhase = batchIndexes.length ? phase : null;
+    latest.updatedAt = new Date().toISOString();
+    __bulkSaveManifest(latest);
+    return __bulkStatus(latest, plan, {});
+  });
+}
+
+function __bulkAcquireLease(jobId, manifest, leaseId, mode) {
+  return __bulkWithLock(__bulkLeaseLockPath(), function () {
+    var leasePath = __bulkLeasePath();
+    var existing = __bulkReadJson(leasePath, 64 * 1024);
+    if (existing && Date.now() - Date.parse(existing.heartbeatAt) <= 60000) {
+      if (existing.jobId === jobId && existing.leaseId === leaseId) return existing;
+      __bulkFail("MONGODB_BULK_INSTANCE_BUSY", "another bulk task is active for this instance", { jobId: existing.jobId });
+    }
+    if (existing) try { __fs.unlinkSync(leasePath); } catch (_error) {}
+    var lease = { jobId: jobId, leaseId: leaseId, mode: mode, heartbeatAt: new Date().toISOString() };
+    __bulkWriteJson(leasePath, lease, 64 * 1024);
+    manifest.leaseId = leaseId;
+    manifest.mode = mode;
+    manifest.desiredState = "running";
+    manifest.status = mode === "rollback" ? "rolling_back" : "running";
+    manifest.runningBatchIndexes = [];
+    manifest.activePhase = mode === "rollback" ? "rollback" : "execute";
+    manifest.pauseReason = undefined;
+    manifest.updatedAt = new Date().toISOString();
+    __bulkSaveManifest(manifest);
+    return lease;
+  });
+}
+
+function __bulkReleaseLease(jobId, leaseId) {
+  return __bulkWithLock(__bulkLeaseLockPath(), function () {
+    var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
+    if (lease && lease.jobId === jobId && lease.leaseId === leaseId) {
+      try { __fs.unlinkSync(__bulkLeasePath()); __bulkFsyncDirectory(__bulkRoot()); } catch (_error) {}
+    }
+  });
+}
+
+function __bulkCheckPlan(manifest, planHash) {
+  if (!manifest.planHash || manifest.planHash !== planHash) __bulkFail("MONGODB_BULK_PLAN_HASH_MISMATCH", "planHash does not match the prepared job");
+  if (Date.parse(manifest.rollbackExpiresAt) <= Date.now()) __bulkFail("MONGODB_BULK_ROLLBACK_EXPIRED", "bulk job rollback retention has expired");
+}
+
+function __bulkComparePreimage(current, document) {
+  if (document === null) return current === null;
+  return current !== null && __bulkHash(__encode(current)) === __bulkHash(document);
+}
+
+function __bulkGroup(operations) {
+  var groups = {};
+  operations.forEach(function (operation, index) {
+    if (!groups[operation.collection]) groups[operation.collection] = [];
+    groups[operation.collection].push({ operation: operation, index: index });
+  });
+  return groups;
+}
+
+function __bulkCount(value, primary, fallback) {
+  if (value && value[primary] !== undefined && value[primary] !== null) return value[primary];
+  return value && value[fallback] !== undefined && value[fallback] !== null ? value[fallback] : 0;
+}
+
+async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
+  var client = await __bulkLoadClient();
+  var session = client.startSession();
+  var receiptAction = rollback ? "rollback" : "commit";
+  var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction);
+  var summary = { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
+  var after = [];
+  var committing = false;
+  try {
+    await __bulkCheckStorageCollection(client);
+    var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction);
+    if (previousReceipt) {
+      if (previousReceipt.planHash !== planHash || previousReceipt.batchHash !== batch.hash || previousReceipt.action !== receiptAction) {
+        __bulkFail("MONGODB_BULK_RECEIPT_CONFLICT", "technical receipt does not match this exact batch");
+      }
+      return { alreadyCommitted: true, summary: previousReceipt.summary || summary };
+    }
+    var beforeEntries = batch.before || [];
+    var ops = batch.operations || [];
+    session.startTransaction({ readPreference: "primary" });
+    var beforeByIndex = {};
+    beforeEntries.forEach(function (entry) { beforeByIndex[entry.operationIndex] = entry.document; });
+    var snapshots = await __bulkGetSnapshots(client, ops, session);
+    var groups = __bulkGroup(ops);
+    var collectionNames = Object.keys(groups);
+    for (var c = 0; c < collectionNames.length; c += 1) {
+      var collectionName = collectionNames[c];
+      var group = groups[collectionName];
+      var currentDocs = snapshots[collectionName] || [];
+      if (!rollback) {
+        var writeOperations = [];
+        group.forEach(function (entry) {
+          var operation = entry.operation;
+          var current = __bulkFindById(currentDocs, __bulkOperationId(operation));
+          var expectedBefore = beforeByIndex[entry.index];
+          if (!__bulkComparePreimage(current, expectedBefore)) __bulkFail("MONGODB_BULK_CONFLICT", "a document changed after its preimage was prepared", { batchIndex: batch.index, collection: collectionName });
+          if (operation.operation === "insertOne") {
+            writeOperations.push({ insertOne: { document: __decode(operation.document) } });
+            summary.inserted += 1;
+          } else {
+            if (!__bulkCheckExpected(current, operation)) __bulkFail("MONGODB_BULK_CONFLICT", "an original field value changed before commit", { batchIndex: batch.index, collection: collectionName });
+            writeOperations.push({ updateOne: { filter: __decode(__bulkUpdateSelector(operation)), update: __decode(operation.update), upsert: false } });
+          }
+        });
+        if (writeOperations.length) {
+          var writeResult = await client.db(__config.database).collection(collectionName).bulkWrite(writeOperations, { ordered: true, session: session });
+          summary.matched += __bulkCount(writeResult, "matchedCount", "nMatched");
+          summary.modified += __bulkCount(writeResult, "modifiedCount", "nModified");
+          var expectedUpdates = group.filter(function (entry) { return entry.operation.operation === "updateOne"; }).length;
+          if (__bulkCount(writeResult, "matchedCount", "nMatched") !== expectedUpdates) __bulkFail("MONGODB_BULK_CONFLICT", "one or more update preconditions did not match");
+        }
+      } else {
+        var reverseOperations = [];
+        group.forEach(function (entry) {
+          var operation = entry.operation;
+          var current = __bulkFindById(currentDocs, __bulkOperationId(operation));
+          var afterItem = (batch.after || []).find(function (item) { return item.operationIndex === entry.index; });
+          if (!afterItem || !current || __bulkHash(__encode(current)) !== afterItem.hash) __bulkFail("MONGODB_ROLLBACK_CONFLICT", "a document changed after this batch committed", { batchIndex: batch.index, collection: collectionName });
+          if (operation.operation === "insertOne") reverseOperations.push({ deleteOne: { filter: { _id: __decode(__bulkOperationId(operation)) } } });
+          else reverseOperations.push({ replaceOne: { filter: { _id: __decode(__bulkOperationId(operation)) }, replacement: __decode(beforeByIndex[entry.index]), upsert: false } });
+        });
+        if (reverseOperations.length) {
+          var reverseResult = await client.db(__config.database).collection(collectionName).bulkWrite(reverseOperations, { ordered: true, session: session });
+          var deleted = __bulkCount(reverseResult, "deletedCount", "nRemoved");
+          var replaced = __bulkCount(reverseResult, "matchedCount", "nMatched");
+          var expectedDelete = group.filter(function (entry) { return entry.operation.operation === "insertOne"; }).length;
+          var expectedReplace = group.length - expectedDelete;
+          if (deleted !== expectedDelete || replaced !== expectedReplace) __bulkFail("MONGODB_ROLLBACK_CONFLICT", "the batch could not be fully restored");
+        }
+      }
+    }
+    if (!rollback) {
+      var afterSnapshots = await __bulkGetSnapshots(client, ops, session);
+      ops.forEach(function (operation, index) {
+        var current = __bulkFindById(afterSnapshots[operation.collection] || [], __bulkOperationId(operation));
+        if (!current) __bulkFail("MONGODB_BULK_VERIFY_FAILED", "a target could not be read after its write");
+        after.push({ operationIndex: index, id: __encode(current._id), hash: __bulkHash(__encode(current)) });
+      });
+      summary.unchanged = Math.max(0, summary.matched - summary.modified);
+      __bulkWriteJson(__path.join(__bulkJobDir(jobId), "after-" + String(batch.index).padStart(6, "0") + ".json"), { batchHash: batch.hash, after: after }, 8 * 1024 * 1024);
+    }
+    var receipts = client.db(__config.database).collection(__config.receiptsCollection);
+    var now = new Date();
+    var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
+    await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary }, { session: session });
+    committing = true;
+    await session.commitTransaction();
+    return { alreadyCommitted: false, summary: summary };
+  } catch (error) {
+    try { await session.abortTransaction(); } catch (_abortError) {}
+    if (committing) {
+      try {
+        var checkClient = await __bulkLoadClient();
+        try {
+          var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction);
+          if (receipt && receipt.planHash === planHash && receipt.batchHash === batch.hash) return { alreadyCommitted: true, summary: receipt.summary || summary };
+        } finally { await checkClient.close(); }
+      } catch (_checkError) {}
+      __bulkFail("MONGODB_BULK_COMMIT_UNKNOWN", "transaction outcome is uncertain; retry only this exact batch after receipt inspection", { batchIndex: batch.index });
+    }
+    throw error;
+  } finally {
+    try { await session.endSession(); } catch (_sessionError) {}
+    try { await client.close(); } catch (_clientError) {}
+  }
+}
+
+async function __bulkInitializeReceiptCollection(client) {
+  var database = client.db(__config.database);
+  var collection = database.collection(__config.receiptsCollection);
+  await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
+  var index = (await collection.listIndexes().toArray()).filter(function (item) { return item.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (!index || !index.key || index.key.expiresAt !== 1 || index.expireAfterSeconds !== 0) __bulkFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
+  var marker = { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: __config.database, receiptsCollection: __config.receiptsCollection };
+  var existing = await collection.findOne({ _id: marker._id }, { readPreference: "primary" });
+  if (existing && (existing.schemaVersion !== 1 || existing.database !== marker.database || existing.receiptsCollection !== marker.receiptsCollection)) {
+    __bulkFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection contains a different storage marker");
+  }
+  if (!existing) await collection.insertOne(marker);
+  return { index: index.name, marker: marker._id };
+}
+
+async function __bulkPrepareStorage() {
+  var root = __bulkRoot();
+  if (!__path.isAbsolute(root) || root === "/") __bulkFail("MONGODB_BULK_ROOT_INVALID", "bulk storage root must be a dedicated absolute path");
+  try { __fs.mkdirSync(root, { recursive: true, mode: 0o700 }); }
+  catch (_error) { __bulkFail("MONGODB_BULK_STORAGE_PERMISSIONS", "bulk storage directory could not be created before any business write"); }
+  var stat = __fs.lstatSync(root);
+  if (stat.isSymbolicLink() || !stat.isDirectory()) __bulkFail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
+  __fs.chmodSync(root, 0o700);
+  var probe = __path.join(root, ".write-probe-" + process.pid + "-" + __crypto.randomBytes(8).toString("hex"));
+  var fd;
+  try { fd = __fs.openSync(probe, "wx", 0o600); __fs.writeFileSync(fd, "ready", "utf8"); __fs.fsyncSync(fd); __fs.closeSync(fd); fd = undefined; __fs.unlinkSync(probe); __bulkFsyncDirectory(root); }
+  catch (_error) {
+    if (fd !== undefined) try { __fs.closeSync(fd); } catch (_closeError) {}
+    try { if (__fs.existsSync(probe)) __fs.unlinkSync(probe); } catch (_unlinkError) {}
+    __bulkFail("MONGODB_BULK_DURABILITY_UNAVAILABLE", "bulk storage could not complete a durable write probe");
+  }
+  var client = await __bulkLoadClient();
+  try {
+    var result = await __bulkInitializeReceiptCollection(client);
+    __bulkWriteJson(__path.join(root, ".storage-v1.json"), { schemaVersion: 1, database: __config.database, receiptsCollection: __config.receiptsCollection, initializedAt: new Date().toISOString() }, 64 * 1024);
+    return { initialized: true, storageRoot: root, directoryMode: "0700", fileMode: "0600", receiptsCollection: __config.receiptsCollection, ttlIndex: result.index, retainedThrough: "rollback expiry plus 24 hours" };
+  } finally { try { await client.close(); } catch (_closeError) {} }
+}
+
+async function __bulkUpload() {
+  var chunk = __request.chunk;
+  var jobId = chunk.jobId;
+  var dir = __bulkEnsureJobDir(jobId);
+  var accepted = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var manifestPath = __path.join(dir, "manifest.json");
+    var manifest = __bulkReadJson(manifestPath, 4 * 1024 * 1024);
+    var identity = { schemaVersion: 1, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    if (!manifest) {
+      if (chunk.chunkIndex !== 0) __bulkFail("MONGODB_BULK_CHUNK_ORDER", "the first upload chunk must have index 0");
+      manifest = identity;
+    } else if (manifest.schemaVersion !== 1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
+      __bulkFail("MONGODB_BULK_JOB_CONFLICT", "jobId already belongs to a different upload plan");
+    }
+    var chunkHash = __bulkHash({ jobId: jobId, database: chunk.database, chunkIndex: chunk.chunkIndex, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, units: chunk.units });
+    if (chunkHash !== chunk.chunkHash) __bulkFail("MONGODB_BULK_CHUNK_HASH_MISMATCH", "chunk contents do not match their supplied digest");
+    if (chunk.chunkIndex < manifest.chunks.length) {
+      if (manifest.chunks[chunk.chunkIndex] !== chunkHash) __bulkFail("MONGODB_BULK_CHUNK_CONFLICT", "a repeated chunk index has different content");
+      if (chunk.endOfUpload && manifest.status === "prepared" && manifest.planHash) {
+        var existingPlan = __bulkPlanSummary(manifest, __bulkLoadPlan(jobId, manifest));
+        existingPlan.duplicate = true;
+        existingPlan.chunkIndex = chunk.chunkIndex;
+        existingPlan.chunkHash = chunkHash;
+        return { result: existingPlan };
+      }
+      if (chunk.endOfUpload && ["uploaded", "prepare_failed", "preparing"].indexOf(manifest.status) !== -1) return { finalize: true };
+      return { result: { jobId: jobId, status: manifest.status, chunkIndex: chunk.chunkIndex, chunkHash: chunkHash, duplicate: true, planHash: manifest.planHash } };
+    }
+    if (manifest.status !== "uploading") __bulkFail("MONGODB_BULK_UPLOAD_CLOSED", "this upload has already been finalized");
+    if (chunk.chunkIndex !== manifest.chunks.length) __bulkFail("MONGODB_BULK_CHUNK_ORDER", "chunks must be uploaded in sequence");
+    if (manifest.operationCount + (chunk.operationCount || 0) > 100000 || manifest.inputBytes + (chunk.inputBytes || 0) > 40 * 1024 * 1024) {
+      __bulkFail("MONGODB_BULK_JOB_SIZE_LIMIT", "a job is limited to 100000 operations and 40 MiB of input");
+    }
+    if (!chunk.endOfUpload && !(chunk.units || []).length) __bulkFail("MONGODB_BULK_EMPTY_CHUNK", "only the explicit end-of-upload chunk may be empty");
+    if (chunk.endOfUpload && (chunk.units || []).length) __bulkFail("MONGODB_BULK_END_MARKER_INVALID", "the end-of-upload marker must be an empty chunk");
+    var body = { jobId: jobId, database: chunk.database, chunkIndex: chunk.chunkIndex, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, units: chunk.units, endOfUpload: chunk.endOfUpload, operationCount: chunk.operationCount, inputBytes: chunk.inputBytes };
+    __bulkWriteJson(__bulkChunkPath(jobId, chunk.chunkIndex), { hash: chunkHash, body: body }, 4 * 1024 * 1024);
+    manifest.chunks.push(chunkHash);
+    manifest.unitCount += (chunk.units || []).length;
+    manifest.operationCount += chunk.operationCount || 0;
+    manifest.inputBytes += chunk.inputBytes || 0;
+    manifest.updatedAt = new Date().toISOString();
+    if (chunk.endOfUpload) {
+      if (manifest.operationCount === 0) __bulkFail("MONGODB_BULK_EMPTY_JOB", "a bulk job must contain at least one business operation");
+      manifest.status = "uploaded";
+    }
+    __bulkSaveManifest(manifest);
+    __bulkAppendJsonLine(__path.join(dir, "events.jsonl"), { at: manifest.updatedAt, event: chunk.endOfUpload ? "upload_finished" : "chunk_uploaded", chunkIndex: chunk.chunkIndex, chunkHash: chunkHash, unitCount: manifest.unitCount, operationCount: manifest.operationCount });
+    if (!chunk.endOfUpload) return { result: { jobId: jobId, status: "uploading", chunkIndex: chunk.chunkIndex, chunkHash: chunkHash, nextChunkIndex: manifest.chunks.length, unitCount: manifest.unitCount, operationCount: manifest.operationCount, inputBytes: manifest.inputBytes } };
+    return { finalize: true };
+  });
+  return accepted.finalize ? await __bulkFinalize(jobId) : accepted.result;
+}
+
+async function __bulkPrepareSlice(client, jobId, units, offset, allIds, allUnitIds, batches) {
+  var operations = __bulkFlatten(units);
+  var groups = __bulkGroup(operations);
+  var snapshots = await __bulkGetSnapshots(client, operations, null);
+  var before = __bulkVerifyPreimages(operations, snapshots);
+  var directory = __bulkJobDir(jobId);
+  var batchIndex = batches.length;
+  var batch = {
+    index: batchIndex,
+    unitIds: units.map(function (unit) { return unit.unitId; }),
+    unitCount: units.length,
+    operations: operations,
+    before: before,
+    after: [],
+    documents: operations.length,
+    inputBytes: __bulkBytes(units),
+    changedFields: __bulkChangedFields(operations),
+    sampleIds: operations.slice(0, 3).map(function (operation) { return { collection: operation.collection, id: __bulkIdSummary(__bulkOperationId(operation)) }; }),
+  };
+  var rollbackBytes = __bulkBytes({ before: batch.before, operations: batch.operations });
+  if (rollbackBytes > 8 * 1024 * 1024) {
+    if (units.length < 2) __bulkFail("MONGODB_BULK_UNIT_ROLLBACK_TOO_LARGE", "one business unit exceeds the 8 MiB rollback log limit");
+    var split = Math.ceil(units.length / 2);
+    await __bulkPrepareSlice(client, jobId, units.slice(0, split), offset, allIds, allUnitIds, batches);
+    await __bulkPrepareSlice(client, jobId, units.slice(split), offset + split, allIds, allUnitIds, batches);
+    return;
+  }
+  batch.rollbackBytes = rollbackBytes;
+  batch.hash = __bulkHash({ index: batch.index, unitIds: batch.unitIds, operations: batch.operations, before: batch.before });
+  batch.rollbackExpiresAt = new Date(Date.now() + __request.chunk.rollbackTtlMs).toISOString();
+  __bulkWriteJson(__bulkBatchPath(jobId, batchIndex), batch, 8 * 1024 * 1024);
+  batches.push({ index: batchIndex, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount, changedFields: batch.changedFields, sampleIds: batch.sampleIds });
+}
+
+async function __bulkCheckTargetCollections(client, units) {
+  var names = {};
+  units.forEach(function (unit) {
+    unit.operations.forEach(function (operation) { names[operation.collection] = true; });
+  });
+  var collectionNames = Object.keys(names);
+  if (!collectionNames.length) __bulkFail("MONGODB_BULK_EMPTY_JOB", "a bulk job must contain at least one business operation");
+  var existing = await client.db(__config.database).listCollections({ name: { $in: collectionNames } }, { nameOnly: true }).toArray();
+  var present = {};
+  existing.forEach(function (item) { present[item.name] = true; });
+  var missing = collectionNames.filter(function (name) { return !present[name]; });
+  if (missing.length) __bulkFail("MONGODB_BULK_COLLECTION_MISSING", "all business collections must exist before bulk transactions begin", { collections: missing });
+}
+
+async function __bulkFinalize(jobId) {
+  return await __bulkWithAsyncLock(__path.join(__bulkJobDir(jobId), ".prepare.lock"), async function () {
+    var manifest = __bulkManifest(jobId, false);
+    if (manifest.status === "prepared" && manifest.planHash) return __bulkPlanSummary(manifest, __bulkLoadPlan(jobId, manifest));
+    if (manifest.status !== "uploaded" && manifest.status !== "prepare_failed" && manifest.status !== "preparing") __bulkFail("MONGODB_BULK_UPLOAD_INCOMPLETE", "all chunks must be uploaded and explicitly closed before preparation");
+    manifest.status = "preparing";
+    manifest.updatedAt = new Date().toISOString();
+    __bulkSaveManifest(manifest);
+    var client = null;
+    try {
+      var units = __bulkLoadChunks(manifest);
+      var seenUnits = {};
+      var seenTargets = {};
+      units.forEach(function (unit) {
+        var unitKey = __bulkUnitIdKey(unit.unitId);
+        if (seenUnits[unitKey]) __bulkFail("MONGODB_BULK_DUPLICATE_UNIT", "unitId must be unique within a job");
+        seenUnits[unitKey] = true;
+        unit.operations.forEach(function (operation) {
+          var target = operation.collection + ":" + __bulkIdKey(operation.operation === "insertOne" ? operation.document._id : operation.id);
+          if (seenTargets[target]) __bulkFail("MONGODB_BULK_DUPLICATE_TARGET", "one collection and document ID may appear only once in a job");
+          seenTargets[target] = true;
+        });
+      });
+      var partitions = __bulkPartition(units);
+      var batches = [];
+      client = await __bulkLoadClient();
+      await __bulkCheckStorageCollection(client);
+      await __bulkCheckTargetCollections(client, units);
+      for (var i = 0; i < partitions.length; i += 1) await __bulkPrepareSlice(client, jobId, partitions[i], 0, seenTargets, seenUnits, batches);
+      var rollbackExpiresAt = new Date(Date.now() + manifest.rollbackTtlMs).toISOString();
+      var planValue = { schemaVersion: 1, jobId: jobId, database: manifest.database, purpose: manifest.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: manifest.chunks, batches: batches };
+      var planHash = __bulkHash({ schemaVersion: planValue.schemaVersion, jobId: planValue.jobId, database: planValue.database, purpose: planValue.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: planValue.chunks, batches: batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }) });
+      planValue.planHash = planHash;
+      __bulkWriteJson(__path.join(__bulkJobDir(jobId), "plan.json"), planValue, 8 * 1024 * 1024);
+      manifest.status = "prepared";
+      manifest.planHash = planHash;
+      manifest.batchCount = batches.length;
+      manifest.rollbackExpiresAt = rollbackExpiresAt;
+      manifest.nextBatch = 0;
+      manifest.nextVerifyBatch = 0;
+      manifest.verifiedBatchCount = 0;
+      manifest.verifiedBatchIndexes = [];
+      manifest.differenceCounts = [];
+      manifest.committedBatchIndexes = [];
+      manifest.rolledBackBatchIndexes = [];
+      manifest.changedFields = Array.from(new Set(batches.reduce(function (all, batch) { return all.concat(batch.changedFields); }, []))).sort().slice(0, 100);
+      manifest.differenceCount = 0;
+      manifest.committed = { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
+      manifest.updatedAt = new Date().toISOString();
+      __bulkSaveManifest(manifest);
+      __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "prepared", planHash: planHash, batchCount: batches.length, operationCount: manifest.operationCount });
+      return __bulkPlanSummary(manifest, planValue);
+    } catch (error) {
+      manifest.status = "prepare_failed";
+      manifest.pauseReason = error.code || "MONGODB_BULK_PREPARE_FAILED";
+      manifest.updatedAt = new Date().toISOString();
+      try { __bulkSaveManifest(manifest); } catch (_saveError) {}
+      try { __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "prepare_failed", reason: manifest.pauseReason }); } catch (_eventError) {}
+      throw error;
+    } finally {
+      if (client) try { await client.close(); } catch (_closeError) {}
+    }
+  });
+}
+
+async function __bulkExecuteBatch(jobId, planHash, leaseId, index) {
+  var manifest = __bulkManifest(jobId, false);
+  __bulkCheckPlan(manifest, planHash);
+  var lease = __bulkAssertLease(jobId, leaseId);
+  var control = __bulkReadJson(__path.join(__bulkJobDir(jobId), "control.json"), 64 * 1024);
+  if (control && control.desiredState === "pause") return __bulkPause(jobId, planHash, leaseId, "pause_requested");
+  var plan = __bulkLoadPlan(jobId, manifest);
+  var batch = __bulkLoadBatch(jobId, index);
+  if (!batch || !plan.batches[index] || batch.hash !== plan.batches[index].hash) __bulkFail("MONGODB_BULK_LOG_INVALID", "batch rollback log is missing or changed");
+  var existing = manifest.committedBatchIndexes || [];
+  if (existing.indexOf(index) !== -1) return __bulkStatus(manifest, plan, {});
+  if (index < (manifest.nextBatch || 0)) __bulkFail("MONGODB_BULK_BATCH_ORDER", "bulk batch index is behind the commit cursor");
+  var executionControl = __bulkReadJson(__path.join(__bulkJobDir(jobId), "control.json"), 64 * 1024);
+  if (executionControl && executionControl.desiredState === "pause") return __bulkPause(jobId, planHash, leaseId, "pause_requested");
+  var result = await __bulkRunTransaction(jobId, planHash, batch, false);
+  manifest = __bulkMarkBatch(manifest, index, result.summary);
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: new Date().toISOString(), event: "batch_committed", batchIndex: index, alreadyCommitted: result.alreadyCommitted, summary: result.summary });
+  return __bulkStatus(manifest, plan, {});
+}
+
+async function __bulkVerifyBatch(jobId, planHash, leaseId, index) {
+  var manifest = __bulkManifest(jobId, false);
+  __bulkCheckPlan(manifest, planHash);
+  __bulkAssertLease(jobId, leaseId);
+  var control = __bulkReadJson(__path.join(__bulkJobDir(jobId), "control.json"), 64 * 1024);
+  if (control && control.desiredState === "pause") return __bulkPause(jobId, planHash, leaseId, "pause_requested");
+  var plan = __bulkLoadPlan(jobId, manifest);
+  if ((manifest.committedBatchIndexes || []).indexOf(index) === -1) __bulkFail("MONGODB_BULK_VERIFY_ORDER", "uncommitted batch cannot be verified");
+  if ((manifest.verifiedBatchIndexes || []).indexOf(index) !== -1) return __bulkStatus(manifest, plan, {});
+  if (index < (manifest.nextVerifyBatch || 0)) __bulkFail("MONGODB_BULK_BATCH_ORDER", "verification batch index is behind the verification cursor");
+  var batch = __bulkLoadBatch(jobId, index);
+  var afterFile = __bulkReadJson(__path.join(__bulkJobDir(jobId), "after-" + String(index).padStart(6, "0") + ".json"), 8 * 1024 * 1024);
+  if (!afterFile || afterFile.batchHash !== batch.hash) __bulkFail("MONGODB_BULK_LOG_INVALID", "postimage log is missing or changed; verification and rollback are unavailable");
+  var client = await __bulkLoadClient();
+  var differences = [];
+  try {
+    var snapshots = await __bulkGetSnapshots(client, batch.operations, null);
+    batch.operations.forEach(function (operation, operationIndex) {
+      var current = __bulkFindById(snapshots[operation.collection] || [], __bulkOperationId(operation));
+      var expected = afterFile.after.filter(function (item) { return item.operationIndex === operationIndex; })[0];
+      if (!current || !expected || __bulkHash(__encode(current)) !== expected.hash) {
+        differences.push({ batchIndex: index, collection: operation.collection, id: __bulkIdSummary(__bulkOperationId(operation)), changedFields: __bulkChangedFields([operation]) });
+      }
+    });
+  } finally { try { await client.close(); } catch (_closeError) {} }
+  if (__bulkBytes({ items: differences }) > 8 * 1024 * 1024) __bulkFail("MONGODB_BULK_DIFF_TOO_LARGE", "verification differences exceed the bounded log size");
+  __bulkWriteJson(__path.join(__bulkJobDir(jobId), "differences-" + String(index).padStart(6, "0") + ".json"), { batchIndex: index, items: differences }, 8 * 1024 * 1024);
+  manifest = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var latest = __bulkManifest(jobId, false);
+    latest.verifiedBatchIndexes = latest.verifiedBatchIndexes || [];
+    latest.differenceCounts = latest.differenceCounts || [];
+    if (latest.verifiedBatchIndexes.indexOf(index) === -1) {
+      latest.verifiedBatchIndexes.push(index);
+      latest.verifiedBatchIndexes.sort(function (a, b) { return a - b; });
+      latest.differenceCount = (latest.differenceCount || 0) + differences.length;
+      latest.differenceCounts[index] = differences.length;
+    }
+    var verified = {};
+    latest.verifiedBatchIndexes.forEach(function (batchIndex) { verified[batchIndex] = true; });
+    var next = 0;
+    while (verified[next]) next += 1;
+    latest.nextVerifyBatch = next;
+    latest.verifiedBatchCount = latest.verifiedBatchIndexes.length;
+    latest.updatedAt = new Date().toISOString();
+    var latestControl = __bulkReadJson(__path.join(__bulkJobDir(jobId), "control.json"), 64 * 1024);
+    latest.desiredState = latestControl && latestControl.desiredState || latest.desiredState || "running";
+    latest.status = latest.desiredState === "pause" ? "pause_requested" : "reviewing";
+    __bulkSaveManifest(latest);
+    return latest;
+  });
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "batch_verified", batchIndex: index, differenceCount: differences.length });
+  return __bulkStatus(manifest, plan, { includeDifferences: true, offset: 0, limit: 10 });
+}
+
+async function __bulkRollbackBatch(jobId, planHash, leaseId, index) {
+  var manifest = __bulkManifest(jobId, false);
+  __bulkCheckPlan(manifest, planHash);
+  __bulkAssertLease(jobId, leaseId);
+  var plan = __bulkLoadPlan(jobId, manifest);
+  var batch = __bulkLoadBatch(jobId, index);
+  if (!batch || !plan.batches[index] || batch.hash !== plan.batches[index].hash) __bulkFail("MONGODB_BULK_LOG_INVALID", "batch rollback log is missing or changed");
+  var control = __bulkReadJson(__path.join(__bulkJobDir(jobId), "control.json"), 64 * 1024);
+  if (control && control.desiredState === "pause") return __bulkPause(jobId, planHash, leaseId, "pause_requested");
+  var already = manifest.rolledBackBatchIndexes || [];
+  if (already.indexOf(index) !== -1) return __bulkStatus(manifest, plan, {});
+  var next = __bulkStatus(manifest, plan, {}).nextRollbackBatch;
+  if (next !== index) __bulkFail("MONGODB_BULK_ROLLBACK_ORDER", "rollback must follow reverse commit order");
+  var afterFile = __bulkReadJson(__path.join(__bulkJobDir(jobId), "after-" + String(index).padStart(6, "0") + ".json"), 8 * 1024 * 1024);
+  if (!afterFile || afterFile.batchHash !== batch.hash) __bulkFail("MONGODB_BULK_LOG_INVALID", "postimage log is missing or changed; rollback is unavailable");
+  batch.after = afterFile.after;
+  var result = await __bulkRunTransaction(jobId, planHash, batch, true);
+  manifest = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var latest = __bulkManifest(jobId, false);
+    latest.rolledBackBatchIndexes = latest.rolledBackBatchIndexes || [];
+    if (latest.rolledBackBatchIndexes.indexOf(index) === -1) latest.rolledBackBatchIndexes.push(index);
+    latest.updatedAt = new Date().toISOString();
+    latest.status = "rolling_back";
+    __bulkSaveManifest(latest);
+    return latest;
+  });
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "batch_rolled_back", batchIndex: index, alreadyCommitted: result.alreadyCommitted });
+  return __bulkStatus(manifest, plan, {});
+}
+
+function __bulkStart(jobId, planHash, leaseId, mode) {
+  var manifest = __bulkManifest(jobId, false);
+  __bulkCheckPlan(manifest, planHash);
+  if (mode === "execute" && manifest.status !== "prepared" && manifest.status !== "paused" && manifest.status !== "recovery_required" && manifest.status !== "running" && manifest.status !== "reviewing") {
+    __bulkFail("MONGODB_BULK_STATE_INVALID", "this job cannot be started from its current state");
+  }
+  if (mode === "rollback" && manifest.status !== "completed" && manifest.status !== "review_required" && manifest.status !== "paused" && manifest.status !== "recovery_required" && manifest.status !== "rolling_back") {
+    __bulkFail("MONGODB_BULK_STATE_INVALID", "this job cannot be rolled back from its current state");
+  }
+  if (mode === "rollback" && Date.parse(manifest.rollbackExpiresAt) <= Date.now()) __bulkFail("MONGODB_BULK_ROLLBACK_EXPIRED", "bulk job rollback retention has expired");
+  var lease = __bulkAcquireLease(jobId, manifest, leaseId, mode);
+  return { jobId: jobId, planHash: planHash, leaseId: lease.leaseId, status: manifest.status, mode: mode, batchCount: manifest.batchCount, effectiveConcurrency: __config.concurrency || 1, accepted: true };
+}
+
+async function __bulkControl(jobId, command, planHash) {
+  return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var manifest = __bulkManifest(jobId, false);
+    if (planHash && manifest.planHash !== planHash) __bulkFail("MONGODB_BULK_PLAN_HASH_MISMATCH", "planHash does not match the prepared job");
+    if (command === "pause") {
+      if (["completed", "rolled_back", "review_required", "failed"].indexOf(manifest.status) !== -1) __bulkFail("MONGODB_BULK_STATE_INVALID", "a terminal job cannot be paused");
+      manifest.desiredState = "pause";
+      manifest.status = "pause_requested";
+    } else {
+      if (["completed", "rolled_back", "review_required", "failed"].indexOf(manifest.status) !== -1) __bulkFail("MONGODB_BULK_STATE_INVALID", "a terminal job cannot be resumed");
+      var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
+      if (lease && Date.now() - Date.parse(lease.heartbeatAt) <= 60000) __bulkFail("MONGODB_BULK_INSTANCE_BUSY", "the current batch is still active", { jobId: lease.jobId });
+      manifest.desiredState = "running";
+      manifest.status = "paused";
+    }
+    manifest.updatedAt = new Date().toISOString();
+    __bulkWriteJson(__path.join(__bulkJobDir(jobId), "control.json"), { desiredState: manifest.desiredState, at: manifest.updatedAt }, 64 * 1024);
+    __bulkSaveManifest(manifest);
+    __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: command === "pause" ? "pause_requested" : "resume_requested" });
+    return { jobId: jobId, status: manifest.status, desiredState: manifest.desiredState, planHash: manifest.planHash, batchCount: manifest.batchCount, mode: manifest.mode || "execute" };
+  });
+}
+
+function __bulkPause(jobId, planHash, leaseId, reason) {
+  var manifest = __bulkManifest(jobId, false);
+  if (planHash && manifest.planHash !== planHash) __bulkFail("MONGODB_BULK_PLAN_HASH_MISMATCH", "planHash does not match the prepared job");
+  var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
+  if (lease && lease.jobId === jobId && lease.leaseId === leaseId) __bulkReleaseLease(jobId, leaseId);
+  manifest.desiredState = "pause";
+  manifest.status = "paused";
+  manifest.runningBatchIndexes = [];
+  manifest.activePhase = null;
+  manifest.pauseReason = String(reason || "paused").slice(0, 128);
+  manifest.updatedAt = new Date().toISOString();
+  __bulkWriteJson(__path.join(__bulkJobDir(jobId), "control.json"), { desiredState: "pause", at: manifest.updatedAt }, 64 * 1024);
+  __bulkSaveManifest(manifest);
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "paused", reason: manifest.pauseReason });
+  return { jobId: jobId, status: manifest.status, pauseReason: manifest.pauseReason, planHash: manifest.planHash };
+}
+
+function __bulkFinish(jobId, planHash, leaseId, mode) {
+  var manifest = __bulkManifest(jobId, false);
+  __bulkCheckPlan(manifest, planHash);
+  __bulkAssertLease(jobId, leaseId);
+  var plan = __bulkLoadPlan(jobId, manifest);
+  if (mode === "rollback") {
+    if (__bulkStatus(manifest, plan, {}).nextRollbackBatch !== null) __bulkFail("MONGODB_BULK_ROLLBACK_INCOMPLETE", "not all committed batches have been rolled back");
+    manifest.status = "rolled_back";
+    manifest.rolledBackAt = new Date().toISOString();
+  } else {
+    if ((manifest.committedBatchIndexes || []).length !== manifest.batchCount || (manifest.verifiedBatchCount || 0) !== manifest.batchCount) __bulkFail("MONGODB_BULK_VERIFY_INCOMPLETE", "all batches must commit and verify before completion");
+    manifest.status = manifest.differenceCount ? "review_required" : "completed";
+    manifest.completedAt = new Date().toISOString();
+  }
+  manifest.updatedAt = new Date().toISOString();
+  manifest.desiredState = "stop";
+  manifest.runningBatchIndexes = [];
+  manifest.activePhase = null;
+  __bulkSaveManifest(manifest);
+  __bulkReleaseLease(jobId, leaseId);
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: manifest.status, differenceCount: manifest.differenceCount });
+  return __bulkStatus(manifest, plan, { includeDifferences: true, offset: 0, limit: 10 });
+}
+
+function __bulkGet(jobId) {
+  var manifest = __bulkManifest(jobId, false);
+  var plan = manifest.planHash ? __bulkLoadPlan(jobId, manifest) : null;
+  var query = __request.query || {};
+  if (manifest.status === "running" || manifest.status === "rolling_back" || manifest.status === "reviewing") {
+    var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
+    if (!lease || lease.jobId !== jobId || Date.now() - Date.parse(lease.heartbeatAt) > 60000) {
+      manifest.status = "recovery_required";
+      manifest.desiredState = "pause";
+      manifest.pauseReason = "worker_restart_or_lost_lease";
+      manifest.runningBatchIndexes = [];
+      manifest.activePhase = null;
+      manifest.updatedAt = new Date().toISOString();
+      __bulkSaveManifest(manifest);
+    }
+  }
+  return __bulkStatus(manifest, plan, { includeDifferences: query.includeDifferences === true, offset: query.offset, limit: query.limit });
+}
+
+function __bulkList() {
+  var root = __bulkEnsureRoot();
+  var dirs = __fs.readdirSync(root).filter(function (name) { return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name); });
+  var items = [];
+  dirs.forEach(function (name) {
+    var manifest = __bulkReadJson(__path.join(root, name, "manifest.json"), 4 * 1024 * 1024);
+    if (manifest && manifest.jobId === name) {
+      items.push({ jobId: name, database: manifest.database, status: manifest.status, mode: manifest.mode || "execute", createdAt: manifest.createdAt, updatedAt: manifest.updatedAt, planHash: manifest.planHash, operationCount: manifest.operationCount, unitCount: manifest.unitCount, batchCount: manifest.batchCount || 0, rollbackExpiresAt: manifest.rollbackExpiresAt, pauseReason: manifest.pauseReason });
+    }
+  });
+  items.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  var offset = __request.offset || 0;
+  var limit = __request.limit || 20;
+  return { jobs: items.slice(offset, offset + limit), offset: offset, limit: limit, total: items.length, hasMore: offset + limit < items.length };
+}
+
+async function __bulkMain() {
+  var data;
+  try {
+    __bulkEnsureRoot();
+    var action = __request.action;
+    if (action === "list") {
+      data = __bulkList();
+      process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
+      return;
+    }
+    var jobId = __bulkJobId();
+    if (action === "upload") data = await __bulkUpload();
+    else if (action === "get") data = __bulkGet(jobId);
+    else if (action === "executeStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "execute");
+    else if (action === "rollbackStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "rollback");
+    else if (action === "control") data = await __bulkControl(jobId, __request.command, __request.planHash);
+    else if (action === "resume") {
+      var resumeManifest = __bulkManifest(jobId, false);
+      __bulkCheckPlan(resumeManifest, __request.planHash);
+      data = __bulkStart(jobId, __request.planHash, __request.leaseId, resumeManifest.mode === "rollback" ? "rollback" : "execute");
+    }
+    else if (action === "executeBatch") data = await __bulkExecuteBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
+    else if (action === "verifyBatch") data = await __bulkVerifyBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
+    else if (action === "rollbackBatch") data = await __bulkRollbackBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
+    else if (action === "dispatch") data = __bulkSetDispatch(jobId, __request.planHash, __request.leaseId, __request.phase, __request.batchIndexes);
+    else if (action === "pause") data = __bulkPause(jobId, __request.planHash, __request.leaseId, __request.reason);
+    else if (action === "heartbeat") {
+      var heartbeatManifest = __bulkManifest(jobId, false);
+      __bulkCheckPlan(heartbeatManifest, __request.planHash);
+      var heartbeatLease = __bulkAssertLease(jobId, __request.leaseId);
+      data = { jobId: jobId, leaseId: heartbeatLease.leaseId, heartbeatAt: heartbeatLease.heartbeatAt, status: heartbeatManifest.status };
+    }
+    else if (action === "finish") data = __bulkFinish(jobId, __request.planHash, __request.leaseId, __request.mode || "execute");
+    else __bulkFail("MONGODB_BULK_ACTION_INVALID", "unsupported bulk action");
+    process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
+  } catch (error) {
+    process.stdout.write(__marker + JSON.stringify({ ok: false, error: { code: error.code || "MONGODB_BULK_FAILED", message: String(error.message || error).slice(0, 2000), details: error.details } }) + "\n");
+    process.exitCode = 1;
+  }
+}
+`;
+
+// mongodb-bulk.js
+var MONGODB_BULK_CONFIRMATION = "确认执行";
+var MONGODB_BULK_ROLLBACK_CONFIRMATION = "确认回滚";
+var DEFAULT_MONGODB_BULK_ROOT = "/var/lib/remote-debug-agent/bulk-jobs";
+var DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS = 500;
+var MAX_MONGODB_BULK_BATCH_DOCUMENTS = 2e3;
+var MAX_MONGODB_BULK_UNIT_OPERATIONS = 20;
+var MAX_MONGODB_BULK_CHUNK_OPERATIONS = 1e4;
+var MAX_MONGODB_BULK_CHUNK_BYTES = 4 * 1024 * 1024;
+var MAX_MONGODB_BULK_JOB_OPERATIONS = 1e5;
+var MAX_MONGODB_BULK_JOB_BYTES = 40 * 1024 * 1024;
+var MAX_MONGODB_BULK_BATCH_INPUT_BYTES = 512 * 1024;
+var MAX_MONGODB_BULK_BATCH_JOURNAL_BYTES = 8 * 1024 * 1024;
+var DEFAULT_MONGODB_BULK_ROLLBACK_TTL_MS = 7 * 24 * 60 * 60 * 1e3;
+var MAX_MONGODB_BULK_ROLLBACK_TTL_MS = 7 * 24 * 60 * 60 * 1e3;
+var DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+var COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
+var JOB_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+var UNIT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
+var FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+var HASH_PATTERN = /^[a-f0-9]{64}$/;
+var UPDATE_OPERATORS = /* @__PURE__ */ new Set(["$set", "$unset", "$inc"]);
+var EJSON_KEYS = /* @__PURE__ */ new Set([
+  "$oid",
+  "$date",
+  "$numberInt",
+  "$numberLong",
+  "$numberDouble",
+  "$numberDecimal",
+  "$binary",
+  "$regularExpression",
+  "$timestamp",
+  "$minKey",
+  "$maxKey",
+  "$undefined"
+]);
+var BLOCKED_KEYS = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor", "$where", "$function", "$accumulator", "$out", "$merge", "$currentOp"]);
+var MAX_BULK_RESULT_BYTES = 512 * 1024;
+function bulkError(message, code, statusCode = 400, details = {}) {
+  const error = operationError(message, {
+    code,
+    statusCode,
+    layer: "mongodb-bulk",
+    phase: "validation",
+    retriable: false
+  });
+  error.details = details;
+  return error;
+}
+function byteLength2(value) {
+  return Buffer.byteLength(String(value), "utf8");
+}
+function stableValue(value) {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (!value || typeof value !== "object") return value;
+  return Object.keys(value).sort().reduce((result, key) => {
+    Object.defineProperty(result, key, {
+      value: stableValue(value[key]),
+      enumerable: true,
+      writable: true,
+      configurable: true
+    });
+    return result;
+  }, {});
+}
+function stableStringify(value) {
+  return JSON.stringify(stableValue(value));
+}
+function assertWireValue(value, fieldName = "$", depth = 0) {
+  if (depth > 16) throw bulkError(`${fieldName} is too deeply nested`, "MONGODB_BULK_VALUE_INVALID");
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw bulkError(`${fieldName} contains a non-finite number`, "MONGODB_BULK_VALUE_INVALID");
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertWireValue(item, `${fieldName}[${index}]`, depth + 1));
+    return;
+  }
+  if (!value || typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
+    throw bulkError(`${fieldName} contains an unsupported value`, "MONGODB_BULK_VALUE_INVALID");
+  }
+  const keys = Object.keys(value);
+  const taggedKeys = keys.filter((key) => key.startsWith("$"));
+  if (taggedKeys.length > 0) {
+    if (keys.length !== 1 || !EJSON_KEYS.has(keys[0])) {
+      throw bulkError(`${fieldName} contains an unsupported Extended JSON value`, "MONGODB_BULK_VALUE_INVALID");
+    }
+    const key = keys[0];
+    const child = value[key];
+    if (key === "$oid" && (typeof child !== "string" || !/^[a-f0-9]{24}$/i.test(child))) {
+      throw bulkError(`${fieldName} contains an invalid ObjectId`, "MONGODB_BULK_VALUE_INVALID");
+    }
+    if (["$numberInt", "$numberLong", "$numberDouble", "$numberDecimal"].includes(key) && typeof child !== "string") {
+      throw bulkError(`${fieldName} contains an invalid BSON number`, "MONGODB_BULK_VALUE_INVALID");
+    }
+    assertWireValue(child, `${fieldName}.${key}`, depth + 1);
+    return;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (BLOCKED_KEYS.has(key) || key.includes("\0")) {
+      throw bulkError(`${fieldName} contains a forbidden key`, "MONGODB_BULK_VALUE_INVALID");
+    }
+    assertWireValue(child, `${fieldName}.${key}`, depth + 1);
+  }
+}
+function normalizeId(value, fieldName) {
+  assertWireValue(value, fieldName);
+  if (typeof value === "string" && value.length > 0 && value.length <= 256) return value;
+  if (Number.isSafeInteger(value)) return value;
+  if (value && typeof value === "object" && Object.keys(value).length === 1 && (typeof value.$oid === "string" || typeof value.$numberLong === "string")) return value;
+  throw bulkError(`${fieldName} must be a string, safe integer, ObjectId, or Long`, "MONGODB_BULK_ID_INVALID");
+}
+function normalizeDocument(value, fieldName) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) {
+    throw bulkError(`${fieldName} must be a plain object`, "MONGODB_BULK_DOCUMENT_INVALID");
+  }
+  assertWireValue(value, fieldName);
+  if (!Object.prototype.hasOwnProperty.call(value, "_id")) {
+    throw bulkError(`${fieldName} must contain an explicit _id`, "MONGODB_BULK_ID_REQUIRED");
+  }
+  const document2 = { ...value, _id: normalizeId(value._id, `${fieldName}._id`) };
+  for (const key of Object.keys(document2)) {
+    if (key.startsWith("$") || key.includes(".") || key.includes("\0")) {
+      throw bulkError(`${fieldName} contains an unsafe field name`, "MONGODB_BULK_FIELD_REJECTED");
+    }
+  }
+  if (byteLength2(JSON.stringify(document2)) > 256 * 1024) {
+    throw bulkError(`${fieldName} exceeds 256 KiB`, "MONGODB_BULK_DOCUMENT_TOO_LARGE", 413);
+  }
+  return document2;
+}
+function normalizeMongoBulkConfig(config = {}, options = {}) {
+  if (!config || options.requireBulkEnabled !== false && config.bulkEnabled !== true) {
+    throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly", "MONGODB_BULK_DISABLED", 403);
+  }
+  const writeEnabled = config.writeEnabled === true || config.mutationsEnabled === true;
+  if (!writeEnabled) throw bulkError("MongoDB mutations are disabled", "MONGODB_MUTATIONS_DISABLED", 403);
+  const database = String(config.database || "").trim();
+  if (!DATABASE_PATTERN.test(database)) throw bulkError("a valid default MongoDB database is required", "MONGODB_BULK_DATABASE_REQUIRED");
+  const allowedDatabases = Array.isArray(config.allowedDatabases) ? config.allowedDatabases : [database];
+  if (!allowedDatabases.includes(database)) throw bulkError("bulk jobs must use an allowlisted database", "MONGODB_DATABASE_NOT_ALLOWED", 403);
+  const allowedCollections = Array.isArray(config.allowedCollections) ? config.allowedCollections : [];
+  const receiptsCollection = String(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts").trim();
+  if (!COLLECTION_PATTERN.test(receiptsCollection) || !allowedCollections.includes(receiptsCollection)) {
+    throw bulkError(`the technical collection ${receiptsCollection} must be included in mongodb.allowedCollections`, "MONGODB_BULK_RECEIPTS_NOT_ALLOWED", 403);
+  }
+  const rawRoot = String(config.bulkRoot || DEFAULT_MONGODB_BULK_ROOT).trim();
+  const root = import_posix2.default.normalize(rawRoot);
+  if (!root.startsWith("/") || root === "/" || root.includes("\0") || root.split("/").includes("..")) {
+    throw bulkError("mongodb.bulkRoot must be a dedicated absolute directory", "MONGODB_BULK_ROOT_INVALID");
+  }
+  const batchDocuments = Number(config.bulkBatchDocuments || DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS);
+  if (!Number.isInteger(batchDocuments) || batchDocuments < 1 || batchDocuments > MAX_MONGODB_BULK_BATCH_DOCUMENTS) {
+    throw bulkError(`mongodb.bulkBatchDocuments must be from 1 to ${MAX_MONGODB_BULK_BATCH_DOCUMENTS}`, "MONGODB_BULK_LIMIT_INVALID");
+  }
+  const concurrency = Number(config.bulkConcurrency || 2);
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) {
+    throw bulkError("mongodb.bulkConcurrency must be from 1 to 4", "MONGODB_BULK_LIMIT_INVALID");
+  }
+  const rollbackTtlMs = Number(config.bulkRollbackTtlMs || DEFAULT_MONGODB_BULK_ROLLBACK_TTL_MS);
+  if (!Number.isInteger(rollbackTtlMs) || rollbackTtlMs < 1 || rollbackTtlMs > MAX_MONGODB_BULK_ROLLBACK_TTL_MS) {
+    throw bulkError("mongodb.bulkRollbackTtlMs must be from 1 to 7 days", "MONGODB_BULK_LIMIT_INVALID");
+  }
+  return {
+    ...config,
+    database,
+    allowedDatabases: [...allowedDatabases],
+    allowedCollections: [...allowedCollections],
+    bulkRoot: root.replace(/\/$/, ""),
+    bulkReceiptsCollection: receiptsCollection,
+    bulkBatchDocuments: batchDocuments,
+    bulkConcurrency: concurrency,
+    bulkRollbackTtlMs: rollbackTtlMs
+  };
+}
+function normalizeUpdate(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) {
+    throw bulkError("update must be a non-empty operator object", "MONGODB_BULK_UPDATE_INVALID");
+  }
+  const output = {};
+  const paths = [];
+  for (const [operator, fields] of Object.entries(value)) {
+    if (!UPDATE_OPERATORS.has(operator) || !fields || typeof fields !== "object" || Array.isArray(fields) || Object.keys(fields).length === 0) {
+      throw bulkError("update may use only $set, $unset, and $inc with non-empty objects", "MONGODB_BULK_UPDATE_INVALID");
+    }
+    output[operator] = {};
+    for (const [field, fieldValue] of Object.entries(fields)) {
+      if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
+        throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
+      }
+      if (paths.some((path9) => path9 === field || path9.startsWith(`${field}.`) || field.startsWith(`${path9}.`))) {
+        throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
+      }
+      if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
+        throw bulkError("$inc values must be finite numbers", "MONGODB_BULK_UPDATE_INVALID");
+      }
+      if (operator === "$unset" && fieldValue !== 1 && fieldValue !== true && fieldValue !== "") {
+        throw bulkError("$unset values must be 1, true, or an empty string", "MONGODB_BULK_UPDATE_INVALID");
+      }
+      assertWireValue(fieldValue, `update.${operator}.${field}`);
+      output[operator][field] = fieldValue;
+      paths.push(field);
+    }
+  }
+  return { update: output, paths };
+}
+function normalizeExpected(value, changedPaths) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) {
+    throw bulkError("updateOne requires original values in expected", "MONGODB_BULK_EXPECTED_REQUIRED");
+  }
+  const expected = {};
+  for (const [field, condition] of Object.entries(value)) {
+    if (!FIELD_PATTERN.test(field) || !condition || typeof condition !== "object" || Array.isArray(condition)) {
+      throw bulkError("expected must map safe field paths to existence/value conditions", "MONGODB_BULK_EXPECTED_INVALID");
+    }
+    const exists = condition.exists;
+    if (exists === false) {
+      if (Object.keys(condition).length !== 1) throw bulkError(`expected.${field} must omit value when exists is false`, "MONGODB_BULK_EXPECTED_INVALID");
+      expected[field] = { exists: false };
+    } else if (exists === true && Object.prototype.hasOwnProperty.call(condition, "value")) {
+      if (Object.keys(condition).some((key) => key !== "exists" && key !== "value")) throw bulkError(`expected.${field} has unsupported keys`, "MONGODB_BULK_EXPECTED_INVALID");
+      assertWireValue(condition.value, `expected.${field}.value`);
+      expected[field] = { exists: true, value: condition.value };
+    } else {
+      throw bulkError(`expected.${field} must specify exists and, when present, value`, "MONGODB_BULK_EXPECTED_INVALID");
+    }
+  }
+  for (const field of changedPaths) {
+    if (!Object.prototype.hasOwnProperty.call(expected, field)) {
+      throw bulkError(`expected must include the original value for every changed field; missing ${field}`, "MONGODB_BULK_EXPECTED_INCOMPLETE");
+    }
+  }
+  return expected;
+}
+function normalizeOperation(value, config, database, unitId, index) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError(`unit ${unitId} operation ${index} must be an object`, "MONGODB_BULK_OPERATION_INVALID");
+  const collection = String(value.collection || "").trim();
+  if (!COLLECTION_PATTERN.test(collection) || !config.allowedCollections.includes(collection)) {
+    throw bulkError(`collection is not allowlisted: ${collection || "(empty)"}`, "MONGODB_COLLECTION_NOT_ALLOWED", 403);
+  }
+  if (collection === config.bulkReceiptsCollection) throw bulkError("business operations cannot target the technical receipt collection", "MONGODB_BULK_RESERVED_COLLECTION", 403);
+  if (value.operation === "insertOne") {
+    return { collection, operation: "insertOne", document: normalizeDocument(value.document, `unit ${unitId} operation ${index}.document`) };
+  }
+  if (value.operation !== "updateOne") throw bulkError("bulk V1 supports only insertOne and updateOne", "MONGODB_BULK_OPERATION_UNSUPPORTED");
+  const updatePlan = normalizeUpdate(value.update);
+  return {
+    collection,
+    operation: "updateOne",
+    id: normalizeId(value.id, `unit ${unitId} operation ${index}.id`),
+    expected: normalizeExpected(value.expected, updatePlan.paths),
+    update: updatePlan.update
+  };
+}
+function normalizeUnit(value, config, database) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError("each business unit must be an object", "MONGODB_BULK_UNIT_INVALID");
+  const unitId = String(value.unitId || "").trim();
+  if (!UNIT_ID_PATTERN.test(unitId)) throw bulkError("unitId must be a stable identifier of 1-64 safe characters", "MONGODB_BULK_UNIT_ID_INVALID");
+  if (!Array.isArray(value.operations) || value.operations.length === 0 || value.operations.length > MAX_MONGODB_BULK_UNIT_OPERATIONS) {
+    throw bulkError(`unit ${unitId} must contain between 1 and ${MAX_MONGODB_BULK_UNIT_OPERATIONS} operations`, "MONGODB_BULK_UNIT_SIZE_INVALID");
+  }
+  const operations = value.operations.map((item, index) => normalizeOperation(item, config, database, unitId, index));
+  return { unitId, operations };
+}
+function normalizeMongoBulkChunk(input = {}, config = {}) {
+  const policy = normalizeMongoBulkConfig(config);
+  const jobId = String(input.jobId || "").trim();
+  if (!JOB_ID_PATTERN.test(jobId)) throw bulkError("jobId must use 1-64 letters, numbers, dots, dashes, or underscores", "MONGODB_BULK_JOB_ID_INVALID");
+  const database = String(input.database || policy.database).trim();
+  if (database !== policy.database || !policy.allowedDatabases.includes(database)) {
+    throw bulkError("one bulk job may target only its configured, allowlisted database", "MONGODB_DATABASE_NOT_ALLOWED", 403);
+  }
+  if (!Number.isInteger(input.chunkIndex) || input.chunkIndex < 0 || input.chunkIndex > 9999) {
+    throw bulkError("chunkIndex must be a non-negative integer", "MONGODB_BULK_CHUNK_INDEX_INVALID");
+  }
+  const units = input.units === void 0 ? [] : input.units;
+  if (!Array.isArray(units)) throw bulkError("units must be an array", "MONGODB_BULK_UNITS_INVALID");
+  const purpose = typeof input.purpose === "string" ? input.purpose.trim().slice(0, 500) : "";
+  const rollbackTtlMs = input.rollbackTtlMs === void 0 ? policy.bulkRollbackTtlMs : Number(input.rollbackTtlMs);
+  if (!Number.isInteger(rollbackTtlMs) || rollbackTtlMs < 1 || rollbackTtlMs > policy.bulkRollbackTtlMs) {
+    throw bulkError("rollbackTtlMs must be a positive duration no greater than the instance rollback window", "MONGODB_BULK_TTL_INVALID");
+  }
+  const normalizedUnits = units.map((unit) => normalizeUnit(unit, policy, database));
+  const body = { jobId, database, chunkIndex: input.chunkIndex, purpose, rollbackTtlMs, units: normalizedUnits };
+  const inputBytes = byteLength2(stableStringify({ units: normalizedUnits }));
+  const operationCount = normalizedUnits.reduce((count, unit) => count + unit.operations.length, 0);
+  if (operationCount > MAX_MONGODB_BULK_CHUNK_OPERATIONS || inputBytes > MAX_MONGODB_BULK_CHUNK_BYTES) {
+    throw bulkError("one upload chunk is limited to 10000 operations and 4 MiB", "MONGODB_BULK_CHUNK_SIZE_LIMIT", 413);
+  }
+  const chunkHash = (0, import_node_crypto3.createHash)("sha256").update(stableStringify(body)).digest("hex");
+  if (input.chunkHash !== void 0 && input.chunkHash !== chunkHash) {
+    throw bulkError("chunkHash does not match the normalized chunk contents", "MONGODB_BULK_CHUNK_HASH_MISMATCH");
+  }
+  if (input.endOfUpload === true && normalizedUnits.length > 0) {
+    throw bulkError("send the explicit end-of-upload marker in an empty chunk", "MONGODB_BULK_END_MARKER_INVALID");
+  }
+  return { ...body, chunkHash, endOfUpload: input.endOfUpload === true, inputBytes, operationCount };
+}
+function normalizeMongoBulkStorage(input = {}, config = {}, options = {}) {
+  const policy = normalizeMongoBulkConfig(config);
+  return {
+    kind: "bulk_storage",
+    operation: "initializeBulkStorage",
+    operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto3.randomUUID)(),
+    purpose: typeof input.purpose === "string" ? input.purpose.trim().slice(0, 500) : "Initialize MongoDB bulk job storage",
+    database: policy.database,
+    collection: policy.bulkReceiptsCollection,
+    storageRoot: policy.bulkRoot,
+    rollbackTtlMs: policy.bulkRollbackTtlMs,
+    riskLevel: "high"
+  };
+}
+function safeLiteral2(value) {
+  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+function buildMongoBulkScript(request, config, normalizationOptions = {}) {
+  const policy = normalizeMongoBulkConfig(config, normalizationOptions);
+  const script = [
+    '"use strict";',
+    'const __fs = require("fs");',
+    'const __path = require("path");',
+    'const __crypto = require("crypto");',
+    `const __request = ${safeLiteral2(request)};`,
+    `const __config = ${safeLiteral2({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4) })};`,
+    `const __marker = ${safeLiteral2(`${MONGODB_RESULT_MARKER}BULK:`)};`,
+    'let __bson; try { __bson = require(require.resolve("bson", { paths: [__config.driverPath] })); } catch (_error) { __bson = null; }',
+    MONGODB_CODEC_SCRIPT,
+    MONGODB_BULK_RUNTIME,
+    "__bulkMain();"
+  ].join("\n");
+  const limit = request.action === "upload" ? MAX_MONGODB_BULK_CHUNK_BYTES + 1024 * 1024 : MAX_BULK_RESULT_BYTES * 2;
+  if (byteLength2(script) > limit) throw bulkError("MongoDB bulk helper exceeds its bounded transport size", "MONGODB_BULK_SCRIPT_TOO_LARGE", 413);
+  return script;
+}
+function parseMarker(stdout) {
+  const lines = String(stdout || "").split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (!lines[index].startsWith(`${MONGODB_RESULT_MARKER}BULK:`)) continue;
+    try {
+      return JSON.parse(lines[index].slice(`${MONGODB_RESULT_MARKER}BULK:`.length));
+    } catch {
+      throw bulkError("MongoDB bulk helper returned invalid JSON", "MONGODB_BULK_INVALID_RESPONSE", 502);
+    }
+  }
+  return null;
+}
+function normalizeActionRequest(input, config) {
+  const action = input.action;
+  if (action === "upload") return { action, chunk: normalizeMongoBulkChunk(input.chunk || input, config) };
+  if (action === "get" || action === "start" || action === "finish" || action === "pause" || action === "resume") {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId)) throw bulkError("jobId has an invalid format", "MONGODB_BULK_JOB_ID_INVALID");
+    if (action !== "get" && action !== "pause" && action !== "resume") {
+      if (!HASH_PATTERN.test(String(input.planHash || ""))) throw bulkError("planHash must be a SHA-256 digest", "MONGODB_BULK_PLAN_HASH_INVALID");
+    }
+    return {
+      ...input,
+      action,
+      jobId,
+      query: action === "get" ? {
+        includeDifferences: input.includeDifferences === true,
+        offset: input.offset,
+        limit: input.limit
+      } : input.query
+    };
+  }
+  if (action === "list") {
+    return { action, offset: Math.max(0, Math.min(1e5, Number.isInteger(input.offset) ? input.offset : 0)), limit: Math.max(1, Math.min(100, Number.isInteger(input.limit) ? input.limit : 20)) };
+  }
+  if (["executeBatch", "rollbackBatch", "verifyBatch"].includes(action)) {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || "")) || !HASH_PATTERN.test(String(input.leaseId || "")) || !Number.isInteger(input.batchIndex) || input.batchIndex < 0) {
+      throw bulkError("bulk batch identity is invalid", "MONGODB_BULK_BATCH_ID_INVALID");
+    }
+    return { ...input, action, jobId };
+  }
+  if (action === "dispatch") {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || "")) || !HASH_PATTERN.test(String(input.leaseId || "")) || !["execute", "verify", "rollback"].includes(input.phase) || !Array.isArray(input.batchIndexes) || input.batchIndexes.length > 4 || input.batchIndexes.some((index) => !Number.isInteger(index) || index < 0) || new Set(input.batchIndexes).size !== input.batchIndexes.length) {
+      throw bulkError("bulk dispatch identity is invalid", "MONGODB_BULK_BATCH_ID_INVALID");
+    }
+    return { action, jobId, planHash: input.planHash, leaseId: input.leaseId, phase: input.phase, batchIndexes: input.batchIndexes };
+  }
+  if (action === "control") {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId) || !["pause", "resume"].includes(input.command)) throw bulkError("bulk control request is invalid", "MONGODB_BULK_CONTROL_INVALID");
+    if (input.planHash !== void 0 && !HASH_PATTERN.test(String(input.planHash))) throw bulkError("planHash must be a SHA-256 digest", "MONGODB_BULK_PLAN_HASH_INVALID");
+    return { action, jobId, command: input.command, planHash: input.planHash };
+  }
+  if (action === "heartbeat") {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || "")) || !HASH_PATTERN.test(String(input.leaseId || ""))) {
+      throw bulkError("bulk heartbeat identity is invalid", "MONGODB_BULK_BATCH_ID_INVALID");
+    }
+    return { action, jobId, planHash: input.planHash, leaseId: input.leaseId };
+  }
+  if (action === "rollbackStart") {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || ""))) throw bulkError("bulk rollback identity is invalid", "MONGODB_BULK_PLAN_HASH_INVALID");
+    if (input.confirmation !== MONGODB_BULK_ROLLBACK_CONFIRMATION) throw bulkError(`confirmation must exactly equal ${MONGODB_BULK_ROLLBACK_CONFIRMATION}`, "MONGODB_BULK_ROLLBACK_CONFIRMATION_REQUIRED");
+    return { ...input, action: "rollbackStart", jobId };
+  }
+  if (action === "executeStart") {
+    const jobId = String(input.jobId || "").trim();
+    if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || ""))) throw bulkError("bulk execution identity is invalid", "MONGODB_BULK_PLAN_HASH_INVALID");
+    if (input.confirmation !== MONGODB_BULK_CONFIRMATION) throw bulkError(`confirmation must exactly equal ${MONGODB_BULK_CONFIRMATION}`, "MONGODB_BULK_CONFIRMATION_REQUIRED");
+    return { ...input, action: "executeStart", jobId, leaseId: input.leaseId || (0, import_node_crypto3.createHash)("sha256").update((0, import_node_crypto3.randomUUID)()).digest("hex") };
+  }
+  throw bulkError("unsupported MongoDB bulk action", "MONGODB_BULK_ACTION_INVALID");
+}
+async function runMongoBulk(input = {}, options = {}) {
+  const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
+  const recoveryAction = input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
+  const config = normalizeMongoBulkConfig(rawConfig, { requireBulkEnabled: !recoveryAction });
+  const request = normalizeActionRequest(input, config);
+  if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+  let remoteResult;
+  try {
+    remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
+      config: options.config,
+      operation: options.operation,
+      timeoutMs: options.timeoutMs || 6e5,
+      priority: options.priority || "interactive",
+      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction })
+    });
+  } catch (error) {
+    throw operationError(redactMongoSecrets(error.message || "MongoDB bulk helper could not be executed"), {
+      code: error.code || "MONGODB_BULK_FAILED",
+      statusCode: error.statusCode || 502,
+      operationId: options.operation && options.operation.operationId,
+      layer: "mongodb-bulk",
+      phase: request.action,
+      retriable: error.retriable === true,
+      cause: error
+    });
+  }
+  if (remoteResult && remoteResult.stdoutTruncated || byteLength2(remoteResult && remoteResult.stdout || "") > MAX_BULK_RESULT_BYTES) {
+    throw bulkError("MongoDB bulk result exceeded the response limit", "MONGODB_BULK_RESULT_TOO_LARGE", 413);
+  }
+  const payload = parseMarker(remoteResult && remoteResult.stdout);
+  if (!payload) throw bulkError("MongoDB bulk helper returned no structured response", "MONGODB_BULK_INVALID_RESPONSE", 502);
+  if (payload.ok !== true || remoteResult && remoteResult.exitCode !== 0 || remoteResult && remoteResult.timedOut) {
+    const error = operationError(redactMongoSecrets(payload.error && payload.error.message || remoteResult && remoteResult.stderr || "MongoDB bulk request failed"), {
+      code: remoteResult && remoteResult.timedOut ? "MONGODB_BULK_TIMEOUT" : payload.error && payload.error.code || "MONGODB_BULK_FAILED",
+      statusCode: remoteResult && remoteResult.timedOut ? 408 : 409,
+      operationId: options.operation && options.operation.operationId,
+      layer: "mongodb-bulk",
+      phase: request.action,
+      retriable: remoteResult && remoteResult.timedOut === true
+    });
+    error.details = payload.error && payload.error.details;
+    throw error;
+  }
+  return { ...payload.data || {}, timing: remoteResult && remoteResult.timing };
+}
+var MongoBulkJobRunner = class {
+  constructor(options = {}) {
+    this.run = options.runMongoBulk;
+    this.config = normalizeMongoBulkConfig(options.config && options.config.mongodb ? options.config.mongodb : options.config || {}, { requireBulkEnabled: false });
+    this.effectiveConcurrency = Math.min(this.config.bulkConcurrency, 4);
+    this.active = null;
+    this.tasks = /* @__PURE__ */ new Map();
+  }
+  async start(input, mode = "execute") {
+    if (mode !== "rollback" && this.config.bulkEnabled !== true) {
+      throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly", "MONGODB_BULK_DISABLED", 403);
+    }
+    if (this.active) throw bulkError("another bulk job is already running for this instance", "MONGODB_BULK_INSTANCE_BUSY", 409, { jobId: this.active.jobId });
+    const action = mode === "rollback" ? "rollbackStart" : "executeStart";
+    const leaseId = (0, import_node_crypto3.createHash)("sha256").update((0, import_node_crypto3.randomUUID)()).digest("hex");
+    const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 6e4 });
+    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode };
+    const promise = this.#runLoop(this.active).finally(() => {
+      if (this.active && this.active.leaseId === leaseId) this.active = null;
+      this.tasks.delete(input.jobId);
+    });
+    this.tasks.set(input.jobId, promise);
+    promise.catch(() => {
+    });
+    return { ...accepted, accepted: true, background: true, effectiveConcurrency: this.effectiveConcurrency };
+  }
+  async control(input) {
+    if (input.command === "resume" && this.config.bulkEnabled !== true) {
+      throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly before resuming", "MONGODB_BULK_DISABLED", 403);
+    }
+    if (input.command === "resume" && this.active && this.active.jobId !== input.jobId) {
+      throw bulkError("another bulk job is active for this instance", "MONGODB_BULK_INSTANCE_BUSY", 409, { jobId: this.active.jobId });
+    }
+    const result = await this.run({ action: "control", ...input }, { priority: "control", timeoutMs: 6e4 });
+    if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
+      const leaseId = (0, import_node_crypto3.createHash)("sha256").update((0, import_node_crypto3.randomUUID)()).digest("hex");
+      const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 6e4 });
+      this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
+      const promise = this.#runLoop(this.active).finally(() => {
+        if (this.active && this.active.leaseId === leaseId) this.active = null;
+        this.tasks.delete(input.jobId);
+      });
+      this.tasks.set(input.jobId, promise);
+      promise.catch(() => {
+      });
+      return { ...result, ...accepted, accepted: true, background: true, effectiveConcurrency: this.effectiveConcurrency };
+    }
+    return result;
+  }
+  async #runLoop(job) {
+    try {
+      while (true) {
+        const state = await this.run({ action: "get", jobId: job.jobId, includePlan: true }, { priority: "control", timeoutMs: 6e4 });
+        if (state.desiredState === "pause" || state.status === "pause_requested" || state.status === "recovery_required" || state.status === "paused" && state.desiredState !== "running") {
+          try {
+            await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason: "pause_requested" }, { priority: "control", timeoutMs: 3e4 });
+          } catch {
+          }
+          return;
+        }
+        if (job.mode === "rollback" || state.mode === "rollback") {
+          if (state.nextRollbackBatch === null || state.nextRollbackBatch === void 0) break;
+          await this.#runBatchWave(job, "rollback", "rollbackBatch", [state.nextRollbackBatch]);
+          continue;
+        }
+        if (state.nextBatch < state.batchCount) {
+          const indexes = Array.from(
+            { length: Math.min(this.effectiveConcurrency, state.batchCount - state.nextBatch) },
+            (_value, offset) => state.nextBatch + offset
+          );
+          await this.#runBatchWave(job, "execute", "executeBatch", indexes);
+          continue;
+        }
+        if (state.nextVerifyBatch < state.batchCount) {
+          const indexes = Array.from(
+            { length: Math.min(this.effectiveConcurrency, state.batchCount - state.nextVerifyBatch) },
+            (_value, offset) => state.nextVerifyBatch + offset
+          );
+          await this.#runBatchWave(job, "verify", "verifyBatch", indexes);
+          continue;
+        }
+        break;
+      }
+      await this.run({ action: "finish", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, mode: job.mode }, { priority: "control", timeoutMs: 6e4 });
+    } catch (error) {
+      try {
+        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason: error.code || "MONGODB_BULK_FAILED" }, { priority: "control", timeoutMs: 3e4 });
+      } catch {
+      }
+    }
+  }
+  async #withHeartbeat(job, work) {
+    let heartbeat = null;
+    let inFlight = false;
+    const interval = setInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      this.run({ action: "heartbeat", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId }, { priority: "control", timeoutMs: 2e4 }).catch(() => {
+      }).finally(() => {
+        inFlight = false;
+      });
+    }, 2e4);
+    interval.unref?.();
+    try {
+      heartbeat = await work();
+      return heartbeat;
+    } finally {
+      clearInterval(interval);
+    }
+  }
+  async #runBatchWave(job, phase, action, indexes) {
+    await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
+      priority: "control",
+      timeoutMs: 3e4
+    });
+    let failure;
+    try {
+      await this.#withHeartbeat(job, async () => {
+        const results = await Promise.allSettled(indexes.map((batchIndex) => this.run({
+          action,
+          jobId: job.jobId,
+          planHash: job.planHash,
+          leaseId: job.leaseId,
+          batchIndex
+        }, { priority: "bulk", timeoutMs: 6e5 })));
+        const rejected = results.find((result) => result.status === "rejected");
+        if (rejected) throw rejected.reason;
+      });
+    } catch (error) {
+      failure = error;
+    }
+    try {
+      await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: [] }, {
+        priority: "control",
+        timeoutMs: 3e4
+      });
+    } catch (error) {
+      if (!failure) failure = error;
+    }
+    if (failure) throw failure;
+  }
+  async pauseForShutdown() {
+    const active = this.active;
+    if (!active) return;
+    try {
+      await this.run({ action: "control", jobId: active.jobId, planHash: active.planHash, command: "pause" }, { priority: "control", timeoutMs: 1e4 });
+    } catch {
+    }
+  }
+};
+
+// mongodb-mutations.js
+var import_node_crypto4 = require("node:crypto");
+var import_posix3 = __toESM(require("node:path/posix"), 1);
 var MONGODB_MUTATION_SCHEMA_VERSION = 1;
 var MONGODB_MUTATION_OPERATIONS = Object.freeze([
   "insertOne",
@@ -45035,6 +47053,10 @@ var MAX_MONGODB_MUTATION_JOURNAL_BYTES = 8 * 1024 * 1024;
 var DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT = "/tmp/remote-debug-agent/mutations";
 var MAX_MONGODB_MUTATION_LIST_ITEMS = 100;
 var MAX_MONGODB_TRANSACTION_OPERATIONS = 20;
+var MAX_MONGODB_IMPORT_BATCH_DOCUMENTS = 2e3;
+var MAX_MONGODB_IMPORT_DOCUMENTS = 1e4;
+var MAX_MONGODB_IMPORT_BYTES = 4 * 1024 * 1024;
+var MAX_MONGODB_IMPORT_BATCH_BYTES = 512 * 1024;
 var MAX_MONGODB_MUTATION_LOCK_AGE_MS = 15 * 60 * 1e3;
 var SAFE_DATABASE_PATTERN2 = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 var SAFE_COLLECTION_PATTERN2 = /^[A-Za-z0-9_.$-]{1,128}$/;
@@ -45054,7 +47076,7 @@ var ALLOWED_EJSON_KEYS = /* @__PURE__ */ new Set([
   "$regularExpression",
   "$timestamp"
 ]);
-var BLOCKED_KEYS = /* @__PURE__ */ new Set([
+var BLOCKED_KEYS2 = /* @__PURE__ */ new Set([
   "__proto__",
   "constructor",
   "prototype",
@@ -45074,7 +47096,7 @@ function riskForDocumentOperation(operation) {
 function riskForIndexOperation(operation, options = {}) {
   return operation === "dropIndex" || options.unique === true ? "high" : "medium";
 }
-function byteLength2(value) {
+function byteLength3(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
 function clampText(value, maxChars = 2e3) {
@@ -45122,7 +47144,7 @@ function assertSafeJson2(value, fieldName = "$", depth = 0) {
     throw mutationError(`${fieldName} contains an unsupported value`, "INVALID_MONGODB_MUTATION");
   }
   for (const [key, child] of Object.entries(value)) {
-    if (BLOCKED_KEYS.has(key)) {
+    if (BLOCKED_KEYS2.has(key)) {
       throw mutationError(`${fieldName} contains a forbidden key`, "MONGODB_OPERATOR_REJECTED");
     }
     if (key.startsWith("$") && !ALLOWED_EJSON_KEYS.has(key) && !ALLOWED_UPDATE_OPERATORS.has(key) && key !== "$in") {
@@ -45160,7 +47182,7 @@ function normalizeAllowedNames(value, fieldName, pattern, fallback = []) {
 }
 function normalizeJournalRoot(value) {
   const raw = typeof value === "string" && value.trim() ? value.trim() : DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT;
-  const normalized = import_posix2.default.normalize(raw);
+  const normalized = import_posix3.default.normalize(raw);
   if (!normalized.startsWith("/tmp/remote-debug-agent/") || normalized === "/tmp" || normalized === "/tmp/" || normalized.includes("\0")) {
     throw mutationError(
       "mongodb mutation journal root must be a dedicated directory under /tmp",
@@ -45219,6 +47241,15 @@ function normalizeMongoMutationConfig(config = {}) {
       DEFAULT_MONGODB_MUTATION_MAX_AFFECTED,
       MAX_MONGODB_MUTATION_MAX_AFFECTED
     ),
+    maxImportBatchDocuments: normalizePositiveInt(
+      config.maxImportBatchDocuments,
+      "mongodb.maxImportBatchDocuments",
+      MAX_MONGODB_IMPORT_BATCH_DOCUMENTS,
+      MAX_MONGODB_IMPORT_BATCH_DOCUMENTS
+    ),
+    bulkEnabled: config.bulkEnabled === true,
+    bulkRoot: config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs",
+    bulkReceiptsCollection: config.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
     allowedDatabases,
     allowedCollections
   };
@@ -45245,7 +47276,7 @@ function assertCollectionAllowed(collection, config) {
   }
   return normalized;
 }
-function normalizeDocument(value, fieldName = "document") {
+function normalizeDocument2(value, fieldName = "document") {
   assertPlainObject2(value, fieldName);
   assertSafeJson2(value, fieldName);
   if (!Object.prototype.hasOwnProperty.call(value, "_id") || value._id === null) {
@@ -45257,7 +47288,7 @@ function normalizeDocument(value, fieldName = "document") {
     }
   }
   const normalized = cloneJson(value);
-  if (byteLength2(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
+  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
     throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
   }
   return normalized;
@@ -45278,7 +47309,7 @@ function normalizeFilter(value, fieldName = "filter") {
     }
   }
   const normalized = cloneJson(value);
-  if (byteLength2(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
+  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
     throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
   }
   return normalized;
@@ -45301,7 +47332,7 @@ function assertScopedFilter(filter, operation) {
     );
   }
 }
-function normalizeUpdate(value, fieldName = "update") {
+function normalizeUpdate2(value, fieldName = "update") {
   assertPlainObject2(value, fieldName);
   assertSafeJson2(value, fieldName);
   const operators = Object.keys(value);
@@ -45332,7 +47363,7 @@ function normalizeUpdate(value, fieldName = "update") {
     }
   }
   const normalized = cloneJson(value);
-  if (byteLength2(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
+  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
     throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
   }
   return normalized;
@@ -45354,7 +47385,7 @@ function normalizeCommonMutation(input, config, operationId, kind = "document") 
   );
   return {
     kind,
-    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto3.randomUUID)(),
+    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto4.randomUUID)(),
     purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
     database,
     collection,
@@ -45381,7 +47412,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
     return {
       ...common,
       operation,
-      document: normalizeDocument(input.document),
+      document: normalizeDocument2(input.document),
       maxAffected: 1,
       riskLevel: riskForDocumentOperation(operation)
     };
@@ -45398,7 +47429,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
     $set: {
       [normalizeName(input.deletedField || "deletedAt", "deletedField", SAFE_FIELD_PATTERN)]: typeof input.deletedValue === "string" && input.deletedValue.trim() ? input.deletedValue.trim().slice(0, 128) : (/* @__PURE__ */ new Date()).toISOString()
     }
-  } : normalizeUpdate(input.update);
+  } : normalizeUpdate2(input.update);
   const expectedCount = input.expectedCount === void 0 ? void 0 : normalizePositiveInt(input.expectedCount, "expectedCount", 1, maxAffected);
   return {
     ...common,
@@ -45408,6 +47439,67 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
     maxAffected: operation === "updateOne" || operation === "softDeleteOne" ? 1 : maxAffected,
     expectedCount,
     riskLevel: riskForDocumentOperation(operation)
+  };
+}
+function normalizeMongoImport(input = {}, config = {}, options = {}) {
+  const policy = normalizeMongoMutationConfig(config);
+  const common = normalizeCommonMutation(input, policy, options.operationId, "import");
+  const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+  if (!Array.isArray(input.documents) || !input.documents.length || input.documents.length > MAX_MONGODB_IMPORT_DOCUMENTS) {
+    throw mutationError("documents must contain between 1 and 10000 documents", "MONGODB_IMPORT_COUNT_LIMIT");
+  }
+  if (byteLength3(JSON.stringify(input.documents)) > MAX_MONGODB_IMPORT_BYTES) {
+    throw mutationError("import documents exceed 4 MiB; send smaller input chunks", "MONGODB_IMPORT_SIZE_LIMIT", 413);
+  }
+  const batchSize = normalizePositiveInt(input.batchSize, "batchSize", policy.maxImportBatchDocuments, policy.maxImportBatchDocuments);
+  const batches = [];
+  const seen = /* @__PURE__ */ new Set();
+  let documents = [];
+  let bytes = 2;
+  const flush = () => {
+    if (!documents.length) return;
+    const batch = {
+      ...common,
+      operation: "insertMany",
+      importId,
+      batchIndex: batches.length,
+      source: { configPath: policy.configPath, configProfile: policy.configProfile, uriKey: policy.uriKey, driverPath: policy.driverPath },
+      documents,
+      maxAffected: documents.length,
+      riskLevel: "high"
+    };
+    const { operationId: _operationId, ...identity } = batch;
+    batch.mutationId = "import-" + (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(identity)).digest("hex");
+    batches.push(batch);
+    documents = [];
+    bytes = 2;
+  };
+  for (const value of input.documents) {
+    const document2 = normalizeDocument2(value);
+    const id = document2._id;
+    const oid = id && typeof id === "object" && Object.keys(id).length === 1 && typeof id.$oid === "string" && /^[a-f0-9]{24}$/i.test(id.$oid);
+    if (!(typeof id === "string" && id.length > 0 && id.length <= 256) && !Number.isSafeInteger(id) && !oid) {
+      throw mutationError("import _id must be a non-empty string (up to 256 characters), safe integer or $oid", "MONGODB_IMPORT_ID_INVALID");
+    }
+    if (oid) document2._id.$oid = id.$oid.toLowerCase();
+    const key = JSON.stringify(document2._id);
+    if (seen.has(key)) throw mutationError("import contains duplicate _id values", "MONGODB_IMPORT_DUPLICATE_ID");
+    seen.add(key);
+    const size = byteLength3(JSON.stringify(document2)) + 1;
+    if (documents.length >= batchSize || bytes + size > MAX_MONGODB_IMPORT_BATCH_BYTES) flush();
+    documents.push(document2);
+    bytes += size;
+  }
+  flush();
+  if (batches.length > 100) throw mutationError("import exceeds 100 batches; send smaller input chunks", "MONGODB_IMPORT_BATCH_LIMIT");
+  return {
+    kind: "import_plan",
+    importId,
+    database: common.database,
+    collection: common.collection,
+    operationId: common.operationId,
+    affectedCount: input.documents.length,
+    batches
   };
 }
 function normalizeMongoTransaction(input = {}, config = {}, options = {}) {
@@ -45424,7 +47516,7 @@ function normalizeMongoTransaction(input = {}, config = {}, options = {}) {
       "MONGODB_TRANSACTION_TOO_LARGE"
     );
   }
-  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto3.randomUUID)();
+  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto4.randomUUID)();
   const database = input.database || input.operations[0]?.database || normalizedConfig.database;
   const operations = input.operations.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item) || item.kind === "index") {
@@ -45546,10 +47638,12 @@ function summarizeMongoMutation(input = {}) {
     riskLevel: input.riskLevel,
     requiresConfirmation: input.requiresConfirmation !== false,
     maxAffected: input.maxAffected,
-    expectedCount: input.expectedCount
+    expectedCount: input.expectedCount,
+    importId: typeof input.importId === "string" ? input.importId.slice(0, 64) : void 0,
+    documentCount: Array.isArray(input.documents) ? input.documents.length : void 0
   };
 }
-function safeLiteral2(value) {
+function safeLiteral3(value) {
   return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 function buildMongoMutationScript(request, config) {
@@ -45557,16 +47651,20 @@ function buildMongoMutationScript(request, config) {
   const script = `
 const __fs = require("fs");
 const __path = require("path");
-const { createHash: __createHash, randomUUID: __randomUUID } = require("crypto");
-const __configPath = ${safeLiteral2(normalizedConfig.configPath)};
-const __driverPath = ${safeLiteral2(normalizedConfig.driverPath)};
-const __profileName = ${safeLiteral2(normalizedConfig.configProfile)};
-const __uriKey = ${safeLiteral2(normalizedConfig.uriKey)};
-const __journalRoot = ${safeLiteral2(normalizedConfig.rollbackRoot)};
-const __allowedDatabases = ${safeLiteral2(normalizedConfig.allowedDatabases)};
-const __allowedCollections = ${safeLiteral2(normalizedConfig.allowedCollections)};
-const __request = ${safeLiteral2(request)};
-const __marker = ${safeLiteral2(MONGODB_RESULT_MARKER)};
+const { createHash: __createHash, randomBytes: __randomBytes } = require("crypto");
+const __configPath = ${safeLiteral3(normalizedConfig.configPath)};
+const __driverPath = ${safeLiteral3(normalizedConfig.driverPath)};
+const __profileName = ${safeLiteral3(normalizedConfig.configProfile)};
+const __uriKey = ${safeLiteral3(normalizedConfig.uriKey)};
+const __journalRoot = ${safeLiteral3(normalizedConfig.rollbackRoot)};
+const __allowedDatabases = ${safeLiteral3(normalizedConfig.allowedDatabases)};
+const __allowedCollections = ${safeLiteral3(normalizedConfig.allowedCollections)};
+const __bulkEnabled = ${safeLiteral3(config.bulkEnabled === true)};
+const __bulkRoot = ${safeLiteral3(config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs")};
+const __bulkReceiptsCollection = ${safeLiteral3(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts")};
+const __importBatchLimit = ${normalizedConfig.maxImportBatchDocuments};
+const __request = ${safeLiteral3(request)};
+const __marker = ${safeLiteral3(MONGODB_RESULT_MARKER)};
 const __schemaVersion = ${MONGODB_MUTATION_SCHEMA_VERSION};
 const __maxTimeMs = 15000;
 let __bson;
@@ -45597,33 +47695,7 @@ function __hash(value) {
   return __createHash("sha256").update(JSON.stringify(__stable(value))).digest("hex");
 }
 
-function __fallbackReplacer(_key, value) {
-  if (value && typeof value === "object" && value._bsontype === "ObjectID" && typeof value.toHexString === "function") {
-    return { $oid: value.toHexString() };
-  }
-  if (value && typeof value === "object" && value._bsontype === "Long" && typeof value.toString === "function") {
-    return { $numberLong: value.toString() };
-  }
-  if (value && typeof value === "object" && value._bsontype === "Decimal128" && typeof value.toString === "function") {
-    return { $numberDecimal: value.toString() };
-  }
-  if (Buffer.isBuffer(value)) {
-    return { $binary: { base64: value.toString("base64"), subType: "00" } };
-  }
-  return value;
-}
-
-function __decode(value) {
-  if (value === undefined || !__bson || !__bson.EJSON || !__bson.EJSON.parse) return value;
-  return __bson.EJSON.parse(JSON.stringify(value));
-}
-
-function __encode(value) {
-  if (__bson && __bson.EJSON && __bson.EJSON.stringify) {
-    return JSON.parse(__bson.EJSON.stringify(value));
-  }
-  return JSON.parse(JSON.stringify(value, __fallbackReplacer));
-}
+${MONGODB_CODEC_SCRIPT}
 
 function __documentHash(value) {
   return __hash(__encode(value));
@@ -45662,7 +47734,7 @@ function __ensureJournalDir() {
 function __writeJsonAtomic(fileName, value) {
   const directory = __ensureJournalDir();
   const filePath = __path.join(directory, fileName);
-  const temporaryPath = filePath + "." + process.pid + "." + __randomUUID() + ".tmp";
+  const temporaryPath = filePath + "." + process.pid + "." + __randomBytes(16).toString("hex") + ".tmp";
   const body = JSON.stringify(value, null, 2) + "\\n";
   if (Buffer.byteLength(body, "utf8") > ${MAX_MONGODB_MUTATION_JOURNAL_BYTES}) {
     __fail("MONGODB_JOURNAL_TOO_LARGE", "mutation journal exceeds the size limit");
@@ -45768,11 +47840,26 @@ function __summary(manifest) {
     affectedCount: manifest.affectedCount,
     changedFields: manifest.changedFields,
     affectedIds: manifest.affectedIds,
+    storageRoot: manifest.request.storageRoot,
+    storageStatus: manifest.storageStatus,
+    ...(manifest.kind === "import" ? {
+      importId: manifest.request.importId,
+      batchIndex: manifest.request.batchIndex,
+      retryable: manifest.status === "commit_retryable" || manifest.status === "rollback_retryable",
+    } : {}),
     journalPath: __path.join(__journalRoot, manifest.mutationId),
   };
 }
 
 function __assertManifestScope(manifest) {
+  if (manifest.kind === "import" && manifest.request.documents.length > __importBatchLimit) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "import batch exceeds the current instance limit");
+  }
+  if (manifest.kind === "import" && __hash(manifest.request.source) !== __hash({
+    configPath: __configPath, configProfile: __profileName, uriKey: __uriKey, driverPath: __driverPath,
+  })) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "import belongs to a different database connection profile");
+  }
   const requests = manifest.kind === "transaction"
     ? (manifest.request.operations || [])
     : [manifest.request];
@@ -45780,6 +47867,9 @@ function __assertManifestScope(manifest) {
     if (!__allowedDatabases.includes(request.database) || !__allowedCollections.includes(request.collection)) {
       __fail("MONGODB_MUTATION_POLICY_CHANGED", "the mutation is no longer within the current database policy");
     }
+  }
+  if (manifest.kind === "bulk_storage" && (!manifest.request.storageRoot || !manifest.request.storageRoot.startsWith("/"))) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "bulk storage root is missing from the prepared plan");
   }
 }
 
@@ -45791,6 +47881,12 @@ function __idSummary(value) {
 
 function __changedFields(update) {
   return [...new Set(Object.values(update || {}).flatMap((value) => value && typeof value === "object" ? Object.keys(value) : []))].slice(0, 100);
+}
+
+// Driver cleanup can return void, reject, or throw synchronously. It must never
+// replace the transaction outcome or prevent saving rollback metadata.
+async function __cleanup(action) {
+  try { await action(); } catch (_cleanupError) {}
 }
 
 async function __loadClient() {
@@ -45808,7 +47904,12 @@ async function __loadClient() {
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: __maxTimeMs,
   });
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (error) {
+    await __cleanup(() => client.close());
+    throw error;
+  }
   return { client };
 }
 
@@ -45907,7 +48008,11 @@ async function __prepare() {
       kind: __request.kind,
       request,
       status: "planned",
-      rollbackMode: __request.kind === "index" ? "compensating" : "transactional",
+      rollbackMode: __request.kind === "index"
+        ? "compensating"
+        : __request.kind === "bulk_storage"
+          ? "retained_non_rollbackable"
+          : "transactional",
       riskLevel: request.riskLevel || (__request.kind === "index" ? "medium" : "high"),
       requiresConfirmation: true,
       createdAt: new Date(now).toISOString(),
@@ -45947,6 +48052,34 @@ async function __prepare() {
         manifest.affectedCount = 1;
         manifest.changedFields = Object.keys(existing.key || {});
       }
+    } else if (__request.kind === "bulk_storage") {
+      if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
+        __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
+      }
+      const databaseObject = client.db(database);
+      const namespaces = await databaseObject.listCollections({ name: request.collection }, { nameOnly: true }).toArray();
+      let expiryIndex = null;
+      if (namespaces.length) {
+        const indexes = await collection.listIndexes().toArray();
+        expiryIndex = indexes.find((index) => index.name === "remote_debug_bulk_receipt_expiry") || null;
+      }
+      let rootState = "missing";
+      let rootMode;
+      try {
+        const stat = __fs.lstatSync(request.storageRoot);
+        rootState = stat.isDirectory() && !stat.isSymbolicLink() ? "directory" : "invalid";
+        rootMode = stat.mode & 0o777;
+      } catch (_error) {}
+      manifest.storageStatus = { rootState, rootMode, collectionExists: namespaces.length > 0, expiryIndexExists: Boolean(expiryIndex) };
+      manifest.affectedCount = 1;
+      manifest.changedFields = ["expiresAt"];
+    } else if (__request.kind === "import") {
+      const documents = __decode(request.documents);
+      const existing = await __findDocs(collection, { _id: { $in: request.documents.map((item) => item._id) } }, 1);
+      if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
+      manifest.affectedCount = documents.length;
+      manifest.affectedIds = documents.slice(0, 10).map((item) => __idSummary(item._id));
+      manifest.changedFields = [...new Set(request.documents.flatMap((item) => Object.keys(item)))].slice(0, 20).map((key) => key.slice(0, 128));
     } else if (__request.kind === "transaction") {
       const operationPlans = [];
       for (const childRequest of request.operations) {
@@ -45983,8 +48116,46 @@ async function __prepare() {
       },
     };
   } finally {
-    await client.close().catch(() => {});
+    await __cleanup(() => client.close());
   }
+}
+
+async function __prepareImportPlan() {
+  if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
+  const plan = __request.mutation;
+  const results = [];
+  for (const batch of plan.batches) {
+    __request.mutationId = batch.mutationId;
+    __request.mutation = batch;
+    __request.kind = "import";
+    const releaseLock = __acquireMutationLock();
+    try {
+      const filePath = __path.join(__journalDir(), "manifest.json");
+      if (__fs.existsSync(filePath)) {
+        if (__fs.lstatSync(filePath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
+        __request.planHash = JSON.parse(__fs.readFileSync(filePath, "utf8")).planHash;
+        const manifest = __loadManifest();
+        const identity = (value) => { const { operationId, ...rest } = value; return rest; };
+        if (__hash(identity(manifest.request)) !== __hash(identity(batch))) __fail("MONGODB_IMPORT_PLAN_CONFLICT", "import journal belongs to a different request");
+        __assertNotExpired(manifest);
+        results.push(__summary(manifest));
+      } else {
+        results.push(await __prepare());
+      }
+    } catch (error) {
+      if (!results.length) throw error;
+      return { kind: "import_plan", importId: plan.importId, database: plan.database,
+        collection: plan.collection, affectedCount: plan.affectedCount, batchCount: plan.batches.length,
+        atomicity: "per_batch", status: "prepare_partial", batches: results, requiresConfirmation: true,
+        failedBatch: { batchIndex: batch.batchIndex, mutationId: batch.mutationId,
+          code: error.code || "MONGODB_IMPORT_PREPARE_FAILED" } };
+    } finally {
+      releaseLock();
+    }
+  }
+  return { kind: "import_plan", importId: plan.importId, database: plan.database,
+    collection: plan.collection, affectedCount: plan.affectedCount, batchCount: results.length,
+    atomicity: "per_batch", status: "prepared", batches: results, requiresConfirmation: true };
 }
 
 function __assertNotExpired(manifest) {
@@ -46013,7 +48184,7 @@ async function __commitDocumentRequest(request, beforeValue, collection, session
   const result = request.operation === "updateMany"
     ? await collection.updateMany(__decode(request.filter), __decode(request.update), { session })
     : await collection.updateOne(__decode(request.filter), __decode(request.update), { session });
-  const matchedCount = result.matchedCount ?? result.n;
+  const matchedCount = result.matchedCount != null ? result.matchedCount : result.n;
   if (matchedCount !== before.length) __fail("MONGODB_MUTATION_CONFLICT", "mutation matched a different number of documents at commit time");
   const after = await __findByIds(collection, before, session);
   if (after.length !== before.length) __fail("MONGODB_MUTATION_CONFLICT", "a mutation target disappeared during commit");
@@ -46026,15 +48197,64 @@ async function __commitDocument(manifest, client, collection) {
   try {
     await session.withTransaction(async () => {
       after = await __commitDocumentRequest(manifest.request, manifest.before, collection, session);
-    });
+    }, { readPreference: "primary" });
   } finally {
-    await session.endSession().catch(() => {});
+    await __cleanup(() => session.endSession());
   }
   manifest.afterHashes = __documentHashes(after || []);
   manifest.status = "committed";
   manifest.committedAt = new Date().toISOString();
   __writeJsonAtomic("manifest.json", manifest);
   __appendJournal("committed", { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
+}
+
+// A batch is one transaction. Never infer ownership from matching documents after
+// an uncertain commit: stop for inspection instead of risking an unsafe rollback.
+async function __runImportTransaction(manifest, client, collection, rollback) {
+  if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
+  const session = client.startSession();
+  let committing = false;
+  try {
+    session.startTransaction({ readPreference: "primary" });
+    const documents = __decode(manifest.request.documents);
+    const filter = { _id: { $in: documents.map((item) => item._id) } };
+    const encodedFilter = { _id: { $in: manifest.request.documents.map((item) => item._id) } };
+    if (rollback) {
+      const current = await __findDocs(collection, encodedFilter, documents.length + 1, session);
+      const expected = new Map((manifest.afterHashes || []).map((item) => [__hash(item.id), item.hash]));
+      if (current.length !== documents.length || current.some((item) => expected.get(__hash(__encode(item._id))) !== __documentHash(item))) {
+        __fail("MONGODB_ROLLBACK_CONFLICT", "import targets changed after commit");
+      }
+      const result = await collection.deleteMany(filter, { session });
+      if ((result.deletedCount != null ? result.deletedCount : result.n) !== documents.length) __fail("MONGODB_ROLLBACK_CONFLICT", "import targets could not all be removed");
+    } else {
+      const existing = await __findDocs(collection, encodedFilter, 1, session);
+      if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
+      await collection.insertMany(documents, { session, ordered: true });
+      const inserted = await __findDocs(collection, encodedFilter, documents.length + 1, session);
+      if (inserted.length !== documents.length) __fail("MONGODB_MUTATION_COMMIT_UNKNOWN", "import document count could not be verified");
+      manifest.afterHashes = __documentHashes(inserted);
+      // Reserve journal capacity and durably save rollback hashes BEFORE commit.
+      __writeJsonAtomic("manifest.json", manifest);
+    }
+    committing = true;
+    await session.commitTransaction();
+    manifest.status = rollback ? "rolled_back" : "committed";
+    manifest[rollback ? "rolledBackAt" : "committedAt"] = new Date().toISOString();
+    __writeJsonAtomic("manifest.json", manifest);
+    __appendJournal(manifest.status, { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
+  } catch (error) {
+    // A failed commit command (or lost reply) is ambiguous, even if abort succeeds.
+    try { await session.abortTransaction(); } catch (_abortError) {}
+    manifest.status = committing
+      ? (rollback ? "rollback_unknown" : "commit_unknown")
+      : (rollback ? "rollback_retryable" : "commit_retryable");
+    try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+    try { __appendJournal(manifest.status, { code: error.code || "MONGODB_IMPORT_FAILED" }); } catch (_journalError) {}
+    throw error;
+  } finally {
+    await __cleanup(() => session.endSession());
+  }
 }
 
 async function __commitTransaction(manifest, client) {
@@ -46048,9 +48268,9 @@ async function __commitTransaction(manifest, client) {
         const after = await __commitDocumentRequest(item.request, item.before, collection, session);
         afterOperations.push({ request: item.request, before: item.before, afterHashes: __documentHashes(after) });
       }
-    });
+    }, { readPreference: "primary" });
   } finally {
-    await session.endSession().catch(() => {});
+    await __cleanup(() => session.endSession());
   }
   manifest.afterOperations = afterOperations;
   manifest.status = "committed";
@@ -46084,35 +48304,127 @@ async function __commitIndex(manifest, collection) {
   __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1 });
 }
 
+async function __commitBulkStorage(manifest, client) {
+  const request = manifest.request;
+  if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
+    __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
+  }
+  try {
+    if (!__fs.existsSync(request.storageRoot)) __fs.mkdirSync(request.storageRoot, { recursive: true, mode: 0o700 });
+    const rootStat = __fs.lstatSync(request.storageRoot);
+    if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) __fail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
+    __fs.chmodSync(request.storageRoot, 0o700);
+    const probePath = __path.join(request.storageRoot, ".write-probe-" + process.pid + "-" + __randomBytes(8).toString("hex"));
+    const probeFd = __fs.openSync(probePath, "wx", 0o600);
+    try {
+      __fs.writeFileSync(probeFd, "ready", "utf8");
+      __fs.fsyncSync(probeFd);
+    } finally { __fs.closeSync(probeFd); }
+    __fs.unlinkSync(probePath);
+    const directoryFd = __fs.openSync(request.storageRoot, "r");
+    try { __fs.fsyncSync(directoryFd); } finally { __fs.closeSync(directoryFd); }
+  } catch (error) {
+    if (error && error.code && error.code.indexOf("MONGODB_") === 0) throw error;
+    __fail("MONGODB_BULK_STORAGE_DURABILITY_UNAVAILABLE", "bulk storage could not complete a durable owner-only write probe");
+  }
+
+  const collection = client.db(request.database).collection(request.collection);
+  const indexes = await collection.listIndexes().toArray().catch((error) => {
+    if (error && (error.codeName === "NamespaceNotFound" || error.code === 26)) return [];
+    throw error;
+  });
+  const existingIndex = __indexByName(indexes, "remote_debug_bulk_receipt_expiry");
+  if (existingIndex && (!existingIndex.key || existingIndex.key.expiresAt !== 1 || existingIndex.expireAfterSeconds !== 0)) {
+    __fail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
+  }
+  if (!existingIndex) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
+  const marker = { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: request.database, receiptsCollection: request.collection };
+  const existingMarker = await collection.findOne({ _id: marker._id }, { readPreference: "primary" });
+  if (existingMarker && (existingMarker.schemaVersion !== marker.schemaVersion || existingMarker.database !== marker.database || existingMarker.receiptsCollection !== marker.receiptsCollection)) {
+    __fail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection contains a different initialization record");
+  }
+  if (!existingMarker) await collection.insertOne(marker);
+  const storageMarker = {
+    schemaVersion: 1,
+    database: request.database,
+    receiptsCollection: request.collection,
+    initializedAt: new Date().toISOString(),
+  };
+  const markerPath = __path.join(request.storageRoot, ".storage-v1.json");
+  if (__fs.existsSync(markerPath)) {
+    const existingStat = __fs.lstatSync(markerPath);
+    if (existingStat.isSymbolicLink() || !existingStat.isFile() || (existingStat.mode & 0o777) !== 0o600) {
+      __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record must be a regular 0600 file");
+    }
+    let existingStorageMarker;
+    try { existingStorageMarker = JSON.parse(__fs.readFileSync(markerPath, "utf8")); }
+    catch (_error) { __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record is damaged"); }
+    if (!existingStorageMarker || existingStorageMarker.schemaVersion !== 1 || existingStorageMarker.database !== request.database || existingStorageMarker.receiptsCollection !== request.collection) {
+      __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record belongs to a different configuration");
+    }
+    storageMarker.initializedAt = existingStorageMarker.initializedAt;
+  }
+  const markerText = JSON.stringify(storageMarker, null, 2) + "\\n";
+  const temporaryPath = markerPath + "." + process.pid + "." + __randomBytes(8).toString("hex") + ".tmp";
+  const markerFd = __fs.openSync(temporaryPath, "w", 0o600);
+  try {
+    __fs.writeFileSync(markerFd, markerText, "utf8");
+    __fs.fsyncSync(markerFd);
+  } finally { __fs.closeSync(markerFd); }
+  __fs.renameSync(temporaryPath, markerPath);
+  __fs.chmodSync(markerPath, 0o600);
+  const markerDirectoryFd = __fs.openSync(request.storageRoot, "r");
+  try { __fs.fsyncSync(markerDirectoryFd); } finally { __fs.closeSync(markerDirectoryFd); }
+  manifest.storageStatus = { rootState: "directory", rootMode: 0o700, collectionExists: true, expiryIndexExists: true };
+  manifest.status = "committed";
+  manifest.committedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1, kind: "bulk_storage" });
+}
+
+async function __loadMutationClient(manifest, rollback) {
+  try {
+    return await __loadClient();
+  } catch (error) {
+    if (manifest.kind === "import") {
+      manifest.status = rollback ? "rollback_retryable" : "commit_retryable";
+      try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+    }
+    throw error;
+  }
+}
+
 async function __commit() {
   const releaseLock = __acquireMutationLock();
   try {
     const manifest = __loadManifest();
     if (manifest.status === "committed") return __summary(manifest);
     if (manifest.status === "rolled_back") __fail("MONGODB_MUTATION_ALREADY_ROLLED_BACK", "mutation was already rolled back");
-    if (manifest.status !== "planned") __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit");
+    if (manifest.status !== "planned" && !(manifest.kind === "import" && manifest.status === "commit_retryable") && !(manifest.kind === "bulk_storage" && manifest.status === "commit_retryable")) __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit; inspect uncertain outcomes before retrying");
     __assertNotExpired(manifest);
     __appendJournal("commit_started", { planHash: manifest.planHash });
     manifest.status = "commit_started";
     __writeJsonAtomic("manifest.json", manifest);
-    const { client } = await __loadClient();
+    const { client } = await __loadMutationClient(manifest, false);
     try {
       const collection = manifest.request.collection
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
-      if (manifest.kind === "index") await __commitIndex(manifest, collection);
+      if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
+      else if (manifest.kind === "index") await __commitIndex(manifest, collection);
+      else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
       else if (manifest.kind === "transaction") await __commitTransaction(manifest, client);
       else await __commitDocument(manifest, client, collection);
       return __summary(manifest);
     } catch (error) {
-      if (manifest.status !== "committed") {
-        manifest.status = "commit_failed";
+      if (manifest.status !== "committed" && manifest.kind !== "import") {
+        manifest.status = manifest.kind === "bulk_storage" ? "commit_retryable" : "commit_failed";
         try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
         try { __appendJournal("commit_failed", { code: error.code || "MONGODB_MUTATION_COMMIT_FAILED" }); } catch (_journalError) {}
       }
       throw error;
     } finally {
-      await client.close().catch(() => {});
+      await __cleanup(() => client.close());
     }
   } finally {
     releaseLock();
@@ -46124,28 +48436,28 @@ async function __rollbackDocument(manifest, client, collection) {
   try {
     await session.withTransaction(async () => {
       await __rollbackDocumentRequest(manifest.request, manifest.before, manifest.afterHashes, collection, session);
-    });
+    }, { readPreference: "primary" });
   } finally {
-    await session.endSession().catch(() => {});
+    await __cleanup(() => session.endSession());
   }
 }
 
 async function __rollbackDocumentRequest(request, beforeValue, afterHashesValue, collection, session) {
   const before = __decode(beforeValue || []);
-  const afterHashes = __decode(afterHashesValue || []);
+  const afterHashes = afterHashesValue || [];
   const idDocuments = request.operation === "insertOne"
     ? [{ _id: __decode(request.document._id) }]
     : before;
   const current = await __findByIds(collection, idDocuments, session);
   if (current.length !== idDocuments.length || current.some((document) => {
-    const expected = afterHashes.find((item) => __hash(__decode(item.id)) === __hash(__encode(document._id)));
+    const expected = afterHashes.find((item) => __hash(item.id) === __hash(__encode(document._id)));
     return !expected || expected.hash !== __documentHash(document);
   })) {
     __fail("MONGODB_ROLLBACK_CONFLICT", "mutation target changed after the commit");
   }
   if (request.operation === "insertOne") {
     const result = await collection.deleteOne({ _id: __decode(request.document._id) }, { session });
-    const deletedCount = result.deletedCount ?? result.n;
+    const deletedCount = result.deletedCount != null ? result.deletedCount : result.n;
     if (deletedCount !== 1) __fail("MONGODB_ROLLBACK_CONFLICT", "inserted document could not be removed safely");
     return;
   }
@@ -46155,7 +48467,7 @@ async function __rollbackDocumentRequest(request, beforeValue, afterHashesValue,
       document,
       { session, upsert: false },
     );
-    const matchedCount = result.matchedCount ?? result.n;
+    const matchedCount = result.matchedCount != null ? result.matchedCount : result.n;
     if (matchedCount !== 1) __fail("MONGODB_ROLLBACK_CONFLICT", "original document could not be restored safely");
   }
 }
@@ -46170,9 +48482,9 @@ async function __rollbackTransaction(manifest, client) {
         const collection = client.db(item.request.database).collection(item.request.collection);
         await __rollbackDocumentRequest(item.request, item.before, item.afterHashes, collection, session);
       }
-    });
+    }, { readPreference: "primary" });
   } finally {
-    await session.endSession().catch(() => {});
+    await __cleanup(() => session.endSession());
   }
 }
 
@@ -46205,17 +48517,21 @@ async function __rollback() {
   try {
     const manifest = __loadManifest();
     if (manifest.status === "rolled_back") return __summary(manifest);
-    if (manifest.status !== "committed") __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
+    if (manifest.kind === "bulk_storage") __fail("MONGODB_BULK_STORAGE_NOT_ROLLBACKABLE", "bulk storage initialization is retained; disable bulk capability instead of deleting its records");
+    if (manifest.status !== "committed" && !(manifest.kind === "import" && manifest.status === "rollback_retryable")) __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
     __assertNotExpired(manifest);
     __appendJournal("rollback_started", { planHash: manifest.planHash });
     manifest.status = "rollback_started";
     __writeJsonAtomic("manifest.json", manifest);
-    const { client } = await __loadClient();
+    const { client } = await __loadMutationClient(manifest, true);
     try {
       const collection = manifest.request.collection
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
-      if (manifest.kind === "index") {
+      if (manifest.kind === "import") {
+        await __runImportTransaction(manifest, client, collection, true);
+        return __summary(manifest);
+      } else if (manifest.kind === "index") {
         await __rollbackIndex(manifest, collection);
       } else if (manifest.kind === "transaction") {
         await __rollbackTransaction(manifest, client);
@@ -46228,12 +48544,12 @@ async function __rollback() {
       __appendJournal("rolled_back", { planHash: manifest.planHash });
       return __summary(manifest);
     } catch (error) {
-      manifest.status = "rollback_failed";
+      if (manifest.kind !== "import") manifest.status = "rollback_failed";
       try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
       try { __appendJournal("rollback_failed", { code: error.code || "MONGODB_ROLLBACK_FAILED" }); } catch (_journalError) {}
       throw error;
     } finally {
-      await client.close().catch(() => {});
+      await __cleanup(() => client.close());
     }
   } finally {
     releaseLock();
@@ -46268,7 +48584,7 @@ function __list() {
     if (__request.mode === "list") {
       data = __list();
     } else if (__request.mode === "prepare") {
-      data = await __prepare();
+      data = __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
     } else if (__request.mode === "commit") {
       data = await __commit();
     } else if (__request.mode === "rollback") {
@@ -46287,11 +48603,12 @@ function __list() {
     }) + "\\n");
     process.exitCode = 1;
   } finally {
-    if (client) await client.close().catch(() => {});
+    if (client) await __cleanup(() => client.close());
   }
 })();
 `;
-  if (byteLength2(script) > MAX_MONGODB_MUTATION_RESULT_BYTES * 2) {
+  const scriptLimit = request.kind === "import_plan" ? MAX_MONGODB_IMPORT_BYTES + 1024 * 1024 : MAX_MONGODB_MUTATION_RESULT_BYTES * 2;
+  if (byteLength3(script) > scriptLimit) {
     throw mutationError("MongoDB mutation helper script is too large", "MONGODB_MUTATION_SCRIPT_TOO_LARGE", 413);
   }
   return script;
@@ -46320,13 +48637,13 @@ async function runMongoMutation(input = {}, options = {}) {
   const mode = input.mode || "prepare";
   let request;
   if (mode === "prepare") {
-    const kind = input.kind === "index" ? "index" : input.kind === "transaction" ? "transaction" : "document";
-    const mutation = kind === "index" ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId }) : kind === "transaction" ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId }) : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
+    const kind = input.kind === "import_plan" ? "import_plan" : input.kind === "bulk_storage" ? "bulk_storage" : input.kind === "index" ? "index" : input.kind === "transaction" ? "transaction" : "document";
+    const mutation = kind === "import_plan" ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId }) : kind === "bulk_storage" ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId }) : kind === "index" ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId }) : kind === "transaction" ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId }) : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
     request = {
       mode: "prepare",
       kind,
       operationId: options.operation?.operationId || mutation.operationId,
-      mutationId: (0, import_node_crypto3.randomUUID)(),
+      mutationId: (0, import_node_crypto4.randomUUID)(),
       mutation
     };
   } else if (mode === "commit" || mode === "rollback") {
@@ -46334,7 +48651,7 @@ async function runMongoMutation(input = {}, options = {}) {
       mode,
       mutationId: normalizeMutationId(input.mutationId),
       planHash: normalizePlanHash(input.planHash),
-      operationId: options.operation?.operationId || (0, import_node_crypto3.randomUUID)()
+      operationId: options.operation?.operationId || (0, import_node_crypto4.randomUUID)()
     };
     const expectedConfirmation = mode === "commit" ? MONGODB_MUTATION_CONFIRMATION : MONGODB_ROLLBACK_CONFIRMATION;
     if (input.confirmation !== expectedConfirmation) {
@@ -46348,8 +48665,8 @@ async function runMongoMutation(input = {}, options = {}) {
     request = {
       mode: "list",
       status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : void 0,
-      mutationId: (0, import_node_crypto3.randomUUID)(),
-      operationId: options.operation?.operationId || (0, import_node_crypto3.randomUUID)()
+      mutationId: (0, import_node_crypto4.randomUUID)(),
+      operationId: options.operation?.operationId || (0, import_node_crypto4.randomUUID)()
     };
   } else {
     throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
@@ -46381,7 +48698,7 @@ async function runMongoMutation(input = {}, options = {}) {
       cause: error
     });
   }
-  if (remoteResult?.stdoutTruncated || byteLength2(remoteResult?.stdout || "") > MAX_MONGODB_MUTATION_RESULT_BYTES) {
+  if (remoteResult?.stdoutTruncated || byteLength3(remoteResult?.stdout || "") > MAX_MONGODB_MUTATION_RESULT_BYTES) {
     throw operationError("MongoDB mutation result exceeded the response limit", {
       code: "MONGODB_MUTATION_RESULT_TOO_LARGE",
       statusCode: 413,
@@ -46421,7 +48738,7 @@ async function runMongoMutation(input = {}, options = {}) {
 }
 
 // log-policy.js
-var import_posix3 = __toESM(require("node:path/posix"), 1);
+var import_posix4 = __toESM(require("node:path/posix"), 1);
 var LOG_CATEGORIES = Object.freeze([
   "system",
   "nginx",
@@ -46579,7 +48896,7 @@ function normalizeArchiveMemberPath(value) {
   if (value.startsWith("/")) {
     throw logInputError("archive member path must be relative", "INVALID_MEMBER_PATH");
   }
-  const normalized = import_posix3.default.normalize(value);
+  const normalized = import_posix4.default.normalize(value);
   if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
     throw logInputError("archive member path escapes the archive", "ARCHIVE_MEMBER_PATH_NOT_ALLOWED");
   }
@@ -46665,6 +48982,21 @@ var SECURITY_POLICY = {
       maxAffectedDocuments: MAX_MONGODB_MUTATION_MAX_AFFECTED,
       maxTransactionOperations: MAX_MONGODB_TRANSACTION_OPERATIONS,
       maxJournalBytes: MAX_MONGODB_MUTATION_JOURNAL_BYTES
+    },
+    bulk: {
+      schemaVersion: 1,
+      enabledByDefault: false,
+      defaultBatchDocuments: DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS,
+      maxBatchDocuments: MAX_MONGODB_BULK_BATCH_DOCUMENTS,
+      maxUnitOperations: MAX_MONGODB_BULK_UNIT_OPERATIONS,
+      maxChunkOperations: MAX_MONGODB_BULK_CHUNK_OPERATIONS,
+      maxChunkBytes: MAX_MONGODB_BULK_CHUNK_BYTES,
+      maxJobOperations: MAX_MONGODB_BULK_JOB_OPERATIONS,
+      maxJobBytes: MAX_MONGODB_BULK_JOB_BYTES,
+      defaultStorageRoot: DEFAULT_MONGODB_BULK_ROOT,
+      transactionReceipts: true,
+      backgroundJobs: true,
+      persistentRollback: true
     }
   },
   logs: { ...LOG_CAPABILITIES },
@@ -46703,7 +49035,7 @@ var SECURITY_POLICY = {
     "mongosh --version"
   ]
 };
-var SECURITY_POLICY_VERSION = (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
+var SECURITY_POLICY_VERSION = (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
 var ALLOWED_COMMANDS = new Set(SECURITY_POLICY.allowedExecutables);
 var DENIED_COMMANDS = new Set(SECURITY_POLICY.deniedExecutables);
 var SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
@@ -46796,6 +49128,15 @@ function securityCapabilities(config = {}) {
         rollbackRoot: config.mongodb?.rollbackRoot,
         rollbackTtlMs: config.mongodb?.rollbackTtlMs,
         maxAffectedDocuments: config.mongodb?.maxAffectedDocuments || MAX_MONGODB_MUTATION_MAX_AFFECTED
+      },
+      bulk: {
+        ...SECURITY_POLICY.mongodb.bulk,
+        enabled: Boolean(config.mongodb?.bulkEnabled),
+        storageRoot: config.mongodb?.bulkRoot || DEFAULT_MONGODB_BULK_ROOT,
+        receiptsCollection: config.mongodb?.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
+        batchDocuments: config.mongodb?.bulkBatchDocuments || DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS,
+        concurrency: config.mongodb?.bulkConcurrency || 2,
+        rollbackTtlMs: config.mongodb?.bulkRollbackTtlMs || 7 * 24 * 60 * 60 * 1e3
       }
     },
     logs: {
@@ -46831,7 +49172,7 @@ function normalizeRemotePath(inputPath) {
   if (!inputPath.startsWith("/")) {
     throw new SecurityError("path must be absolute", "INVALID_PATH");
   }
-  const normalized = import_posix4.default.normalize(inputPath);
+  const normalized = import_posix5.default.normalize(inputPath);
   return normalized.length > 1 && normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
 }
 function isPathAllowed(inputPath, allowedPaths) {
@@ -47213,7 +49554,7 @@ var CodexReviewProcessError = class extends CommandReviewError {
     this.retriable = true;
   }
 };
-function byteLength3(value) {
+function byteLength4(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
 function clampText2(value, maxChars) {
@@ -47404,7 +49745,7 @@ function normalizeSnapshot(value, options = {}) {
 function writeJsonAtomically(filePath, value, fsImpl = import_node_fs.default) {
   const directory = import_node_path.default.dirname(filePath);
   fsImpl.mkdirSync(directory, { recursive: true });
-  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto5.randomUUID)()}.tmp`;
+  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto6.randomUUID)()}.tmp`;
   try {
     fsImpl.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}
 `, "utf8");
@@ -47683,7 +50024,7 @@ function buildCommandReviewPrompt({ purpose, commands, staticReview }) {
     serialized,
     "</draft-data>"
   ].join("\n");
-  if (byteLength3(prompt) > MAX_COMMAND_REVIEW_PROMPT_BYTES) {
+  if (byteLength4(prompt) > MAX_COMMAND_REVIEW_PROMPT_BYTES) {
     throw new CommandReviewError(
       "command review prompt is too large",
       "COMMAND_REVIEW_PROMPT_TOO_LARGE",
@@ -47760,7 +50101,7 @@ function modelEnvironment(codexHome, env = process.env) {
 }
 function appendOutput(current, chunk, maxBytes) {
   const next = `${current}${String(chunk || "")}`;
-  if (byteLength3(next) > maxBytes) {
+  if (byteLength4(next) > maxBytes) {
     throw new CodexReviewProcessError(
       "Codex review process output exceeded the limit",
       "COMMAND_REVIEW_MODEL_OUTPUT_TOO_LARGE"
@@ -47910,7 +50251,7 @@ function readModelOutput(outputPath, stdout, fsImpl = import_node_fs.default) {
       "COMMAND_REVIEW_MODEL_OUTPUT_INVALID"
     );
   }
-  if (byteLength3(text) > MAX_COMMAND_REVIEW_OUTPUT_BYTES) {
+  if (byteLength4(text) > MAX_COMMAND_REVIEW_OUTPUT_BYTES) {
     throw new CodexReviewProcessError(
       "Codex review response exceeded the limit",
       "COMMAND_REVIEW_MODEL_OUTPUT_TOO_LARGE"
@@ -48171,7 +50512,7 @@ function normalizeSourceRoots(value) {
     if (trimmed.length > MAX_SOURCE_ROOT_LENGTH) {
       throw sourceRootsError(`sourceRoots.${project} is too long`);
     }
-    const normalizedPath = import_posix5.default.normalize(trimmed);
+    const normalizedPath = import_posix6.default.normalize(trimmed);
     if (normalizedPath === "/") {
       throw sourceRootsError(`sourceRoots.${project} cannot grant access to the remote root`);
     }
@@ -48213,6 +50554,13 @@ function parseMongoConfig(value) {
     "rollbackRoot",
     "rollbackTtlMs",
     "maxAffectedDocuments",
+    "maxImportBatchDocuments",
+    "bulkEnabled",
+    "bulkRoot",
+    "bulkReceiptsCollection",
+    "bulkBatchDocuments",
+    "bulkConcurrency",
+    "bulkRollbackTtlMs",
     "allowedDatabases",
     "allowedCollections"
   ]) {
@@ -48393,6 +50741,13 @@ function fingerprintConfig(config) {
       rollbackRoot: config.mongodb.rollbackRoot,
       rollbackTtlMs: config.mongodb.rollbackTtlMs,
       maxAffectedDocuments: config.mongodb.maxAffectedDocuments,
+      maxImportBatchDocuments: config.mongodb.maxImportBatchDocuments,
+      bulkEnabled: Boolean(config.mongodb.bulkEnabled),
+      bulkRoot: config.mongodb.bulkRoot,
+      bulkReceiptsCollection: config.mongodb.bulkReceiptsCollection,
+      bulkBatchDocuments: config.mongodb.bulkBatchDocuments,
+      bulkConcurrency: config.mongodb.bulkConcurrency,
+      bulkRollbackTtlMs: config.mongodb.bulkRollbackTtlMs,
       allowedDatabases: config.mongodb.allowedDatabases,
       allowedCollections: config.mongodb.allowedCollections
     } : null,
@@ -48403,7 +50758,7 @@ function fingerprintConfig(config) {
   };
 }
 function configFingerprint(config) {
-  return (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
+  return (0, import_node_crypto7.createHash)("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
 }
 function assertSshConfig(config) {
   const missing = [];
@@ -48420,14 +50775,14 @@ function assertSshConfig(config) {
 
 // server.js
 var import_express = __toESM(require_express2(), 1);
-var import_node_crypto10 = require("node:crypto");
+var import_node_crypto11 = require("node:crypto");
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path7 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
 var import_node_url2 = require("node:url");
 
 // activity.js
-var import_node_crypto7 = require("node:crypto");
+var import_node_crypto8 = require("node:crypto");
 var import_node_events = require("node:events");
 var DEFAULT_MAX_EVENTS = 200;
 var DEFAULT_PREVIEW_CHARS = 4e3;
@@ -48449,7 +50804,7 @@ function previewText(value, maxChars = DEFAULT_PREVIEW_CHARS) {
   return `${value.slice(0, maxChars)}
 ...[truncated ${omitted} chars]`;
 }
-function byteLength4(value) {
+function byteLength5(value) {
   return typeof value === "string" ? Buffer.byteLength(value, "utf8") : 0;
 }
 function createActivityLog(options = {}) {
@@ -48458,7 +50813,7 @@ function createActivityLog(options = {}) {
   const events = [];
   function publish(event2) {
     const entry = {
-      id: (0, import_node_crypto7.randomUUID)(),
+      id: (0, import_node_crypto8.randomUUID)(),
       time: (/* @__PURE__ */ new Date()).toISOString(),
       ...event2
     };
@@ -48579,7 +50934,7 @@ async function writeAuditLog(logPath, event2, now) {
 }
 
 // logs.js
-var import_posix6 = __toESM(require("node:path/posix"), 1);
+var import_posix7 = __toESM(require("node:path/posix"), 1);
 var import_node_string_decoder = require("node:string_decoder");
 var import_node_zlib = require("node:zlib");
 
@@ -49489,7 +51844,7 @@ function archiveEntryName(rawName) {
   if (!raw || raw.includes("\\") || raw.startsWith("/")) {
     return { name: raw || ".", safe: false };
   }
-  const normalized = import_posix6.default.normalize(raw);
+  const normalized = import_posix7.default.normalize(raw);
   if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
     return { name: normalized, safe: false };
   }
@@ -50429,7 +52784,7 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
   return { sources, warnings };
 }
 function listFileSourceEntry(source) {
-  const name = import_posix6.default.basename(source.path);
+  const name = import_posix7.default.basename(source.path);
   return logEntryFromRaw(source, {
     name,
     size: source.stats.size,
@@ -50724,7 +53079,7 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
       "ARCHIVE_MEMBER_NOT_ALLOWED"
     );
   }
-  if (compression === "none" && (binaryName(import_posix6.default.basename(canonicalPath)) || prefix.includes(0))) {
+  if (compression === "none" && (binaryName(import_posix7.default.basename(canonicalPath)) || prefix.includes(0))) {
     throw logInputError("binary system logs cannot be decoded as text", "BINARY_LOG_UNSUPPORTED");
   }
   const sourceSize = Number(stats.size);
@@ -50922,7 +53277,7 @@ async function readLog(options = {}) {
 // instance-registry.js
 var import_node_fs3 = __toESM(require("node:fs"), 1);
 var import_node_path4 = __toESM(require("node:path"), 1);
-var import_node_crypto8 = require("node:crypto");
+var import_node_crypto9 = require("node:crypto");
 var REGISTRY_VERSION = 3;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 var DEFAULT_HEALTH_INTERVAL_MS = 15e3;
@@ -51114,15 +53469,43 @@ function normalizeMongoSettings(input, existing) {
   if (raw.mutationsEnabled !== void 0) {
     normalized.mutationsEnabled = parseBooleanFlag3(raw.mutationsEnabled, false);
   }
+  if (raw.bulkEnabled !== void 0) {
+    normalized.bulkEnabled = parseBooleanFlag3(raw.bulkEnabled, false);
+  }
   if (raw.rollbackRoot !== void 0 && raw.rollbackRoot !== "") {
     normalized.rollbackRoot = String(raw.rollbackRoot).trim();
   }
+  if (raw.bulkRoot !== void 0 && raw.bulkRoot !== "") {
+    normalized.bulkRoot = String(raw.bulkRoot).trim();
+  }
+  if (raw.bulkReceiptsCollection !== void 0 && raw.bulkReceiptsCollection !== "") {
+    const collection = String(raw.bulkReceiptsCollection).trim();
+    if (!/^[A-Za-z0-9_.$-]{1,128}$/.test(collection)) {
+      const error = new Error("mongodb.bulkReceiptsCollection has an invalid format");
+      error.code = "INVALID_INSTANCE_FIELD";
+      error.statusCode = 400;
+      throw error;
+    }
+    normalized.bulkReceiptsCollection = collection;
+  }
   for (const [fieldName, fieldValue] of [
     ["rollbackTtlMs", raw.rollbackTtlMs],
-    ["maxAffectedDocuments", raw.maxAffectedDocuments]
+    ["maxAffectedDocuments", raw.maxAffectedDocuments],
+    ["maxImportBatchDocuments", raw.maxImportBatchDocuments],
+    ["bulkBatchDocuments", raw.bulkBatchDocuments],
+    ["bulkConcurrency", raw.bulkConcurrency],
+    ["bulkRollbackTtlMs", raw.bulkRollbackTtlMs]
   ]) {
     if (fieldValue !== void 0 && fieldValue !== "") {
-      normalized[fieldName] = parsePositiveInt2(fieldValue, void 0, `mongodb.${fieldName}`);
+      const parsed = parsePositiveInt2(fieldValue, void 0, `mongodb.${fieldName}`);
+      const maximum = fieldName === "bulkBatchDocuments" ? 2e3 : fieldName === "bulkConcurrency" ? 4 : fieldName === "bulkRollbackTtlMs" ? 7 * 24 * 60 * 60 * 1e3 : void 0;
+      if (maximum && parsed > maximum) {
+        const error = new Error(`mongodb.${fieldName} must not exceed ${maximum}`);
+        error.code = "INVALID_INSTANCE_FIELD";
+        error.statusCode = 400;
+        throw error;
+      }
+      normalized[fieldName] = parsed;
     }
   }
   for (const fieldName of ["allowedDatabases", "allowedCollections"]) {
@@ -51139,7 +53522,7 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto8.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto9.randomUUID)());
   assertInstanceId(id);
   const name = String(input.name ?? existing.name ?? id).trim();
   if (!name) {
@@ -51306,6 +53689,13 @@ function publicInstance(instance) {
         ...mongodb.rollbackRoot === void 0 ? {} : { rollbackRoot: mongodb.rollbackRoot },
         ...mongodb.rollbackTtlMs === void 0 ? {} : { rollbackTtlMs: mongodb.rollbackTtlMs },
         ...mongodb.maxAffectedDocuments === void 0 ? {} : { maxAffectedDocuments: mongodb.maxAffectedDocuments },
+        ...mongodb.maxImportBatchDocuments === void 0 ? {} : { maxImportBatchDocuments: mongodb.maxImportBatchDocuments },
+        ...mongodb.bulkEnabled === void 0 ? {} : { bulkEnabled: Boolean(mongodb.bulkEnabled) },
+        ...mongodb.bulkRoot === void 0 ? {} : { bulkRoot: mongodb.bulkRoot },
+        ...mongodb.bulkReceiptsCollection === void 0 ? {} : { bulkReceiptsCollection: mongodb.bulkReceiptsCollection },
+        ...mongodb.bulkBatchDocuments === void 0 ? {} : { bulkBatchDocuments: mongodb.bulkBatchDocuments },
+        ...mongodb.bulkConcurrency === void 0 ? {} : { bulkConcurrency: mongodb.bulkConcurrency },
+        ...mongodb.bulkRollbackTtlMs === void 0 ? {} : { bulkRollbackTtlMs: mongodb.bulkRollbackTtlMs },
         ...mongodb.allowedDatabases === void 0 ? {} : { allowedDatabases: [...mongodb.allowedDatabases] },
         ...mongodb.allowedCollections === void 0 ? {} : { allowedCollections: [...mongodb.allowedCollections] }
       }
@@ -51452,7 +53842,7 @@ var import_node_path6 = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // memory-store.js
-var import_node_crypto9 = require("node:crypto");
+var import_node_crypto10 = require("node:crypto");
 var import_node_fs4 = __toESM(require("node:fs"), 1);
 var import_promises2 = __toESM(require("node:fs/promises"), 1);
 var import_node_path5 = __toESM(require("node:path"), 1);
@@ -51530,7 +53920,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto9.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto10.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -51896,7 +54286,7 @@ var MemoryStore = class {
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
     await import_promises2.default.mkdir(import_node_path5.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto9.randomUUID)()}.tmp`;
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto10.randomUUID)()}.tmp`;
     await import_promises2.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
     await import_promises2.default.rename(tempPath, filePath);
@@ -53211,7 +55601,7 @@ async function writeRuntimeState(config, event2) {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   await import_promises4.default.mkdir(import_node_path7.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto10.randomUUID)()}.tmp`;
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto11.randomUUID)()}.tmp`;
   await import_promises4.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises4.default.rename(tempPath, statePath);
@@ -53231,7 +55621,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto10.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto11.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -53290,8 +55680,8 @@ function outputSummary(payload) {
     durationMs: payload.durationMs,
     exitCode: payload.exitCode,
     timedOut: payload.timedOut,
-    stdoutLength: byteLength4(payload.stdout),
-    stderrLength: byteLength4(payload.stderr),
+    stdoutLength: byteLength5(payload.stdout),
+    stderrLength: byteLength5(payload.stderr),
     stdoutPreview: previewText(payload.stdout),
     stderrPreview: previewText(payload.stderr)
   };
@@ -53300,7 +55690,7 @@ function fileSummary(payload) {
   return {
     path: payload.path,
     durationMs: payload.durationMs,
-    contentLength: byteLength4(payload.content),
+    contentLength: byteLength5(payload.content),
     contentPreview: previewText(payload.content),
     truncated: payload.truncated
   };
@@ -53339,7 +55729,7 @@ function logReadSummary(payload) {
     path: payload.path,
     memberPath: payload.memberPath,
     compression: payload.compression,
-    contentLength: byteLength4(payload.content),
+    contentLength: byteLength5(payload.content),
     totalLines: payload.totalLines,
     matchedLines: payload.matchedLines,
     scannedBytes: payload.scannedBytes,
@@ -53377,7 +55767,31 @@ function mongoMutationSummary(payload) {
     rollbackExpiresAt: payload.rollbackExpiresAt,
     planHash: payload.planHash,
     affectedCount: payload.affectedCount,
-    changedFields: payload.changedFields
+    changedFields: payload.changedFields,
+    importId: payload.importId,
+    batchCount: payload.batchCount,
+    batchIndex: payload.batchIndex,
+    batches: payload.batches?.map(({ mutationId, planHash, status, affectedCount }) => ({ mutationId, planHash, status, affectedCount }))
+  };
+}
+function mongoBulkSummary(payload) {
+  return {
+    jobId: payload.jobId,
+    planHash: payload.planHash,
+    status: payload.status,
+    mode: payload.mode,
+    database: payload.database,
+    operationCount: payload.operationCount,
+    unitCount: payload.unitCount,
+    batchCount: payload.batchCount,
+    committedBatchCount: payload.committedBatchCount,
+    verifiedBatchCount: payload.verifiedBatchCount,
+    rolledBackBatchCount: payload.rolledBackBatchCount,
+    differenceCount: payload.differenceCount,
+    pauseReason: payload.pauseReason,
+    accepted: payload.accepted,
+    background: payload.background,
+    effectiveConcurrency: payload.effectiveConcurrency
   };
 }
 function approvedDraftSummary(payload) {
@@ -53439,6 +55853,7 @@ function createApp(options = {}) {
   const resolveRemotePathsImpl = options.resolveRemotePaths || resolveRemotePaths;
   const runMongoQueryImpl = options.runMongoQuery || runMongoQuery;
   const runMongoMutationImpl = options.runMongoMutation || runMongoMutation;
+  const runMongoBulkImpl = options.runMongoBulk || runMongoBulk;
   const listLogsImpl = options.listLogs || listLogs;
   const listLogArchiveMembersImpl = options.listLogArchiveMembers || listLogArchiveMembers;
   const readLogImpl = options.readLog || readLog;
@@ -53456,6 +55871,16 @@ function createApp(options = {}) {
     config,
     runSSH: runSSH2
   });
+  const runMongoBulk2 = (bulkRequest, operationOptions) => runMongoBulkImpl(bulkRequest, {
+    ...operationOptions,
+    config,
+    runSSH: runSSH2
+  });
+  let mongoBulkJobRunner;
+  const getMongoBulkJobRunner = () => {
+    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk: runMongoBulk2 });
+    return mongoBulkJobRunner;
+  };
   const listLogs2 = (logOptions) => listLogsImpl({
     ...logOptions,
     config,
@@ -53476,6 +55901,8 @@ function createApp(options = {}) {
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = (0, import_express.default)();
   const publicDir = import_node_path7.default.join(moduleDirectory2, "public");
+  app.use("/mongodb/imports/prepare", import_express.default.json({ limit: "5mb" }));
+  app.use("/mongodb/bulk/prepare", import_express.default.json({ limit: "5mb" }));
   app.use(import_express.default.json({ limit: "512kb" }));
   app.get("/", (_request, response) => {
     response.sendFile(import_node_path7.default.join(publicDir, "dashboard.html"));
@@ -54179,7 +56606,7 @@ function createApp(options = {}) {
         path: result.path,
         memberPath: result.memberPath,
         compression: result.compression,
-        contentLength: byteLength4(result.content),
+        contentLength: byteLength5(result.content),
         totalLines: result.totalLines,
         matchedLines: result.matchedLines,
         scannedBytes: result.scannedBytes,
@@ -54311,7 +56738,7 @@ function createApp(options = {}) {
     publishStage(activity, operation, "started");
     try {
       const result = await runMongoMutation2(
-        { ...raw, mode },
+        { ...raw, mode, ...pathName === "/mongodb/imports/prepare" ? { kind: "import_plan" } : {} },
         { operation: requestOperation }
       );
       const payload = {
@@ -54364,10 +56791,100 @@ function createApp(options = {}) {
       response.status(errorStatus(error)).json({ ...payload, durationMs });
     }
   }
+  async function handleMongoBulk(request, response, action, pathName) {
+    const startedAt = import_node_perf_hooks.performance.now();
+    const raw = request.body || {};
+    const requestOperation = createRequestOperation(request, response, pathName, config);
+    const operation = createOperation(request, config, `mongodb-bulk-${action}`, {
+      operationId: requestOperation.operationId,
+      jobId: requestText(raw.jobId),
+      chunkIndex: Number.isInteger(raw.chunkIndex) ? raw.chunkIndex : void 0,
+      unitCount: Array.isArray(raw.units) ? raw.units.length : void 0,
+      operationCount: Array.isArray(raw.units) ? raw.units.reduce((count, unit) => count + (Array.isArray(unit?.operations) ? unit.operations.length : 0), 0) : void 0,
+      planHash: requestText(raw.planHash),
+      timeoutMs: requestOperation.timeoutMs
+    });
+    publishStage(activity, operation, "started");
+    try {
+      let result;
+      if (action === "upload") {
+        result = await runMongoBulk2({ action: "upload", chunk: raw }, { operation: requestOperation });
+      } else if (action === "get" || action === "list") {
+        result = await runMongoBulk2({ action, ...raw }, { operation: requestOperation });
+      } else if (action === "execute") {
+        result = await getMongoBulkJobRunner().start(raw, "execute");
+      } else if (action === "rollback") {
+        result = await getMongoBulkJobRunner().start(raw, "rollback");
+      } else if (action === "control") {
+        if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw);
+        else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw);
+        else result = await runMongoBulk2({ action: "control", ...raw }, { operation: requestOperation });
+      } else {
+        throw new Error("unsupported MongoDB bulk request");
+      }
+      const payload = {
+        ok: true,
+        instanceId: process.env.REMOTE_DEBUG_INSTANCE_ID || void 0,
+        ...result,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId
+      };
+      operation.request = {
+        jobId: payload.jobId || requestText(raw.jobId),
+        planHash: payload.planHash || requestText(raw.planHash),
+        chunkIndex: Number.isInteger(raw.chunkIndex) ? raw.chunkIndex : void 0,
+        operationCount: payload.operationCount,
+        batchCount: payload.batchCount,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt
+      };
+      const summary = mongoBulkSummary(payload);
+      await audit(config, {
+        tool: `mongodb-bulk-${action}`,
+        ...summary,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId
+      });
+      publishStage(activity, operation, "completed", { ok: true, result: summary });
+      response.status(payload.background ? 202 : 200).json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      const summary = {
+        jobId: requestText(raw.jobId),
+        planHash: requestText(raw.planHash),
+        chunkIndex: Number.isInteger(raw.chunkIndex) ? raw.chunkIndex : void 0
+      };
+      await audit(config, {
+        tool: `mongodb-bulk-${action}`,
+        ...summary,
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase
+      });
+      publishStage(activity, operation, "failed", { ok: false, durationMs, error: payload.error });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  }
+  app.post("/mongodb/bulk/storage/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/bulk/storage/prepare"));
+  app.post("/mongodb/imports/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
   app.post("/mongodb/mutations/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
   app.post("/mongodb/mutations/execute", (request, response) => handleMongoMutation(request, response, "commit", "/mongodb/mutations/execute"));
   app.post("/mongodb/mutations/rollback", (request, response) => handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
   app.post("/mongodb/mutations/list", (request, response) => handleMongoMutation(request, response, "list", "/mongodb/mutations/list"));
+  app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
+  app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
+  app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
+  app.post("/mongodb/bulk/jobs", (request, response) => handleMongoBulk(request, response, "list", "/mongodb/bulk/jobs"));
+  app.post("/mongodb/bulk/control", (request, response) => handleMongoBulk(request, response, "control", "/mongodb/bulk/control"));
+  app.post("/mongodb/bulk/rollback", (request, response) => handleMongoBulk(request, response, "rollback", "/mongodb/bulk/rollback"));
+  app.locals.mongoBulkJobRunner = getMongoBulkJobRunner;
+  app.locals.pauseMongoBulkJobRunner = () => mongoBulkJobRunner ? mongoBulkJobRunner.pauseForShutdown() : Promise.resolve();
   return app;
 }
 function managerErrorPayload(error) {
@@ -54611,6 +57128,8 @@ function createManagerApp(options = {}) {
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
+  app.use("/mongodb/imports/prepare", import_express.default.json({ limit: "5mb" }));
+  app.use("/mongodb/bulk/prepare", import_express.default.json({ limit: "5mb" }));
   app.use(import_express.default.json({ limit: "512kb" }));
   let restoreCheckScheduled = false;
   app.get("/", (_request, response) => {
@@ -55189,6 +57708,14 @@ function createManagerApp(options = {}) {
   app.post("/logs/archive-members", (request, response) => proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
+  app.post("/mongodb/imports/prepare", (request, response) => proxyToInstance("/mongodb/imports/prepare", request, response));
+  app.post("/mongodb/bulk/storage/prepare", (request, response) => proxyToInstance("/mongodb/bulk/storage/prepare", request, response));
+  app.post("/mongodb/bulk/prepare", (request, response) => proxyToInstance("/mongodb/bulk/prepare", request, response));
+  app.post("/mongodb/bulk/execute", (request, response) => proxyToInstance("/mongodb/bulk/execute", request, response));
+  app.post("/mongodb/bulk/job", (request, response) => proxyToInstance("/mongodb/bulk/job", request, response));
+  app.post("/mongodb/bulk/jobs", (request, response) => proxyToInstance("/mongodb/bulk/jobs", request, response));
+  app.post("/mongodb/bulk/control", (request, response) => proxyToInstance("/mongodb/bulk/control", request, response));
+  app.post("/mongodb/bulk/rollback", (request, response) => proxyToInstance("/mongodb/bulk/rollback", request, response));
   app.post("/mongodb/mutations/prepare", (request, response) => proxyToInstance("/mongodb/mutations/prepare", request, response));
   app.post("/mongodb/mutations/execute", (request, response) => proxyToInstance("/mongodb/mutations/execute", request, response));
   app.post("/mongodb/mutations/rollback", (request, response) => proxyToInstance("/mongodb/mutations/rollback", request, response));
@@ -55354,6 +57881,7 @@ var ChannelScheduler = class {
     this.maxBusiness = options.maxBusiness || 4;
     this.maxControl = options.maxControl || 1;
     this.maxBackground = options.maxBackground || 1;
+    this.maxBulk = options.maxBulk === void 0 ? 2 : options.maxBulk;
     this.maxQueue = options.maxQueue || 100;
     this.backgroundStarvationMs = options.backgroundStarvationMs || 1e4;
     this.now = options.now || (() => Date.now());
@@ -55361,6 +57889,7 @@ var ChannelScheduler = class {
     this.activeBusiness = 0;
     this.activeControl = 0;
     this.activeBackground = 0;
+    this.activeBulk = 0;
     this.activeOperations = /* @__PURE__ */ new Map();
     this.closed = false;
   }
@@ -55447,6 +57976,9 @@ var ChannelScheduler = class {
     if (this.activeBusiness >= this.maxBusiness) {
       return false;
     }
+    if (item.priority === "bulk") {
+      return this.activeBulk < this.maxBulk;
+    }
     if (BACKGROUND_PRIORITIES.has(item.priority)) {
       return this.activeBackground < this.maxBackground;
     }
@@ -55487,7 +58019,8 @@ var ChannelScheduler = class {
   }
   startItem(item) {
     item.started = true;
-    const background = BACKGROUND_PRIORITIES.has(item.priority);
+    const background = item.priority === "background";
+    const bulk = item.priority === "bulk";
     if (item.priority === "control") {
       this.activeControl += 1;
     } else {
@@ -55495,6 +58028,7 @@ var ChannelScheduler = class {
       if (background) {
         this.activeBackground += 1;
       }
+      if (bulk) this.activeBulk += 1;
     }
     const queueMs = Math.max(0, this.now() - item.enqueuedAt);
     this.activeOperations.set(item.operation.operationId, {
@@ -55517,6 +58051,7 @@ var ChannelScheduler = class {
         if (background) {
           this.activeBackground -= 1;
         }
+        if (bulk) this.activeBulk -= 1;
       }
       this.pump();
     });
@@ -55542,11 +58077,13 @@ var ChannelScheduler = class {
       activeBusiness: this.activeBusiness,
       activeControl: this.activeControl,
       activeBackground: this.activeBackground,
+      activeBulk: this.activeBulk,
       queued: this.queue.length,
       queuedByPriority: queuedCountByPriority(this.queue),
       maxBusiness: this.maxBusiness,
       maxControl: this.maxControl,
       maxBackground: this.maxBackground,
+      maxBulk: this.maxBulk,
       maxQueue: this.maxQueue
     };
   }
@@ -55575,10 +58112,12 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     this.reconnectBaseMs = network.reconnectBaseMs || 1e3;
     this.reconnectMaxMs = network.reconnectMaxMs || 3e4;
     this.reconnectJitter = network.reconnectJitter ?? 0.2;
+    const bulkConcurrency = config.mongodb && config.mongodb.bulkEnabled === true ? Math.min(4, Number(config.mongodb.bulkConcurrency) || 2) : 0;
     this.scheduler = options.scheduler || new ChannelScheduler({
-      maxBusiness: network.maxBusinessChannels || 4,
+      maxBusiness: Math.max(network.maxBusinessChannels || 4, bulkConcurrency + 1),
       maxControl: network.maxControlChannels || 1,
       maxBackground: network.maxBackgroundChannels || 1,
+      maxBulk: bulkConcurrency,
       maxQueue: network.maxQueueLength || 100,
       backgroundStarvationMs: network.backgroundStarvationMs || 1e4,
       now: this.now
@@ -56298,12 +58837,13 @@ async function main() {
     if (reportStopped) {
       send({ type: "health", status: "stopped", reason });
     }
-    supervisor.stop(reason).finally(() => {
+    Promise.resolve().then(() => app.locals.pauseMongoBulkJobRunner()).catch(() => {
+    }).then(() => supervisor.stop(reason)).finally(() => {
       server.close(() => {
         process.exit(0);
       });
     });
-    setTimeout(() => process.exit(0), 1e3).unref?.();
+    setTimeout(() => process.exit(0), 12e3).unref?.();
   };
   installWorkerShutdownHandlers(shutdown);
 }

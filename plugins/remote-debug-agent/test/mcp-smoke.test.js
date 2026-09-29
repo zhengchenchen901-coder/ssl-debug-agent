@@ -270,6 +270,56 @@ function startAgentStub() {
         return;
       }
 
+      if (request.url === "/mongodb/imports/prepare") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, importId: parsed.importId,
+          collection: parsed.collection, affectedCount: parsed.documents.length,
+          batchSize: parsed.batchSize, kind: "import_plan", batches: [] }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/storage/prepare") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, mutationId: "storage-1", kind: parsed.kind, status: "planned" }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/prepare") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, jobId: parsed.jobId, chunkIndex: parsed.chunkIndex, unitCount: parsed.units.length, endOfUpload: parsed.endOfUpload === true }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/execute") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, jobId: parsed.jobId, planHash: parsed.planHash, accepted: true, status: "running" }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/job") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, jobId: parsed.jobId, includeDifferences: parsed.includeDifferences === true, offset: parsed.offset || 0 }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/jobs") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, offset: parsed.offset || 0, limit: parsed.limit || 20, jobs: [] }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/control") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, jobId: parsed.jobId, command: parsed.command, status: parsed.command === "pause" ? "pause_requested" : "running" }));
+        return;
+      }
+
+      if (request.url === "/mongodb/bulk/rollback") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, jobId: parsed.jobId, status: "rolling_back" }));
+        return;
+      }
+
       if (request.url === "/mongodb/mutations/prepare") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(JSON.stringify({
@@ -933,6 +983,11 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "options",
       "status",
       "operations",
+      "batchSize",
+      "chunkHash",
+      "endOfUpload",
+      "includeDifferences",
+      "offset",
     ].includes(propertyName)) {
       continue;
     }
@@ -962,6 +1017,14 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_mongodb_prepare_write",
         "remote_debug_mongodb_prepare_index",
         "remote_debug_mongodb_prepare_transaction",
+        "remote_debug_mongodb_prepare_import",
+        "remote_debug_mongodb_prepare_bulk_storage",
+        "remote_debug_mongodb_prepare_bulk",
+        "remote_debug_mongodb_execute_bulk",
+        "remote_debug_mongodb_get_bulk_job",
+        "remote_debug_mongodb_list_bulk_jobs",
+        "remote_debug_mongodb_control_bulk_job",
+        "remote_debug_mongodb_rollback_bulk_job",
         "remote_debug_mongodb_execute_mutation",
         "remote_debug_mongodb_rollback_mutation",
         "remote_debug_mongodb_list_mutations",
@@ -1157,6 +1220,54 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     const preparedTransaction = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(preparedTransaction.kind, "transaction");
     assert.equal(preparedTransaction.status, "planned");
+
+    child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 47, method: "tools/call",
+      params: { name: "remote_debug_mongodb_prepare_import", arguments: {
+        instanceId: "default", importId: "seed-01", collection: "members", batchSize: 2000,
+        documents: Array.from({ length: 2000 }, (_, i) => ({ _id: `seed-${i}`, value: "x".repeat(300) })),
+      } },
+    }));
+    const preparedImport = JSON.parse((await readMessage()).result.content[0].text);
+    assert.equal(preparedImport.kind, "import_plan");
+    assert.equal(preparedImport.importId, "seed-01");
+    assert.equal(preparedImport.affectedCount, 2000);
+    assert.equal(preparedImport.batchSize, 2000);
+
+    const callMongoTool = async (id, name, arguments_) => {
+      child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: arguments_ } }));
+      return JSON.parse((await readMessage()).result.content[0].text);
+    };
+    const storagePlan = await callMongoTool(480, "remote_debug_mongodb_prepare_bulk_storage", {
+      instanceId: "default", purpose: "Initialize bulk storage",
+    });
+    assert.equal(storagePlan.kind, "bulk_storage");
+    const bulkChunk = await callMongoTool(481, "remote_debug_mongodb_prepare_bulk", {
+      instanceId: "default", jobId: "bulk-123", chunkIndex: 0,
+      units: [{ unitId: "member-1", operations: [{ operation: "insertOne", collection: "members", document: { _id: "m1" } }] }],
+    });
+    assert.equal(bulkChunk.unitCount, 1);
+    const bulkExecution = await callMongoTool(482, "remote_debug_mongodb_execute_bulk", {
+      instanceId: "default", jobId: "bulk-123", planHash: "c".repeat(64), confirmation: "确认执行",
+    });
+    assert.equal(bulkExecution.status, "running");
+    const bulkJob = await callMongoTool(483, "remote_debug_mongodb_get_bulk_job", {
+      instanceId: "default", jobId: "bulk-123", includeDifferences: true, offset: 10, limit: 5,
+    });
+    assert.equal(bulkJob.includeDifferences, true);
+    assert.equal(bulkJob.offset, 10);
+    const bulkJobs = await callMongoTool(484, "remote_debug_mongodb_list_bulk_jobs", {
+      instanceId: "default", offset: 5, limit: 2,
+    });
+    assert.equal(bulkJobs.offset, 5);
+    assert.equal(bulkJobs.limit, 2);
+    const bulkControl = await callMongoTool(485, "remote_debug_mongodb_control_bulk_job", {
+      instanceId: "default", jobId: "bulk-123", planHash: "c".repeat(64), command: "pause",
+    });
+    assert.equal(bulkControl.status, "pause_requested");
+    const bulkRollback = await callMongoTool(486, "remote_debug_mongodb_rollback_bulk_job", {
+      instanceId: "default", jobId: "bulk-123", planHash: "c".repeat(64), confirmation: "确认回滚",
+    });
+    assert.equal(bulkRollback.status, "rolling_back");
 
     child.stdin.write(
       encodeMessage({
@@ -1734,7 +1845,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     "cache",
     "remote-debug-local",
     "remote-debug-agent",
-    "2.1.0",
+    "2.2.0",
   );
   const installedServerPath = path.join(cacheDir, "mcp-server.js");
   const port = await getFreePort();
@@ -1804,7 +1915,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     );
 
     const status = await waitForStatus(port);
-    assert.match(status.agent.runtimeId, /^2\.1\.0:[a-f0-9]{64}$/);
+    assert.match(status.agent.runtimeId, /^2\.2\.0:[a-f0-9]{64}$/);
     killPid(status.agent.pid);
     await waitForPortRelease(port);
     child.kill();
@@ -1826,7 +1937,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
       const restartedInstances = JSON.parse(restartedCall.result.content[0].text);
       assert.equal(restartedInstances.instances[0].id, "legacy-instance");
       const restartedStatus = await waitForStatus(port);
-      assert.match(restartedStatus.agent.runtimeId, /^2\.1\.0:[a-f0-9]{64}$/);
+      assert.match(restartedStatus.agent.runtimeId, /^2\.2\.0:[a-f0-9]{64}$/);
       killPid(restartedStatus.agent.pid);
     } finally {
       restarted.kill();

@@ -228,15 +228,43 @@ function normalizeMongoSettings(input, existing) {
   if (raw.mutationsEnabled !== undefined) {
     normalized.mutationsEnabled = parseBooleanFlag(raw.mutationsEnabled, false);
   }
+  if (raw.bulkEnabled !== undefined) {
+    normalized.bulkEnabled = parseBooleanFlag(raw.bulkEnabled, false);
+  }
   if (raw.rollbackRoot !== undefined && raw.rollbackRoot !== "") {
     normalized.rollbackRoot = String(raw.rollbackRoot).trim();
+  }
+  if (raw.bulkRoot !== undefined && raw.bulkRoot !== "") {
+    normalized.bulkRoot = String(raw.bulkRoot).trim();
+  }
+  if (raw.bulkReceiptsCollection !== undefined && raw.bulkReceiptsCollection !== "") {
+    const collection = String(raw.bulkReceiptsCollection).trim();
+    if (!/^[A-Za-z0-9_.$-]{1,128}$/.test(collection)) {
+      const error = new Error("mongodb.bulkReceiptsCollection has an invalid format");
+      error.code = "INVALID_INSTANCE_FIELD";
+      error.statusCode = 400;
+      throw error;
+    }
+    normalized.bulkReceiptsCollection = collection;
   }
   for (const [fieldName, fieldValue] of [
     ["rollbackTtlMs", raw.rollbackTtlMs],
     ["maxAffectedDocuments", raw.maxAffectedDocuments],
+    ["maxImportBatchDocuments", raw.maxImportBatchDocuments],
+    ["bulkBatchDocuments", raw.bulkBatchDocuments],
+    ["bulkConcurrency", raw.bulkConcurrency],
+    ["bulkRollbackTtlMs", raw.bulkRollbackTtlMs],
   ]) {
     if (fieldValue !== undefined && fieldValue !== "") {
-      normalized[fieldName] = parsePositiveInt(fieldValue, undefined, `mongodb.${fieldName}`);
+      const parsed = parsePositiveInt(fieldValue, undefined, `mongodb.${fieldName}`);
+      const maximum = fieldName === "bulkBatchDocuments" ? 2_000 : fieldName === "bulkConcurrency" ? 4 : fieldName === "bulkRollbackTtlMs" ? 7 * 24 * 60 * 60 * 1000 : undefined;
+      if (maximum && parsed > maximum) {
+        const error = new Error(`mongodb.${fieldName} must not exceed ${maximum}`);
+        error.code = "INVALID_INSTANCE_FIELD";
+        error.statusCode = 400;
+        throw error;
+      }
+      normalized[fieldName] = parsed;
     }
   }
   for (const fieldName of ["allowedDatabases", "allowedCollections"]) {
@@ -470,6 +498,13 @@ function publicInstance(instance) {
             ...(mongodb.rollbackRoot === undefined ? {} : { rollbackRoot: mongodb.rollbackRoot }),
             ...(mongodb.rollbackTtlMs === undefined ? {} : { rollbackTtlMs: mongodb.rollbackTtlMs }),
             ...(mongodb.maxAffectedDocuments === undefined ? {} : { maxAffectedDocuments: mongodb.maxAffectedDocuments }),
+            ...(mongodb.maxImportBatchDocuments === undefined ? {} : { maxImportBatchDocuments: mongodb.maxImportBatchDocuments }),
+            ...(mongodb.bulkEnabled === undefined ? {} : { bulkEnabled: Boolean(mongodb.bulkEnabled) }),
+            ...(mongodb.bulkRoot === undefined ? {} : { bulkRoot: mongodb.bulkRoot }),
+            ...(mongodb.bulkReceiptsCollection === undefined ? {} : { bulkReceiptsCollection: mongodb.bulkReceiptsCollection }),
+            ...(mongodb.bulkBatchDocuments === undefined ? {} : { bulkBatchDocuments: mongodb.bulkBatchDocuments }),
+            ...(mongodb.bulkConcurrency === undefined ? {} : { bulkConcurrency: mongodb.bulkConcurrency }),
+            ...(mongodb.bulkRollbackTtlMs === undefined ? {} : { bulkRollbackTtlMs: mongodb.bulkRollbackTtlMs }),
             ...(mongodb.allowedDatabases === undefined ? {} : { allowedDatabases: [...mongodb.allowedDatabases] }),
             ...(mongodb.allowedCollections === undefined ? {} : { allowedCollections: [...mongodb.allowedCollections] }),
           },

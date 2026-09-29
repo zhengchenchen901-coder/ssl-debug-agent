@@ -128,6 +128,32 @@
             <input name="approvedCommandsEnabled" type="checkbox" />
             <span>启用 approved-command</span>
           </label>
+          <fieldset id="mongodbPermissions" class="wide mongo-permissions">
+            <legend>MongoDB 写入权限</legend>
+            <p id="mongodbHint" class="muted"></p>
+            <label class="switch-row">
+              <input name="mongodbWriteEnabled" type="checkbox" />
+              <span>允许 MongoDB 写入</span>
+            </label>
+            <label>
+              <span>允许的数据库（多选）</span>
+              <select name="mongodbAllowedDatabases" multiple size="4"></select>
+            </label>
+            <label>
+              <span>搜索集合</span>
+              <input id="mongodbCollectionSearch" type="search" autocomplete="off" placeholder="输入集合名称进行筛选" aria-controls="mongodbAllowedCollections" />
+            </label>
+            <label>
+              <span>允许的集合（多选）</span>
+              <select id="mongodbAllowedCollections" name="mongodbAllowedCollections" multiple size="8" aria-describedby="mongodbCollectionSearchStatus"></select>
+            </label>
+            <p id="mongodbCollectionSearchStatus" class="muted" aria-live="polite"></p>
+            <p class="muted">搜索不区分大小写，筛选不会清除已选集合。清空搜索可查看全部集合。</p>
+            <p class="muted">按住 Ctrl（Mac 使用 Command）可选择多项。集合选项来自所选数据库；集合白名单对所有所选数据库中的同名集合生效。已保存的名称会保留。</p>
+            <button id="reloadMongoOptions" class="button" type="button">重新读取选项</button>
+            <p id="mongodbOptionsStatus" class="muted" aria-live="polite"></p>
+            <p class="muted">开启写入时需填写两项白名单。保存后，运行中的实例需点击行内“重新加载配置”；已停止的实例下次启动时生效。重新加载仅重启本地 Agent worker，不重启远端 PM2。实际写入仍需准备具体写入计划。</p>
+          </fieldset>
           <div id="formMessage" class="form-message" aria-live="polite"></div>
           <div class="modal-actions">
             <button id="cancelModalButton" class="button" type="button">取消</button>

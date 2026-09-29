@@ -350,7 +350,7 @@ function renderRow(instance) {
   const deleteButton = button("删除", "delete", instance, "button danger");
   deleteButton.disabled = !canUseManager;
   deleteButton.title = canUseManager ? "" : "主进程不可用";
-  const refresh = button("刷新", "refresh", instance);
+  const refresh = button("重新加载配置", "refresh", instance);
   refresh.disabled = !canUseManager;
   refresh.title = canUseManager ? "" : "主进程不可用";
   actionWrap.append(
@@ -394,15 +394,133 @@ function resetForm(instance) {
   instanceForm.elements.auditLog.value = instance?.auditLog || "";
   instanceForm.elements.enabled.checked = instance ? Boolean(instance.enabled) : true;
   instanceForm.elements.approvedCommandsEnabled.checked = Boolean(instance?.approvedCommands?.enabled);
+  const mongodb = instance?.mongodb;
+  document.querySelector("#mongodbPermissions").disabled = !mongodb;
+  document.querySelector("#mongodbHint").textContent = mongodb
+    ? "仅修改当前实例的写入权限，保留已有连接配置。"
+    : "当前实例尚未配置 MongoDB 连接，请先在实例配置文件中配置连接，再设置写入权限。";
+  instanceForm.elements.mongodbWriteEnabled.checked = Boolean(mongodb?.writeEnabled || mongodb?.mutationsEnabled);
+  mongoOptionsGeneration++;
+  document.querySelector("#mongodbCollectionSearch").value = "";
+  setMongoOptions(instanceForm.elements.mongodbAllowedDatabases, [], mongodb?.allowedDatabases || []);
+  setMongoOptions(instanceForm.elements.mongodbAllowedCollections, [], mongodb?.allowedCollections || []);
+  document.querySelector("#mongodbOptionsStatus").textContent = "";
+}
+
+let mongoOptionsGeneration = 0;
+let mongoCollectionOptions = [];
+let mongoCollectionSelection = new Set();
+
+function selectedMongoNames(select) {
+  if (select === instanceForm.elements.mongodbAllowedCollections) {
+    for (const option of select.children) {
+      if (option.selected) mongoCollectionSelection.add(option.value);
+      else mongoCollectionSelection.delete(option.value);
+    }
+    return [...mongoCollectionSelection];
+  }
+  return Array.from(select.selectedOptions, (option) => option.value);
+}
+
+function setMongoOptions(select, names, selected) {
+  const available = new Set(names);
+  if (select === instanceForm.elements.mongodbAllowedCollections) {
+    mongoCollectionOptions = [...new Set([...names, ...selected])].sort().map((name) => ({
+      name, label: available.has(name) ? name : `${name}（已保存/已选）`,
+    }));
+    mongoCollectionSelection = new Set(selected);
+    renderMongoCollectionOptions();
+    return;
+  }
+  select.replaceChildren(...[...new Set([...names, ...selected])].sort().map((name) => {
+    const option = createElement("option", "", available.has(name) ? name : `${name}（已保存/已选）`);
+    option.value = name;
+    option.selected = selected.includes(name);
+    return option;
+  }));
+}
+
+function renderMongoCollectionOptions() {
+  const query = document.querySelector("#mongodbCollectionSearch").value.trim().toLowerCase();
+  const matches = mongoCollectionOptions.filter((item) => item.name.toLowerCase().includes(query));
+  instanceForm.elements.mongodbAllowedCollections.replaceChildren(...matches.map(({ name, label }) => {
+    const option = createElement("option", "", label);
+    option.value = name;
+    option.selected = mongoCollectionSelection.has(name);
+    return option;
+  }));
+  updateMongoCollectionStatus();
+}
+
+function updateMongoCollectionStatus() {
+  const count = instanceForm.elements.mongodbAllowedCollections.children.length;
+  const query = document.querySelector("#mongodbCollectionSearch").value.trim();
+  document.querySelector("#mongodbCollectionSearchStatus").textContent =
+    `${query && !count ? "没有匹配的集合。" : ""}显示 ${count} / ${mongoCollectionOptions.length} 个集合，已选 ${mongoCollectionSelection.size} 个。`;
+}
+
+function filterMongoCollections() {
+  selectedMongoNames(instanceForm.elements.mongodbAllowedCollections);
+  renderMongoCollectionOptions();
+}
+
+async function loadMongoOptions(collectionsOnly = false) {
+  const instanceId = state.editingId;
+  if (!findInstance(instanceId)?.mongodb) return;
+  const generation = ++mongoOptionsGeneration;
+  const isCurrent = () => generation === mongoOptionsGeneration && state.editingId === instanceId;
+  const status = document.querySelector("#mongodbOptionsStatus");
+  const databases = instanceForm.elements.mongodbAllowedDatabases;
+  const collections = instanceForm.elements.mongodbAllowedCollections;
+  status.textContent = "正在通过当前实例只读加载选项…";
+  const readNames = async (operation, database) => {
+    const names = new Set();
+    for (let skip = 0; skip < 10000; skip += 500) {
+      const result = await api("/mongodb/query", {
+        method: "POST",
+        body: JSON.stringify({ instanceId, operation, ...(database ? { database } : {}), limit: 500, skip }),
+      });
+      if (!isCurrent()) return [];
+      const items = operation === "listDatabases" ? result.data?.databases || [] : result.data || [];
+      const previousCount = names.size;
+      for (const item of items) names.add(item.name);
+      if (items.length < 500) return [...names];
+      if (names.size === previousCount) throw new Error("当前 worker 尚不支持分批读取，请重新加载实例配置后重试");
+    }
+    throw new Error("名称数量超过 10000 项读取上限");
+  };
+  try {
+    if (!collectionsOnly) {
+      const names = await readNames("listDatabases");
+      if (!isCurrent()) return;
+      setMongoOptions(databases, names, selectedMongoNames(databases));
+    }
+    const selectedDatabases = selectedMongoNames(databases);
+    const names = [];
+    for (const database of selectedDatabases) {
+      const items = await readNames("listCollections", database);
+      if (!isCurrent()) return;
+      names.push(...items);
+    }
+    if (!isCurrent()) return;
+    setMongoOptions(collections, names, selectedMongoNames(collections));
+    status.textContent = selectedDatabases.length
+      ? "选项已读取。"
+      : "请先选择数据库，再加载集合选项。";
+  } catch (error) {
+    if (isCurrent()) status.textContent = `读取失败：${error.message}。已保留当前选择，可重新读取。`;
+  }
 }
 
 function openModal(instance = null) {
   resetForm(instance);
   modalBackdrop.hidden = false;
   instanceForm.elements.name.focus();
+  void loadMongoOptions();
 }
 
 function closeModal() {
+  mongoOptionsGeneration++;
   modalBackdrop.hidden = true;
 }
 
@@ -436,6 +554,30 @@ function formPayload() {
   if (!payload.auditLog) {
     delete payload.auditLog;
   }
+  const mongodb = findInstance(state.editingId)?.mongodb;
+  if (mongodb) {
+    const writeEnabled = form.mongodbWriteEnabled.checked;
+    const allowedDatabases = selectedMongoNames(form.mongodbAllowedDatabases);
+    const allowedCollections = selectedMongoNames(form.mongodbAllowedCollections);
+    const changes = {};
+    if (writeEnabled !== Boolean(mongodb.writeEnabled || mongodb.mutationsEnabled)) {
+      changes.writeEnabled = writeEnabled;
+      // The legacy alias also enables writes; disabling must turn both off.
+      if (mongodb.mutationsEnabled !== undefined) changes.mutationsEnabled = false;
+    }
+    for (const [key, values] of Object.entries({ allowedDatabases, allowedCollections })) {
+      if (JSON.stringify([...values].sort()) !== JSON.stringify([...(mongodb[key] || [])].sort())) {
+        if (!values.length) throw new Error("已有白名单不可清空；如需停止写入，请关闭写入开关。");
+        changes[key] = values;
+      }
+    }
+    if (Object.keys(changes).length) {
+      if (writeEnabled && (!allowedDatabases.length || !allowedCollections.length)) {
+        throw new Error("允许写入时，请填写允许的数据库和集合。");
+      }
+      payload.mongodb = changes;
+    }
+  }
   return payload;
 }
 
@@ -446,14 +588,14 @@ async function submitForm(event) {
     formMessage.textContent = "主进程不可用，恢复后再保存";
     return;
   }
-  const payload = formPayload();
   try {
+    const payload = formPayload();
     if (state.editingId) {
       await api(`/api/instances/${encodeURIComponent(state.editingId)}`, {
         method: "PUT",
         body: JSON.stringify(payload),
       });
-      showToast("实例已更新，运行中的实例需要刷新后生效");
+      showToast("实例已保存，运行中的实例请点击行内“重新加载配置”生效");
     } else {
       await api("/api/instances", {
         method: "POST",
@@ -622,6 +764,16 @@ instanceRows.addEventListener("click", (event) => {
 });
 
 reloadButton.addEventListener("click", loadInstances);
+document.querySelector("#reloadMongoOptions").addEventListener("click", () => loadMongoOptions());
+instanceForm.elements.mongodbAllowedDatabases.addEventListener("change", () => loadMongoOptions(true));
+document.querySelector("#mongodbCollectionSearch").addEventListener("input", filterMongoCollections);
+document.querySelector("#mongodbCollectionSearch").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") event.preventDefault();
+});
+instanceForm.elements.mongodbAllowedCollections.addEventListener("change", () => {
+  selectedMongoNames(instanceForm.elements.mongodbAllowedCollections);
+  updateMongoCollectionStatus();
+});
 newButton.addEventListener("click", () => openModal());
 shutdownButton?.addEventListener("click", async () => {
   if (!state.online) {

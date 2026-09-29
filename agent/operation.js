@@ -87,7 +87,11 @@ export function operationPolicy(pathName, config = {}) {
       maxMs: OPERATION_TIMEOUTS.mongodb.maxMs,
     };
   }
-  if (pathName.startsWith("/mongodb/mutations/")) {
+  if (
+    pathName.startsWith("/mongodb/mutations/") ||
+    pathName.startsWith("/mongodb/bulk/") ||
+    pathName === "/mongodb/imports/prepare"
+  ) {
     return {
       defaultMs: OPERATION_TIMEOUTS.mongodbMutation.defaultMs,
       maxMs: OPERATION_TIMEOUTS.mongodbMutation.maxMs,

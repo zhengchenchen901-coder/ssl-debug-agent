@@ -142,6 +142,26 @@ test("registry preserves per-instance MongoDB profile metadata", async () => {
   assert.equal(created.mongodb.database, "yennefer");
   assert.equal(created.mongodb.uri, undefined);
   assert.equal(registry.getInternal("test-server").mongodb.driverPath, "/home/github/app/node_modules/mongodb");
+  registry.create({
+    id: "default", name: "production", host: "prod.example.com",
+    username: "app", privateKeyPath: "C:\\test", mongodb: created.mongodb,
+  });
+  const defaultBefore = registry.getInternal("default");
+  registry.update("test-server", { mongodb: {
+    writeEnabled: true,
+    allowedDatabases: ["yennefer"],
+    allowedCollections: ["Customer", "CustomerRestaurantRelation"],
+    maxImportBatchDocuments: 1500,
+  } });
+  const reopened = new InstanceRegistry({ cwd: dir, registryPath: path.join(dir, "instances.json"), env: {} });
+  assert.deepEqual(reopened.get("test-server").mongodb, {
+    ...created.mongodb,
+    writeEnabled: true,
+    allowedDatabases: ["yennefer"],
+    allowedCollections: ["Customer", "CustomerRestaurantRelation"],
+    maxImportBatchDocuments: 1500,
+  });
+  assert.deepEqual(reopened.getInternal("default"), defaultBefore);
 });
 
 test("registry preserves labeled per-instance source roots", async () => {

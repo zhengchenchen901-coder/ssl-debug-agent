@@ -40,6 +40,7 @@ import {
   runMongoMutation as defaultRunMongoMutation,
   summarizeMongoMutation,
 } from "./mongodb-mutations.js";
+import { MongoBulkJobRunner, runMongoBulk as defaultRunMongoBulk } from "./mongodb-bulk.js";
 import {
   listLogArchiveMembers as defaultListLogArchiveMembers,
   listLogs as defaultListLogs,
@@ -308,6 +309,31 @@ function mongoMutationSummary(payload) {
     planHash: payload.planHash,
     affectedCount: payload.affectedCount,
     changedFields: payload.changedFields,
+    importId: payload.importId,
+    batchCount: payload.batchCount,
+    batchIndex: payload.batchIndex,
+    batches: payload.batches?.map(({ mutationId, planHash, status, affectedCount }) => ({ mutationId, planHash, status, affectedCount })),
+  };
+}
+
+function mongoBulkSummary(payload) {
+  return {
+    jobId: payload.jobId,
+    planHash: payload.planHash,
+    status: payload.status,
+    mode: payload.mode,
+    database: payload.database,
+    operationCount: payload.operationCount,
+    unitCount: payload.unitCount,
+    batchCount: payload.batchCount,
+    committedBatchCount: payload.committedBatchCount,
+    verifiedBatchCount: payload.verifiedBatchCount,
+    rolledBackBatchCount: payload.rolledBackBatchCount,
+    differenceCount: payload.differenceCount,
+    pauseReason: payload.pauseReason,
+    accepted: payload.accepted,
+    background: payload.background,
+    effectiveConcurrency: payload.effectiveConcurrency,
   };
 }
 
@@ -376,6 +402,7 @@ export function createApp(options = {}) {
   const resolveRemotePathsImpl = options.resolveRemotePaths || defaultResolveRemotePaths;
   const runMongoQueryImpl = options.runMongoQuery || defaultRunMongoQuery;
   const runMongoMutationImpl = options.runMongoMutation || defaultRunMongoMutation;
+  const runMongoBulkImpl = options.runMongoBulk || defaultRunMongoBulk;
   const listLogsImpl = options.listLogs || defaultListLogs;
   const listLogArchiveMembersImpl =
     options.listLogArchiveMembers || defaultListLogArchiveMembers;
@@ -400,6 +427,16 @@ export function createApp(options = {}) {
       config,
       runSSH,
     });
+  const runMongoBulk = (bulkRequest, operationOptions) => runMongoBulkImpl(bulkRequest, {
+    ...operationOptions,
+    config,
+    runSSH,
+  });
+  let mongoBulkJobRunner;
+  const getMongoBulkJobRunner = () => {
+    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk });
+    return mongoBulkJobRunner;
+  };
   const listLogs = (logOptions) => listLogsImpl({
     ...logOptions,
     config,
@@ -421,6 +458,8 @@ export function createApp(options = {}) {
   const app = express();
   const publicDir = path.join(moduleDirectory, "public");
 
+  app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
+  app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use(express.json({ limit: "512kb" }));
 
   app.get("/", (_request, response) => {
@@ -1324,7 +1363,7 @@ export function createApp(options = {}) {
 
     try {
       const result = await runMongoMutation(
-        { ...raw, mode },
+        { ...raw, mode, ...(pathName === "/mongodb/imports/prepare" ? { kind: "import_plan" } : {}) },
         { operation: requestOperation },
       );
       const payload = {
@@ -1378,6 +1417,93 @@ export function createApp(options = {}) {
     }
   }
 
+  async function handleMongoBulk(request, response, action, pathName) {
+    const startedAt = performance.now();
+    const raw = request.body || {};
+    const requestOperation = createRequestOperation(request, response, pathName, config);
+    const operation = createOperation(request, config, `mongodb-bulk-${action}`, {
+      operationId: requestOperation.operationId,
+      jobId: requestText(raw.jobId),
+      chunkIndex: Number.isInteger(raw.chunkIndex) ? raw.chunkIndex : undefined,
+      unitCount: Array.isArray(raw.units) ? raw.units.length : undefined,
+      operationCount: Array.isArray(raw.units)
+        ? raw.units.reduce((count, unit) => count + (Array.isArray(unit?.operations) ? unit.operations.length : 0), 0)
+        : undefined,
+      planHash: requestText(raw.planHash),
+      timeoutMs: requestOperation.timeoutMs,
+    });
+    publishStage(activity, operation, "started");
+    try {
+      let result;
+      if (action === "upload") {
+        result = await runMongoBulk({ action: "upload", chunk: raw }, { operation: requestOperation });
+      } else if (action === "get" || action === "list") {
+        result = await runMongoBulk({ action, ...raw }, { operation: requestOperation });
+      } else if (action === "execute") {
+        result = await getMongoBulkJobRunner().start(raw, "execute");
+      } else if (action === "rollback") {
+        result = await getMongoBulkJobRunner().start(raw, "rollback");
+      } else if (action === "control") {
+        if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw);
+        else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw);
+        else result = await runMongoBulk({ action: "control", ...raw }, { operation: requestOperation });
+      } else {
+        throw new Error("unsupported MongoDB bulk request");
+      }
+      const payload = {
+        ok: true,
+        instanceId: process.env.REMOTE_DEBUG_INSTANCE_ID || undefined,
+        ...result,
+        durationMs: durationSince(startedAt),
+        operationId: requestOperation.operationId,
+      };
+      operation.request = {
+        jobId: payload.jobId || requestText(raw.jobId),
+        planHash: payload.planHash || requestText(raw.planHash),
+        chunkIndex: Number.isInteger(raw.chunkIndex) ? raw.chunkIndex : undefined,
+        operationCount: payload.operationCount,
+        batchCount: payload.batchCount,
+        timeoutMs: requestOperation.timeoutMs,
+        deadlineAt: requestOperation.deadlineAt,
+      };
+      const summary = mongoBulkSummary(payload);
+      await audit(config, {
+        tool: `mongodb-bulk-${action}`,
+        ...summary,
+        ok: true,
+        durationMs: payload.durationMs,
+        operationId: requestOperation.operationId,
+      });
+      publishStage(activity, operation, "completed", { ok: true, result: summary });
+      response.status(payload.background ? 202 : 200).json(payload);
+    } catch (error) {
+      error.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error);
+      const durationMs = durationSince(startedAt);
+      const summary = {
+        jobId: requestText(raw.jobId),
+        planHash: requestText(raw.planHash),
+        chunkIndex: Number.isInteger(raw.chunkIndex) ? raw.chunkIndex : undefined,
+      };
+      await audit(config, {
+        tool: `mongodb-bulk-${action}`,
+        ...summary,
+        ok: false,
+        durationMs,
+        errorCode: payload.error.code,
+        operationId: requestOperation.operationId,
+        errorLayer: payload.error.layer,
+        errorPhase: payload.error.phase,
+      });
+      publishStage(activity, operation, "failed", { ok: false, durationMs, error: payload.error });
+      response.status(errorStatus(error)).json({ ...payload, durationMs });
+    }
+  }
+
+  app.post("/mongodb/bulk/storage/prepare", (request, response) =>
+    handleMongoMutation(request, response, "prepare", "/mongodb/bulk/storage/prepare"));
+  app.post("/mongodb/imports/prepare", (request, response) =>
+    handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
   app.post("/mongodb/mutations/prepare", (request, response) =>
     handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
   app.post("/mongodb/mutations/execute", (request, response) =>
@@ -1386,7 +1512,15 @@ export function createApp(options = {}) {
     handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
   app.post("/mongodb/mutations/list", (request, response) =>
     handleMongoMutation(request, response, "list", "/mongodb/mutations/list"));
+  app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
+  app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
+  app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
+  app.post("/mongodb/bulk/jobs", (request, response) => handleMongoBulk(request, response, "list", "/mongodb/bulk/jobs"));
+  app.post("/mongodb/bulk/control", (request, response) => handleMongoBulk(request, response, "control", "/mongodb/bulk/control"));
+  app.post("/mongodb/bulk/rollback", (request, response) => handleMongoBulk(request, response, "rollback", "/mongodb/bulk/rollback"));
 
+  app.locals.mongoBulkJobRunner = getMongoBulkJobRunner;
+  app.locals.pauseMongoBulkJobRunner = () => mongoBulkJobRunner ? mongoBulkJobRunner.pauseForShutdown() : Promise.resolve();
   return app;
 }
 
@@ -1666,6 +1800,8 @@ export function createManagerApp(options = {}) {
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
+  app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
+  app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use(express.json({ limit: "512kb" }));
   let restoreCheckScheduled = false;
 
@@ -2291,6 +2427,22 @@ export function createManagerApp(options = {}) {
     proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
+  app.post("/mongodb/imports/prepare", (request, response) =>
+    proxyToInstance("/mongodb/imports/prepare", request, response));
+  app.post("/mongodb/bulk/storage/prepare", (request, response) =>
+    proxyToInstance("/mongodb/bulk/storage/prepare", request, response));
+  app.post("/mongodb/bulk/prepare", (request, response) =>
+    proxyToInstance("/mongodb/bulk/prepare", request, response));
+  app.post("/mongodb/bulk/execute", (request, response) =>
+    proxyToInstance("/mongodb/bulk/execute", request, response));
+  app.post("/mongodb/bulk/job", (request, response) =>
+    proxyToInstance("/mongodb/bulk/job", request, response));
+  app.post("/mongodb/bulk/jobs", (request, response) =>
+    proxyToInstance("/mongodb/bulk/jobs", request, response));
+  app.post("/mongodb/bulk/control", (request, response) =>
+    proxyToInstance("/mongodb/bulk/control", request, response));
+  app.post("/mongodb/bulk/rollback", (request, response) =>
+    proxyToInstance("/mongodb/bulk/rollback", request, response));
   app.post("/mongodb/mutations/prepare", (request, response) =>
     proxyToInstance("/mongodb/mutations/prepare", request, response));
   app.post("/mongodb/mutations/execute", (request, response) =>

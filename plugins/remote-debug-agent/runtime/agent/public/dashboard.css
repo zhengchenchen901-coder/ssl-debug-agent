@@ -425,7 +425,9 @@ main {
   font-weight: 700;
 }
 
-.form-grid input {
+.form-grid input,
+.form-grid textarea,
+.form-grid select {
   border: 1px solid var(--line);
   border-radius: 6px;
   min-height: 36px;
@@ -433,7 +435,9 @@ main {
   padding: 0 10px;
 }
 
-.form-grid input:focus {
+.form-grid input:focus,
+.form-grid textarea:focus,
+.form-grid select:focus {
   border-color: var(--primary);
   outline: 3px solid var(--blue-soft);
 }
@@ -442,6 +446,37 @@ main {
 .form-message,
 .modal-actions {
   grid-column: 1 / -1;
+}
+
+.mongo-permissions {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 12px;
+}
+
+.mongo-permissions p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.form-grid textarea {
+  padding: 8px 10px;
+  resize: vertical;
+  font: inherit;
+}
+
+.form-grid select {
+  width: 100%;
+  padding: 6px;
+  font: inherit;
+  background: var(--surface);
+}
+
+.form-grid select option {
+  padding: 5px 8px;
 }
 
 .switch-row {

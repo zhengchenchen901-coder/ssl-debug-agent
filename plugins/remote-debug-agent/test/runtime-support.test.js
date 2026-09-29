@@ -122,7 +122,7 @@ test("bundled runtime manifest is readable from the plugin root", async () => {
   );
 
   assert.equal(manifest.pluginVersion, pluginManifest.version);
-  assert.match(manifest.runtimeId, /^2\.1\.0:[a-f0-9]{64}$/);
+  assert.match(manifest.runtimeId, new RegExp(`^${pluginManifest.version.split("+", 1)[0]}:[a-f0-9]{64}$`));
   assert.equal(manifest.server, "server.cjs");
   assert.equal(manifest.worker, "worker-entry.cjs");
 });

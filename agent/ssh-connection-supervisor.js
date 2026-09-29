@@ -37,10 +37,14 @@ export class SshConnectionSupervisor extends EventEmitter {
     this.reconnectBaseMs = network.reconnectBaseMs || 1_000;
     this.reconnectMaxMs = network.reconnectMaxMs || 30_000;
     this.reconnectJitter = network.reconnectJitter ?? 0.2;
+    const bulkConcurrency = config.mongodb && config.mongodb.bulkEnabled === true
+      ? Math.min(4, Number(config.mongodb.bulkConcurrency) || 2)
+      : 0;
     this.scheduler = options.scheduler || new ChannelScheduler({
-      maxBusiness: network.maxBusinessChannels || 4,
+      maxBusiness: Math.max(network.maxBusinessChannels || 4, bulkConcurrency + 1),
       maxControl: network.maxControlChannels || 1,
       maxBackground: network.maxBackgroundChannels || 1,
+      maxBulk: bulkConcurrency,
       maxQueue: network.maxQueueLength || 100,
       backgroundStarvationMs: network.backgroundStarvationMs || 10_000,
       now: this.now,

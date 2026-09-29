@@ -451,6 +451,122 @@ test("HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and lis
     assert.equal(listed.status, 200);
     assert.deepEqual(listed.body.entries, []);
     assert.deepEqual(calls.map((item) => item.mode), ["prepare", "commit", "rollback", "list"]);
+    const imported = await postJson(server, "/mongodb/imports/prepare", {
+      importId: "seed-01", collection: "members",
+      documents: Array.from({ length: 2000 }, (_, i) => ({ _id: `seed-${i}`, value: "x".repeat(300) })),
+    });
+    assert.equal(imported.status, 200);
+    assert.equal(calls.at(-1).kind, "import_plan");
+    assert.equal(calls.at(-1).documents.length, 2000);
+  } finally {
+    await close(server);
+  }
+});
+
+test("HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler", { skip: !depsInstalled }, async () => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-mongodb-bulk-api-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.mongodb = {
+    enabled: true,
+    configPath: "/home/github/app/config.json",
+    driverPath: "/home/github/app/node_modules/mongodb",
+    configProfile: "test",
+    uriKey: "url",
+    database: "yennefer",
+    writeEnabled: true,
+    allowedDatabases: ["yennefer"],
+    allowedCollections: ["members", "private", "__remote_debug_bulk_receipts"],
+    bulkEnabled: true,
+  };
+  const calls = [];
+  const app = createApp({
+    config,
+    runMongoBulk: async (input) => {
+      calls.push(input);
+      if (input.action === "list") return { jobs: [], total: 0, hasMore: false };
+      if (input.action === "get") return { jobId: input.jobId, status: "paused", planHash: "a".repeat(64) };
+      if (input.action === "control") return { jobId: input.jobId, status: "pause_requested" };
+      return { jobId: input.chunk?.jobId || input.jobId, status: "uploading", chunkIndex: input.chunk?.chunkIndex };
+    },
+  });
+  const server = await listen(app);
+
+  try {
+    const prepared = await postJson(server, "/mongodb/bulk/prepare", {
+      jobId: "bulk-http-1", database: "yennefer", chunkIndex: 0, purpose: "test", units: [],
+    });
+    assert.equal(prepared.status, 200);
+    assert.equal(calls[0].action, "upload");
+    assert.equal(calls[0].chunk.jobId, "bulk-http-1");
+
+    const job = await postJson(server, "/mongodb/bulk/job", { jobId: "bulk-http-1" });
+    assert.equal(job.status, 200);
+    assert.equal(job.body.status, "paused");
+
+    const jobs = await postJson(server, "/mongodb/bulk/jobs", { offset: 0, limit: 10 });
+    assert.equal(jobs.status, 200);
+    assert.deepEqual(jobs.body.jobs, []);
+
+    const paused = await postJson(server, "/mongodb/bulk/control", {
+      jobId: "bulk-http-1", command: "pause", planHash: "a".repeat(64),
+    });
+    assert.equal(paused.status, 200);
+    assert.deepEqual(calls.map((call) => call.action), ["upload", "get", "list", "control"]);
+    const audit = (await fsPromises.readFile(config.audit.logPath, "utf8"))
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line));
+    assert.deepEqual(audit.map((entry) => entry.tool), [
+      "mongodb-bulk-upload", "mongodb-bulk-get", "mongodb-bulk-list", "mongodb-bulk-control",
+    ]);
+  } finally {
+    await close(server);
+  }
+});
+
+test("HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled", { skip: !depsInstalled }, async () => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-mongodb-bulk-recovery-api-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.mongodb = {
+    enabled: true,
+    configPath: "/home/github/app/config.json",
+    driverPath: "/home/github/app/node_modules/mongodb",
+    configProfile: "test",
+    uriKey: "url",
+    database: "yennefer",
+    writeEnabled: true,
+    allowedDatabases: ["yennefer"],
+    allowedCollections: ["members", "__remote_debug_bulk_receipts"],
+    bulkEnabled: false,
+  };
+  const calls = [];
+  const app = createApp({
+    config,
+    runMongoBulk: async (input) => {
+      calls.push(input);
+      if (input.action === "rollbackStart") return { jobId: input.jobId, planHash: input.planHash, batchCount: 0, mode: "rollback", status: "rolling_back" };
+      if (input.action === "get") return { jobId: input.jobId, batchCount: 0, mode: "rollback", status: "rolling_back", desiredState: "running", nextRollbackBatch: null };
+      if (input.action === "finish") return { jobId: input.jobId, status: "rolled_back" };
+      throw new Error(`unexpected action ${input.action}`);
+    },
+  });
+  const server = await listen(app);
+
+  try {
+    const rollback = await postJson(server, "/mongodb/bulk/rollback", {
+      jobId: "bulk-disabled-rollback", planHash: "b".repeat(64), confirmation: "确认回滚",
+    });
+    assert.equal(rollback.status, 202);
+    await app.locals.mongoBulkJobRunner().tasks.get("bulk-disabled-rollback");
+    assert.deepEqual(calls.map((call) => call.action), ["rollbackStart", "get", "finish"]);
+
+    const execute = await postJson(server, "/mongodb/bulk/execute", {
+      jobId: "bulk-disabled-new", planHash: "c".repeat(64), confirmation: "确认执行",
+    });
+    assert.equal(execute.status, 403);
+    assert.equal(execute.body.error.code, "MONGODB_BULK_DISABLED");
   } finally {
     await close(server);
   }
@@ -640,7 +756,9 @@ test("manager API includes memory and updates it from proxied tool results", { s
       })),
     runtimeFor: () => ({ status: "running" }),
     shutdownAll: async () => {},
-    callInstance: async (_instanceId, pathName, payload) => pathName === "/logs/list"
+    callInstance: async (_instanceId, pathName, payload) => pathName === "/mongodb/imports/prepare"
+      ? { ok: true, instanceId: _instanceId, importId: payload.importId, affectedCount: payload.documents.length }
+      : pathName === "/logs/list"
       ? {
           ok: true,
           instanceId: "a",
@@ -679,6 +797,15 @@ test("manager API includes memory and updates it from proxied tool results", { s
     const before = await getJson(server, "/api/instances");
     assert.equal(before.status, 200);
     assert.equal(before.body.instances[0].memory.status, "missing");
+
+    const imported = await postJson(server, "/mongodb/imports/prepare", {
+      instanceId: "a", importId: "seed-manager", collection: "members",
+      documents: Array.from({ length: 2000 }, (_, i) => ({ _id: `seed-${i}`, value: "x".repeat(300) })),
+    });
+    assert.equal(imported.status, 200);
+    assert.equal(imported.body.instanceId, "a");
+    assert.equal(imported.body.importId, "seed-manager");
+    assert.equal(imported.body.affectedCount, 2000);
 
     const updatedMemory = await postJson(server, "/api/memory", {
       instanceId: "a",

@@ -18,6 +18,32 @@ const mongodb = {
   database: "yennefer",
 };
 
+test("MongoDB name discovery returns stable bounded pages", async () => {
+  const names = Array.from({ length: 503 }, (_, i) => ({ name: `name${String(i).padStart(4, "0")}`, type: "collection" })).reverse();
+  for (const operation of ["listDatabases", "listCollections"]) {
+    let output = "";
+    class MongoClient {
+      async connect() {}
+      async close() {}
+      db() { return {
+        admin: () => ({ listDatabases: async () => ({ databases: [...names] }) }),
+        listCollections: () => ({ toArray: async () => [...names] }),
+      }; }
+    }
+    const require = (name) => name === "fs"
+      ? { readFileSync: () => JSON.stringify({ test: { url: "mongodb://example.test/yennefer" } }) }
+      : { MongoClient };
+    require.resolve = () => { throw new Error("no bson"); };
+    await vm.runInNewContext(buildMongoScript({ operation, skip: 500, limit: 500 }, mongodb), {
+      require, Buffer, process: { stdout: { write: (text) => { output += text; } } },
+    });
+    const result = JSON.parse(output.slice(MONGODB_RESULT_MARKER.length));
+    assert.equal(result.ok, true);
+    const items = operation === "listDatabases" ? result.data.databases : result.data;
+    assert.deepEqual(items.map((item) => item.name), ["name0500", "name0501", "name0502"]);
+  }
+});
+
 test("MongoDB query normalization keeps operations read-only and bounded", () => {
   const query = normalizeMongoQuery(
     {

@@ -1,6 +1,6 @@
 ---
 name: database-mutations
-description: Safely plan, confirm, commit, inspect, and roll back bounded MongoDB document and index mutations through the structured Remote Debug Agent tools. Use this for database writes, updates, soft deletes, index changes, and business workflows composed from those operations.
+description: Safely plan, confirm, commit, inspect, and roll back bounded MongoDB document, index, import, and resumable bulk mutations through the structured Remote Debug Agent tools. Use this for database writes, updates, soft deletes, index changes, and business workflows composed from those operations.
 ---
 
 # Database Mutations
@@ -47,6 +47,23 @@ MongoDB URI for writes.
 
 ## Business workflows
 
+For bulk inserts or data seeding, use `remote_debug_mongodb_prepare_import`.
+It accepts up to 10000 documents / 4 MiB per input chunk, automatically split into
+transactions of at most 2000 documents / 512 KiB (also capped by the instance's
+`maxImportBatchDocuments`). All documents need explicit unique `_id` values;
+existing documents are rejected rather than overwritten. Ordinary mixed
+transactions retain their 20-operation limit.
+
+Inspect every returned batch plan before committing the authorized batches with
+the existing execute tool. Atomicity and rollback apply to individual batches,
+not the whole dataset. `prepare_partial` means preparation stopped; inspect
+`failedBatch` and the returned plans instead of reporting complete preparation.
+Keep the exact input chunk, `importId`, order and options unchanged when retrying
+prepare to recover the same journals. Repeating a committed batch does not
+reinsert it. `commit_retryable` / `rollback_retryable` can reuse the same plan;
+unknown or started outcomes require inspection before further action. Never
+infer ownership of existing documents merely because their contents match.
+
 For a project-specific action such as adding a member to a restaurant, first
 use read-only queries to resolve and validate the restaurant and member, then
 prepare a narrow domain mutation. Prefer a dedicated business tool with named
@@ -55,3 +72,12 @@ and update fields. If multiple document changes are required, keep them in one
 transaction where possible and roll back child steps in reverse order when a
 cross-service compensation is unavoidable.
 
+## Resumable bulk jobs
+
+For large different-value updates or cross-collection writes, follow
+[`references/mongodb-bulk.md`](references/mongodb-bulk.md). Use the seven
+`remote_debug_mongodb_*bulk*` tools only when the selected instance has bulk
+changes explicitly enabled. The reference explains storage initialization,
+chunk identity, preflight, authorization, long-running job recovery, verification,
+rollback, and redacted examples. Do not substitute a script, shell command, or
+direct HTTP call for the structured tool workflow.

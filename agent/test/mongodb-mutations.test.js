@@ -180,6 +180,21 @@ test("MongoDB mutation helper has no URI and uses the protected temporary journa
   assert.doesNotThrow(() => new vm.Script(script));
 });
 
+test("remote mutation helper avoids unsupported Node 12 operators and preserves zero counts", () => {
+  const script = buildMongoMutationScript({ mode: "prepare", kind: "document" }, mongodb);
+  // All modes share the helper, so even unused import/rollback functions must parse.
+  assert.doesNotMatch(script, /\?\.|\?\?/);
+  for (const field of ["matchedCount", "deletedCount"]) {
+    const expressions = [...script.matchAll(new RegExp(`result\\.${field} != null \\? result\\.${field} : result\\.n`, "g"))];
+    assert.ok(expressions.length >= 2, `${field}: commit and rollback guards`);
+    for (const [expression] of expressions) {
+      for (const [value, expected] of [[0, 0], [1, 1], [null, 7], [undefined, 7]]) {
+        assert.equal(vm.runInNewContext(expression, { result: { [field]: value, n: 7 } }), expected);
+      }
+    }
+  }
+});
+
 test("MongoDB mutation runner forwards fixed node helper and confirmation requirements", async () => {
   const calls = [];
   const prepared = await runMongoMutation(

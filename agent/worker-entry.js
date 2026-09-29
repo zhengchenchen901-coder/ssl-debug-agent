@@ -190,12 +190,16 @@ async function main() {
     if (reportStopped) {
       send({ type: "health", status: "stopped", reason });
     }
-    supervisor.stop(reason).finally(() => {
-      server.close(() => {
-        process.exit(0);
+    Promise.resolve()
+      .then(() => app.locals.pauseMongoBulkJobRunner())
+      .catch(() => {})
+      .then(() => supervisor.stop(reason))
+      .finally(() => {
+        server.close(() => {
+          process.exit(0);
+        });
       });
-    });
-    setTimeout(() => process.exit(0), 1000).unref?.();
+    setTimeout(() => process.exit(0), 12_000).unref?.();
   };
 
   installWorkerShutdownHandlers(shutdown);

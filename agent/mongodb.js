@@ -1,3 +1,4 @@
+import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
 import posixPath from "node:path/posix";
 import {
   operationError,
@@ -343,35 +344,7 @@ try {
   __bson = null;
 }
 
-function __fallbackReplacer(_key, value) {
-  if (value && typeof value === "object" && value._bsontype === "ObjectID" && typeof value.toHexString === "function") {
-    return { $oid: value.toHexString() };
-  }
-  if (value && typeof value === "object" && value._bsontype === "Long" && typeof value.toString === "function") {
-    return { $numberLong: value.toString() };
-  }
-  if (value && typeof value === "object" && value._bsontype === "Decimal128" && typeof value.toString === "function") {
-    return { $numberDecimal: value.toString() };
-  }
-  if (Buffer.isBuffer(value)) {
-    return { $binary: { base64: value.toString("base64"), subType: "00" } };
-  }
-  return value;
-}
-
-function __decode(value) {
-  if (value === undefined || !__bson || !__bson.EJSON || !__bson.EJSON.parse) {
-    return value;
-  }
-  return __bson.EJSON.parse(JSON.stringify(value));
-}
-
-function __encode(value) {
-  if (__bson && __bson.EJSON && __bson.EJSON.stringify) {
-    return JSON.parse(__bson.EJSON.stringify(value));
-  }
-  return JSON.parse(JSON.stringify(value, __fallbackReplacer));
-}
+${MONGODB_CODEC_SCRIPT}
 
 function __getPath(value, keyPath) {
   return keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
@@ -423,12 +396,13 @@ function __errorPayload(error) {
     } else if (__request.operation === "listDatabases") {
       const __listed = await __client.db("admin").admin().listDatabases({ nameOnly: true });
       __data = {
-        databases: (__listed.databases || []).slice(0, __request.limit).map((item) => ({ name: item.name })),
+        databases: (__listed.databases || []).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0).slice(__request.skip, __request.skip + __request.limit).map((item) => ({ name: item.name })),
       };
     } else if (__request.operation === "listCollections") {
       const __db = __client.db(__database);
       __data = (await __db.listCollections({}, { nameOnly: true }).toArray())
-        .slice(0, __request.limit)
+        .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+        .slice(__request.skip, __request.skip + __request.limit)
         .map((item) => ({ name: item.name, type: item.type }));
     } else {
       const __collection = __client.db(__database).collection(__request.collection);
