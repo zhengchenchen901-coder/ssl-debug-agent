@@ -34,6 +34,18 @@ MongoDB URI for writes.
 - Document writes are bounded and use a MongoDB transaction. Updates require an
   `_id` scope; `updateMany` requires an explicit bounded `_id.$in` list.
 - Only `$set`, `$unset`, and `$inc` are accepted by the generic update tool.
+- Ordinary mutation/transaction tools support guarded numeric array paths such
+  as `booking_orders.12.origin_status`. Read the current index first and include
+  the element identity in the filter (for example `booking_orders.12.origin_id`)
+  along with the document `_id`. Every indexed prefix requires a filter guard;
+  positional operators and sparse array extension are rejected. Canonical
+  indexes 0–99999 are supported. Do not relax payload or journal limits.
+- To append a missing snapshot, `$set` one full element at the current array
+  length and filter that exact tail path with `null`. Also use a bounded
+  `booking_orders.origin_id: {$nin: [...]}` absence filter to prevent duplicates;
+  include both BSON ObjectId and string forms if needed. `$nin` accepts 1–1000
+  values only in filters. Read the new length before preparing another append.
+  The normal before-image conflict checks and transactional rollback still apply.
 - Insert documents must contain an explicit `_id` so their inverse is exact.
 - Index creation and removal are compensating operations, not document
   transactions. Never create an index implicitly as part of a business write.

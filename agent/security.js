@@ -83,6 +83,14 @@ const SECURITY_POLICY = {
       maxAffectedDocuments: MAX_MONGODB_MUTATION_MAX_AFFECTED,
       maxTransactionOperations: MAX_MONGODB_TRANSACTION_OPERATIONS,
       maxJournalBytes: MAX_MONGODB_MUTATION_JOURNAL_BYTES,
+      indexedArrayUpdates: {
+        enabled: true,
+        maxIndex: 99999,
+        requiresElementFilterGuard: true,
+        appendMode: "immediate-tail-set",
+        positionalOperators: false,
+        absenceFilter: "$nin",
+      },
     },
     bulk: {
       schemaVersion: 1,

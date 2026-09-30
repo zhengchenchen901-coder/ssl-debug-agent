@@ -47061,6 +47061,7 @@ var MAX_MONGODB_MUTATION_LOCK_AGE_MS = 15 * 60 * 1e3;
 var SAFE_DATABASE_PATTERN2 = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 var SAFE_COLLECTION_PATTERN2 = /^[A-Za-z0-9_.$-]{1,128}$/;
 var SAFE_FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+var SAFE_MUTATION_PATH_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
 var SAFE_INDEX_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
 var SAFE_MUTATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 var SAFE_INDEX_DIRECTIONS = /* @__PURE__ */ new Set([-1, 1]);
@@ -47123,7 +47124,7 @@ function assertPlainObject2(value, fieldName) {
     throw mutationError(`${fieldName} must be a plain object`, "INVALID_MONGODB_MUTATION");
   }
 }
-function assertSafeJson2(value, fieldName = "$", depth = 0) {
+function assertSafeJson2(value, fieldName = "$", depth = 0, allowNin = false) {
   if (depth > 12) {
     throw mutationError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_MUTATION");
   }
@@ -47137,7 +47138,7 @@ function assertSafeJson2(value, fieldName = "$", depth = 0) {
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((item, index) => assertSafeJson2(item, `${fieldName}[${index}]`, depth + 1));
+    value.forEach((item, index) => assertSafeJson2(item, `${fieldName}[${index}]`, depth + 1, allowNin));
     return;
   }
   if (typeof value !== "object") {
@@ -47147,10 +47148,13 @@ function assertSafeJson2(value, fieldName = "$", depth = 0) {
     if (BLOCKED_KEYS2.has(key)) {
       throw mutationError(`${fieldName} contains a forbidden key`, "MONGODB_OPERATOR_REJECTED");
     }
-    if (key.startsWith("$") && !ALLOWED_EJSON_KEYS.has(key) && !ALLOWED_UPDATE_OPERATORS.has(key) && key !== "$in") {
+    if (key.startsWith("$") && !ALLOWED_EJSON_KEYS.has(key) && !ALLOWED_UPDATE_OPERATORS.has(key) && key !== "$in" && !(allowNin && key === "$nin")) {
       throw mutationError(`${key} is not allowed by the MongoDB mutation tool`, "MONGODB_OPERATOR_REJECTED");
     }
-    assertSafeJson2(child, `${fieldName}.${key}`, depth + 1);
+    if (key === "$nin" && (!Array.isArray(child) || child.length === 0 || child.length > 1e3)) {
+      throw mutationError("$nin requires between 1 and 1000 values", "MONGODB_FILTER_REJECTED");
+    }
+    assertSafeJson2(child, `${fieldName}.${key}`, depth + 1, allowNin);
   }
 }
 function cloneJson(value) {
@@ -47295,7 +47299,7 @@ function normalizeDocument2(value, fieldName = "document") {
 }
 function normalizeFilter(value, fieldName = "filter") {
   assertPlainObject2(value, fieldName);
-  assertSafeJson2(value, fieldName);
+  assertSafeJson2(value, fieldName, 0, true);
   const keys = Object.keys(value);
   if (keys.length === 0) {
     throw mutationError(`${fieldName} must not be empty`, "MONGODB_EMPTY_FILTER");
@@ -47304,7 +47308,7 @@ function normalizeFilter(value, fieldName = "filter") {
     if (key.startsWith("$")) {
       throw mutationError(`${fieldName} cannot use logical operators`, "MONGODB_FILTER_REJECTED");
     }
-    if (!SAFE_FIELD_PATTERN.test(key) || key.startsWith("_id.")) {
+    if (!isSafeMutationPath(key) || key.startsWith("_id.")) {
       throw mutationError(`${fieldName} contains an unsafe field`, "MONGODB_FILTER_REJECTED");
     }
   }
@@ -47322,6 +47326,9 @@ function assertScopedFilter(filter, operation) {
     );
   }
   if (operation !== "updateMany") {
+    if (filter._id && typeof filter._id === "object" && Object.prototype.hasOwnProperty.call(filter._id, "$nin")) {
+      throw mutationError("document _id scope cannot use an exclusion filter", "MONGODB_FILTER_SCOPE_REQUIRED");
+    }
     return;
   }
   const id = filter._id;
@@ -47348,7 +47355,7 @@ function normalizeUpdate2(value, fieldName = "update") {
     }
     assertPlainObject2(value[operator], `${fieldName}.${operator}`);
     for (const field of Object.keys(value[operator])) {
-      if (!SAFE_FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.")) {
+      if (!isSafeMutationPath(field) || field === "_id" || field.startsWith("_id.")) {
         throw mutationError(
           `${fieldName}.${operator} contains an unsafe or immutable field`,
           "MONGODB_FIELD_REJECTED"
@@ -47367,6 +47374,44 @@ function normalizeUpdate2(value, fieldName = "update") {
     throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
   }
   return normalized;
+}
+function isSafeMutationPath(field) {
+  return SAFE_MUTATION_PATH_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS2.has(part));
+}
+function assertIndexedMutationGuards(filter, update) {
+  for (const fields of Object.values(update)) {
+    for (const field of Object.keys(fields)) {
+      const parts = field.split(".");
+      for (let index = 0; index < parts.length; index += 1) {
+        if (!/^[0-9]+$/.test(parts[index])) continue;
+        const prefix = parts.slice(0, index + 1).join(".");
+        if (!Object.keys(filter).some((key) => key === prefix || key.startsWith(`${prefix}.`))) {
+          throw mutationError("indexed updates require a filter guard for each array element", "MONGODB_ARRAY_GUARD_REQUIRED");
+        }
+      }
+    }
+  }
+}
+function assertIndexedMutationDocument(request, document2) {
+  for (const operator of Object.keys(request.update || {})) {
+    for (const field of Object.keys(request.update[operator])) {
+      const parts = field.split(".");
+      let value = document2;
+      for (let position = 0; position < parts.length; position += 1) {
+        const part = parts[position];
+        if (/^[0-9]+$/.test(part)) {
+          const index = Number(part);
+          const append = Array.isArray(value) && index === value.length && position === parts.length - 1 && operator === "$set";
+          if (!Array.isArray(value) || index > value.length || index === value.length && !append) {
+            const error = new Error("indexed mutation must target an existing array element or set its immediate tail");
+            error.code = "MONGODB_ARRAY_INDEX_INVALID";
+            throw error;
+          }
+        }
+        value = value == null ? void 0 : value[part];
+      }
+    }
+  }
 }
 function normalizeCommonMutation(input, config, operationId, kind = "document") {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
@@ -47430,6 +47475,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
       [normalizeName(input.deletedField || "deletedAt", "deletedField", SAFE_FIELD_PATTERN)]: typeof input.deletedValue === "string" && input.deletedValue.trim() ? input.deletedValue.trim().slice(0, 128) : (/* @__PURE__ */ new Date()).toISOString()
     }
   } : normalizeUpdate2(input.update);
+  assertIndexedMutationGuards(filter, update);
   const expectedCount = input.expectedCount === void 0 ? void 0 : normalizePositiveInt(input.expectedCount, "expectedCount", 1, maxAffected);
   return {
     ...common,
@@ -47696,6 +47742,8 @@ function __hash(value) {
 }
 
 ${MONGODB_CODEC_SCRIPT}
+
+const __assertIndexedMutationDocument = ${assertIndexedMutationDocument.toString()};
 
 function __documentHash(value) {
   return __hash(__encode(value));
@@ -47984,6 +48032,7 @@ async function __prepareDocumentRequest(request, collection) {
   if (documents.length > request.maxAffected) __fail("MONGODB_MUTATION_AFFECTED_LIMIT", "mutation matched more documents than allowed");
   if (request.operation !== "updateMany" && documents.length !== 1) __fail("MONGODB_MUTATION_TARGET_AMBIGUOUS", "mutation filter did not identify exactly one document");
   if (request.expectedCount !== undefined && documents.length !== request.expectedCount) __fail("MONGODB_EXPECTED_COUNT_MISMATCH", "mutation matched a different number of documents than expected");
+  documents.forEach((document) => __assertIndexedMutationDocument(request, document));
   return {
     before: __encode(documents),
     affectedCount: documents.length,
@@ -48981,7 +49030,15 @@ var SECURITY_POLICY = {
       },
       maxAffectedDocuments: MAX_MONGODB_MUTATION_MAX_AFFECTED,
       maxTransactionOperations: MAX_MONGODB_TRANSACTION_OPERATIONS,
-      maxJournalBytes: MAX_MONGODB_MUTATION_JOURNAL_BYTES
+      maxJournalBytes: MAX_MONGODB_MUTATION_JOURNAL_BYTES,
+      indexedArrayUpdates: {
+        enabled: true,
+        maxIndex: 99999,
+        requiresElementFilterGuard: true,
+        appendMode: "immediate-tail-set",
+        positionalOperators: false,
+        absenceFilter: "$nin"
+      }
     },
     bulk: {
       schemaVersion: 1,

@@ -42,6 +42,8 @@ export const MAX_MONGODB_MUTATION_LOCK_AGE_MS = 15 * 60 * 1000;
 const SAFE_DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 const SAFE_COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
 const SAFE_FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+// 数组下标只接受规范十进制，禁止位置通配符和超大下标。
+const SAFE_MUTATION_PATH_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
 const SAFE_INDEX_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
 const SAFE_MUTATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_INDEX_DIRECTIONS = new Set([-1, 1]);
@@ -111,7 +113,7 @@ function assertPlainObject(value, fieldName) {
   }
 }
 
-function assertSafeJson(value, fieldName = "$", depth = 0) {
+function assertSafeJson(value, fieldName = "$", depth = 0, allowNin = false) {
   if (depth > 12) {
     throw mutationError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_MUTATION");
   }
@@ -125,7 +127,7 @@ function assertSafeJson(value, fieldName = "$", depth = 0) {
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((item, index) => assertSafeJson(item, `${fieldName}[${index}]`, depth + 1));
+    value.forEach((item, index) => assertSafeJson(item, `${fieldName}[${index}]`, depth + 1, allowNin));
     return;
   }
   if (typeof value !== "object") {
@@ -139,11 +141,14 @@ function assertSafeJson(value, fieldName = "$", depth = 0) {
       key.startsWith("$") &&
       !ALLOWED_EJSON_KEYS.has(key) &&
       !ALLOWED_UPDATE_OPERATORS.has(key) &&
-      key !== "$in"
+      key !== "$in" && !(allowNin && key === "$nin")
     ) {
       throw mutationError(`${key} is not allowed by the MongoDB mutation tool`, "MONGODB_OPERATOR_REJECTED");
     }
-    assertSafeJson(child, `${fieldName}.${key}`, depth + 1);
+    if (key === "$nin" && (!Array.isArray(child) || child.length === 0 || child.length > 1000)) {
+      throw mutationError("$nin requires between 1 and 1000 values", "MONGODB_FILTER_REJECTED");
+    }
+    assertSafeJson(child, `${fieldName}.${key}`, depth + 1, allowNin);
   }
 }
 
@@ -307,7 +312,7 @@ function normalizeDocument(value, fieldName = "document") {
 
 function normalizeFilter(value, fieldName = "filter") {
   assertPlainObject(value, fieldName);
-  assertSafeJson(value, fieldName);
+  assertSafeJson(value, fieldName, 0, true);
   const keys = Object.keys(value);
   if (keys.length === 0) {
     throw mutationError(`${fieldName} must not be empty`, "MONGODB_EMPTY_FILTER");
@@ -316,7 +321,7 @@ function normalizeFilter(value, fieldName = "filter") {
     if (key.startsWith("$")) {
       throw mutationError(`${fieldName} cannot use logical operators`, "MONGODB_FILTER_REJECTED");
     }
-    if (!SAFE_FIELD_PATTERN.test(key) || key.startsWith("_id.")) {
+    if (!isSafeMutationPath(key) || key.startsWith("_id.")) {
       throw mutationError(`${fieldName} contains an unsafe field`, "MONGODB_FILTER_REJECTED");
     }
   }
@@ -337,6 +342,9 @@ function assertScopedFilter(filter, operation) {
     );
   }
   if (operation !== "updateMany") {
+    if (filter._id && typeof filter._id === "object" && Object.prototype.hasOwnProperty.call(filter._id, "$nin")) {
+      throw mutationError("document _id scope cannot use an exclusion filter", "MONGODB_FILTER_SCOPE_REQUIRED");
+    }
     return;
   }
   const id = filter._id;
@@ -364,7 +372,7 @@ function normalizeUpdate(value, fieldName = "update") {
     }
     assertPlainObject(value[operator], `${fieldName}.${operator}`);
     for (const field of Object.keys(value[operator])) {
-      if (!SAFE_FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.")) {
+      if (!isSafeMutationPath(field) || field === "_id" || field.startsWith("_id.")) {
         throw mutationError(
           `${fieldName}.${operator} contains an unsafe or immutable field`,
           "MONGODB_FIELD_REJECTED",
@@ -383,6 +391,50 @@ function normalizeUpdate(value, fieldName = "update") {
     throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
   }
   return normalized;
+}
+
+function isSafeMutationPath(field) {
+  return SAFE_MUTATION_PATH_PATTERN.test(field) &&
+    field.split(".").every((part) => !BLOCKED_KEYS.has(part));
+}
+
+function assertIndexedMutationGuards(filter, update) {
+  for (const fields of Object.values(update)) {
+    for (const field of Object.keys(fields)) {
+      const parts = field.split(".");
+      for (let index = 0; index < parts.length; index += 1) {
+        if (!/^[0-9]+$/.test(parts[index])) continue;
+        const prefix = parts.slice(0, index + 1).join(".");
+        if (!Object.keys(filter).some((key) => key === prefix || key.startsWith(`${prefix}.`))) {
+          throw mutationError("indexed updates require a filter guard for each array element", "MONGODB_ARRAY_GUARD_REQUIRED");
+        }
+      }
+    }
+  }
+}
+
+// 同一实现嵌入远程固定 helper；保持兼容远程 Node 12，不依赖外部变量。
+export function assertIndexedMutationDocument(request, document) {
+  for (const operator of Object.keys(request.update || {})) {
+    for (const field of Object.keys(request.update[operator])) {
+      const parts = field.split(".");
+      let value = document;
+      for (let position = 0; position < parts.length; position += 1) {
+        const part = parts[position];
+        if (/^[0-9]+$/.test(part)) {
+          const index = Number(part);
+          const append = Array.isArray(value) && index === value.length &&
+            position === parts.length - 1 && operator === "$set";
+          if (!Array.isArray(value) || index > value.length || (index === value.length && !append)) {
+            const error = new Error("indexed mutation must target an existing array element or set its immediate tail");
+            error.code = "MONGODB_ARRAY_INDEX_INVALID";
+            throw error;
+          }
+        }
+        value = value == null ? undefined : value[part];
+      }
+    }
+  }
 }
 
 function normalizeCommonMutation(input, config, operationId, kind = "document") {
@@ -459,6 +511,7 @@ export function normalizeMongoMutation(input = {}, config = {}, options = {}) {
         },
       }
     : normalizeUpdate(input.update);
+  assertIndexedMutationGuards(filter, update);
   const expectedCount = input.expectedCount === undefined
     ? undefined
     : normalizePositiveInt(input.expectedCount, "expectedCount", 1, maxAffected);
@@ -739,6 +792,8 @@ function __hash(value) {
 }
 
 ${MONGODB_CODEC_SCRIPT}
+
+const __assertIndexedMutationDocument = ${assertIndexedMutationDocument.toString()};
 
 function __documentHash(value) {
   return __hash(__encode(value));
@@ -1027,6 +1082,7 @@ async function __prepareDocumentRequest(request, collection) {
   if (documents.length > request.maxAffected) __fail("MONGODB_MUTATION_AFFECTED_LIMIT", "mutation matched more documents than allowed");
   if (request.operation !== "updateMany" && documents.length !== 1) __fail("MONGODB_MUTATION_TARGET_AMBIGUOUS", "mutation filter did not identify exactly one document");
   if (request.expectedCount !== undefined && documents.length !== request.expectedCount) __fail("MONGODB_EXPECTED_COUNT_MISMATCH", "mutation matched a different number of documents than expected");
+  documents.forEach((document) => __assertIndexedMutationDocument(request, document));
   return {
     before: __encode(documents),
     affectedCount: documents.length,

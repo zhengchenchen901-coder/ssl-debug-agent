@@ -486,6 +486,31 @@ prepare -> inspect affected count and fields -> 确认执行 -> commit -> verify
 stores before-images remotely and rechecks them at commit and rollback time;
 later changes cause `MONGODB_ROLLBACK_CONFLICT` instead of an unsafe overwrite.
 
+### Updating individual array elements
+
+The ordinary mutation and transaction tools accept explicit array indexes, for
+example `$set: { "booking_orders.12.origin_status": "2" }`. Keep the document
+`_id` filter and guard that element's identity with
+`"booking_orders.12.origin_id": { "$oid": "<order-id>" }`. Every indexed prefix
+requires a filter guard. Indexes must be canonical decimals from 0 to 99999;
+positional `$`, `$[]`, `$[name]`, prototype paths and sparse array extension are
+rejected. Index definitions and soft-delete field names are unchanged.
+
+Preflight checks that each index addresses an actual array element. `$set` may
+also append one complete element at the immediate tail of an existing array:
+filter `"booking_orders.13": null` when the current length is 13. For idempotent
+insertion, also filter `"booking_orders.origin_id": { "$nin": ["<order-id>"] }`
+(include both string and ObjectId forms when existing data mixes types).
+`$nin` is supported only in filters, with 1–1000 values. Multiple appends to the
+same array require separate plans, rereading its length after each commit.
+
+Only the small patch is sent; the 256 KiB payload limit is unchanged. The server
+still saves the full before-image within the existing journal limit, checks for
+any concurrent document change, commits transactionally and refuses rollback if
+the document has changed afterward. Prepare, confirmation and allowlists remain
+mandatory. Existing bulk-job tools have their separate field validation policy;
+use ordinary mutation/transaction tools for indexed patches.
+
 Index creation and removal use the separate index tool. They are compensating
 operations, not part of the document transaction. An index must not be created
 implicitly by a business operation. Create required unique indexes as a schema

@@ -417,7 +417,7 @@ const tools = [
         },
         update: {
           type: "object",
-          description: "Only $set, $unset, and $inc are supported for updateOne/updateMany.",
+          description: "Only $set, $unset, and $inc are supported. Explicit array indexes require a filter guard for each indexed element; $set may append one complete immediate-tail element. Positional operators are rejected. Filters may use bounded $nin for absence checks.",
         },
         deletedField: {
           type: "string",
