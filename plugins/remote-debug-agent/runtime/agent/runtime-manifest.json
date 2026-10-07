@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "pluginVersion": "2.2.0+codex.20260930045441",
+  "pluginVersion": "2.2.0+codex.20260930062433",
   "runtimeId": "2.2.0:bb40c238c9a764bec7974a7ca8d60c45151879e20aaa522493d5197b3489a977",
   "node": ">=22.18 <23",
   "server": "server.cjs",
