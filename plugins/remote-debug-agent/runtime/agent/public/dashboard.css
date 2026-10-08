@@ -448,6 +448,7 @@ main {
   grid-column: 1 / -1;
 }
 
+.mongo-connection,
 .mongo-permissions {
   min-width: 0;
   border: 1px solid var(--line);
@@ -456,6 +457,11 @@ main {
   gap: 12px;
 }
 
+.mongo-connection {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mongo-connection p,
 .mongo-permissions p {
   margin: 0;
   font-size: 12px;
@@ -479,7 +485,7 @@ main {
   padding: 5px 8px;
 }
 
-.switch-row {
+.form-grid .switch-row {
   align-items: center;
   display: flex;
   gap: 8px;
@@ -596,6 +602,7 @@ main {
 
   .metrics,
   .form-grid,
+  .mongo-connection,
   .detail-row {
     grid-template-columns: 1fr;
   }

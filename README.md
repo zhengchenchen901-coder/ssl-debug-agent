@@ -406,9 +406,17 @@ from the remote application's JSON configuration on that instance and uses the
 existing remote `mongodb` Node driver; the URI and credentials are never part of
 the MCP request, command arguments, response, memory cache, or audit record.
 
-Configure the non-secret connection metadata under each instance in
-`.remote-debug/instances.json` (the file is normally under the local data
-directory):
+Configure the non-secret connection metadata in the dashboard's instance
+create/edit dialog under **MongoDB 连接配置**. Enable MongoDB and enter the remote
+JSON configuration path, remote driver path, configuration profile, URI field
+name, and optional default database. Existing values are filled in when editing.
+After saving, reload a running instance with **重新加载配置**; stopped instances
+use the saved configuration on their next start. Database/collection discovery
+uses the saved worker configuration, so save and reload connection changes
+before reading those options.
+
+These settings are stored under each instance in `.remote-debug/instances.json`
+(the file is normally under the local data directory):
 
 ```json
 {

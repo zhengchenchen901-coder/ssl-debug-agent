@@ -139,6 +139,12 @@ function createDashboardHarness(fetchImpl) {
     auditLog: new FakeElement("input"),
     enabled: new FakeElement("input"),
     approvedCommandsEnabled: new FakeElement("input"),
+    mongodbEnabled: new FakeElement("input"),
+    mongodbConfigPath: new FakeElement("input"),
+    mongodbDriverPath: new FakeElement("input"),
+    mongodbConfigProfile: new FakeElement("input"),
+    mongodbUriKey: new FakeElement("input"),
+    mongodbDatabase: new FakeElement("input"),
     mongodbWriteEnabled: new FakeElement("input"),
     mongodbAllowedDatabases: new FakeElement("textarea"),
     mongodbAllowedCollections: new FakeElement("textarea"),
@@ -288,7 +294,7 @@ test("MongoDB selectors discover names per instance and retain choices on failur
 
 test("dashboard edits only selected MongoDB permissions and validates write scope", async () => {
   const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
-  const mongodb = { enabled: true, configPath: "/app/config.json", configProfile: "test" };
+  const mongodb = { enabled: true, configPath: "/app/config.json", driverPath: "/app/node_modules/mongodb", configProfile: "test" };
   const instances = [
     { id: "default", name: "default", host: "prod", username: "app" },
     { id: "test-server", name: "test", host: "test", username: "app", mongodb },
@@ -335,4 +341,128 @@ test("dashboard edits only selected MongoDB permissions and validates write scop
   context.openModal(instances[1]);
   context.setMongoOptions(form.mongodbAllowedCollections, [], []);
   assert.throws(() => context.formPayload(), /已有白名单不可清空/);
+});
+
+test("dashboard creates a MongoDB connection with required fields and keeps it read-only initially", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const { context, elements } = createDashboardHarness(async () => ({
+    ok: true, text: async () => JSON.stringify({ ok: true, instances: [] }),
+  }));
+  vm.runInContext(script, context);
+  await context.loadInstances();
+  context.resetForm(null);
+  const form = elements.get("instanceForm").elements;
+  assert.equal(context.formPayload().mongodb, undefined);
+  assert.equal(form.mongodbConfigPath.disabled, true);
+  assert.equal(form.mongodbConfigPath.required, false);
+  form.mongodbEnabled.checked = true;
+  context.updateMongoConnectionState();
+  assert.equal(form.mongodbConfigPath.required, true);
+  assert.equal(form.mongodbDatabase.required, false);
+  assert.equal(form.mongodbConfigPath.disabled, false);
+  assert.equal(elements.get("mongodbPermissions").disabled, true);
+  assert.throws(() => context.formPayload(), /远程配置文件路径/);
+  form.mongodbConfigPath.value = " /srv/app/config.json ";
+  assert.throws(() => context.formPayload(), /驱动路径/);
+  form.mongodbDriverPath.value = "/srv/app/node_modules/mongodb";
+  assert.throws(() => context.formPayload(), /配置分组/);
+  form.mongodbConfigProfile.value = " development ";
+  form.mongodbUriKey.value = " ";
+  assert.throws(() => context.formPayload(), /URI 字段名/);
+  form.mongodbUriKey.value = " mongodb.url ";
+  assert.deepEqual(JSON.parse(JSON.stringify(context.formPayload().mongodb)), {
+    enabled: true,
+    configPath: "/srv/app/config.json",
+    driverPath: "/srv/app/node_modules/mongodb",
+    configProfile: "development",
+    uriKey: "mongodb.url",
+    database: "",
+    writeEnabled: false,
+  });
+  form.mongodbEnabled.checked = false;
+  context.updateMongoConnectionState();
+  assert.equal(form.mongodbConfigPath.required, false);
+  assert.equal(context.formPayload().mongodb, undefined);
+});
+
+test("dashboard saves connection changes only for the edited instance and preserves existing permissions", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const production = {
+    enabled: true, configPath: "/prod/config.json", driverPath: "/prod/node_modules/mongodb",
+    configProfile: "production", uriKey: "url", database: "production",
+  };
+  const mongodb = {
+    ...production, configPath: "/test/config.json", configProfile: "development", database: "yennefer",
+    writeEnabled: true, allowedDatabases: ["yennefer"], allowedCollections: ["Customer"],
+    rollbackRoot: "/tmp/mutations", maxAffectedDocuments: 100, bulkEnabled: true,
+  };
+  const instances = [
+    { id: "default", name: "production", host: "prod", username: "app", mongodb: production },
+    { id: "test-server", name: "test", host: "test", username: "app", mongodb },
+  ];
+  const requests = [];
+  const { context, elements } = createDashboardHarness(async (url, options = {}) => {
+    if (options.method === "PUT") requests.push({ url, body: JSON.parse(options.body) });
+    return { ok: true, text: async () => JSON.stringify({ ok: true, instances }) };
+  });
+  vm.runInContext(script, context);
+  await context.loadInstances();
+  context.resetForm(instances[1]);
+  const form = elements.get("instanceForm").elements;
+  assert.equal(form.mongodbConfigPath.value, mongodb.configPath);
+  assert.equal(form.mongodbDriverPath.value, mongodb.driverPath);
+  assert.equal(form.mongodbConfigProfile.value, "development");
+  assert.equal(form.mongodbUriKey.value, "url");
+  assert.equal(form.mongodbDatabase.value, "yennefer");
+  assert.equal(context.formPayload().mongodb, undefined);
+  form.mongodbConfigPath.value = " /test/shared/config.json ";
+  form.mongodbDatabase.value = "";
+  context.updateMongoConnectionState();
+  assert.equal(elements.get("reloadMongoOptions").disabled, true);
+  await context.submitForm({ preventDefault() {} });
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, "/api/instances/test-server");
+  assert.deepEqual(requests[0].body.mongodb, { configPath: "/test/shared/config.json", database: "" });
+  assert.equal(mongodb.configPath, "/test/config.json");
+  assert.equal(production.configPath, "/prod/config.json");
+  context.resetForm(instances[1]);
+  form.mongodbEnabled.checked = false;
+  context.updateMongoConnectionState();
+  assert.equal(elements.get("mongodbPermissions").disabled, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.formPayload().mongodb)), { enabled: false });
+  mongodb.enabled = false;
+  await context.loadInstances();
+  context.resetForm(instances[1]);
+  assert.equal(form.mongodbConfigPath.value, "/test/config.json");
+  form.mongodbEnabled.checked = true;
+  context.updateMongoConnectionState();
+  assert.deepEqual(JSON.parse(JSON.stringify(context.formPayload().mongodb)), { enabled: true });
+});
+
+test("editing a connection discards pending discovery and blocks queries using the previous connection", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const instance = { id: "test-server", mongodb: {
+    enabled: true, configPath: "/test/config.json", driverPath: "/test/node_modules/mongodb",
+    configProfile: "development", uriKey: "url", database: "yennefer", allowedDatabases: ["yennefer"],
+  } };
+  const queries = [];
+  let finishQuery;
+  const { context, elements } = createDashboardHarness(async (url, options) => {
+    if (url === "/api/instances") return { ok: true, text: async () => JSON.stringify({ ok: true, instances: [instance] }) };
+    queries.push(JSON.parse(options.body));
+    return new Promise((resolve) => { finishQuery = resolve; });
+  });
+  vm.runInContext(script, context);
+  await context.loadInstances();
+  context.resetForm(instance);
+  const pending = context.loadMongoOptions();
+  elements.get("instanceForm").elements.mongodbConfigProfile.value = "production";
+  context.updateMongoConnectionState();
+  finishQuery({ ok: true, text: async () => JSON.stringify({ ok: true, data: { databases: [{ name: "old-database" }] } }) });
+  await pending;
+  await context.loadMongoOptions();
+  assert.equal(queries.length, 1);
+  assert.deepEqual(Array.from(elements.get("instanceForm").elements.mongodbAllowedDatabases.children, (o) => o.value), ["yennefer"]);
+  assert.equal(elements.get("reloadMongoOptions").disabled, true);
+  assert.match(elements.get("mongodbHint").textContent, /先保存连接配置并重新加载实例/);
 });

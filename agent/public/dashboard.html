@@ -128,6 +128,35 @@
             <input name="approvedCommandsEnabled" type="checkbox" />
             <span>启用 approved-command</span>
           </label>
+          <fieldset class="wide mongo-connection">
+            <legend>MongoDB 连接配置</legend>
+            <label class="switch-row wide">
+              <input name="mongodbEnabled" type="checkbox" />
+              <span>启用 MongoDB</span>
+            </label>
+            <label class="wide">
+              <span>远程配置文件路径</span>
+              <input name="mongodbConfigPath" autocomplete="off" maxlength="4096" placeholder="/home/app/config.json" />
+            </label>
+            <label class="wide">
+              <span>远程 MongoDB 驱动路径</span>
+              <input name="mongodbDriverPath" autocomplete="off" maxlength="4096" placeholder="/home/app/node_modules/mongodb" />
+            </label>
+            <label>
+              <span>配置分组</span>
+              <input name="mongodbConfigProfile" autocomplete="off" maxlength="128" placeholder="production 或 development" />
+            </label>
+            <label>
+              <span>连接 URI 字段名</span>
+              <input name="mongodbUriKey" autocomplete="off" maxlength="128" value="url" placeholder="url 或 mongodb.url" />
+            </label>
+            <label class="wide">
+              <span>默认数据库</span>
+              <input name="mongodbDatabase" autocomplete="off" maxlength="128" placeholder="可选，留空时使用远程配置中的数据库" />
+            </label>
+            <p class="wide muted">路径均为远程服务器上的绝对路径。配置分组为远程 JSON 文件中的分组名称，例如 production；URI 字段名为该分组中的连接地址字段，例如 url，支持 mongodb.url 这样的嵌套字段。</p>
+            <p class="wide muted">连接地址和凭据由实例读取远程配置文件。保存后，运行中的实例需点击“重新加载配置”生效，已停止的实例下次启动时生效。</p>
+          </fieldset>
           <fieldset id="mongodbPermissions" class="wide mongo-permissions">
             <legend>MongoDB 写入权限</legend>
             <p id="mongodbHint" class="muted"></p>

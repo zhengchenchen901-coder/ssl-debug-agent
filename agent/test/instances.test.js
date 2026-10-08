@@ -162,6 +162,23 @@ test("registry preserves per-instance MongoDB profile metadata", async () => {
     maxImportBatchDocuments: 1500,
   });
   assert.deepEqual(reopened.getInternal("default"), defaultBefore);
+  reopened.update("test-server", { mongodb: {
+    configPath: "/home/github/app/shared/config.json",
+    configProfile: "development",
+    database: "",
+  } });
+  const afterConnectionEdit = new InstanceRegistry({ cwd: dir, registryPath: path.join(dir, "instances.json"), env: {} });
+  assert.deepEqual(afterConnectionEdit.get("test-server").mongodb, {
+    ...reopened.get("test-server").mongodb,
+    configPath: "/home/github/app/shared/config.json",
+    configProfile: "development",
+    database: "",
+    writeEnabled: true,
+    allowedDatabases: ["yennefer"],
+    allowedCollections: ["Customer", "CustomerRestaurantRelation"],
+    maxImportBatchDocuments: 1500,
+  });
+  assert.deepEqual(afterConnectionEdit.getInternal("default"), defaultBefore);
 });
 
 test("registry preserves labeled per-instance source roots", async () => {

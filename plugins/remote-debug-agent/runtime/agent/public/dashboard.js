@@ -377,6 +377,47 @@ function findInstance(id) {
   return state.instances.find((instance) => instance.id === id);
 }
 
+const mongoConnectionFields = [
+  ["configPath", "mongodbConfigPath", "远程配置文件路径"],
+  ["driverPath", "mongodbDriverPath", "远程 MongoDB 驱动路径"],
+  ["configProfile", "mongodbConfigProfile", "配置分组"],
+  ["uriKey", "mongodbUriKey", "连接 URI 字段名"],
+  ["database", "mongodbDatabase", "默认数据库"],
+];
+
+function mongoConnectionChanges() {
+  const existing = findInstance(state.editingId)?.mongodb;
+  const enabled = instanceForm.elements.mongodbEnabled.checked;
+  const changes = {};
+  if (enabled !== Boolean(existing && existing.enabled !== false)) changes.enabled = enabled;
+  for (const [key, name] of mongoConnectionFields) {
+    const previous = existing?.[key] ?? (key === "uriKey" ? "url" : "");
+    const value = instanceForm.elements[name].value.trim();
+    if (!existing || value !== previous) changes[key] = value;
+  }
+  return changes;
+}
+
+function updateMongoConnectionState() {
+  mongoOptionsGeneration++;
+  const enabled = instanceForm.elements.mongodbEnabled.checked;
+  const existing = findInstance(state.editingId)?.mongodb;
+  for (const [key, name] of mongoConnectionFields) {
+    instanceForm.elements[name].disabled = !enabled;
+    instanceForm.elements[name].required = enabled && key !== "database";
+  }
+  const configured = Boolean(existing && existing.enabled !== false);
+  const changed = Object.keys(mongoConnectionChanges()).length > 0;
+  document.querySelector("#mongodbPermissions").disabled = !enabled || !configured;
+  document.querySelector("#reloadMongoOptions").disabled = !enabled || !configured || changed;
+  document.querySelector("#mongodbHint").textContent = !enabled
+    ? "启用 MongoDB 连接后可设置写入权限。"
+    : !configured || changed
+      ? "请先保存连接配置并重新加载实例，再读取数据库和集合选项。"
+      : "可设置当前实例允许写入的数据库和集合。";
+  document.querySelector("#mongodbOptionsStatus").textContent = "";
+}
+
 function resetForm(instance) {
   instanceForm.reset();
   formMessage.textContent = "";
@@ -395,16 +436,16 @@ function resetForm(instance) {
   instanceForm.elements.enabled.checked = instance ? Boolean(instance.enabled) : true;
   instanceForm.elements.approvedCommandsEnabled.checked = Boolean(instance?.approvedCommands?.enabled);
   const mongodb = instance?.mongodb;
-  document.querySelector("#mongodbPermissions").disabled = !mongodb;
-  document.querySelector("#mongodbHint").textContent = mongodb
-    ? "仅修改当前实例的写入权限，保留已有连接配置。"
-    : "当前实例尚未配置 MongoDB 连接，请先在实例配置文件中配置连接，再设置写入权限。";
+  instanceForm.elements.mongodbEnabled.checked = Boolean(mongodb && mongodb.enabled !== false);
+  for (const [key, name] of mongoConnectionFields) {
+    instanceForm.elements[name].value = mongodb?.[key] ?? (key === "uriKey" ? "url" : "");
+  }
   instanceForm.elements.mongodbWriteEnabled.checked = Boolean(mongodb?.writeEnabled || mongodb?.mutationsEnabled);
   mongoOptionsGeneration++;
   document.querySelector("#mongodbCollectionSearch").value = "";
   setMongoOptions(instanceForm.elements.mongodbAllowedDatabases, [], mongodb?.allowedDatabases || []);
   setMongoOptions(instanceForm.elements.mongodbAllowedCollections, [], mongodb?.allowedCollections || []);
-  document.querySelector("#mongodbOptionsStatus").textContent = "";
+  updateMongoConnectionState();
 }
 
 let mongoOptionsGeneration = 0;
@@ -466,7 +507,8 @@ function filterMongoCollections() {
 
 async function loadMongoOptions(collectionsOnly = false) {
   const instanceId = state.editingId;
-  if (!findInstance(instanceId)?.mongodb) return;
+  const mongodb = findInstance(instanceId)?.mongodb;
+  if (!mongodb || mongodb.enabled === false || !instanceForm.elements.mongodbEnabled.checked || Object.keys(mongoConnectionChanges()).length) return;
   const generation = ++mongoOptionsGeneration;
   const isCurrent = () => generation === mongoOptionsGeneration && state.editingId === instanceId;
   const status = document.querySelector("#mongodbOptionsStatus");
@@ -555,11 +597,22 @@ function formPayload() {
     delete payload.auditLog;
   }
   const mongodb = findInstance(state.editingId)?.mongodb;
-  if (mongodb) {
+  const mongoEnabled = form.mongodbEnabled.checked;
+  if (mongodb || mongoEnabled) {
+    if (mongoEnabled) {
+      for (const [key, name, label] of mongoConnectionFields) {
+        if (key !== "database" && !form[name].value.trim()) throw new Error(`启用 MongoDB 时，请填写${label}。`);
+      }
+    }
+    const changes = mongoConnectionChanges();
+    // New connections begin without write permissions; discovery uses the saved worker configuration.
+    if (!mongodb) {
+      payload.mongodb = { ...changes, enabled: true, writeEnabled: false };
+      return payload;
+    }
     const writeEnabled = form.mongodbWriteEnabled.checked;
     const allowedDatabases = selectedMongoNames(form.mongodbAllowedDatabases);
     const allowedCollections = selectedMongoNames(form.mongodbAllowedCollections);
-    const changes = {};
     if (writeEnabled !== Boolean(mongodb.writeEnabled || mongodb.mutationsEnabled)) {
       changes.writeEnabled = writeEnabled;
       // The legacy alias also enables writes; disabling must turn both off.
@@ -572,7 +625,7 @@ function formPayload() {
       }
     }
     if (Object.keys(changes).length) {
-      if (writeEnabled && (!allowedDatabases.length || !allowedCollections.length)) {
+      if (mongoEnabled && writeEnabled && (!allowedDatabases.length || !allowedCollections.length)) {
         throw new Error("允许写入时，请填写允许的数据库和集合。");
       }
       payload.mongodb = changes;
@@ -764,6 +817,10 @@ instanceRows.addEventListener("click", (event) => {
 });
 
 reloadButton.addEventListener("click", loadInstances);
+instanceForm.elements.mongodbEnabled.addEventListener("change", updateMongoConnectionState);
+for (const [, name] of mongoConnectionFields) {
+  instanceForm.elements[name].addEventListener("input", updateMongoConnectionState);
+}
 document.querySelector("#reloadMongoOptions").addEventListener("click", () => loadMongoOptions());
 instanceForm.elements.mongodbAllowedDatabases.addEventListener("change", () => loadMongoOptions(true));
 document.querySelector("#mongodbCollectionSearch").addEventListener("input", filterMongoCollections);
