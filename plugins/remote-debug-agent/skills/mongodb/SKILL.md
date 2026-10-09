@@ -5,6 +5,11 @@ description: Inspect MongoDB data deployed with a configured Remote Debug Agent 
 
 # MongoDB Inspection
 
+Before querying, confirm `remote_debug_mongodb_query` is callable in this chat.
+If it is missing, follow [environment-check](../environment-check/SKILL.md) to
+show the plugin's environment report in the existing dashboard. Resume the
+query only after the required tool is available.
+
 Use `remote_debug_mongodb_query` for database access. The tool routes through
 the selected instance's SSH worker, reads that instance's configured remote
 application profile, and uses the deployed Node MongoDB driver. Do not replace

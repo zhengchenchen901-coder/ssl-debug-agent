@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
+import { createRequire } from "node:module";
 import {
   DEFAULT_MONGODB_BULK_ROOT,
   MONGODB_BULK_CONFIRMATION,
@@ -139,6 +140,46 @@ test("bulk helper is fixed Node code, bounded, and parses with legacy target syn
   assert.doesNotThrow(() => new vm.Script(script));
   assert.match(script, /bulkWrite/);
   assert.match(script, /\.worker-lease\.json/);
+});
+
+test("generated bulk helper decodes ObjectIds and original values with legacy BSON drivers", () => {
+  class ObjectID {
+    constructor(hex) { this.hex = hex.toLowerCase(); this._bsontype = "ObjectID"; }
+    toHexString() { return this.hex; }
+  }
+  const requireBuiltin = createRequire(import.meta.url);
+  const id = { $oid: "507f1f77bcf86cd799439011" };
+  const input = { _id: id, owner: id, deleted_at: null, updated_at: { $date: "2026-10-09T06:29:30.611Z" } };
+  const script = buildMongoBulkScript({ action: "get", jobId: "codec-regression" }, config)
+    .replace(/\n__bulkMain\(\);\s*$/, "\n({ decode: __decode, encode: __encode, selector: __bulkUpdateSelector })");
+  for (const [bson, driver] of [[{ ObjectId: ObjectID }, {}], [null, { ObjectID }], [{}, { ObjectId: ObjectID }]]) {
+    const loadedDrivers = [];
+    function requireMock(name) {
+      if (name === "fixture-bson") return bson;
+      if (name === config.driverPath) { loadedDrivers.push(name); return driver; }
+      if (["fs", "path", "crypto"].includes(name)) return requireBuiltin(name);
+      throw new Error(`unexpected module: ${name}`);
+    }
+    requireMock.resolve = (name, options) => {
+      assert.equal(name, "bson");
+      assert.deepEqual(Array.from(options.paths), [config.driverPath]);
+      if (!bson) throw new Error("standalone BSON module unavailable");
+      return "fixture-bson";
+    };
+    const codec = vm.runInNewContext(script, { require: requireMock, Buffer });
+    const decoded = codec.decode(input);
+    assert.ok(decoded._id instanceof ObjectID);
+    assert.ok(decoded.owner instanceof ObjectID);
+    assert.equal(decoded.updated_at.toISOString(), input.updated_at.$date);
+    assert.deepEqual(JSON.parse(JSON.stringify(codec.encode(decoded))), input);
+    const selector = codec.selector({ id, expected: {
+      deleted_at: { exists: true, value: null }, updated_at: { exists: true, value: input.updated_at },
+    } });
+    assert.ok(selector._id instanceof ObjectID);
+    assert.equal(selector.deleted_at.$eq, null);
+    assert.equal(selector.updated_at.$eq.toISOString(), input.updated_at.$date);
+    assert.ok(loadedDrivers.length > 0);
+  }
 });
 
 test("runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel", async () => {

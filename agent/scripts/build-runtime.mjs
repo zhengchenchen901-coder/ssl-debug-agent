@@ -80,6 +80,7 @@ const artifactFiles = [
   "public/dashboard.css",
   "public/dashboard.html",
   "public/dashboard.js",
+  "public/environment-report.js",
 ];
 const hashes = {};
 for (const relativePath of artifactFiles) {
@@ -93,7 +94,7 @@ const manifest = {
   version: 1,
   pluginVersion: pluginManifest.version,
   runtimeId: `${agentPackage.version}:${runtimeHash}`,
-  node: ">=22.18 <23",
+  node: agentPackage.engines.node,
   server: "server.cjs",
   worker: "worker-entry.cjs",
   hashes,

@@ -20,6 +20,26 @@
     </header>
 
     <main>
+      <section id="environmentPanel" class="table-panel environment-panel" aria-label="插件环境检查" hidden>
+        <div class="table-toolbar">
+          <div>
+            <h2>插件环境检查 <span id="environmentStatus" class="environment-status"></span></h2>
+            <p id="environmentSummary" aria-live="polite">正在读取检查报告</p>
+          </div>
+          <button id="reloadEnvironmentButton" class="button" type="button">刷新报告</button>
+        </div>
+        <div class="table-scroll">
+          <table class="pro-table environment-table">
+            <thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead>
+            <tbody id="environmentRows"></tbody>
+          </table>
+        </div>
+        <p id="environmentRecovery" class="environment-recovery"></p>
+        <details id="environmentHistory" class="environment-history" hidden>
+          <summary>最近失败记录</summary>
+          <div id="environmentHistoryRows"></div>
+        </details>
+      </section>
       <section class="metrics" aria-label="运行状态">
         <div class="metric">
           <span>实例总数</span>
@@ -206,6 +226,7 @@
 
     <div id="toast" class="toast" hidden></div>
 
+    <script src="/environment-report.js" defer></script>
     <script src="/dashboard.js" type="module"></script>
   </body>
 </html>

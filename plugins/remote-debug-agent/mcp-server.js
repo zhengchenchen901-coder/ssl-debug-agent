@@ -4,6 +4,8 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import environmentReport from "./environment-report.cjs";
+import diagnosticDashboard from "./diagnostic-dashboard.cjs";
 import {
   migrateLegacyData,
   normalizeWindowsExtendedPath,
@@ -1361,6 +1363,15 @@ function agentSettingsWithPort(settings, port) {
 }
 
 async function appendPluginLog(settings, event) {
+  try {
+    const report = environmentReport.recordRuntimeEvent(settings.dataDir, { agentUrl: settings.agentUrl, ...event },
+      process.env.REMOTE_DEBUG_ENVIRONMENT_ATTEMPT_ID);
+    if (report?.status === "failed") {
+      await diagnosticDashboard.ensureDashboard(__dirname, settings.dataDir, report);
+    }
+  } catch (error) {
+    console.error("failed to update environment report", error.code || "REPORT_FAILED");
+  }
   const entry = {
     time: new Date().toISOString(),
     component: "mcp-server",

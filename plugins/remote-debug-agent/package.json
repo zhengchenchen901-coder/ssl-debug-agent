@@ -6,8 +6,9 @@
   "description": "Codex Desktop MCP wrapper for the Remote Debug Agent.",
   "main": "mcp-server.js",
   "scripts": {
-    "start": "node mcp-server.js",
-    "diagnose": "node scripts/diagnose-mcp.js",
+    "start": "node launch.cjs",
+    "diagnose": "node launch.cjs --diagnose",
+    "check:environment": "node launch.cjs --check",
     "test": "node --test \"test/*.test.js\""
   },
   "engines": {

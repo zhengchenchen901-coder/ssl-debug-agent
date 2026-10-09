@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
+import environmentReport from "../plugins/remote-debug-agent/environment-report.cjs";
 import { byteLength, createActivityLog, previewText } from "./activity.js";
 import {
   assertApprovedCommandsEnabled,
@@ -79,6 +80,15 @@ const MIN_MANAGER_LEASE_TTL_MS = 10_000;
 const MAX_MANAGER_LEASE_TTL_MS = 120_000;
 const DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5_000;
 const DEFAULT_DESKTOP_STARTUP_GRACE_MS = 60_000;
+
+function registerEnvironmentReport(app, config) {
+  const dataDir = path.dirname(path.dirname(config.runtime?.statePath ||
+    path.join(process.cwd(), ".runtime", "agent-state.json")));
+  app.get("/api/environment-report", (_request, response) => {
+    response.set("Cache-Control", "no-store");
+    response.json({ ok: true, mode: "manager", report: environmentReport.readReport(dataDir) });
+  });
+}
 
 function durationSince(startedAt) {
   return Math.round(performance.now() - startedAt);
@@ -465,6 +475,8 @@ export function createApp(options = {}) {
   app.get("/", (_request, response) => {
     response.sendFile(path.join(publicDir, "dashboard.html"));
   });
+
+  registerEnvironmentReport(app, config);
 
   app.get("/favicon.ico", (_request, response) => {
     response.status(204).end();
@@ -1808,6 +1820,8 @@ export function createManagerApp(options = {}) {
   app.get("/", (_request, response) => {
     response.sendFile(path.join(publicDir, "dashboard.html"));
   });
+
+  registerEnvironmentReport(app, config);
 
   app.get("/favicon.ico", (_request, response) => {
     response.status(204).end();

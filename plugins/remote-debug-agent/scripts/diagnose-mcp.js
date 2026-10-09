@@ -12,11 +12,12 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const pluginRoot = path.resolve(__dirname, "..");
-const serverPath = path.resolve(pluginRoot, "mcp-server.js");
+const serverPath = path.resolve(pluginRoot, "launch.cjs");
 const pluginName = "remote-debug-agent";
 const expectedTools = [
   "remote_debug_list_instances",
   "remote_debug_get_capabilities",
+  "remote_debug_mongodb_query",
   "remote_debug_run_command",
   "remote_debug_read_file",
   "remote_debug_list_dir",

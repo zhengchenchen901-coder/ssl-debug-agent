@@ -1847,7 +1847,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     "remote-debug-agent",
     "2.2.0",
   );
-  const installedServerPath = path.join(cacheDir, "mcp-server.js");
+  const installedServerPath = path.join(cacheDir, "launch.cjs");
   const port = await getFreePort();
   const pluginRoot = path.resolve(here, "..");
   const legacyStateDir = path.join(projectDir, ".remote-debug");
@@ -1963,6 +1963,9 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs"]) {
+    await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
+  }
   await fs.copyFile(
     path.resolve(here, "..", "runtime-support.js"),
     path.join(cacheDir, "runtime-support.js"),
@@ -2012,6 +2015,9 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs"]) {
+    await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
+  }
   await fs.copyFile(
     path.resolve(here, "..", "runtime-support.js"),
     path.join(cacheDir, "runtime-support.js"),
@@ -2294,4 +2300,3 @@ test("MCP starts the local agent on a fallback port when the configured port is 
     await close(occupied);
   }
 });
-

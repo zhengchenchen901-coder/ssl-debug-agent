@@ -80,8 +80,10 @@ target instance is not obvious. Pass `instanceId` to operation tools when
 multiple instances are configured. If only one instance exists, the manager can
 route to it automatically.
 
-When the MCP tools are missing, only troubleshoot plugin visibility: run
-`npm run diagnose` from `plugins/remote-debug-agent`, inspect the MCP runtime
+When the MCP tools are missing, only troubleshoot plugin visibility: follow
+[environment-check](../environment-check/SKILL.md) to read the startup report
+and show the existing dashboard, then run `npm run diagnose` from the installed
+plugin root when the local runtime meets the requirements. Inspect the MCP runtime
 logs, and report whether the installed plugin cache recently received
 `MCP_INITIALIZE` and `MCP_TOOLS_LIST`. Stop after the visibility diagnosis and
 give the user recovery steps such as reinstalling or re-enabling the plugin,
@@ -182,4 +184,3 @@ For "Why is port 9000 unreachable?":
 4. Inspect recent nginx and app logs under `/var/log`, `/home/app`, or `/home/github`, and PM2 metadata under `/root/.pm2`.
 5. Report whether the problem is listener absence, bind address, proxy config,
    crash loop, or resource pressure.
-

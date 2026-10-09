@@ -25,6 +25,20 @@
 
 插件启动链路已确认正确：
 
+入口现为兼容 Node 14 的 `launch.cjs`。它在加载 MCP wrapper 前检查实际
+Node 版本、打包运行文件与报告目录，保存 dashboard 使用的环境报告。
+环境不符合要求时不加载 wrapper，而是尝试提供仅诊断模式的 dashboard；
+目录不可写时报告保存到系统临时目录，并保留原目录不符合要求的检查结果。
+成功启动时只通过私有 token 关闭本插件的诊断服务，再加载原 wrapper。
+不兼容的启动入口会从 PATH/NVM 查找符合要求的已有 Node，再仅为插件进程
+重启入口；明确指定的 `REMOTE_DEBUG_NODE_PATH` 优先，错误配置不静默回退。
+报告同时记录启动入口与实际运行版本。环境检查不改变用户默认 Node 版本，
+不执行远端业务操作。
+
+wrapper 的生命周期日志会同步更新本次启动报告；该报告中的工具发现记录
+不等同于当前聊天已经获得可调用工具。诊断服务不提供 `/status` Agent
+身份、实例管理或业务执行接口，不能作为健康 Agent 被复用。
+
 1. MCP wrapper 从 marketplace cache、`REMOTE_DEBUG_PROJECT_ROOT` 或本地源码路径解析项目根目录。
 2. wrapper 合并进程环境与项目 `.env`，以 `REMOTE_DEBUG_*` 配置生成 Agent URL、端口、Agent 目录和配置指纹。
 3. wrapper 在 `initialize` 和 `tools/list` 后预热本地 Agent；在工具调用前通过 `ensureAgentReady()` 确认 Agent 可用。

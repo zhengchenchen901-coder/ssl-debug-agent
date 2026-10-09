@@ -18,6 +18,25 @@
   --shadow: 0 12px 32px rgba(31, 35, 41, 0.1);
 }
 
+.environment-panel { margin-bottom: 16px; }
+.environment-panel .button { flex-shrink: 0; white-space: nowrap; }
+.environment-status { margin-left: 8px; font-size: 12px; font-weight: 500; }
+.environment-status.failed, .environment-result.fail { color: var(--red); }
+.environment-status.passed, .environment-result.pass { color: var(--green); }
+.environment-result.warn { color: var(--gold); }
+.environment-panel .environment-table { min-width: 660px; width: 100%; table-layout: fixed; }
+.environment-table th:nth-child(1) { width: 16%; }
+.environment-table th:nth-child(2) { width: 23%; }
+.environment-table th:nth-child(3) { width: 21%; }
+.environment-table th:nth-child(4) { width: 10%; }
+.environment-table th:nth-child(5) { width: 30%; }
+.environment-table td, .environment-table th { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+.environment-recovery, .environment-history { padding: 14px 18px; color: var(--muted); font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.environment-history { border-top: 1px solid var(--line-soft); }
+.environment-history summary { cursor: pointer; }
+.environment-history p { margin-top: 8px; }
+[hidden] { display: none !important; }
+
 * {
   box-sizing: border-box;
 }

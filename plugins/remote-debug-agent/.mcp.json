@@ -3,7 +3,7 @@
     "remote-debug-agent": {
       "command": "node",
       "args": [
-        "./mcp-server.js"
+        "./launch.cjs"
       ],
       "cwd": ".",
       "startup_timeout_sec": 30,

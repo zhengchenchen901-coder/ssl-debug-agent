@@ -187,6 +187,44 @@ loading path in three separate layers:
 
 First confirm the first two layers with the bundled diagnostic script:
 
+The plugin entrypoint is `launch.cjs`. It checks the actual Node executable
+against the packaged Node requirement (`>=22.18 <23`), bundled artifact hashes,
+and report-directory permissions before loading MCP. If the initial Node is
+incompatible, it finds an already installed compatible Node in PATH or NVM and
+relaunches only the plugin process using that executable. The current runtime
+is retained when compatible; NVM versions are considered newest first within
+the supported range. No global PATH or NVM default is changed. An optional
+`REMOTE_DEBUG_NODE_PATH` in the environment or `config.env` pins a user-selected
+executable; an invalid explicit selection fails visibly. The report records
+both the bootstrap runtime and the selected MCP runtime. `config.env` is
+optional; SSH and MongoDB connectivity are checked when those features are used.
+
+Reports are saved under the resolved data directory as
+`.runtime/environment-report.json`, including timestamps and up to ten previous
+failure snapshots. If that directory cannot be written, the launcher saves a
+failure report under a user-specific system temporary directory instead.
+The existing dashboard displays these at the top of the
+page. When startup fails, a Node 14-compatible diagnostic-only server reuses
+the dashboard assets on a free loopback port (preferred Agent port through
+preferred port + 9), without starting workers. Its URL is printed to stderr
+and saved as `dashboardUrl`; it expires after 30 minutes. A successful launch
+stops only the diagnostic server identified by its private shutdown token.
+An existing Agent dashboard can also display a later failed MCP launch.
+
+Use `node launch.cjs --check` from the installed plugin root for a fresh local
+check without starting a dashboard server. Reports also have a self-contained
+offline copy at `.runtime/environment-dashboard.html`. If Node is absent or
+older than 14, `python3 scripts/offline-report.py` (Windows: `py -3`) generates
+that view using Python's standard library. When neither runtime is available,
+the environment-check skill reports the requirements without claiming a
+report was generated. Manual shell checks describe that shell's Node, which
+may differ from Codex's MCP launch environment.
+
+The dashboard's “刷新报告” reads the latest saved result; it does not restart
+instances. After changing the launch environment, reload the plugin or open a
+fresh chat to run its startup check again. Passing prerequisites or receiving
+`tools/list` does not establish that the current chat exposes callable tools.
+
 ```powershell
 cd plugins\remote-debug-agent
 npm run diagnose

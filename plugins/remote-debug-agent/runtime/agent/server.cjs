@@ -1795,7 +1795,7 @@ var require_utf32 = __commonJS({
     }
     Utf32Encoder.prototype.write = function(str) {
       var src = Buffer2.from(str, "ucs2");
-      var dst = Buffer2.alloc(src.length * 2 + 4);
+      var dst = Buffer2.alloc(src.length * 2);
       var write32 = this.isLE ? dst.writeUInt32LE : dst.writeUInt32BE;
       var offset = 0;
       for (var i = 0; i < src.length; i += 2) {
@@ -1862,9 +1862,9 @@ var require_utf32 = __commonJS({
         }
         if (overflow.length === 4) {
           if (isLE) {
-            codepoint = overflow[0] | overflow[1] << 8 | overflow[2] << 16 | overflow[3] << 24;
+            codepoint = overflow[i] | overflow[i + 1] << 8 | overflow[i + 2] << 16 | overflow[i + 3] << 24;
           } else {
-            codepoint = overflow[3] | overflow[2] << 8 | overflow[1] << 16 | overflow[0] << 24;
+            codepoint = overflow[i + 3] | overflow[i + 2] << 8 | overflow[i + 1] << 16 | overflow[i] << 24;
           }
           overflow.length = 0;
           offset = _writeCodepoint(dst, offset, codepoint, badChar);
@@ -1899,11 +1899,7 @@ var require_utf32 = __commonJS({
       return offset;
     }
     Utf32Decoder.prototype.end = function() {
-      if (this.overflow.length === 0) {
-        return;
-      }
       this.overflow.length = 0;
-      return String.fromCharCode(this.badChar);
     };
     exports2.utf32 = Utf32AutoCodec;
     exports2.ucs4 = "utf32";
@@ -2528,8 +2524,6 @@ var require_sbcs_data = __commonJS({
       elot928: "iso88597",
       hebrew: "iso88598",
       hebrew8: "iso88598",
-      iso88598i: "iso88598",
-      iso88598e: "iso88598",
       turkish: "iso88599",
       turkish8: "iso88599",
       thai: "iso885911",
@@ -5636,133 +5630,106 @@ var require_on_finished = __commonJS({
   }
 });
 
-// node_modules/type-is/node_modules/content-type/dist/index.js
-var require_dist = __commonJS({
-  "node_modules/type-is/node_modules/content-type/dist/index.js"(exports2) {
+// node_modules/content-type/index.js
+var require_content_type = __commonJS({
+  "node_modules/content-type/index.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
+    var PARAM_REGEXP = /; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) */g;
+    var TEXT_REGEXP = /^[\u000b\u0020-\u007e\u0080-\u00ff]+$/;
+    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var QESC_REGEXP = /\\([\u000b\u0020-\u00ff])/g;
+    var QUOTE_REGEXP = /([\\"])/g;
+    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
     exports2.format = format;
     exports2.parse = parse;
-    var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
-    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    var QUOTE_REGEXP = /[\\"]/g;
-    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    var NullObject = /* @__PURE__ */ (() => {
-      const C = function() {
-      };
-      C.prototype = /* @__PURE__ */ Object.create(null);
-      return C;
-    })();
     function format(obj) {
-      const { type, parameters } = obj;
+      if (!obj || typeof obj !== "object") {
+        throw new TypeError("argument obj is required");
+      }
+      var parameters = obj.parameters;
+      var type = obj.type;
       if (!type || !TYPE_REGEXP.test(type)) {
-        throw new TypeError(`Invalid type: ${type}`);
+        throw new TypeError("invalid type");
       }
-      let result = type;
-      if (parameters) {
-        for (const param of Object.keys(parameters)) {
+      var string = type;
+      if (parameters && typeof parameters === "object") {
+        var param;
+        var params = Object.keys(parameters).sort();
+        for (var i = 0; i < params.length; i++) {
+          param = params[i];
           if (!TOKEN_REGEXP.test(param)) {
-            throw new TypeError(`Invalid parameter name: ${param}`);
+            throw new TypeError("invalid parameter name");
           }
-          result += `; ${param}=${qstring(parameters[param])}`;
+          string += "; " + param + "=" + qstring(parameters[param]);
         }
       }
-      return result;
+      return string;
     }
-    function parse(header, options) {
-      const len = header.length;
-      let index = skipOWS(header, 0, len);
-      const valueStart = index;
-      index = skipValue(header, index, len);
-      const valueEnd = trailingOWS(header, valueStart, index);
-      const type = header.slice(valueStart, valueEnd).toLowerCase();
-      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
-      return { type, parameters };
-    }
-    var SP = 32;
-    var HTAB = 9;
-    var SEMI = 59;
-    var EQ = 61;
-    var DQUOTE = 34;
-    var BSLASH = 92;
-    function parseParameters(header, index, len) {
-      const parameters = new NullObject();
-      parameter: while (index < len) {
-        index = skipOWS(header, index + 1, len);
-        const keyStart = index;
-        while (index < len) {
-          const code = header.charCodeAt(index);
-          if (code === SEMI)
-            continue parameter;
-          if (code === EQ) {
-            const keyEnd = trailingOWS(header, keyStart, index);
-            const key = header.slice(keyStart, keyEnd).toLowerCase();
-            index = skipOWS(header, index + 1, len);
-            if (index < len && header.charCodeAt(index) === DQUOTE) {
-              index++;
-              let value = "";
-              while (index < len) {
-                const code2 = header.charCodeAt(index++);
-                if (code2 === DQUOTE) {
-                  index = skipValue(header, index, len);
-                  if (parameters[key] === void 0)
-                    parameters[key] = value;
-                  break;
-                }
-                if (code2 === BSLASH && index < len) {
-                  value += header[index++];
-                  continue;
-                }
-                value += String.fromCharCode(code2);
-              }
-              continue parameter;
-            }
-            const valueStart = index;
-            index = skipValue(header, index, len);
-            if (parameters[key] === void 0) {
-              const valueEnd = trailingOWS(header, valueStart, index);
-              parameters[key] = header.slice(valueStart, valueEnd);
-            }
-            continue parameter;
+    function parse(string) {
+      if (!string) {
+        throw new TypeError("argument string is required");
+      }
+      var header = typeof string === "object" ? getcontenttype(string) : string;
+      if (typeof header !== "string") {
+        throw new TypeError("argument string is required to be a string");
+      }
+      var index = header.indexOf(";");
+      var type = index !== -1 ? header.slice(0, index).trim() : header.trim();
+      if (!TYPE_REGEXP.test(type)) {
+        throw new TypeError("invalid media type");
+      }
+      var obj = new ContentType(type.toLowerCase());
+      if (index !== -1) {
+        var key;
+        var match;
+        var value;
+        PARAM_REGEXP.lastIndex = index;
+        while (match = PARAM_REGEXP.exec(header)) {
+          if (match.index !== index) {
+            throw new TypeError("invalid parameter format");
           }
-          index++;
+          index += match[0].length;
+          key = match[1].toLowerCase();
+          value = match[2];
+          if (value.charCodeAt(0) === 34) {
+            value = value.slice(1, -1);
+            if (value.indexOf("\\") !== -1) {
+              value = value.replace(QESC_REGEXP, "$1");
+            }
+          }
+          obj.parameters[key] = value;
+        }
+        if (index !== header.length) {
+          throw new TypeError("invalid parameter format");
         }
       }
-      return parameters;
+      return obj;
     }
-    function skipValue(str, index, len) {
-      while (index < len) {
-        const char = str.charCodeAt(index);
-        if (char === SEMI)
-          break;
-        index++;
+    function getcontenttype(obj) {
+      var header;
+      if (typeof obj.getHeader === "function") {
+        header = obj.getHeader("content-type");
+      } else if (typeof obj.headers === "object") {
+        header = obj.headers && obj.headers["content-type"];
       }
-      return index;
-    }
-    function skipOWS(header, index, len) {
-      while (index < len) {
-        const char = header.charCodeAt(index);
-        if (char !== SP && char !== HTAB)
-          break;
-        index++;
+      if (typeof header !== "string") {
+        throw new TypeError("content-type header is missing from object");
       }
-      return index;
+      return header;
     }
-    function trailingOWS(header, start, end) {
-      while (end > start) {
-        const char = header.charCodeAt(end - 1);
-        if (char !== SP && char !== HTAB)
-          break;
-        end--;
-      }
-      return end;
-    }
-    function qstring(str) {
-      if (TOKEN_REGEXP.test(str))
+    function qstring(val) {
+      var str = String(val);
+      if (TOKEN_REGEXP.test(str)) {
         return str;
-      if (TEXT_REGEXP.test(str))
-        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
-      throw new TypeError(`Invalid parameter value: ${str}`);
+      }
+      if (str.length > 0 && !TEXT_REGEXP.test(str)) {
+        throw new TypeError("invalid parameter value");
+      }
+      return '"' + str.replace(QUOTE_REGEXP, "\\$1") + '"';
+    }
+    function ContentType(type) {
+      this.parameters = /* @__PURE__ */ Object.create(null);
+      this.type = type;
     }
   }
 });
@@ -15305,12 +15272,18 @@ var require_media_typer = __commonJS({
       return string;
     }
     function test(string) {
+      if (!string) {
+        throw new TypeError("argument string is required");
+      }
       if (typeof string !== "string") {
         throw new TypeError("argument string is required to be a string");
       }
       return TYPE_REGEXP.test(string.toLowerCase());
     }
     function parse(string) {
+      if (!string) {
+        throw new TypeError("argument string is required");
+      }
       if (typeof string !== "string") {
         throw new TypeError("argument string is required to be a string");
       }
@@ -15340,7 +15313,7 @@ var require_media_typer = __commonJS({
 var require_type_is = __commonJS({
   "node_modules/type-is/index.js"(exports2, module2) {
     "use strict";
-    var contentType = require_dist();
+    var contentType = require_content_type();
     var mime = require_mime_types();
     var typer = require_media_typer();
     module2.exports = typeofrequest;
@@ -15349,12 +15322,9 @@ var require_type_is = __commonJS({
     module2.exports.normalize = normalize;
     module2.exports.match = mimeMatch;
     function typeis(value, types_) {
-      if (value && typeof value === "object") {
-        value = value.headers["content-type"];
-      }
       var i;
       var types = types_;
-      var val = normalizeType(value);
+      var val = tryNormalizeType(value);
       if (!val) {
         return false;
       }
@@ -15420,140 +15390,15 @@ var require_type_is = __commonJS({
       return true;
     }
     function normalizeType(value) {
-      if (!value) return null;
-      var type = contentType.parse(value, { parameters: false }).type;
+      var type = contentType.parse(value).type;
       return typer.test(type) ? type : null;
     }
-  }
-});
-
-// node_modules/body-parser/node_modules/content-type/dist/index.js
-var require_dist2 = __commonJS({
-  "node_modules/body-parser/node_modules/content-type/dist/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.format = format;
-    exports2.parse = parse;
-    var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
-    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    var QUOTE_REGEXP = /[\\"]/g;
-    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    var NullObject = /* @__PURE__ */ (() => {
-      const C = function() {
-      };
-      C.prototype = /* @__PURE__ */ Object.create(null);
-      return C;
-    })();
-    function format(obj) {
-      const { type, parameters } = obj;
-      if (!type || !TYPE_REGEXP.test(type)) {
-        throw new TypeError(`Invalid type: ${type}`);
+    function tryNormalizeType(value) {
+      try {
+        return value ? normalizeType(value) : null;
+      } catch (err) {
+        return null;
       }
-      let result = type;
-      if (parameters) {
-        for (const param of Object.keys(parameters)) {
-          if (!TOKEN_REGEXP.test(param)) {
-            throw new TypeError(`Invalid parameter name: ${param}`);
-          }
-          result += `; ${param}=${qstring(parameters[param])}`;
-        }
-      }
-      return result;
-    }
-    function parse(header, options) {
-      const len = header.length;
-      let index = skipOWS(header, 0, len);
-      const valueStart = index;
-      index = skipValue(header, index, len);
-      const valueEnd = trailingOWS(header, valueStart, index);
-      const type = header.slice(valueStart, valueEnd).toLowerCase();
-      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
-      return { type, parameters };
-    }
-    var SP = 32;
-    var HTAB = 9;
-    var SEMI = 59;
-    var EQ = 61;
-    var DQUOTE = 34;
-    var BSLASH = 92;
-    function parseParameters(header, index, len) {
-      const parameters = new NullObject();
-      parameter: while (index < len) {
-        index = skipOWS(header, index + 1, len);
-        const keyStart = index;
-        while (index < len) {
-          const code = header.charCodeAt(index);
-          if (code === SEMI)
-            continue parameter;
-          if (code === EQ) {
-            const keyEnd = trailingOWS(header, keyStart, index);
-            const key = header.slice(keyStart, keyEnd).toLowerCase();
-            index = skipOWS(header, index + 1, len);
-            if (index < len && header.charCodeAt(index) === DQUOTE) {
-              index++;
-              let value = "";
-              while (index < len) {
-                const code2 = header.charCodeAt(index++);
-                if (code2 === DQUOTE) {
-                  index = skipValue(header, index, len);
-                  if (parameters[key] === void 0)
-                    parameters[key] = value;
-                  break;
-                }
-                if (code2 === BSLASH && index < len) {
-                  value += header[index++];
-                  continue;
-                }
-                value += String.fromCharCode(code2);
-              }
-              continue parameter;
-            }
-            const valueStart = index;
-            index = skipValue(header, index, len);
-            if (parameters[key] === void 0) {
-              const valueEnd = trailingOWS(header, valueStart, index);
-              parameters[key] = header.slice(valueStart, valueEnd);
-            }
-            continue parameter;
-          }
-          index++;
-        }
-      }
-      return parameters;
-    }
-    function skipValue(str, index, len) {
-      while (index < len) {
-        const char = str.charCodeAt(index);
-        if (char === SEMI)
-          break;
-        index++;
-      }
-      return index;
-    }
-    function skipOWS(header, index, len) {
-      while (index < len) {
-        const char = header.charCodeAt(index);
-        if (char !== SP && char !== HTAB)
-          break;
-        index++;
-      }
-      return index;
-    }
-    function trailingOWS(header, start, end) {
-      while (end > start) {
-        const char = header.charCodeAt(end - 1);
-        if (char !== SP && char !== HTAB)
-          break;
-        end--;
-      }
-      return end;
-    }
-    function qstring(str) {
-      if (TOKEN_REGEXP.test(str))
-        return str;
-      if (TEXT_REGEXP.test(str))
-        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
-      throw new TypeError(`Invalid parameter value: ${str}`);
     }
   }
 });
@@ -15563,7 +15408,7 @@ var require_utils = __commonJS({
   "node_modules/body-parser/lib/utils.js"(exports2, module2) {
     "use strict";
     var bytes = require_bytes();
-    var contentType = require_dist2();
+    var contentType = require_content_type();
     var typeis = require_type_is();
     module2.exports = {
       getCharset,
@@ -15571,9 +15416,11 @@ var require_utils = __commonJS({
       passthrough
     };
     function getCharset(req) {
-      const header = req.headers["content-type"];
-      if (!header) return void 0;
-      return contentType.parse(header).parameters.charset?.toLowerCase();
+      try {
+        return (contentType.parse(req).parameters.charset || "").toLowerCase();
+      } catch {
+        return void 0;
+      }
     }
     function typeChecker(type) {
       return function checkType(req) {
@@ -15584,18 +15431,15 @@ var require_utils = __commonJS({
       if (!defaultType) {
         throw new TypeError("defaultType must be provided");
       }
-      const inflate = options?.inflate !== false;
-      const limit = typeof options?.limit === "undefined" || options?.limit === null ? 102400 : bytes.parse(options.limit);
-      const type = options?.type || defaultType;
-      const verify = options?.verify || false;
-      const defaultCharset = options?.defaultCharset || "utf-8";
-      if (limit === null) {
-        throw new TypeError(`option limit "${String(options.limit)}" is invalid`);
-      }
+      var inflate = options?.inflate !== false;
+      var limit = typeof options?.limit !== "number" ? bytes.parse(options?.limit || "100kb") : options?.limit;
+      var type = options?.type || defaultType;
+      var verify = options?.verify || false;
+      var defaultCharset = options?.defaultCharset || "utf-8";
       if (verify !== false && typeof verify !== "function") {
         throw new TypeError("option verify must be function");
       }
-      const shouldParse = typeof type !== "function" ? typeChecker(type) : type;
+      var shouldParse = typeof type !== "function" ? typeChecker(type) : type;
       return {
         inflate,
         limit,
@@ -15642,7 +15486,7 @@ var require_read = __commonJS({
         next();
         return;
       }
-      let encoding = null;
+      var encoding = null;
       if (options?.skipCharset !== true) {
         encoding = getCharset(req) || options.defaultCharset;
         if (!!options?.isValidCharset && !options.isValidCharset(encoding)) {
@@ -15654,10 +15498,10 @@ var require_read = __commonJS({
           return;
         }
       }
-      let length;
-      const opts = options;
-      let stream;
-      const verify = opts.verify;
+      var length;
+      var opts = options;
+      var stream;
+      var verify = opts.verify;
       try {
         stream = contentstream(req, debug, opts.inflate);
         length = stream.length;
@@ -15676,7 +15520,7 @@ var require_read = __commonJS({
       debug("read body");
       getBody(stream, opts, function(error, body) {
         if (error) {
-          let _error;
+          var _error;
           if (error.type === "encoding.unsupported") {
             _error = createError(415, 'unsupported charset "' + encoding.toUpperCase() + '"', {
               charset: encoding.toLowerCase(),
@@ -15706,7 +15550,7 @@ var require_read = __commonJS({
             return;
           }
         }
-        let str = body;
+        var str = body;
         try {
           debug("parse body");
           str = typeof body !== "string" && encoding !== null ? iconv.decode(body, encoding) : body;
@@ -15722,8 +15566,8 @@ var require_read = __commonJS({
       });
     }
     function contentstream(req, debug, inflate) {
-      const encoding = (req.headers["content-encoding"] || "identity").toLowerCase();
-      const length = req.headers["content-length"];
+      var encoding = (req.headers["content-encoding"] || "identity").toLowerCase();
+      var length = req.headers["content-length"];
       debug('content-encoding "%s"', encoding);
       if (inflate === false && encoding !== "identity") {
         throw createError(415, "content encoding unsupported", {
@@ -15735,7 +15579,7 @@ var require_read = __commonJS({
         req.length = length;
         return req;
       }
-      const stream = createDecompressionStream(encoding, debug);
+      var stream = createDecompressionStream(encoding, debug);
       req.pipe(stream);
       return stream;
     }
@@ -15781,43 +15625,18 @@ var require_json = __commonJS({
     var JSON_SYNTAX_REGEXP = /#+/g;
     function json(options) {
       const normalizedOptions = normalizeOptions(options, "application/json");
-      const parse = createJsonParser(options);
-      const readOptions = {
-        ...normalizedOptions,
-        // assert charset per RFC 7159 sec 8.1
-        isValidCharset: (charset) => charset.slice(0, 4) === "utf-"
-      };
-      return function jsonParser(req, res, next) {
-        read(req, res, next, parse, debug, readOptions);
-      };
-    }
-    function createJsonParser(options) {
-      const reviver = options?.reviver;
-      const strict = options?.strict !== false;
-      if (strict) {
-        return function parse(body) {
-          if (body.length === 0) {
-            return {};
-          }
-          const first = firstchar(body);
+      var reviver = options?.reviver;
+      var strict = options?.strict !== false;
+      function parse(body) {
+        if (body.length === 0) {
+          return {};
+        }
+        if (strict) {
+          var first = firstchar(body);
           if (first !== "{" && first !== "[") {
             debug("strict violation");
             throw createStrictSyntaxError(body, first);
           }
-          try {
-            debug("parse json");
-            return JSON.parse(body, reviver);
-          } catch (e) {
-            throw normalizeJsonSyntaxError(e, {
-              message: e.message,
-              stack: e.stack
-            });
-          }
-        };
-      }
-      return function parse(body) {
-        if (body.length === 0) {
-          return {};
         }
         try {
           debug("parse json");
@@ -15828,11 +15647,19 @@ var require_json = __commonJS({
             stack: e.stack
           });
         }
+      }
+      const readOptions = {
+        ...normalizedOptions,
+        // assert charset per RFC 7159 sec 8.1
+        isValidCharset: (charset) => charset.slice(0, 4) === "utf-"
+      };
+      return function jsonParser(req, res, next) {
+        read(req, res, next, parse, debug, readOptions);
       };
     }
     function createStrictSyntaxError(str, char) {
-      const index = str.indexOf(char);
-      let partial = "";
+      var index = str.indexOf(char);
+      var partial = "";
       if (index !== -1) {
         partial = str.substring(0, index) + JSON_SYNTAX_CHAR.repeat(str.length - index);
       }
@@ -15849,13 +15676,13 @@ var require_json = __commonJS({
       }
     }
     function firstchar(str) {
-      const match = FIRST_CHAR_REGEXP.exec(str);
+      var match = FIRST_CHAR_REGEXP.exec(str);
       return match ? match[1] : void 0;
     }
     function normalizeJsonSyntaxError(error, obj) {
-      const keys = Object.getOwnPropertyNames(error);
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
+      var keys = Object.getOwnPropertyNames(error);
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
         if (key !== "stack" && key !== "message") {
           delete error[key];
         }
@@ -17507,8 +17334,7 @@ var require_side_channel = __commonJS({
       var channel = {
         assert: function(key) {
           if (!channel.has(key)) {
-            var keyDesc = key && Object(key) === key ? "the given object key" : inspect(key);
-            throw new $TypeError("Side channel does not contain " + keyDesc);
+            throw new $TypeError("Side channel does not contain " + inspect(key));
           }
         },
         "delete": function(key) {
@@ -17564,7 +17390,6 @@ var require_utils2 = __commonJS({
     "use strict";
     var formats = require_formats();
     var getSideChannel = require_side_channel();
-    var defineProperty = require_es_define_property();
     var has = Object.prototype.hasOwnProperty;
     var isArray = Array.isArray;
     var overflowChannel = getSideChannel();
@@ -17612,18 +17437,6 @@ var require_utils2 = __commonJS({
       }
       return obj;
     };
-    var setProperty = function setProperty2(obj, key, value) {
-      if (key === "__proto__" && defineProperty) {
-        defineProperty(obj, key, {
-          configurable: true,
-          enumerable: true,
-          value,
-          writable: true
-        });
-      } else {
-        obj[key] = value;
-      }
-    };
     var merge = function merge2(target, source, options) {
       if (!source) {
         return target;
@@ -17631,10 +17444,7 @@ var require_utils2 = __commonJS({
       if (typeof source !== "object" && typeof source !== "function") {
         if (isArray(target)) {
           var nextIndex = target.length;
-          if (options && typeof options.arrayLimit === "number" && nextIndex >= options.arrayLimit) {
-            if (options.throwOnLimitExceeded) {
-              throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-            }
+          if (options && typeof options.arrayLimit === "number" && nextIndex > options.arrayLimit) {
             return markOverflow(arrayToObject(target.concat(source), options), nextIndex);
           }
           target[nextIndex] = source;
@@ -17665,9 +17475,6 @@ var require_utils2 = __commonJS({
         }
         var combined = [target].concat(source);
         if (options && typeof options.arrayLimit === "number" && combined.length > options.arrayLimit) {
-          if (options.throwOnLimitExceeded) {
-            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-          }
           return markOverflow(arrayToObject(combined, options), combined.length - 1);
         }
         return combined;
@@ -17689,20 +17496,14 @@ var require_utils2 = __commonJS({
             target[i] = item;
           }
         });
-        if (options && typeof options.arrayLimit === "number" && target.length > options.arrayLimit) {
-          if (options.throwOnLimitExceeded) {
-            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-          }
-          return markOverflow(arrayToObject(target, options), target.length - 1);
-        }
         return target;
       }
       return Object.keys(source).reduce(function(acc, key) {
         var value = source[key];
         if (has.call(acc, key)) {
-          setProperty(acc, key, merge2(acc[key], value, options));
+          acc[key] = merge2(acc[key], value, options);
         } else {
-          setProperty(acc, key, value);
+          acc[key] = value;
         }
         if (isOverflow(source) && !isOverflow(acc)) {
           markOverflow(acc, getMaxIndex(source));
@@ -17718,7 +17519,7 @@ var require_utils2 = __commonJS({
     };
     var assign = function assignSingleSource(target, source) {
       return Object.keys(source).reduce(function(acc, key) {
-        setProperty(acc, key, source[key]);
+        acc[key] = source[key];
         return acc;
       }, target);
     };
@@ -17752,13 +17553,6 @@ var require_utils2 = __commonJS({
       var out = "";
       for (var j = 0; j < string.length; j += limit) {
         var segment = string.length >= limit ? string.slice(j, j + limit) : string;
-        if (j + limit < string.length) {
-          var last = segment.charCodeAt(segment.length - 1);
-          if (last >= 55296 && last <= 56319) {
-            segment = segment.slice(0, -1);
-            j -= 1;
-          }
-        }
         var arr = [];
         for (var i = 0; i < segment.length; ++i) {
           var c = segment.charCodeAt(i);
@@ -17788,7 +17582,7 @@ var require_utils2 = __commonJS({
     };
     var compact = function compact2(value) {
       var queue = [{ obj: { o: value }, prop: "o" }];
-      var refs = getSideChannel();
+      var refs = [];
       for (var i = 0; i < queue.length; ++i) {
         var item = queue[i];
         var obj = item.obj[item.prop];
@@ -17796,9 +17590,9 @@ var require_utils2 = __commonJS({
         for (var j = 0; j < keys.length; ++j) {
           var key = keys[j];
           var val = obj[key];
-          if (typeof val === "object" && val !== null && !refs.has(val)) {
+          if (typeof val === "object" && val !== null && refs.indexOf(val) === -1) {
             queue[queue.length] = { obj, prop: key };
-            refs.set(val, true);
+            refs[refs.length] = val;
           }
         }
       }
@@ -17814,11 +17608,8 @@ var require_utils2 = __commonJS({
       }
       return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
     };
-    var combine = function combine2(a, b, arrayLimit, plainObjects, throwOnLimitExceeded) {
+    var combine = function combine2(a, b, arrayLimit, plainObjects) {
       if (isOverflow(a)) {
-        if (throwOnLimitExceeded) {
-          throw new RangeError("Array limit exceeded. Only " + arrayLimit + " element" + (arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-        }
         var newIndex = getMaxIndex(a) + 1;
         a[newIndex] = b;
         setMaxIndex(a, newIndex);
@@ -17826,9 +17617,6 @@ var require_utils2 = __commonJS({
       }
       var result = [].concat(a, b);
       if (result.length > arrayLimit) {
-        if (throwOnLimitExceeded) {
-          throw new RangeError("Array limit exceeded. Only " + arrayLimit + " element" + (arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-        }
         return markOverflow(arrayToObject(result, { plainObjects }), result.length - 1);
       }
       return result;
@@ -17948,7 +17736,7 @@ var require_stringify = __commonJS({
       }
       if (obj === null) {
         if (strictNullHandling) {
-          return formatter(encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix);
+          return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset, "key", format) : prefix;
         }
         obj = "";
       }
@@ -17966,9 +17754,7 @@ var require_stringify = __commonJS({
       var objKeys;
       if (generateArrayPrefix === "comma" && isArray(obj)) {
         if (encodeValuesOnly && encoder) {
-          obj = utils.maybeMap(obj, function(v) {
-            return v == null ? v : encoder(v);
-          });
+          obj = utils.maybeMap(obj, encoder);
         }
         objKeys = [{ value: obj.length > 0 ? obj.join(",") || null : void 0 }];
       } else if (isArray(filter)) {
@@ -18106,9 +17892,6 @@ var require_stringify = __commonJS({
       var sideChannel = getSideChannel();
       for (var i = 0; i < objKeys.length; ++i) {
         var key = objKeys[i];
-        if (typeof key === "undefined" || key === null) {
-          continue;
-        }
         var value = obj[key];
         if (options.skipNulls && value === null) {
           continue;
@@ -18138,9 +17921,9 @@ var require_stringify = __commonJS({
       var prefix = options.addQueryPrefix === true ? "?" : "";
       if (options.charsetSentinel) {
         if (options.charset === "iso-8859-1") {
-          prefix += "utf8=%26%2310003%3B" + options.delimiter;
+          prefix += "utf8=%26%2310003%3B&";
         } else {
-          prefix += "utf8=%E2%9C%93" + options.delimiter;
+          prefix += "utf8=%E2%9C%93&";
         }
       }
       return joined.length > 0 ? prefix + joined : "";
@@ -18184,19 +17967,8 @@ var require_parse = __commonJS({
         return String.fromCharCode(parseInt(numberStr, 10));
       });
     };
-    var parseArrayValue = function(val, options, currentArrayLength, isFlatArrayValue) {
+    var parseArrayValue = function(val, options, currentArrayLength) {
       if (val && typeof val === "string" && options.comma && val.indexOf(",") > -1) {
-        if (isFlatArrayValue && options.throwOnLimitExceeded) {
-          var commaCount = 0;
-          var commaIndex = val.indexOf(",");
-          while (commaIndex > -1) {
-            commaCount += 1;
-            if (commaCount >= options.arrayLimit) {
-              throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
-            }
-            commaIndex = val.indexOf(",", commaIndex + 1);
-          }
-        }
         return val.split(",");
       }
       if (options.throwOnLimitExceeded && currentArrayLength >= options.arrayLimit) {
@@ -18253,8 +18025,7 @@ var require_parse = __commonJS({
               parseArrayValue(
                 part.slice(pos + 1),
                 options,
-                isArray(obj[key]) ? obj[key].length : 0,
-                part.indexOf("[]=") === -1
+                isArray(obj[key]) ? obj[key].length : 0
               ),
               function(encodedVal) {
                 return options.decoder(encodedVal, defaults.decoder, charset, "value");
@@ -18269,7 +18040,10 @@ var require_parse = __commonJS({
           val = isArray(val) ? [val] : val;
         }
         if (options.comma && isArray(val) && val.length > options.arrayLimit) {
-          val = utils.combine([], val, options.arrayLimit, options.plainObjects, options.throwOnLimitExceeded);
+          if (options.throwOnLimitExceeded) {
+            throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+          }
+          val = utils.combine([], val, options.arrayLimit, options.plainObjects);
         }
         if (key !== null) {
           var existing = has.call(obj, key);
@@ -18278,8 +18052,7 @@ var require_parse = __commonJS({
               obj[key],
               val,
               options.arrayLimit,
-              options.plainObjects,
-              options.throwOnLimitExceeded
+              options.plainObjects
             );
           } else if (!existing || options.duplicates === "last") {
             obj[key] = val;
@@ -18306,8 +18079,7 @@ var require_parse = __commonJS({
               [],
               leaf,
               options.arrayLimit,
-              options.plainObjects,
-              options.throwOnLimitExceeded
+              options.plainObjects
             );
           }
         } else {
@@ -18334,8 +18106,8 @@ var require_parse = __commonJS({
       }
       return leaf;
     };
-    var splitKeyIntoSegments = function splitKeyIntoSegments2(originalKey, options) {
-      var key = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
+    var splitKeyIntoSegments = function splitKeyIntoSegments2(givenKey, options) {
+      var key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, "[$1]") : givenKey;
       if (options.depth <= 0) {
         if (!options.plainObjects && has.call(Object.prototype, key)) {
           if (!options.allowPrototypes) {
@@ -18344,56 +18116,37 @@ var require_parse = __commonJS({
         }
         return [key];
       }
-      var segments = [];
-      var first = key.indexOf("[");
-      var parent = first >= 0 ? key.slice(0, first) : key;
+      var brackets = /(\[[^[\]]*])/;
+      var child = /(\[[^[\]]*])/g;
+      var segment = brackets.exec(key);
+      var parent = segment ? key.slice(0, segment.index) : key;
+      var keys = [];
       if (parent) {
         if (!options.plainObjects && has.call(Object.prototype, parent)) {
           if (!options.allowPrototypes) {
             return;
           }
         }
-        segments[segments.length] = parent;
+        keys[keys.length] = parent;
       }
-      var n = key.length;
-      var open = first;
-      var collected = 0;
-      while (open >= 0 && collected < options.depth) {
-        var level = 1;
-        var i = open + 1;
-        var close = -1;
-        while (i < n && close < 0) {
-          var cu = key.charCodeAt(i);
-          if (cu === 91) {
-            level += 1;
-          } else if (cu === 93) {
-            level -= 1;
-            if (level === 0) {
-              close = i;
-            }
+      var i = 0;
+      while ((segment = child.exec(key)) !== null && i < options.depth) {
+        i += 1;
+        var segmentContent = segment[1].slice(1, -1);
+        if (!options.plainObjects && has.call(Object.prototype, segmentContent)) {
+          if (!options.allowPrototypes) {
+            return;
           }
-          i += 1;
         }
-        if (close < 0) {
-          segments[segments.length] = "[" + key.slice(open) + "]";
-          return segments;
-        }
-        var seg = key.slice(open, close + 1);
-        var content = seg.slice(1, -1);
-        if (!options.plainObjects && has.call(Object.prototype, content) && !options.allowPrototypes) {
-          return;
-        }
-        segments[segments.length] = seg;
-        collected += 1;
-        open = key.indexOf("[", close + 1);
+        keys[keys.length] = segment[1];
       }
-      if (open >= 0) {
+      if (segment) {
         if (options.strictDepth === true) {
           throw new RangeError("Input depth exceeded depth option of " + options.depth + " and strictDepth is true");
         }
-        segments[segments.length] = "[" + key.slice(open) + "]";
+        keys[keys.length] = "[" + key.slice(segment.index) + "]";
       }
-      return segments;
+      return keys;
     };
     var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesParsed) {
       if (!givenKey) {
@@ -18507,7 +18260,10 @@ var require_urlencoded = __commonJS({
       if (normalizedOptions.defaultCharset !== "utf-8" && normalizedOptions.defaultCharset !== "iso-8859-1") {
         throw new TypeError("option defaultCharset must be either utf-8 or iso-8859-1");
       }
-      const parse = createQueryParser(options);
+      var queryparse = createQueryParser(options);
+      function parse(body, encoding) {
+        return body.length ? queryparse(body, encoding) : {};
+      }
       const readOptions = {
         ...normalizedOptions,
         // assert charset
@@ -18518,11 +18274,11 @@ var require_urlencoded = __commonJS({
       };
     }
     function createQueryParser(options) {
-      const extended = Boolean(options?.extended);
-      let parameterLimit = options?.parameterLimit !== void 0 ? options?.parameterLimit : 1e3;
-      const charsetSentinel = options?.charsetSentinel;
-      const interpretNumericEntities = options?.interpretNumericEntities;
-      const depth = extended ? options?.depth !== void 0 ? options?.depth : 32 : 0;
+      var extended = Boolean(options?.extended);
+      var parameterLimit = options?.parameterLimit !== void 0 ? options?.parameterLimit : 1e3;
+      var charsetSentinel = options?.charsetSentinel;
+      var interpretNumericEntities = options?.interpretNumericEntities;
+      var depth = extended ? options?.depth !== void 0 ? options?.depth : 32 : 0;
       if (isNaN(parameterLimit) || parameterLimit < 1) {
         throw new TypeError("option parameterLimit must be a positive number");
       }
@@ -18532,16 +18288,15 @@ var require_urlencoded = __commonJS({
       if (isFinite(parameterLimit)) {
         parameterLimit = parameterLimit | 0;
       }
-      return function parse(body, encoding) {
-        if (!body.length) return {};
-        const paramCount = parameterCount(body, parameterLimit);
+      return function queryparse(body, encoding) {
+        var paramCount = parameterCount(body, parameterLimit);
         if (paramCount === void 0) {
           debug("too many parameters");
           throw createError(413, "too many parameters", {
             type: "parameters.too.many"
           });
         }
-        const arrayLimit = extended ? Math.max(100, paramCount) : paramCount;
+        var arrayLimit = extended ? Math.max(100, paramCount) : paramCount;
         debug("parse " + (extended ? "extended " : "") + "urlencoding");
         try {
           return qs.parse(body, {
@@ -18583,10 +18338,26 @@ var require_body_parser = __commonJS({
   "node_modules/body-parser/index.js"(exports2, module2) {
     "use strict";
     exports2 = module2.exports = bodyParser;
-    exports2.json = require_json();
-    exports2.raw = require_raw();
-    exports2.text = require_text();
-    exports2.urlencoded = require_urlencoded();
+    Object.defineProperty(exports2, "json", {
+      configurable: true,
+      enumerable: true,
+      get: () => require_json()
+    });
+    Object.defineProperty(exports2, "raw", {
+      configurable: true,
+      enumerable: true,
+      get: () => require_raw()
+    });
+    Object.defineProperty(exports2, "text", {
+      configurable: true,
+      enumerable: true,
+      get: () => require_text()
+    });
+    Object.defineProperty(exports2, "urlencoded", {
+      configurable: true,
+      enumerable: true,
+      get: () => require_urlencoded()
+    });
     function bodyParser() {
       throw new Error("The bodyParser() generic has been split into individual middleware to use instead.");
     }
@@ -18979,110 +18750,6 @@ var require_view = __commonJS({
       } catch (e) {
         return void 0;
       }
-    }
-  }
-});
-
-// node_modules/content-type/index.js
-var require_content_type = __commonJS({
-  "node_modules/content-type/index.js"(exports2) {
-    "use strict";
-    var PARAM_REGEXP = /; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) */g;
-    var TEXT_REGEXP = /^[\u000b\u0020-\u007e\u0080-\u00ff]+$/;
-    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    var QESC_REGEXP = /\\([\u000b\u0020-\u00ff])/g;
-    var QUOTE_REGEXP = /([\\"])/g;
-    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    exports2.format = format;
-    exports2.parse = parse;
-    function format(obj) {
-      if (!obj || typeof obj !== "object") {
-        throw new TypeError("argument obj is required");
-      }
-      var parameters = obj.parameters;
-      var type = obj.type;
-      if (!type || !TYPE_REGEXP.test(type)) {
-        throw new TypeError("invalid type");
-      }
-      var string = type;
-      if (parameters && typeof parameters === "object") {
-        var param;
-        var params = Object.keys(parameters).sort();
-        for (var i = 0; i < params.length; i++) {
-          param = params[i];
-          if (!TOKEN_REGEXP.test(param)) {
-            throw new TypeError("invalid parameter name");
-          }
-          string += "; " + param + "=" + qstring(parameters[param]);
-        }
-      }
-      return string;
-    }
-    function parse(string) {
-      if (!string) {
-        throw new TypeError("argument string is required");
-      }
-      var header = typeof string === "object" ? getcontenttype(string) : string;
-      if (typeof header !== "string") {
-        throw new TypeError("argument string is required to be a string");
-      }
-      var index = header.indexOf(";");
-      var type = index !== -1 ? header.slice(0, index).trim() : header.trim();
-      if (!TYPE_REGEXP.test(type)) {
-        throw new TypeError("invalid media type");
-      }
-      var obj = new ContentType(type.toLowerCase());
-      if (index !== -1) {
-        var key;
-        var match;
-        var value;
-        PARAM_REGEXP.lastIndex = index;
-        while (match = PARAM_REGEXP.exec(header)) {
-          if (match.index !== index) {
-            throw new TypeError("invalid parameter format");
-          }
-          index += match[0].length;
-          key = match[1].toLowerCase();
-          value = match[2];
-          if (value.charCodeAt(0) === 34) {
-            value = value.slice(1, -1);
-            if (value.indexOf("\\") !== -1) {
-              value = value.replace(QESC_REGEXP, "$1");
-            }
-          }
-          obj.parameters[key] = value;
-        }
-        if (index !== header.length) {
-          throw new TypeError("invalid parameter format");
-        }
-      }
-      return obj;
-    }
-    function getcontenttype(obj) {
-      var header;
-      if (typeof obj.getHeader === "function") {
-        header = obj.getHeader("content-type");
-      } else if (typeof obj.headers === "object") {
-        header = obj.headers && obj.headers["content-type"];
-      }
-      if (typeof header !== "string") {
-        throw new TypeError("content-type header is missing from object");
-      }
-      return header;
-    }
-    function qstring(val) {
-      var str = String(val);
-      if (TOKEN_REGEXP.test(str)) {
-        return str;
-      }
-      if (str.length > 0 && !TEXT_REGEXP.test(str)) {
-        throw new TypeError("invalid parameter value");
-      }
-      return '"' + str.replace(QUOTE_REGEXP, "\\$1") + '"';
-    }
-    function ContentType(type) {
-      this.parameters = /* @__PURE__ */ Object.create(null);
-      this.type = type;
     }
   }
 });
@@ -20170,7 +19837,7 @@ var require_is_promise = __commonJS({
 });
 
 // node_modules/path-to-regexp/dist/index.js
-var require_dist3 = __commonJS({
+var require_dist = __commonJS({
   "node_modules/path-to-regexp/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -20543,7 +20210,7 @@ var require_layer = __commonJS({
   "node_modules/router/lib/layer.js"(exports2, module2) {
     "use strict";
     var isPromise = require_is_promise();
-    var pathRegexp = require_dist3();
+    var pathRegexp = require_dist();
     var debug = require_src()("router:layer");
     var deprecate = require_depd()("router");
     var TRAILING_SLASH_REGEXP = /\/+$/;
@@ -22150,27 +21817,19 @@ var require_range_parser = __commonJS({
       var ranges = [];
       ranges.type = str.slice(0, index);
       for (var i = 0; i < arr.length; i++) {
-        var indexOf = arr[i].indexOf("-");
-        if (indexOf === -1) {
-          return -2;
-        }
-        var startStr = arr[i].slice(0, indexOf).trim();
-        var endStr = arr[i].slice(indexOf + 1).trim();
-        var start = parsePos(startStr);
-        var end = parsePos(endStr);
-        if (startStr.length === 0) {
+        var range = arr[i].split("-");
+        var start = parseInt(range[0], 10);
+        var end = parseInt(range[1], 10);
+        if (isNaN(start)) {
           start = size - end;
           end = size - 1;
-        } else if (endStr.length === 0) {
+        } else if (isNaN(end)) {
           end = size - 1;
         }
         if (end > size - 1) {
           end = size - 1;
         }
-        if (isNaN(start) || isNaN(end)) {
-          return -2;
-        }
-        if (start > end || start < 0) {
+        if (isNaN(start) || isNaN(end) || start > end || start < 0) {
           continue;
         }
         ranges.push({
@@ -22182,10 +21841,6 @@ var require_range_parser = __commonJS({
         return -1;
       }
       return options && options.combine ? combineRanges(ranges) : ranges;
-    }
-    function parsePos(str) {
-      if (/^\d+$/.test(str)) return Number(str);
-      return NaN;
     }
     function combineRanges(ranges) {
       var ordered = ranges.map(mapWithIndex).sort(sortByRangeStart);
@@ -23945,6 +23600,309 @@ var require_express2 = __commonJS({
   }
 });
 
+// ../plugins/remote-debug-agent/environment-report.cjs
+var require_environment_report = __commonJS({
+  "../plugins/remote-debug-agent/environment-report.cjs"(exports2, module2) {
+    "use strict";
+    var fs7 = require("fs");
+    var os2 = require("os");
+    var path8 = require("path");
+    var crypto = require("crypto");
+    function dataDirectory(env) {
+      return path8.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path8.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path8.join(os2.homedir(), ".remote-debug-agent")));
+    }
+    function reportPath(dataDir) {
+      return path8.join(dataDir, ".runtime", "environment-report.json");
+    }
+    function readJson(file) {
+      try {
+        return JSON.parse(fs7.readFileSync(file, "utf8"));
+      } catch (_) {
+        return null;
+      }
+    }
+    function readReport(dataDir) {
+      return readJson(reportPath(dataDir));
+    }
+    function writeJson(file, value) {
+      fs7.mkdirSync(path8.dirname(file), { recursive: true, mode: 448 });
+      const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
+      try {
+        fs7.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
+        fs7.renameSync(temporary, file);
+      } finally {
+        try {
+          fs7.unlinkSync(temporary);
+        } catch (_) {
+        }
+      }
+    }
+    function saveReport(dataDir, report) {
+      writeJson(reportPath(dataDir), report);
+      try {
+        writeOfflineDashboard(dataDir, report);
+      } catch (_) {
+      }
+      return report;
+    }
+    function compatibleNode(version, requirement) {
+      const v = /^(\d+)\.(\d+)\.(\d+)$/.exec(version.replace(/^v/, ""));
+      const range = /^>=(\d+)\.(\d+)(?:\.(\d+))? <(\d+)$/.exec(requirement);
+      if (!v || !range) return false;
+      const actual = v.slice(1).map(Number);
+      const minimum = [Number(range[1]), Number(range[2]), Number(range[3] || 0)];
+      return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
+    }
+    function effectiveEnvironment(env, dataDir) {
+      const configPath = path8.resolve(env.REMOTE_DEBUG_ENV_PATH || path8.join(dataDir, "config.env"));
+      const effective = Object.assign({}, env);
+      let configError = null;
+      try {
+        if (fs7.existsSync(configPath)) {
+          fs7.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
+            const match = /^\s*(REMOTE_DEBUG_[A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
+            if (!match) return;
+            let value = match[2];
+            if (value[0] === '"' && value[value.length - 1] === '"' || value[0] === "'" && value[value.length - 1] === "'") value = value.slice(1, -1);
+            else value = value.replace(/\s+#.*$/, "");
+            effective[match[1]] = value;
+          });
+        }
+      } catch (error) {
+        configError = error.code || "CONFIG_UNREADABLE";
+      }
+      return { env: effective, configPath, configError };
+    }
+    function collectReport(pluginRoot, env, options) {
+      options = options || {};
+      const dataDir = dataDirectory(env);
+      const settings = effectiveEnvironment(env, dataDir);
+      const runtimeRoot = path8.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path8.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path8.join(pluginRoot, "package.json"));
+      const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
+      const version = options.nodeVersion || process.versions.node;
+      const checks = [];
+      function check(id, label, actual, required, status, remedy) {
+        checks.push({
+          id,
+          label,
+          actual,
+          required,
+          status,
+          remedy: status === "fail" || status === "warn" ? remedy : ""
+        });
+      }
+      check(
+        "node",
+        "插件启动使用的 Node.js",
+        version + "（" + (options.execPath || process.execPath) + "）",
+        requirement,
+        compatibleNode(version, requirement) ? "pass" : "fail",
+        "安装满足版本范围的 Node.js，或通过 REMOTE_DEBUG_NODE_PATH 指定已有版本；启动入口会自动查找 PATH/NVM，无需改变其他项目的默认版本。"
+      );
+      const selection = env.REMOTE_DEBUG_BOOTSTRAP_NODE_PATH ? {
+        bootstrapExecutable: env.REMOTE_DEBUG_BOOTSTRAP_NODE_PATH,
+        bootstrapVersion: env.REMOTE_DEBUG_BOOTSTRAP_NODE_VERSION,
+        executable: process.execPath,
+        version: process.versions.node,
+        source: env.REMOTE_DEBUG_NODE_SELECTION_SOURCE
+      } : null;
+      if (selection) check(
+        "node-selection",
+        "运行环境选择",
+        "入口 Node " + selection.bootstrapVersion + " → 插件 Node " + selection.version + "（" + selection.source + "）",
+        "插件运行进程使用符合版本范围的 Node.js",
+        "pass",
+        ""
+      );
+      const external = settings.env.REMOTE_DEBUG_AGENT_URL || settings.env.REMOTE_DEBUG_AGENT_DIR;
+      if (!external) {
+        const valid = manifest && manifest.version === 1 && typeof manifest.runtimeId === "string" && typeof manifest.server === "string" && typeof manifest.worker === "string" && manifest.hashes;
+        check(
+          "manifest",
+          "预构建运行清单",
+          valid ? manifest.runtimeId : "缺失或格式无效",
+          "存在有效的 runtime-manifest.json",
+          valid ? "pass" : "fail",
+          "重新安装完整插件，开发环境可重新构建 runtime。"
+        );
+        if (valid) {
+          const requiredFiles = [
+            manifest.server,
+            manifest.worker,
+            "public/dashboard.html",
+            "public/dashboard.css",
+            "public/dashboard.js",
+            "public/environment-report.js"
+          ];
+          const invalid = requiredFiles.filter(function(file) {
+            const resolved = path8.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path8.sep) || !fs7.existsSync(resolved)) return true;
+            try {
+              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs7.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
+            } catch (_) {
+              return true;
+            }
+          });
+          check(
+            "artifacts",
+            "运行文件完整性",
+            invalid.length ? "缺失或校验不匹配：" + invalid.join("、") : "完整",
+            "运行文件存在且 SHA-256 与清单一致",
+            invalid.length ? "fail" : "pass",
+            "重新安装或重新构建插件，避免混用不同版本的文件。"
+          );
+        }
+      } else {
+        check("artifacts", "运行文件完整性", "使用自定义 Agent", "由自定义部署管理运行文件", "skip", "连接与配置将在对应功能调用时检查。");
+      }
+      check(
+        "config",
+        "本地配置文件",
+        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs7.existsSync(settings.configPath) ? settings.configPath : "未创建",
+        "可选；文件存在时需可读，连接信息也可来自实例配置或环境变量",
+        settings.configError ? "fail" : fs7.existsSync(settings.configPath) ? "pass" : "warn",
+        settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
+      );
+      try {
+        fs7.mkdirSync(path8.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path8.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs7.writeFileSync(probe, "", { mode: 384 });
+        fs7.unlinkSync(probe);
+        check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
+      } catch (_) {
+        check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "fail", "为当前用户提供目录写入权限，或设置 REMOTE_DEBUG_DATA_DIR 到可写目录。");
+      }
+      const previous = readReport(dataDir);
+      const history = previous && Array.isArray(previous.failures) ? previous.failures.slice(-9) : [];
+      if (previous && previous.status === "failed") {
+        history.push({
+          checkedAt: previous.checkedAt,
+          stage: previous.stage,
+          checks: previous.checks.filter(function(item) {
+            return item.status === "fail";
+          })
+        });
+      }
+      return {
+        schemaVersion: 1,
+        attemptId: crypto.randomBytes(16).toString("hex"),
+        trigger: options.trigger || "startup",
+        checkedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        pluginRoot,
+        nodeExecutable: options.execPath || process.execPath,
+        nodeRequirement: requirement,
+        runtimeSelection: selection,
+        dataDir,
+        status: checks.some(function(item) {
+          return item.status === "fail";
+        }) ? "failed" : "checked",
+        stage: "environment",
+        checks,
+        failures: history.slice(-10),
+        offlineDashboard: path8.join(dataDir, ".runtime", "environment-dashboard.html"),
+        dashboardUrl: null
+      };
+    }
+    function writeOfflineDashboard(dataDir, report) {
+      const publicDir = path8.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path8.join(dataDir, ".runtime", "environment-dashboard.html");
+      if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name) {
+        return fs7.existsSync(path8.join(publicDir, name));
+      })) {
+        let escape2 = function(value) {
+          return String(value || "").replace(/[&<>"']/g, function(char) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
+          });
+        };
+        const rows = report.checks.map(function(check) {
+          return "<tr>" + [check.label, check.actual, check.required, check.status, check.remedy].map(function(value) {
+            return "<td>" + escape2(value) + "</td>";
+          }).join("") + "</tr>";
+        }).join("");
+        fs7.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
+        return;
+      }
+      let html = fs7.readFileSync(path8.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs7.readFileSync(path8.join(publicDir, "dashboard.css"), "utf8");
+      const script = fs7.readFileSync(path8.join(publicDir, "environment-report.js"), "utf8");
+      const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
+      html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
+        return "<style>" + css + "</style>";
+      }).replace(
+        '<script src="/environment-report.js" defer></script>',
+        function() {
+          return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>";
+        }
+      ).replace('<script src="/dashboard.js" type="module"></script>', "");
+      fs7.writeFileSync(file, html, { mode: 384 });
+    }
+    function recordRuntimeEvent(dataDir, event2, attemptId) {
+      if (!attemptId) return;
+      const report = readReport(dataDir);
+      if (!report || report.attemptId !== attemptId) return;
+      const states = {
+        MCP_INITIALIZE: ["initialize", "MCP 初始化", "已收到初始化请求", "等待后续工具发现", "pass"],
+        MCP_TOOLS_LIST: ["tools", "MCP 工具发现", String(event2.toolCount) + " 个工具", "宿主请求工具列表", "pass"],
+        AGENT_READY: ["manager", "本地 Agent", "已就绪", "Agent 正常响应健康检查", "pass"],
+        AGENT_READY_AFTER_LOCK_WAIT: ["manager", "本地 Agent", "已就绪", "Agent 正常响应健康检查", "pass"],
+        AGENT_REUSED: ["manager", "本地 Agent", "已复用", "Agent 正常响应健康检查", "pass"],
+        AGENT_FALLBACK_REUSED: ["manager", "本地 Agent", "已复用", "Agent 正常响应健康检查", "pass"],
+        AGENT_LEASE_RECOVERY_READY: ["manager", "本地 Agent", "已恢复", "Agent 正常响应健康检查", "pass"]
+      };
+      let item = states[event2.code];
+      if (!item && (event2.level === "error" && typeof event2.code === "string" && !event2.code.startsWith("MCP_TOOLS_CALL"))) {
+        item = ["manager", "本地 Agent 启动", event2.code || "启动失败", "Agent 正常启动并响应健康检查", "fail"];
+      }
+      if (!item) return;
+      const failureSnapshot = report.status === "failed" ? {
+        checkedAt: report.checkedAt,
+        stage: report.stage,
+        checks: report.checks.filter(function(check) {
+          return check.status === "fail";
+        })
+      } : null;
+      report.checks = report.checks.filter(function(check) {
+        return check.id !== item[0];
+      });
+      report.checks.push({
+        id: item[0],
+        label: item[1],
+        actual: item[2],
+        required: item[3],
+        status: item[4],
+        remedy: item[4] === "fail" ? "检查本地配置、运行文件与端口；详细原因见 MCP 运行日志。" : ""
+      });
+      report.stage = item[0];
+      report.status = report.checks.some(function(check) {
+        return check.status === "fail";
+      }) ? "failed" : report.checks.some(function(check) {
+        return check.id === "tools";
+      }) ? "ready" : "starting";
+      report.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      if (failureSnapshot && report.status !== "failed") report.failures = (report.failures || []).concat([failureSnapshot]).slice(-10);
+      if (event2.agentUrl && /^http:\/\/127\.0\.0\.1:\d+\/?$/.test(event2.agentUrl)) report.dashboardUrl = event2.agentUrl;
+      saveReport(dataDir, report);
+      return report;
+    }
+    module2.exports = {
+      dataDirectory,
+      reportPath,
+      readJson,
+      writeJson,
+      readReport,
+      saveReport,
+      compatibleNode,
+      effectiveEnvironment,
+      collectReport,
+      writeOfflineDashboard,
+      recordRuntimeEvent
+    };
+  }
+});
+
 // server.js
 var server_exports = {};
 __export(server_exports, {
@@ -23962,6 +23920,7 @@ var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path7 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
 var import_node_url2 = require("node:url");
+var import_environment_report = __toESM(require_environment_report(), 1);
 
 // activity.js
 var import_node_crypto = require("node:crypto");
@@ -26775,7 +26734,8 @@ function buildMongoBulkScript(request, config, normalizationOptions = {}) {
     `const __request = ${safeLiteral2(request)};`,
     `const __config = ${safeLiteral2({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4) })};`,
     `const __marker = ${safeLiteral2(`${MONGODB_RESULT_MARKER}BULK:`)};`,
-    'let __bson; try { __bson = require(require.resolve("bson", { paths: [__config.driverPath] })); } catch (_error) { __bson = null; }',
+    "const __driverPath = __config.driverPath;",
+    'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
     "__bulkMain();"
@@ -35463,6 +35423,13 @@ var MIN_MANAGER_LEASE_TTL_MS = 1e4;
 var MAX_MANAGER_LEASE_TTL_MS = 12e4;
 var DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5e3;
 var DEFAULT_DESKTOP_STARTUP_GRACE_MS = 6e4;
+function registerEnvironmentReport(app, config) {
+  const dataDir = import_node_path7.default.dirname(import_node_path7.default.dirname(config.runtime?.statePath || import_node_path7.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  app.get("/api/environment-report", (_request, response) => {
+    response.set("Cache-Control", "no-store");
+    response.json({ ok: true, mode: "manager", report: import_environment_report.default.readReport(dataDir) });
+  });
+}
 function durationSince(startedAt) {
   return Math.round(import_node_perf_hooks.performance.now() - startedAt);
 }
@@ -35808,6 +35775,7 @@ function createApp(options = {}) {
   app.get("/", (_request, response) => {
     response.sendFile(import_node_path7.default.join(publicDir, "dashboard.html"));
   });
+  registerEnvironmentReport(app, config);
   app.get("/favicon.ico", (_request, response) => {
     response.status(204).end();
   });
@@ -37036,6 +37004,7 @@ function createManagerApp(options = {}) {
   app.get("/", (_request, response) => {
     response.sendFile(import_node_path7.default.join(publicDir, "dashboard.html"));
   });
+  registerEnvironmentReport(app, config);
   app.get("/favicon.ico", (_request, response) => {
     response.status(204).end();
   });
