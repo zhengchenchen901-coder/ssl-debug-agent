@@ -9,6 +9,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_ALLOWED_PATHS } from "../config.js";
 import { SecurityError } from "../security.js";
+import { execFileSync } from "node:child_process";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const depsInstalled =
@@ -122,6 +123,49 @@ async function waitForFileJson(filePath, predicate = () => true) {
   }
   throw lastError || new Error(`timed out waiting for ${filePath}`);
 }
+
+test("HTTP log query executes a bounded helper and rejects unknown projects", { skip: !depsInstalled }, async (t) => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "log-query-http-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.security.allowedPaths = [dir];
+  config.logs = { projects: { be: { directories: [dir] } } };
+  await fsPromises.writeFile(path.join(dir, "app.log"), "older\nlatest\n");
+  const server = await listen(createApp({ config, runSSH: async (command, options) => {
+    assert.equal(command, "node");
+    return { exitCode: 0, stdout: execFileSync(process.execPath, [], { input: options.stdin, encoding: "utf8" }), timing: { queueMs: 0 } };
+  } }));
+  t.after(() => close(server));
+  const response = await postJson(server, "/logs/query", { projectId: "be", limit: 1 });
+  assert.equal(response.status, 200);
+  assert.equal(response.body.records[0].text, "latest");
+  const unknown = await postJson(server, "/logs/query", { projectId: "missing" });
+  assert.equal(unknown.status, 400);
+  assert.equal(unknown.body.error.code, "LOG_PROJECT_NOT_FOUND");
+});
+
+test("manager log mappings persist and override stale worker mappings immediately", { skip: !depsInstalled }, async (t) => {
+  const { createManagerApp } = await import("../server.js");
+  const { InstanceRegistry } = await import("../instance-registry.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "log-project-http-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const registry = new InstanceRegistry({ cwd: dir, env: {}, registryPath: path.join(dir, "instances.json") });
+  registry.create({ id: "default", host: "example.test", username: "app", privateKeyPath: "key" });
+  let forwarded;
+  const stub = makeWorkerManagerStub();
+  stub.callInstance = async (id, route, payload) => { forwarded = payload; return { ok: true, instanceId: id, route }; };
+  const server = await listen(createManagerApp({ config: makeConfig(path.join(dir, "audit.jsonl")), registry, workerManager: stub }));
+  t.after(() => close(server));
+  const set = await postJson(server, "/api/log-projects", { instanceId: "default", projectId: "be", directories: ["/home/github/app/logs"] });
+  assert.equal(set.status, 200);
+  assert.deepEqual(registry.getInternal("default").logProjects.be.directories, ["/home/github/app/logs"]);
+  const query = await postJson(server, "/logs/query", { instanceId: "default", projectId: "be", _logProjects: { be: { directories: ["/etc/ssh"] } } });
+  assert.equal(query.status, 200);
+  assert.deepEqual(forwarded._logProjects.be.directories, ["/home/github/app/logs"]);
+  const invalid = await postJson(server, "/api/log-projects", { instanceId: "default", projectId: "be", directories: ["/etc/ssh"] });
+  assert.equal(invalid.status, 400);
+});
 
 async function getText(server, route) {
   const address = server.address();

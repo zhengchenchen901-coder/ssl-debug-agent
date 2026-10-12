@@ -53,6 +53,8 @@ import {
   normalizeLogReadOptions,
 } from "./log-policy.js";
 import { InstanceRegistry } from "./instance-registry.js";
+import { normalizeLogProjects } from "./log-projects.js";
+import { queryLogs as defaultQueryLogs, normalizeLogQuery } from "./log-query.js";
 import { WorkerManager } from "./worker-manager.js";
 import {
   API_VERSION,
@@ -456,11 +458,17 @@ export function createApp(options = {}) {
     ...logOptions,
     config,
     supervisor: sshSupervisor,
+    runSSH,
   });
   const readLog = (logOptions) => readLogImpl({
     ...logOptions,
     config,
     supervisor: sshSupervisor,
+    runSSH,
+  });
+  const queryLogs = (input, operation) => (options.queryLogs || defaultQueryLogs)(input, {
+    config: { ...config, logs: { projects: input._logProjects || config.logs?.projects || {} } },
+    operation, runSSH,
   });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
@@ -1194,6 +1202,29 @@ export function createApp(options = {}) {
     }
   });
 
+  app.post("/logs/query", async (request, response) => {
+    const startedAt = performance.now();
+    const operation = createRequestOperation(request, response, "/logs/query", config);
+    try {
+      const input = request.body || {};
+      normalizeLogQuery(input, { ...config, logs: { projects: input._logProjects || config.logs?.projects || {} } });
+      const result = await queryLogs(input, operation);
+      const durationMs = durationSince(startedAt);
+      await audit(config, { tool: "logs-query", projectId: input.projectId, mode: result.mode,
+        ok: true, durationMs, operationId: operation.operationId,
+        scannedBytes: result.scannedBytes, expandedBytes: result.expandedBytes,
+        returnedLines: result.returnedLines, matchedLines: result.matchedLines,
+        complete: result.complete, ...result.timing });
+      response.json({ ok: true, ...result, durationMs, operationId: operation.operationId });
+    } catch (error) {
+      error.operationId ||= operation.operationId;
+      const payload = errorPayload(error);
+      await audit(config, { tool: "logs-query", ok: false, operationId: operation.operationId,
+        durationMs: durationSince(startedAt), errorCode: payload.error.code });
+      response.status(errorStatus(error)).json(payload);
+    }
+  });
+
   app.post("/logs/read", async (request, response) => {
     const startedAt = performance.now();
     const requestOperation = createRequestOperation(request, response, "/logs/read", config);
@@ -1748,6 +1779,9 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
 
 function managerPathCapabilities(config, registry) {
   const capabilities = securityCapabilities(config);
+  capabilities.logs.projectsByInstance = Object.fromEntries(registry.listInternal().map((instance) => [
+    instance.id, normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots),
+  ]));
   capabilities.paths.byInstance = Object.fromEntries(
     registry.listInternal().map((instance) => {
       const sourceRoots = { ...(instance.sourceRoots || {}) };
@@ -1961,6 +1995,25 @@ export function createManagerApp(options = {}) {
       instance,
       runtime: workerManager.runtimeFor(instance.id),
     });
+  }));
+
+  app.get("/api/log-projects", managerAsync(async (_request, response) => {
+    response.json({ ok: true, instances: registry.list().map((instance) => ({
+      instanceId: instance.id,
+      projects: normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots),
+    })) });
+  }));
+  app.post("/api/log-projects", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.body?.instanceId);
+    const instance = registry.getInternal(id);
+    const projectId = request.body?.projectId;
+    if (typeof projectId !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(projectId)) throw operationError("invalid projectId", { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
+    const projects = { ...(instance.logProjects || {}) };
+    if (request.body.remove === true) delete projects[projectId];
+    else projects[projectId] = { root: request.body.root, directories: request.body.directories };
+    const updated = registry.update(id, { logProjects: projects });
+    activity.publish({ type: "instance", stage: "log-projects-updated", instanceId: id });
+    response.json({ ok: true, instanceId: id, projects: updated.logProjects || {} });
   }));
 
   app.delete("/api/instances/:id", managerAsync(async (request, response) => {
@@ -2393,6 +2446,10 @@ export function createManagerApp(options = {}) {
     publishStage(activity, operation, "started");
 
     try {
+      if (pathName === "/logs/query") {
+        const instance = registry.getInternal(registry.resolveId(instanceId));
+        payload._logProjects = normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots);
+      }
       const result = await workerManager.callInstance(
         instanceId,
         pathName,
@@ -2440,6 +2497,7 @@ export function createManagerApp(options = {}) {
   app.post("/logs/archive-members", (request, response) =>
     proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
+  app.post("/logs/query", (request, response) => proxyToInstance("/logs/query", request, response));
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/mongodb/imports/prepare", (request, response) =>
     proxyToInstance("/mongodb/imports/prepare", request, response));

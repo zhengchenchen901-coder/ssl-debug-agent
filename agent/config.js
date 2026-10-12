@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import posixPath from "node:path/posix";
+import { normalizeLogProjects } from "./log-projects.js";
 import {
   DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
   DEFAULT_APPROVED_COMMAND_TTL_MS,
@@ -303,6 +304,7 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       readyTimeout: 10_000,
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
+    logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots) },
     security: {
       allowedPaths: allowedPathsForSourceRoots(sourceRoots),
       sourceRoots,

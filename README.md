@@ -1,5 +1,56 @@
 # Remote Debug Agent
 
+## Project log queries
+
+Configure `logProjects` on each instance in the dashboard or with
+`remote_debug_set_log_project`. Paths must already be under the instance's
+approved roots. These mappings persist locally and do not expand permissions:
+
+```json
+{"be":{"root":"/home/github/app","directories":["/home/github/app/logs"]}}
+```
+
+`REMOTE_DEBUG_LOG_PROJECTS` supplies the same JSON mapping in environment-based
+setups. Configured source roots also provide a default `<root>/logs` mapping.
+Use `remote_debug_list_log_projects` once, then reuse the instance/project id.
+
+- `remote_debug_query_logs` with `mode: "latest"` reads small tail blocks from
+  the newest selected file. Its default file count is one.
+- `mode: "files"` selects candidate files by `date` or `dateFrom`/`dateTo` and
+  literal `fileContains`, without recursive filesystem discovery.
+- `mode: "members"` lists a selected tar-gzip archive's members remotely;
+  `memberPrefix` and `memberOffset` narrow or page the member listing. The
+  existing archive-member tool also uses this streaming path.
+- `mode: "search"` scans selected files on the server and returns bounded
+  matching records. It accepts literal `contains`, exact JSON `route`, `method`
+  and `level`, plus inclusive `fromTime`/`toTime` with explicit timezones. Nested
+  JSON payloads inside application `message` strings are supported.
+- Gzip and tar-gzip are decompressed as streams. For tar archives,
+  `memberContains`/`memberPath` selects regular members; container filename
+  filters and member filters are separate. No temporary extraction directory
+  or remote helper file is created. An exact selected member stops after that
+  member. Traversal paths and link members cannot be read.
+
+Results include source file/member, line number (or `lineFromEnd` for tail
+reads), parsed fields, scanned/expanded bytes, matching/returned counts and
+coverage. `countsAreComplete` concerns scan coverage; `outputTruncated` only
+concerns returned records. Do not infer no matches for the whole date when
+coverage is bounded. File pages expose `nextFileOffset`; the directory can
+change between calls, so these are not immutable snapshots.
+
+Searches and compressed/project queries use one background channel per
+instance. Default scan limits are 32 MiB of selected log content and 1 GiB of
+expanded archive content, capped at 256 MiB and 2 GiB respectively. File,
+directory-entry, line, output and execution-time limits also apply. The target
+needs Node 12.12+ in its SSH command PATH; the helper is separately transpiled
+for older deployed Node versions. CPU/read I/O costs still exist despite zero
+temporary disk writes.
+
+The existing `remote_debug_read_log` tool now uses the same remote helper and
+keeps its chronological output format. Its runtime improvement works in
+existing sessions; the new tools require an MCP/session reload to become
+visible. Older direct-library SFTP callers retain the existing decoder.
+
 Remote Debug Agent is a Codex Desktop plugin plus a local HTTP manager for safe
 Linux server debugging over SSH.
 

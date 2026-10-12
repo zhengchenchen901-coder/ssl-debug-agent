@@ -23,6 +23,13 @@ export const LOG_MAX_ARCHIVE_MEMBERS = 5_000;
 export const LOG_MAX_PAX_BYTES = 1 * 1024 * 1024;
 export const LOG_MAX_MEMBER_BYTES = 256 * 1024 * 1024;
 
+export const LOG_QUERY_CAPABILITIES = Object.freeze({
+  modes: ["latest", "search", "files", "members"], remoteFiltering: true, temporaryExtraction: false,
+  supportedCompression: ["none", "gzip", "tar-gzip"], maxFiles: 50,
+  maxScanBytes: 256 * 1024 * 1024, maxExpandedBytes: 2 * 1024 * 1024 * 1024,
+  maxDirectoryEntries: 5000, maxReturnedLines: 2000, maxReturnedBytes: 256 * 1024,
+});
+
 export const LOG_SUPPORTED_COMPRESSION = Object.freeze([
   "none",
   "gzip",
@@ -36,6 +43,7 @@ export const LOG_UNSUPPORTED_COMPRESSION = Object.freeze([
 ]);
 
 export const LOG_CAPABILITIES = Object.freeze({
+  query: LOG_QUERY_CAPABILITIES,
   categories: [...LOG_CATEGORIES],
   supportedCompression: [...LOG_SUPPORTED_COMPRESSION],
   unsupportedCompression: [...LOG_UNSUPPORTED_COMPRESSION],

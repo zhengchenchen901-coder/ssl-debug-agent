@@ -1,6 +1,7 @@
 import posixPath from "node:path/posix";
 import { StringDecoder } from "node:string_decoder";
 import { createGunzip } from "node:zlib";
+import { queryLogs } from "./log-query.js";
 import {
   OPERATION_TIMEOUTS,
   assertOperationActive,
@@ -1685,6 +1686,20 @@ async function readArchiveMembersFromSftp(sftp, requestedPath, options, operatio
 }
 
 export async function listLogArchiveMembers(options = {}) {
+  if (options.runSSH) {
+    const normalized = normalizeArchiveMemberListOptions(options);
+    const cursor = decodeLogCursor(normalized.cursor, "archive-members");
+    const prepared = prepareOperation(options);
+    try {
+      const result = await queryLogs({ path: normalized.path, mode: "members", limit: normalized.limit,
+        memberPrefix: normalized.prefix, memberOffset: cursor.offset, maxFiles: 1,
+      }, { config: options.config, runSSH: options.runSSH, operation: prepared.operation });
+      return { path: result.files[0]?.path || normalized.path, compression: "tar-gzip",
+        members: result.members, hasMore: result.hasMoreMembers,
+        nextCursor: result.hasMoreMembers ? encodeLogCursor({ kind: "archive-members", sourceIndex: 0, offset: result.nextMemberOffset }) : null,
+        truncated: result.scanTruncated, scannedBytes: result.expandedBytes, timing: result.timing };
+    } finally { prepared.cleanup(); }
+  }
   const supervisor = requireSupervisor(options);
   const normalized = normalizeArchiveMemberListOptions(options);
   const prepared = prepareOperation(options);
@@ -1917,6 +1932,29 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
 }
 
 export async function readLog(options = {}) {
+  if (options.runSSH) {
+    const normalized = normalizeLogReadOptions(options);
+    if (/\.(?:tar\.gz|tgz)$/i.test(normalized.path) && !normalized.memberPath) throw logInputError("tar.gz logs require memberPath; list archive members first", "ARCHIVE_MEMBER_REQUIRED");
+    const prepared = prepareOperation(options);
+    try {
+      const result = await queryLogs({
+        path: normalized.path, memberPath: normalized.memberPath, contains: normalized.contains,
+        caseSensitive: normalized.caseSensitive, limit: normalized.tailLines, maxBytes: normalized.maxBytes,
+        maxScanBytes: LOG_MAX_SCAN_BYTES, maxFiles: 1,
+      }, { config: options.config, runSSH: options.runSSH, operation: prepared.operation });
+      return {
+        path: result.files[0]?.path || normalized.path, memberPath: normalized.memberPath || undefined,
+        compression: result.files[0]?.compression,
+        content: [...result.records].reverse().map((record) => record.text).join("\n") + (result.records.length ? "\n" : ""),
+        totalLines: result.scannedLines, matchedLines: result.matchedLines,
+        scannedBytes: result.scannedBytes, archiveScannedBytes: result.expandedBytes,
+        truncated: result.outputTruncated || (result.mode === "search" && !result.complete),
+        scannedTruncated: result.mode === "search" && result.scanTruncated,
+        countsAreComplete: result.countsAreComplete, coverage: result.coverage,
+        warnings: result.warnings, remoteDurationMs: result.remoteDurationMs, timing: result.timing,
+      };
+    } finally { prepared.cleanup(); }
+  }
   const supervisor = requireSupervisor(options);
   const normalized = normalizeLogReadOptions(options);
   const prepared = prepareOperation(options);

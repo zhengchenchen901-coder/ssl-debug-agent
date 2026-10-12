@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { loadDotEnv, normalizeSourceRoots } from "./config.js";
+import { loadDotEnv, normalizeSourceRoots, allowedPathsForSourceRoots } from "./config.js";
+import { normalizeLogProjects } from "./log-projects.js";
 
 export const REGISTRY_VERSION = 3;
 export const DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -313,6 +314,7 @@ function normalizeInstance(input, existing = {}) {
   const sourceRoots = normalizeSourceRoots(
     input.sourceRoots === undefined ? existing.sourceRoots : input.sourceRoots,
   );
+  const logProjects = normalizeLogProjects(input.logProjects === undefined ? existing.logProjects : input.logProjects, allowedPathsForSourceRoots(sourceRoots));
 
   return {
     id,
@@ -333,6 +335,7 @@ function normalizeInstance(input, existing = {}) {
     }),
     ...(mongodb ? { mongodb } : {}),
     ...(Object.keys(sourceRoots).length > 0 ? { sourceRoots } : {}),
+    ...(Object.keys(logProjects).length > 0 ? { logProjects } : {}),
     createdAt: existing.createdAt || input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
   };
@@ -434,6 +437,7 @@ function envDefaultInstance(env, cwd) {
       maxExecutionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS,
     },
     sourceRoots: merged.REMOTE_DEBUG_SOURCE_ROOTS,
+    logProjects: merged.REMOTE_DEBUG_LOG_PROJECTS,
     mongodb,
   });
 }

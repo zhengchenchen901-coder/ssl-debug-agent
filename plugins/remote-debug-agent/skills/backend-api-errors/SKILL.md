@@ -33,6 +33,36 @@ remote server. This skill is for the deployed backend at
 
 ## Workflow
 
+Prefer the structured project query tools when exposed:
+
+1. Call `remote_debug_list_log_projects` once to choose the exact instance and
+   backend project. Reuse this mapping during the query; do not discover the
+   whole filesystem before reading each log.
+2. For latest records, use `remote_debug_query_logs` with `mode: "latest"`,
+   `projectId`, a small `limit`, and a filename fragment such as `-error.log`.
+3. For an endpoint/date search, use `mode: "search"`, `date`, `fileContains`,
+   and the exact `route`. `contains`, `method`, `level`, `fromTime`, and `toTime`
+   can further narrow records. ISO time filters require an explicit timezone.
+4. For an archived date, first query `mode: "files"` with the project/date to
+   select its `.tar.gz`/`.tgz`. Search that exact `path` with `memberContains:
+   "-error.log"` or an exact `memberPath`. `fileContains` filters container
+   filenames; `memberContains` filters files inside the archive.
+5. The helper filters and decompresses on the server without writing temporary
+   files. Search/decompression uses one background channel per instance and
+   explicit scan, expanded-byte, file-count, output, and deadline limits.
+6. Preserve `file`, `memberPath`, `lineNumber`/`lineFromEnd`, and parsed fields
+   as evidence. `matchedLines` is a complete count only when
+   `countsAreComplete` is true. Inspect `outputTruncated`, `scanTruncated`,
+   `directoryListingTruncated`, `warnings`, and `hasMoreFiles`. Continue file
+   pages with `nextFileOffset` when needed; directory contents may change
+   between requests, so pages are not an immutable snapshot.
+
+If these tools are not exposed in the current session, use the existing
+`remote_debug_read_log` workflow below. Its execution path now filters remotely
+and reads plain log tails in small blocks. Reload the MCP session to expose
+new tool definitions; updating the Agent runtime alone does not add tools to
+an existing session's tool table.
+
 1. State the exact date and endpoint being checked. Select the matching
    `instanceId`; use its configured backend source root or a verified log path
    from instance memory. The default log root above belongs to the default
@@ -56,10 +86,10 @@ remote server. This skill is for the deployed backend at
 
 ## Timeouts and Coverage
 
-- `tailLines` and `maxBytes` bound the returned content, not the bytes scanned.
-  Plain logs with `contains` can scan up to 256 MiB over SFTP; small output
-  limits do not make a large-file query cheap. Archives also require streaming
-  decompression locally.
+- `tailLines` and `maxBytes` bound returned content. Plain latest-line reads
+  use small tail blocks. Searches still have a scan budget, but filtering and
+  decompression now happen remotely and only bounded results are transferred.
+  Avoid repeated broad scans of the same large file.
 - Inspect `truncated`, `scannedTruncated`, `scannedBytes`, and `matchedLines`.
   Report bounded results as a sample when output or scan coverage is truncated;
   do not claim a complete count for the date from a truncated response.

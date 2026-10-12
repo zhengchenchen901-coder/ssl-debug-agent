@@ -849,8 +849,8 @@ var require_depd = __commonJS({
       return typeName && callSite.getMethodName() ? typeName + "." + funcName : funcName;
     }
     function formatPlain(msg, caller, stack) {
-      var timestamp = (/* @__PURE__ */ new Date()).toUTCString();
-      var formatted = timestamp + " " + this._namespace + " deprecated " + msg;
+      var timestamp2 = (/* @__PURE__ */ new Date()).toUTCString();
+      var formatted = timestamp2 + " " + this._namespace + " deprecated " + msg;
       if (this._traced) {
         for (var i = 0; i < stack.length; i++) {
           formatted += "\n    at " + stack[i].toString();
@@ -15190,11 +15190,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path8) {
-      if (!path8 || typeof path8 !== "string") {
+    function lookup(path9) {
+      if (!path9 || typeof path9 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path8).toLowerCase().slice(1);
+      var extension2 = extname("x." + path9).toLowerCase().slice(1);
       if (!extension2) {
         return false;
       }
@@ -15723,8 +15723,8 @@ var require_text = __commonJS({
     var debug = require_src()("body-parser:text");
     var read = require_read();
     var { normalizeOptions, passthrough } = require_utils();
-    module2.exports = text;
-    function text(options) {
+    module2.exports = text2;
+    function text2(options) {
       const normalizedOptions = normalizeOptions(options, "text/plain");
       return function textParser(req, res, next) {
         read(req, res, next, passthrough, debug, normalizedOptions);
@@ -17693,8 +17693,8 @@ var require_stringify = __commonJS({
       formatter: formats.formatters[defaultFormat],
       // deprecated
       indices: false,
-      serializeDate: function serializeDate(date) {
-        return toISO.call(date);
+      serializeDate: function serializeDate(date2) {
+        return toISO.call(date2);
       },
       skipNulls: false,
       strictNullHandling: false
@@ -18665,13 +18665,13 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path8 = require("node:path");
+    var path9 = require("node:path");
     var fs7 = require("node:fs");
-    var dirname = path8.dirname;
-    var basename = path8.basename;
-    var extname = path8.extname;
-    var join = path8.join;
-    var resolve = path8.resolve;
+    var dirname = path9.dirname;
+    var basename = path9.basename;
+    var extname = path9.extname;
+    var join = path9.join;
+    var resolve = path9.resolve;
     module2.exports = View;
     function View(name, options) {
       var opts = options || {};
@@ -18700,17 +18700,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View.prototype.lookup = function lookup(name) {
-      var path9;
+      var path10;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name);
-      for (var i = 0; i < roots.length && !path9; i++) {
+      for (var i = 0; i < roots.length && !path10; i++) {
         var root = roots[i];
         var loc = resolve(root, name);
         var dir = dirname(loc);
         var file = basename(loc);
-        path9 = this.resolve(dir, file);
+        path10 = this.resolve(dir, file);
       }
-      return path9;
+      return path10;
     };
     View.prototype.render = function render(options, callback) {
       var sync = true;
@@ -18732,21 +18732,21 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path9 = join(dir, file);
-      var stat = tryStat(path9);
+      var path10 = join(dir, file);
+      var stat = tryStat(path10);
       if (stat && stat.isFile()) {
-        return path9;
+        return path10;
       }
-      path9 = join(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path9);
+      path10 = join(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path10);
       if (stat && stat.isFile()) {
-        return path9;
+        return path10;
       }
     };
-    function tryStat(path9) {
-      debug('stat "%s"', path9);
+    function tryStat(path10) {
+      debug('stat "%s"', path10);
       try {
-        return fs7.statSync(path9);
+        return fs7.statSync(path10);
       } catch (e) {
         return void 0;
       }
@@ -19867,11 +19867,11 @@ var require_dist = __commonJS({
     exports2.TokenData = TokenData;
     var PathError = class extends TypeError {
       constructor(message, originalPath) {
-        let text = message;
+        let text2 = message;
         if (originalPath)
-          text += `: ${originalPath}`;
-        text += `; visit https://git.new/pathToRegexpError for info`;
-        super(text);
+          text2 += `: ${originalPath}`;
+        text2 += `; visit https://git.new/pathToRegexpError for info`;
+        super(text2);
         this.originalPath = originalPath;
       }
     };
@@ -19882,15 +19882,15 @@ var require_dist = __commonJS({
       let index = 0;
       function consumeUntil(end) {
         const output = [];
-        let path8 = "";
+        let path9 = "";
         function writePath() {
-          if (!path8)
+          if (!path9)
             return;
           output.push({
             type: "text",
-            value: encodePath(path8)
+            value: encodePath(path9)
           });
-          path8 = "";
+          path9 = "";
         }
         while (index < chars.length) {
           const value = chars[index++];
@@ -19902,7 +19902,7 @@ var require_dist = __commonJS({
             if (index === chars.length) {
               throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            path8 += chars[index++];
+            path9 += chars[index++];
             continue;
           }
           if (value === ":" || value === "*") {
@@ -19946,7 +19946,7 @@ var require_dist = __commonJS({
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
             throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
           }
-          path8 += value;
+          path9 += value;
         }
         if (end) {
           throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
@@ -19956,17 +19956,17 @@ var require_dist = __commonJS({
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path8, options = {}) {
+    function compile(path9, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const data = typeof path8 === "object" ? path8 : parse(path8, options);
+      const data = typeof path9 === "object" ? path9 : parse(path9, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
-      return function path9(params = {}) {
+      return function path10(params = {}) {
         const missing = [];
-        const path10 = fn(params, missing);
+        const path11 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path10;
+        return path11;
       };
     }
     function tokensToFunction(tokens, delimiter, encode) {
@@ -20028,9 +20028,9 @@ var require_dist = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path8, options = {}) {
+    function match(path9, options = {}) {
       const { decode = decodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path8, options);
+      const { regexp, keys } = pathToRegexp(path9, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20042,7 +20042,7 @@ var require_dist = __commonJS({
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path9 = m[0];
+        const path10 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20051,21 +20051,21 @@ var require_dist = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path9, params };
+        return { path: path10, params };
       };
     }
-    function pathToRegexp(path8, options = {}) {
+    function pathToRegexp(path9, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path9) {
-        if (Array.isArray(path9)) {
-          for (const p of path9)
+      function process2(path10) {
+        if (Array.isArray(path10)) {
+          for (const p of path10)
             process2(p);
           return;
         }
-        const data = typeof path9 === "object" ? path9 : parse(path9, options);
+        const data = typeof path10 === "object" ? path10 : parse(path10, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20076,7 +20076,7 @@ var require_dist = __commonJS({
           combinations++;
         });
       }
-      process2(path8);
+      process2(path9);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape2(delimiter) + "$)?";
@@ -20216,18 +20216,18 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path8, options, fn) {
+    function Layer(path9, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path8, options, fn);
+        return new Layer(path9, options, fn);
       }
-      debug("new %o", path8);
+      debug("new %o", path9);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path8 === "/" && opts.end === false;
+      this.slash = path9 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
@@ -20266,7 +20266,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path8) ? path8.map(matcher) : [matcher(path8)];
+      this.matchers = Array.isArray(path9) ? path9.map(matcher) : [matcher(path9)];
     }
     Layer.prototype.handleError = function handleError(error, req, res, next) {
       const fn = this.handle;
@@ -20306,9 +20306,9 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path8) {
+    Layer.prototype.match = function match(path9) {
       let match2;
-      if (path8 != null) {
+      if (path9 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
@@ -20316,7 +20316,7 @@ var require_layer = __commonJS({
         }
         let i = 0;
         while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path8);
+          match2 = this.matchers[i](path9);
           i++;
         }
       }
@@ -20344,13 +20344,13 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path8) {
-      if (path8 instanceof RegExp || path8 === "/") {
-        return path8;
+    function loosen(path9) {
+      if (path9 instanceof RegExp || path9 === "/") {
+        return path9;
       }
-      return Array.isArray(path8) ? path8.map(function(p) {
+      return Array.isArray(path9) ? path9.map(function(p) {
         return loosen(p);
-      }) : String(path8).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path9).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
@@ -20366,9 +20366,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path8) {
-      debug("new %o", path8);
-      this.path = path8;
+    function Route(path9) {
+      debug("new %o", path9);
+      this.path = path9;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -20576,8 +20576,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path8 = getPathname(req);
-        if (path8 == null) {
+        const path9 = getPathname(req);
+        if (path9 == null) {
           return done(layerError);
         }
         let layer;
@@ -20585,7 +20585,7 @@ var require_router = __commonJS({
         let route;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path8);
+          match = matchLayer(layer, path9);
           route = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -20623,18 +20623,18 @@ var require_router = __commonJS({
           } else if (route) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path8);
+            trimPrefix(layer, layerError, layerPath, path9);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path8) {
+      function trimPrefix(layer, layerError, layerPath, path9) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path8.substring(0, layerPath.length)) {
+          if (layerPath !== path9.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path8[layerPath.length];
+          const c = path9[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -20658,7 +20658,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path8 = "/";
+      let path9 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -20666,7 +20666,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path8 = handler;
+          path9 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -20678,8 +20678,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path8, fn.name || "<anonymous>");
-        const layer = new Layer(path8, {
+        debug("use %o %s", path9, fn.name || "<anonymous>");
+        const layer = new Layer(path9, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -20689,9 +20689,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route(path8) {
-      const route2 = new Route(path8);
-      const layer = new Layer(path8, {
+    Router.prototype.route = function route(path9) {
+      const route2 = new Route(path9);
+      const layer = new Layer(path9, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -20704,8 +20704,8 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path8) {
-        const route = this.route(path8);
+      Router.prototype[method] = function(path9) {
+        const route = this.route(path9);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
@@ -20734,9 +20734,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path8) {
+    function matchLayer(layer, path9) {
       try {
-        return layer.match(path8);
+        return layer.match(path9);
       } catch (err) {
         return err;
       }
@@ -20964,7 +20964,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path8 = "/";
+      var path9 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -20972,7 +20972,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path8 = fn;
+          path9 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -20982,12 +20982,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path8, fn2);
+          return router.use(path9, fn2);
         }
-        debug(".use app under %s", path8);
-        fn2.mountpath = path8;
+        debug(".use app under %s", path9);
+        fn2.mountpath = path9;
         fn2.parent = this;
-        router.use(path8, function mounted_app(req, res, next) {
+        router.use(path9, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -20999,8 +20999,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route(path8) {
-      return this.router.route(path8);
+    app.route = function route(path9) {
+      return this.router.route(path9);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21043,7 +21043,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path8() {
+    app.path = function path9() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -21059,17 +21059,17 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path8) {
+      app[method] = function(path9) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path8);
+          return this.set(path9);
         }
-        var route = this.route(path8);
+        var route = this.route(path9);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path8) {
-      var route = this.route(path8);
+    app.all = function all(path9) {
+      var route = this.route(path9);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route[methods[i]].apply(route, args);
@@ -21770,9 +21770,9 @@ var require_fresh = __commonJS({
       }
       return true;
     }
-    function parseHttpDate(date) {
-      var timestamp = date && Date.parse(date);
-      return typeof timestamp === "number" ? timestamp : NaN;
+    function parseHttpDate(date2) {
+      var timestamp2 = date2 && Date.parse(date2);
+      return typeof timestamp2 === "number" ? timestamp2 : NaN;
     }
     function parseTokenList(str) {
       var end = 0;
@@ -21979,7 +21979,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path8() {
+    defineGetter(req, "path", function path9() {
       return parse(this).pathname;
     });
     defineGetter(req, "host", function host() {
@@ -22190,8 +22190,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename(path8) {
-      const normalized = path8.replaceAll("\\", "/");
+    function basename(path9) {
+      const normalized = path9.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22437,27 +22437,27 @@ var require_send = __commonJS({
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path8 = require("path");
+    var path9 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path8.extname;
-    var join = path8.join;
-    var normalize = path8.normalize;
-    var resolve = path8.resolve;
-    var sep = path8.sep;
+    var extname = path9.extname;
+    var join = path9.join;
+    var normalize = path9.normalize;
+    var resolve = path9.resolve;
+    var sep = path9.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send;
-    function send(req, path9, options) {
-      return new SendStream(req, path9, options);
+    function send(req, path10, options) {
+      return new SendStream(req, path10, options);
     }
-    function SendStream(req, path9, options) {
+    function SendStream(req, path10, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path9;
+      this.path = path10;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -22571,10 +22571,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path9) {
+    SendStream.prototype.redirect = function redirect(path10) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path9);
+        this.emit("directory", res, path10);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -22594,38 +22594,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path9 = decode(this.path);
-      if (path9 === -1) {
+      var path10 = decode(this.path);
+      if (path10 === -1) {
         this.error(400);
         return res;
       }
-      if (~path9.indexOf("\0")) {
+      if (~path10.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path9) {
-          path9 = normalize("." + sep + path9);
+        if (path10) {
+          path10 = normalize("." + sep + path10);
         }
-        if (UP_PATH_REGEXP.test(path9)) {
-          debug('malicious path "%s"', path9);
+        if (UP_PATH_REGEXP.test(path10)) {
+          debug('malicious path "%s"', path10);
           this.error(403);
           return res;
         }
-        parts = path9.split(sep);
-        path9 = normalize(join(root, path9));
+        parts = path10.split(sep);
+        path10 = normalize(join(root, path10));
       } else {
-        if (UP_PATH_REGEXP.test(path9)) {
-          debug('malicious path "%s"', path9);
+        if (UP_PATH_REGEXP.test(path10)) {
+          debug('malicious path "%s"', path10);
           this.error(403);
           return res;
         }
-        parts = normalize(path9).split(sep);
-        path9 = resolve(path9);
+        parts = normalize(path10).split(sep);
+        path10 = resolve(path10);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path9);
+        debug('%s dotfile "%s"', this._dotfiles, path10);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -22639,13 +22639,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path9);
+        this.sendIndex(path10);
         return res;
       }
-      this.sendFile(path9);
+      this.sendFile(path10);
       return res;
     };
-    SendStream.prototype.send = function send2(path9, stat) {
+    SendStream.prototype.send = function send2(path10, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -22657,9 +22657,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path9);
-      this.setHeader(path9, stat);
-      this.type(path9);
+      debug('pipe "%s"', path10);
+      this.setHeader(path10, stat);
+      this.type(path10);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -22708,28 +22708,28 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path9, opts);
+      this.stream(path10, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path9) {
+    SendStream.prototype.sendFile = function sendFile(path10) {
       var i = 0;
       var self = this;
-      debug('stat "%s"', path9);
-      fs7.stat(path9, function onstat(err, stat) {
-        var pathEndsWithSep = path9[path9.length - 1] === sep;
-        if (err && err.code === "ENOENT" && !extname(path9) && !pathEndsWithSep) {
+      debug('stat "%s"', path10);
+      fs7.stat(path10, function onstat(err, stat) {
+        var pathEndsWithSep = path10[path10.length - 1] === sep;
+        if (err && err.code === "ENOENT" && !extname(path10) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self.onStatError(err);
-        if (stat.isDirectory()) return self.redirect(path9);
+        if (stat.isDirectory()) return self.redirect(path10);
         if (pathEndsWithSep) return self.error(404);
-        self.emit("file", path9, stat);
-        self.send(path9, stat);
+        self.emit("file", path10, stat);
+        self.send(path10, stat);
       });
       function next(err) {
         if (self._extensions.length <= i) {
           return err ? self.onStatError(err) : self.error(404);
         }
-        var p = path9 + "." + self._extensions[i++];
+        var p = path10 + "." + self._extensions[i++];
         debug('stat "%s"', p);
         fs7.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -22739,7 +22739,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path9) {
+    SendStream.prototype.sendIndex = function sendIndex(path10) {
       var i = -1;
       var self = this;
       function next(err) {
@@ -22747,7 +22747,7 @@ var require_send = __commonJS({
           if (err) return self.onStatError(err);
           return self.error(404);
         }
-        var p = join(path9, self._index[i]);
+        var p = join(path10, self._index[i]);
         debug('stat "%s"', p);
         fs7.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -22758,10 +22758,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path9, options) {
+    SendStream.prototype.stream = function stream(path10, options) {
       var self = this;
       var res = this.res;
-      var stream2 = fs7.createReadStream(path9, options);
+      var stream2 = fs7.createReadStream(path10, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -22776,17 +22776,17 @@ var require_send = __commonJS({
         self.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path9) {
+    SendStream.prototype.type = function type(path10) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path9);
+      var ext = extname(path10);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path9, stat) {
+    SendStream.prototype.setHeader = function setHeader(path10, stat) {
       var res = this.res;
-      this.emit("headers", res, path9, stat);
+      this.emit("headers", res, path10, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -22844,9 +22844,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path9) {
+    function decode(path10) {
       try {
-        return decodeURIComponent(path9);
+        return decodeURIComponent(path10);
       } catch (err) {
         return -1;
       }
@@ -22864,9 +22864,9 @@ var require_send = __commonJS({
       }
       return list;
     }
-    function parseHttpDate(date) {
-      var timestamp = date && Date.parse(date);
-      return typeof timestamp === "number" ? timestamp : NaN;
+    function parseHttpDate(date2) {
+      var timestamp2 = date2 && Date.parse(date2);
+      return typeof timestamp2 === "number" ? timestamp2 : NaN;
     }
     function parseTokenList(str) {
       var end = 0;
@@ -22990,7 +22990,7 @@ var require_response = __commonJS({
     var http = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path8 = require("node:path");
+    var path9 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -22999,8 +22999,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send = require_send();
-    var extname = path8.extname;
-    var resolve = path8.resolve;
+    var extname = path9.extname;
+    var resolve = path9.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http.ServerResponse.prototype);
@@ -23146,26 +23146,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path9, options, callback) {
+    res.sendFile = function sendFile(path10, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path9) {
+      if (!path10) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path9 !== "string") {
+      if (typeof path10 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path9)) {
+      if (!opts.root && !pathIsAbsolute(path10)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path9);
+      var pathname = encodeURI(path10);
       opts.etag = this.app.enabled("etag");
       var file = send(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23176,7 +23176,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path9, filename, options, callback) {
+    res.download = function download(path10, filename, options, callback) {
       var done = callback;
       var name = filename;
       var opts = options || null;
@@ -23193,7 +23193,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name || path9)
+        "Content-Disposition": contentDisposition(name || path10)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23206,7 +23206,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path9) : path9;
+      var fullPath = !opts.root ? resolve(path10) : path10;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -23489,11 +23489,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path8 = parseUrl(req).pathname;
-        if (path8 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path8 = "";
+        var path9 = parseUrl(req).pathname;
+        if (path9 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path9 = "";
         }
-        var stream = send(req, path8, opts);
+        var stream = send(req, path9, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -23606,13 +23606,13 @@ var require_environment_report = __commonJS({
     "use strict";
     var fs7 = require("fs");
     var os2 = require("os");
-    var path8 = require("path");
+    var path9 = require("path");
     var crypto = require("crypto");
     function dataDirectory(env) {
-      return path8.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path8.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path8.join(os2.homedir(), ".remote-debug-agent")));
+      return path9.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path9.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path9.join(os2.homedir(), ".remote-debug-agent")));
     }
     function reportPath(dataDir) {
-      return path8.join(dataDir, ".runtime", "environment-report.json");
+      return path9.join(dataDir, ".runtime", "environment-report.json");
     }
     function readJson(file) {
       try {
@@ -23625,7 +23625,7 @@ var require_environment_report = __commonJS({
       return readJson(reportPath(dataDir));
     }
     function writeJson(file, value) {
-      fs7.mkdirSync(path8.dirname(file), { recursive: true, mode: 448 });
+      fs7.mkdirSync(path9.dirname(file), { recursive: true, mode: 448 });
       const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
       try {
         fs7.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
@@ -23654,7 +23654,7 @@ var require_environment_report = __commonJS({
       return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
     }
     function effectiveEnvironment(env, dataDir) {
-      const configPath = path8.resolve(env.REMOTE_DEBUG_ENV_PATH || path8.join(dataDir, "config.env"));
+      const configPath = path9.resolve(env.REMOTE_DEBUG_ENV_PATH || path9.join(dataDir, "config.env"));
       const effective = Object.assign({}, env);
       let configError = null;
       try {
@@ -23677,9 +23677,9 @@ var require_environment_report = __commonJS({
       options = options || {};
       const dataDir = dataDirectory(env);
       const settings = effectiveEnvironment(env, dataDir);
-      const runtimeRoot = path8.join(pluginRoot, "runtime", "agent");
-      const manifest = readJson(path8.join(runtimeRoot, "runtime-manifest.json"));
-      const pkg = readJson(path8.join(pluginRoot, "package.json"));
+      const runtimeRoot = path9.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path9.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path9.join(pluginRoot, "package.json"));
       const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
       const version = options.nodeVersion || process.versions.node;
       const checks = [];
@@ -23736,9 +23736,9 @@ var require_environment_report = __commonJS({
             "public/dashboard.js",
             "public/environment-report.js"
           ];
-          const invalid = requiredFiles.filter(function(file) {
-            const resolved = path8.resolve(runtimeRoot, file);
-            if (!resolved.startsWith(runtimeRoot + path8.sep) || !fs7.existsSync(resolved)) return true;
+          const invalid2 = requiredFiles.filter(function(file) {
+            const resolved = path9.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path9.sep) || !fs7.existsSync(resolved)) return true;
             try {
               return !manifest.hashes[file] || crypto.createHash("sha256").update(fs7.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
             } catch (_) {
@@ -23748,9 +23748,9 @@ var require_environment_report = __commonJS({
           check(
             "artifacts",
             "运行文件完整性",
-            invalid.length ? "缺失或校验不匹配：" + invalid.join("、") : "完整",
+            invalid2.length ? "缺失或校验不匹配：" + invalid2.join("、") : "完整",
             "运行文件存在且 SHA-256 与清单一致",
-            invalid.length ? "fail" : "pass",
+            invalid2.length ? "fail" : "pass",
             "重新安装或重新构建插件，避免混用不同版本的文件。"
           );
         }
@@ -23766,8 +23766,8 @@ var require_environment_report = __commonJS({
         settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
       );
       try {
-        fs7.mkdirSync(path8.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
-        const probe = path8.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs7.mkdirSync(path9.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path9.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
         fs7.writeFileSync(probe, "", { mode: 384 });
         fs7.unlinkSync(probe);
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
@@ -23802,15 +23802,15 @@ var require_environment_report = __commonJS({
         stage: "environment",
         checks,
         failures: history.slice(-10),
-        offlineDashboard: path8.join(dataDir, ".runtime", "environment-dashboard.html"),
+        offlineDashboard: path9.join(dataDir, ".runtime", "environment-dashboard.html"),
         dashboardUrl: null
       };
     }
     function writeOfflineDashboard(dataDir, report) {
-      const publicDir = path8.join(report.pluginRoot, "runtime", "agent", "public");
-      const file = path8.join(dataDir, ".runtime", "environment-dashboard.html");
+      const publicDir = path9.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path9.join(dataDir, ".runtime", "environment-dashboard.html");
       if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name) {
-        return fs7.existsSync(path8.join(publicDir, name));
+        return fs7.existsSync(path9.join(publicDir, name));
       })) {
         let escape2 = function(value) {
           return String(value || "").replace(/[&<>"']/g, function(char) {
@@ -23825,9 +23825,9 @@ var require_environment_report = __commonJS({
         fs7.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
         return;
       }
-      let html = fs7.readFileSync(path8.join(publicDir, "dashboard.html"), "utf8");
-      const css = fs7.readFileSync(path8.join(publicDir, "dashboard.css"), "utf8");
-      const script = fs7.readFileSync(path8.join(publicDir, "environment-report.js"), "utf8");
+      let html = fs7.readFileSync(path9.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs7.readFileSync(path9.join(publicDir, "dashboard.css"), "utf8");
+      const script = fs7.readFileSync(path9.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
       html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
         return "<style>" + css + "</style>";
@@ -24485,7 +24485,7 @@ function operationPolicy(pathName, config = {}) {
       maxMs: config.security?.maxTimeoutMs || OPERATION_TIMEOUTS.run.maxMs
     };
   }
-  if (pathName === "/read-file" || pathName === "/list-dir" || pathName === "/logs/list" || pathName === "/logs/archive-members" || pathName === "/logs/read") {
+  if (pathName === "/read-file" || pathName === "/list-dir" || pathName === "/logs/list" || pathName === "/logs/archive-members" || pathName === "/logs/read" || pathName === "/logs/query") {
     return {
       defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
       maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs
@@ -26599,7 +26599,7 @@ function normalizeUpdate(value) {
       if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
-      if (paths.some((path8) => path8 === field || path8.startsWith(`${field}.`) || field.startsWith(`${path8}.`))) {
+      if (paths.some((path9) => path9 === field || path9.startsWith(`${field}.`) || field.startsWith(`${path9}.`))) {
         throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
       }
       if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
@@ -27087,8 +27087,8 @@ function byteLength4(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
 function clampText(value, maxChars = 2e3) {
-  const text = redactMongoSecrets(value, maxChars);
-  return text.length <= maxChars ? text : `${text.slice(0, maxChars)}...`;
+  const text2 = redactMongoSecrets(value, maxChars);
+  return text2.length <= maxChars ? text2 : `${text2.slice(0, maxChars)}...`;
 }
 function mutationError(message, code, statusCode = 400, details = {}) {
   const error = operationError(message, {
@@ -28795,6 +28795,18 @@ var LOG_MAX_SCAN_ENTRIES = 5e3;
 var LOG_MAX_ARCHIVE_MEMBERS = 5e3;
 var LOG_MAX_PAX_BYTES = 1 * 1024 * 1024;
 var LOG_MAX_MEMBER_BYTES = 256 * 1024 * 1024;
+var LOG_QUERY_CAPABILITIES = Object.freeze({
+  modes: ["latest", "search", "files", "members"],
+  remoteFiltering: true,
+  temporaryExtraction: false,
+  supportedCompression: ["none", "gzip", "tar-gzip"],
+  maxFiles: 50,
+  maxScanBytes: 256 * 1024 * 1024,
+  maxExpandedBytes: 2 * 1024 * 1024 * 1024,
+  maxDirectoryEntries: 5e3,
+  maxReturnedLines: 2e3,
+  maxReturnedBytes: 256 * 1024
+});
 var LOG_SUPPORTED_COMPRESSION = Object.freeze([
   "none",
   "gzip",
@@ -28806,6 +28818,7 @@ var LOG_UNSUPPORTED_COMPRESSION = Object.freeze([
   "zip"
 ]);
 var LOG_CAPABILITIES = Object.freeze({
+  query: LOG_QUERY_CAPABILITIES,
   categories: [...LOG_CATEGORIES],
   supportedCompression: [...LOG_SUPPORTED_COMPRESSION],
   unsupportedCompression: [...LOG_UNSUPPORTED_COMPRESSION],
@@ -28865,8 +28878,8 @@ function normalizeLogListOptions(input = {}) {
   return { category, limit, cursor };
 }
 function normalizeArchiveMemberListOptions(input = {}) {
-  const path8 = input.path;
-  if (typeof path8 !== "string" || path8.trim() === "") {
+  const path9 = input.path;
+  if (typeof path9 !== "string" || path9.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
@@ -28878,15 +28891,15 @@ function normalizeArchiveMemberListOptions(input = {}) {
     throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
   }
   return {
-    path: path8,
+    path: path9,
     prefix: normalizeArchiveMemberPrefix(prefix),
     limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
     cursor
   };
 }
 function normalizeLogReadOptions(input = {}) {
-  const path8 = input.path;
-  if (typeof path8 !== "string" || path8.trim() === "") {
+  const path9 = input.path;
+  if (typeof path9 !== "string" || path9.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
@@ -28901,7 +28914,7 @@ function normalizeLogReadOptions(input = {}) {
     );
   }
   return {
-    path: path8,
+    path: path9,
     memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
     tailLines: positiveInteger(
       input.tailLines,
@@ -29601,8 +29614,8 @@ function byteLength5(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
 function clampText2(value, maxChars) {
-  const text = redactCommand(typeof value === "string" ? value : String(value ?? ""), maxChars);
-  return text.length <= maxChars ? text : `${text.slice(0, maxChars)}...`;
+  const text2 = redactCommand(typeof value === "string" ? value : String(value ?? ""), maxChars);
+  return text2.length <= maxChars ? text2 : `${text2.slice(0, maxChars)}...`;
 }
 function parseBooleanFlag(value, fallback = false) {
   if (value === void 0 || value === null || value === "") {
@@ -30262,7 +30275,7 @@ function runCodexProcess({ command, args, prompt, cwd, env, timeoutMs, spawnImpl
   });
 }
 function readModelOutput(outputPath, stdout, fsImpl = import_node_fs.default) {
-  let text = "";
+  let text2 = "";
   let outputAvailable = false;
   try {
     const stats = fsImpl.statSync(outputPath);
@@ -30280,28 +30293,28 @@ function readModelOutput(outputPath, stdout, fsImpl = import_node_fs.default) {
   }
   if (outputAvailable) {
     try {
-      text = fsImpl.readFileSync(outputPath, "utf8");
+      text2 = fsImpl.readFileSync(outputPath, "utf8");
     } catch {
       outputAvailable = false;
     }
   }
   if (!outputAvailable) {
-    text = String(stdout || "");
+    text2 = String(stdout || "");
   }
-  if (!text.trim()) {
+  if (!text2.trim()) {
     throw new CodexReviewProcessError(
       "Codex review returned an empty response",
       "COMMAND_REVIEW_MODEL_OUTPUT_INVALID"
     );
   }
-  if (byteLength5(text) > MAX_COMMAND_REVIEW_OUTPUT_BYTES) {
+  if (byteLength5(text2) > MAX_COMMAND_REVIEW_OUTPUT_BYTES) {
     throw new CodexReviewProcessError(
       "Codex review response exceeded the limit",
       "COMMAND_REVIEW_MODEL_OUTPUT_TOO_LARGE"
     );
   }
   try {
-    return JSON.parse(text);
+    return JSON.parse(text2);
   } catch {
     throw new CodexReviewProcessError(
       "Codex review response was not valid JSON",
@@ -30431,7 +30444,49 @@ function publicCommandReviewConfig(config = {}) {
 var import_node_fs2 = __toESM(require("node:fs"), 1);
 var import_node_crypto8 = require("node:crypto");
 var import_node_path2 = __toESM(require("node:path"), 1);
+var import_posix7 = __toESM(require("node:path/posix"), 1);
+
+// log-projects.js
 var import_posix6 = __toESM(require("node:path/posix"), 1);
+function normalizeLogProjects(value, allowedRoots, sourceRoots = {}) {
+  if (typeof value === "string" && value) {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      throw invalid("logProjects must be valid JSON");
+    }
+  }
+  const configured = value === void 0 || value === null || value === "" ? {} : value;
+  if (typeof configured !== "object" || Array.isArray(configured)) throw invalid("logProjects must be an object");
+  if (Object.keys(configured).length > 20) throw invalid("at most 20 log projects are supported");
+  const result = {};
+  for (const [id, project] of Object.entries(configured)) {
+    if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id) || !project || typeof project !== "object") throw invalid("invalid log project");
+    const directories = project.directories;
+    if (!Array.isArray(directories) || !directories.length || directories.length > 8) throw invalid("each log project needs 1-8 directories");
+    const normalize = (value2) => {
+      if (typeof value2 !== "string" || value2.length > 4096 || !value2.startsWith("/") || value2.includes("\0")) throw invalid("log project paths must be absolute");
+      const normalized = import_posix6.default.normalize(value2).replace(/\/$/, "");
+      if (!allowedRoots.some((root) => normalized === root || normalized.startsWith(`${root}/`))) throw invalid("log project path is outside approved roots");
+      return normalized;
+    };
+    result[id] = {
+      ...project.root ? { root: normalize(project.root) } : {},
+      directories: [...new Set(directories.map(normalize))]
+    };
+  }
+  for (const [id, root] of Object.entries(sourceRoots)) {
+    if (!Object.hasOwn(result, id)) result[id] = { root, directories: [`${root}/logs`] };
+  }
+  return result;
+}
+function invalid(message) {
+  const error = new Error(message);
+  Object.assign(error, { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
+  return error;
+}
+
+// config.js
 var DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
 var SOURCE_ROOT_KEY_PATTERN = /^[a-z][a-z0-9_-]{0,31}$/;
 var MAX_SOURCE_ROOTS = 20;
@@ -30559,7 +30614,7 @@ function normalizeSourceRoots(value) {
     if (trimmed.length > MAX_SOURCE_ROOT_LENGTH) {
       throw sourceRootsError(`sourceRoots.${project} is too long`);
     }
-    const normalizedPath = import_posix6.default.normalize(trimmed);
+    const normalizedPath = import_posix7.default.normalize(trimmed);
     if (normalizedPath === "/") {
       throw sourceRootsError(`sourceRoots.${project} cannot grant access to the remote root`);
     }
@@ -30665,6 +30720,7 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
       readyTimeout: 1e4
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
+    logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots) },
     security: {
       allowedPaths: allowedPathsForSourceRoots(sourceRoots),
       sourceRoots,
@@ -30886,9 +30942,145 @@ async function writeAuditLog(logPath, event2, now) {
 }
 
 // logs.js
-var import_posix7 = __toESM(require("node:path/posix"), 1);
+var import_posix8 = __toESM(require("node:path/posix"), 1);
 var import_node_string_decoder = require("node:string_decoder");
 var import_node_zlib = require("node:zlib");
+
+// log-query-runtime-source.js
+var LOG_QUERY_RUNTIME_SOURCE = 'const runRemoteLogQuery = async function remoteLogQuery(input) {\n  const fs = require("fs");\n  const path = require("path").posix;\n  const zlib = require("zlib");\n  const { StringDecoder } = require("string_decoder");\n  const { Readable } = require("stream");\n  const started = Date.now();\n  const warnings = [];\n  const files = [];\n  let records = [];\n  const retainedRecords = [];\n  let retainedBytes = 0;\n  const members = [];\n  let archiveMembersScanned = 0;\n  let memberListingStopped = false;\n  let memberBytes = 0;\n  let outputBytes = 0;\n  let scannedBytes = 0;\n  let expandedBytes = 0;\n  let matchedLines = 0;\n  let scannedLines = 0;\n  let outputTruncated = false;\n  let scanTruncated = false;\n  let filesTruncated = false;\n  let listingTruncated = false;\n  let directoryEntries = 0;\n  let warningsTruncated = false;\n  function warn(value) {\n    if (warnings.length < 100) warnings.push(value);\n    else warningsTruncated = true;\n  }\n  const inside = (value, root) => value === root || value.startsWith(`${root}/`);\n  const failure = (message, code) => Object.assign(new Error(message), { code });\n  function active() {\n    if (Date.now() >= input.deadlineAt) throw failure("log query deadline exceeded", "OPERATION_DEADLINE_EXCEEDED");\n  }\n  async function canonical(value) {\n    const normalized = path.normalize(value);\n    const roots = input.allowedRoots.filter((root) => inside(normalized, root));\n    if (!roots.length) throw failure("path is outside approved roots", "PATH_NOT_ALLOWED");\n    const resolvedRoots = [];\n    for (const root of roots) resolvedRoots.push(await fs.promises.realpath(root));\n    const resolved = await fs.promises.realpath(normalized);\n    if (!resolvedRoots.some((root) => inside(resolved, root))) throw failure("symlink escapes approved roots", "PATH_NOT_ALLOWED");\n    return resolved;\n  }\n  const dateIn = (name) => {\n    var _a;\n    return (_a = /\\d{4}-\\d{2}-\\d{2}/.exec(name)) == null ? void 0 : _a[0];\n  };\n  function fileMatches(name) {\n    if (input.fileContains && !name.toLowerCase().includes(input.fileContains.toLowerCase())) return false;\n    const date = dateIn(name);\n    if ((input.dateFrom || input.dateTo) && (!date || input.dateFrom && date < input.dateFrom || input.dateTo && date > input.dateTo)) return false;\n    return true;\n  }\n  function logName(name) {\n    return /\\.log(?:\\.\\d+)?(?:\\.gz)?$/i.test(name) || /\\.(?:tar\\.gz|tgz)$/i.test(name) || /^(?:syslog|messages|auth\\.log)(?:\\.\\d+)?(?:\\.gz)?$/i.test(name);\n  }\n  async function addFile(requested, directory) {\n    active();\n    const resolved = await canonical(requested);\n    if (directory && !inside(resolved, directory)) throw failure("log symlink escapes the selected directory", "PATH_NOT_ALLOWED");\n    const stats = await fs.promises.stat(resolved);\n    if (!stats.isFile()) return;\n    if (files.some((file) => file.path === resolved)) return;\n    const compression = /\\.(?:tar\\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\\.gz$/i.test(resolved) ? "gzip" : "none";\n    files.push({ path: resolved, name: path.basename(requested), size: stats.size, modifyTime: stats.mtimeMs, compression });\n  }\n  if (input.path) {\n    if (/\\.(?:bz2|xz|zip|tar)$/i.test(input.path)) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n    if (/\\/(?:btmp|wtmp|lastlog|faillog)(?:\\.\\d+)?(?:\\.gz)?$/.test(input.path)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n    if (fileMatches(path.basename(input.path))) await addFile(input.path);\n  } else {\n    for (const directory of input.directories) {\n      active();\n      try {\n        const resolved = await canonical(directory);\n        const handle = await fs.promises.opendir(resolved);\n        try {\n          for await (const entry of handle) {\n            active();\n            if (++directoryEntries > input.maxDirectoryEntries) {\n              listingTruncated = true;\n              break;\n            }\n            if (!entry.isFile() && !entry.isSymbolicLink() || !logName(entry.name) || !fileMatches(entry.name)) continue;\n            try {\n              await addFile(path.join(directory, entry.name), resolved);\n            } catch (error) {\n              if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n              warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });\n            }\n          }\n        } finally {\n          await handle.close().catch(() => {\n          });\n        }\n      } catch (error) {\n        if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n        warn({ path: directory, code: error.code, message: error.message });\n      }\n    }\n  }\n  files.sort((a, b) => b.modifyTime - a.modifyTime || a.name.localeCompare(b.name));\n  filesTruncated = files.length > input.maxFiles;\n  const selected = files.slice(input.fileOffset, input.fileOffset + input.maxFiles);\n  filesTruncated = input.fileOffset + selected.length < files.length;\n  const inspectedFiles = selected.map((file) => ({ ...file }));\n  if (input.mode === "files") return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    warnings,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    durationMs: Date.now() - started\n  };\n  function recordFields(line) {\n    var _a, _b;\n    let outer, inner;\n    try {\n      outer = JSON.parse(line);\n    } catch {\n    }\n    const message = typeof (outer == null ? void 0 : outer.message) === "string" ? outer.message : "";\n    const bracketTime = (_a = /^\\[([^\\]]+)\\]/.exec(message)) == null ? void 0 : _a[1];\n    const brace = message.indexOf("{");\n    if (brace >= 0) {\n      try {\n        inner = JSON.parse(message.slice(brace));\n      } catch {\n      }\n    }\n    inner || (inner = outer);\n    const timestamp = (inner == null ? void 0 : inner.timestamp) || (outer == null ? void 0 : outer.timestamp) || bracketTime || ((_b = /^\\[?((?:\\d{4}-\\d{2}-\\d{2})T[^\\s\\]]+)/.exec(line)) == null ? void 0 : _b[1]);\n    const scalar = (value, limit) => typeof value === "string" ? value.slice(0, limit) : void 0;\n    return {\n      timestamp: scalar(timestamp, 40),\n      level: scalar((outer == null ? void 0 : outer.level) || (inner == null ? void 0 : inner.level), 32),\n      route: scalar((inner == null ? void 0 : inner.path) || (inner == null ? void 0 : inner.route), 1024),\n      method: scalar(inner == null ? void 0 : inner.method, 32)\n    };\n  }\n  function match(line, fields) {\n    if (input.contains && !(input.caseSensitive ? line : line.toLowerCase()).includes(input.caseSensitive ? input.contains : input.contains.toLowerCase())) return false;\n    if (input.level && String(fields.level || "").toLowerCase() !== input.level) return false;\n    if (input.route && fields.route !== input.route) return false;\n    if (input.method && String(fields.method || "").toUpperCase() !== input.method) return false;\n    const timestamp = Date.parse(fields.timestamp);\n    if ((input.fromTime || input.toTime) && (!Number.isFinite(timestamp) || input.fromTime && timestamp < Date.parse(input.fromTime) || input.toTime && timestamp > Date.parse(input.toTime))) return false;\n    return true;\n  }\n  function addRecord(line, file, lineNumber, memberPath, lineFromEnd) {\n    scannedLines++;\n    const fields = recordFields(line);\n    if (!match(line, fields)) return;\n    matchedLines++;\n    const raw = Buffer.from(line);\n    const shortened = raw.length > input.maxBytes;\n    let text = shortened ? raw.subarray(0, input.maxBytes).toString("utf8").replace(/\\uFFFD$/, "") : line;\n    if (shortened) outputTruncated = true;\n    const record = { file, ...memberPath ? { memberPath } : {}, ...lineNumber ? { lineNumber } : {}, ...lineFromEnd ? { lineFromEnd } : {}, ...fields, text, ...shortened ? { truncated: true } : {} };\n    records.push(record);\n    outputBytes += Buffer.byteLength(text);\n    while (records.length > input.limit || outputBytes > input.maxBytes && records.length > 1) {\n      const removed = records.shift();\n      outputBytes -= Buffer.byteLength(removed.text);\n      outputTruncated = true;\n    }\n  }\n  function lineConsumer(file, memberPath, discardFirstLine = false) {\n    const decoder = new StringDecoder("utf8");\n    let pending = "";\n    let oversized = false;\n    let lineNumber = 0;\n    return {\n      write(chunk) {\n        const text = decoder.write(chunk);\n        let offset = 0;\n        while (offset < text.length) {\n          const end = text.indexOf("\\n", offset);\n          const piece = text.slice(offset, end < 0 ? text.length : end);\n          if (!oversized) pending += piece;\n          if (Buffer.byteLength(pending) > input.maxLineBytes) {\n            oversized = true;\n            pending = "";\n          }\n          if (end < 0) break;\n          lineNumber++;\n          if (oversized) {\n            scanTruncated = true;\n            warn({ file, memberPath, lineNumber, code: "LOG_LINE_TOO_LARGE" });\n          } else if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n          pending = "";\n          oversized = false;\n          offset = end + 1;\n        }\n      },\n      finish() {\n        pending += decoder.end();\n        if (oversized) {\n          scanTruncated = true;\n          return;\n        }\n        if (pending) {\n          lineNumber++;\n          if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n        }\n        if (discardFirstLine) for (const record of records) {\n          record.lineFromEnd = lineNumber - record.lineNumber + 1;\n          delete record.lineNumber;\n        }\n      }\n    };\n  }\n  function allowedMember(name) {\n    return name && path.normalize(name) !== "." && !name.startsWith("/") && !name.includes("\\0") && !name.includes("\\\\") && !name.split("/").includes("..");\n  }\n  function memberMatches(name) {\n    return (!input.memberPath || name === input.memberPath) && (!input.memberContains || name.toLowerCase().includes(input.memberContains.toLowerCase()));\n  }\n  function tarConsumer(file) {\n    let header = Buffer.alloc(0), remaining = 0, padding = 0, consumer = null;\n    let metadata = null, parts = [], pax = {}, globalPax = {}, longName = "";\n    let done = false, selectedMember = false, foundMember = false;\n    const number = (bytes) => {\n      if (bytes[0] & 128) throw failure("unsupported tar numeric format", "LOG_ARCHIVE_INVALID");\n      const value = bytes.toString("ascii").replace(/\\0/g, "").trim();\n      if (value && !/^[0-7]+$/.test(value)) throw failure("invalid tar number", "LOG_ARCHIVE_INVALID");\n      const parsed = value ? parseInt(value, 8) : 0;\n      if (!Number.isSafeInteger(parsed)) throw failure("invalid tar size", "LOG_ARCHIVE_INVALID");\n      return parsed;\n    };\n    const field = (buffer, offset, size) => buffer.subarray(offset, offset + size).toString("utf8").replace(/\\0.*$/, "");\n    function endEntry() {\n      consumer == null ? void 0 : consumer.finish();\n      consumer = null;\n      if (selectedMember && input.memberPath) done = true;\n      selectedMember = false;\n      if (metadata) {\n        const buffer = Buffer.concat(parts);\n        if (metadata === "L") longName = buffer.toString("utf8").replace(/\\0.*$/, "");\n        else if (metadata === "x" || metadata === "g") {\n          const fields = {};\n          for (let offset = 0; offset < buffer.length; ) {\n            const space = buffer.indexOf(32, offset);\n            const length = Number(buffer.subarray(offset, space).toString());\n            if (space < 0 || !Number.isInteger(length) || length <= space - offset + 1 || offset + length > buffer.length) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            const record = buffer.subarray(space + 1, offset + length).toString("utf8");\n            const equals = record.indexOf("=");\n            if (equals < 1) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            fields[record.slice(0, equals)] = record.slice(equals + 1).replace(/\\n$/, "");\n            offset += length;\n          }\n          if (metadata === "g") globalPax = { ...globalPax, ...fields };\n          else pax = fields;\n        }\n        parts = [];\n        metadata = null;\n      }\n    }\n    return {\n      write(chunk) {\n        let offset = 0;\n        while (offset < chunk.length && !done) {\n          if (remaining) {\n            const size = Math.min(remaining, chunk.length - offset);\n            const piece = chunk.subarray(offset, offset + size);\n            if (metadata) parts.push(Buffer.from(piece));\n            else if (consumer) {\n              if (scannedBytes + size > input.maxScanBytes) {\n                scanTruncated = true;\n                return false;\n              }\n              scannedBytes += size;\n              consumer.write(piece);\n            }\n            remaining -= size;\n            offset += size;\n            if (!remaining) endEntry();\n          } else if (padding) {\n            const size = Math.min(padding, chunk.length - offset);\n            padding -= size;\n            offset += size;\n          } else {\n            const needed = 512 - header.length;\n            const piece = chunk.subarray(offset, offset + needed);\n            offset += piece.length;\n            header = Buffer.concat([header, piece]);\n            if (header.length < 512) break;\n            if (header.every((byte) => byte === 0)) {\n              done = true;\n              header = Buffer.alloc(0);\n              break;\n            }\n            let checksum = 0;\n            for (let i = 0; i < 512; i++) checksum += i >= 148 && i < 156 ? 32 : header[i];\n            if (number(header.subarray(148, 156)) !== checksum) throw failure("invalid tar checksum", "LOG_ARCHIVE_INVALID");\n            let name = field(header, 0, 100);\n            const prefix = field(header, 345, 155);\n            if (prefix) name = `${prefix}/${name}`;\n            const type = field(header, 156, 1) || "0";\n            const extended = { ...globalPax, ...pax };\n            remaining = extended.size === void 0 ? number(header.subarray(124, 136)) : Number(extended.size);\n            if (!Number.isSafeInteger(remaining) || remaining < 0) throw failure("invalid tar member size", "LOG_ARCHIVE_INVALID");\n            padding = (512 - remaining % 512) % 512;\n            metadata = ["x", "g", "L", "K"].includes(type) ? type : null;\n            if (metadata && remaining > 1024 * 1024) throw failure("tar metadata too large", "LOG_ARCHIVE_INVALID");\n            if (!metadata) {\n              name = extended.path || longName || name;\n              pax = {};\n              longName = "";\n              if (name.length > 4096) throw failure("archive member name exceeds the path limit", "LOG_ARCHIVE_INVALID");\n              if (allowedMember(name)) name = path.normalize(name);\n              if (input.mode === "members") {\n                const index = archiveMembersScanned++;\n                if (archiveMembersScanned > input.maxArchiveMembers) {\n                  scanTruncated = true;\n                  return false;\n                }\n                if (index >= input.memberOffset && (!input.memberPrefix || name.startsWith(input.memberPrefix))) {\n                  const memberType = type === "0" ? "file" : type === "5" ? "directory" : type === "2" ? "symlink" : type === "1" ? "hardlink" : "special";\n                  const readable = type === "0" && Boolean(allowedMember(name));\n                  const member = {\n                    name,\n                    size: remaining,\n                    type: memberType,\n                    readable,\n                    ...readable ? {} : { readReason: "member must be a safe relative regular file" }\n                  };\n                  const bytes = Buffer.byteLength(JSON.stringify(member));\n                  if (members.length && memberBytes + bytes > input.maxBytes) {\n                    archiveMembersScanned--;\n                    memberListingStopped = true;\n                    done = true;\n                  } else {\n                    members.push(member);\n                    memberBytes += bytes;\n                  }\n                  if (members.length >= input.limit) {\n                    memberListingStopped = true;\n                    done = true;\n                  }\n                }\n              } else if (input.memberPath === name && (type !== "0" || !allowedMember(name))) throw failure("archive member must be a safe regular file", "ARCHIVE_MEMBER_NOT_READABLE");\n              if (input.mode !== "members" && type === "0" && allowedMember(name) && (logName(name) || input.memberPath === name) && memberMatches(name)) {\n                consumer = lineConsumer(file, name);\n                selectedMember = true;\n                foundMember = true;\n              }\n            }\n            header = Buffer.alloc(0);\n            if (!remaining) endEntry();\n          }\n        }\n        return !(done && (input.memberPath || memberListingStopped));\n      },\n      finish() {\n        if (done && input.memberPath) return;\n        if (remaining || padding || header.length) throw failure("incomplete tar archive", "LOG_ARCHIVE_INVALID");\n        if (input.memberPath && !foundMember) throw failure("archive member was not found", "ARCHIVE_MEMBER_NOT_FOUND");\n      }\n    };\n  }\n  const scannedFiles = [];\n  for (const file of selected) {\n    active();\n    if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) {\n      scanTruncated = true;\n      break;\n    }\n    if (input.mode === "latest" && retainedRecords.length >= input.limit) {\n      scanTruncated = true;\n      break;\n    }\n    records = [];\n    outputBytes = 0;\n    const before = scannedBytes;\n    let rangeStart = 0;\n    let fd;\n    try {\n      fd = await fs.promises.open(file.path, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));\n      const liveStats = await fd.stat();\n      if (!liveStats.isFile()) throw failure("path is not a regular log file", "LOG_NOT_FILE");\n      file.size = liveStats.size;\n      const prefix = Buffer.alloc(8);\n      const inspected = await fd.read(prefix, 0, Math.min(8, file.size), 0);\n      if (prefix[0] === 66 && prefix[1] === 90 && prefix[2] === 104 || prefix[0] === 253 && prefix[1] === 55 && prefix[2] === 122 || prefix[0] === 80 && prefix[1] === 75) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n      if (prefix[0] === 31 && prefix[1] === 139 && file.compression === "none") file.compression = "gzip";\n      if (file.compression === "none" && prefix.subarray(0, inspected.bytesRead).includes(0)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n      if (input.mode === "latest" && file.compression === "none") {\n        let position = file.size;\n        let suffix = Buffer.alloc(0);\n        while (position > 0 && scannedBytes < input.maxScanBytes) {\n          active();\n          const size = Math.min(32768, position, input.maxScanBytes - scannedBytes);\n          position -= size;\n          rangeStart = position;\n          const buffer = Buffer.allocUnsafe(size);\n          const read = await fd.read(buffer, 0, size, position);\n          scannedBytes += read.bytesRead;\n          if (read.bytesRead < size) warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n          suffix = Buffer.concat([buffer.subarray(0, read.bytesRead), suffix]);\n          const newline = suffix.indexOf(10);\n          const complete2 = position === 0 ? suffix : newline < 0 ? Buffer.alloc(0) : suffix.subarray(newline + 1);\n          const lines = complete2.toString("utf8").split("\\n");\n          if (lines[lines.length - 1] === "") lines.pop();\n          if (lines.length >= input.limit || position === 0 || suffix.length >= input.maxLineBytes) {\n            for (let i = Math.max(0, lines.length - input.limit); i < lines.length; i++) addRecord(lines[i].replace(/\\r$/, ""), file.path, null, null, lines.length - i);\n            if (position > 0) scanTruncated = true;\n            break;\n          }\n        }\n        if (position > 0) scanTruncated = true;\n      } else {\n        rangeStart = file.compression === "none" ? Math.max(0, file.size - (input.maxScanBytes - scannedBytes)) : 0;\n        if (rangeStart > 0) scanTruncated = true;\n        const source = Readable.from((async function* () {\n          let position = rangeStart;\n          while (position < file.size) {\n            active();\n            const buffer = Buffer.allocUnsafe(Math.min(65536, file.size - position));\n            const read = await fd.read(buffer, 0, buffer.length, position);\n            if (!read.bytesRead) {\n              warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n              break;\n            }\n            position += read.bytesRead;\n            yield buffer.subarray(0, read.bytesRead);\n          }\n        })());\n        let stream = source;\n        let gunzip;\n        let sourceError;\n        if (file.compression !== "none") {\n          gunzip = zlib.createGunzip();\n          source.on("error", (error) => {\n            sourceError = error;\n            gunzip.destroy(error);\n          });\n          stream = source.pipe(gunzip);\n        }\n        const consumer = file.compression === "tar-gzip" ? tarConsumer(file.path) : lineConsumer(file.path, null, rangeStart > 0);\n        let stopped = false;\n        try {\n          for await (const chunk of stream) {\n            active();\n            if (file.compression !== "none") {\n              if (expandedBytes + chunk.length > input.maxExpandedBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              expandedBytes += chunk.length;\n            }\n            if (file.compression !== "tar-gzip") {\n              if (scannedBytes + chunk.length > input.maxScanBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              scannedBytes += chunk.length;\n            }\n            if (consumer.write(chunk) === false) {\n              stopped = true;\n              break;\n            }\n          }\n          if (!stopped) consumer.finish();\n        } finally {\n          source.destroy();\n          gunzip == null ? void 0 : gunzip.destroy();\n        }\n        if (sourceError) throw sourceError;\n      }\n      scannedFiles.push({\n        path: file.path,\n        scannedBytes: scannedBytes - before,\n        ...file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}\n      });\n    } catch (error) {\n      if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n      if (input.path) throw error;\n      warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });\n    } finally {\n      await (fd == null ? void 0 : fd.close());\n      for (const record of records.reverse()) {\n        const bytes = Buffer.byteLength(record.text);\n        if (retainedRecords.length >= input.limit || retainedBytes + bytes > input.maxBytes) {\n          outputTruncated = true;\n          continue;\n        }\n        retainedRecords.push(record);\n        retainedBytes += bytes;\n      }\n    }\n  }\n  for (const file of inspectedFiles) {\n    const live = selected.find((selectedFile) => selectedFile.path === file.path);\n    file.size = live.size;\n    file.compression = live.compression;\n  }\n  const complete = !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;\n  return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    scannedFiles,\n    records: retainedRecords,\n    content: retainedRecords.map((record) => record.text).join("\\n") + (retainedRecords.length ? "\\n" : ""),\n    returnedLines: retainedRecords.length,\n    matchedLines,\n    scannedLines,\n    scannedBytes,\n    expandedBytes,\n    outputBytes: retainedBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    coverage: complete ? "complete" : input.mode === "latest" && selected.every((file) => file.compression === "none") ? "tail" : "bounded",\n    countsAreComplete: complete,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    ...input.mode === "members" ? {\n      members,\n      hasMoreMembers: memberListingStopped || scanTruncated,\n      nextMemberOffset: memberListingStopped || scanTruncated ? archiveMembersScanned : null,\n      memberBytes\n    } : {},\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    warnings,\n    durationMs: Date.now() - started\n  };\n};\n';
+
+// log-query.js
+var LOG_QUERY_MARKER = "__REMOTE_DEBUG_LOG_QUERY__";
+function text(value, field, maximum = 256) {
+  if (value === void 0 || value === null) return "";
+  if (typeof value !== "string" || value.length > maximum || value.includes("\0")) throw logInputError(`${field} is invalid`, "INVALID_LOG_QUERY");
+  return value;
+}
+function integer(value, fallback, maximum, field) {
+  if (value === void 0) return fallback;
+  if (!Number.isInteger(value) || value < 1) throw logInputError(`${field} must be a positive integer`, "INVALID_LOG_QUERY");
+  return Math.min(value, maximum);
+}
+function date(value, field) {
+  const result = text(value, field, 10);
+  const parsed = /* @__PURE__ */ new Date(`${result}T00:00:00Z`);
+  if (result && (!/^\d{4}-\d{2}-\d{2}$/.test(result) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== result)) throw logInputError(`${field} must be YYYY-MM-DD`, "INVALID_LOG_QUERY");
+  return result;
+}
+function timestamp(value, field) {
+  const result = text(value, field, 40);
+  if (result && (!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(result) || !Number.isFinite(Date.parse(result)))) throw logInputError(`${field} requires an ISO timestamp with timezone`, "INVALID_LOG_QUERY");
+  return result;
+}
+function normalizeLogQuery(input, config) {
+  const projects = normalizeLogProjects(config.logs?.projects, config.security.allowedPaths, config.security.sourceRoots);
+  const projectId = text(input.projectId, "projectId", 32);
+  const path9 = text(input.path, "path", 4096);
+  if (Boolean(projectId) === Boolean(path9)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
+  if (projectId && !Object.hasOwn(projects, projectId)) throw logInputError(`unknown log project: ${projectId}`, "LOG_PROJECT_NOT_FOUND");
+  if (path9) assertPathAllowed(path9, config.security.allowedPaths);
+  const contains = text(input.contains, "contains");
+  const route = text(input.route, "route");
+  if (route && !route.startsWith("/")) throw logInputError("route must be an exact absolute route", "INVALID_LOG_QUERY");
+  const level = text(input.level, "level", 16).toLowerCase();
+  const method = text(input.method, "method", 16).toUpperCase();
+  const fromTime = timestamp(input.fromTime, "fromTime");
+  const toTime = timestamp(input.toTime, "toTime");
+  const mode = input.mode || (contains || route || level || method || fromTime || toTime ? "search" : "latest");
+  if (!LOG_QUERY_CAPABILITIES.modes.includes(mode)) throw logInputError("mode must be latest, search, files, or members", "INVALID_LOG_QUERY");
+  if (mode === "members" && (!path9 || !/\.(?:tar\.gz|tgz)$/i.test(path9))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
+  if (mode === "latest" && (contains || route || level || method || fromTime || toTime)) throw logInputError("use search mode for record filters", "INVALID_LOG_QUERY");
+  if (["files", "members"].includes(mode) && (contains || route || level || method || fromTime || toTime)) throw logInputError("record filters require search mode", "INVALID_LOG_QUERY");
+  const dateFrom = date(input.date || input.dateFrom, "dateFrom");
+  const dateTo = date(input.date || input.dateTo, "dateTo");
+  if (dateFrom && dateTo && dateFrom > dateTo || fromTime && toTime && Date.parse(fromTime) > Date.parse(toTime)) throw logInputError("start must precede end", "INVALID_LOG_QUERY");
+  const fileOffset = input.fileOffset ?? 0;
+  if (!Number.isInteger(fileOffset) || fileOffset < 0 || fileOffset > 5e3) throw logInputError("invalid fileOffset", "INVALID_LOG_QUERY");
+  const memberPath = text(input.memberPath, "memberPath", 4096);
+  const memberOffset = input.memberOffset ?? 0;
+  if (!Number.isInteger(memberOffset) || memberOffset < 0 || memberOffset > 5e3) throw logInputError("invalid memberOffset", "INVALID_LOG_QUERY");
+  if (memberPath && path9 && !/\.(?:tar\.gz|tgz)$/i.test(path9)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
+  return {
+    projectId,
+    path: path9,
+    directories: projectId ? projects[projectId].directories : [],
+    allowedRoots: config.security.allowedPaths,
+    mode,
+    dateFrom,
+    dateTo,
+    fromTime,
+    toTime,
+    fileContains: text(input.fileContains, "fileContains"),
+    memberContains: text(input.memberContains, "memberContains"),
+    memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
+    memberPrefix: normalizeArchiveMemberPrefix(text(input.memberPrefix, "memberPrefix", 512)),
+    memberOffset,
+    maxArchiveMembers: 5e3,
+    contains,
+    caseSensitive: input.caseSensitive === true,
+    route,
+    level,
+    method,
+    fileOffset,
+    limit: integer(input.limit, 50, mode === "members" ? 5e3 : 2e3, "limit"),
+    maxBytes: integer(input.maxBytes, 256 * 1024, 256 * 1024, "maxBytes"),
+    maxFiles: integer(input.maxFiles, mode === "latest" ? 1 : 10, 50, "maxFiles"),
+    maxScanBytes: integer(input.maxScanBytes, 32 * 1024 * 1024, LOG_QUERY_CAPABILITIES.maxScanBytes, "maxScanBytes"),
+    maxExpandedBytes: integer(input.maxExpandedBytes, 1024 * 1024 * 1024, LOG_QUERY_CAPABILITIES.maxExpandedBytes, "maxExpandedBytes"),
+    maxLineBytes: 1024 * 1024,
+    maxDirectoryEntries: 5e3
+  };
+}
+function buildLogQueryScript(query, operation) {
+  const input = { ...query, deadlineAt: operation.deadlineAt };
+  return `${LOG_QUERY_RUNTIME_SOURCE}
+runRemoteLogQuery(${JSON.stringify(input)}).then(result => {
+    let payload = JSON.stringify({ok:true,...result});
+    while (Buffer.byteLength(payload) > 768 * 1024 && result.records && result.records.length) {
+      if (result.records.length === 1) result.records.length = 0;
+      else result.records.splice(Math.ceil(result.records.length / 2));
+      result.returnedLines = result.records.length;
+      result.content = result.records.map(record => record.text).join("\\n") + (result.records.length ? "\\n" : "");
+      result.outputBytes = result.records.reduce((bytes, record) => bytes + Buffer.byteLength(record.text), 0);
+      result.outputTruncated = true;
+      payload = JSON.stringify({ok:true,...result});
+    }
+    if (Buffer.byteLength(payload) > 768 * 1024) throw new Error("log query response too large");
+    console.log(${JSON.stringify(LOG_QUERY_MARKER)} + payload);
+  }).catch(error => {
+    console.log(${JSON.stringify(LOG_QUERY_MARKER)} + JSON.stringify({ok:false,error:{code:error.code||"LOG_QUERY_FAILED",message:error.message}}));
+    process.exitCode=1;
+  });
+`;
+}
+async function queryLogs(input, options) {
+  const query = normalizeLogQuery(input, options.config);
+  const result = await options.runSSH("node", {
+    config: options.config,
+    operation: options.operation,
+    stdin: buildLogQueryScript(query, options.operation),
+    priority: query.mode === "latest" && query.path && !/\.(?:gz|tgz)$/i.test(query.path) ? "interactive" : "background"
+  });
+  if (result.stdoutTruncated) throw operationError("log query response exceeded the limit", { code: "LOG_QUERY_RESPONSE_TOO_LARGE", statusCode: 502, layer: "logs", phase: "response" });
+  const line = String(result.stdout || "").split(/\r?\n/).find((line2) => line2.startsWith(LOG_QUERY_MARKER));
+  let payload;
+  try {
+    payload = line && JSON.parse(line.slice(LOG_QUERY_MARKER.length));
+  } catch {
+  }
+  if (!payload || !payload.ok || result.exitCode !== 0) {
+    throw operationError(payload?.error?.message || "remote log helper failed; Node must be available on the target", {
+      code: payload?.error?.code || "LOG_QUERY_HELPER_FAILED",
+      statusCode: 502,
+      layer: "logs",
+      phase: "remote-query",
+      operationId: options.operation.operationId,
+      details: { exitCode: result.exitCode, stderr: String(result.stderr || "").slice(0, 2048) }
+    });
+  }
+  delete payload.ok;
+  return { ...payload, remoteDurationMs: payload.durationMs, timing: result.timing };
+}
 
 // ssh.js
 var remoteReadStreams = /* @__PURE__ */ new WeakMap();
@@ -31774,7 +31966,7 @@ function archiveEntryName(rawName) {
   if (!raw || raw.includes("\\") || raw.startsWith("/")) {
     return { name: raw || ".", safe: false };
   }
-  const normalized = import_posix7.default.normalize(raw);
+  const normalized = import_posix8.default.normalize(raw);
   if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
     return { name: normalized, safe: false };
   }
@@ -31791,12 +31983,12 @@ function parseTarNumber(value) {
   if ((raw[0] & 128) !== 0) {
     throw new Error("base-256 tar numbers are not supported");
   }
-  const text = raw.toString("ascii").replace(/\0/g, "").trim();
-  if (!text) return 0;
-  if (!/^\d+$/.test(text)) {
+  const text2 = raw.toString("ascii").replace(/\0/g, "").trim();
+  if (!text2) return 0;
+  if (!/^\d+$/.test(text2)) {
     throw new Error("invalid tar numeric field");
   }
-  const parsed = Number.parseInt(text, 8);
+  const parsed = Number.parseInt(text2, 8);
   if (!Number.isSafeInteger(parsed) || parsed < 0) {
     throw new Error("tar numeric field is out of range");
   }
@@ -32121,8 +32313,8 @@ var LineCollector = class {
     }
     this.resetCurrent();
   }
-  consumeText(text) {
-    this.pending += text;
+  consumeText(text2) {
+    this.pending += text2;
     while (true) {
       const newline = this.pending.indexOf("\n");
       if (newline < 0) {
@@ -32714,7 +32906,7 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
   return { sources, warnings };
 }
 function listFileSourceEntry(source) {
-  const name = import_posix7.default.basename(source.path);
+  const name = import_posix8.default.basename(source.path);
   return logEntryFromRaw(source, {
     name,
     size: source.stats.size,
@@ -32965,6 +33157,33 @@ async function readArchiveMembersFromSftp(sftp, requestedPath, options, operatio
   };
 }
 async function listLogArchiveMembers(options = {}) {
+  if (options.runSSH) {
+    const normalized2 = normalizeArchiveMemberListOptions(options);
+    const cursor = decodeLogCursor(normalized2.cursor, "archive-members");
+    const prepared2 = prepareOperation2(options);
+    try {
+      const result = await queryLogs({
+        path: normalized2.path,
+        mode: "members",
+        limit: normalized2.limit,
+        memberPrefix: normalized2.prefix,
+        memberOffset: cursor.offset,
+        maxFiles: 1
+      }, { config: options.config, runSSH: options.runSSH, operation: prepared2.operation });
+      return {
+        path: result.files[0]?.path || normalized2.path,
+        compression: "tar-gzip",
+        members: result.members,
+        hasMore: result.hasMoreMembers,
+        nextCursor: result.hasMoreMembers ? encodeLogCursor({ kind: "archive-members", sourceIndex: 0, offset: result.nextMemberOffset }) : null,
+        truncated: result.scanTruncated,
+        scannedBytes: result.expandedBytes,
+        timing: result.timing
+      };
+    } finally {
+      prepared2.cleanup();
+    }
+  }
   const supervisor = requireSupervisor2(options);
   const normalized = normalizeArchiveMemberListOptions(options);
   const prepared = prepareOperation2(options);
@@ -33009,7 +33228,7 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
       "ARCHIVE_MEMBER_NOT_ALLOWED"
     );
   }
-  if (compression === "none" && (binaryName(import_posix7.default.basename(canonicalPath)) || prefix.includes(0))) {
+  if (compression === "none" && (binaryName(import_posix8.default.basename(canonicalPath)) || prefix.includes(0))) {
     throw logInputError("binary system logs cannot be decoded as text", "BINARY_LOG_UNSUPPORTED");
   }
   const sourceSize = Number(stats.size);
@@ -33188,6 +33407,42 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
   };
 }
 async function readLog(options = {}) {
+  if (options.runSSH) {
+    const normalized2 = normalizeLogReadOptions(options);
+    if (/\.(?:tar\.gz|tgz)$/i.test(normalized2.path) && !normalized2.memberPath) throw logInputError("tar.gz logs require memberPath; list archive members first", "ARCHIVE_MEMBER_REQUIRED");
+    const prepared2 = prepareOperation2(options);
+    try {
+      const result = await queryLogs({
+        path: normalized2.path,
+        memberPath: normalized2.memberPath,
+        contains: normalized2.contains,
+        caseSensitive: normalized2.caseSensitive,
+        limit: normalized2.tailLines,
+        maxBytes: normalized2.maxBytes,
+        maxScanBytes: LOG_MAX_SCAN_BYTES,
+        maxFiles: 1
+      }, { config: options.config, runSSH: options.runSSH, operation: prepared2.operation });
+      return {
+        path: result.files[0]?.path || normalized2.path,
+        memberPath: normalized2.memberPath || void 0,
+        compression: result.files[0]?.compression,
+        content: [...result.records].reverse().map((record) => record.text).join("\n") + (result.records.length ? "\n" : ""),
+        totalLines: result.scannedLines,
+        matchedLines: result.matchedLines,
+        scannedBytes: result.scannedBytes,
+        archiveScannedBytes: result.expandedBytes,
+        truncated: result.outputTruncated || result.mode === "search" && !result.complete,
+        scannedTruncated: result.mode === "search" && result.scanTruncated,
+        countsAreComplete: result.countsAreComplete,
+        coverage: result.coverage,
+        warnings: result.warnings,
+        remoteDurationMs: result.remoteDurationMs,
+        timing: result.timing
+      };
+    } finally {
+      prepared2.cleanup();
+    }
+  }
   const supervisor = requireSupervisor2(options);
   const normalized = normalizeLogReadOptions(options);
   const prepared = prepareOperation2(options);
@@ -33476,6 +33731,7 @@ function normalizeInstance(input, existing = {}) {
   const sourceRoots = normalizeSourceRoots(
     input.sourceRoots === void 0 ? existing.sourceRoots : input.sourceRoots
   );
+  const logProjects = normalizeLogProjects(input.logProjects === void 0 ? existing.logProjects : input.logProjects, allowedPathsForSourceRoots(sourceRoots));
   return {
     id,
     name,
@@ -33493,6 +33749,7 @@ function normalizeInstance(input, existing = {}) {
     }),
     ...mongodb ? { mongodb } : {},
     ...Object.keys(sourceRoots).length > 0 ? { sourceRoots } : {},
+    ...Object.keys(logProjects).length > 0 ? { logProjects } : {},
     createdAt: existing.createdAt || input.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
     updatedAt: input.updatedAt || (/* @__PURE__ */ new Date()).toISOString()
   };
@@ -33567,6 +33824,7 @@ function envDefaultInstance(env, cwd) {
       maxExecutionTimeoutMs: merged.REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS
     },
     sourceRoots: merged.REMOTE_DEBUG_SOURCE_ROOTS,
+    logProjects: merged.REMOTE_DEBUG_LOG_PROJECTS,
     mongodb
   });
 }
@@ -34224,15 +34482,15 @@ var MemoryStore = class {
   }
   async markInitializing(instance, source = "worker-start") {
     const previous = this.ensureLoaded(instance.id);
-    const timestamp = this.now();
+    const timestamp2 = this.now();
     const next = sanitizeMemoryValue({
       version: MEMORY_VERSION,
       instanceId: instance.id,
       targetFingerprint: targetFingerprint(instance),
       status: "initializing",
       initializedAt: previous?.initializedAt || null,
-      updatedAt: timestamp,
-      lastCheckedAt: timestamp,
+      updatedAt: timestamp2,
+      lastCheckedAt: timestamp2,
       sections: {
         ...previous?.sections || {},
         target: targetSummary(instance)
@@ -34240,7 +34498,7 @@ var MemoryStore = class {
       changes: [
         ...(previous?.changes || []).slice(-(MAX_CHANGES - 1)),
         {
-          time: timestamp,
+          time: timestamp2,
           source,
           sections: ["status", "target"]
         }
@@ -34251,15 +34509,15 @@ var MemoryStore = class {
   }
   async markFailed(instance, error, source = "worker-start") {
     const previous = this.ensureLoaded(instance.id);
-    const timestamp = this.now();
+    const timestamp2 = this.now();
     const next = sanitizeMemoryValue({
       version: MEMORY_VERSION,
       instanceId: instance.id,
       targetFingerprint: targetFingerprint(instance),
       status: "failed",
       initializedAt: previous?.initializedAt || null,
-      updatedAt: timestamp,
-      lastCheckedAt: timestamp,
+      updatedAt: timestamp2,
+      lastCheckedAt: timestamp2,
       sections: {
         ...previous?.sections || {},
         target: targetSummary(instance)
@@ -34271,7 +34529,7 @@ var MemoryStore = class {
       changes: [
         ...(previous?.changes || []).slice(-(MAX_CHANGES - 1)),
         {
-          time: timestamp,
+          time: timestamp2,
           source,
           sections: ["status"]
         }
@@ -34282,7 +34540,7 @@ var MemoryStore = class {
   }
   async merge(instance, update = {}, source = "worker") {
     const previous = this.ensureLoaded(instance.id);
-    const timestamp = this.now();
+    const timestamp2 = this.now();
     const incomingSections = sanitizeMemoryValue(update.sections || {});
     const baseSections = {
       ...previous?.sections || {},
@@ -34323,16 +34581,16 @@ var MemoryStore = class {
       instanceId: instance.id,
       targetFingerprint: targetFingerprint(instance),
       status,
-      initializedAt: previous?.initializedAt || update.initializedAt || timestamp,
-      updatedAt: changedSections.length > 0 || previous?.status !== status ? timestamp : previous?.updatedAt || timestamp,
-      lastCheckedAt: update.lastCheckedAt || timestamp,
+      initializedAt: previous?.initializedAt || update.initializedAt || timestamp2,
+      updatedAt: changedSections.length > 0 || previous?.status !== status ? timestamp2 : previous?.updatedAt || timestamp2,
+      lastCheckedAt: update.lastCheckedAt || timestamp2,
       sections: nextSections,
       lastError: update.lastError,
       changes: [
         ...(previous?.changes || []).slice(-(MAX_CHANGES - 1)),
         ...changedSections.length > 0 || previous?.status !== status ? [
           {
-            time: timestamp,
+            time: timestamp2,
             source,
             sections: changedSections.length > 0 ? changedSections : ["status"]
           }
@@ -34508,6 +34766,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.maxExecutionTimeoutMs),
     REMOTE_DEBUG_MONGODB_CONFIG: instance.mongodb ? JSON.stringify(instance.mongodb) : "",
     REMOTE_DEBUG_SOURCE_ROOTS: instance.sourceRoots ? JSON.stringify(instance.sourceRoots) : "",
+    REMOTE_DEBUG_LOG_PROJECTS: instance.logProjects ? JSON.stringify(instance.logProjects) : "",
     REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS: String(manager.sshNetwork.keepaliveIntervalMs),
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
@@ -34673,12 +34932,12 @@ var WorkerManager = class {
       await this.clearRestoreSnapshot({ reason: "empty", action });
       return { written: false, reason: "empty", instances: [] };
     }
-    const timestamp = nowIso3();
+    const timestamp2 = nowIso3();
     const snapshot = {
       version: RESTORE_SNAPSHOT_VERSION,
       reason,
-      createdAt: timestamp,
-      updatedAt: timestamp,
+      createdAt: timestamp2,
+      updatedAt: timestamp2,
       ownerPid: process.pid,
       sourcePid: process.pid,
       lastAction: action,
@@ -35420,11 +35679,11 @@ var WorkerManager = class {
         body: JSON.stringify(payload),
         signal: controller.signal
       });
-      const text = await response.text();
+      const text2 = await response.text();
       try {
-        parsed = JSON.parse(text);
+        parsed = JSON.parse(text2);
       } catch {
-        parsed = { ok: false, raw: text };
+        parsed = { ok: false, raw: text2 };
       }
     } catch (error) {
       if (options.signal?.aborted) {
@@ -35826,12 +36085,19 @@ function createApp(options = {}) {
   const listLogArchiveMembers2 = (logOptions) => listLogArchiveMembersImpl({
     ...logOptions,
     config,
-    supervisor: sshSupervisor
+    supervisor: sshSupervisor,
+    runSSH: runSSH2
   });
   const readLog2 = (logOptions) => readLogImpl({
     ...logOptions,
     config,
-    supervisor: sshSupervisor
+    supervisor: sshSupervisor,
+    runSSH: runSSH2
+  });
+  const queryLogs2 = (input, operation) => (options.queryLogs || queryLogs)(input, {
+    config: { ...config, logs: { projects: input._logProjects || config.logs?.projects || {} } },
+    operation,
+    runSSH: runSSH2
   });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
@@ -36506,6 +36772,42 @@ function createApp(options = {}) {
       response.status(errorStatus(error)).json({ ...payload, durationMs });
     }
   });
+  app.post("/logs/query", async (request, response) => {
+    const startedAt = import_node_perf_hooks.performance.now();
+    const operation = createRequestOperation(request, response, "/logs/query", config);
+    try {
+      const input = request.body || {};
+      normalizeLogQuery(input, { ...config, logs: { projects: input._logProjects || config.logs?.projects || {} } });
+      const result = await queryLogs2(input, operation);
+      const durationMs = durationSince(startedAt);
+      await audit(config, {
+        tool: "logs-query",
+        projectId: input.projectId,
+        mode: result.mode,
+        ok: true,
+        durationMs,
+        operationId: operation.operationId,
+        scannedBytes: result.scannedBytes,
+        expandedBytes: result.expandedBytes,
+        returnedLines: result.returnedLines,
+        matchedLines: result.matchedLines,
+        complete: result.complete,
+        ...result.timing
+      });
+      response.json({ ok: true, ...result, durationMs, operationId: operation.operationId });
+    } catch (error) {
+      error.operationId ||= operation.operationId;
+      const payload = errorPayload(error);
+      await audit(config, {
+        tool: "logs-query",
+        ok: false,
+        operationId: operation.operationId,
+        durationMs: durationSince(startedAt),
+        errorCode: payload.error.code
+      });
+      response.status(errorStatus(error)).json(payload);
+    }
+  });
   app.post("/logs/read", async (request, response) => {
     const startedAt = import_node_perf_hooks.performance.now();
     const requestOperation = createRequestOperation(request, response, "/logs/read", config);
@@ -37013,6 +37315,10 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
 }
 function managerPathCapabilities(config, registry) {
   const capabilities = securityCapabilities(config);
+  capabilities.logs.projectsByInstance = Object.fromEntries(registry.listInternal().map((instance) => [
+    instance.id,
+    normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots)
+  ]));
   capabilities.paths.byInstance = Object.fromEntries(
     registry.listInternal().map((instance) => {
       const sourceRoots = { ...instance.sourceRoots || {} };
@@ -37196,6 +37502,24 @@ function createManagerApp(options = {}) {
       instance,
       runtime: workerManager.runtimeFor(instance.id)
     });
+  }));
+  app.get("/api/log-projects", managerAsync(async (_request, response) => {
+    response.json({ ok: true, instances: registry.list().map((instance) => ({
+      instanceId: instance.id,
+      projects: normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots)
+    })) });
+  }));
+  app.post("/api/log-projects", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.body?.instanceId);
+    const instance = registry.getInternal(id);
+    const projectId = request.body?.projectId;
+    if (typeof projectId !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(projectId)) throw operationError("invalid projectId", { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
+    const projects = { ...instance.logProjects || {} };
+    if (request.body.remove === true) delete projects[projectId];
+    else projects[projectId] = { root: request.body.root, directories: request.body.directories };
+    const updated = registry.update(id, { logProjects: projects });
+    activity.publish({ type: "instance", stage: "log-projects-updated", instanceId: id });
+    response.json({ ok: true, instanceId: id, projects: updated.logProjects || {} });
   }));
   app.delete("/api/instances/:id", managerAsync(async (request, response) => {
     const instance = await workerManager.deleteInstance(request.params.id);
@@ -37601,6 +37925,10 @@ function createManagerApp(options = {}) {
     };
     publishStage(activity, operation, "started");
     try {
+      if (pathName === "/logs/query") {
+        const instance2 = registry.getInternal(registry.resolveId(instanceId));
+        payload._logProjects = normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots);
+      }
       const result = await workerManager.callInstance(
         instanceId,
         pathName,
@@ -37646,6 +37974,7 @@ function createManagerApp(options = {}) {
   app.post("/logs/list", (request, response) => proxyToInstance("/logs/list", request, response));
   app.post("/logs/archive-members", (request, response) => proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
+  app.post("/logs/query", (request, response) => proxyToInstance("/logs/query", request, response));
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/mongodb/imports/prepare", (request, response) => proxyToInstance("/mongodb/imports/prepare", request, response));
   app.post("/mongodb/bulk/storage/prepare", (request, response) => proxyToInstance("/mongodb/bulk/storage/prepare", request, response));

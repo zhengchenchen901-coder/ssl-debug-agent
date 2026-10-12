@@ -131,6 +131,11 @@ function startAgentStub() {
       }));
       return;
     }
+    if (request.method === "GET" && request.url === "/api/log-projects") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ ok: true, instances: [] }));
+      return;
+    }
     if (request.method === "GET" && request.url === "/api/instances") {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(
@@ -240,21 +245,17 @@ function startAgentStub() {
 
       if (request.url === "/logs/read") {
         response.writeHead(200, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({
-          ok: true,
-          path: parsed.path,
-          memberPath: parsed.memberPath,
-          compression: parsed.memberPath ? "tar-gzip" : "none",
-          content: "ERROR\n",
-          truncated: false,
-          scannedTruncated: false,
-          scannedBytes: 6,
-          totalLines: 1,
-          matchedLines: 1,
-        }));
+        response.end(JSON.stringify({ ok: true, path: parsed.path, memberPath: parsed.memberPath,
+          compression: parsed.memberPath ? "tar-gzip" : "none", content: "ERROR\n",
+          truncated: false, scannedTruncated: false, scannedBytes: 6, totalLines: 1, matchedLines: 1 }));
         return;
       }
-
+      if (request.url === "/logs/query" || request.url === "/api/log-projects") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, projectId: parsed.projectId, route: parsed.route,
+          mode: parsed.mode, records: [], complete: true, instances: [] }));
+        return;
+      }
       if (request.url === "/mongodb/query") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(JSON.stringify({
@@ -988,6 +989,10 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "endOfUpload",
       "includeDifferences",
       "offset",
+      "projectId", "path", "mode", "date", "dateFrom", "dateTo", "fileContains",
+      "memberContains", "route", "method", "level", "fromTime", "toTime",
+      "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
+      "memberPrefix", "memberOffset",
     ].includes(propertyName)) {
       continue;
     }
@@ -1036,6 +1041,9 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_list_logs",
         "remote_debug_list_log_archive_members",
         "remote_debug_read_log",
+        "remote_debug_query_logs",
+        "remote_debug_list_log_projects",
+        "remote_debug_set_log_project",
         "remote_debug_prepare_command_draft",
         "remote_debug_get_command_draft",
         "remote_debug_review_command_draft",
@@ -1113,6 +1121,17 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     }));
     const readLogResult = JSON.parse((await readMessage()).result.content[0].text);
     assert.equal(readLogResult.content, "ERROR\n");
+    for (const [id, name, arguments_] of [
+      [403, "remote_debug_query_logs", { instanceId: "default", projectId: "be", mode: "search", route: "/v3/order" }],
+      [404, "remote_debug_list_log_projects", {}],
+      [405, "remote_debug_set_log_project", { instanceId: "default", projectId: "be", directories: ["/home/github/app/logs"] }],
+    ]) {
+      child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: arguments_ } }));
+      const result = JSON.parse((await readMessage()).result.content[0].text);
+      assert.equal(result.ok, true, JSON.stringify(result));
+      if (name !== "remote_debug_list_log_projects") assert.equal(result.projectId, "be");
+      if (name === "remote_debug_query_logs") assert.equal(result.route, "/v3/order");
+    }
 
     child.stdin.write(
       encodeMessage({

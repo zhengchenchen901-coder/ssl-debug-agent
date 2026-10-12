@@ -22,6 +22,14 @@ described below.
   `.tgz` log archive before reading one.
 - `remote_debug_read_log`: read recent plain/gzip logs or a selected archive
   member, with optional plain-text substring filtering.
+- `remote_debug_list_log_projects`: list persisted project/log directory maps
+  without remote filesystem traversal.
+- `remote_debug_set_log_project`: configure an approved project/log mapping
+  when the user authorizes configuring log mappings; this changes local
+  instance settings only.
+- `remote_debug_query_logs`: query mapped projects in latest/search/files
+  modes with filename/date filters and exact structured route, method, level,
+  keyword and timezone-aware timestamp filters.
 - `remote_debug_mongodb_query`: run bounded, read-only MongoDB operations on
   the selected instance.
 - `remote_debug_list_instances`: list configured instances and runtime status.
@@ -46,7 +54,15 @@ Instance listings also expose labeled `sourceRoots` for projects such as `be`,
 matching `instanceId`; source roots are read-only and are not a substitute for
 the approved-command workflow.
 
-For log work, prefer `remote_debug_list_logs` over a full
+For log work, first use `remote_debug_list_log_projects` when exposed. Reuse a
+configured project mapping and `remote_debug_query_logs`; latest mode reads
+small file tails, search mode filters on the remote host, and gzip/tar.gz
+decompression streams without temporary extraction. Inspect coverage and
+truncation fields before reporting complete counts. Use file dates/names to
+select candidates before record filters. Search/decompression concurrency,
+expanded bytes and execution time are bounded.
+
+For unmapped logs, prefer `remote_debug_list_logs` over a full
 `remote_debug_list_dir`. It discovers `/var/log` and service subdirectories,
 `/var/log/nginx`, `/root/.pm2`, PM2 application log paths, configured source-root
 log folders, and shallow application log folders under `/home/github` without

@@ -142,6 +142,7 @@ const toolOperationPolicies = {
     maxMs: MAX_FILE_TIMEOUT_MS,
   },
   remote_debug_read_log: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_query_logs: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
   remote_debug_mongodb_query: {
     defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
     maxMs: MAX_MONGODB_TIMEOUT_MS,
@@ -993,6 +994,58 @@ const tools = [
     },
   },
   {
+    name: "remote_debug_query_logs",
+    description: "Query one mapped project's logs without filesystem-wide discovery. latest reads a bounded tail; search filters records on the server; files selects dated/named files; members lists an archive. gzip/tar.gz stream without extraction. Results include coverage and truncation; fileOffset and memberOffset page listings.",
+    inputSchema: {
+      type: "object", additionalProperties: false,
+      oneOf: [{ required: ["projectId"], not: { required: ["path"] } }, { required: ["path"], not: { required: ["projectId"] } }],
+      properties: {
+        instanceId: instanceIdProperty,
+        projectId: { type: "string", pattern: "^[a-z][a-z0-9_-]{0,31}$" },
+        path: { type: "string", description: "Exact approved file path, as an alternative to projectId." },
+        mode: { type: "string", enum: ["latest", "search", "files", "members"], description: "Defaults to search when record filters are provided, otherwise latest; members lists archive members without extraction." },
+        memberPrefix: { type: "string", maxLength: 512 },
+        memberOffset: { type: "integer", minimum: 0, maximum: 5000 },
+        date: { type: "string", description: "Filename date YYYY-MM-DD." },
+        dateFrom: { type: "string" }, dateTo: { type: "string" },
+        fileContains: { type: "string", maxLength: 256, description: "Literal filename fragment; narrow files before scanning records." },
+        memberPath: { type: "string", maxLength: 4096 },
+        memberContains: { type: "string", maxLength: 256, description: "Literal tar member name fragment, e.g. -error.log." },
+        contains: { type: "string", maxLength: 256 }, caseSensitive: { type: "boolean" },
+        route: { type: "string", description: "Exact JSON route path, including nested JSON messages." },
+        method: { type: "string", maxLength: 16 }, level: { type: "string", maxLength: 16 },
+        fromTime: { type: "string", description: "Inclusive ISO timestamp with explicit timezone." },
+        toTime: { type: "string", description: "Inclusive ISO timestamp with explicit timezone." },
+        limit: { type: "integer", minimum: 1, maximum: 2000 },
+        maxBytes: { type: "integer", minimum: 1, maximum: 262144 },
+        maxFiles: { type: "integer", minimum: 1, maximum: 50, description: "Defaults to 1 for latest and 10 for search/files." },
+        fileOffset: { type: "integer", minimum: 0, maximum: 5000 },
+        maxScanBytes: { type: "integer", minimum: 1, maximum: 268435456 },
+        maxExpandedBytes: { type: "integer", minimum: 1, maximum: 2147483648 },
+        timeoutMs: timeoutProperty(60000, 300000),
+      },
+    },
+  },
+  {
+    name: "remote_debug_list_log_projects",
+    description: "List persisted instance/project log directory mappings without contacting the remote servers.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {} },
+  },
+  {
+    name: "remote_debug_set_log_project",
+    description: "Persist a local project-to-log-directory mapping for one instance. Use when the user authorizes configuring log mappings. Does not write to the remote server or expand approved path roots; subsequent project queries use it immediately.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["instanceId", "projectId"],
+      properties: {
+        instanceId: instanceIdProperty,
+        projectId: { type: "string", pattern: "^[a-z][a-z0-9_-]{0,31}$" },
+        root: { type: "string" },
+        directories: { type: "array", minItems: 1, maxItems: 8, items: { type: "string" } },
+        remove: { type: "boolean", description: "Remove this explicit mapping." },
+      },
+    },
+  },
+  {
     name: "remote_debug_prepare_command_draft",
     description:
       "Create a one-time approved-command draft. This only generates commands; it never executes them. Call remote_debug_review_command_draft immediately before deciding whether human confirmation is required.",
@@ -1618,6 +1671,12 @@ function toolArgumentSummary(name, args = {}) {
       caseSensitive: args.caseSensitive === true,
       timeoutMs: args.timeoutMs,
     };
+  }
+
+  if (name === "remote_debug_query_logs" || name === "remote_debug_set_log_project") {
+    return { instanceId: args.instanceId, projectId: args.projectId, mode: args.mode,
+      path: args.path, date: args.date, dateFrom: args.dateFrom, dateTo: args.dateTo,
+      hasContains: Boolean(args.contains), route: args.route, limit: args.limit, maxFiles: args.maxFiles };
   }
 
   if (name === "remote_debug_prepare_command_draft") {
@@ -3016,6 +3075,10 @@ async function callTool(name, args, operation) {
       timeoutMs: args?.timeoutMs,
     }, operation);
   }
+
+  if (name === "remote_debug_query_logs") return callAgent("/logs/query", args, operation);
+  if (name === "remote_debug_list_log_projects") return getAgent("/api/log-projects", operation);
+  if (name === "remote_debug_set_log_project") return callAgent("/api/log-projects", args, operation);
 
   if (name === "remote_debug_prepare_command_draft") {
     return callAgent("/approved-command-drafts", {

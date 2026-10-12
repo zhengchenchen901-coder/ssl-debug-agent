@@ -149,6 +149,14 @@
             <span>启用 approved-command</span>
           </label>
           <fieldset class="wide mongo-connection">
+            <legend>项目日志目录</legend>
+            <label class="wide">
+              <span>项目与日志目录映射（JSON）</span>
+              <textarea name="logProjects" rows="4" placeholder='{"be":{"root":"/home/github/app","directories":["/home/github/app/logs"]}}'></textarea>
+            </label>
+            <p class="form-note">查询只查指定项目目录；保存后项目查询立即生效。留空保留原配置，输入 {} 清空。</p>
+          </fieldset>
+          <fieldset class="wide mongo-connection">
             <legend>MongoDB 连接配置</legend>
             <label class="switch-row wide">
               <input name="mongodbEnabled" type="checkbox" />

@@ -74,7 +74,8 @@ export function operationPolicy(pathName, config = {}) {
     pathName === "/list-dir" ||
     pathName === "/logs/list" ||
     pathName === "/logs/archive-members" ||
-    pathName === "/logs/read"
+    pathName === "/logs/read" ||
+    pathName === "/logs/query"
   ) {
     return {
       defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,

@@ -433,6 +433,7 @@ function resetForm(instance) {
   instanceForm.elements.passphrase.value = "";
   instanceForm.elements.preferredWorkerPort.value = instance?.preferredWorkerPort || "";
   instanceForm.elements.auditLog.value = instance?.auditLog || "";
+  if (instanceForm.elements.logProjects) instanceForm.elements.logProjects.value = JSON.stringify(instance?.logProjects || {}, null, 2);
   instanceForm.elements.enabled.checked = instance ? Boolean(instance.enabled) : true;
   instanceForm.elements.approvedCommandsEnabled.checked = Boolean(instance?.approvedCommands?.enabled);
   const mongodb = instance?.mongodb;
@@ -578,6 +579,7 @@ function formPayload() {
     passphrase: form.passphrase.value,
     preferredWorkerPort: form.preferredWorkerPort.value,
     auditLog: form.auditLog.value.trim(),
+    ...(form.logProjects?.value.trim() ? { logProjects: JSON.parse(form.logProjects.value) } : {}),
     enabled: form.enabled.checked,
     approvedCommands: {
       enabled: form.approvedCommandsEnabled.checked,
