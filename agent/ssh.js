@@ -6,7 +6,61 @@ import {
   normalizeOperationEnvelope,
   operationError,
   operationErrorForSignal,
+  remainingOperationMs,
 } from "./operation.js";
+
+const remoteReadStreams = new WeakMap();
+
+function destroyRemoteReadStreams(sftp) {
+  for (const { stream } of remoteReadStreams.get(sftp) || []) {
+    stream.destroy?.();
+  }
+}
+
+async function closeRemoteReadStreams(sftp, operation) {
+  const records = [...(remoteReadStreams.get(sftp) || [])];
+  if (!records.length) return;
+  const context = { layer: "ssh", phase: "sftp-stream-close" };
+  assertOperationActive(operation, operation.signal, context);
+  destroyRemoteReadStreams(sftp);
+  // ssh2 ReadStream emits 'end' before its asynchronous file CLOSE finishes.
+  // Keep the SFTP channel alive until every file has closed, within the request
+  // deadline. Ending it sooner fails pending callbacks after the read returned.
+  await new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      operation.signal?.removeEventListener("abort", onAbort);
+      if (error) reject(error);
+      else resolve();
+    };
+    const onAbort = () => finish(operationErrorForSignal(operation.signal, operation, context));
+    const timer = setTimeout(() => finish(operationError("operation deadline exceeded closing SFTP files", {
+      code: "OPERATION_DEADLINE_EXCEEDED",
+      statusCode: 408,
+      operationId: operation.operationId,
+      ...context,
+    })), remainingOperationMs(operation));
+    timer.unref?.();
+    operation.signal?.addEventListener("abort", onAbort, { once: true });
+    Promise.all(records.map((record) => record.closed)).then(() => finish());
+    if (operation.signal?.aborted) onAbort();
+  });
+  assertOperationActive(operation, operation.signal, context);
+  const failed = records.find((record) => record.closeError);
+  if (failed) {
+    throw operationError(failed.closeError.message || "failed to close SFTP file", {
+      code: "SSH_STREAM_CLOSE_FAILED",
+      statusCode: 502,
+      operationId: operation.operationId,
+      ...context,
+      retriable: false,
+      cause: failed.closeError,
+    });
+  }
+}
 
 function createOutputCollector(limitBytes) {
   let output = "";
@@ -232,12 +286,16 @@ export async function withSftp(supervisor, operation, callback, options = {}) {
           : await supervisor.waitUntilReady(operation);
         sftp = await openSftp(client, operation);
         const unregister = supervisor.registerChannel(sftp, operation);
-        const closeOnAbort = () => sftp.end?.();
+        const closeOnAbort = () => {
+          destroyRemoteReadStreams(sftp);
+          sftp.end?.();
+        };
         operation.signal?.addEventListener("abort", closeOnAbort, { once: true });
         try {
           const result = await callback(sftp, () => {
             progressed = true;
           });
+          await closeRemoteReadStreams(sftp, operation);
           return {
             ...result,
             timing: {
@@ -249,7 +307,9 @@ export async function withSftp(supervisor, operation, callback, options = {}) {
         } finally {
           operation.signal?.removeEventListener("abort", closeOnAbort);
           unregister();
+          destroyRemoteReadStreams(sftp);
           sftp.end?.();
+          remoteReadStreams.delete(sftp);
         }
       } catch (error) {
         lastError = error;
@@ -508,7 +568,7 @@ export async function readRemoteFile(remotePath, options) {
       );
       const stats = await sftpStat(sftp, canonicalPath, prepared.operation);
       const truncated = Number.isFinite(stats.size) && stats.size > options.maxBytes;
-      const stream = sftp.createReadStream(canonicalPath, {
+      const stream = createRemoteReadStream(sftp, canonicalPath, {
         start: 0,
         end: Math.max(0, options.maxBytes - 1),
       });
@@ -649,7 +709,25 @@ export async function statRemotePathForOperation(sftp, remotePath, operation) {
 }
 
 export function createRemoteReadStream(sftp, remotePath, options = {}) {
-  return sftp.createReadStream(remotePath, options);
+  const stream = sftp.createReadStream(remotePath, options);
+  let onClosed;
+  const record = {
+    stream,
+    closeError: null,
+    closed: new Promise((resolve) => { onClosed = resolve; }),
+  };
+  stream.once("close", onClosed);
+  // Keep this listener for the stream's whole lifetime: ssh2 can emit late
+  // read/close errors even after destroy, including during cancellation.
+  stream.on("error", (error) => {
+    // Active read/open errors belong to the consumer (discovery may turn them
+    // into warnings). Only late errors from a destroyed stream fail cleanup.
+    if (stream.destroyed) record.closeError ||= error;
+    onClosed();
+  });
+  if (!remoteReadStreams.has(sftp)) remoteReadStreams.set(sftp, new Set());
+  remoteReadStreams.get(sftp).add(record);
+  return stream;
 }
 
 export {

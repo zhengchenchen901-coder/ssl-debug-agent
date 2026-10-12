@@ -33,9 +33,15 @@ remote server. This skill is for the deployed backend at
 
 ## Workflow
 
-1. State the exact date and endpoint being checked.
-2. Call `remote_debug_list_logs` for the selected instance and locate the
-   application log directory and the date-specific error/info files.
+1. State the exact date and endpoint being checked. Select the matching
+   `instanceId`; use its configured backend source root or a verified log path
+   from instance memory. The default log root above belongs to the default
+   deployment and must not be assumed for another instance.
+2. When the log directory is known, call `remote_debug_read_log` directly on
+   the date-specific error file. Use `remote_debug_list_logs` with
+   `category: "application"` only when the directory is unknown, the file is
+   missing, or rotations/archives need discovery. Do not repeat discovery
+   before every file read or query against the same directory.
 3. If the date is inside a `.tar.gz` archive, call
    `remote_debug_list_log_archive_members` and choose the exact error member.
 4. Call `remote_debug_read_log` with `contains` set to the final endpoint
@@ -47,6 +53,23 @@ remote server. This skill is for the deployed backend at
    the symptom, use `remote_debug_read_log` on the relevant `/var/log/nginx`
    file and its compressed rotation instead of sending compressed bytes to
    `remote_debug_read_file`.
+
+## Timeouts and Coverage
+
+- `tailLines` and `maxBytes` bound the returned content, not the bytes scanned.
+  Plain logs with `contains` can scan up to 256 MiB over SFTP; small output
+  limits do not make a large-file query cheap. Archives also require streaming
+  decompression locally.
+- Inspect `truncated`, `scannedTruncated`, `scannedBytes`, and `matchedLines`.
+  Report bounded results as a sample when output or scan coverage is truncated;
+  do not claim a complete count for the date from a truncated response.
+- On `OPERATION_DEADLINE_EXCEEDED`, inspect instance status before retrying.
+  Narrow the files or date range and use an explicit timeout within the tool's
+  published maximum when justified. Avoid repeatedly scanning the same large
+  file with the same arguments.
+- On `WORKER_UNAVAILABLE` or `INSTANCE_NOT_RUNNING`, stop the log-read loop
+  and inspect instance health and `lastError`/`stderrTail`; report the worker
+  failure rather than interpreting it as no matching logs.
 
 ## Parsing
 

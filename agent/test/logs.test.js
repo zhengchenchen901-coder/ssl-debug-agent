@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { gzipSync } from "node:zlib";
 import test from "node:test";
@@ -11,6 +12,7 @@ import {
 import { listRemoteDirPage } from "../ssh.js";
 
 const ALLOWED_PATHS = ["/var/log", "/root/.pm2", "/home/github"];
+const { SFTP } = createRequire(import.meta.url)("ssh2/lib/protocol/SFTP.js");
 
 function operation() {
   const controller = new AbortController();
@@ -138,6 +140,138 @@ function makeSupervisor(sftp) {
     }),
   };
 }
+
+// Use ssh2's actual ReadStream: ordinary Readable mocks do not model its
+// asynchronous file CLOSE or errors emitted after the readable end event.
+function makeAsyncClosingSftp(files, options = {}) {
+  const sftp = makeSftp(files, {});
+  const handles = new Map();
+  const pending = new Map();
+  const errors = [];
+  let handleId = 0;
+  let pendingAtEnd = 0;
+  const later = (callback, run, delay = 1) => {
+    const timer = setTimeout(() => {
+      pending.delete(callback);
+      run();
+    }, delay);
+    pending.set(callback, timer);
+  };
+  sftp.open = (remotePath, _flags, _mode, callback) => later(callback, () => {
+    const handle = Buffer.from(String(++handleId));
+    handles.set(handle, files[remotePath]);
+    callback(null, handle);
+  });
+  sftp.read = (handle, buffer, offset, length, position, callback) => {
+    options.onRead?.();
+    later(callback, () => {
+      const size = handles.get(handle).copy(buffer, offset, position, position + length);
+      callback(null, size);
+    }, options.readDelayMs || 1);
+  };
+  sftp.close = (handle, callback) => later(callback, () => {
+    handles.delete(handle);
+    callback(options.closeError || null);
+  }, options.closeDelayMs || 20);
+  sftp.createReadStream = (remotePath, streamOptions) => {
+    const stream = SFTP.prototype.createReadStream.call(sftp, remotePath, streamOptions);
+    if (options.observeErrors !== false) {
+      stream.on("error", (error) => errors.push(error.message));
+    }
+    return stream;
+  };
+  sftp.end = () => {
+    pendingAtEnd += pending.size;
+    for (const [callback, timer] of pending) {
+      clearTimeout(timer);
+      pending.delete(callback);
+      callback(new Error("No response from server"));
+    }
+    sftp.emit("close");
+  };
+  return { sftp, errors, pendingAtEnd: () => pendingAtEnd };
+}
+
+test("log reads close ssh2 file handles before ending the SFTP channel", async () => {
+  const files = {
+    "/var/log/plain.log": Buffer.from("first\nlast\n"),
+    "/var/log/gzip.log.gz": gzipSync(Buffer.from("first\nlast\n")),
+    "/var/log/archive.tar.gz": tarArchive([
+      { name: "selected.log", content: "first\nlast\n" },
+      { name: "later.log", content: "unused\n" },
+    ]),
+  };
+  for (const path of Object.keys(files)) {
+    const fixture = makeAsyncClosingSftp(files);
+    const result = await readLog({
+      config: config(), supervisor: makeSupervisor(fixture.sftp), operation: operation(),
+      path, ...(path.endsWith("tar.gz") ? { memberPath: "selected.log" } : {}),
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(result.content, "first\nlast\n");
+    assert.equal(fixture.pendingAtEnd(), 0, path);
+    assert.deepEqual(fixture.errors, [], path);
+  }
+});
+
+test("archive member listing closes an early-stopped ssh2 stream", async () => {
+  const fixture = makeAsyncClosingSftp({
+    "/var/log/archive.tar.gz": tarArchive([
+      { name: "first.log", content: "first\n" },
+      { name: "later.log", content: "later\n" },
+    ]),
+  });
+  const result = await listLogArchiveMembers({
+    config: config(), supervisor: makeSupervisor(fixture.sftp), operation: operation(),
+    path: "/var/log/archive.tar.gz", limit: 1,
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(result.members[0].name, "first.log");
+  assert.equal(fixture.pendingAtEnd(), 0);
+  assert.deepEqual(fixture.errors, []);
+});
+
+test("late ssh2 errors during cancellation stay within the log operation", async () => {
+  const controller = new AbortController();
+  let cancelled = false;
+  const fixture = makeAsyncClosingSftp({ "/var/log/plain.log": Buffer.from("first\nlast\n") }, {
+    observeErrors: false,
+    readDelayMs: 50,
+    onRead: () => {
+      if (cancelled) return;
+      cancelled = true;
+      setImmediate(() => controller.abort());
+    },
+  });
+  await assert.rejects(readLog({
+    config: config(), supervisor: makeSupervisor(fixture.sftp),
+    operation: { ...operation(), signal: controller.signal }, path: "/var/log/plain.log",
+  }), (error) => error.code === "OPERATION_CANCELLED");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(fixture.pendingAtEnd() > 0);
+});
+
+test("closing a stalled ssh2 stream respects the operation deadline", async () => {
+  const fixture = makeAsyncClosingSftp({ "/var/log/plain.log": Buffer.from("first\nlast\n") }, {
+    observeErrors: false, closeDelayMs: 200,
+  });
+  await assert.rejects(readLog({
+    config: config(), supervisor: makeSupervisor(fixture.sftp),
+    path: "/var/log/plain.log", timeoutMs: 30,
+  }), (error) => error.code === "OPERATION_DEADLINE_EXCEEDED");
+  await new Promise((resolve) => setImmediate(resolve));
+});
+
+test("ssh2 file close failures are returned as operation errors", async () => {
+  const fixture = makeAsyncClosingSftp({ "/var/log/plain.log": Buffer.from("first\nlast\n") }, {
+    observeErrors: false, closeError: new Error("remote CLOSE failed"),
+  });
+  await assert.rejects(readLog({
+    config: config(), supervisor: makeSupervisor(fixture.sftp),
+    operation: operation(), path: "/var/log/plain.log",
+  }), (error) => error.code === "SSH_STREAM_CLOSE_FAILED" && error.phase === "sftp-stream-close");
+  await new Promise((resolve) => setImmediate(resolve));
+});
 
 function config(sourceRoots = {}) {
   return {

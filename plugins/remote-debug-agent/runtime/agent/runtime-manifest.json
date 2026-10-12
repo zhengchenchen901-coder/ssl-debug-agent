@@ -1,13 +1,13 @@
 {
   "version": 1,
   "pluginVersion": "2.2.0+codex.20260930062433",
-  "runtimeId": "2.2.0:133082fca02d81c07f89d66558749eccc0e400af01a824a3c9b45f09c19fbd22",
+  "runtimeId": "2.2.0:caade1964d7313c8c161ee248ff911ccc6c1def300461959bf1aa655b140d457",
   "node": ">=22.18 <23",
   "server": "server.cjs",
   "worker": "worker-entry.cjs",
   "hashes": {
-    "server.cjs": "3bac0012caf6fce509f7c620911eec1d90efb01f1eaa357fd0f9136e383b47c6",
-    "worker-entry.cjs": "92d80e93d1766fefc7f7cb84d14c2dc7766ce798b15d66f84c0558c145d46246",
+    "server.cjs": "44f74db21ddba673271ca526976c302f5f95829df165e41b0aabf7838b1ba958",
+    "worker-entry.cjs": "9edd6f3c884d307d40d9c0b004b209a7cbc8b5274adb08b688c5a498fa68dd3c",
     "public/dashboard.css": "6d02c703b1820a2f047fc5dd8ec24f96b44b25854794007ff06fa61b9784c348",
     "public/dashboard.html": "4782bd26efe488cb9464430e61dae1b98f071e84a1f82ea1231b678e2a0937f8",
     "public/dashboard.js": "1b327fdfe27ce3fd159e673c31f39116156b201e0a9fe0d055e0be57b7d23152",
