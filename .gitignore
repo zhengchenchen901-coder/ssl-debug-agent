@@ -10,3 +10,4 @@ plugins/remote-debug-agent/.runtime/
 .remote-debug/
 .playwright-cli/
 *.log
+output/
