@@ -46,6 +46,16 @@ const SECURITY_POLICY = {
   ],
   deniedExecutables: ["rm", "shutdown", "reboot", "mkfs", "sudo", "chmod", "chown"],
   commandsRequiringAllowedAbsolutePath: ["ls", "cat", "tail", "grep"],
+  pathArgumentPolicy: {
+    absoluteOnly: true,
+    canonicalExecution: true,
+    recursiveReads: false,
+    tailMaxLines: 10000,
+    tailMaxBytes: 1048576,
+    grepMaxContext: 10000,
+    shortFlags: { cat: "nbsvETA", ls: "laAhdtrS1nipF", grep: "EFivnHhclLswxo", tail: "" },
+    numericFlags: { tail: ["-n", "-c", "--lines", "--bytes"], grep: ["-m", "-A", "-B", "-C"] },
+  },
   versionOnlyExecutables: ["mongodump", "mongo", "mongosh"],
   systemctl: {
     actions: ["status", "is-active", "is-enabled"],
@@ -117,7 +127,7 @@ const SECURITY_POLICY = {
     },
   },
   constraints: [
-    "Commands are parsed as tokens and never executed through a shell.",
+    "Read-only commands are parsed as tokens and POSIX-quoted before SSH execution.",
     "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
     "Commands that read paths require at least one absolute path under an allowed root.",
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
@@ -169,8 +179,15 @@ export function securityCapabilities(config = {}) {
     schemaVersion: SECURITY_POLICY.schemaVersion,
     policyVersion: SECURITY_POLICY_VERSION,
     authority: "remote-debug-agent",
+    ssh: { hostKeyVerification: "required", fingerprintAlgorithm: "SHA256", maxTrustedHostKeys: 4, configured: Boolean(config.ssh?.hostKeyFingerprints?.length) },
     commands: {
       allowedExecutables: [...SECURITY_POLICY.allowedExecutables],
+      pathArguments: {
+        ...SECURITY_POLICY.pathArgumentPolicy,
+        shortFlags: { ...SECURITY_POLICY.pathArgumentPolicy.shortFlags },
+        numericFlags: { tail: [...SECURITY_POLICY.pathArgumentPolicy.numericFlags.tail], grep: [...SECURITY_POLICY.pathArgumentPolicy.numericFlags.grep] },
+        grepPatternOption: "-e",
+      },
       deniedExecutables: [...SECURITY_POLICY.deniedExecutables],
       commandsRequiringAllowedAbsolutePath: [
         ...SECURITY_POLICY.commandsRequiringAllowedAbsolutePath,
@@ -333,9 +350,26 @@ function tokenizeCommand(command) {
     throw new SecurityError("cmd contains shell control characters", "SHELL_CONTROL_REJECTED");
   }
 
-  const tokens = command.trim().split(/\s+/);
+  const tokens = [];
+  let token = "";
+  let quote = null;
+  let tokenStarted = false;
+  for (const character of command.trim()) {
+    if (quote) {
+      if (character === quote) quote = null;
+      else token += character;
+    } else if (character === "'" || character === '"') {
+      quote = character;
+      tokenStarted = true;
+    } else if (/\s/.test(character)) {
+      if (tokenStarted) { tokens.push(token); token = ""; tokenStarted = false; }
+    } else { token += character; tokenStarted = true; }
+  }
+  if (quote) throw new SecurityError("cmd contains an unterminated quoted argument", "INVALID_COMMAND");
+  if (tokenStarted) tokens.push(token);
+  if (!tokens.length) throw new SecurityError("cmd must contain an executable", "INVALID_COMMAND");
   for (const token of tokens) {
-    if (!SAFE_TOKEN_PATTERN.test(token)) {
+    if (!/^[A-Za-z0-9_@%+=:,./ '"-]+$/.test(token)) {
       throw new SecurityError(`unsafe token rejected: ${token}`, "UNSAFE_TOKEN");
     }
   }
@@ -349,22 +383,50 @@ function containsDeniedCommand(token) {
 
 function validatePathArguments(command, tokens, allowedPaths) {
   const absolutePaths = [];
+  const pathTokenIndexes = [];
   if (!SECURITY_POLICY.commandsRequiringAllowedAbsolutePath.includes(command)) {
-    return absolutePaths;
+    return { absolutePaths, pathTokenIndexes };
   }
-
-  for (const token of tokens.slice(1)) {
-    if (!token.includes("/")) {
+  const readPolicy = SECURITY_POLICY.pathArgumentPolicy;
+  const flags = readPolicy.shortFlags[command];
+  let optionsEnded = false;
+  let hasPattern = false;
+  const invalid = (token) => { throw new SecurityError(`unsupported ${command} argument: ${token}`, "UNSUPPORTED_COMMAND_ARGUMENTS"); };
+  const number = (value, option) => {
+    const max = command === "tail" ? (["c", "bytes"].includes(option) ? readPolicy.tailMaxBytes : readPolicy.tailMaxLines) : readPolicy.grepMaxContext;
+    if (!/^[1-9][0-9]*$/.test(value || "") || Number(value) > max) invalid(`${option} ${value || ""}`);
+  };
+  for (let index = 1; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (!optionsEnded && token === "--") { optionsEnded = true; continue; }
+    if (!optionsEnded && token.startsWith("-")) {
+      if (command === "tail") {
+        const match = /^(?:-([nc])([0-9]*)|--(lines|bytes)(?:=([0-9]+))?)$/.exec(token);
+        if (!match) invalid(token);
+        number(match[2] || match[4] || tokens[++index], match[1] || match[3]);
+      } else if (command === "grep") {
+        for (let offset = 1; offset < token.length; offset += 1) {
+          const option = token[offset];
+          if (flags.includes(option)) continue;
+          if (option === "e" || "mABC".includes(option)) {
+            const value = token.slice(offset + 1) || tokens[++index];
+            if (option === "e") {
+              if (hasPattern || value === undefined) invalid(token);
+              hasPattern = true;
+            } else number(value, option);
+            break;
+          }
+          invalid(token);
+        }
+        if (token === "-") invalid(token);
+      } else if (!new RegExp(`^-[${flags}]+$`).test(token)) invalid(token);
       continue;
     }
-
-    if (!token.startsWith("/")) {
-      throw new SecurityError(`relative or embedded path rejected: ${token}`, "PATH_NOT_ALLOWED");
-    }
-
+    if (command === "grep" && !hasPattern) { hasPattern = true; continue; }
+    if (!token.startsWith("/")) throw new SecurityError(`relative or embedded path rejected: ${token}`, "PATH_NOT_ALLOWED");
+    pathTokenIndexes.push(index);
     absolutePaths.push(assertPathAllowed(token, allowedPaths));
   }
-
   if (absolutePaths.length === 0) {
     throw new SecurityError(
       `${command} requires at least one allowed absolute path`,
@@ -372,7 +434,7 @@ function validatePathArguments(command, tokens, allowedPaths) {
     );
   }
 
-  return absolutePaths;
+  return { absolutePaths, pathTokenIndexes };
 }
 
 function validateTail(tokens) {
@@ -633,7 +695,7 @@ export function validateCommand(command, options = {}) {
     }
   }
 
-  const absolutePaths = validatePathArguments(executable, tokens, allowedPaths);
+  const { absolutePaths, pathTokenIndexes } = validatePathArguments(executable, tokens, allowedPaths);
   const manualProfile =
     mode === "approved" &&
     (
@@ -645,8 +707,9 @@ export function validateCommand(command, options = {}) {
   return {
     executable,
     tokens,
-    normalizedCommand: tokens.join(" "),
+    normalizedCommand: tokens.map((token) => SAFE_TOKEN_PATTERN.test(token) ? token : "'" + token.replace(/'/g, "'\"'\"'") + "'").join(" "),
     absolutePaths,
+    pathTokenIndexes,
     executionMode: manualProfile ? "manual" : "auto",
     effect: manualProfile ? "service_control" : "read_only",
     riskLevel: manualProfile ? "medium" : "low",

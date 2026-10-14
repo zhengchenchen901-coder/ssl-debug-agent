@@ -17,6 +17,21 @@ import {
 
 export const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
 
+export function normalizeHostKeyFingerprints(value) {
+  if (value === undefined || value === null || value === "") return [];
+  let parsed = value;
+  try { if (typeof value === "string") parsed = JSON.parse(value); } catch { parsed = null; }
+  if (!Array.isArray(parsed) || parsed.length > 4 || parsed.some((item) => {
+    if (typeof item !== "string" || !/^SHA256:[A-Za-z0-9+/]{43}$/.test(item)) return true;
+    return Buffer.from(item.slice(7), "base64").toString("base64").replace(/=+$/, "") !== item.slice(7);
+  })) {
+    const error = new Error("hostKeyFingerprints must contain at most four canonical SHA256 fingerprints");
+    Object.assign(error, { code: "SSH_HOST_KEY_INVALID", statusCode: 400, retriable: false });
+    throw error;
+  }
+  return [...new Set(parsed)];
+}
+
 const SOURCE_ROOT_KEY_PATTERN = /^[a-z][a-z0-9_-]{0,31}$/;
 const MAX_SOURCE_ROOTS = 20;
 const MAX_SOURCE_ROOT_LENGTH = 4096;
@@ -295,6 +310,9 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       host: "127.0.0.1",
       port: agentPort,
     },
+    auth: {
+      filePath: path.resolve(mergedEnv.REMOTE_DEBUG_DATA_DIR || mergedEnv.REMOTE_DEBUG_PROJECT_ROOT || cwd, mergedEnv.REMOTE_DEBUG_AUTH_FILE || path.join(".runtime", "http-auth.json")),
+    },
     ssh: {
       host: mergedEnv.REMOTE_DEBUG_HOST || "",
       port: sshPort,
@@ -302,6 +320,7 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       privateKeyPath: mergedEnv.REMOTE_DEBUG_PRIVATE_KEY_PATH || "",
       passphrase: mergedEnv.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || undefined,
       readyTimeout: 10_000,
+      hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS),
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
     logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots) },
@@ -423,6 +442,7 @@ function fingerprintConfig(config) {
       privateKeyPath: config.ssh.privateKeyPath || "",
       passphrase: config.ssh.passphrase || "",
       readyTimeout: config.ssh.readyTimeout,
+      hostKeyFingerprints: config.ssh.hostKeyFingerprints || [],
     },
     security,
     mongodb: config.mongodb

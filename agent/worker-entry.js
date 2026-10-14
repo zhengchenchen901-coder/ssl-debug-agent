@@ -119,8 +119,31 @@ export function installWorkerShutdownHandlers(shutdown, processObject = process)
   processObject.once("SIGINT", () => shutdown("SIGINT"));
 }
 
+export function receiveWorkerAuth(processObject = process, timeoutMs = 10000) {
+  return new Promise((resolve, reject) => {
+    const finish = (error, token) => {
+      clearTimeout(timer);
+      processObject.off("message", onMessage);
+      processObject.off("disconnect", onDisconnect);
+      if (error) reject(error); else resolve(token);
+    };
+    const failure = () => Object.assign(new Error("worker initialization requires private IPC credentials"), { code: "LOCAL_AUTH_REQUIRED" });
+    const onMessage = (message) => {
+      if (message?.type !== "initialize-auth") return;
+      if (!/^[a-f0-9]{64}$/.test(message.token || "")) finish(failure());
+      else finish(null, message.token);
+    };
+    const onDisconnect = () => finish(failure());
+    const timer = setTimeout(onDisconnect, timeoutMs);
+    if (!processObject.connected) { finish(failure()); return; }
+    processObject.on("message", onMessage);
+    processObject.once("disconnect", onDisconnect);
+  });
+}
+
 async function main() {
   const config = loadConfig();
+  const authToken = await receiveWorkerAuth();
   const supervisor = new SshConnectionSupervisor(config);
   const sshOperations = createSSHOperations(supervisor);
   const backgroundSshOperations = createSSHOperations(supervisor, { priority: "background" });
@@ -137,7 +160,7 @@ async function main() {
     return;
   }
 
-  const app = createApp({ config, sshSupervisor: supervisor, ...sshOperations });
+  const app = createApp({ config, authToken, sshSupervisor: supervisor, ...sshOperations });
   const server = app.listen(config.agent.port, config.agent.host, () => {
     send({
       type: "ready",
@@ -146,6 +169,7 @@ async function main() {
       pid: process.pid,
       port: config.agent.port,
       protocolVersion: API_VERSION,
+      localAuthentication: true,
       health: healthSnapshot(supervisor),
     });
     scheduleMemoryInit(config, {

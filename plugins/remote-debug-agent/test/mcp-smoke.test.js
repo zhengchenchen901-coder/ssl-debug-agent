@@ -1,3 +1,4 @@
+import localAuth from "../local-auth.cjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
@@ -17,6 +18,9 @@ const developmentRuntimeId = `development:${pluginManifest.version}`;
 const sharedTestDataDir = await fs.mkdtemp(
   path.join(os.tmpdir(), "remote-debug-mcp-test-data-"),
 );
+
+const testAuthFiles = new Set([localAuth.resolveAuthFile(sharedTestDataDir)]);
+localAuth.ensureAuthToken(localAuth.resolveAuthFile(sharedTestDataDir));
 
 function encodeMessage(message) {
   const body = Buffer.from(JSON.stringify(message), "utf8");
@@ -110,10 +114,12 @@ function createJsonLineMessageReader(child) {
   };
 }
 
-function startAgentStub() {
+function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir)) {
   const drafts = new Map();
   const leaseRequests = [];
   const server = http.createServer((request, response) => {
+    if (request.url === "/health") { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion: 2, authProof: localAuth.healthProof(localAuth.readAuthToken(authFile), request.headers["x-remote-debug-challenge"], `http://${request.headers.host}`) })); return; }
+    assert.equal(request.headers.authorization, `Bearer ${localAuth.readAuthToken(authFile)}`);
     if (request.method === "GET" && request.url === "/status") {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({
@@ -125,7 +131,7 @@ function startAgentStub() {
           persistentSsh: true,
           operationDeadlines: true,
           cancellation: true,
-          structuredHealth: true,
+          structuredHealth: true, localAuthentication: true,
         },
         agent: { port: server.address().port, pid: process.pid },
       }));
@@ -563,7 +569,11 @@ async function waitForStatus(port, predicate = () => true, timeoutMs = 5000) {
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/status`);
+      let response;
+      for (const file of testAuthFiles) {
+        response = await fetch(`http://127.0.0.1:${port}/status`, { headers: { Authorization: `Bearer ${localAuth.readAuthToken(file)}` } });
+        if (response.status !== 401) break;
+      }
       lastStatus = await response.json();
       if (predicate(lastStatus)) {
         return lastStatus;
@@ -593,6 +603,8 @@ async function waitForPortRelease(port, timeoutMs = 5000) {
 
 function startOperationAgentStub(mode) {
   const server = http.createServer((request, response) => {
+    if (request.url === "/health") { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion: 2, authProof: localAuth.healthProof(localAuth.readAuthToken(localAuth.resolveAuthFile(sharedTestDataDir)), request.headers["x-remote-debug-challenge"], `http://${request.headers.host}`) })); return; }
+    assert.equal(request.headers.authorization, `Bearer ${localAuth.readAuthToken(localAuth.resolveAuthFile(sharedTestDataDir))}`);
     if (request.method === "GET" && request.url === "/status") {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({
@@ -604,7 +616,7 @@ function startOperationAgentStub(mode) {
           persistentSsh: true,
           operationDeadlines: true,
           cancellation: true,
-          structuredHealth: true,
+          structuredHealth: true, localAuthentication: true,
         },
         agent: { port: server.address().port, pid: process.pid },
       }));
@@ -706,7 +718,7 @@ async function writeFakeAgent(agentDir) {
   await fs.writeFile(
     path.join(agentDir, "server.js"),
     `
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
@@ -774,7 +786,7 @@ function configFingerprint() {
         username: process.env.REMOTE_DEBUG_USER || "",
         privateKeyPath: process.env.REMOTE_DEBUG_PRIVATE_KEY_PATH || "",
         passphrase: process.env.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || "",
-        readyTimeout: 10000
+        readyTimeout: 10000, hostKeyFingerprints: []
       },
       security: securityConfig(),
       audit: {
@@ -788,6 +800,14 @@ const leases = new Map();
 let leaseRequestCount = 0;
 
 const server = http.createServer((request, response) => {
+  if (request.url === "/health") {
+    const token = JSON.parse(fs.readFileSync(process.env.REMOTE_DEBUG_AUTH_FILE || ${JSON.stringify(localAuth.resolveAuthFile(sharedTestDataDir))}, "utf8")).token;
+    const nonce = request.headers["x-remote-debug-challenge"];
+    const proof = nonce ? createHmac("sha256", token).update("remote-debug-health-v1\\n" + nonce + "\\nhttp://" + request.headers.host).digest("hex") : undefined;
+    response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion, authProof: proof })); return;
+  }
+  const expectedToken = JSON.parse(fs.readFileSync(process.env.REMOTE_DEBUG_AUTH_FILE || ${JSON.stringify(localAuth.resolveAuthFile(sharedTestDataDir))}, "utf8")).token;
+  if (request.headers.authorization !== "Bearer " + expectedToken) { response.writeHead(401); response.end(JSON.stringify({ ok:false, error:{code:"LOCAL_AUTH_INVALID"} })); return; }
   if (request.method === "GET" && request.url === "/status") {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(JSON.stringify({
@@ -799,7 +819,7 @@ const server = http.createServer((request, response) => {
         persistentSsh: true,
         operationDeadlines: true,
         cancellation: true,
-        structuredHealth: true
+        structuredHealth: true, localAuthentication: true
       },
       agent: {
         port,
@@ -878,6 +898,9 @@ setTimeout(() => {
 }
 
 function startMcp(env, targetServerPath = serverPath) {
+  const authFile = localAuth.resolveAuthFile(env.REMOTE_DEBUG_DATA_DIR || sharedTestDataDir, env);
+  localAuth.ensureAuthToken(authFile);
+  testAuthFiles.add(authFile);
   return spawn(process.execPath, [targetServerPath], {
     cwd: path.dirname(targetServerPath),
     env: {
@@ -1934,7 +1957,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     );
 
     const status = await waitForStatus(port);
-    assert.match(status.agent.runtimeId, /^2\.2\.0:[a-f0-9]{64}$/);
+    assert.match(status.agent.runtimeId, /^2\.2\.1:[a-f0-9]{64}$/);
     killPid(status.agent.pid);
     await waitForPortRelease(port);
     child.kill();
@@ -1956,7 +1979,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
       const restartedInstances = JSON.parse(restartedCall.result.content[0].text);
       assert.equal(restartedInstances.instances[0].id, "legacy-instance");
       const restartedStatus = await waitForStatus(port);
-      assert.match(restartedStatus.agent.runtimeId, /^2\.2\.0:[a-f0-9]{64}$/);
+      assert.match(restartedStatus.agent.runtimeId, /^2\.2\.1:[a-f0-9]{64}$/);
       killPid(restartedStatus.agent.pid);
     } finally {
       restarted.kill();
@@ -1982,7 +2005,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2030,11 +2053,11 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
   const cacheDir = path.join(tempRoot, "插件 缓存");
   const dataDir = path.join(tempRoot, "用户 数据");
   const installedServerPath = path.join(cacheDir, "mcp-server.js");
-  const agentStub = await startAgentStub();
+  const agentStub = await startAgentStub(localAuth.resolveAuthFile(dataDir));
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(

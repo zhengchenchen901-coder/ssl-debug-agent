@@ -1,4 +1,5 @@
 import express from "express";
+import { installHttpAuth, publicHealth } from "./http-auth.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -69,6 +70,7 @@ import {
   readRemoteFile as defaultReadRemoteFile,
   resolveRemotePaths as defaultResolveRemotePaths,
   runSSH as defaultRunSSH,
+  canonicalCommand,
 } from "./ssh.js";
 
 const moduleFilePath =
@@ -476,6 +478,8 @@ export function createApp(options = {}) {
   const app = express();
   const publicDir = path.join(moduleDirectory, "public");
 
+  installHttpAuth(app, config, options);
+
   app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use(express.json({ limit: "512kb" }));
@@ -492,8 +496,8 @@ export function createApp(options = {}) {
 
   app.use(express.static(publicDir, { index: false, maxAge: 0 }));
 
-  app.get("/health", (_request, response) => {
-    response.json({ ok: true, name: "remote-debug-agent", apiVersion: API_VERSION });
+  app.get("/health", (request, response) => {
+    response.json(publicHealth(request, app.locals.authToken, { ok: true, name: "remote-debug-agent", apiVersion: API_VERSION, localAuthentication: true }));
   });
 
   app.get("/api/capabilities", (_request, response) => {
@@ -536,16 +540,18 @@ export function createApp(options = {}) {
       };
       publishStage(activity, operation, "validated");
 
+      let canonicalPaths = [];
       if (customPathResolver && validation.absolutePaths.length > 0) {
-        await resolveRemotePaths(validation.absolutePaths, {
+        canonicalPaths = await resolveRemotePaths(validation.absolutePaths, {
           config,
           operation: requestOperation,
         });
       }
-      const result = await runSSH(validation.normalizedCommand, {
+      const result = await runSSH(customPathResolver && validation.absolutePaths.length ? canonicalCommand(validation, canonicalPaths || validation.absolutePaths) : validation.normalizedCommand, {
         config,
         operation: requestOperation,
         remotePaths: customPathResolver ? [] : validation.absolutePaths,
+        commandValidation: customPathResolver ? undefined : validation,
         onStdout: (chunk) => {
           publishStage(activity, operation, "stdout", {
             chunk: previewText(String(chunk)),
@@ -751,6 +757,7 @@ export function createApp(options = {}) {
 
       let stopped;
       for (const [index, command] of claimedDraft.commands.entries()) {
+        const validation = request.body?.automatic === true ? validateCommand(command, config.security) : undefined;
         publishStage(activity, operation, "command-started", {
           commandIndex: index,
           commandPreview: redactCommand(command),
@@ -759,6 +766,8 @@ export function createApp(options = {}) {
         const result = await runSSH(command, {
           config,
           operation: requestOperation,
+          commandValidation: validation,
+          remotePaths: validation?.absolutePaths || [],
           onStdout: (chunk) => {
             publishStage(activity, operation, "stdout", {
               commandIndex: index,
@@ -1759,6 +1768,7 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
       operationDeadlines: true,
       cancellation: true,
       structuredHealth: true,
+      localAuthentication: true,
       logs: true,
     },
     agent: {
@@ -1846,6 +1856,7 @@ export function createManagerApp(options = {}) {
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
+  installHttpAuth(app, config, { ...options, initializeAuth: true });
   app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use(express.json({ limit: "512kb" }));
@@ -1863,13 +1874,14 @@ export function createManagerApp(options = {}) {
 
   app.use(express.static(publicDir, { index: false, maxAge: 0 }));
 
-  app.get("/health", (_request, response) => {
-    response.json({
+  app.get("/health", (request, response) => {
+    response.json(publicHealth(request, app.locals.authToken, {
       ok: true,
       name: "remote-debug-agent",
       apiVersion: API_VERSION,
       mode: "manager",
-    });
+      localAuthentication: true,
+    }));
   });
 
   app.get("/status", (_request, response) => {
@@ -2332,6 +2344,7 @@ export function createManagerApp(options = {}) {
             draftId: draft.draftId,
             commandHash: draft.commandHash,
             confirmation: APPROVED_COMMAND_CONFIRMATION,
+            automatic: true,
             operationId: requestOperation.operationId,
             timeoutMs: requestOperation.timeoutMs,
             deadlineAt: requestOperation.deadlineAt,

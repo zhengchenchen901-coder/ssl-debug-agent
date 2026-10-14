@@ -1,4 +1,5 @@
 import { fork } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import fsp from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
@@ -143,6 +144,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_USER: instance.username,
     REMOTE_DEBUG_PRIVATE_KEY_PATH: instance.privateKeyPath,
     REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance.passphrase || "",
+    REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance.hostKeyFingerprints || []),
     REMOTE_DEBUG_AUDIT_LOG:
       instance.auditLog || path.resolve(instanceDir, "audit.jsonl"),
     REMOTE_DEBUG_APPROVED_COMMANDS: instance.approvedCommands?.enabled ? "1" : "0",
@@ -648,6 +650,7 @@ export class WorkerManager {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
+      authToken: randomBytes(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -730,7 +733,9 @@ export class WorkerManager {
     });
 
     try {
-      await this.waitForReady(id, child, manager.startTimeoutMs);
+      const ready = this.waitForReady(id, child, manager.startTimeoutMs);
+      child.send({ type: "initialize-auth", token: runtime.authToken });
+      await ready;
       runtime.status = "running";
       runtime.lastHeartbeatAt = nowIso();
       runtime.lastError = null;
@@ -775,7 +780,7 @@ export class WorkerManager {
           return;
         }
         if (message.ok) {
-          if (message.protocolVersion !== API_VERSION) {
+          if (message.protocolVersion !== API_VERSION || message.localAuthentication !== true) {
             finish(
               managerError(
                 `worker protocol version mismatch: expected ${API_VERSION}, received ${message.protocolVersion ?? "missing"}`,
@@ -1125,6 +1130,9 @@ export class WorkerManager {
         },
       );
     }
+    if (!/^[a-f0-9]{64}$/.test(runtime.authToken || "")) {
+      throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401);
+    }
 
     const url = `http://${this.managerConfig().host}:${runtime.workerPort}${pathName}`;
     const operation = {
@@ -1161,7 +1169,9 @@ export class WorkerManager {
     try {
       response = await this.fetchImpl(url, {
         method: "POST",
+        redirect: "error",
         headers: {
+          Authorization: `Bearer ${runtime.authToken}`,
           "Content-Type": "application/json",
           "X-Remote-Debug-Source": headers["x-remote-debug-source"] || headers["X-Remote-Debug-Source"] || "http-api",
           "X-Remote-Debug-Operation-Id": operation.operationId,

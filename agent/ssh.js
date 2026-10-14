@@ -11,6 +11,17 @@ import {
 
 const remoteReadStreams = new WeakMap();
 
+export function quotePosixArgument(value) {
+  return "'" + String(value).replace(/'/g, "'\"'\"'") + "'";
+}
+
+export function canonicalCommand(validation, canonicalPaths) {
+  if (validation.pathTokenIndexes.length !== canonicalPaths.length) throw new Error("canonical command path count mismatch");
+  const tokens = validation.tokens.slice();
+  validation.pathTokenIndexes.forEach((index, offset) => { tokens[index] = canonicalPaths[offset]; });
+  return tokens.map(quotePosixArgument).join(" ");
+}
+
 function destroyRemoteReadStreams(sftp) {
   for (const { stream } of remoteReadStreams.get(sftp) || []) {
     stream.destroy?.();
@@ -501,7 +512,7 @@ export async function runSSH(command, options) {
   try {
     return await supervisor.schedule(prepared.operation, async (timing) => {
       const validationStartedAt = Date.now();
-      await validateRemotePathsWithClient(
+      const canonicalPaths = await validateRemotePathsWithClient(
         timing.client,
         options.remotePaths || [],
         options.config,
@@ -510,7 +521,7 @@ export async function runSSH(command, options) {
       );
       const result = await executeChannel(
         timing.client,
-        command,
+        options.commandValidation ? canonicalCommand(options.commandValidation, canonicalPaths) : command,
         prepared.operation,
         options,
         supervisor,

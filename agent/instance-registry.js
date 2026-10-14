@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { loadDotEnv, normalizeSourceRoots, allowedPathsForSourceRoots } from "./config.js";
+import { loadDotEnv, normalizeSourceRoots, allowedPathsForSourceRoots, normalizeHostKeyFingerprints } from "./config.js";
 import { normalizeLogProjects } from "./log-projects.js";
 
-export const REGISTRY_VERSION = 3;
+export const REGISTRY_VERSION = 4;
 export const DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 export const DEFAULT_HEALTH_INTERVAL_MS = 15_000;
 export const DEFAULT_START_TIMEOUT_MS = 10_000;
@@ -309,6 +309,10 @@ function normalizeInstance(input, existing = {}) {
     input.passphrase === "" || input.passphrase === undefined
       ? existing.passphrase
       : input.passphrase;
+  const targetChanged = (existing.host && host !== existing.host) || (existing.port && parsePort(input.port, existing.port, "port") !== existing.port);
+  const hostKeyFingerprints = normalizeHostKeyFingerprints(
+    input.hostKeyFingerprints === undefined ? (targetChanged ? [] : existing.hostKeyFingerprints) : input.hostKeyFingerprints,
+  );
   const preferredWorkerPort = input.preferredWorkerPort ?? input.workerPort ?? input.agentPort;
   const mongodb = normalizeMongoSettings(input.mongodb, existing.mongodb);
   const sourceRoots = normalizeSourceRoots(
@@ -324,6 +328,7 @@ function normalizeInstance(input, existing = {}) {
     port: parsePort(input.port, existing.port || 22, "port"),
     username,
     privateKeyPath,
+    hostKeyFingerprints,
     passphrase: passphrase || undefined,
     auditLog: input.auditLog === "" ? undefined : input.auditLog ?? existing.auditLog,
     preferredWorkerPort: preferredWorkerPort === undefined || preferredWorkerPort === ""
@@ -430,6 +435,7 @@ function envDefaultInstance(env, cwd) {
     username,
     privateKeyPath,
     passphrase: merged.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE,
+    hostKeyFingerprints: merged.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS,
     auditLog: merged.REMOTE_DEBUG_AUDIT_LOG,
     approvedCommands: {
       enabled: merged.REMOTE_DEBUG_APPROVED_COMMANDS,

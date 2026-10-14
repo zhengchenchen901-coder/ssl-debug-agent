@@ -1,5 +1,17 @@
 # Remote Debug Agent
 
+## Security upgrade: 2.2.1
+
+Stop the previous Manager after active operations finish before upgrading. The new MCP refuses to reuse an unauthenticated legacy Agent. Re-enable/reinstall the plugin and reload the chat after upgrading the runtime.
+
+The Manager generates a 256-bit access token in `<data-dir>/.runtime/http-auth.json` (override with `REMOTE_DEBUG_AUTH_FILE`). The file and its directory are owner-only; initialization fails if permissions/Windows ACL cannot be protected. MCP reads it automatically. Copy the `token` value into the dashboard unlock form; it stays in that tab only. Logout or a 401 clears it. Never share this file or put its token in a URL. Ordinary HTTP clients must send `Authorization: Bearer <token>`. MCP and diagnostics verify a fresh, listener-bound health proof before sending a credential to a local port; merely claiming to be an Agent cannot obtain the token. Only dashboard assets and minimal `/health` are public. Worker tokens are independent, delivered through private IPC, and expire at worker restart.
+
+SSH now requires verified OpenSSH SHA256 host-key fingerprints on every connection and reconnect. Add up to four entries to an instance’s `hostKeyFingerprints` array in the dashboard, or configure `REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS=["SHA256:..."]` for the environment-defined instance. Obtain fingerprints through a trusted server console or administrator; for example, run `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256` on that console and verify the configured server offers the corresponding key. An unverified network scan does not establish trust. Existing instances migrate to registry v4 with an empty array and cannot connect until configured. Changing the host/port clears previously inherited pins; enter verified pins again and refresh the instance. `SSH_HOST_KEY_REQUIRED` and `SSH_HOST_KEY_MISMATCH` stop retries until configuration is corrected.
+
+File-reading command arguments are now parsed per executable. Every file operand must be an allowed absolute path and is canonicalized and POSIX-quoted before execution. Supported options: `cat -n/-b/-s/-v/-E/-T/-A`, `ls -l/-a/-A/-h/-d/-t/-r/-S/-1/-n/-i/-p/-F`, `tail -n/-c/--lines/--bytes`, and `grep -E/-F/-i/-v/-n/-H/-h/-c/-l/-L/-s/-w/-x/-o/-e/-m/-A/-B/-C`. Safe short options may be combined. Tail counts are at most 10,000 lines or 1 MiB; grep numeric options are at most 10,000. Recursive reads, symlink-following options, grep pattern files, relative file operands, and follow/retry tails are rejected. Use the structured log tools for recursive searches.
+
+Custom Agent URLs outside loopback require HTTPS and a matching owner-only credential file. Redirects are rejected; authorization failures are reported without restarting a Manager or selecting another port. Independent diagnostic mode remains read-only and cannot perform SSH or instance operations. These changes protect the local API boundary; they do not protect against a process that already fully controls the current user account.
+
 ## Project log queries
 
 Configure `logProjects` on each instance in the dashboard or with
@@ -901,10 +913,10 @@ SSH access.
 
 The V2 MCP only accepts a manager whose `/status` reports `apiVersion: 2`, the
 required capabilities, and the current bundled `agent.runtimeId`. A confirmed
-local Manager with an older runtime ID is safely replaced; an external
-`REMOTE_DEBUG_AGENT_URL` remains compatible with any existing V2 runtime. The
+local Manager with an older runtime ID is safely replaced; an explicit
+`REMOTE_DEBUG_AGENT_URL` requires a V2 runtime with authenticated HTTP support and a matching protected local credential file. The
 manager only accepts workers whose ready IPC message reports
-`protocolVersion: 2`. Registry files are migrated to version 3; legacy
+`protocolVersion: 2`. Registry files are migrated to version 4; legacy
 approved-command `timeoutMs` fields are converted to the new shared execution
 budget fields when the registry is loaded.
 
@@ -935,8 +947,7 @@ Command validation applies these checks:
 - The command must be a non-empty string and no longer than 4096 characters.
 - Shell control characters are rejected, including `;`, `&`, `|`, backticks,
   `$`, redirects, brackets, backslashes, and newlines.
-- Tokens may only contain the safe character set used by
-  `SAFE_TOKEN_PATTERN`.
+- Tokens support literal single/double quoting for spaces and quotes in paths or search expressions; shell substitutions and control operators remain forbidden. Quoted arguments are reserialized safely before execution.
 - The executable must be in `ALLOWED_COMMANDS`.
 - Dangerous commands are denied even if they appear inside a token, including
   `rm`, `sudo`, `shutdown`, `reboot`, `mkfs`, `chmod`, and `chown`.

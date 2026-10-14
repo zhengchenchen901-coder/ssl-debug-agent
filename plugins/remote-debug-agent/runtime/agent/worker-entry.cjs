@@ -15190,11 +15190,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path10) {
-      if (!path10 || typeof path10 !== "string") {
+    function lookup(path11) {
+      if (!path11 || typeof path11 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path10).toLowerCase().slice(1);
+      var extension2 = extname("x." + path11).toLowerCase().slice(1);
       if (!extension2) {
         return false;
       }
@@ -18665,13 +18665,13 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path10 = require("node:path");
+    var path11 = require("node:path");
     var fs8 = require("node:fs");
-    var dirname = path10.dirname;
-    var basename = path10.basename;
-    var extname = path10.extname;
-    var join = path10.join;
-    var resolve = path10.resolve;
+    var dirname = path11.dirname;
+    var basename = path11.basename;
+    var extname = path11.extname;
+    var join = path11.join;
+    var resolve = path11.resolve;
     module2.exports = View;
     function View(name, options) {
       var opts = options || {};
@@ -18700,17 +18700,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View.prototype.lookup = function lookup(name) {
-      var path11;
+      var path12;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name);
-      for (var i = 0; i < roots.length && !path11; i++) {
+      for (var i = 0; i < roots.length && !path12; i++) {
         var root = roots[i];
         var loc = resolve(root, name);
         var dir = dirname(loc);
         var file = basename(loc);
-        path11 = this.resolve(dir, file);
+        path12 = this.resolve(dir, file);
       }
-      return path11;
+      return path12;
     };
     View.prototype.render = function render(options, callback) {
       var sync = true;
@@ -18732,21 +18732,21 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path11 = join(dir, file);
-      var stat = tryStat(path11);
+      var path12 = join(dir, file);
+      var stat = tryStat(path12);
       if (stat && stat.isFile()) {
-        return path11;
+        return path12;
       }
-      path11 = join(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path11);
+      path12 = join(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path12);
       if (stat && stat.isFile()) {
-        return path11;
+        return path12;
       }
     };
-    function tryStat(path11) {
-      debug('stat "%s"', path11);
+    function tryStat(path12) {
+      debug('stat "%s"', path12);
       try {
-        return fs8.statSync(path11);
+        return fs8.statSync(path12);
       } catch (e) {
         return void 0;
       }
@@ -19882,15 +19882,15 @@ var require_dist = __commonJS({
       let index = 0;
       function consumeUntil(end) {
         const output = [];
-        let path10 = "";
+        let path11 = "";
         function writePath() {
-          if (!path10)
+          if (!path11)
             return;
           output.push({
             type: "text",
-            value: encodePath(path10)
+            value: encodePath(path11)
           });
-          path10 = "";
+          path11 = "";
         }
         while (index < chars.length) {
           const value = chars[index++];
@@ -19902,7 +19902,7 @@ var require_dist = __commonJS({
             if (index === chars.length) {
               throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            path10 += chars[index++];
+            path11 += chars[index++];
             continue;
           }
           if (value === ":" || value === "*") {
@@ -19946,7 +19946,7 @@ var require_dist = __commonJS({
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
             throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
           }
-          path10 += value;
+          path11 += value;
         }
         if (end) {
           throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
@@ -19956,17 +19956,17 @@ var require_dist = __commonJS({
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path10, options = {}) {
+    function compile(path11, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const data = typeof path10 === "object" ? path10 : parse(path10, options);
+      const data = typeof path11 === "object" ? path11 : parse(path11, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
-      return function path11(params = {}) {
+      return function path12(params = {}) {
         const missing = [];
-        const path12 = fn(params, missing);
+        const path13 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path12;
+        return path13;
       };
     }
     function tokensToFunction(tokens, delimiter, encode) {
@@ -20028,9 +20028,9 @@ var require_dist = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path10, options = {}) {
+    function match(path11, options = {}) {
       const { decode = decodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path10, options);
+      const { regexp, keys } = pathToRegexp(path11, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20042,7 +20042,7 @@ var require_dist = __commonJS({
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path11 = m[0];
+        const path12 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20051,21 +20051,21 @@ var require_dist = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path11, params };
+        return { path: path12, params };
       };
     }
-    function pathToRegexp(path10, options = {}) {
+    function pathToRegexp(path11, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path11) {
-        if (Array.isArray(path11)) {
-          for (const p of path11)
+      function process2(path12) {
+        if (Array.isArray(path12)) {
+          for (const p of path12)
             process2(p);
           return;
         }
-        const data = typeof path11 === "object" ? path11 : parse(path11, options);
+        const data = typeof path12 === "object" ? path12 : parse(path12, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20076,7 +20076,7 @@ var require_dist = __commonJS({
           combinations++;
         });
       }
-      process2(path10);
+      process2(path11);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape2(delimiter) + "$)?";
@@ -20216,18 +20216,18 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path10, options, fn) {
+    function Layer(path11, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path10, options, fn);
+        return new Layer(path11, options, fn);
       }
-      debug("new %o", path10);
+      debug("new %o", path11);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path10 === "/" && opts.end === false;
+      this.slash = path11 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
@@ -20266,7 +20266,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path10) ? path10.map(matcher) : [matcher(path10)];
+      this.matchers = Array.isArray(path11) ? path11.map(matcher) : [matcher(path11)];
     }
     Layer.prototype.handleError = function handleError(error, req, res, next) {
       const fn = this.handle;
@@ -20306,9 +20306,9 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path10) {
+    Layer.prototype.match = function match(path11) {
       let match2;
-      if (path10 != null) {
+      if (path11 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
@@ -20316,7 +20316,7 @@ var require_layer = __commonJS({
         }
         let i = 0;
         while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path10);
+          match2 = this.matchers[i](path11);
           i++;
         }
       }
@@ -20344,13 +20344,13 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path10) {
-      if (path10 instanceof RegExp || path10 === "/") {
-        return path10;
+    function loosen(path11) {
+      if (path11 instanceof RegExp || path11 === "/") {
+        return path11;
       }
-      return Array.isArray(path10) ? path10.map(function(p) {
+      return Array.isArray(path11) ? path11.map(function(p) {
         return loosen(p);
-      }) : String(path10).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path11).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
@@ -20366,9 +20366,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path10) {
-      debug("new %o", path10);
-      this.path = path10;
+    function Route(path11) {
+      debug("new %o", path11);
+      this.path = path11;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -20576,8 +20576,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path10 = getPathname(req);
-        if (path10 == null) {
+        const path11 = getPathname(req);
+        if (path11 == null) {
           return done(layerError);
         }
         let layer;
@@ -20585,7 +20585,7 @@ var require_router = __commonJS({
         let route;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path10);
+          match = matchLayer(layer, path11);
           route = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -20623,18 +20623,18 @@ var require_router = __commonJS({
           } else if (route) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path10);
+            trimPrefix(layer, layerError, layerPath, path11);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path10) {
+      function trimPrefix(layer, layerError, layerPath, path11) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path10.substring(0, layerPath.length)) {
+          if (layerPath !== path11.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path10[layerPath.length];
+          const c = path11[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -20658,7 +20658,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path10 = "/";
+      let path11 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -20666,7 +20666,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path10 = handler;
+          path11 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -20678,8 +20678,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path10, fn.name || "<anonymous>");
-        const layer = new Layer(path10, {
+        debug("use %o %s", path11, fn.name || "<anonymous>");
+        const layer = new Layer(path11, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -20689,9 +20689,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route(path10) {
-      const route2 = new Route(path10);
-      const layer = new Layer(path10, {
+    Router.prototype.route = function route(path11) {
+      const route2 = new Route(path11);
+      const layer = new Layer(path11, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -20704,8 +20704,8 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path10) {
-        const route = this.route(path10);
+      Router.prototype[method] = function(path11) {
+        const route = this.route(path11);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
@@ -20734,9 +20734,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path10) {
+    function matchLayer(layer, path11) {
       try {
-        return layer.match(path10);
+        return layer.match(path11);
       } catch (err) {
         return err;
       }
@@ -20964,7 +20964,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path10 = "/";
+      var path11 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -20972,7 +20972,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path10 = fn;
+          path11 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -20982,12 +20982,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path10, fn2);
+          return router.use(path11, fn2);
         }
-        debug(".use app under %s", path10);
-        fn2.mountpath = path10;
+        debug(".use app under %s", path11);
+        fn2.mountpath = path11;
         fn2.parent = this;
-        router.use(path10, function mounted_app(req, res, next) {
+        router.use(path11, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -20999,8 +20999,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route(path10) {
-      return this.router.route(path10);
+    app.route = function route(path11) {
+      return this.router.route(path11);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21043,7 +21043,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path10() {
+    app.path = function path11() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -21059,17 +21059,17 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path10) {
+      app[method] = function(path11) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path10);
+          return this.set(path11);
         }
-        var route = this.route(path10);
+        var route = this.route(path11);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path10) {
-      var route = this.route(path10);
+    app.all = function all(path11) {
+      var route = this.route(path11);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route[methods[i]].apply(route, args);
@@ -21979,7 +21979,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path10() {
+    defineGetter(req, "path", function path11() {
       return parse(this).pathname;
     });
     defineGetter(req, "host", function host() {
@@ -22190,8 +22190,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename(path10) {
-      const normalized = path10.replaceAll("\\", "/");
+    function basename(path11) {
+      const normalized = path11.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22437,27 +22437,27 @@ var require_send = __commonJS({
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path10 = require("path");
+    var path11 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path10.extname;
-    var join = path10.join;
-    var normalize = path10.normalize;
-    var resolve = path10.resolve;
-    var sep = path10.sep;
+    var extname = path11.extname;
+    var join = path11.join;
+    var normalize = path11.normalize;
+    var resolve = path11.resolve;
+    var sep = path11.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send2;
-    function send2(req, path11, options) {
-      return new SendStream(req, path11, options);
+    function send2(req, path12, options) {
+      return new SendStream(req, path12, options);
     }
-    function SendStream(req, path11, options) {
+    function SendStream(req, path12, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path11;
+      this.path = path12;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -22571,10 +22571,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path11) {
+    SendStream.prototype.redirect = function redirect(path12) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path11);
+        this.emit("directory", res, path12);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -22594,38 +22594,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path11 = decode(this.path);
-      if (path11 === -1) {
+      var path12 = decode(this.path);
+      if (path12 === -1) {
         this.error(400);
         return res;
       }
-      if (~path11.indexOf("\0")) {
+      if (~path12.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path11) {
-          path11 = normalize("." + sep + path11);
+        if (path12) {
+          path12 = normalize("." + sep + path12);
         }
-        if (UP_PATH_REGEXP.test(path11)) {
-          debug('malicious path "%s"', path11);
+        if (UP_PATH_REGEXP.test(path12)) {
+          debug('malicious path "%s"', path12);
           this.error(403);
           return res;
         }
-        parts = path11.split(sep);
-        path11 = normalize(join(root, path11));
+        parts = path12.split(sep);
+        path12 = normalize(join(root, path12));
       } else {
-        if (UP_PATH_REGEXP.test(path11)) {
-          debug('malicious path "%s"', path11);
+        if (UP_PATH_REGEXP.test(path12)) {
+          debug('malicious path "%s"', path12);
           this.error(403);
           return res;
         }
-        parts = normalize(path11).split(sep);
-        path11 = resolve(path11);
+        parts = normalize(path12).split(sep);
+        path12 = resolve(path12);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path11);
+        debug('%s dotfile "%s"', this._dotfiles, path12);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -22639,13 +22639,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path11);
+        this.sendIndex(path12);
         return res;
       }
-      this.sendFile(path11);
+      this.sendFile(path12);
       return res;
     };
-    SendStream.prototype.send = function send3(path11, stat) {
+    SendStream.prototype.send = function send3(path12, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -22657,9 +22657,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path11);
-      this.setHeader(path11, stat);
-      this.type(path11);
+      debug('pipe "%s"', path12);
+      this.setHeader(path12, stat);
+      this.type(path12);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -22708,28 +22708,28 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path11, opts);
+      this.stream(path12, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path11) {
+    SendStream.prototype.sendFile = function sendFile(path12) {
       var i = 0;
       var self2 = this;
-      debug('stat "%s"', path11);
-      fs8.stat(path11, function onstat(err, stat) {
-        var pathEndsWithSep = path11[path11.length - 1] === sep;
-        if (err && err.code === "ENOENT" && !extname(path11) && !pathEndsWithSep) {
+      debug('stat "%s"', path12);
+      fs8.stat(path12, function onstat(err, stat) {
+        var pathEndsWithSep = path12[path12.length - 1] === sep;
+        if (err && err.code === "ENOENT" && !extname(path12) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self2.onStatError(err);
-        if (stat.isDirectory()) return self2.redirect(path11);
+        if (stat.isDirectory()) return self2.redirect(path12);
         if (pathEndsWithSep) return self2.error(404);
-        self2.emit("file", path11, stat);
-        self2.send(path11, stat);
+        self2.emit("file", path12, stat);
+        self2.send(path12, stat);
       });
       function next(err) {
         if (self2._extensions.length <= i) {
           return err ? self2.onStatError(err) : self2.error(404);
         }
-        var p = path11 + "." + self2._extensions[i++];
+        var p = path12 + "." + self2._extensions[i++];
         debug('stat "%s"', p);
         fs8.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -22739,7 +22739,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path11) {
+    SendStream.prototype.sendIndex = function sendIndex(path12) {
       var i = -1;
       var self2 = this;
       function next(err) {
@@ -22747,7 +22747,7 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join(path11, self2._index[i]);
+        var p = join(path12, self2._index[i]);
         debug('stat "%s"', p);
         fs8.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -22758,10 +22758,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path11, options) {
+    SendStream.prototype.stream = function stream(path12, options) {
       var self2 = this;
       var res = this.res;
-      var stream2 = fs8.createReadStream(path11, options);
+      var stream2 = fs8.createReadStream(path12, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -22776,17 +22776,17 @@ var require_send = __commonJS({
         self2.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path11) {
+    SendStream.prototype.type = function type(path12) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path11);
+      var ext = extname(path12);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path11, stat) {
+    SendStream.prototype.setHeader = function setHeader(path12, stat) {
       var res = this.res;
-      this.emit("headers", res, path11, stat);
+      this.emit("headers", res, path12, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -22844,9 +22844,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path11) {
+    function decode(path12) {
       try {
-        return decodeURIComponent(path11);
+        return decodeURIComponent(path12);
       } catch (err) {
         return -1;
       }
@@ -22990,7 +22990,7 @@ var require_response = __commonJS({
     var http = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path10 = require("node:path");
+    var path11 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -22999,8 +22999,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send2 = require_send();
-    var extname = path10.extname;
-    var resolve = path10.resolve;
+    var extname = path11.extname;
+    var resolve = path11.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http.ServerResponse.prototype);
@@ -23146,26 +23146,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path11, options, callback) {
+    res.sendFile = function sendFile(path12, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path11) {
+      if (!path12) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path11 !== "string") {
+      if (typeof path12 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path11)) {
+      if (!opts.root && !pathIsAbsolute(path12)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path11);
+      var pathname = encodeURI(path12);
       opts.etag = this.app.enabled("etag");
       var file = send2(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23176,7 +23176,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path11, filename, options, callback) {
+    res.download = function download(path12, filename, options, callback) {
       var done = callback;
       var name = filename;
       var opts = options || null;
@@ -23193,7 +23193,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name || path11)
+        "Content-Disposition": contentDisposition(name || path12)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23206,7 +23206,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path11) : path11;
+      var fullPath = !opts.root ? resolve(path12) : path12;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -23489,11 +23489,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path10 = parseUrl(req).pathname;
-        if (path10 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path10 = "";
+        var path11 = parseUrl(req).pathname;
+        if (path11 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path11 = "";
         }
-        var stream = send2(req, path10, opts);
+        var stream = send2(req, path11, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -23600,19 +23600,169 @@ var require_express2 = __commonJS({
   }
 });
 
+// ../plugins/remote-debug-agent/local-auth.cjs
+var require_local_auth = __commonJS({
+  "../plugins/remote-debug-agent/local-auth.cjs"(exports2, module2) {
+    "use strict";
+    var fs8 = require("fs");
+    var path11 = require("path");
+    var crypto = require("crypto");
+    var { execFileSync } = require("child_process");
+    function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
+      const error = new Error(message);
+      Object.assign(error, { code, statusCode, retriable: false });
+      return error;
+    }
+    function resolveAuthFile(dataDir, env = process.env) {
+      return path11.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path11.join(".runtime", "http-auth.json"));
+    }
+    var aclScript = `
+$ErrorActionPreference = 'Stop'
+$target = $env:RDA_AUTH_ACL_TARGET
+$item = Get-Item -LiteralPath $target -Force
+if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Reparse point rejected' }
+$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+if ($env:RDA_AUTH_ACL_ACTION -eq 'protect') {
+  if ($item.PSIsContainer) {
+    $acl = New-Object Security.AccessControl.DirectorySecurity
+    $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+  } else {
+    $acl = New-Object Security.AccessControl.FileSecurity
+    $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'Allow')
+  }
+  $acl.SetOwner($sid)
+  $acl.SetAccessRuleProtection($true, $false)
+  $acl.AddAccessRule($rule)
+  Set-Acl -LiteralPath $target -AclObject $acl
+}
+$actual = Get-Acl -LiteralPath $target
+if (-not $actual.AreAccessRulesProtected -or $actual.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value) { throw 'Unsafe owner or inheritance' }
+$rules = $actual.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])
+$full = $false
+foreach ($rule in $rules) {
+  if ($rule.AccessControlType -eq 'Allow') {
+    if ($rule.IdentityReference.Value -ne $sid.Value) { throw 'Other principal can access credential' }
+    if (($rule.FileSystemRights -band [Security.AccessControl.FileSystemRights]::FullControl) -eq [Security.AccessControl.FileSystemRights]::FullControl) { $full = $true }
+  }
+}
+if (-not $full) { throw 'Owner lacks access' }
+`;
+    function protectOrCheck(target, directory, protect) {
+      const stat = fs8.lstatSync(target);
+      if (stat.isSymbolicLink() || (directory ? !stat.isDirectory() : !stat.isFile())) {
+        throw authError("authentication storage must be a regular file in a protected directory");
+      }
+      if (process.platform === "win32") {
+        try {
+          execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", aclScript], {
+            env: { ...process.env, RDA_AUTH_ACL_TARGET: target, RDA_AUTH_ACL_ACTION: protect ? "protect" : "check" },
+            stdio: "pipe",
+            windowsHide: true,
+            timeout: 15e3
+          });
+        } catch {
+          throw authError("could not establish or verify owner-only authentication storage ACL");
+        }
+      } else {
+        if (stat.uid !== process.getuid()) throw authError("authentication storage is owned by another user");
+        if (protect) fs8.chmodSync(target, directory ? 448 : 384);
+        if ((fs8.statSync(target).mode & 511) !== (directory ? 448 : 384)) {
+          throw authError("authentication storage requires owner-only permissions");
+        }
+      }
+    }
+    function readAuthToken(filePath) {
+      try {
+        protectOrCheck(path11.dirname(filePath), true, false);
+        protectOrCheck(filePath, false, false);
+        const stat = fs8.statSync(filePath);
+        if (stat.size > 1024) throw authError("authentication credential file is invalid");
+        const value = JSON.parse(fs8.readFileSync(filePath, "utf8"));
+        if (value.version !== 1 || !/^[a-f0-9]{64}$/.test(value.token)) throw authError("authentication credential file is invalid");
+        return value.token;
+      } catch (error) {
+        if (error.code === "LOCAL_AUTH_STORAGE_UNSAFE") throw error;
+        throw authError("authentication credential file is missing or invalid");
+      }
+    }
+    function ensureAuthToken(filePath) {
+      const directory = path11.dirname(filePath);
+      try {
+        fs8.mkdirSync(directory, { recursive: true, mode: 448 });
+        protectOrCheck(directory, true, true);
+        if (fs8.existsSync(filePath)) return readAuthToken(filePath);
+        const token = crypto.randomBytes(32).toString("hex");
+        const temporaryPath = path11.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
+        try {
+          const fd = fs8.openSync(temporaryPath, "wx", 384);
+          try {
+            fs8.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
+            fs8.fsyncSync(fd);
+          } finally {
+            fs8.closeSync(fd);
+          }
+          protectOrCheck(temporaryPath, false, true);
+          try {
+            fs8.linkSync(temporaryPath, filePath);
+          } catch (error) {
+            if (error.code !== "EEXIST") throw error;
+          }
+        } finally {
+          try {
+            fs8.unlinkSync(temporaryPath);
+          } catch {
+          }
+        }
+        return readAuthToken(filePath);
+      } catch (error) {
+        if (error.code === "LOCAL_AUTH_STORAGE_UNSAFE") throw error;
+        throw authError("could not initialize protected authentication storage");
+      }
+    }
+    function tokenMatches(actual, expected) {
+      if (typeof actual !== "string" || typeof expected !== "string") return false;
+      const a = Buffer.from(actual), b = Buffer.from(expected);
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
+    }
+    function healthProof(token, nonce, origin) {
+      return crypto.createHmac("sha256", token).update("remote-debug-health-v1\n" + nonce + "\n" + origin).digest("hex");
+    }
+    function verifyHealthProof(token, nonce, origin, health) {
+      if (!tokenMatches(health && health.authProof, healthProof(token, nonce, origin))) {
+        throw authError("Agent did not prove ownership of the configured local credential", "LOCAL_AUTH_INVALID", 401);
+      }
+    }
+    function validateAgentUrl(value) {
+      let url;
+      try {
+        url = new URL(value);
+      } catch {
+        throw authError("invalid Agent URL", "LOCAL_AUTH_INVALID", 400);
+      }
+      const local = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
+      if (url.username || url.password || url.hash || url.search || !["http:", "https:"].includes(url.protocol) || !local && url.protocol !== "https:") {
+        throw authError("Agent URL requires HTTPS outside loopback and cannot contain credentials", "LOCAL_AUTH_INVALID", 400);
+      }
+      if (url.protocol === "http:" && url.hostname === "localhost") url.hostname = "127.0.0.1";
+      return url;
+    }
+    module2.exports = { authError, resolveAuthFile, readAuthToken, ensureAuthToken, tokenMatches, validateAgentUrl, healthProof, verifyHealthProof };
+  }
+});
+
 // ../plugins/remote-debug-agent/environment-report.cjs
 var require_environment_report = __commonJS({
   "../plugins/remote-debug-agent/environment-report.cjs"(exports2, module2) {
     "use strict";
     var fs8 = require("fs");
     var os2 = require("os");
-    var path10 = require("path");
+    var path11 = require("path");
     var crypto = require("crypto");
     function dataDirectory(env) {
-      return path10.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path10.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path10.join(os2.homedir(), ".remote-debug-agent")));
+      return path11.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path11.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path11.join(os2.homedir(), ".remote-debug-agent")));
     }
     function reportPath(dataDir) {
-      return path10.join(dataDir, ".runtime", "environment-report.json");
+      return path11.join(dataDir, ".runtime", "environment-report.json");
     }
     function readJson(file) {
       try {
@@ -23625,7 +23775,7 @@ var require_environment_report = __commonJS({
       return readJson(reportPath(dataDir));
     }
     function writeJson(file, value) {
-      fs8.mkdirSync(path10.dirname(file), { recursive: true, mode: 448 });
+      fs8.mkdirSync(path11.dirname(file), { recursive: true, mode: 448 });
       const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
       try {
         fs8.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
@@ -23654,7 +23804,7 @@ var require_environment_report = __commonJS({
       return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
     }
     function effectiveEnvironment(env, dataDir) {
-      const configPath = path10.resolve(env.REMOTE_DEBUG_ENV_PATH || path10.join(dataDir, "config.env"));
+      const configPath = path11.resolve(env.REMOTE_DEBUG_ENV_PATH || path11.join(dataDir, "config.env"));
       const effective = Object.assign({}, env);
       let configError = null;
       try {
@@ -23677,9 +23827,9 @@ var require_environment_report = __commonJS({
       options = options || {};
       const dataDir = dataDirectory(env);
       const settings = effectiveEnvironment(env, dataDir);
-      const runtimeRoot = path10.join(pluginRoot, "runtime", "agent");
-      const manifest = readJson(path10.join(runtimeRoot, "runtime-manifest.json"));
-      const pkg = readJson(path10.join(pluginRoot, "package.json"));
+      const runtimeRoot = path11.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path11.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path11.join(pluginRoot, "package.json"));
       const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
       const version = options.nodeVersion || process.versions.node;
       const checks = [];
@@ -23737,8 +23887,8 @@ var require_environment_report = __commonJS({
             "public/environment-report.js"
           ];
           const invalid2 = requiredFiles.filter(function(file) {
-            const resolved = path10.resolve(runtimeRoot, file);
-            if (!resolved.startsWith(runtimeRoot + path10.sep) || !fs8.existsSync(resolved)) return true;
+            const resolved = path11.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path11.sep) || !fs8.existsSync(resolved)) return true;
             try {
               return !manifest.hashes[file] || crypto.createHash("sha256").update(fs8.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
             } catch (_) {
@@ -23766,8 +23916,8 @@ var require_environment_report = __commonJS({
         settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
       );
       try {
-        fs8.mkdirSync(path10.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
-        const probe = path10.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs8.mkdirSync(path11.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path11.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
         fs8.writeFileSync(probe, "", { mode: 384 });
         fs8.unlinkSync(probe);
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
@@ -23802,15 +23952,15 @@ var require_environment_report = __commonJS({
         stage: "environment",
         checks,
         failures: history.slice(-10),
-        offlineDashboard: path10.join(dataDir, ".runtime", "environment-dashboard.html"),
+        offlineDashboard: path11.join(dataDir, ".runtime", "environment-dashboard.html"),
         dashboardUrl: null
       };
     }
     function writeOfflineDashboard(dataDir, report) {
-      const publicDir = path10.join(report.pluginRoot, "runtime", "agent", "public");
-      const file = path10.join(dataDir, ".runtime", "environment-dashboard.html");
+      const publicDir = path11.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path11.join(dataDir, ".runtime", "environment-dashboard.html");
       if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name) {
-        return fs8.existsSync(path10.join(publicDir, name));
+        return fs8.existsSync(path11.join(publicDir, name));
       })) {
         let escape2 = function(value) {
           return String(value || "").replace(/[&<>"']/g, function(char) {
@@ -23825,9 +23975,9 @@ var require_environment_report = __commonJS({
         fs8.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
         return;
       }
-      let html = fs8.readFileSync(path10.join(publicDir, "dashboard.html"), "utf8");
-      const css = fs8.readFileSync(path10.join(publicDir, "dashboard.css"), "utf8");
-      const script = fs8.readFileSync(path10.join(publicDir, "environment-report.js"), "utf8");
+      let html = fs8.readFileSync(path11.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs8.readFileSync(path11.join(publicDir, "dashboard.css"), "utf8");
+      const script = fs8.readFileSync(path11.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
       html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
         return "<style>" + css + "</style>";
@@ -30342,7 +30492,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv,
       createECDH,
-      createHash: createHash7,
+      createHash: createHash8,
       createHmac,
       createSign,
       createVerify,
@@ -31030,11 +31180,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash7("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash8("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash7("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash8("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -31199,8 +31349,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash7("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash7("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash8("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash8("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -31240,7 +31390,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash7("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash8("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -31884,11 +32034,11 @@ var require_agent = __commonJS({
       };
     })();
     var WINDOWS_PIPE_REGEX = /^[/\\][/\\]\.[/\\]pipe[/\\].+/;
-    function createAgent(path10) {
-      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path10)) {
-        return path10 === "pageant" ? new PageantAgent() : new CygwinAgent(path10);
+    function createAgent(path11) {
+      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path11)) {
+        return path11 === "pageant" ? new PageantAgent() : new CygwinAgent(path11);
       }
-      return new OpenSSHAgent(path10);
+      return new OpenSSHAgent(path11);
     }
     var AgentProtocol = (() => {
       const SSH_AGENTC_REQUEST_IDENTITIES = 11;
@@ -33562,7 +33712,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash7,
+      createHash: createHash8,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -33988,7 +34138,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash7(this.hashName);
+          const hash = createHash8(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -34996,9 +35146,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest = createHash7(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest = createHash8(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest.length < len) {
-          const chunk = createHash7(hashName).update(secret).update(exchangeHash).update(digest).digest();
+          const chunk = createHash8(hashName).update(secret).update(exchangeHash).update(digest).digest();
           const extended = Buffer.allocUnsafe(digest.length + chunk.length);
           extended.set(digest, 0);
           extended.set(chunk, digest.length);
@@ -37132,17 +37282,17 @@ var require_SFTP = __commonJS({
       // ===========================================================================
       // Client-specific ===========================================================
       // ===========================================================================
-      createReadStream(path10, options) {
+      createReadStream(path11, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new ReadStream(this, path10, options);
+        return new ReadStream(this, path11, options);
       }
-      createWriteStream(path10, options) {
+      createWriteStream(path11, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new WriteStream(this, path10, options);
+        return new WriteStream(this, path11, options);
       }
-      open(path10, flags_, attrs, cb) {
+      open(path11, flags_, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         if (typeof attrs === "function") {
@@ -37161,7 +37311,7 @@ var require_SFTP = __commonJS({
           attrsFlags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37169,7 +37319,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         writeUInt32BE(buf, attrsFlags, p += 4);
         if (attrsLen) {
@@ -37300,7 +37450,7 @@ var require_SFTP = __commonJS({
           throw new Error("Client-only method called in server mode");
         fastXfer(fs8, this, localPath, remotePath, opts, cb);
       }
-      readFile(path10, options, callback_) {
+      readFile(path11, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -37373,13 +37523,13 @@ var require_SFTP = __commonJS({
             return callback && callback(er, buffer);
           });
         };
-        this.open(path10, flag, 438, (er, handle_) => {
+        this.open(path11, flag, 438, (er, handle_) => {
           if (er)
             return callback && callback(er);
           handle = handle_;
           const tryStat = (er2, st) => {
             if (er2) {
-              this.stat(path10, (er_, st_) => {
+              this.stat(path11, (er_, st_) => {
                 if (er_) {
                   return this.close(handle, () => {
                     callback && callback(er2);
@@ -37400,7 +37550,7 @@ var require_SFTP = __commonJS({
           this.fstat(handle, tryStat);
         });
       }
-      writeFile(path10, data, options, callback_) {
+      writeFile(path11, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -37419,7 +37569,7 @@ var require_SFTP = __commonJS({
         if (options.encoding && !Buffer.isEncoding(options.encoding))
           throw new Error(`Unknown encoding: ${options.encoding}`);
         const flag = options.flag || "w";
-        this.open(path10, flag, options.mode, (openErr, handle) => {
+        this.open(path11, flag, options.mode, (openErr, handle) => {
           if (openErr) {
             callback && callback(openErr);
           } else {
@@ -37428,7 +37578,7 @@ var require_SFTP = __commonJS({
             if (position === null) {
               const tryStat = (er, st) => {
                 if (er) {
-                  this.stat(path10, (er_, st_) => {
+                  this.stat(path11, (er_, st_) => {
                     if (er_) {
                       return this.close(handle, () => {
                         callback && callback(er);
@@ -37447,7 +37597,7 @@ var require_SFTP = __commonJS({
           }
         });
       }
-      appendFile(path10, data, options, callback_) {
+      appendFile(path11, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -37465,12 +37615,12 @@ var require_SFTP = __commonJS({
           throw new TypeError("Bad arguments");
         if (!options.flag)
           options = Object.assign({ flag: "a" }, options);
-        this.writeFile(path10, data, options, callback);
+        this.writeFile(path11, data, options, callback);
       }
-      exists(path10, cb) {
+      exists(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        this.stat(path10, (err) => {
+        this.stat(path11, (err) => {
           cb && cb(err ? false : true);
         });
       }
@@ -37513,7 +37663,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} RENAME`
         );
       }
-      mkdir(path10, attrs, cb) {
+      mkdir(path11, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -37527,7 +37677,7 @@ var require_SFTP = __commonJS({
           flags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37535,7 +37685,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -37551,10 +37701,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} MKDIR`
         );
       }
-      rmdir(path10, cb) {
+      rmdir(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37562,7 +37712,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
@@ -37652,10 +37802,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} FSTAT`
         );
       }
-      stat(path10, cb) {
+      stat(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37663,17 +37813,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} STAT`
         );
       }
-      lstat(path10, cb) {
+      lstat(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37681,17 +37831,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} LSTAT`
         );
       }
-      opendir(path10, cb) {
+      opendir(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37699,14 +37849,14 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} OPENDIR`
         );
       }
-      setstat(path10, attrs, cb) {
+      setstat(path11, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -37718,7 +37868,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37726,7 +37876,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -37786,8 +37936,8 @@ var require_SFTP = __commonJS({
           mtime: toUnixTimestamp(mtime)
         }, cb);
       }
-      utimes(path10, atime, mtime, cb) {
-        return this.setstat(path10, {
+      utimes(path11, atime, mtime, cb) {
+        return this.setstat(path11, {
           atime: toUnixTimestamp(atime),
           mtime: toUnixTimestamp(mtime)
         }, cb);
@@ -37798,8 +37948,8 @@ var require_SFTP = __commonJS({
           gid
         }, cb);
       }
-      chown(path10, uid, gid, cb) {
-        return this.setstat(path10, {
+      chown(path11, uid, gid, cb) {
+        return this.setstat(path11, {
           uid,
           gid
         }, cb);
@@ -37809,15 +37959,15 @@ var require_SFTP = __commonJS({
           mode
         }, cb);
       }
-      chmod(path10, mode, cb) {
-        return this.setstat(path10, {
+      chmod(path11, mode, cb) {
+        return this.setstat(path11, {
           mode
         }, cb);
       }
-      readlink(path10, cb) {
+      readlink(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37825,7 +37975,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -37870,10 +38020,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} SYMLINK`
         );
       }
-      realpath(path10, cb) {
+      realpath(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37881,7 +38031,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -37926,13 +38076,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${which} posix-rename@openssh.com`);
         }
       }
-      ext_openssh_statvfs(path10, cb) {
+      ext_openssh_statvfs(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["statvfs@openssh.com"];
         if (!ext || ext !== "2")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 19 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37942,7 +38092,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 19, p);
         buf.utf8Write("statvfs@openssh.com", p += 4, 19);
         writeUInt32BE(buf, pathLen, p += 19);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = { extended: "statvfs@openssh.com", cb };
         const isBuffered = sendOrBuffer(this, buf);
         if (this._debug) {
@@ -38028,7 +38178,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} fsync@openssh.com`
         );
       }
-      ext_openssh_lsetstat(path10, attrs, cb) {
+      ext_openssh_lsetstat(path11, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["lsetstat@openssh.com"];
@@ -38043,7 +38193,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 20 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -38053,7 +38203,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 20, p);
         buf.utf8Write("lsetstat@openssh.com", p += 4, 20);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -38070,13 +38220,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${status} lsetstat@openssh.com`);
         }
       }
-      ext_openssh_expandPath(path10, cb) {
+      ext_openssh_expandPath(path11, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["expand-path@openssh.com"];
         if (ext !== "1")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path10);
+        const pathLen = Buffer.byteLength(path11);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 23 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -38086,7 +38236,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 23, p);
         buf.utf8Write("expand-path@openssh.com", p += 4, 23);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path10, p += 4, pathLen);
+        buf.utf8Write(path11, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -39364,12 +39514,12 @@ var require_SFTP = __commonJS({
       [REQUEST.LSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed LSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received LSTAT (id:${reqID})`);
-        if (!sftp.emit("LSTAT", reqID, path10)) {
+        if (!sftp.emit("LSTAT", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39388,13 +39538,13 @@ var require_SFTP = __commonJS({
       [REQUEST.SETSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed SETSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received SETSTAT (id:${reqID})`);
-        if (!sftp.emit("SETSTAT", reqID, path10, attrs)) {
+        if (!sftp.emit("SETSTAT", reqID, path11, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39416,12 +39566,12 @@ var require_SFTP = __commonJS({
       [REQUEST.OPENDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed OPENDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received OPENDIR (id:${reqID})`);
-        if (!sftp.emit("OPENDIR", reqID, path10)) {
+        if (!sftp.emit("OPENDIR", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39440,63 +39590,63 @@ var require_SFTP = __commonJS({
       [REQUEST.REMOVE]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed REMOVE packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received REMOVE (id:${reqID})`);
-        if (!sftp.emit("REMOVE", reqID, path10)) {
+        if (!sftp.emit("REMOVE", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.MKDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed MKDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received MKDIR (id:${reqID})`);
-        if (!sftp.emit("MKDIR", reqID, path10, attrs)) {
+        if (!sftp.emit("MKDIR", reqID, path11, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.RMDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed RMDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received RMDIR (id:${reqID})`);
-        if (!sftp.emit("RMDIR", reqID, path10)) {
+        if (!sftp.emit("RMDIR", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.REALPATH]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed REALPATH packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received REALPATH (id:${reqID})`
         );
-        if (!sftp.emit("REALPATH", reqID, path10)) {
+        if (!sftp.emit("REALPATH", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.STAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed STAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received STAT (id:${reqID})`);
-        if (!sftp.emit("STAT", reqID, path10)) {
+        if (!sftp.emit("STAT", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39516,14 +39666,14 @@ var require_SFTP = __commonJS({
       [REQUEST.READLINK]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path10 = bufferParser.readString(true);
+        const path11 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path10 === void 0)
+        if (path11 === void 0)
           return doFatalSFTPError(sftp, "Malformed READLINK packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received READLINK (id:${reqID})`
         );
-        if (!sftp.emit("READLINK", reqID, path10)) {
+        if (!sftp.emit("READLINK", reqID, path11)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39594,7 +39744,7 @@ var require_SFTP = __commonJS({
     function roundUpToMultipleOf8(n) {
       return n + 7 & ~7;
     }
-    function ReadStream(sftp, path10, options) {
+    function ReadStream(sftp, path11, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -39608,7 +39758,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       ReadableStream.call(this, options);
-      this.path = path10;
+      this.path = path11;
       this.flags = options.flags === void 0 ? "r" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -39739,7 +39889,7 @@ var require_SFTP = __commonJS({
       },
       configurable: true
     });
-    function WriteStream(sftp, path10, options) {
+    function WriteStream(sftp, path11, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -39751,7 +39901,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       WritableStream.call(this, options);
-      this.path = path10;
+      this.path = path11;
       this.flags = options.flags === void 0 ? "w" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -40433,7 +40583,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash7,
+      createHash: createHash8,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -40655,7 +40805,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash7(hashAlgo).update(key).digest("hex");
+              key = createHash8(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -43494,7 +43644,7 @@ var require_keygen = __commonJS({
       generateKeyPair: generateKeyPair_,
       generateKeyPairSync: generateKeyPairSync_,
       getCurves,
-      randomBytes
+      randomBytes: randomBytes2
     } = require("crypto");
     var { Ber } = require_lib3();
     var bcrypt_pbkdf = require_bcrypt_pbkdf().pbkdf;
@@ -43758,7 +43908,7 @@ var require_keygen = __commonJS({
                 rounds = opts.rounds;
             }
             const gen = Buffer.allocUnsafe(cipher.keyLen + cipher.ivLen);
-            const salt = randomBytes(SALT_LEN);
+            const salt = randomBytes2(SALT_LEN);
             const r = bcrypt_pbkdf(
               passphrase,
               passphrase.length,
@@ -43797,7 +43947,7 @@ var require_keygen = __commonJS({
           const kdfOptions = encrypted ? encrypted.kdfOptions : Buffer.alloc(0);
           const blockLen = encrypted ? encrypted.cipher.blockLen : 8;
           const parsed = parseDERs(keyType, pub, priv);
-          const checkInt = randomBytes(4);
+          const checkInt = randomBytes2(4);
           const commentBin = Buffer.from(comment);
           const privBlobLen = 4 + 4 + parsed.priv.length + 4 + commentBin.length;
           let padding = [];
@@ -43959,6 +44109,7 @@ var require_lib4 = __commonJS({
 var worker_entry_exports = {};
 __export(worker_entry_exports, {
   installWorkerShutdownHandlers: () => installWorkerShutdownHandlers,
+  receiveWorkerAuth: () => receiveWorkerAuth,
   runMemoryInit: () => runMemoryInit,
   scheduleMemoryInit: () => scheduleMemoryInit
 });
@@ -46612,7 +46763,7 @@ function normalizeUpdate(value) {
       if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
-      if (paths.some((path10) => path10 === field || path10.startsWith(`${field}.`) || field.startsWith(`${path10}.`))) {
+      if (paths.some((path11) => path11 === field || path11.startsWith(`${field}.`) || field.startsWith(`${path11}.`))) {
         throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
       }
       if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
@@ -48891,8 +49042,8 @@ function normalizeLogListOptions(input = {}) {
   return { category, limit, cursor };
 }
 function normalizeArchiveMemberListOptions(input = {}) {
-  const path10 = input.path;
-  if (typeof path10 !== "string" || path10.trim() === "") {
+  const path11 = input.path;
+  if (typeof path11 !== "string" || path11.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
@@ -48904,15 +49055,15 @@ function normalizeArchiveMemberListOptions(input = {}) {
     throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
   }
   return {
-    path: path10,
+    path: path11,
     prefix: normalizeArchiveMemberPrefix(prefix),
     limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
     cursor
   };
 }
 function normalizeLogReadOptions(input = {}) {
-  const path10 = input.path;
-  if (typeof path10 !== "string" || path10.trim() === "") {
+  const path11 = input.path;
+  if (typeof path11 !== "string" || path11.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
@@ -48927,7 +49078,7 @@ function normalizeLogReadOptions(input = {}) {
     );
   }
   return {
-    path: path10,
+    path: path11,
     memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
     tailLines: positiveInteger(
       input.tailLines,
@@ -49006,6 +49157,16 @@ var SECURITY_POLICY = {
   ],
   deniedExecutables: ["rm", "shutdown", "reboot", "mkfs", "sudo", "chmod", "chown"],
   commandsRequiringAllowedAbsolutePath: ["ls", "cat", "tail", "grep"],
+  pathArgumentPolicy: {
+    absoluteOnly: true,
+    canonicalExecution: true,
+    recursiveReads: false,
+    tailMaxLines: 1e4,
+    tailMaxBytes: 1048576,
+    grepMaxContext: 1e4,
+    shortFlags: { cat: "nbsvETA", ls: "laAhdtrS1nipF", grep: "EFivnHhclLswxo", tail: "" },
+    numericFlags: { tail: ["-n", "-c", "--lines", "--bytes"], grep: ["-m", "-A", "-B", "-C"] }
+  },
   versionOnlyExecutables: ["mongodump", "mongo", "mongosh"],
   systemctl: {
     actions: ["status", "is-active", "is-enabled"],
@@ -49077,7 +49238,7 @@ var SECURITY_POLICY = {
     }
   },
   constraints: [
-    "Commands are parsed as tokens and never executed through a shell.",
+    "Read-only commands are parsed as tokens and POSIX-quoted before SSH execution.",
     "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
     "Commands that read paths require at least one absolute path under an allowed root.",
     "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
@@ -49123,8 +49284,15 @@ function securityCapabilities(config = {}) {
     schemaVersion: SECURITY_POLICY.schemaVersion,
     policyVersion: SECURITY_POLICY_VERSION,
     authority: "remote-debug-agent",
+    ssh: { hostKeyVerification: "required", fingerprintAlgorithm: "SHA256", maxTrustedHostKeys: 4, configured: Boolean(config.ssh?.hostKeyFingerprints?.length) },
     commands: {
       allowedExecutables: [...SECURITY_POLICY.allowedExecutables],
+      pathArguments: {
+        ...SECURITY_POLICY.pathArgumentPolicy,
+        shortFlags: { ...SECURITY_POLICY.pathArgumentPolicy.shortFlags },
+        numericFlags: { tail: [...SECURITY_POLICY.pathArgumentPolicy.numericFlags.tail], grep: [...SECURITY_POLICY.pathArgumentPolicy.numericFlags.grep] },
+        grepPatternOption: "-e"
+      },
       deniedExecutables: [...SECURITY_POLICY.deniedExecutables],
       commandsRequiringAllowedAbsolutePath: [
         ...SECURITY_POLICY.commandsRequiringAllowedAbsolutePath
@@ -49268,10 +49436,34 @@ function tokenizeCommand(command) {
   if (SHELL_CONTROL_PATTERN.test(command)) {
     throw new SecurityError("cmd contains shell control characters", "SHELL_CONTROL_REJECTED");
   }
-  const tokens = command.trim().split(/\s+/);
-  for (const token of tokens) {
-    if (!SAFE_TOKEN_PATTERN.test(token)) {
-      throw new SecurityError(`unsafe token rejected: ${token}`, "UNSAFE_TOKEN");
+  const tokens = [];
+  let token = "";
+  let quote = null;
+  let tokenStarted = false;
+  for (const character of command.trim()) {
+    if (quote) {
+      if (character === quote) quote = null;
+      else token += character;
+    } else if (character === "'" || character === '"') {
+      quote = character;
+      tokenStarted = true;
+    } else if (/\s/.test(character)) {
+      if (tokenStarted) {
+        tokens.push(token);
+        token = "";
+        tokenStarted = false;
+      }
+    } else {
+      token += character;
+      tokenStarted = true;
+    }
+  }
+  if (quote) throw new SecurityError("cmd contains an unterminated quoted argument", "INVALID_COMMAND");
+  if (tokenStarted) tokens.push(token);
+  if (!tokens.length) throw new SecurityError("cmd must contain an executable", "INVALID_COMMAND");
+  for (const token2 of tokens) {
+    if (!/^[A-Za-z0-9_@%+=:,./ '"-]+$/.test(token2)) {
+      throw new SecurityError(`unsafe token rejected: ${token2}`, "UNSAFE_TOKEN");
     }
   }
   return tokens;
@@ -49281,16 +49473,56 @@ function containsDeniedCommand(token) {
 }
 function validatePathArguments(command, tokens, allowedPaths) {
   const absolutePaths = [];
+  const pathTokenIndexes = [];
   if (!SECURITY_POLICY.commandsRequiringAllowedAbsolutePath.includes(command)) {
-    return absolutePaths;
+    return { absolutePaths, pathTokenIndexes };
   }
-  for (const token of tokens.slice(1)) {
-    if (!token.includes("/")) {
+  const readPolicy = SECURITY_POLICY.pathArgumentPolicy;
+  const flags = readPolicy.shortFlags[command];
+  let optionsEnded = false;
+  let hasPattern = false;
+  const invalid2 = (token) => {
+    throw new SecurityError(`unsupported ${command} argument: ${token}`, "UNSUPPORTED_COMMAND_ARGUMENTS");
+  };
+  const number = (value, option) => {
+    const max = command === "tail" ? ["c", "bytes"].includes(option) ? readPolicy.tailMaxBytes : readPolicy.tailMaxLines : readPolicy.grepMaxContext;
+    if (!/^[1-9][0-9]*$/.test(value || "") || Number(value) > max) invalid2(`${option} ${value || ""}`);
+  };
+  for (let index = 1; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (!optionsEnded && token === "--") {
+      optionsEnded = true;
       continue;
     }
-    if (!token.startsWith("/")) {
-      throw new SecurityError(`relative or embedded path rejected: ${token}`, "PATH_NOT_ALLOWED");
+    if (!optionsEnded && token.startsWith("-")) {
+      if (command === "tail") {
+        const match = /^(?:-([nc])([0-9]*)|--(lines|bytes)(?:=([0-9]+))?)$/.exec(token);
+        if (!match) invalid2(token);
+        number(match[2] || match[4] || tokens[++index], match[1] || match[3]);
+      } else if (command === "grep") {
+        for (let offset = 1; offset < token.length; offset += 1) {
+          const option = token[offset];
+          if (flags.includes(option)) continue;
+          if (option === "e" || "mABC".includes(option)) {
+            const value = token.slice(offset + 1) || tokens[++index];
+            if (option === "e") {
+              if (hasPattern || value === void 0) invalid2(token);
+              hasPattern = true;
+            } else number(value, option);
+            break;
+          }
+          invalid2(token);
+        }
+        if (token === "-") invalid2(token);
+      } else if (!new RegExp(`^-[${flags}]+$`).test(token)) invalid2(token);
+      continue;
     }
+    if (command === "grep" && !hasPattern) {
+      hasPattern = true;
+      continue;
+    }
+    if (!token.startsWith("/")) throw new SecurityError(`relative or embedded path rejected: ${token}`, "PATH_NOT_ALLOWED");
+    pathTokenIndexes.push(index);
     absolutePaths.push(assertPathAllowed(token, allowedPaths));
   }
   if (absolutePaths.length === 0) {
@@ -49299,7 +49531,7 @@ function validatePathArguments(command, tokens, allowedPaths) {
       "PATH_REQUIRED"
     );
   }
-  return absolutePaths;
+  return { absolutePaths, pathTokenIndexes };
 }
 function validateTail(tokens) {
   if (tokens.includes("-f") || tokens.includes("--follow")) {
@@ -49523,13 +49755,14 @@ function validateCommand(command, options = {}) {
       validatePm2(tokens);
     }
   }
-  const absolutePaths = validatePathArguments(executable, tokens, allowedPaths);
+  const { absolutePaths, pathTokenIndexes } = validatePathArguments(executable, tokens, allowedPaths);
   const manualProfile = mode === "approved" && (executable === "systemctl" && tokens.some((token) => SECURITY_POLICY.systemctl.manualActions.includes(token)) || executable === "nginx" && tokens[1] === "-s" && tokens[2] === "reload" || executable === "pm2" && ["reload", "restart"].includes(tokens[1]));
   return {
     executable,
     tokens,
-    normalizedCommand: tokens.join(" "),
+    normalizedCommand: tokens.map((token) => SAFE_TOKEN_PATTERN.test(token) ? token : "'" + token.replace(/'/g, `'"'"'`) + "'").join(" "),
     absolutePaths,
+    pathTokenIndexes,
     executionMode: manualProfile ? "manual" : "auto",
     effect: manualProfile ? "service_control" : "read_only",
     riskLevel: manualProfile ? "medium" : "low"
@@ -50455,6 +50688,24 @@ function publicCommandReviewConfig(config = {}) {
 
 // config.js
 var DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm2", "/home/github"];
+function normalizeHostKeyFingerprints(value) {
+  if (value === void 0 || value === null || value === "") return [];
+  let parsed = value;
+  try {
+    if (typeof value === "string") parsed = JSON.parse(value);
+  } catch {
+    parsed = null;
+  }
+  if (!Array.isArray(parsed) || parsed.length > 4 || parsed.some((item) => {
+    if (typeof item !== "string" || !/^SHA256:[A-Za-z0-9+/]{43}$/.test(item)) return true;
+    return Buffer.from(item.slice(7), "base64").toString("base64").replace(/=+$/, "") !== item.slice(7);
+  })) {
+    const error = new Error("hostKeyFingerprints must contain at most four canonical SHA256 fingerprints");
+    Object.assign(error, { code: "SSH_HOST_KEY_INVALID", statusCode: 400, retriable: false });
+    throw error;
+  }
+  return [...new Set(parsed)];
+}
 var SOURCE_ROOT_KEY_PATTERN = /^[a-z][a-z0-9_-]{0,31}$/;
 var MAX_SOURCE_ROOTS = 20;
 var MAX_SOURCE_ROOT_LENGTH = 4096;
@@ -50678,13 +50929,17 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
       host: "127.0.0.1",
       port: agentPort
     },
+    auth: {
+      filePath: import_node_path2.default.resolve(mergedEnv.REMOTE_DEBUG_DATA_DIR || mergedEnv.REMOTE_DEBUG_PROJECT_ROOT || cwd, mergedEnv.REMOTE_DEBUG_AUTH_FILE || import_node_path2.default.join(".runtime", "http-auth.json"))
+    },
     ssh: {
       host: mergedEnv.REMOTE_DEBUG_HOST || "",
       port: sshPort,
       username: mergedEnv.REMOTE_DEBUG_USER || "",
       privateKeyPath: mergedEnv.REMOTE_DEBUG_PRIVATE_KEY_PATH || "",
       passphrase: mergedEnv.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || void 0,
-      readyTimeout: 1e4
+      readyTimeout: 1e4,
+      hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS)
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
     logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots) },
@@ -50797,7 +51052,8 @@ function fingerprintConfig(config) {
       username: config.ssh.username || "",
       privateKeyPath: config.ssh.privateKeyPath || "",
       passphrase: config.ssh.passphrase || "",
-      readyTimeout: config.ssh.readyTimeout
+      readyTimeout: config.ssh.readyTimeout,
+      hostKeyFingerprints: config.ssh.hostKeyFingerprints || []
     },
     security,
     mongodb: config.mongodb ? {
@@ -50845,9 +51101,55 @@ function assertSshConfig(config) {
 
 // server.js
 var import_express = __toESM(require_express2(), 1);
-var import_node_crypto11 = require("node:crypto");
+
+// http-auth.js
+var import_node_path3 = __toESM(require("node:path"), 1);
+var import_local_auth = __toESM(require_local_auth(), 1);
+var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/environment-report.js"]);
+function publicHealth(request, token, identity) {
+  const nonce = request.headers["x-remote-debug-challenge"];
+  return {
+    ...identity,
+    .../^[a-f0-9]{64}$/.test(nonce || "") ? { authProof: import_local_auth.default.healthProof(token, nonce, new URL(`http://${request.headers.host}`).origin) } : {}
+  };
+}
+function installHttpAuth(app, config, options = {}) {
+  const dataDir = import_node_path3.default.dirname(import_node_path3.default.dirname(config.runtime?.statePath || import_node_path3.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const filePath = config.auth?.filePath || import_local_auth.default.resolveAuthFile(dataDir);
+  const token = options.authToken || (options.initializeAuth ? import_local_auth.default.ensureAuthToken(filePath) : import_local_auth.default.readAuthToken(filePath));
+  if (!/^[a-f0-9]{64}$/.test(token)) throw import_local_auth.default.authError("valid HTTP authentication credentials are required");
+  app.locals.authToken = token;
+  app.use((request, response, next) => {
+    response.set("Cache-Control", "no-store");
+    response.set("X-Content-Type-Options", "nosniff");
+    response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    const fail = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
+    const port = request.socket.localPort;
+    const host = request.headers.host;
+    const listener = config.agent.host || "127.0.0.1";
+    const allowedHosts = [`${listener.includes(":") ? `[${listener}]` : listener}:${port}`, `127.0.0.1:${port}`, `localhost:${port}`];
+    if (port === 80) allowedHosts.push(listener.includes(":") ? `[${listener}]` : listener, "127.0.0.1", "localhost");
+    if (!allowedHosts.includes(host)) {
+      return fail(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
+    }
+    const origin = request.headers.origin;
+    if (origin !== void 0 && origin !== new URL(`http://${host}`).origin) {
+      return fail(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
+    }
+    if ((request.method === "GET" || request.method === "HEAD") && (request.path === "/health" || PUBLIC_ASSETS.has(request.path))) return next();
+    const header = request.headers.authorization;
+    if (!header) return fail(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
+    if (!import_local_auth.default.tokenMatches(header.startsWith("Bearer ") ? header.slice(7) : "", token)) {
+      return fail(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
+    }
+    next();
+  });
+}
+
+// server.js
+var import_node_crypto12 = require("node:crypto");
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
-var import_node_path7 = __toESM(require("node:path"), 1);
+var import_node_path8 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
 var import_node_url2 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
@@ -50929,7 +51231,7 @@ function createActivityLog(options = {}) {
 
 // audit.js
 var import_promises = __toESM(require("node:fs/promises"), 1);
-var import_node_path3 = __toESM(require("node:path"), 1);
+var import_node_path4 = __toESM(require("node:path"), 1);
 function safeLength(value) {
   return typeof value === "string" ? Buffer.byteLength(value, "utf8") : 0;
 }
@@ -50998,7 +51300,7 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
 }
 async function writeAuditLog(logPath, event2, now) {
   const entry = buildAuditEntry(event2, now);
-  await import_promises.default.mkdir(import_node_path3.default.dirname(logPath), { recursive: true });
+  await import_promises.default.mkdir(import_node_path4.default.dirname(logPath), { recursive: true });
   await import_promises.default.appendFile(logPath, `${JSON.stringify(entry)}
 `, "utf8");
   return entry;
@@ -51038,10 +51340,10 @@ function timestamp(value, field) {
 function normalizeLogQuery(input, config) {
   const projects = normalizeLogProjects(config.logs?.projects, config.security.allowedPaths, config.security.sourceRoots);
   const projectId = text(input.projectId, "projectId", 32);
-  const path10 = text(input.path, "path", 4096);
-  if (Boolean(projectId) === Boolean(path10)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
+  const path11 = text(input.path, "path", 4096);
+  if (Boolean(projectId) === Boolean(path11)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
   if (projectId && !Object.hasOwn(projects, projectId)) throw logInputError(`unknown log project: ${projectId}`, "LOG_PROJECT_NOT_FOUND");
-  if (path10) assertPathAllowed(path10, config.security.allowedPaths);
+  if (path11) assertPathAllowed(path11, config.security.allowedPaths);
   const contains = text(input.contains, "contains");
   const route = text(input.route, "route");
   if (route && !route.startsWith("/")) throw logInputError("route must be an exact absolute route", "INVALID_LOG_QUERY");
@@ -51051,7 +51353,7 @@ function normalizeLogQuery(input, config) {
   const toTime = timestamp(input.toTime, "toTime");
   const mode = input.mode || (contains || route || level || method || fromTime || toTime ? "search" : "latest");
   if (!LOG_QUERY_CAPABILITIES.modes.includes(mode)) throw logInputError("mode must be latest, search, files, or members", "INVALID_LOG_QUERY");
-  if (mode === "members" && (!path10 || !/\.(?:tar\.gz|tgz)$/i.test(path10))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
+  if (mode === "members" && (!path11 || !/\.(?:tar\.gz|tgz)$/i.test(path11))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
   if (mode === "latest" && (contains || route || level || method || fromTime || toTime)) throw logInputError("use search mode for record filters", "INVALID_LOG_QUERY");
   if (["files", "members"].includes(mode) && (contains || route || level || method || fromTime || toTime)) throw logInputError("record filters require search mode", "INVALID_LOG_QUERY");
   const dateFrom = date(input.date || input.dateFrom, "dateFrom");
@@ -51062,10 +51364,10 @@ function normalizeLogQuery(input, config) {
   const memberPath = text(input.memberPath, "memberPath", 4096);
   const memberOffset = input.memberOffset ?? 0;
   if (!Number.isInteger(memberOffset) || memberOffset < 0 || memberOffset > 5e3) throw logInputError("invalid memberOffset", "INVALID_LOG_QUERY");
-  if (memberPath && path10 && !/\.(?:tar\.gz|tgz)$/i.test(path10)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
+  if (memberPath && path11 && !/\.(?:tar\.gz|tgz)$/i.test(path11)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
   return {
     projectId,
-    path: path10,
+    path: path11,
     directories: projectId ? projects[projectId].directories : [],
     allowedRoots: config.security.allowedPaths,
     mode,
@@ -51147,6 +51449,17 @@ async function queryLogs(input, options) {
 
 // ssh.js
 var remoteReadStreams = /* @__PURE__ */ new WeakMap();
+function quotePosixArgument(value) {
+  return "'" + String(value).replace(/'/g, `'"'"'`) + "'";
+}
+function canonicalCommand(validation, canonicalPaths) {
+  if (validation.pathTokenIndexes.length !== canonicalPaths.length) throw new Error("canonical command path count mismatch");
+  const tokens = validation.tokens.slice();
+  validation.pathTokenIndexes.forEach((index, offset) => {
+    tokens[index] = canonicalPaths[offset];
+  });
+  return tokens.map(quotePosixArgument).join(" ");
+}
 function destroyRemoteReadStreams(sftp) {
   for (const { stream } of remoteReadStreams.get(sftp) || []) {
     stream.destroy?.();
@@ -51600,7 +51913,7 @@ async function runSSH(command, options) {
   try {
     return await supervisor.schedule(prepared.operation, async (timing) => {
       const validationStartedAt = Date.now();
-      await validateRemotePathsWithClient(
+      const canonicalPaths = await validateRemotePathsWithClient(
         timing.client,
         options.remotePaths || [],
         options.config,
@@ -51609,7 +51922,7 @@ async function runSSH(command, options) {
       );
       const result = await executeChannel(
         timing.client,
-        command,
+        options.commandValidation ? canonicalCommand(options.commandValidation, canonicalPaths) : command,
         prepared.operation,
         options,
         supervisor
@@ -53615,9 +53928,9 @@ async function readLog(options = {}) {
 
 // instance-registry.js
 var import_node_fs3 = __toESM(require("node:fs"), 1);
-var import_node_path4 = __toESM(require("node:path"), 1);
+var import_node_path5 = __toESM(require("node:path"), 1);
 var import_node_crypto9 = require("node:crypto");
-var REGISTRY_VERSION = 3;
+var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 var DEFAULT_HEALTH_INTERVAL_MS = 15e3;
 var DEFAULT_START_TIMEOUT_MS = 1e4;
@@ -53880,6 +54193,10 @@ function normalizeInstance(input, existing = {}) {
     throw error;
   }
   const passphrase = input.passphrase === "" || input.passphrase === void 0 ? existing.passphrase : input.passphrase;
+  const targetChanged = existing.host && host !== existing.host || existing.port && parsePort(input.port, existing.port, "port") !== existing.port;
+  const hostKeyFingerprints = normalizeHostKeyFingerprints(
+    input.hostKeyFingerprints === void 0 ? targetChanged ? [] : existing.hostKeyFingerprints : input.hostKeyFingerprints
+  );
   const preferredWorkerPort = input.preferredWorkerPort ?? input.workerPort ?? input.agentPort;
   const mongodb = normalizeMongoSettings(input.mongodb, existing.mongodb);
   const sourceRoots = normalizeSourceRoots(
@@ -53894,6 +54211,7 @@ function normalizeInstance(input, existing = {}) {
     port: parsePort(input.port, existing.port || 22, "port"),
     username,
     privateKeyPath,
+    hostKeyFingerprints,
     passphrase: passphrase || void 0,
     auditLog: input.auditLog === "" ? void 0 : input.auditLog ?? existing.auditLog,
     preferredWorkerPort: preferredWorkerPort === void 0 || preferredWorkerPort === "" ? existing.preferredWorkerPort : parsePort(preferredWorkerPort, void 0, "preferredWorkerPort"),
@@ -53932,18 +54250,18 @@ function hasUnavailablePreferredWorkerPort(rawInstances, manager, managerPort) {
   });
 }
 function registryRootFrom(cwd) {
-  const normalized = import_node_path4.default.resolve(cwd);
-  if (import_node_path4.default.basename(normalized).toLowerCase() === "agent") {
-    return import_node_path4.default.dirname(normalized);
+  const normalized = import_node_path5.default.resolve(cwd);
+  if (import_node_path5.default.basename(normalized).toLowerCase() === "agent") {
+    return import_node_path5.default.dirname(normalized);
   }
   return normalized;
 }
 function defaultRegistryPath(cwd = process.cwd(), env = process.env) {
   if (env.REMOTE_DEBUG_INSTANCE_REGISTRY) {
-    return import_node_path4.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
+    return import_node_path5.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
   }
-  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path4.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
-  return import_node_path4.default.resolve(root, ".remote-debug", "instances.json");
+  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path5.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
+  return import_node_path5.default.resolve(root, ".remote-debug", "instances.json");
 }
 function envDefaultInstance(env, cwd) {
   const dotEnv = loadDotEnv(cwd);
@@ -53971,6 +54289,7 @@ function envDefaultInstance(env, cwd) {
     username,
     privateKeyPath,
     passphrase: merged.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE,
+    hostKeyFingerprints: merged.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS,
     auditLog: merged.REMOTE_DEBUG_AUDIT_LOG,
     approvedCommands: {
       enabled: merged.REMOTE_DEBUG_APPROVED_COMMANDS,
@@ -54071,7 +54390,7 @@ var InstanceRegistry = class {
   }
   save(nextRegistry = this.registry) {
     this.registry = nextRegistry;
-    import_node_fs3.default.mkdirSync(import_node_path4.default.dirname(this.registryPath), { recursive: true });
+    import_node_fs3.default.mkdirSync(import_node_path5.default.dirname(this.registryPath), { recursive: true });
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
     import_node_fs3.default.writeFileSync(tempPath, `${JSON.stringify(this.registry, null, 2)}
 `, "utf8");
@@ -54178,16 +54497,17 @@ var InstanceRegistry = class {
 
 // worker-manager.js
 var import_node_child_process2 = require("node:child_process");
+var import_node_crypto11 = require("node:crypto");
 var import_promises3 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
-var import_node_path6 = __toESM(require("node:path"), 1);
+var import_node_path7 = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // memory-store.js
 var import_node_crypto10 = require("node:crypto");
 var import_node_fs4 = __toESM(require("node:fs"), 1);
 var import_promises2 = __toESM(require("node:fs/promises"), 1);
-var import_node_path5 = __toESM(require("node:path"), 1);
+var import_node_path6 = __toESM(require("node:path"), 1);
 var MEMORY_VERSION = 1;
 var MEMORY_STATUSES = /* @__PURE__ */ new Set([
   "missing",
@@ -54212,8 +54532,8 @@ function nowIso2() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function projectRootFrom(cwd) {
-  const normalized = import_node_path5.default.resolve(cwd);
-  return import_node_path5.default.basename(normalized).toLowerCase() === "agent" ? import_node_path5.default.dirname(normalized) : normalized;
+  const normalized = import_node_path6.default.resolve(cwd);
+  return import_node_path6.default.basename(normalized).toLowerCase() === "agent" ? import_node_path6.default.dirname(normalized) : normalized;
 }
 function stableJson(value) {
   if (Array.isArray(value)) {
@@ -54277,9 +54597,9 @@ function targetSummary(instance = {}) {
 }
 function memoryRootFromOptions(options) {
   if (options.memoryRoot) {
-    return import_node_path5.default.resolve(options.memoryRoot);
+    return import_node_path6.default.resolve(options.memoryRoot);
   }
-  return import_node_path5.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
+  return import_node_path6.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
 }
 function isObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -54587,7 +54907,7 @@ var MemoryStore = class {
     this.records = /* @__PURE__ */ new Map();
   }
   memoryPath(instanceId) {
-    return import_node_path5.default.resolve(this.root, instanceId, "memory.json");
+    return import_node_path6.default.resolve(this.root, instanceId, "memory.json");
   }
   ensureLoaded(instanceId) {
     if (this.records.has(instanceId)) {
@@ -54627,7 +54947,7 @@ var MemoryStore = class {
   }
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
-    await import_promises2.default.mkdir(import_node_path5.default.dirname(filePath), { recursive: true });
+    await import_promises2.default.mkdir(import_node_path6.default.dirname(filePath), { recursive: true });
     const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto10.randomUUID)()}.tmp`;
     await import_promises2.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
@@ -54801,7 +55121,7 @@ var MemoryStore = class {
 
 // worker-manager.js
 var moduleFilePath = typeof __filename === "string" ? __filename : (0, import_node_url.fileURLToPath)(void 0);
-var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path6.default.dirname(moduleFilePath);
+var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path7.default.dirname(moduleFilePath);
 var RESTORE_SNAPSHOT_VERSION = 1;
 var RESTORE_SHUTDOWN_REASONS = /* @__PURE__ */ new Set(["lease-expired"]);
 var RESTORE_SNAPSHOT_REASONS = /* @__PURE__ */ new Set(["active-runtime", ...RESTORE_SHUTDOWN_REASONS]);
@@ -54893,17 +55213,17 @@ async function waitForExit(child, timeoutMs) {
   });
 }
 function projectRootFrom2(cwd) {
-  const normalized = import_node_path6.default.resolve(cwd);
-  return import_node_path6.default.basename(normalized).toLowerCase() === "agent" ? import_node_path6.default.dirname(normalized) : normalized;
+  const normalized = import_node_path7.default.resolve(cwd);
+  return import_node_path7.default.basename(normalized).toLowerCase() === "agent" ? import_node_path7.default.dirname(normalized) : normalized;
 }
 function defaultRestoreSnapshotPath(cwd) {
-  return import_node_path6.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
+  return import_node_path7.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
 }
 function defaultRestoreSnapshotDiagnosticPath(cwd) {
-  return import_node_path6.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
+  return import_node_path7.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
 }
 function configEnv(instance, port, manager, cwd, memoryInit) {
-  const instanceDir = import_node_path6.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance.id);
+  const instanceDir = import_node_path7.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance.id);
   return {
     REMOTE_DEBUG_WORKER: "1",
     REMOTE_DEBUG_INSTANCE_ID: instance.id,
@@ -54914,7 +55234,8 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_USER: instance.username,
     REMOTE_DEBUG_PRIVATE_KEY_PATH: instance.privateKeyPath,
     REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance.passphrase || "",
-    REMOTE_DEBUG_AUDIT_LOG: instance.auditLog || import_node_path6.default.resolve(instanceDir, "audit.jsonl"),
+    REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance.hostKeyFingerprints || []),
+    REMOTE_DEBUG_AUDIT_LOG: instance.auditLog || import_node_path7.default.resolve(instanceDir, "audit.jsonl"),
     REMOTE_DEBUG_APPROVED_COMMANDS: instance.approvedCommands?.enabled ? "1" : "0",
     REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.executionTimeoutMs),
     REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.maxExecutionTimeoutMs),
@@ -54925,7 +55246,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
-    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path6.default.resolve(instanceDir, ".runtime", "agent-state.json"),
+    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path7.default.resolve(instanceDir, ".runtime", "agent-state.json"),
     REMOTE_DEBUG_RUNTIME_ID: process.env.REMOTE_DEBUG_RUNTIME_ID || "development",
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0"
   };
@@ -54936,7 +55257,7 @@ var WorkerManager = class {
     this.managerPort = options.managerPort;
     this.cwd = options.cwd || process.cwd();
     this.nodePath = options.nodePath || process.execPath;
-    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path6.default.resolve(moduleDirectory, "worker-entry.js");
+    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path7.default.resolve(moduleDirectory, "worker-entry.js");
     this.forkWorker = options.forkWorker || ((entryPath, forkOptions) => (0, import_node_child_process2.fork)(entryPath, [], forkOptions));
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
@@ -55019,7 +55340,7 @@ var WorkerManager = class {
   }
   async writeRestoreSnapshotDiagnostic(diagnostic) {
     try {
-      await import_promises3.default.mkdir(import_node_path6.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
+      await import_promises3.default.mkdir(import_node_path7.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
       const tempPath = `${this.restoreSnapshotDiagnosticPath}.${process.pid}.${Date.now()}.tmp`;
       await import_promises3.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
 `, "utf8");
@@ -55098,7 +55419,7 @@ var WorkerManager = class {
       lastReason: reason,
       instances
     };
-    await import_promises3.default.mkdir(import_node_path6.default.dirname(this.restoreSnapshotPath), { recursive: true });
+    await import_promises3.default.mkdir(import_node_path7.default.dirname(this.restoreSnapshotPath), { recursive: true });
     const tempPath = `${this.restoreSnapshotPath}.${process.pid}.${Date.now()}.tmp`;
     await import_promises3.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
 `, "utf8");
@@ -55349,6 +55670,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
+      authToken: (0, import_node_crypto11.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -55427,7 +55749,9 @@ var WorkerManager = class {
       this.handleWorkerExit(id, code, signal);
     });
     try {
-      await this.waitForReady(id, child, manager.startTimeoutMs);
+      const ready = this.waitForReady(id, child, manager.startTimeoutMs);
+      child.send({ type: "initialize-auth", token: runtime.authToken });
+      await ready;
       runtime.status = "running";
       runtime.lastHeartbeatAt = nowIso3();
       runtime.lastError = null;
@@ -55470,7 +55794,7 @@ var WorkerManager = class {
           return;
         }
         if (message.ok) {
-          if (message.protocolVersion !== API_VERSION) {
+          if (message.protocolVersion !== API_VERSION || message.localAuthentication !== true) {
             finish(
               managerError(
                 `worker protocol version mismatch: expected ${API_VERSION}, received ${message.protocolVersion ?? "missing"}`,
@@ -55792,6 +56116,9 @@ var WorkerManager = class {
         }
       );
     }
+    if (!/^[a-f0-9]{64}$/.test(runtime.authToken || "")) {
+      throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401);
+    }
     const url = `http://${this.managerConfig().host}:${runtime.workerPort}${pathName}`;
     const operation = {
       operationId: payload?.operationId || `manager-${Date.now()}`,
@@ -55825,7 +56152,9 @@ var WorkerManager = class {
     try {
       response = await this.fetchImpl(url, {
         method: "POST",
+        redirect: "error",
         headers: {
+          Authorization: `Bearer ${runtime.authToken}`,
           "Content-Type": "application/json",
           "X-Remote-Debug-Source": headers["x-remote-debug-source"] || headers["X-Remote-Debug-Source"] || "http-api",
           "X-Remote-Debug-Operation-Id": operation.operationId
@@ -55897,7 +56226,7 @@ var WorkerManager = class {
 
 // server.js
 var moduleFilePath2 = typeof __filename === "string" ? __filename : (0, import_node_url2.fileURLToPath)(void 0);
-var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path7.default.dirname(moduleFilePath2);
+var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path8.default.dirname(moduleFilePath2);
 var DEFAULT_AGENT_LIFETIME2 = "manual";
 var DESKTOP_AGENT_LIFETIME = "desktop";
 var DEFAULT_MANAGER_LEASE_TTL_MS = 45e3;
@@ -55906,7 +56235,7 @@ var MAX_MANAGER_LEASE_TTL_MS = 12e4;
 var DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5e3;
 var DEFAULT_DESKTOP_STARTUP_GRACE_MS = 6e4;
 function registerEnvironmentReport(app, config) {
-  const dataDir = import_node_path7.default.dirname(import_node_path7.default.dirname(config.runtime?.statePath || import_node_path7.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const dataDir = import_node_path8.default.dirname(import_node_path8.default.dirname(config.runtime?.statePath || import_node_path8.default.join(process.cwd(), ".runtime", "agent-state.json")));
   app.get("/api/environment-report", (_request, response) => {
     response.set("Cache-Control", "no-store");
     response.json({ ok: true, mode: "manager", report: import_environment_report.default.readReport(dataDir) });
@@ -55950,8 +56279,8 @@ async function writeRuntimeState(config, event2) {
     ...event2,
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
-  await import_promises4.default.mkdir(import_node_path7.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto11.randomUUID)()}.tmp`;
+  await import_promises4.default.mkdir(import_node_path8.default.dirname(statePath), { recursive: true });
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto12.randomUUID)()}.tmp`;
   await import_promises4.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises4.default.rename(tempPath, statePath);
@@ -55971,7 +56300,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto11.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto12.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -56257,20 +56586,21 @@ function createApp(options = {}) {
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = (0, import_express.default)();
-  const publicDir = import_node_path7.default.join(moduleDirectory2, "public");
+  const publicDir = import_node_path8.default.join(moduleDirectory2, "public");
+  installHttpAuth(app, config, options);
   app.use("/mongodb/imports/prepare", import_express.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express.default.json({ limit: "5mb" }));
   app.use(import_express.default.json({ limit: "512kb" }));
   app.get("/", (_request, response) => {
-    response.sendFile(import_node_path7.default.join(publicDir, "dashboard.html"));
+    response.sendFile(import_node_path8.default.join(publicDir, "dashboard.html"));
   });
   registerEnvironmentReport(app, config);
   app.get("/favicon.ico", (_request, response) => {
     response.status(204).end();
   });
   app.use(import_express.default.static(publicDir, { index: false, maxAge: 0 }));
-  app.get("/health", (_request, response) => {
-    response.json({ ok: true, name: "remote-debug-agent", apiVersion: API_VERSION });
+  app.get("/health", (request, response) => {
+    response.json(publicHealth(request, app.locals.authToken, { ok: true, name: "remote-debug-agent", apiVersion: API_VERSION, localAuthentication: true }));
   });
   app.get("/api/capabilities", (_request, response) => {
     response.json({ ok: true, capabilities: securityCapabilities(config) });
@@ -56307,16 +56637,18 @@ function createApp(options = {}) {
         deadlineAt: requestOperation.deadlineAt
       };
       publishStage(activity, operation, "validated");
+      let canonicalPaths = [];
       if (customPathResolver && validation.absolutePaths.length > 0) {
-        await resolveRemotePaths2(validation.absolutePaths, {
+        canonicalPaths = await resolveRemotePaths2(validation.absolutePaths, {
           config,
           operation: requestOperation
         });
       }
-      const result = await runSSH2(validation.normalizedCommand, {
+      const result = await runSSH2(customPathResolver && validation.absolutePaths.length ? canonicalCommand(validation, canonicalPaths || validation.absolutePaths) : validation.normalizedCommand, {
         config,
         operation: requestOperation,
         remotePaths: customPathResolver ? [] : validation.absolutePaths,
+        commandValidation: customPathResolver ? void 0 : validation,
         onStdout: (chunk) => {
           publishStage(activity, operation, "stdout", {
             chunk: previewText(String(chunk))
@@ -56506,6 +56838,7 @@ function createApp(options = {}) {
       });
       let stopped;
       for (const [index, command] of claimedDraft.commands.entries()) {
+        const validation = request.body?.automatic === true ? validateCommand(command, config.security) : void 0;
         publishStage(activity, operation, "command-started", {
           commandIndex: index,
           commandPreview: redactCommand(command)
@@ -56514,6 +56847,8 @@ function createApp(options = {}) {
         const result = await runSSH2(command, {
           config,
           operation: requestOperation,
+          commandValidation: validation,
+          remotePaths: validation?.absolutePaths || [],
           onStdout: (chunk) => {
             publishStage(activity, operation, "stdout", {
               commandIndex: index,
@@ -57450,6 +57785,7 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
       operationDeadlines: true,
       cancellation: true,
       structuredHealth: true,
+      localAuthentication: true,
       logs: true
     },
     agent: {
@@ -57521,30 +57857,32 @@ function createManagerApp(options = {}) {
     ...options.lifecycleOptions
   });
   const app = (0, import_express.default)();
-  const publicDir = import_node_path7.default.join(moduleDirectory2, "public");
+  const publicDir = import_node_path8.default.join(moduleDirectory2, "public");
   let commandReviewInFlight = false;
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
+  installHttpAuth(app, config, { ...options, initializeAuth: true });
   app.use("/mongodb/imports/prepare", import_express.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express.default.json({ limit: "5mb" }));
   app.use(import_express.default.json({ limit: "512kb" }));
   let restoreCheckScheduled = false;
   app.get("/", (_request, response) => {
-    response.sendFile(import_node_path7.default.join(publicDir, "dashboard.html"));
+    response.sendFile(import_node_path8.default.join(publicDir, "dashboard.html"));
   });
   registerEnvironmentReport(app, config);
   app.get("/favicon.ico", (_request, response) => {
     response.status(204).end();
   });
   app.use(import_express.default.static(publicDir, { index: false, maxAge: 0 }));
-  app.get("/health", (_request, response) => {
-    response.json({
+  app.get("/health", (request, response) => {
+    response.json(publicHealth(request, app.locals.authToken, {
       ok: true,
       name: "remote-debug-agent",
       apiVersion: API_VERSION,
-      mode: "manager"
-    });
+      mode: "manager",
+      localAuthentication: true
+    }));
   });
   app.get("/status", (_request, response) => {
     response.json({
@@ -57970,6 +58308,7 @@ function createManagerApp(options = {}) {
             draftId: draft.draftId,
             commandHash: draft.commandHash,
             confirmation: APPROVED_COMMAND_CONFIRMATION,
+            automatic: true,
             operationId: requestOperation.operationId,
             timeoutMs: requestOperation.timeoutMs,
             deadlineAt: requestOperation.deadlineAt
@@ -58155,7 +58494,7 @@ function isServerEntrypointProcess(options = {}) {
   const env = options.env || process.env;
   const filePath = options.filePath || moduleFilePath2;
   return Boolean(
-    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path7.default.resolve(filePath) === import_node_path7.default.resolve(argv[1])
+    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path8.default.resolve(filePath) === import_node_path8.default.resolve(argv[1])
   );
 }
 function listenHttpServer(app, config, eventFactory) {
@@ -58287,6 +58626,7 @@ if (isServerEntrypointProcess()) {
 // ssh-connection-supervisor.js
 var import_node_events2 = require("node:events");
 var import_promises5 = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto13 = require("node:crypto");
 var import_ssh22 = __toESM(require_lib4(), 1);
 
 // channel-scheduler.js
@@ -58554,6 +58894,8 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     this.connectedAt = null;
     this.lastActivityAt = null;
     this.lastError = null;
+    this.hostVerificationError = null;
+    this.hostVerification = { status: "unverified", observedFingerprint: null };
     this.authentication = {
       status: "unknown",
       lastSuccessAt: null,
@@ -58576,6 +58918,18 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
   }
   async connectionOptions() {
     assertSshConfig(this.config);
+    const fingerprints = normalizeHostKeyFingerprints(this.config.ssh.hostKeyFingerprints);
+    if (!fingerprints.length) {
+      throw operationError("configure a server host key fingerprint verified through a trusted channel", {
+        code: "SSH_HOST_KEY_REQUIRED",
+        statusCode: 503,
+        layer: "ssh",
+        phase: "host-verification",
+        retriable: false
+      });
+    }
+    this.hostVerificationError = null;
+    this.hostVerification = { status: "unverified", observedFingerprint: null };
     return {
       host: this.config.ssh.host,
       port: this.config.ssh.port,
@@ -58584,7 +58938,20 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
       passphrase: this.config.ssh.passphrase,
       readyTimeout: this.config.ssh.readyTimeout,
       keepaliveInterval: this.keepaliveIntervalMs,
-      keepaliveCountMax: this.keepaliveCountMax
+      keepaliveCountMax: this.keepaliveCountMax,
+      hostVerifier: (key) => {
+        const fingerprint = `SHA256:${(0, import_node_crypto13.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
+        const matched = fingerprints.includes(fingerprint);
+        this.hostVerification = { status: matched ? "verified" : "mismatch", observedFingerprint: fingerprint };
+        if (!matched) this.hostVerificationError = operationError(`server host key does not match trusted fingerprints; observed ${fingerprint}`, {
+          code: "SSH_HOST_KEY_MISMATCH",
+          statusCode: 502,
+          layer: "ssh",
+          phase: "host-verification",
+          retriable: false
+        });
+        return matched;
+      }
     };
   }
   async start() {
@@ -58592,6 +58959,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     return this.snapshot();
   }
   connectNow(options = {}) {
+    if (this.state === "blocked") return Promise.reject(this.wrapConnectionError(this.lastError));
     if (this.stopping) {
       return Promise.reject(operationError("SSH supervisor is stopping", {
         code: "OPERATION_CANCELLED",
@@ -58647,6 +59015,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
       });
     } catch (error) {
       client.end?.();
+      error = this.hostVerificationError || error;
       this.recordConnectionFailure(error, options.initial);
       throw this.wrapConnectionError(error);
     }
@@ -58672,6 +59041,14 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     return client;
   }
   wrapConnectionError(error, operationId) {
+    if (error?.code?.startsWith("SSH_HOST_KEY_")) return operationError(error.message, {
+      code: error.code,
+      statusCode: error.statusCode || 502,
+      layer: "ssh",
+      phase: "host-verification",
+      retriable: false,
+      operationId
+    });
     const authFailed = authenticationFailure(error);
     return operationError(error?.message || "SSH connection failed", {
       code: authFailed ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
@@ -58684,6 +59061,13 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     });
   }
   recordConnectionFailure(error, initial) {
+    if (error?.code?.startsWith("SSH_HOST_KEY_")) {
+      this.lastError = { code: error.code, message: error.message, at: nowIso4(this.now()) };
+      this.hostVerification.status = error.code === "SSH_HOST_KEY_REQUIRED" ? "required" : "mismatch";
+      this.nextRetryAt = null;
+      this.setState("blocked", { error });
+      return;
+    }
     this.lastError = {
       code: authenticationFailure(error) ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
       message: error?.message || "SSH connection failed",
@@ -58717,7 +59101,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     this.scheduleReconnect();
   }
   scheduleReconnect() {
-    if (this.stopping || this.reconnectTimer) {
+    if (this.stopping || this.reconnectTimer || this.state === "blocked") {
       return;
     }
     this.reconnectAttempts += 1;
@@ -58763,6 +59147,8 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
       const onState = () => {
         if (this.state === "ready" && this.client) {
           finish(null, this.client);
+        } else if (this.state === "blocked") {
+          finish(this.wrapConnectionError(this.lastError, operation.operationId));
         } else if (this.state === "closed" || this.state === "stopping") {
           finish(operationError("SSH supervisor is not available", {
             code: "OPERATION_CANCELLED",
@@ -58827,6 +59213,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
         lastError: this.lastError
       },
       authentication: { ...this.authentication },
+      hostVerification: { ...this.hostVerification },
       target: {
         status: this.state === "ready" ? "reachable" : this.hasConnected ? "degraded" : "unknown",
         lastCheckedAt: this.connectedAt,
@@ -59096,7 +59483,7 @@ async function discoverMemory(config, options = {}) {
 }
 
 // worker-entry.js
-var import_node_path8 = __toESM(require("node:path"), 1);
+var import_node_path9 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
 var moduleFilePath3 = typeof __filename === "string" ? __filename : (0, import_node_url3.fileURLToPath)(void 0);
 function parsePositiveInt3(value, fallback) {
@@ -59180,7 +59567,7 @@ function scheduleMemoryInit(config, options = {}) {
 }
 function isEntrypointProcess() {
   return Boolean(
-    process.argv[1] && import_node_path8.default.resolve(moduleFilePath3) === import_node_path8.default.resolve(process.argv[1])
+    process.argv[1] && import_node_path9.default.resolve(moduleFilePath3) === import_node_path9.default.resolve(process.argv[1])
   );
 }
 function installWorkerShutdownHandlers(shutdown, processObject = process) {
@@ -59193,8 +59580,34 @@ function installWorkerShutdownHandlers(shutdown, processObject = process) {
   processObject.once("SIGTERM", () => shutdown("SIGTERM"));
   processObject.once("SIGINT", () => shutdown("SIGINT"));
 }
+function receiveWorkerAuth(processObject = process, timeoutMs = 1e4) {
+  return new Promise((resolve, reject) => {
+    const finish = (error, token) => {
+      clearTimeout(timer);
+      processObject.off("message", onMessage);
+      processObject.off("disconnect", onDisconnect);
+      if (error) reject(error);
+      else resolve(token);
+    };
+    const failure = () => Object.assign(new Error("worker initialization requires private IPC credentials"), { code: "LOCAL_AUTH_REQUIRED" });
+    const onMessage = (message) => {
+      if (message?.type !== "initialize-auth") return;
+      if (!/^[a-f0-9]{64}$/.test(message.token || "")) finish(failure());
+      else finish(null, message.token);
+    };
+    const onDisconnect = () => finish(failure());
+    const timer = setTimeout(onDisconnect, timeoutMs);
+    if (!processObject.connected) {
+      finish(failure());
+      return;
+    }
+    processObject.on("message", onMessage);
+    processObject.once("disconnect", onDisconnect);
+  });
+}
 async function main() {
   const config = loadConfig();
+  const authToken = await receiveWorkerAuth();
   const supervisor = new SshConnectionSupervisor(config);
   const sshOperations = createSSHOperations(supervisor);
   const backgroundSshOperations = createSSHOperations(supervisor, { priority: "background" });
@@ -59209,7 +59622,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const app = createApp({ config, sshSupervisor: supervisor, ...sshOperations });
+  const app = createApp({ config, authToken, sshSupervisor: supervisor, ...sshOperations });
   const server = app.listen(config.agent.port, config.agent.host, () => {
     send({
       type: "ready",
@@ -59218,6 +59631,7 @@ async function main() {
       pid: process.pid,
       port: config.agent.port,
       protocolVersion: API_VERSION,
+      localAuthentication: true,
       health: healthSnapshot(supervisor)
     });
     scheduleMemoryInit(config, {
@@ -59278,6 +59692,7 @@ if (isEntrypointProcess()) {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   installWorkerShutdownHandlers,
+  receiveWorkerAuth,
   runMemoryInit,
   scheduleMemoryInit
 });

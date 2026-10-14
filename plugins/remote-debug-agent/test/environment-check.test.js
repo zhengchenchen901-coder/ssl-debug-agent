@@ -8,6 +8,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import environment from "../environment-report.cjs";
 import dashboard from "../diagnostic-dashboard.cjs";
+import localAuth from "../local-auth.cjs";
 
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -157,6 +158,7 @@ test("runtime events update only their own attempt and do not claim tool availab
 
 async function verifyHandshake(t, executable = process.execPath, extraEnv = {}) {
   const { dataDir, env } = await fixture(t);
+  localAuth.ensureAuthToken(localAuth.resolveAuthFile(dataDir));
   const child = spawn(executable, [path.join(pluginRoot, "launch.cjs")], {
     env: { ...env, ...extraEnv, REMOTE_DEBUG_AGENT_URL: "http://127.0.0.1:1" }, stdio: ["pipe", "pipe", "pipe"],
   });

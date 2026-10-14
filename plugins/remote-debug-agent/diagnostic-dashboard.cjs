@@ -5,6 +5,7 @@ const path = require("path");
 const crypto = require("crypto");
 const childProcess = require("child_process");
 const environment = require("./environment-report.cjs");
+const localAuth = require("./local-auth.cjs");
 
 function statePath(dataDir) { return path.join(dataDir, ".runtime", "diagnostic-dashboard.json"); }
 
@@ -41,8 +42,16 @@ async function ensureDashboard(pluginRoot, dataDir, report) {
   const candidates = [agentState && agentState.port, port].filter(function (value) { return Number.isInteger(value) && value > 0 && value < 65536; });
   for (const candidate of candidates) {
     const endpoint = "http://127.0.0.1:" + candidate;
-    const result = await request(endpoint + "/api/environment-report");
-    if (result && result.ok && result.report && result.report.dataDir === dataDir) {
+    let options;
+    try {
+      const token = localAuth.readAuthToken(localAuth.resolveAuthFile(dataDir, settings));
+      const nonce = crypto.randomBytes(32).toString("hex");
+      const health = await request(endpoint + "/health", { headers: { "X-Remote-Debug-Challenge": nonce } });
+      localAuth.verifyHealthProof(token, nonce, endpoint, health);
+      options = { headers: { Authorization: "Bearer " + token } };
+    } catch (_) {}
+    const result = await request(endpoint + "/api/environment-report", options);
+    if (options && result && result.ok && result.mode === "manager" && result.report && result.report.dataDir === dataDir) {
       report.dashboardUrl = endpoint; environment.saveReport(dataDir, report); return;
     }
   }

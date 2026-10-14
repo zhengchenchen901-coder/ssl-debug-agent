@@ -23,6 +23,30 @@ const closeDrawerButton = document.querySelector("#closeDrawerButton");
 const drawerTitle = document.querySelector("#drawerTitle");
 const drawerBody = document.querySelector("#drawerBody");
 const toast = document.querySelector("#toast");
+const authPanel = document.querySelector("#authPanel");
+const authForm = document.querySelector("#authForm");
+const authLogout = document.querySelector("#authLogout");
+const authMessage = document.querySelector("#authMessage");
+let authToken = sessionStorage.getItem("remote-debug-auth") || "";
+window.remoteDebugAuthHeaders = () => authToken ? { Authorization: `Bearer ${authToken}` } : {};
+
+function lockPanel() {
+  authToken = "";
+  sessionStorage.removeItem("remote-debug-auth");
+  state.instances = [];
+  state.online = false;
+  closeDrawer();
+  closeModal();
+  document.querySelector("#environmentPanel").hidden = true;
+  updateAuthVisibility();
+  setConnection("offline", "面板未解锁");
+}
+
+function updateAuthVisibility() {
+  authPanel.hidden = Boolean(authToken);
+  authLogout.hidden = !authToken;
+  document.querySelectorAll(".metrics, .table-panel:not(#authPanel):not(#environmentPanel)").forEach((node) => { node.hidden = !authToken; });
+}
 
 const statusLabels = {
   running: "运行中",
@@ -128,14 +152,17 @@ function showToast(message) {
 }
 
 async function api(path, options = {}) {
+  if (!authToken) throw Object.assign(new Error("请先解锁本地面板"), { code: "LOCAL_AUTH_REQUIRED" });
   const response = await fetch(path, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
+      ...window.remoteDebugAuthHeaders(),
     },
   });
   const raw = await response.text();
+  if (response.status === 401) lockPanel();
   let data;
   try {
     data = raw ? JSON.parse(raw) : {};
@@ -157,6 +184,7 @@ async function api(path, options = {}) {
 }
 
 async function loadInstances() {
+  if (!authToken) return;
   try {
     const data = await api("/api/instances", { cache: "no-store" });
     state.instances = data.instances || [];
@@ -431,6 +459,7 @@ function resetForm(instance) {
   instanceForm.elements.username.value = instance?.username || "";
   instanceForm.elements.privateKeyPath.value = instance?.privateKeyPath || "";
   instanceForm.elements.passphrase.value = "";
+  instanceForm.elements.hostKeyFingerprints.value = (instance?.hostKeyFingerprints || []).join("\n");
   instanceForm.elements.preferredWorkerPort.value = instance?.preferredWorkerPort || "";
   instanceForm.elements.auditLog.value = instance?.auditLog || "";
   if (instanceForm.elements.logProjects) instanceForm.elements.logProjects.value = JSON.stringify(instance?.logProjects || {}, null, 2);
@@ -577,6 +606,7 @@ function formPayload() {
     username: form.username.value.trim(),
     privateKeyPath: form.privateKeyPath.value.trim(),
     passphrase: form.passphrase.value,
+    hostKeyFingerprints: form.hostKeyFingerprints.value.split(/\s+/).filter(Boolean),
     preferredWorkerPort: form.preferredWorkerPort.value,
     auditLog: form.auditLog.value.trim(),
     ...(form.logProjects?.value.trim() ? { logProjects: JSON.parse(form.logProjects.value) } : {}),
@@ -864,5 +894,24 @@ instanceForm.addEventListener("submit", submitForm);
 closeDrawerButton.addEventListener("click", closeDrawer);
 drawerMask.addEventListener("click", closeDrawer);
 
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const input = document.querySelector("#authToken");
+  authToken = input.value.trim();
+  input.value = "";
+  try {
+    await api("/status");
+    sessionStorage.setItem("remote-debug-auth", authToken);
+    authMessage.textContent = "";
+    updateAuthVisibility();
+    window.dispatchEvent(new Event("remote-debug-unlocked"));
+    await loadInstances();
+  } catch (error) { lockPanel(); authMessage.textContent = error.message; }
+});
+authLogout.addEventListener("click", lockPanel);
+for (const field of ["host", "port"]) {
+  instanceForm.elements[field].addEventListener("input", () => { instanceForm.elements.hostKeyFingerprints.value = ""; });
+}
+updateAuthVisibility();
 loadInstances();
 setInterval(loadInstances, 5000);

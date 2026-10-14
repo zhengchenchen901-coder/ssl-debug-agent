@@ -8,6 +8,7 @@ const config = {
     host: "example.test",
     port: 22,
     username: "app",
+    hostKeyFingerprints: ["SHA256:" + "A".repeat(43)],
     privateKeyPath: "test-key",
     readyTimeout: 1_000,
   },

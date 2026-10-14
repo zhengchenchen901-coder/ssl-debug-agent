@@ -1,3 +1,4 @@
+import { TEST_AUTH_TOKEN, fetch } from "./helpers/http-auth.js";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -15,7 +16,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 test("existing manager dashboard reads a failed MCP launch's report from its data directory", async (t) => {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "manager-environment-report-"));
   t.after(() => fs.rm(dataDir, { recursive: true, force: true }));
-  const app = createManagerApp({ config: loadConfig({}, dataDir), cwd: dataDir, env: {} });
+  const app = createManagerApp({ authToken: TEST_AUTH_TOKEN, config: loadConfig({}, dataDir), cwd: dataDir, env: {} });
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
@@ -43,7 +44,7 @@ async function render(mode) {
   const context = {
     document: { querySelector: (s) => elements.get(s.slice(1)), createElement: () => new Element(),
       querySelectorAll: () => [instancePanel] },
-    window: { environmentSnapshot: { mode, report: { status: "failed", checkedAt: "2026-10-09T14:00:00Z", stage: "environment",
+    window: { addEventListener: () => {}, environmentSnapshot: { mode, report: { status: "failed", checkedAt: "2026-10-09T14:00:00Z", stage: "environment",
       checks: [{ label: "Node.js", actual: "14.21.3<script>test</script>", required: ">=22.18 <23", status: "fail", remedy: "使用 Node 22" }],
       failures: [{ checkedAt: "2026-10-09T13:00:00Z", stage: "environment", checks: [{ label: "Node.js", actual: "14.21.3" }] }] } } },
     fetch: () => { throw new Error("offline view must not fetch"); }, setInterval: () => {},

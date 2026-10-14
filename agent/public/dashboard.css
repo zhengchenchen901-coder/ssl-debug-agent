@@ -37,6 +37,13 @@
 .environment-history p { margin-top: 8px; }
 [hidden] { display: none !important; }
 
+#authPanel { padding: 24px; margin-bottom: 16px; }
+#authPanel p { color: var(--muted); line-height: 1.6; }
+#authForm { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+#authToken { flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; }
+#authMessage { width: 100%; color: var(--red); }
+#authLogout { margin-bottom: 16px; }
+
 * {
   box-sizing: border-box;
 }

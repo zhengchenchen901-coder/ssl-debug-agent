@@ -1,11 +1,12 @@
 import { execFile, spawn } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomUUID, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import environmentReport from "./environment-report.cjs";
 import diagnosticDashboard from "./diagnostic-dashboard.cjs";
+import localAuth from "./local-auth.cjs";
 import {
   migrateLegacyData,
   normalizeWindowsExtendedPath,
@@ -1331,6 +1332,7 @@ function fingerprintConfigFromEnv(env, dataDir, port) {
       privateKeyPath: env.REMOTE_DEBUG_PRIVATE_KEY_PATH || "",
       passphrase: env.REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE || "",
       readyTimeout: 10_000,
+      hostKeyFingerprints: env.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS ? JSON.parse(env.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS) : [],
     },
     security: publicSecurityConfig(env, dataDir),
     audit: {
@@ -1347,13 +1349,21 @@ function configFingerprintFromEnv(env, dataDir, port) {
     .digest("hex");
 }
 
+const credentialCache = new Map();
+
 function agentSettings() {
   const env = loadRemoteDebugEnv();
   const dataDir = resolveDataDir(process.env);
   const configPath = resolveConfigPath(process.env, dataDir);
   const explicitUrl = env.REMOTE_DEBUG_AGENT_URL || "";
   const port = parsePositivePort(env.REMOTE_DEBUG_AGENT_PORT, DEFAULT_AGENT_PORT);
-  const agentUrl = explicitUrl || `http://127.0.0.1:${port}`;
+  const agentUrl = localAuth.validateAgentUrl(explicitUrl || `http://127.0.0.1:${port}`).href.replace(/\/$/, "");
+  const authFile = localAuth.resolveAuthFile(dataDir, env);
+  const credentialKey = `${Boolean(explicitUrl)}:${authFile}`;
+  if (!credentialCache.has(credentialKey)) {
+    credentialCache.set(credentialKey, explicitUrl ? localAuth.readAuthToken(authFile) : localAuth.ensureAuthToken(authFile));
+  }
+  const authToken = credentialCache.get(credentialKey);
   const explicitAgentDir = env.REMOTE_DEBUG_AGENT_DIR || "";
   const runtime = readRuntimeManifest(__dirname);
   if (!explicitUrl && !explicitAgentDir && !runtime.manifest) {
@@ -1386,6 +1396,8 @@ function agentSettings() {
 
   return {
     env,
+    authFile,
+    authToken,
     dataDir,
     configPath,
     explicitUrl: Boolean(explicitUrl),
@@ -1768,6 +1780,7 @@ async function fetchJson(url, options = {}) {
     const { timeoutMs: _timeoutMs, ...fetchOptions } = options;
     const response = await fetch(url, {
       ...fetchOptions,
+      redirect: "error",
       signal: controller.signal,
     });
     const text = await response.text();
@@ -1786,6 +1799,25 @@ async function fetchJson(url, options = {}) {
   }
 }
 
+async function fetchAgentJson(settings, pathName, options = {}) {
+  const origin = new URL(settings.agentUrl).origin;
+  if (origin.startsWith("http:")) {
+    const nonce = randomBytes(32).toString("hex");
+    const health = await fetchJson(new URL("/health", settings.agentUrl), {
+      headers: { "X-Remote-Debug-Challenge": nonce }, signal: options.signal, timeoutMs: options.timeoutMs,
+    });
+    localAuth.verifyHealthProof(settings.authToken, nonce, origin, health.parsed);
+  }
+  const result = await fetchJson(new URL(pathName, settings.agentUrl), {
+    ...options,
+    headers: { ...options.headers, Authorization: `Bearer ${settings.authToken}` },
+  });
+  if ([401, 403].includes(result.response.status)) {
+    throw localAuth.authError(result.parsed.error?.message || "Agent authentication failed", result.parsed.error?.code || "LOCAL_AUTH_INVALID", result.response.status);
+  }
+  return result;
+}
+
 function leasePayload() {
   return {
     clientId: leaseClientId,
@@ -1797,7 +1829,7 @@ function leasePayload() {
 
 async function renewAgentLease(settings, phase) {
   try {
-    const { response, parsed } = await fetchJson(new URL("/api/leases", settings.agentUrl), {
+    const { response, parsed } = await fetchAgentJson(settings, "/api/leases", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1833,7 +1865,7 @@ async function releaseAgentLease(lease = activeAgentLease) {
 
   if (!lease.settings.explicitUrl) {
     try {
-      await fetchJson(new URL(`/api/leases/${encodeURIComponent(leaseClientId)}`, lease.settings.agentUrl), {
+      await fetchAgentJson(lease.settings, `/api/leases/${encodeURIComponent(leaseClientId)}`, {
         method: "DELETE",
         headers: {
           "X-Remote-Debug-Source": "codex-plugin",
@@ -1900,13 +1932,20 @@ function isConnectionRefused(error) {
 
 async function probeAgent(settings) {
   try {
-    const { response, parsed } = await fetchJson(new URL("/status", settings.agentUrl));
+    const nonce = randomBytes(32).toString("hex");
+    const origin = new URL(settings.agentUrl).origin;
+    const health = await fetchJson(new URL("/health", settings.agentUrl), { headers: { "X-Remote-Debug-Challenge": nonce } });
+    if (health.parsed?.name !== "remote-debug-agent") return { kind: "occupied", response: health.response };
+    if (health.parsed.localAuthentication !== true) throw localAuth.authError("stop the legacy Agent and reload the updated plugin; unauthenticated Agent reuse is disabled", "AGENT_AUTH_UPGRADE_REQUIRED", 409);
+    if (origin.startsWith("http:")) localAuth.verifyHealthProof(settings.authToken, nonce, origin, health.parsed);
+    const { response, parsed } = await fetchAgentJson(settings, "/status");
     if (parsed?.name === "remote-debug-agent") {
       return { kind: "agent", response, status: parsed };
     }
 
     return { kind: "occupied", response, status: parsed };
   } catch (error) {
+    if (error.code?.startsWith("LOCAL_") || error.code === "AGENT_AUTH_UPGRADE_REQUIRED") throw error;
     if (isConnectionRefused(error)) {
       return { kind: "unreachable", error };
     }
@@ -1930,6 +1969,7 @@ function agentStatusIsHealthy(status, settings) {
       capabilities.operationDeadlines === true &&
       capabilities.cancellation === true &&
       capabilities.structuredHealth === true &&
+      capabilities.localAuthentication === true &&
       runtimeMatches &&
       portMatches,
   );
@@ -2241,6 +2281,7 @@ async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
       detached: true,
       env: mergeEnvironment(process.env, settings.env, {
         REMOTE_DEBUG_AGENT_PORT: String(settings.port),
+        REMOTE_DEBUG_AUTH_FILE: settings.authFile,
         REMOTE_DEBUG_AGENT_LIFETIME: "desktop",
         REMOTE_DEBUG_PROJECT_ROOT: settings.dataDir,
         REMOTE_DEBUG_RUNTIME_ID: settings.runtimeId,
@@ -2732,7 +2773,7 @@ async function requestAgent(pathName, payload, options = {}) {
     const remainingMs = operation
       ? Math.max(1, operation.deadlineAt - Date.now())
       : payload?.timeoutMs || DEFAULT_TIMEOUT_MS;
-    const result = await fetchJson(new URL(pathName, settings.agentUrl), {
+    const result = await fetchAgentJson(settings, pathName, {
       method,
       headers: {
         "Content-Type": "application/json",
@@ -2763,6 +2804,12 @@ async function requestAgent(pathName, payload, options = {}) {
         "request",
         error,
       );
+    }
+    if (error.code?.startsWith("LOCAL_") || error.code === "AGENT_AUTH_UPGRADE_REQUIRED") {
+      error.operationId ||= operation?.operationId;
+      error.layer = "manager";
+      error.phase = "authentication";
+      throw error;
     }
     const wrapped = new Error(`Remote Debug Agent is unavailable at ${settings.agentUrl}: ${error.message}`);
     wrapped.code = "AGENT_UNAVAILABLE";

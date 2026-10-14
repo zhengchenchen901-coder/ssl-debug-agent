@@ -1,3 +1,4 @@
+import { TEST_AUTH_TOKEN, fetch } from "./helpers/http-auth.js";
 import assert from "node:assert/strict";
 import fsPromises from "node:fs/promises";
 import http from "node:http";
@@ -156,7 +157,7 @@ async function startReviewServer({
     status: "pending",
     expiresAt: "2099-01-01T00:00:00.000Z",
   };
-  const app = createManagerApp({
+  const app = createManagerApp({ authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     config: {
       ...reviewConfig({ approvedEnabled, autoExecuteEnabled }),

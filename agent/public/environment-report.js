@@ -52,6 +52,7 @@
     });
     history.hidden = !(report.failures || []).length;
     if (data.mode !== "manager") {
+      ["#authPanel", "#authLogout"].forEach(function (id) { const node = document.querySelector(id); if (node) node.hidden = true; });
       document.querySelectorAll(".metrics, .table-panel:not(#environmentPanel)").forEach(function (node) { node.hidden = true; });
       document.querySelector("#connectionText").textContent = data.mode === "offline" ? "离线诊断" : "仅诊断模式";
       document.querySelector("#connectionDot").className = "dot offline";
@@ -63,7 +64,8 @@
   async function load() {
     if (window.environmentSnapshot) { render(window.environmentSnapshot); return; }
     try {
-      const response = await fetch("/api/environment-report", { cache: "no-store" });
+      const response = await fetch("/api/environment-report", { cache: "no-store", headers: window.remoteDebugAuthHeaders ? window.remoteDebugAuthHeaders() : {} });
+      if (response.status === 401) { panel.hidden = true; return; }
       if (!response.ok) throw new Error("报告读取失败");
       render(await response.json());
     } catch (_) {
@@ -71,6 +73,7 @@
     }
   }
   refresh.addEventListener("click", load);
+  window.addEventListener("remote-debug-unlocked", load);
   load();
   if (!window.environmentSnapshot) setInterval(load, 5000);
 })();

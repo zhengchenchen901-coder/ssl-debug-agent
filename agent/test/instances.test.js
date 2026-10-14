@@ -54,7 +54,7 @@ class FakeWorkerProcess extends EventEmitter {
   }
 }
 
-test("registry migrates v1 instance records to v3 manager config", async () => {
+test("registry migrates v1 instance records to v4 manager config", async () => {
   const dir = await tempDir("remote-debug-registry-");
   const registryPath = path.join(dir, "instances.json");
   await fs.writeFile(
@@ -84,7 +84,7 @@ test("registry migrates v1 instance records to v3 manager config", async () => {
 
   const registry = new InstanceRegistry({ cwd: dir, registryPath, env: {} });
 
-  assert.equal(registry.registry.version, 3);
+  assert.equal(registry.registry.version, 4);
   assert.equal(registry.managerConfig().workerPortRange.start, 4400);
   assert.equal(registry.get("default").name, "默认实例");
   assert.equal(registry.get("default").passphrase, undefined);
@@ -246,7 +246,7 @@ test("worker manager forwards MongoDB profile metadata to the selected worker", 
     canBindPort: async () => true,
     forkWorker: (_entryPath, options) => {
       workerEnv = options.env;
-      setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
+      setImmediate(() => child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 }));
       return child;
     },
   });
@@ -423,7 +423,7 @@ test("worker manager restart recovers stopped instances without disrupting runni
     forkWorker: () => {
       const child = new FakeWorkerProcess(nextPid += 1);
       children.push(child);
-      setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
+      setImmediate(() => child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 }));
       return child;
     },
   });
@@ -469,7 +469,7 @@ test("worker manager preserves bounded stderr when a worker exits", async () => 
     cwd: dir,
     canBindPort: async () => true,
     forkWorker: () => {
-      setImmediate(() => child.emit("message", { type: "ready", ok: true, protocolVersion: 2 }));
+      setImmediate(() => child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 }));
       return child;
     },
   });
@@ -623,7 +623,7 @@ test("worker manager stops workers after stopped health and reuses released port
       nextPid += 1;
       workers.push(child);
       setImmediate(() => {
-        child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
+        child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 });
       });
       return child;
     },
@@ -644,7 +644,7 @@ test("worker manager stops workers after stopped health and reuses released port
     assert.deepEqual(runningSnapshot.instances.map((item) => item.id), ["a"]);
 
     const stopped = await manager.stopInstance("a", "stopped");
-    assert.deepEqual(workers[0].sent[0], { type: "shutdown", reason: "stopped" });
+    assert.deepEqual(workers[0].sent.find((message) => message.type === "shutdown"), { type: "shutdown", reason: "stopped" });
     assert.equal(stopped.instance.id, "a");
     assert.equal(stopped.runtime.status, "stopped");
     assert.equal(stopped.runtime.pid, null);
@@ -726,7 +726,7 @@ test("worker manager restores running workers from a maintained runtime snapshot
     nextPid += 1;
     workers.push(child);
     setImmediate(() => {
-      child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
+      child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 });
     });
     return child;
   };
@@ -827,7 +827,7 @@ test("worker manager preserves lease-expiry snapshots while stopping workers", a
       const child = new FakeWorkerProcess(2500);
       workers.push(child);
       setImmediate(() => {
-        child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
+        child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 });
       });
       return child;
     },
@@ -841,7 +841,7 @@ test("worker manager preserves lease-expiry snapshots while stopping workers", a
     assert.equal(snapshot.lastAction, "shutdown");
     assert.equal(snapshot.lastReason, "lease-expired");
     assert.deepEqual(snapshot.instances.map((item) => item.id), ["a"]);
-    assert.equal(workers[0].sent[0].reason, "lease-expired");
+    assert.equal(workers[0].sent.find((message) => message.type === "shutdown").reason, "lease-expired");
     await assert.rejects(() => fs.readFile(restoreSnapshotDiagnosticPath, "utf8"), /ENOENT/);
   } finally {
     clearInterval(manager.monitorTimer);
@@ -886,7 +886,7 @@ test("worker manager does not restore instances stopped before lease expiry", as
     forkWorker: () => {
       const child = new FakeWorkerProcess(3000);
       setImmediate(() => {
-        child.emit("message", { type: "ready", ok: true, protocolVersion: 2 });
+        child.emit("message", { type: "ready", ok: true, localAuthentication: true, protocolVersion: 2 });
       });
       return child;
     },

@@ -5,6 +5,35 @@ import test from "node:test";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
+test("dashboard unlock, logout and expired credentials stay confined to one tab", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const calls = [];
+  let expired = false;
+  const { context, elements } = createDashboardHarness(async (route, options) => {
+    calls.push({ route, headers: options.headers });
+    return { ok: !expired, status: expired ? 401 : 200, text: async () => JSON.stringify(expired ? { ok: false, error: { code: "LOCAL_AUTH_INVALID", message: "expired" } } : { ok: true, instances: [] }) };
+  }, null);
+  vm.runInContext(script, context);
+  assert.equal(calls.length, 0);
+  assert.equal(elements.get("authPanel").hidden, false);
+  elements.get("authToken").value = "c".repeat(64);
+  await elements.get("authForm").listeners.submit({ preventDefault() {} });
+  assert.equal(elements.get("authPanel").hidden, true);
+  assert.equal(elements.get("authToken").value, "");
+  assert.equal(context.sessionStorage.getItem("remote-debug-auth"), "c".repeat(64));
+  assert.ok(calls.every((call) => call.headers.Authorization === "Bearer " + "c".repeat(64)));
+  expired = true;
+  await context.loadInstances();
+  assert.equal(context.sessionStorage.getItem("remote-debug-auth"), null);
+  assert.equal(elements.get("authPanel").hidden, false);
+  expired = false;
+  elements.get("authToken").value = "d".repeat(64);
+  await elements.get("authForm").listeners.submit({ preventDefault() {} });
+  elements.get("authLogout").listeners.click();
+  assert.equal(context.sessionStorage.getItem("remote-debug-auth"), null);
+  assert.equal(elements.get("authPanel").hidden, false);
+});
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 class FakeElement {
@@ -69,7 +98,10 @@ class FakeElement {
     this.attributes[name] = String(value);
   }
 
-  addEventListener() {}
+  addEventListener(name, handler) {
+    this.listeners ||= {};
+    this.listeners[name] = handler;
+  }
 
   focus() {}
 
@@ -85,7 +117,7 @@ class FakeElement {
   }
 }
 
-function createDashboardHarness(fetchImpl) {
+function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
   const elements = new Map();
   const ids = [
     "connectionDot",
@@ -117,7 +149,7 @@ function createDashboardHarness(fetchImpl) {
     "closeDrawerButton",
     "drawerTitle",
     "drawerBody",
-    "toast",
+    "toast", "authPanel", "authForm", "authLogout", "authMessage", "authToken", "environmentPanel",
   ];
 
   for (const id of ids) {
@@ -135,6 +167,7 @@ function createDashboardHarness(fetchImpl) {
     username: new FakeElement("input"),
     privateKeyPath: new FakeElement("input"),
     passphrase: new FakeElement("input"),
+    hostKeyFingerprints: new FakeElement("textarea"),
     preferredWorkerPort: new FakeElement("input"),
     auditLog: new FakeElement("input"),
     enabled: new FakeElement("input"),
@@ -150,14 +183,18 @@ function createDashboardHarness(fetchImpl) {
     mongodbAllowedCollections: new FakeElement("textarea"),
   };
 
+  let storedToken = initialToken;
   const context = {
     document: {
       querySelector: (selector) => elements.get(selector.replace(/^#/, "")),
+      querySelectorAll: () => [],
       createElement: (tagName) => new FakeElement(tagName),
     },
+    sessionStorage: { getItem: () => storedToken, setItem: (_key, value) => { storedToken = value; }, removeItem: () => { storedToken = null; } },
+    Event: class { constructor(type) { this.type = type; } },
     fetch: fetchImpl,
     window: {
-      confirm: () => true,
+      confirm: () => true, dispatchEvent: () => {}, addEventListener: () => {},
     },
     setInterval: () => 0,
     setTimeout: () => 0,

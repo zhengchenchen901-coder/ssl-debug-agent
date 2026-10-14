@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { randomBytes } from "node:crypto";
+import localAuth from "../local-auth.cjs";
 import { fileURLToPath } from "node:url";
 import {
   normalizeWindowsExtendedPath,
@@ -391,13 +393,20 @@ function agentUrlFromEnv(env) {
   return `http://127.0.0.1:${Number.isInteger(port) ? port : 4343}`;
 }
 
-async function fetchAgentStatus(agentUrl) {
+async function fetchAgentStatus(agentUrl, env, dataDir) {
   const deadline = Date.now() + 7000;
   let lastError;
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(new URL("/status", agentUrl));
+      agentUrl = localAuth.validateAgentUrl(agentUrl).href;
+      const token = localAuth.readAuthToken(localAuth.resolveAuthFile(dataDir, env));
+      if (new URL(agentUrl).protocol === "http:") {
+        const nonce = randomBytes(32).toString("hex");
+        const health = await fetch(new URL("/health", agentUrl), { redirect: "error", headers: { "X-Remote-Debug-Challenge": nonce } });
+        localAuth.verifyHealthProof(token, nonce, new URL(agentUrl).origin, await health.json());
+      }
+      const response = await fetch(new URL("/status", agentUrl), { redirect: "error", headers: { Authorization: `Bearer ${token}` } });
       const text = await response.text();
       let parsed;
       try {
@@ -491,7 +500,7 @@ async function main() {
     }
 
     try {
-      const { response, parsed } = await fetchAgentStatus(agentUrl);
+      const { response, parsed } = await fetchAgentStatus(agentUrl, env, dataDir);
       const status = response.ok && parsed?.name === "remote-debug-agent" ? "ok" : "unexpected";
       const target = parsed?.target
         ? `${parsed.target.username || "unknown"}@${parsed.target.host || "unknown"}:${parsed.target.port || ""}`

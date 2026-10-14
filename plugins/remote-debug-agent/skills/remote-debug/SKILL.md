@@ -200,3 +200,9 @@ For "Why is port 9000 unreachable?":
 4. Inspect recent nginx and app logs under `/var/log`, `/home/app`, or `/home/github`, and PM2 metadata under `/root/.pm2`.
 5. Report whether the problem is listener absence, bind address, proxy config,
    crash loop, or resource pressure.
+
+## Authenticated runtime and verified SSH hosts
+
+Version 2.2.1 requires MCP HTTP authentication and verified SSH host-key fingerprints. Do not bypass authentication, suggest disabling host verification, or trust an unverified ssh-keyscan result. For LOCAL_AUTH_REQUIRED/LOCAL_AUTH_INVALID, fix the local credential configuration; for SSH_HOST_KEY_REQUIRED/SSH_HOST_KEY_MISMATCH, ask the user to verify the server fingerprint through a trusted channel and configure the instance. Do not repeatedly restart an instance with a host-key error.
+
+All file operands in diagnostic commands must use approved absolute paths. For example, use `grep -n error /var/log/app.log`, `ls -lah /var/log`, or `tail -n 100 /var/log/app.log`. Relative file operands, recursive/symlink-following options, grep pattern files, and follow tails are rejected. Use the structured log-query tools for broader searches.

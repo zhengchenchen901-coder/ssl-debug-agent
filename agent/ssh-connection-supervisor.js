@@ -1,8 +1,9 @@
 import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { Client } from "ssh2";
 import { ChannelScheduler } from "./channel-scheduler.js";
-import { assertSshConfig } from "./config.js";
+import { assertSshConfig, normalizeHostKeyFingerprints } from "./config.js";
 import {
   assertOperationActive,
   operationError,
@@ -59,6 +60,8 @@ export class SshConnectionSupervisor extends EventEmitter {
     this.connectedAt = null;
     this.lastActivityAt = null;
     this.lastError = null;
+    this.hostVerificationError = null;
+    this.hostVerification = { status: "unverified", observedFingerprint: null };
     this.authentication = {
       status: "unknown",
       lastSuccessAt: null,
@@ -83,6 +86,14 @@ export class SshConnectionSupervisor extends EventEmitter {
 
   async connectionOptions() {
     assertSshConfig(this.config);
+    const fingerprints = normalizeHostKeyFingerprints(this.config.ssh.hostKeyFingerprints);
+    if (!fingerprints.length) {
+      throw operationError("configure a server host key fingerprint verified through a trusted channel", {
+        code: "SSH_HOST_KEY_REQUIRED", statusCode: 503, layer: "ssh", phase: "host-verification", retriable: false,
+      });
+    }
+    this.hostVerificationError = null;
+    this.hostVerification = { status: "unverified", observedFingerprint: null };
     return {
       host: this.config.ssh.host,
       port: this.config.ssh.port,
@@ -92,6 +103,15 @@ export class SshConnectionSupervisor extends EventEmitter {
       readyTimeout: this.config.ssh.readyTimeout,
       keepaliveInterval: this.keepaliveIntervalMs,
       keepaliveCountMax: this.keepaliveCountMax,
+      hostVerifier: (key) => {
+        const fingerprint = `SHA256:${createHash("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
+        const matched = fingerprints.includes(fingerprint);
+        this.hostVerification = { status: matched ? "verified" : "mismatch", observedFingerprint: fingerprint };
+        if (!matched) this.hostVerificationError = operationError(`server host key does not match trusted fingerprints; observed ${fingerprint}`, {
+          code: "SSH_HOST_KEY_MISMATCH", statusCode: 502, layer: "ssh", phase: "host-verification", retriable: false,
+        });
+        return matched;
+      },
     };
   }
 
@@ -101,6 +121,7 @@ export class SshConnectionSupervisor extends EventEmitter {
   }
 
   connectNow(options = {}) {
+    if (this.state === "blocked") return Promise.reject(this.wrapConnectionError(this.lastError));
     if (this.stopping) {
       return Promise.reject(operationError("SSH supervisor is stopping", {
         code: "OPERATION_CANCELLED",
@@ -160,6 +181,7 @@ export class SshConnectionSupervisor extends EventEmitter {
       });
     } catch (error) {
       client.end?.();
+      error = this.hostVerificationError || error;
       this.recordConnectionFailure(error, options.initial);
       throw this.wrapConnectionError(error);
     }
@@ -188,6 +210,9 @@ export class SshConnectionSupervisor extends EventEmitter {
   }
 
   wrapConnectionError(error, operationId) {
+    if (error?.code?.startsWith("SSH_HOST_KEY_")) return operationError(error.message, {
+      code: error.code, statusCode: error.statusCode || 502, layer: "ssh", phase: "host-verification", retriable: false, operationId,
+    });
     const authFailed = authenticationFailure(error);
     return operationError(error?.message || "SSH connection failed", {
       code: authFailed ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
@@ -201,6 +226,13 @@ export class SshConnectionSupervisor extends EventEmitter {
   }
 
   recordConnectionFailure(error, initial) {
+    if (error?.code?.startsWith("SSH_HOST_KEY_")) {
+      this.lastError = { code: error.code, message: error.message, at: nowIso(this.now()) };
+      this.hostVerification.status = error.code === "SSH_HOST_KEY_REQUIRED" ? "required" : "mismatch";
+      this.nextRetryAt = null;
+      this.setState("blocked", { error });
+      return;
+    }
     this.lastError = {
       code: authenticationFailure(error) ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
       message: error?.message || "SSH connection failed",
@@ -236,7 +268,7 @@ export class SshConnectionSupervisor extends EventEmitter {
   }
 
   scheduleReconnect() {
-    if (this.stopping || this.reconnectTimer) {
+    if (this.stopping || this.reconnectTimer || this.state === "blocked") {
       return;
     }
     this.reconnectAttempts += 1;
@@ -283,6 +315,8 @@ export class SshConnectionSupervisor extends EventEmitter {
       const onState = () => {
         if (this.state === "ready" && this.client) {
           finish(null, this.client);
+        } else if (this.state === "blocked") {
+          finish(this.wrapConnectionError(this.lastError, operation.operationId));
         } else if (this.state === "closed" || this.state === "stopping") {
           finish(operationError("SSH supervisor is not available", {
             code: "OPERATION_CANCELLED",
@@ -356,6 +390,7 @@ export class SshConnectionSupervisor extends EventEmitter {
         lastError: this.lastError,
       },
       authentication: { ...this.authentication },
+      hostVerification: { ...this.hostVerification },
       target: {
         status: this.state === "ready" ? "reachable" : this.hasConnected ? "degraded" : "unknown",
         lastCheckedAt: this.connectedAt,

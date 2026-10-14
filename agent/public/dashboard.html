@@ -20,6 +20,17 @@
     </header>
 
     <main>
+      <section id="authPanel" class="table-panel" aria-label="本地访问令牌">
+        <h2>解锁本地面板</h2>
+        <p>从本地受保护的 .runtime/http-auth.json 文件复制访问令牌。令牌仅保留在当前标签页。</p>
+        <form id="authForm">
+          <label for="authToken">访问令牌</label>
+          <input id="authToken" type="password" autocomplete="off" required />
+          <button class="button" type="submit">解锁</button>
+          <p id="authMessage" role="alert"></p>
+        </form>
+      </section>
+      <button id="authLogout" class="button" type="button" hidden>退出面板</button>
       <section id="environmentPanel" class="table-panel environment-panel" aria-label="插件环境检查" hidden>
         <div class="table-toolbar">
           <div>
@@ -131,6 +142,11 @@
           <label class="wide">
             <span>私钥口令</span>
             <input name="passphrase" type="password" autocomplete="new-password" placeholder="编辑时留空表示不修改" />
+          </label>
+          <label class="wide">
+            <span>服务器主机密钥指纹（每行一个，最多四个）</span>
+            <textarea name="hostKeyFingerprints" rows="3" placeholder="SHA256:..."></textarea>
+            <small>通过服务器控制台或管理员核验指纹后填写；缺少或不匹配时拒绝连接。不要直接信任未经核验的扫描结果。</small>
           </label>
           <label>
             <span>首选 Worker 端口</span>

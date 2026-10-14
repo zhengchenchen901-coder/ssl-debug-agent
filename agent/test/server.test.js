@@ -1,3 +1,4 @@
+import { TEST_AUTH_TOKEN, fetch } from "./helpers/http-auth.js";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
@@ -132,7 +133,7 @@ test("HTTP log query executes a bounded helper and rejects unknown projects", { 
   config.security.allowedPaths = [dir];
   config.logs = { projects: { be: { directories: [dir] } } };
   await fsPromises.writeFile(path.join(dir, "app.log"), "older\nlatest\n");
-  const server = await listen(createApp({ config, runSSH: async (command, options) => {
+  const server = await listen(createApp({ authToken: TEST_AUTH_TOKEN, config, runSSH: async (command, options) => {
     assert.equal(command, "node");
     return { exitCode: 0, stdout: execFileSync(process.execPath, [], { input: options.stdin, encoding: "utf8" }), timing: { queueMs: 0 } };
   } }));
@@ -155,7 +156,7 @@ test("manager log mappings persist and override stale worker mappings immediatel
   let forwarded;
   const stub = makeWorkerManagerStub();
   stub.callInstance = async (id, route, payload) => { forwarded = payload; return { ok: true, instanceId: id, route }; };
-  const server = await listen(createManagerApp({ config: makeConfig(path.join(dir, "audit.jsonl")), registry, workerManager: stub }));
+  const server = await listen(createManagerApp({ authToken: TEST_AUTH_TOKEN, config: makeConfig(path.join(dir, "audit.jsonl")), registry, workerManager: stub }));
   t.after(() => close(server));
   const set = await postJson(server, "/api/log-projects", { instanceId: "default", projectId: "be", directories: ["/home/github/app/logs"] });
   assert.equal(set.status, 200);
@@ -223,7 +224,7 @@ function collectSseUntil(server, predicate, trigger) {
       else resolve(value);
     };
 
-    request = http.get(`http://127.0.0.1:${address.port}/events`, (response) => {
+    request = http.get(`http://127.0.0.1:${address.port}/events`, { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } }, (response) => {
       response.setEncoding("utf8");
       response.on("data", (chunk) => {
         buffer += chunk;
@@ -255,7 +256,7 @@ function collectSseUntil(server, predicate, trigger) {
 test("HTTP API works with mocked SSH", { skip: !depsInstalled }, async () => {
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-http-"));
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config: makeConfig(path.join(dir, "audit.jsonl")),
     runSSH: async (cmd) => ({
       stdout: `ran:${cmd}`,
@@ -379,7 +380,7 @@ test("HTTP MongoDB query endpoint is instance-scoped and read-only", { skip: !de
     database: "yennefer",
   };
   const calls = [];
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config,
     runMongoQuery: async (query) => {
       calls.push(query);
@@ -444,7 +445,7 @@ test("HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and lis
     allowedCollections: ["members"],
   };
   const calls = [];
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config,
     runMongoMutation: async (input) => {
       calls.push(input);
@@ -524,7 +525,7 @@ test("HTTP MongoDB bulk endpoints forward uploads and job controls through the a
     bulkEnabled: true,
   };
   const calls = [];
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config,
     runMongoBulk: async (input) => {
       calls.push(input);
@@ -586,7 +587,7 @@ test("HTTP MongoDB bulk rollback remains available when new bulk jobs are disabl
     bulkEnabled: false,
   };
   const calls = [];
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config,
     runMongoBulk: async (input) => {
       calls.push(input);
@@ -619,7 +620,7 @@ test("HTTP MongoDB bulk rollback remains available when new bulk jobs are disabl
 test("dashboard serves status and streams remote interaction activity", { skip: !depsInstalled }, async () => {
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-dashboard-"));
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config: makeConfig(path.join(dir, "audit.jsonl")),
     runSSH: async (cmd, options) => {
       options.onStdout?.("streamed output");
@@ -675,7 +676,7 @@ test("dashboard serves status and streams remote interaction activity", { skip: 
 test("manager API creates, lists, updates, and deletes instances", { skip: !depsInstalled }, async () => {
   const { createManagerApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-manager-api-"));
-  const app = createManagerApp({
+  const app = createManagerApp({ authToken: TEST_AUTH_TOKEN,
     config: makeConfig(path.join(dir, "audit.jsonl")),
     cwd: dir,
     env: {},
@@ -829,7 +830,7 @@ test("manager API includes memory and updates it from proxied tool results", { s
           durationMs: 1,
         },
   };
-  const app = createManagerApp({
+  const app = createManagerApp({ authToken: TEST_AUTH_TOKEN,
     config: makeConfig(path.join(dir, "audit.jsonl")),
     cwd: dir,
     registry,
@@ -900,7 +901,7 @@ test("manager lease registration schedules instance restore", { skip: !depsInsta
       return { restored: ["a"], skipped: [], failed: [] };
     },
   };
-  const app = createManagerApp({
+  const app = createManagerApp({ authToken: TEST_AUTH_TOKEN,
     config,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
@@ -953,7 +954,7 @@ test("manager lease restore check publishes missing snapshot diagnostics", { ski
       };
     },
   };
-  const app = createManagerApp({
+  const app = createManagerApp({ authToken: TEST_AUTH_TOKEN,
     config,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
@@ -996,7 +997,7 @@ test("manual manager lifetime does not shut down when no lease exists", { skip: 
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.lifecycle = { lifetime: "manual" };
   const workerManager = makeWorkerManagerStub();
-  const server = startServer(config, {
+  const server = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
     workerManager,
@@ -1021,7 +1022,7 @@ test("desktop manager lifetime shuts down when no lease arrives", { skip: !depsI
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.lifecycle = { lifetime: "desktop" };
   const workerManager = makeWorkerManagerStub();
-  const server = startServer(config, {
+  const server = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
     workerManager,
@@ -1047,7 +1048,7 @@ test("desktop manager lifetime shuts down after lease expiry", { skip: !depsInst
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.lifecycle = { lifetime: "desktop" };
   const workerManager = makeWorkerManagerStub();
-  const server = startServer(config, {
+  const server = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
     workerManager,
@@ -1085,7 +1086,7 @@ test("manual manager shutdown API triggers graceful shutdown", { skip: !depsInst
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.lifecycle = { lifetime: "manual" };
   const workerManager = makeWorkerManagerStub();
-  const server = startServer(config, {
+  const server = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
     workerManager,
@@ -1111,7 +1112,7 @@ test("desktop manager shutdown API is rejected", { skip: !depsInstalled }, async
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.lifecycle = { lifetime: "desktop" };
   const workerManager = makeWorkerManagerStub();
-  const server = startServer(config, {
+  const server = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
     workerManager,
@@ -1145,7 +1146,7 @@ test("manager signal handlers perform graceful shutdown", { skip: !depsInstalled
   const exitPromise = new Promise((resolve) => {
     resolveExit = resolve;
   });
-  const server = startServer(config, {
+  const server = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
     workerManager,
@@ -1181,7 +1182,7 @@ test("startServer records port binding errors in runtime state", { skip: !depsIn
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-bind-"));
   const config = makeConfig(path.join(dir, "audit.jsonl"));
   config.agent.port = blocker.address().port;
-  const failedServer = startServer(config, {
+  const failedServer = startServer(config, { authToken: TEST_AUTH_TOKEN,
     cwd: dir,
     registryPath: path.join(dir, "instances.json"),
   });
@@ -1203,7 +1204,7 @@ test("HTTP /run rejects canonical path escape detected before command execution"
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-escape-"));
   let executed = false;
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config: makeConfig(path.join(dir, "audit.jsonl")),
     runSSH: async () => {
       executed = true;

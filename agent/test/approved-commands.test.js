@@ -1,3 +1,4 @@
+import { TEST_AUTH_TOKEN, fetch } from "./helpers/http-auth.js";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
@@ -77,7 +78,7 @@ async function postJson(server, route, body) {
 async function startApprovedApp({ approvedCommands = {}, runSSH } = {}) {
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "remote-debug-approved-"));
-  const app = createApp({
+  const app = createApp({ authToken: TEST_AUTH_TOKEN,
     config: makeConfig(path.join(dir, "audit.jsonl"), approvedCommands),
     runSSH: runSSH || (async () => ({
       stdout: "",
