@@ -11,3 +11,4 @@ plugins/remote-debug-agent/.runtime/
 .playwright-cli/
 *.log
 output/
+.DS_Store
