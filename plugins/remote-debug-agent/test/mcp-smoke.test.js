@@ -117,6 +117,7 @@ function createJsonLineMessageReader(child) {
 function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir)) {
   const drafts = new Map();
   const leaseRequests = [];
+  const forwardedRequests = [];
   const server = http.createServer((request, response) => {
     if (request.url === "/health") { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion: 2, authProof: localAuth.healthProof(localAuth.readAuthToken(authFile), request.headers["x-remote-debug-challenge"], `http://${request.headers.host}`) })); return; }
     assert.equal(request.headers.authorization, `Bearer ${localAuth.readAuthToken(authFile)}`);
@@ -198,6 +199,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
     });
     request.on("end", () => {
       const parsed = JSON.parse(body);
+      forwardedRequests.push({ route: request.url, body: parsed });
       if (request.url.startsWith("/sandbox/") || request.url.startsWith("/mongodb/sandbox/access/") || request.url === "/api/sandbox/local") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(JSON.stringify({ ok: true, forwardedRoute: request.url, forwardedBody: parsed }));
@@ -491,6 +493,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
     });
   });
   server.leaseRequests = leaseRequests;
+  server.forwardedRequests = forwardedRequests;
 
   return new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -1163,8 +1166,8 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: arguments_ } }));
       const result = JSON.parse((await readMessage()).result.content[0].text);
       assert.equal(result.ok, true, JSON.stringify(result));
-      if (name !== "remote_debug_list_log_projects") assert.equal(result.projectId, "be");
-      if (name === "remote_debug_query_logs") assert.equal(result.route, "/v3/order");
+      if (name !== "remote_debug_list_log_projects") assert.equal(agentStub.forwardedRequests.at(-1).body.projectId, "be");
+      if (name === "remote_debug_query_logs") assert.equal(agentStub.forwardedRequests.at(-1).body.route, "/v3/order");
     }
 
     child.stdin.write(
@@ -1284,7 +1287,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.equal(preparedImport.kind, "import_plan");
     assert.equal(preparedImport.importId, "seed-01");
     assert.equal(preparedImport.affectedCount, 2000);
-    assert.equal(preparedImport.batchSize, 2000);
+    assert.equal(agentStub.forwardedRequests.at(-1).body.batchSize, 2000);
 
     const callMongoTool = async (id, name, arguments_) => {
       child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: arguments_ } }));
@@ -1306,8 +1309,9 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     const bulkJob = await callMongoTool(483, "remote_debug_mongodb_get_bulk_job", {
       instanceId: "default", jobId: "bulk-123", includeDifferences: true, offset: 10, limit: 5,
     });
-    assert.equal(bulkJob.includeDifferences, true);
-    assert.equal(bulkJob.offset, 10);
+    assert.equal(bulkJob.jobId, "bulk-123");
+    assert.equal(agentStub.forwardedRequests.at(-1).body.includeDifferences, true);
+    assert.equal(agentStub.forwardedRequests.at(-1).body.offset, 10);
     const bulkJobs = await callMongoTool(484, "remote_debug_mongodb_list_bulk_jobs", {
       instanceId: "default", offset: 5, limit: 2,
     });
@@ -1411,12 +1415,15 @@ test("sandbox tools forward only scoped identities and keep local audit access o
       child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: id++, method: "tools/call", params: { name, arguments: args } }));
       const message = await readMessage();
       const result = JSON.parse(message.result.content[0].text);
-      assert.equal(result.forwardedRoute, route);
-      assert.equal(result.forwardedBody.jobId, args.jobId);
-      assert.equal(result.forwardedBody.cleanupHash, args.cleanupHash);
-      assert.equal(result.forwardedBody.setupId, args.setupId);
-      assert.equal(result.forwardedBody.planHash, args.planHash);
-      if (args.area === "local") assert.equal(result.forwardedBody.action, "status");
+      assert.equal(result.ok, true);
+      assert.equal(result.forwardedBody, undefined, "unknown response fields are omitted");
+      const forwarded = agentStub.forwardedRequests.at(-1);
+      assert.equal(forwarded.route, route);
+      assert.equal(forwarded.body.jobId, args.jobId);
+      assert.equal(forwarded.body.cleanupHash, args.cleanupHash);
+      assert.equal(forwarded.body.setupId, args.setupId);
+      assert.equal(forwarded.body.planHash, args.planHash);
+      if (args.area === "local") assert.equal(forwarded.body.action, "status");
     }
   } finally { child.kill(); await close(agentStub); }
 });
@@ -1997,7 +2004,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     );
 
     const status = await waitForStatus(port);
-    assert.match(status.agent.runtimeId, /^2\.3\.1:[a-f0-9]{64}$/);
+    assert.match(status.agent.runtimeId, /^2\.3\.2:[a-f0-9]{64}$/);
     killPid(status.agent.pid);
     await waitForPortRelease(port);
     child.kill();
@@ -2019,7 +2026,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
       const restartedInstances = JSON.parse(restartedCall.result.content[0].text);
       assert.equal(restartedInstances.instances[0].id, "legacy-instance");
       const restartedStatus = await waitForStatus(port);
-      assert.match(restartedStatus.agent.runtimeId, /^2\.3\.1:[a-f0-9]{64}$/);
+      assert.match(restartedStatus.agent.runtimeId, /^2\.3\.2:[a-f0-9]{64}$/);
       killPid(restartedStatus.agent.pid);
     } finally {
       restarted.kill();
@@ -2045,7 +2052,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "output-guard.js", "output-contracts.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2097,7 +2104,7 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "output-guard.js", "output-contracts.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(

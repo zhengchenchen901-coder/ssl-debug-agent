@@ -5,6 +5,8 @@ export async function sandboxAccessRuntime(request, config, marker) {
   const URLSearchParams = require("url").URLSearchParams;
   const collection = "__remote_debug_bulk_receipts";
   let client, managerClient, plan, lockFd, lockPath, temporary;
+  let phase = "storage";
+  const primary = { readPreference: "primary" };
   function fail(code) { const error = new Error(code); error.safeCode = code; throw error; }
   function stable(value) {
     if (Array.isArray(value)) return value.map(stable);
@@ -68,7 +70,7 @@ export async function sandboxAccessRuntime(request, config, marker) {
     return { user: decodeURIComponent(authority.slice(0, colon)), password: decodeURIComponent(authority.slice(colon + 1)) };
   }
   function desiredUri(parts) {
-    const query = new URLSearchParams(parts.query.toString()); query.set("authSource", config.sandboxDatabase);
+    const query = new URLSearchParams(parts.query.toString()); query.set("authSource", config.sandboxDatabase); query.set("readPreference", "primary");
     return parts.prefix + encodeURIComponent(managerUser) + ":" + encodeURIComponent(config.managementPassword) + "@" + parts.hosts + "/" + config.sandboxDatabase + "?" + query.toString();
   }
   function getKey(value, key) { return key.split(".").reduce(function (item, part) { return item == null ? undefined : item[part]; }, value); }
@@ -78,18 +80,21 @@ export async function sandboxAccessRuntime(request, config, marker) {
     try { await connection.connect(); return connection; } catch (error) { try { await connection.close(); } catch (_) {} throw error; }
   }
   async function preflight() {
+    phase = "preflight";
     if (!["/home/app/", "/home/github/"].some(function (root) { return config.configPath.startsWith(root); }) || config.receiptsCollection !== collection) fail("SANDBOX_SETUP_SCOPE_INVALID");
     const stat = regular(config.configPath, false);
     const original = fs.readFileSync(config.configPath, "utf8"), fileConfig = JSON.parse(original);
     const source = getKey(fileConfig[config.configProfile], config.uriKey), parts = uriParts(source);
     if (!client) client = await connect(source);
-    const build = await client.db("admin").command({ buildInfo: 1 });
-    const topology = await client.db("admin").command({ isMaster: 1 });
+    const build = await client.db("admin").command({ buildInfo: 1 }, primary);
+    const topology = await client.db("admin").command({ isMaster: 1 }, primary);
+    if (topology.ismaster === false || topology.isWritablePrimary === false) fail("SANDBOX_SETUP_PRIMARY_REQUIRED");
     const version = String(build.version || ""), major = Number(version.split(".")[0]);
     if (!Number.isInteger(major) || major < 4 || Number(topology.maxWireVersion) < 7) fail("SANDBOX_SETUP_SERVER_UNSUPPORTED");
     const environment = { serverVersion: version, maxWireVersion: topology.maxWireVersion, deployment: topology.msg === "isdbgrid" ? "sharded" : topology.setName ? "replicaSet" : "standalone", replicaSet: topology.setName || null,
-      transactionsSupported: !!topology.setName || topology.msg === "isdbgrid" && Number(topology.maxWireVersion) >= 8 };
-    const authentication = await client.db("admin").command({ connectionStatus: 1, showPrivileges: true });
+      transactionsSupported: !!topology.setName || topology.msg === "isdbgrid" && Number(topology.maxWireVersion) >= 8,
+      configuredReadPreference: ["primary", "primaryPreferred", "secondary", "secondaryPreferred", "nearest"].includes(parts.query.get("readPreference")) ? parts.query.get("readPreference") : "primary" };
+    const authentication = await client.db("admin").command({ connectionStatus: 1, showPrivileges: true }, primary);
     const users = authentication.authInfo.authenticatedUsers;
     if (!users || users.length !== 1 || users[0].user === managerUser) fail("SANDBOX_SETUP_EXECUTION_USER_INVALID");
     const executionUser = users[0], privileges = authentication.authInfo.authenticatedUserPrivileges || [];
@@ -98,12 +103,12 @@ export async function sandboxAccessRuntime(request, config, marker) {
     }
     const db = client.db(config.sandboxDatabase), roles = [];
     for (const item of [[managerRole, managerPrivileges], [executorRole, executorPrivileges]]) {
-      const result = await db.command({ rolesInfo: { role: item[0], db: config.sandboxDatabase }, showPrivileges: true });
+      const result = await db.command({ rolesInfo: { role: item[0], db: config.sandboxDatabase }, showPrivileges: true }, primary);
       const actual = result.roles[0] || null;
       if (actual && (actual.roles.length || hash(shape(actual.privileges)) !== hash(shape(item[1])))) fail("SANDBOX_SETUP_ROLE_CONFLICT");
       roles.push({ role: item[0], exists: !!actual });
     }
-    const result = await db.command({ usersInfo: { user: managerUser, db: config.sandboxDatabase }, showCredentials: false });
+    const result = await db.command({ usersInfo: { user: managerUser, db: config.sandboxDatabase }, showCredentials: false }, primary);
     const user = result.users[0];
     if (user && (user.roles.length !== 1 || user.roles[0].db !== config.sandboxDatabase || user.roles[0].role !== managerRole)) fail("SANDBOX_SETUP_USER_CONFLICT");
     const ownership = { plugin: "remote-debug-agent", version: 1, scope };
@@ -128,7 +133,7 @@ export async function sandboxAccessRuntime(request, config, marker) {
       await verifyManager();
       await managerClient.close(); managerClient = null;
     }
-    const current = await client.db(executionUser.db).command({ usersInfo: executionUser, showCredentials: false });
+    const current = await client.db(executionUser.db).command({ usersInfo: executionUser, showCredentials: false }, primary);
     if (!current.users[0]) fail("SANDBOX_SETUP_EXECUTION_USER_INVALID");
     const grants = current.users[0].roles;
     const passwordChanged = !!user && !credentialAlreadyCurrent;
@@ -138,7 +143,7 @@ export async function sandboxAccessRuntime(request, config, marker) {
     return { stat, original, fileConfig, parts, snapshot, saved };
   }
   async function verifyManager() {
-    const result = await managerClient.db("admin").command({ connectionStatus: 1, showPrivileges: true });
+    const result = await managerClient.db("admin").command({ connectionStatus: 1, showPrivileges: true }, primary);
     const users = result.authInfo.authenticatedUsers || [], privileges = result.authInfo.authenticatedUserPrivileges || [];
     if (users.length !== 1 || users[0].user !== managerUser || users[0].db !== config.sandboxDatabase || hash(shape(privileges)) !== hash(shape(managerPrivileges))) fail("SANDBOX_SETUP_MANAGER_PRIVILEGES_UNSAFE");
   }
@@ -166,23 +171,30 @@ export async function sandboxAccessRuntime(request, config, marker) {
         if (plan.status !== "prepared") fail("SANDBOX_SETUP_INSPECT_PARTIAL_CHANGES");
         if (!(Date.parse(plan.expiresAt) > Date.now())) fail("SANDBOX_SETUP_PLAN_EXPIRED");
         lockPath = config.configPath + ".rda-sandbox-access.lock";
+        phase = "lock";
         try { lockFd = fs.openSync(lockPath, "wx", 0o600); } catch (_) { fail("SANDBOX_SETUP_BUSY"); }
         const state = await preflight();
         if (hash(state.snapshot) !== hash(plan.snapshot)) fail("SANDBOX_SETUP_PLAN_CONFLICT");
+        phase = "journal-start";
         plan.status = "started"; atomic(planFile, plan);
         const password = config.managementPassword;
         const uri = desiredUri(state.parts);
         const sandbox = client.db(config.sandboxDatabase);
         for (const item of [[managerRole, managerPrivileges], [executorRole, executorPrivileges]]) {
-          if (!plan.snapshot.roles.find(function (role) { return role.role === item[0]; }).exists) await sandbox.command({ createRole: item[0], privileges: item[1], roles: [] });
+          phase = item[0] === managerRole ? "create-manager-role" : "create-executor-role";
+          if (!plan.snapshot.roles.find(function (role) { return role.role === item[0]; }).exists) await sandbox.command({ createRole: item[0], privileges: item[1], roles: [] }, primary);
         }
-        if (!plan.snapshot.managerExists) await sandbox.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope } });
-        else if (state.snapshot.passwordChanged) await sandbox.command({ updateUser: managerUser, pwd: password });
-        if (!plan.snapshot.executorGranted) await client.db(plan.snapshot.executionUser.db).command({ grantRolesToUser: plan.snapshot.executionUser.user, roles: [{ role: executorRole, db: config.sandboxDatabase }] });
+        phase = "create-manager-user";
+        if (!plan.snapshot.managerExists) await sandbox.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope } }, primary);
+        else if (state.snapshot.passwordChanged) { phase = "reset-manager-password"; await sandbox.command({ updateUser: managerUser, pwd: password }, primary); }
+        phase = "grant-executor-role";
+        if (!plan.snapshot.executorGranted) await client.db(plan.snapshot.executionUser.db).command({ grantRolesToUser: plan.snapshot.executionUser.user, roles: [{ role: executorRole, db: config.sandboxDatabase }] }, primary);
+        phase = "verify-manager";
         managerClient = await connect(uri); await verifyManager();
         // The latest credential remains in protected per-instance local config.
         // If this file write fails, a new prepare authenticates with that value.
         if (state.snapshot.profileNeedsUpdate) {
+          phase = "write-config";
           if (textHash(fs.readFileSync(config.configPath, "utf8")) !== plan.snapshot.configHash) fail("SANDBOX_SETUP_PLAN_CONFLICT");
           const backup = config.configPath + ".before-rda-sandbox-" + request.setupId;
           fs.writeFileSync(backup, state.original, { flag: "wx", mode: 0o600 });
@@ -192,6 +204,7 @@ export async function sandboxAccessRuntime(request, config, marker) {
           // Tightening the file mode is part of the displayed plan.
           fs.chmodSync(config.configPath, 0o600);
         }
+        phase = "journal-complete";
         plan.status = "completed"; atomic(planFile, plan);
       } else {
         const current = await preflight();
@@ -200,11 +213,15 @@ export async function sandboxAccessRuntime(request, config, marker) {
     }
     process.stdout.write(marker + JSON.stringify({ ok: true, data: summary(plan) }) + "\n");
   } catch (error) {
+    const diagnostic = { phase };
+    if (Number.isSafeInteger(error.code)) diagnostic.databaseCode = error.code;
+    if (["EACCES", "EPERM", "EIO", "EEXIST", "EROFS", "ENOSPC", "ELOOP", "EINVAL", "EMFILE", "ENFILE", "ENOTDIR"].includes(error.code)) diagnostic.filesystemCode = error.code;
     if (plan && plan.status === "started") {
       plan.status = "partial";
+      plan.errorDiagnostic = diagnostic;
       try { atomic(path.join(config.journalRoot, request.setupId + ".json"), plan); } catch (_) {}
     }
-    process.stdout.write(marker + JSON.stringify({ ok: false, error: { code: error.safeCode || "SANDBOX_SETUP_FAILED" } }) + "\n");
+    process.stdout.write(marker + JSON.stringify({ ok: false, error: { code: error.safeCode || "SANDBOX_SETUP_FAILED", diagnostic } }) + "\n");
     process.exitCode = 1;
   } finally {
     if (temporary) try { fs.unlinkSync(temporary); } catch (_) {}

@@ -1,5 +1,9 @@
 # Remote Debug Agent
 
+## Sandbox account administration: 2.3.2
+
+沙盒账户的权限预检、角色/用户创建与验证明确使用主节点，专用管理连接也选择 primary；原业务连接分组及读取偏好保留。若实际连接直指从节点，预检会在数据库写入前返回 `SANDBOX_SETUP_PRIMARY_REQUIRED`。账户配置失败会显示固定阶段及经过筛选的数据库数字错误码或文件系统错误码，不输出原始驱动错误、连接串或密码。部分完成的账户配置仍须重新准备具体计划并确认，不能盲重放。
+
 ## Sandbox file boundary: 2.3.1
 
 服务器继续保留批量任务、日志和回滚副本。沙盒仅接受结构化任务记录：块、业务单元和操作的未知字段会被拒绝，调用方不能通过 `fileName`、`path`、`content` 等额外参数上传文件或指定落盘位置。合法业务字段仍可包含文本或 Extended JSON 数据；数据内容是否与业务任务相关，交给后续插件与实例之间的内容护栏判断。本轮不使用代码关键词或后缀检测替代内容授权。
@@ -55,6 +59,47 @@ SSH now requires verified OpenSSH SHA256 host-key fingerprints on every connecti
 File-reading command arguments are now parsed per executable. Every file operand must be an allowed absolute path and is canonicalized and POSIX-quoted before execution. Supported options: `cat -n/-b/-s/-v/-E/-T/-A`, `ls -l/-a/-A/-h/-d/-t/-r/-S/-1/-n/-i/-p/-F`, `tail -n/-c/--lines/--bytes`, and `grep -E/-F/-i/-v/-n/-H/-h/-c/-l/-L/-s/-w/-x/-o/-e/-m/-A/-B/-C`. Safe short options may be combined. Tail counts are at most 10,000 lines or 1 MiB; grep numeric options are at most 10,000. Recursive reads, symlink-following options, grep pattern files, relative file operands, and follow/retry tails are rejected. Use the structured log tools for recursive searches.
 
 Custom Agent URLs outside loopback require HTTPS and a matching owner-only credential file. Redirects are rejected; authorization failures are reported without restarting a Manager or selecting another port. Independent diagnostic mode remains read-only and cannot perform SSH or instance operations. These changes protect the local API boundary; they do not protect against a process that already fully controls the current user account.
+
+### MCP sensitive output guard
+
+The MCP wrapper applies an always-on output guard before sending tool results
+to Codex. `output-contracts.js` defines allowed response fields for every tool;
+unknown metadata fields are omitted and unregistered tools cannot return data.
+Explicit JSON surfaces (business query documents, log events, capabilities and
+memory summaries) keep their flexible structure but are recursively sanitized.
+New tools and metadata fields must add an output contract and protocol tests.
+
+The guard masks credential fields of any JSON type, password/token/API-key
+assignments and command flags, Authorization and Cookie headers, authenticated
+URLs, PEM private keys, and recognizable token formats. It also checks nested
+and escaped JSON text. Configured HTTP tokens, environment secrets and local
+per-instance SSH/sandbox passwords are matched even in unlabelled text. Known
+configured secrets stay in process memory only; additional secrets discovered
+in a response are scoped to that response. This is deterministic filtering,
+not model review, and has no raw-output bypass switch.
+
+Successful payloads include `outputGuard` metadata with the policy version,
+replacement count and omitted-field count; no matched values are included.
+Error messages, approved diagnostic fields, wrapper stderr and lifecycle event
+details are sanitized too. Raw upstream error payloads/stacks are not forwarded.
+The final transport supports only the existing JSON text tool result format;
+new structured/media result types require an explicit guard implementation.
+Static server-owned tool schemas remain unchanged. Draft IDs, plan hashes,
+confirmation phrases and ordinary diagnostics remain available unless they
+themselves contain a detected secret.
+
+Responses are buffered before output. HTTP bodies and final serialized results
+are limited to 8 MiB; traversal has depth, work and time limits. An invalid shape,
+unsupported result, exceeded limit or guard failure returns a fixed
+`OUTPUT_GUARD_BLOCKED` error without including the original content. Replacements
+use `[REDACTED]` and are not executable secret references. This guard does not
+change remote operations or their stored data; a blocked response does not mean
+an operation was cancelled, so inspect its status before retrying a write.
+
+The boundary covers this plugin's MCP output, not independent terminal/file
+access or data previously placed in a chat. Unknown opaque secrets and arbitrary
+encodings cannot be guaranteed detectable. Phone/email/identity-number masking
+and per-collection business privacy policies are not part of this first layer.
 
 ## Project log queries
 

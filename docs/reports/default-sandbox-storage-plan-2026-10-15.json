@@ -1,0 +1,26 @@
+{
+  "instanceId": "default",
+  "mutationId": "8104b40b-fc40-467e-a10b-f62d7475f20b",
+  "operationId": "a2391bdd-83ef-4f81-a193-263bba36a23d",
+  "kind": "bulk_storage",
+  "operation": "initializeBulkStorage",
+  "database": "yenneferbak",
+  "receiptsDatabase": "remote_debug_agent",
+  "collection": "__remote_debug_bulk_receipts",
+  "status": "planned",
+  "rollbackMode": "retained_non_rollbackable",
+  "riskLevel": "high",
+  "requiresConfirmation": true,
+  "purpose": "为 default 独立配置插件沙盒：仅初始化 remote_debug_agent 的技术收据集合、固定过期索引及受保护日志目录，保留旧业务库技术集合和已有任务。",
+  "createdAt": "2026-10-15T01:53:29.336Z",
+  "rollbackExpiresAt": "2026-10-22T01:53:29.336Z",
+  "planHash": "e091c0225eb8ff7200ae5b9575c4f7c0dfbebe9c7337d5b3cf0c4a01479bcb7c",
+  "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+  "storageStatus": {
+    "rootState": "directory",
+    "rootMode": 448,
+    "collectionExists": false,
+    "expiryIndexExists": false
+  },
+  "journalPath": "/tmp/remote-debug-agent/mutations/8104b40b-fc40-467e-a10b-f62d7475f20b"
+}

@@ -1,0 +1,86 @@
+{
+  "ok": true,
+  "setupId": "513c098a-a42e-4230-bcb7-ca569afeb2be",
+  "planHash": "ab5eb8dc8dd62f1493085140072d18e93eae8ebd7b2791410cdc3c5a33ef0ab9",
+  "status": "prepared",
+  "expiresAt": "2026-10-15T02:49:09.356Z",
+  "instanceId": "default",
+  "sandboxDatabase": "remote_debug_agent",
+  "collection": "__remote_debug_bulk_receipts",
+  "managerUser": "rda_sandbox_manager_009acd5149226df1",
+  "managerRole": "rda_sandbox_manager",
+  "executorRole": "rda_sandbox_executor",
+  "executionUser": {
+    "user": "root",
+    "db": "admin"
+  },
+  "managementProfile": "remote_debug_manager",
+  "configPath": "/home/github/breBE/OD-Yennefer-BE-release/shared/config.json",
+  "configModeAfter": "0600",
+  "backupMode": "0600",
+  "managerPrivileges": [
+    {
+      "resource": {
+        "db": "remote_debug_agent",
+        "collection": "__remote_debug_bulk_receipts"
+      },
+      "actions": [
+        "find",
+        "remove"
+      ]
+    }
+  ],
+  "executorPrivileges": [
+    {
+      "resource": {
+        "db": "remote_debug_agent",
+        "collection": "__remote_debug_bulk_receipts"
+      },
+      "actions": [
+        "find",
+        "insert",
+        "listIndexes",
+        "createIndex"
+      ]
+    },
+    {
+      "resource": {
+        "db": "remote_debug_agent",
+        "collection": ""
+      },
+      "actions": [
+        "listCollections",
+        "createCollection"
+      ]
+    }
+  ],
+  "collectionsInitialized": false,
+  "environment": {
+    "serverVersion": "4.2.25",
+    "maxWireVersion": 8,
+    "deployment": "replicaSet",
+    "replicaSet": "mgset-400127241",
+    "transactionsSupported": true,
+    "configuredReadPreference": "secondary"
+  },
+  "passwordReset": false,
+  "requiresConfirmation": true,
+  "confirmation": "确认配置沙盒",
+  "rollbackMode": "manual_account_management",
+  "existing": {
+    "roles": [
+      {
+        "role": "rda_sandbox_manager",
+        "exists": false
+      },
+      {
+        "role": "rda_sandbox_executor",
+        "exists": false
+      }
+    ],
+    "manager": false,
+    "profile": false,
+    "executorGranted": false
+  },
+  "operationId": "df1ad7fd-7ac8-41eb-942a-e5536f55b0e0"
+}

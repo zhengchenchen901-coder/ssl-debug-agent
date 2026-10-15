@@ -57,6 +57,13 @@ export async function runSandboxAccess(input = {}, options = {}) {
   const line = String(remote.stdout || "").split(/\r?\n/).filter((item) => item.startsWith(MONGODB_RESULT_MARKER)).pop();
   let payload;
   try { payload = JSON.parse(line.slice(MONGODB_RESULT_MARKER.length)); } catch { throw fail("SANDBOX_SETUP_INVALID_RESPONSE"); }
-  if (!payload.ok || remote.exitCode !== 0 || remote.timedOut) throw fail(payload.error?.code || "SANDBOX_SETUP_FAILED", "Sandbox setup did not complete; prepare again to inspect partial configuration safely");
+  if (!payload.ok || remote.exitCode !== 0 || remote.timedOut) {
+    const phases = ["storage", "preflight", "lock", "journal-start", "create-manager-role", "create-executor-role", "create-manager-user", "reset-manager-password", "grant-executor-role", "verify-manager", "write-config", "journal-complete"];
+    const diagnostic = payload.error?.diagnostic || {};
+    const stage = phases.includes(diagnostic.phase) ? diagnostic.phase : "unknown";
+    const code = Number.isSafeInteger(diagnostic.databaseCode) ? `; database code ${diagnostic.databaseCode}` : "";
+    const filesystem = ["EACCES", "EPERM", "EIO", "EEXIST", "EROFS", "ENOSPC", "ELOOP", "EINVAL", "EMFILE", "ENFILE", "ENOTDIR"].includes(diagnostic.filesystemCode) ? `; filesystem code ${diagnostic.filesystemCode}` : "";
+    throw fail(payload.error?.code || "SANDBOX_SETUP_FAILED", `Sandbox setup failed at ${stage}${code}${filesystem}; prepare again to inspect partial configuration safely`);
+  }
   return payload.data;
 }

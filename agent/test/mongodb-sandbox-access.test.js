@@ -22,7 +22,7 @@ function fixture(t, external = {}) {
   for (const name of ["existsSync", "mkdirSync", "lstatSync", "readFileSync", "writeFileSync", "openSync", "unlinkSync", "chmodSync"]) remoteFs[name] = (file, ...args) => fs[name](typeof file === "number" ? file : translate(file), ...args);
   remoteFs.renameSync = (from, to) => fs.renameSync(translate(from), translate(to));
   remoteFs.realpathSync = (file) => "/" + path.relative(root, fs.realpathSync(translate(file))).split(path.sep).join("/");
-  const state = { roles: new Map(), users: new Map(), grants: [{ role: "root", db: "admin" }], events: [], admin: true, failUser: false, unsafeManager: false, version: "4.4.30", wire: 9, setName: "test-rs" };
+  const state = { roles: new Map(), users: new Map(), grants: [{ role: "root", db: "admin" }], events: [], admin: true, failUser: false, failRoleCode: null, requirePrimary: false, unsafeManager: false, version: "4.4.30", wire: 9, setName: "test-rs" };
   class MongoClient {
     constructor(uri) { this.uri = uri; this.manager = !uri.includes("admin:fixture-private"); }
     async connect() {
@@ -32,14 +32,18 @@ function fixture(t, external = {}) {
       }
     }
     async close() {}
-    db(database) { return { command: async (command) => {
+    db(database) { return { command: async (command, options) => {
+      if (state.requirePrimary && options?.readPreference !== "primary") throw Object.assign(new Error("not primary NEVER-PRINT-SECRET"), { code: 10107 });
       if (command.buildInfo) return { version: state.version };
-      if (command.isMaster) return { maxWireVersion: state.wire, setName: state.setName };
+      if (command.isMaster) return { maxWireVersion: state.wire, setName: state.setName, ismaster: state.writablePrimary !== false };
       if (command.connectionStatus) return { authInfo: { authenticatedUsers: [{ user: this.manager ? decodeURIComponent(new URL(this.uri).username) : "admin", db: this.manager ? "remote_debug_agent" : "admin" }], authenticatedUserPrivileges: this.manager ? [{ resource: { db: state.unsafeManager ? "business" : "remote_debug_agent", collection: "__remote_debug_bulk_receipts" }, actions: ["remove", "find"] }] : state.admin ? [{ resource: { anyResource: true }, actions: ["createRole", "createUser", "grantRole", "changePassword"] }] : [] } };
       if (command.rolesInfo) return { roles: state.roles.has(command.rolesInfo.role) ? [structuredClone(state.roles.get(command.rolesInfo.role))] : [] };
       if (command.usersInfo) return { users: command.usersInfo.user === "admin" ? [{ roles: structuredClone(state.grants) }] : state.users.has(command.usersInfo.user) ? [structuredClone(state.users.get(command.usersInfo.user))] : [] };
       state.events.push({ database, command: Object.keys(command)[0] });
-      if (command.createRole) state.roles.set(command.createRole, { privileges: structuredClone(command.privileges), roles: structuredClone(command.roles) });
+      if (command.createRole) {
+        if (state.failRoleCode !== null) throw Object.assign(new Error("mongodb://secret:NEVER-PRINT-SECRET@localhost"), { code: state.failRoleCode });
+        state.roles.set(command.createRole, { privileges: structuredClone(command.privileges), roles: structuredClone(command.roles) });
+      }
       else if (command.createUser) {
         if (state.failUser) throw new Error("Database failure mongodb://secret:NEVER-PRINT-SECRET@localhost");
         state.users.set(command.createUser, structuredClone(command));
@@ -87,6 +91,31 @@ test("sandbox access rejects absent admin authority and conflicting roles before
   await assert.rejects(h.run(), { code: "SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED" });
   h.state.admin = true; h.state.roles.set("rda_sandbox_manager", { roles: [], privileges: [{ resource: { db: "business", collection: "" }, actions: ["remove"] }] });
   await assert.rejects(h.run(), { code: "SANDBOX_SETUP_ROLE_CONFLICT" });
+  assert.equal(h.state.events.length, 0); assert.deepEqual(h.fileConfig(), h.sourceConfig);
+});
+
+test("account administration overrides secondary read preferences without changing business configuration", async (t) => {
+  const h = fixture(t); h.state.requirePrimary = true;
+  const source = h.fileConfig(); source.development.url += "&readPreference=secondaryPreferred";
+  fs.writeFileSync(h.translate(h.config.configPath), JSON.stringify(source));
+  const plan = await h.run();
+  assert.equal(plan.environment.configuredReadPreference, "secondaryPreferred");
+  assert.equal((await h.execute(plan)).status, "completed");
+  assert.equal(h.fileConfig().development.url, source.development.url);
+  assert.equal(new URL(h.fileConfig().remote_debug_manager.url).searchParams.get("readPreference"), "primary");
+});
+
+test("setup failures expose only the fixed phase and numeric database code", async (t) => {
+  const h = fixture(t), plan = await h.run(); h.state.failRoleCode = 13;
+  await assert.rejects(h.execute(plan), (error) => error.code === "SANDBOX_SETUP_FAILED" && error.message.includes("create-manager-role") && error.message.includes("database code 13") && !error.message.includes("NEVER-PRINT-SECRET"));
+  const stored = JSON.parse(fs.readFileSync(h.translate("/tmp/remote-debug-agent/sandbox-access/" + plan.setupId + ".json"), "utf8"));
+  assert.deepEqual(stored.errorDiagnostic, { phase: "create-manager-role", databaseCode: 13 });
+  assert.equal(stored.status, "partial"); assert.equal(h.state.users.size, 0);
+});
+
+test("a direct connection to a secondary stops during read-only preflight", async (t) => {
+  const h = fixture(t); h.state.writablePrimary = false;
+  await assert.rejects(h.run(), { code: "SANDBOX_SETUP_PRIMARY_REQUIRED" });
   assert.equal(h.state.events.length, 0); assert.deepEqual(h.fileConfig(), h.sourceConfig);
 });
 

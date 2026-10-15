@@ -1,0 +1,336 @@
+{
+  "instanceId": "default",
+  "account": {
+    "status": "completed",
+    "setupId": "513c098a-a42e-4230-bcb7-ca569afeb2be",
+    "planHash": "ab5eb8dc8dd62f1493085140072d18e93eae8ebd7b2791410cdc3c5a33ef0ab9",
+    "operationId": "610f3bb9-6bbf-4327-a29a-b165e2a0e02e",
+    "managementProfile": "remote_debug_manager",
+    "configMode": "0600",
+    "backupMode": "0600",
+    "passwordSource": "latest user-saved instance configuration; not included"
+  },
+  "storage": {
+    "ok": true,
+    "instanceId": "default",
+    "mutationId": "8104b40b-fc40-467e-a10b-f62d7475f20b",
+    "operationId": "f8f37cff-475b-4120-bb2f-f126652f5f22",
+    "kind": "bulk_storage",
+    "operation": "initializeBulkStorage",
+    "database": "yenneferbak",
+    "collection": "__remote_debug_bulk_receipts",
+    "status": "committed",
+    "rollbackMode": "retained_non_rollbackable",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "为 default 独立配置插件沙盒：仅初始化 remote_debug_agent 的技术收据集合、固定过期索引及受保护日志目录，保留旧业务库技术集合和已有任务。",
+    "createdAt": "2026-10-15T01:53:29.336Z",
+    "committedAt": "2026-10-15T02:26:39.363Z",
+    "rollbackExpiresAt": "2026-10-22T01:53:29.336Z",
+    "planHash": "e091c0225eb8ff7200ae5b9575c4f7c0dfbebe9c7337d5b3cf0c4a01479bcb7c",
+    "affectedCount": 1,
+    "changedFields": [
+      "expiresAt"
+    ],
+    "affectedIds": [],
+    "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+    "receiptsDatabase": "remote_debug_agent",
+    "storageStatus": {
+      "rootState": "directory",
+      "rootMode": 448,
+      "collectionExists": true,
+      "expiryIndexExists": true
+    },
+    "journalPath": "/tmp/remote-debug-agent/mutations/8104b40b-fc40-467e-a10b-f62d7475f20b",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2138,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2139
+  },
+  "verification": {
+    "indexes": {
+      "ok": true,
+      "operation": "aggregate",
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "data": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "spec": {
+            "v": 2,
+            "key": {
+              "_id": 1
+            },
+            "name": "_id_",
+            "ns": "remote_debug_agent.__remote_debug_bulk_receipts"
+          }
+        },
+        {
+          "name": "remote_debug_bulk_receipt_expiry",
+          "key": {
+            "expiresAt": 1
+          },
+          "spec": {
+            "v": 2,
+            "key": {
+              "expiresAt": 1
+            },
+            "name": "remote_debug_bulk_receipt_expiry",
+            "expireAfterSeconds": 0,
+            "ns": "remote_debug_agent.__remote_debug_bulk_receipts"
+          }
+        }
+      ],
+      "resultCount": 2,
+      "durationMs": 1767,
+      "operationId": "b876a2b1-f2b6-41b0-a401-b4cd5f87fd63",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1766,
+        "connectionGeneration": 1
+      },
+      "instanceId": "default"
+    },
+    "marker": {
+      "ok": true,
+      "operation": "findOne",
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "data": {
+        "_id": "__remote_debug_bulk_storage_v1",
+        "schemaVersion": 1,
+        "database": "remote_debug_agent",
+        "receiptsCollection": "__remote_debug_bulk_receipts"
+      },
+      "resultCount": 1,
+      "durationMs": 1749,
+      "operationId": "f9a472ea-5d95-4a69-911c-f5e87eca20c6",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 1,
+        "executionMs": 1748,
+        "connectionGeneration": 1
+      },
+      "instanceId": "default"
+    },
+    "manager": {
+      "ok": true,
+      "operation": "find",
+      "database": "admin",
+      "collection": "system.users",
+      "data": [
+        {
+          "user": "rda_sandbox_manager_009acd5149226df1",
+          "db": "remote_debug_agent",
+          "customData": {
+            "plugin": "remote-debug-agent",
+            "version": 1,
+            "scope": "009acd5149226df12c1e04ebfb5c7b1d0a81b519cd84b06a91be8243b258257e"
+          },
+          "roles": [
+            {
+              "role": "rda_sandbox_manager",
+              "db": "remote_debug_agent"
+            }
+          ]
+        }
+      ],
+      "resultCount": 1,
+      "durationMs": 1744,
+      "operationId": "c1475c60-ea52-457f-bfab-7f6ad34d6e9d",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1743,
+        "connectionGeneration": 1
+      },
+      "instanceId": "default"
+    },
+    "roles": {
+      "ok": true,
+      "operation": "find",
+      "database": "admin",
+      "collection": "system.roles",
+      "data": [
+        {
+          "role": "rda_sandbox_executor",
+          "db": "remote_debug_agent",
+          "privileges": [
+            {
+              "resource": {
+                "db": "remote_debug_agent",
+                "collection": "__remote_debug_bulk_receipts"
+              },
+              "actions": [
+                "createIndex",
+                "find",
+                "insert",
+                "listIndexes"
+              ]
+            },
+            {
+              "resource": {
+                "db": "remote_debug_agent",
+                "collection": ""
+              },
+              "actions": [
+                "createCollection",
+                "listCollections"
+              ]
+            }
+          ],
+          "roles": []
+        },
+        {
+          "role": "rda_sandbox_manager",
+          "db": "remote_debug_agent",
+          "privileges": [
+            {
+              "resource": {
+                "db": "remote_debug_agent",
+                "collection": "__remote_debug_bulk_receipts"
+              },
+              "actions": [
+                "find",
+                "remove"
+              ]
+            }
+          ],
+          "roles": []
+        }
+      ],
+      "resultCount": 2,
+      "durationMs": 1747,
+      "operationId": "b2e47057-7491-42b1-a712-fd11d6ca9683",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1746,
+        "connectionGeneration": 1
+      },
+      "instanceId": "default"
+    },
+    "executor": {
+      "ok": true,
+      "operation": "find",
+      "database": "admin",
+      "collection": "system.users",
+      "data": [
+        {
+          "user": "root",
+          "db": "admin",
+          "roles": [
+            {
+              "role": "root",
+              "db": "admin"
+            },
+            {
+              "role": "rda_sandbox_executor",
+              "db": "remote_debug_agent"
+            }
+          ]
+        }
+      ],
+      "resultCount": 1,
+      "durationMs": 1803,
+      "operationId": "c81a8b07-8173-4706-965d-7bf402d4eb10",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1803,
+        "connectionGeneration": 1
+      },
+      "instanceId": "default"
+    },
+    "jobs": {
+      "ok": true,
+      "instanceId": "default",
+      "jobs": [
+        {
+          "jobId": "8065w-visite-1791560950736",
+          "database": "yenneferbak",
+          "status": "prepare_failed",
+          "mode": "execute",
+          "createdAt": "2026-10-09T15:49:12.532Z",
+          "updatedAt": "2026-10-09T15:49:25.949Z",
+          "operationCount": 44,
+          "unitCount": 44,
+          "batchCount": 0,
+          "pauseReason": "MONGODB_BULK_PREPARE_FAILED"
+        }
+      ],
+      "offset": 0,
+      "limit": 10,
+      "total": 1,
+      "hasMore": false,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2489,
+        "connectionGeneration": 1
+      },
+      "durationMs": 2490,
+      "operationId": "22195921-7db6-49ff-92e6-7d8cfccbf2e1"
+    },
+    "instances": [
+      {
+        "id": "default",
+        "status": "running",
+        "health": "healthy"
+      },
+      {
+        "id": "test-server",
+        "status": "running",
+        "health": "healthy"
+      }
+    ],
+    "managementStatus": {
+      "ok": true,
+      "instanceId": "default",
+      "sandboxDatabase": "remote_debug_agent",
+      "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+      "jobs": [
+        {
+          "jobId": "8065w-visite-1791560950736",
+          "status": "prepare_failed",
+          "receiptStorage": {
+            "database": "yenneferbak",
+            "collection": "__remote_debug_bulk_receipts",
+            "legacy": true
+          }
+        }
+      ],
+      "jobCount": 1,
+      "bytes": 41878,
+      "hasMore": false,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 1,
+        "executionMs": 3569,
+        "connectionGeneration": 1
+      },
+      "durationMs": 3570,
+      "operationId": "234cdef9-4db7-43a1-b955-e343f2f46654"
+    }
+  },
+  "transientFailures": [
+    "NamespaceNotFound before secondary visibility",
+    "TTL verification before secondary visibility"
+  ],
+  "recovery": "Inspected read-only state and retried the same approved id/hash; no rollback or deletion."
+}

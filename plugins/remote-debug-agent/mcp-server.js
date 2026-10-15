@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import environmentReport from "./environment-report.cjs";
 import diagnosticDashboard from "./diagnostic-dashboard.cjs";
 import localAuth from "./local-auth.cjs";
+import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard.js";
 import {
   migrateLegacyData,
   normalizeWindowsExtendedPath,
@@ -47,6 +48,38 @@ const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const outputGuard = createOutputGuard();
+for (const [key, value] of Object.entries(process.env)) {
+  if (isSensitiveKey(key)) outputGuard.remember(value);
+}
+
+function safeDiagnostic(...values) {
+  try {
+    const diagnostic = values.map((value) => value instanceof Error
+      ? { code: value.code, message: value.message } : value);
+    console.error(JSON.stringify(outputGuard.sanitize(diagnostic).value));
+  } catch { console.error("OUTPUT_GUARD_BLOCKED"); }
+}
+
+function rememberConfiguredSecrets(env, dataDir) {
+  for (const [key, value] of Object.entries(env)) {
+    if (isSensitiveKey(key)) outputGuard.remember(value);
+  }
+  const registryPath = env.REMOTE_DEBUG_INSTANCE_REGISTRY || path.join(dataDir, ".remote-debug", "instances.json");
+  let fd;
+  try {
+    fd = fs.openSync(registryPath, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile() || stat.size > 1024 * 1024) throw new Error("OUTPUT_GUARD_BLOCKED");
+    const registry = JSON.parse(fs.readFileSync(fd, "utf8").replace(/^\uFEFF/, ""));
+    for (const instance of registry.instances || []) {
+      outputGuard.remember(instance.passphrase);
+      outputGuard.remember(instance.mongodb?.sandboxManagementPassword);
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw Object.assign(new Error(GUARD_BLOCKED.error.message), { code: "OUTPUT_GUARD_BLOCKED" });
+  } finally { if (fd !== undefined) fs.closeSync(fd); }
+}
 
 function readPluginVersion() {
   try {
@@ -1366,6 +1399,7 @@ const credentialCache = new Map();
 function agentSettings() {
   const env = loadRemoteDebugEnv();
   const dataDir = resolveDataDir(process.env);
+  rememberConfiguredSecrets(env, dataDir);
   const configPath = resolveConfigPath(process.env, dataDir);
   const explicitUrl = env.REMOTE_DEBUG_AGENT_URL || "";
   const port = parsePositivePort(env.REMOTE_DEBUG_AGENT_PORT, DEFAULT_AGENT_PORT);
@@ -1376,6 +1410,7 @@ function agentSettings() {
     credentialCache.set(credentialKey, explicitUrl ? localAuth.readAuthToken(authFile) : localAuth.ensureAuthToken(authFile));
   }
   const authToken = credentialCache.get(credentialKey);
+  outputGuard.remember(authToken);
   const explicitAgentDir = env.REMOTE_DEBUG_AGENT_DIR || "";
   const runtime = readRuntimeManifest(__dirname);
   if (!explicitUrl && !explicitAgentDir && !runtime.manifest) {
@@ -1440,6 +1475,8 @@ function agentSettingsWithPort(settings, port) {
 }
 
 async function appendPluginLog(settings, event) {
+  try { event = outputGuard.sanitize(event).value; }
+  catch { event = { code: "OUTPUT_GUARD_BLOCKED", message: GUARD_BLOCKED.error.message }; }
   try {
     const report = environmentReport.recordRuntimeEvent(settings.dataDir, { agentUrl: settings.agentUrl, ...event },
       process.env.REMOTE_DEBUG_ENVIRONMENT_ATTEMPT_ID);
@@ -1447,7 +1484,7 @@ async function appendPluginLog(settings, event) {
       await diagnosticDashboard.ensureDashboard(__dirname, settings.dataDir, report);
     }
   } catch (error) {
-    console.error("failed to update environment report", error.code || "REPORT_FAILED");
+    safeDiagnostic("failed to update environment report", error.code || "REPORT_FAILED");
   }
   const entry = {
     time: new Date().toISOString(),
@@ -1470,7 +1507,7 @@ async function appendPluginLog(settings, event) {
     await fsp.mkdir(settings.runtimeDir, { recursive: true });
     await fsp.appendFile(settings.logPath, `${JSON.stringify(entry)}\n`, "utf8");
   } catch (error) {
-    console.error("failed to write MCP runtime log", error);
+    safeDiagnostic("failed to write MCP runtime log", error);
   }
 }
 
@@ -1747,8 +1784,8 @@ async function logMcpLifecycle(code, message, event = {}) {
 
 let outputFraming = "content-length";
 
-function sendMessage(message) {
-  const body = Buffer.from(JSON.stringify(message), "utf8");
+function sendMessage(message, options) {
+  const body = outputGuard.serialize(message, options);
   if (outputFraming === "json-line") {
     process.stdout.write(`${body.toString("utf8")}\n`);
     return;
@@ -1758,8 +1795,8 @@ function sendMessage(message) {
   process.stdout.write(body);
 }
 
-function sendResult(id, result) {
-  sendMessage({ jsonrpc: "2.0", id, result });
+function sendResult(id, result, options) {
+  sendMessage({ jsonrpc: "2.0", id, result }, options);
 }
 
 function sendError(id, code, message) {
@@ -1795,7 +1832,17 @@ async function fetchJson(url, options = {}) {
       redirect: "error",
       signal: controller.signal,
     });
-    const text = await response.text();
+    const chunks = [];
+    let bytes = 0;
+    for await (const chunk of response.body || []) {
+      bytes += chunk.length;
+      if (bytes > 8 * 1024 * 1024) {
+        controller.abort();
+        throw Object.assign(new Error(GUARD_BLOCKED.error.message), { code: "OUTPUT_GUARD_BLOCKED" });
+      }
+      chunks.push(chunk);
+    }
+    const text = Buffer.concat(chunks).toString("utf8");
     let parsed;
 
     try {
@@ -1921,7 +1968,7 @@ async function syncAgentLease(settings) {
           return null;
         })
         .catch((error) => {
-          console.error("failed to recover Remote Debug Agent lease", error);
+          safeDiagnostic("failed to recover Remote Debug Agent lease", error);
         });
     }, AGENT_LEASE_HEARTBEAT_MS);
     activeAgentLease.timer.unref?.();
@@ -2351,7 +2398,7 @@ async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
         error: spawnError,
       },
     }).catch((logError) => {
-      console.error("failed to write MCP spawn error log", logError);
+      safeDiagnostic("failed to write MCP spawn error log", logError);
     });
   });
 
@@ -2370,7 +2417,7 @@ async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
       startupAttemptId,
       details: childExit,
     }).catch((logError) => {
-      console.error("failed to write MCP process exit log", logError);
+      safeDiagnostic("failed to write MCP process exit log", logError);
     });
   });
 
@@ -2706,7 +2753,7 @@ function scheduleAgentPrewarm(trigger) {
   try {
     settings = agentSettings();
   } catch (error) {
-    console.error(`failed to resolve Remote Debug Agent settings during ${trigger}: ${error.message}`);
+    safeDiagnostic(`failed to resolve Remote Debug Agent settings during ${trigger}: ${error.message}`);
     const fallbackSettings = fallbackLogSettings(error);
     appendPluginLog(fallbackSettings, {
       level: "error",
@@ -2714,7 +2761,7 @@ function scheduleAgentPrewarm(trigger) {
       message: `Remote Debug Agent prewarm could not resolve settings during ${trigger}: ${error.message}`,
       details: fallbackSettings.settingsError,
     }).catch((logError) => {
-      console.error("failed to write MCP prewarm settings failure log", logError);
+      safeDiagnostic("failed to write MCP prewarm settings failure log", logError);
     });
     return;
   }
@@ -2730,7 +2777,7 @@ function scheduleAgentPrewarm(trigger) {
       message: `Remote Debug Agent prewarm failed during ${trigger}: ${error.message}`,
       details: error.payload,
     }).catch((logError) => {
-      console.error("failed to write MCP prewarm failure log", logError);
+      safeDiagnostic("failed to write MCP prewarm failure log", logError);
     });
   });
 }
@@ -2799,6 +2846,7 @@ async function requestAgent(pathName, payload, options = {}) {
     response = result.response;
     parsed = result.parsed;
   } catch (error) {
+    if (error.code === "OUTPUT_GUARD_BLOCKED") throw error;
     if (operation?.signal.aborted) {
       throw operation.signal.reason || toolOperationError(
         operation,
@@ -3220,7 +3268,7 @@ async function handleRequest(message) {
       toolNames: tools.map((tool) => tool.name),
       toolCount: tools.length,
     });
-    sendResult(id, { tools });
+    sendResult(id, { tools }, { staticResult: true });
     scheduleAgentPrewarm("tools/list");
     return;
   }
@@ -3258,14 +3306,7 @@ async function handleRequest(message) {
         durationMs: Date.now() - startedAt,
         ok: true,
       });
-      sendResult(id, {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      });
+      sendResult(id, outputGuard.toolResult(toolName, result));
     } catch (error) {
       await logMcpLifecycle("MCP_TOOLS_CALL_FAILED", "MCP tools/call failed.", {
         requestId: id,
@@ -3279,31 +3320,19 @@ async function handleRequest(message) {
           message: error.message,
         },
       });
-      sendResult(id, {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                ok: false,
-                error: {
-                  operationId: error.operationId || operation.operationId,
-                  code: error.code || "TOOL_CALL_FAILED",
-                  message: error.message,
-                  layer: error.layer,
-                  phase: error.phase,
-                  retriable: error.retriable,
-                  cause: error.cause,
-                },
-                details: error.payload,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      });
+      sendResult(id, outputGuard.toolResult(toolName, {
+        ok: false,
+        error: {
+          operationId: error.operationId || operation.operationId,
+          code: error.code || "TOOL_CALL_FAILED",
+          message: error.message,
+          layer: error.layer,
+          phase: error.phase,
+          retriable: error.retriable,
+          cause: error.cause,
+        },
+        details: error.payload,
+      }, true));
     } finally {
       inFlightToolCalls.delete(id);
     }
@@ -3323,6 +3352,10 @@ async function handleRequest(message) {
 let inputBuffer = Buffer.alloc(0);
 
 function dispatchMessage(message) {
+  if (!message || typeof message !== "object" || Array.isArray(message)) {
+    sendError(null, -32600, "Invalid JSON-RPC message");
+    return;
+  }
   if (message.method && message.id === undefined) {
     if (message.method === "notifications/cancelled") {
       cancelToolOperation(message.params?.requestId, message.params?.reason);
@@ -3384,11 +3417,15 @@ function parseMessages() {
 
 process.stdin.on("data", (chunk) => {
   inputBuffer = Buffer.concat([inputBuffer, chunk]);
-  parseMessages();
+  try { parseMessages(); }
+  catch {
+    inputBuffer = Buffer.alloc(0);
+    sendError(null, -32700, "Invalid JSON-RPC message");
+  }
 });
 
 process.stdin.on("error", (error) => {
-  console.error(error);
+  safeDiagnostic(error);
 });
 
 process.stdin.on("close", () => {
@@ -3396,6 +3433,6 @@ process.stdin.on("close", () => {
     cancelToolOperation(requestId, "MCP stdin closed");
   }
   releaseAgentLease().catch((error) => {
-    console.error("failed to release Remote Debug Agent lease", error);
+    safeDiagnostic("failed to release Remote Debug Agent lease", error);
   });
 });
