@@ -1,5 +1,6 @@
 import express from "express";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
+import { inspectLocalSandbox } from "./local-sandbox.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -43,6 +44,7 @@ import {
   summarizeMongoMutation,
 } from "./mongodb-mutations.js";
 import { MongoBulkJobRunner, runMongoBulk as defaultRunMongoBulk } from "./mongodb-bulk.js";
+import { runSandboxAccess as defaultRunSandboxAccess, sandboxSettingsHash } from "./mongodb-sandbox-access.js";
 import {
   listLogArchiveMembers as defaultListLogArchiveMembers,
   listLogs as defaultListLogs,
@@ -417,6 +419,7 @@ export function createApp(options = {}) {
   const runMongoQueryImpl = options.runMongoQuery || defaultRunMongoQuery;
   const runMongoMutationImpl = options.runMongoMutation || defaultRunMongoMutation;
   const runMongoBulkImpl = options.runMongoBulk || defaultRunMongoBulk;
+  const runSandboxAccessImpl = options.runSandboxAccess || defaultRunSandboxAccess;
   const listLogsImpl = options.listLogs || defaultListLogs;
   const listLogArchiveMembersImpl =
     options.listLogArchiveMembers || defaultListLogArchiveMembers;
@@ -1491,6 +1494,8 @@ export function createApp(options = {}) {
         result = await runMongoBulk({ action: "upload", chunk: raw }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk({ action, ...raw }, { operation: requestOperation });
+      } else if (action.startsWith("sandbox")) {
+        result = await runMongoBulk({ ...raw, action }, { operation: requestOperation, priority: "background" });
       } else if (action === "execute") {
         result = await getMongoBulkJobRunner().start(raw, "execute");
       } else if (action === "rollback") {
@@ -1554,6 +1559,24 @@ export function createApp(options = {}) {
 
   app.post("/mongodb/bulk/storage/prepare", (request, response) =>
     handleMongoMutation(request, response, "prepare", "/mongodb/bulk/storage/prepare"));
+  for (const action of ["prepare", "execute"]) {
+    const route = `/mongodb/sandbox/access/${action}`;
+    app.post(route, async (request, response) => {
+      const operation = createRequestOperation(request, response, route, config);
+      try {
+        const { _sandboxSettingsHash, ...input } = request.body || {};
+        const result = await runSandboxAccessImpl(input, { action, config, runSSH, operation, expectedSettingsHash: _sandboxSettingsHash });
+        await audit(config, { tool: `sandbox-access-${action}`, setupId: result.setupId, planHash: result.planHash, sandboxDatabase: result.sandboxDatabase, status: result.status, ok: true });
+        response.json({ ok: true, ...result, operationId: operation.operationId });
+      } catch (error) {
+        await audit(config, { tool: `sandbox-access-${action}`, ok: false, errorCode: error.code });
+        response.status(errorStatus(error)).json(errorPayload(error));
+      }
+    });
+  }
+  for (const [route, action] of [["status", "sandboxStatus"], ["export", "sandboxExport"], ["prepare-cleanup", "sandboxPrepareCleanup"], ["cleanup", "sandboxCleanup"]]) {
+    app.post(`/sandbox/${route}`, (request, response) => handleMongoBulk(request, response, action, `/sandbox/${route}`));
+  }
   app.post("/mongodb/imports/prepare", (request, response) =>
     handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
   app.post("/mongodb/mutations/prepare", (request, response) =>
@@ -2429,6 +2452,13 @@ export function createManagerApp(options = {}) {
     });
   }));
 
+  app.post("/api/sandbox/local", managerAsync(async (request, response) => {
+    const instanceId = registry.resolveId(request.body?.instanceId);
+    const dataDir = path.dirname(path.dirname(config.runtime?.statePath || path.join(process.cwd(), ".runtime", "agent-state.json")));
+    const result = await inspectLocalSandbox(dataDir, instanceId, request.body || {});
+    response.json({ ok: true, ...result });
+  }));
+
   async function proxyToInstance(pathName, request, response) {
     const startedAt = performance.now();
     const instanceId = request.body?.instanceId;
@@ -2462,6 +2492,10 @@ export function createManagerApp(options = {}) {
       if (pathName === "/logs/query") {
         const instance = registry.getInternal(registry.resolveId(instanceId));
         payload._logProjects = normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots);
+      }
+      if (pathName.startsWith("/mongodb/sandbox/access/")) {
+        const resolvedId = registry.resolveId(instanceId);
+        payload._sandboxSettingsHash = sandboxSettingsHash(registry.getInternal(resolvedId).mongodb || {}, resolvedId);
       }
       const result = await workerManager.callInstance(
         instanceId,
@@ -2504,6 +2538,9 @@ export function createManagerApp(options = {}) {
   }
 
   app.post("/run", (request, response) => proxyToInstance("/run", request, response));
+  for (const route of ["status", "export", "prepare-cleanup", "cleanup"]) {
+    app.post(`/sandbox/${route}`, (request, response) => proxyToInstance(`/sandbox/${route}`, request, response));
+  }
   app.post("/read-file", (request, response) => proxyToInstance("/read-file", request, response));
   app.post("/list-dir", (request, response) => proxyToInstance("/list-dir", request, response));
   app.post("/logs/list", (request, response) => proxyToInstance("/logs/list", request, response));
@@ -2516,6 +2553,10 @@ export function createManagerApp(options = {}) {
     proxyToInstance("/mongodb/imports/prepare", request, response));
   app.post("/mongodb/bulk/storage/prepare", (request, response) =>
     proxyToInstance("/mongodb/bulk/storage/prepare", request, response));
+  for (const action of ["prepare", "execute"]) {
+    const route = `/mongodb/sandbox/access/${action}`;
+    app.post(route, (request, response) => proxyToInstance(route, request, response));
+  }
   app.post("/mongodb/bulk/prepare", (request, response) =>
     proxyToInstance("/mongodb/bulk/prepare", request, response));
   app.post("/mongodb/bulk/execute", (request, response) =>

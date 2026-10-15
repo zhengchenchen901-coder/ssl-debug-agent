@@ -137,4 +137,4 @@ function validateAgentUrl(value) {
   return url;
 }
 
-module.exports = { authError, resolveAuthFile, readAuthToken, ensureAuthToken, tokenMatches, validateAgentUrl, healthProof, verifyHealthProof };
+module.exports = { authError, resolveAuthFile, readAuthToken, ensureAuthToken, tokenMatches, validateAgentUrl, healthProof, verifyHealthProof, protectOrCheck };

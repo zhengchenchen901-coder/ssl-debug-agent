@@ -140,7 +140,7 @@ function __bulkManifest(jobId, allowMissing) {
     __bulkFail("MONGODB_BULK_JOB_NOT_FOUND", "bulk job was not found");
   }
   var manifest = __bulkReadJson(__path.join(directory, "manifest.json"), 4 * 1024 * 1024);
-  if (!manifest || manifest.schemaVersion !== 1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
+  if (!manifest || [1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
   return manifest;
 }
 
@@ -246,10 +246,10 @@ function __bulkLoadBatch(jobId, index) {
 
 function __bulkLoadPlan(jobId, manifest) {
   var plan = __bulkReadJson(__path.join(__bulkJobDir(jobId), "plan.json"), 8 * 1024 * 1024);
-  if (!plan || plan.schemaVersion !== 1 || plan.jobId !== jobId || plan.planHash !== manifest.planHash) {
+  if (!plan || [1, 2].indexOf(plan.schemaVersion) === -1 || plan.jobId !== jobId || plan.planHash !== manifest.planHash) {
     __bulkFail("MONGODB_BULK_LOG_INVALID", "final bulk plan is missing or does not match the manifest");
   }
-  var planHash = __bulkHash({
+  var hashValue = {
     schemaVersion: plan.schemaVersion,
     jobId: plan.jobId,
     database: plan.database,
@@ -257,8 +257,12 @@ function __bulkLoadPlan(jobId, manifest) {
     rollbackExpiresAt: plan.rollbackExpiresAt,
     chunks: plan.chunks,
     batches: plan.batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }),
-  });
+  };
+  if (plan.schemaVersion === 2) hashValue.receiptStorage = plan.receiptStorage;
+  var planHash = __bulkHash(hashValue);
   if (planHash !== plan.planHash) __bulkFail("MONGODB_BULK_LOG_INVALID", "final bulk plan integrity check failed");
+  if (plan.schemaVersion !== manifest.schemaVersion || __bulkHash(plan.receiptStorage || null) !== __bulkHash(manifest.receiptStorage || null)) __bulkFail("MONGODB_BULK_LOG_INVALID", "receipt storage does not match the immutable plan");
+  __bulkReceiptStorage(manifest);
   return plan;
 }
 
@@ -307,6 +311,7 @@ function __bulkStatus(manifest, plan, options) {
   return {
     jobId: manifest.jobId,
     database: manifest.database,
+    receiptStorage: __bulkReceiptStorage(manifest),
     status: current,
     mode: manifest.mode || "execute",
     desiredState: manifest.desiredState || "running",
@@ -461,6 +466,7 @@ function __bulkPlanSummary(manifest, plan) {
     jobId: manifest.jobId,
     status: manifest.status,
     database: manifest.database,
+    receiptStorage: __bulkReceiptStorage(manifest),
     planHash: manifest.planHash,
     unitCount: manifest.unitCount,
     operationCount: manifest.operationCount,
@@ -522,15 +528,14 @@ function __bulkFlatten(units) {
   return result;
 }
 
-function __bulkCheckStorageCollection(client) {
-  var collection = client.db(__config.database).collection(__config.receiptsCollection);
-  return collection.listIndexes().toArray().then(function (indexes) {
-    var valid = indexes.some(function (index) {
-      return index.name === "remote_debug_bulk_receipt_expiry" && index.key && index.key.expiresAt === 1 && index.expireAfterSeconds === 0;
-    });
-    if (!valid) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "the technical receipt expiry index is missing");
-    return collection;
-  });
+async function __bulkCheckStorageCollection(client, storage) {
+  storage = storage || { database: __config.sandboxDatabase, collection: __config.receiptsCollection };
+  __ttlAssertReceiptName(__config.receiptsCollection);
+  var collection = client.db(storage.database).collection(storage.collection);
+  await __ttlCheckReceiptOwnership(collection, storage.database, storage.collection, false);
+  var indexes = await collection.listIndexes().toArray();
+  if (!indexes.some(__ttlValidReceiptIndex)) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "the technical receipt expiry index is missing or has changed");
+  return collection;
 }
 
 async function __bulkLoadClient() {
@@ -549,13 +554,32 @@ async function __bulkLoadClient() {
   return client;
 }
 
-function __bulkReceiptId(jobId, index, action) {
-  return jobId + ":" + String(index) + ":" + action;
+function __bulkSourceScope() {
+  var source = JSON.parse(__fs.readFileSync(__config.configPath, "utf8"));
+  return __bulkHash({ database: __config.database, configPath: __config.configPath, profile: __config.configProfile, root: __config.bulkRoot, target: __sandboxSourceTarget(source) });
 }
 
-async function __bulkFindReceipt(client, jobId, index, action) {
-  var collection = client.db(__config.database).collection(__config.receiptsCollection);
-  return collection.findOne({ _id: __bulkReceiptId(jobId, index, action) }, { readPreference: "primary" });
+function __bulkReceiptStorage(manifest) {
+  if (manifest.database !== __config.database || __config.allowedDatabases.indexOf(manifest.database) === -1) __bulkFail("MONGODB_BULK_DATABASE_CONFLICT", "job belongs to another business database");
+  if (manifest.schemaVersion === 1) return { database: manifest.database, collection: __config.receiptsCollection, legacy: true };
+  var storage = manifest.receiptStorage;
+  var expectedScope;
+  try { expectedScope = __bulkSourceScope(); } catch (_) { __bulkFail("SANDBOX_DATABASE_CHANGED", "job source connection is missing or has changed"); }
+  if (!storage || storage.database !== __config.sandboxDatabase || storage.collection !== __config.receiptsCollection || storage.scope !== expectedScope) {
+    __bulkFail("SANDBOX_DATABASE_CHANGED", "job receipt storage is invalid or no longer allowlisted; restore the job's sandbox configuration");
+  }
+  return storage;
+}
+
+function __bulkReceiptId(jobId, index, action, storage) {
+  var id = jobId + ":" + String(index) + ":" + action;
+  return storage && !storage.legacy ? storage.scope + ":" + id : id;
+}
+
+async function __bulkFindReceipt(client, jobId, index, action, storage) {
+  storage = storage || __bulkReceiptStorage(__bulkManifest(jobId, false));
+  var collection = client.db(storage.database).collection(storage.collection);
+  return collection.findOne({ _id: __bulkReceiptId(jobId, index, action, storage) }, { readPreference: "primary" });
 }
 
 function __bulkApplySummary(manifest, summary) {
@@ -688,16 +712,18 @@ function __bulkCount(value, primary, fallback) {
 }
 
 async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
+  var manifest = __bulkManifest(jobId, false);
+  var storage = __bulkReceiptStorage(manifest);
   var client = await __bulkLoadClient();
   var session = client.startSession();
   var receiptAction = rollback ? "rollback" : "commit";
-  var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction);
+  var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction, storage);
   var summary = { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
   var after = [];
   var committing = false;
   try {
-    await __bulkCheckStorageCollection(client);
-    var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction);
+    await __bulkCheckStorageCollection(client, storage);
+    var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction, storage);
     if (previousReceipt) {
       if (previousReceipt.planHash !== planHash || previousReceipt.batchHash !== batch.hash || previousReceipt.action !== receiptAction) {
         __bulkFail("MONGODB_BULK_RECEIPT_CONFLICT", "technical receipt does not match this exact batch");
@@ -768,10 +794,10 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
       summary.unchanged = Math.max(0, summary.matched - summary.modified);
       __bulkWriteJson(__path.join(__bulkJobDir(jobId), "after-" + String(batch.index).padStart(6, "0") + ".json"), { batchHash: batch.hash, after: after }, 8 * 1024 * 1024);
     }
-    var receipts = client.db(__config.database).collection(__config.receiptsCollection);
+    var receipts = client.db(storage.database).collection(storage.collection);
     var now = new Date();
     var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
-    await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary }, { session: session });
+    await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary, businessDatabase: __config.database, scope: storage.scope }, { session: session });
     committing = true;
     await session.commitTransaction();
     return { alreadyCommitted: false, summary: summary };
@@ -781,7 +807,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
       try {
         var checkClient = await __bulkLoadClient();
         try {
-          var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction);
+          var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction, storage);
           if (receipt && receipt.planHash === planHash && receipt.batchHash === batch.hash) return { alreadyCommitted: true, summary: receipt.summary || summary };
         } finally { await checkClient.close(); }
       } catch (_checkError) {}
@@ -795,18 +821,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
 }
 
 async function __bulkInitializeReceiptCollection(client) {
-  var database = client.db(__config.database);
-  var collection = database.collection(__config.receiptsCollection);
-  await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  var index = (await collection.listIndexes().toArray()).filter(function (item) { return item.name === "remote_debug_bulk_receipt_expiry"; })[0];
-  if (!index || !index.key || index.key.expiresAt !== 1 || index.expireAfterSeconds !== 0) __bulkFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
-  var marker = { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: __config.database, receiptsCollection: __config.receiptsCollection };
-  var existing = await collection.findOne({ _id: marker._id }, { readPreference: "primary" });
-  if (existing && (existing.schemaVersion !== 1 || existing.database !== marker.database || existing.receiptsCollection !== marker.receiptsCollection)) {
-    __bulkFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection contains a different storage marker");
-  }
-  if (!existing) await collection.insertOne(marker);
-  return { index: index.name, marker: marker._id };
+  return __ttlInitializeReceiptCollection(client, __config.sandboxDatabase, __config.receiptsCollection);
 }
 
 async function __bulkPrepareStorage() {
@@ -840,11 +855,11 @@ async function __bulkUpload() {
   var accepted = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
     var manifestPath = __path.join(dir, "manifest.json");
     var manifest = __bulkReadJson(manifestPath, 4 * 1024 * 1024);
-    var identity = { schemaVersion: 1, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    var identity = { schemaVersion: 2, receiptStorage: { database: __config.sandboxDatabase, collection: __config.receiptsCollection, scope: __bulkSourceScope() }, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     if (!manifest) {
       if (chunk.chunkIndex !== 0) __bulkFail("MONGODB_BULK_CHUNK_ORDER", "the first upload chunk must have index 0");
       manifest = identity;
-    } else if (manifest.schemaVersion !== 1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
+    } else if ([1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
       __bulkFail("MONGODB_BULK_JOB_CONFLICT", "jobId already belongs to a different upload plan");
     }
     var chunkHash = __bulkHash({ jobId: jobId, database: chunk.database, chunkIndex: chunk.chunkIndex, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, units: chunk.units });
@@ -961,12 +976,14 @@ async function __bulkFinalize(jobId) {
       var partitions = __bulkPartition(units);
       var batches = [];
       client = await __bulkLoadClient();
-      await __bulkCheckStorageCollection(client);
+      await __bulkCheckStorageCollection(client, __bulkReceiptStorage(manifest));
       await __bulkCheckTargetCollections(client, units);
       for (var i = 0; i < partitions.length; i += 1) await __bulkPrepareSlice(client, jobId, partitions[i], 0, seenTargets, seenUnits, batches);
       var rollbackExpiresAt = new Date(Date.now() + manifest.rollbackTtlMs).toISOString();
-      var planValue = { schemaVersion: 1, jobId: jobId, database: manifest.database, purpose: manifest.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: manifest.chunks, batches: batches };
-      var planHash = __bulkHash({ schemaVersion: planValue.schemaVersion, jobId: planValue.jobId, database: planValue.database, purpose: planValue.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: planValue.chunks, batches: batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }) });
+      var planValue = { schemaVersion: manifest.schemaVersion, jobId: jobId, database: manifest.database, purpose: manifest.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: manifest.chunks, batches: batches };
+      var hashValue = { schemaVersion: planValue.schemaVersion, jobId: planValue.jobId, database: planValue.database, purpose: planValue.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: planValue.chunks, batches: batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }) };
+      if (manifest.schemaVersion === 2) { planValue.receiptStorage = manifest.receiptStorage; hashValue.receiptStorage = manifest.receiptStorage; }
+      var planHash = __bulkHash(hashValue);
       planValue.planHash = planHash;
       __bulkWriteJson(__path.join(__bulkJobDir(jobId), "plan.json"), planValue, 8 * 1024 * 1024);
       manifest.status = "prepared";
@@ -1222,6 +1239,11 @@ async function __bulkMain() {
   try {
     __bulkEnsureRoot();
     var action = __request.action;
+    if (action.indexOf("sandbox") === 0) {
+      data = await __sandboxManage();
+      process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
+      return;
+    }
     if (action === "list") {
       data = __bulkList();
       process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");

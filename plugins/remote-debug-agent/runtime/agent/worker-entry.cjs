@@ -15190,11 +15190,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path11) {
-      if (!path11 || typeof path11 !== "string") {
+    function lookup(path12) {
+      if (!path12 || typeof path12 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path11).toLowerCase().slice(1);
+      var extension2 = extname("x." + path12).toLowerCase().slice(1);
       if (!extension2) {
         return false;
       }
@@ -18665,13 +18665,13 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path11 = require("node:path");
-    var fs8 = require("node:fs");
-    var dirname = path11.dirname;
-    var basename = path11.basename;
-    var extname = path11.extname;
-    var join = path11.join;
-    var resolve = path11.resolve;
+    var path12 = require("node:path");
+    var fs9 = require("node:fs");
+    var dirname = path12.dirname;
+    var basename = path12.basename;
+    var extname = path12.extname;
+    var join = path12.join;
+    var resolve = path12.resolve;
     module2.exports = View;
     function View(name, options) {
       var opts = options || {};
@@ -18700,17 +18700,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View.prototype.lookup = function lookup(name) {
-      var path12;
+      var path13;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name);
-      for (var i = 0; i < roots.length && !path12; i++) {
+      for (var i = 0; i < roots.length && !path13; i++) {
         var root = roots[i];
         var loc = resolve(root, name);
         var dir = dirname(loc);
         var file = basename(loc);
-        path12 = this.resolve(dir, file);
+        path13 = this.resolve(dir, file);
       }
-      return path12;
+      return path13;
     };
     View.prototype.render = function render(options, callback) {
       var sync = true;
@@ -18732,21 +18732,21 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path12 = join(dir, file);
-      var stat = tryStat(path12);
+      var path13 = join(dir, file);
+      var stat = tryStat(path13);
       if (stat && stat.isFile()) {
-        return path12;
+        return path13;
       }
-      path12 = join(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path12);
+      path13 = join(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path13);
       if (stat && stat.isFile()) {
-        return path12;
+        return path13;
       }
     };
-    function tryStat(path12) {
-      debug('stat "%s"', path12);
+    function tryStat(path13) {
+      debug('stat "%s"', path13);
       try {
-        return fs8.statSync(path12);
+        return fs9.statSync(path13);
       } catch (e) {
         return void 0;
       }
@@ -19882,15 +19882,15 @@ var require_dist = __commonJS({
       let index = 0;
       function consumeUntil(end) {
         const output = [];
-        let path11 = "";
+        let path12 = "";
         function writePath() {
-          if (!path11)
+          if (!path12)
             return;
           output.push({
             type: "text",
-            value: encodePath(path11)
+            value: encodePath(path12)
           });
-          path11 = "";
+          path12 = "";
         }
         while (index < chars.length) {
           const value = chars[index++];
@@ -19902,7 +19902,7 @@ var require_dist = __commonJS({
             if (index === chars.length) {
               throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            path11 += chars[index++];
+            path12 += chars[index++];
             continue;
           }
           if (value === ":" || value === "*") {
@@ -19946,7 +19946,7 @@ var require_dist = __commonJS({
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
             throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
           }
-          path11 += value;
+          path12 += value;
         }
         if (end) {
           throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
@@ -19956,17 +19956,17 @@ var require_dist = __commonJS({
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path11, options = {}) {
+    function compile(path12, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const data = typeof path11 === "object" ? path11 : parse(path11, options);
+      const data = typeof path12 === "object" ? path12 : parse(path12, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
-      return function path12(params = {}) {
+      return function path13(params = {}) {
         const missing = [];
-        const path13 = fn(params, missing);
+        const path14 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path13;
+        return path14;
       };
     }
     function tokensToFunction(tokens, delimiter, encode) {
@@ -20028,9 +20028,9 @@ var require_dist = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path11, options = {}) {
+    function match(path12, options = {}) {
       const { decode = decodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path11, options);
+      const { regexp, keys } = pathToRegexp(path12, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20042,7 +20042,7 @@ var require_dist = __commonJS({
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path12 = m[0];
+        const path13 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20051,21 +20051,21 @@ var require_dist = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path12, params };
+        return { path: path13, params };
       };
     }
-    function pathToRegexp(path11, options = {}) {
+    function pathToRegexp(path12, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path12) {
-        if (Array.isArray(path12)) {
-          for (const p of path12)
+      function process2(path13) {
+        if (Array.isArray(path13)) {
+          for (const p of path13)
             process2(p);
           return;
         }
-        const data = typeof path12 === "object" ? path12 : parse(path12, options);
+        const data = typeof path13 === "object" ? path13 : parse(path13, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20076,7 +20076,7 @@ var require_dist = __commonJS({
           combinations++;
         });
       }
-      process2(path11);
+      process2(path12);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape2(delimiter) + "$)?";
@@ -20216,18 +20216,18 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path11, options, fn) {
+    function Layer(path12, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path11, options, fn);
+        return new Layer(path12, options, fn);
       }
-      debug("new %o", path11);
+      debug("new %o", path12);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path11 === "/" && opts.end === false;
+      this.slash = path12 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
@@ -20266,7 +20266,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path11) ? path11.map(matcher) : [matcher(path11)];
+      this.matchers = Array.isArray(path12) ? path12.map(matcher) : [matcher(path12)];
     }
     Layer.prototype.handleError = function handleError(error, req, res, next) {
       const fn = this.handle;
@@ -20306,9 +20306,9 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path11) {
+    Layer.prototype.match = function match(path12) {
       let match2;
-      if (path11 != null) {
+      if (path12 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
@@ -20316,7 +20316,7 @@ var require_layer = __commonJS({
         }
         let i = 0;
         while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path11);
+          match2 = this.matchers[i](path12);
           i++;
         }
       }
@@ -20344,13 +20344,13 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path11) {
-      if (path11 instanceof RegExp || path11 === "/") {
-        return path11;
+    function loosen(path12) {
+      if (path12 instanceof RegExp || path12 === "/") {
+        return path12;
       }
-      return Array.isArray(path11) ? path11.map(function(p) {
+      return Array.isArray(path12) ? path12.map(function(p) {
         return loosen(p);
-      }) : String(path11).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path12).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
@@ -20366,9 +20366,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path11) {
-      debug("new %o", path11);
-      this.path = path11;
+    function Route(path12) {
+      debug("new %o", path12);
+      this.path = path12;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -20576,8 +20576,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path11 = getPathname(req);
-        if (path11 == null) {
+        const path12 = getPathname(req);
+        if (path12 == null) {
           return done(layerError);
         }
         let layer;
@@ -20585,7 +20585,7 @@ var require_router = __commonJS({
         let route;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path11);
+          match = matchLayer(layer, path12);
           route = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -20623,18 +20623,18 @@ var require_router = __commonJS({
           } else if (route) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path11);
+            trimPrefix(layer, layerError, layerPath, path12);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path11) {
+      function trimPrefix(layer, layerError, layerPath, path12) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path11.substring(0, layerPath.length)) {
+          if (layerPath !== path12.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path11[layerPath.length];
+          const c = path12[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -20658,7 +20658,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path11 = "/";
+      let path12 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -20666,7 +20666,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path11 = handler;
+          path12 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -20678,8 +20678,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path11, fn.name || "<anonymous>");
-        const layer = new Layer(path11, {
+        debug("use %o %s", path12, fn.name || "<anonymous>");
+        const layer = new Layer(path12, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -20689,9 +20689,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route(path11) {
-      const route2 = new Route(path11);
-      const layer = new Layer(path11, {
+    Router.prototype.route = function route(path12) {
+      const route2 = new Route(path12);
+      const layer = new Layer(path12, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -20704,8 +20704,8 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path11) {
-        const route = this.route(path11);
+      Router.prototype[method] = function(path12) {
+        const route = this.route(path12);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
@@ -20734,9 +20734,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path11) {
+    function matchLayer(layer, path12) {
       try {
-        return layer.match(path11);
+        return layer.match(path12);
       } catch (err) {
         return err;
       }
@@ -20964,7 +20964,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path11 = "/";
+      var path12 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -20972,7 +20972,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path11 = fn;
+          path12 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -20982,12 +20982,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path11, fn2);
+          return router.use(path12, fn2);
         }
-        debug(".use app under %s", path11);
-        fn2.mountpath = path11;
+        debug(".use app under %s", path12);
+        fn2.mountpath = path12;
         fn2.parent = this;
-        router.use(path11, function mounted_app(req, res, next) {
+        router.use(path12, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -20999,8 +20999,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route(path11) {
-      return this.router.route(path11);
+    app.route = function route(path12) {
+      return this.router.route(path12);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21043,7 +21043,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path11() {
+    app.path = function path12() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -21059,17 +21059,17 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path11) {
+      app[method] = function(path12) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path11);
+          return this.set(path12);
         }
-        var route = this.route(path11);
+        var route = this.route(path12);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path11) {
-      var route = this.route(path11);
+    app.all = function all(path12) {
+      var route = this.route(path12);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route[methods[i]].apply(route, args);
@@ -21979,7 +21979,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path11() {
+    defineGetter(req, "path", function path12() {
       return parse(this).pathname;
     });
     defineGetter(req, "host", function host() {
@@ -22190,8 +22190,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename(path11) {
-      const normalized = path11.replaceAll("\\", "/");
+    function basename(path12) {
+      const normalized = path12.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22432,32 +22432,32 @@ var require_send = __commonJS({
     var escapeHtml = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
-    var fs8 = require("fs");
+    var fs9 = require("fs");
     var mime = require_mime_types();
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path11 = require("path");
+    var path12 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path11.extname;
-    var join = path11.join;
-    var normalize = path11.normalize;
-    var resolve = path11.resolve;
-    var sep = path11.sep;
+    var extname = path12.extname;
+    var join = path12.join;
+    var normalize = path12.normalize;
+    var resolve = path12.resolve;
+    var sep = path12.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send2;
-    function send2(req, path12, options) {
-      return new SendStream(req, path12, options);
+    function send2(req, path13, options) {
+      return new SendStream(req, path13, options);
     }
-    function SendStream(req, path12, options) {
+    function SendStream(req, path13, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path12;
+      this.path = path13;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -22571,10 +22571,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path12) {
+    SendStream.prototype.redirect = function redirect(path13) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path12);
+        this.emit("directory", res, path13);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -22594,38 +22594,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path12 = decode(this.path);
-      if (path12 === -1) {
+      var path13 = decode(this.path);
+      if (path13 === -1) {
         this.error(400);
         return res;
       }
-      if (~path12.indexOf("\0")) {
+      if (~path13.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path12) {
-          path12 = normalize("." + sep + path12);
+        if (path13) {
+          path13 = normalize("." + sep + path13);
         }
-        if (UP_PATH_REGEXP.test(path12)) {
-          debug('malicious path "%s"', path12);
+        if (UP_PATH_REGEXP.test(path13)) {
+          debug('malicious path "%s"', path13);
           this.error(403);
           return res;
         }
-        parts = path12.split(sep);
-        path12 = normalize(join(root, path12));
+        parts = path13.split(sep);
+        path13 = normalize(join(root, path13));
       } else {
-        if (UP_PATH_REGEXP.test(path12)) {
-          debug('malicious path "%s"', path12);
+        if (UP_PATH_REGEXP.test(path13)) {
+          debug('malicious path "%s"', path13);
           this.error(403);
           return res;
         }
-        parts = normalize(path12).split(sep);
-        path12 = resolve(path12);
+        parts = normalize(path13).split(sep);
+        path13 = resolve(path13);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path12);
+        debug('%s dotfile "%s"', this._dotfiles, path13);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -22639,13 +22639,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path12);
+        this.sendIndex(path13);
         return res;
       }
-      this.sendFile(path12);
+      this.sendFile(path13);
       return res;
     };
-    SendStream.prototype.send = function send3(path12, stat) {
+    SendStream.prototype.send = function send3(path13, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -22657,9 +22657,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path12);
-      this.setHeader(path12, stat);
-      this.type(path12);
+      debug('pipe "%s"', path13);
+      this.setHeader(path13, stat);
+      this.type(path13);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -22708,30 +22708,30 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path12, opts);
+      this.stream(path13, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path12) {
+    SendStream.prototype.sendFile = function sendFile(path13) {
       var i = 0;
       var self2 = this;
-      debug('stat "%s"', path12);
-      fs8.stat(path12, function onstat(err, stat) {
-        var pathEndsWithSep = path12[path12.length - 1] === sep;
-        if (err && err.code === "ENOENT" && !extname(path12) && !pathEndsWithSep) {
+      debug('stat "%s"', path13);
+      fs9.stat(path13, function onstat(err, stat) {
+        var pathEndsWithSep = path13[path13.length - 1] === sep;
+        if (err && err.code === "ENOENT" && !extname(path13) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self2.onStatError(err);
-        if (stat.isDirectory()) return self2.redirect(path12);
+        if (stat.isDirectory()) return self2.redirect(path13);
         if (pathEndsWithSep) return self2.error(404);
-        self2.emit("file", path12, stat);
-        self2.send(path12, stat);
+        self2.emit("file", path13, stat);
+        self2.send(path13, stat);
       });
       function next(err) {
         if (self2._extensions.length <= i) {
           return err ? self2.onStatError(err) : self2.error(404);
         }
-        var p = path12 + "." + self2._extensions[i++];
+        var p = path13 + "." + self2._extensions[i++];
         debug('stat "%s"', p);
-        fs8.stat(p, function(err2, stat) {
+        fs9.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -22739,7 +22739,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path12) {
+    SendStream.prototype.sendIndex = function sendIndex(path13) {
       var i = -1;
       var self2 = this;
       function next(err) {
@@ -22747,9 +22747,9 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join(path12, self2._index[i]);
+        var p = join(path13, self2._index[i]);
         debug('stat "%s"', p);
-        fs8.stat(p, function(err2, stat) {
+        fs9.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -22758,10 +22758,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path12, options) {
+    SendStream.prototype.stream = function stream(path13, options) {
       var self2 = this;
       var res = this.res;
-      var stream2 = fs8.createReadStream(path12, options);
+      var stream2 = fs9.createReadStream(path13, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -22776,17 +22776,17 @@ var require_send = __commonJS({
         self2.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path12) {
+    SendStream.prototype.type = function type(path13) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path12);
+      var ext = extname(path13);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path12, stat) {
+    SendStream.prototype.setHeader = function setHeader(path13, stat) {
       var res = this.res;
-      this.emit("headers", res, path12, stat);
+      this.emit("headers", res, path13, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -22844,9 +22844,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path12) {
+    function decode(path13) {
       try {
-        return decodeURIComponent(path12);
+        return decodeURIComponent(path13);
       } catch (err) {
         return -1;
       }
@@ -22990,7 +22990,7 @@ var require_response = __commonJS({
     var http = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path11 = require("node:path");
+    var path12 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -22999,8 +22999,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send2 = require_send();
-    var extname = path11.extname;
-    var resolve = path11.resolve;
+    var extname = path12.extname;
+    var resolve = path12.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http.ServerResponse.prototype);
@@ -23146,26 +23146,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path12, options, callback) {
+    res.sendFile = function sendFile(path13, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path12) {
+      if (!path13) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path12 !== "string") {
+      if (typeof path13 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path12)) {
+      if (!opts.root && !pathIsAbsolute(path13)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path12);
+      var pathname = encodeURI(path13);
       opts.etag = this.app.enabled("etag");
       var file = send2(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23176,7 +23176,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path12, filename, options, callback) {
+    res.download = function download(path13, filename, options, callback) {
       var done = callback;
       var name = filename;
       var opts = options || null;
@@ -23193,7 +23193,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name || path12)
+        "Content-Disposition": contentDisposition(name || path13)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23206,7 +23206,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path12) : path12;
+      var fullPath = !opts.root ? resolve(path13) : path13;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -23489,11 +23489,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path11 = parseUrl(req).pathname;
-        if (path11 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path11 = "";
+        var path12 = parseUrl(req).pathname;
+        if (path12 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path12 = "";
         }
-        var stream = send2(req, path11, opts);
+        var stream = send2(req, path12, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -23604,8 +23604,8 @@ var require_express2 = __commonJS({
 var require_local_auth = __commonJS({
   "../plugins/remote-debug-agent/local-auth.cjs"(exports2, module2) {
     "use strict";
-    var fs8 = require("fs");
-    var path11 = require("path");
+    var fs9 = require("fs");
+    var path12 = require("path");
     var crypto = require("crypto");
     var { execFileSync } = require("child_process");
     function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
@@ -23614,7 +23614,7 @@ var require_local_auth = __commonJS({
       return error;
     }
     function resolveAuthFile(dataDir, env = process.env) {
-      return path11.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path11.join(".runtime", "http-auth.json"));
+      return path12.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path12.join(".runtime", "http-auth.json"));
     }
     var aclScript = `
 $ErrorActionPreference = 'Stop'
@@ -23648,7 +23648,7 @@ foreach ($rule in $rules) {
 if (-not $full) { throw 'Owner lacks access' }
 `;
     function protectOrCheck(target, directory, protect) {
-      const stat = fs8.lstatSync(target);
+      const stat = fs9.lstatSync(target);
       if (stat.isSymbolicLink() || (directory ? !stat.isDirectory() : !stat.isFile())) {
         throw authError("authentication storage must be a regular file in a protected directory");
       }
@@ -23665,19 +23665,19 @@ if (-not $full) { throw 'Owner lacks access' }
         }
       } else {
         if (stat.uid !== process.getuid()) throw authError("authentication storage is owned by another user");
-        if (protect) fs8.chmodSync(target, directory ? 448 : 384);
-        if ((fs8.statSync(target).mode & 511) !== (directory ? 448 : 384)) {
+        if (protect) fs9.chmodSync(target, directory ? 448 : 384);
+        if ((fs9.statSync(target).mode & 511) !== (directory ? 448 : 384)) {
           throw authError("authentication storage requires owner-only permissions");
         }
       }
     }
     function readAuthToken(filePath) {
       try {
-        protectOrCheck(path11.dirname(filePath), true, false);
+        protectOrCheck(path12.dirname(filePath), true, false);
         protectOrCheck(filePath, false, false);
-        const stat = fs8.statSync(filePath);
+        const stat = fs9.statSync(filePath);
         if (stat.size > 1024) throw authError("authentication credential file is invalid");
-        const value = JSON.parse(fs8.readFileSync(filePath, "utf8"));
+        const value = JSON.parse(fs9.readFileSync(filePath, "utf8"));
         if (value.version !== 1 || !/^[a-f0-9]{64}$/.test(value.token)) throw authError("authentication credential file is invalid");
         return value.token;
       } catch (error) {
@@ -23686,30 +23686,30 @@ if (-not $full) { throw 'Owner lacks access' }
       }
     }
     function ensureAuthToken(filePath) {
-      const directory = path11.dirname(filePath);
+      const directory = path12.dirname(filePath);
       try {
-        fs8.mkdirSync(directory, { recursive: true, mode: 448 });
+        fs9.mkdirSync(directory, { recursive: true, mode: 448 });
         protectOrCheck(directory, true, true);
-        if (fs8.existsSync(filePath)) return readAuthToken(filePath);
+        if (fs9.existsSync(filePath)) return readAuthToken(filePath);
         const token = crypto.randomBytes(32).toString("hex");
-        const temporaryPath = path11.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
+        const temporaryPath = path12.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
         try {
-          const fd = fs8.openSync(temporaryPath, "wx", 384);
+          const fd = fs9.openSync(temporaryPath, "wx", 384);
           try {
-            fs8.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
-            fs8.fsyncSync(fd);
+            fs9.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
+            fs9.fsyncSync(fd);
           } finally {
-            fs8.closeSync(fd);
+            fs9.closeSync(fd);
           }
           protectOrCheck(temporaryPath, false, true);
           try {
-            fs8.linkSync(temporaryPath, filePath);
+            fs9.linkSync(temporaryPath, filePath);
           } catch (error) {
             if (error.code !== "EEXIST") throw error;
           }
         } finally {
           try {
-            fs8.unlinkSync(temporaryPath);
+            fs9.unlinkSync(temporaryPath);
           } catch {
           }
         }
@@ -23746,7 +23746,7 @@ if (-not $full) { throw 'Owner lacks access' }
       if (url.protocol === "http:" && url.hostname === "localhost") url.hostname = "127.0.0.1";
       return url;
     }
-    module2.exports = { authError, resolveAuthFile, readAuthToken, ensureAuthToken, tokenMatches, validateAgentUrl, healthProof, verifyHealthProof };
+    module2.exports = { authError, resolveAuthFile, readAuthToken, ensureAuthToken, tokenMatches, validateAgentUrl, healthProof, verifyHealthProof, protectOrCheck };
   }
 });
 
@@ -23754,19 +23754,19 @@ if (-not $full) { throw 'Owner lacks access' }
 var require_environment_report = __commonJS({
   "../plugins/remote-debug-agent/environment-report.cjs"(exports2, module2) {
     "use strict";
-    var fs8 = require("fs");
+    var fs9 = require("fs");
     var os2 = require("os");
-    var path11 = require("path");
+    var path12 = require("path");
     var crypto = require("crypto");
     function dataDirectory(env) {
-      return path11.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path11.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path11.join(os2.homedir(), ".remote-debug-agent")));
+      return path12.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path12.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path12.join(os2.homedir(), ".remote-debug-agent")));
     }
     function reportPath(dataDir) {
-      return path11.join(dataDir, ".runtime", "environment-report.json");
+      return path12.join(dataDir, ".runtime", "environment-report.json");
     }
     function readJson(file) {
       try {
-        return JSON.parse(fs8.readFileSync(file, "utf8"));
+        return JSON.parse(fs9.readFileSync(file, "utf8"));
       } catch (_) {
         return null;
       }
@@ -23775,14 +23775,14 @@ var require_environment_report = __commonJS({
       return readJson(reportPath(dataDir));
     }
     function writeJson(file, value) {
-      fs8.mkdirSync(path11.dirname(file), { recursive: true, mode: 448 });
+      fs9.mkdirSync(path12.dirname(file), { recursive: true, mode: 448 });
       const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
       try {
-        fs8.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
-        fs8.renameSync(temporary, file);
+        fs9.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
+        fs9.renameSync(temporary, file);
       } finally {
         try {
-          fs8.unlinkSync(temporary);
+          fs9.unlinkSync(temporary);
         } catch (_) {
         }
       }
@@ -23804,12 +23804,12 @@ var require_environment_report = __commonJS({
       return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
     }
     function effectiveEnvironment(env, dataDir) {
-      const configPath = path11.resolve(env.REMOTE_DEBUG_ENV_PATH || path11.join(dataDir, "config.env"));
+      const configPath = path12.resolve(env.REMOTE_DEBUG_ENV_PATH || path12.join(dataDir, "config.env"));
       const effective = Object.assign({}, env);
       let configError = null;
       try {
-        if (fs8.existsSync(configPath)) {
-          fs8.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
+        if (fs9.existsSync(configPath)) {
+          fs9.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
             const match = /^\s*(REMOTE_DEBUG_[A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
             if (!match) return;
             let value = match[2];
@@ -23827,9 +23827,9 @@ var require_environment_report = __commonJS({
       options = options || {};
       const dataDir = dataDirectory(env);
       const settings = effectiveEnvironment(env, dataDir);
-      const runtimeRoot = path11.join(pluginRoot, "runtime", "agent");
-      const manifest = readJson(path11.join(runtimeRoot, "runtime-manifest.json"));
-      const pkg = readJson(path11.join(pluginRoot, "package.json"));
+      const runtimeRoot = path12.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path12.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path12.join(pluginRoot, "package.json"));
       const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
       const version = options.nodeVersion || process.versions.node;
       const checks = [];
@@ -23887,10 +23887,10 @@ var require_environment_report = __commonJS({
             "public/environment-report.js"
           ];
           const invalid2 = requiredFiles.filter(function(file) {
-            const resolved = path11.resolve(runtimeRoot, file);
-            if (!resolved.startsWith(runtimeRoot + path11.sep) || !fs8.existsSync(resolved)) return true;
+            const resolved = path12.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path12.sep) || !fs9.existsSync(resolved)) return true;
             try {
-              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs8.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
+              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs9.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
             } catch (_) {
               return true;
             }
@@ -23910,16 +23910,16 @@ var require_environment_report = __commonJS({
       check(
         "config",
         "本地配置文件",
-        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs8.existsSync(settings.configPath) ? settings.configPath : "未创建",
+        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs9.existsSync(settings.configPath) ? settings.configPath : "未创建",
         "可选；文件存在时需可读，连接信息也可来自实例配置或环境变量",
-        settings.configError ? "fail" : fs8.existsSync(settings.configPath) ? "pass" : "warn",
+        settings.configError ? "fail" : fs9.existsSync(settings.configPath) ? "pass" : "warn",
         settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
       );
       try {
-        fs8.mkdirSync(path11.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
-        const probe = path11.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
-        fs8.writeFileSync(probe, "", { mode: 384 });
-        fs8.unlinkSync(probe);
+        fs9.mkdirSync(path12.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path12.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs9.writeFileSync(probe, "", { mode: 384 });
+        fs9.unlinkSync(probe);
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
       } catch (_) {
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "fail", "为当前用户提供目录写入权限，或设置 REMOTE_DEBUG_DATA_DIR 到可写目录。");
@@ -23952,15 +23952,15 @@ var require_environment_report = __commonJS({
         stage: "environment",
         checks,
         failures: history.slice(-10),
-        offlineDashboard: path11.join(dataDir, ".runtime", "environment-dashboard.html"),
+        offlineDashboard: path12.join(dataDir, ".runtime", "environment-dashboard.html"),
         dashboardUrl: null
       };
     }
     function writeOfflineDashboard(dataDir, report) {
-      const publicDir = path11.join(report.pluginRoot, "runtime", "agent", "public");
-      const file = path11.join(dataDir, ".runtime", "environment-dashboard.html");
+      const publicDir = path12.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path12.join(dataDir, ".runtime", "environment-dashboard.html");
       if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name) {
-        return fs8.existsSync(path11.join(publicDir, name));
+        return fs9.existsSync(path12.join(publicDir, name));
       })) {
         let escape2 = function(value) {
           return String(value || "").replace(/[&<>"']/g, function(char) {
@@ -23972,12 +23972,12 @@ var require_environment_report = __commonJS({
             return "<td>" + escape2(value) + "</td>";
           }).join("") + "</tr>";
         }).join("");
-        fs8.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
+        fs9.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
         return;
       }
-      let html = fs8.readFileSync(path11.join(publicDir, "dashboard.html"), "utf8");
-      const css = fs8.readFileSync(path11.join(publicDir, "dashboard.css"), "utf8");
-      const script = fs8.readFileSync(path11.join(publicDir, "environment-report.js"), "utf8");
+      let html = fs9.readFileSync(path12.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs9.readFileSync(path12.join(publicDir, "dashboard.css"), "utf8");
+      const script = fs9.readFileSync(path12.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
       html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
         return "<style>" + css + "</style>";
@@ -23987,7 +23987,7 @@ var require_environment_report = __commonJS({
           return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>";
         }
       ).replace('<script src="/dashboard.js" type="module"></script>', "");
-      fs8.writeFileSync(file, html, { mode: 384 });
+      fs9.writeFileSync(file, html, { mode: 384 });
     }
     function recordRuntimeEvent(dataDir, event2, attemptId) {
       if (!attemptId) return;
@@ -30492,7 +30492,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv,
       createECDH,
-      createHash: createHash8,
+      createHash: createHash9,
       createHmac,
       createSign,
       createVerify,
@@ -31180,11 +31180,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash8("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash9("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash8("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash9("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -31349,8 +31349,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash8("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash8("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash9("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash9("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -31390,7 +31390,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash8("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash9("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -32034,11 +32034,11 @@ var require_agent = __commonJS({
       };
     })();
     var WINDOWS_PIPE_REGEX = /^[/\\][/\\]\.[/\\]pipe[/\\].+/;
-    function createAgent(path11) {
-      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path11)) {
-        return path11 === "pageant" ? new PageantAgent() : new CygwinAgent(path11);
+    function createAgent(path12) {
+      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path12)) {
+        return path12 === "pageant" ? new PageantAgent() : new CygwinAgent(path12);
       }
-      return new OpenSSHAgent(path11);
+      return new OpenSSHAgent(path12);
     }
     var AgentProtocol = (() => {
       const SSH_AGENTC_REQUEST_IDENTITIES = 11;
@@ -33712,7 +33712,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash8,
+      createHash: createHash9,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -34138,7 +34138,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash8(this.hashName);
+          const hash = createHash9(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -35146,9 +35146,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest = createHash8(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest = createHash9(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest.length < len) {
-          const chunk = createHash8(hashName).update(secret).update(exchangeHash).update(digest).digest();
+          const chunk = createHash9(hashName).update(secret).update(exchangeHash).update(digest).digest();
           const extended = Buffer.allocUnsafe(digest.length + chunk.length);
           extended.set(digest, 0);
           extended.set(chunk, digest.length);
@@ -37013,8 +37013,8 @@ var require_SFTP = __commonJS({
   "node_modules/ssh2/lib/protocol/SFTP.js"(exports2, module2) {
     "use strict";
     var EventEmitter3 = require("events");
-    var fs8 = require("fs");
-    var { constants } = fs8;
+    var fs9 = require("fs");
+    var { constants } = fs9;
     var {
       Readable: ReadableStream,
       Writable: WritableStream
@@ -37282,17 +37282,17 @@ var require_SFTP = __commonJS({
       // ===========================================================================
       // Client-specific ===========================================================
       // ===========================================================================
-      createReadStream(path11, options) {
+      createReadStream(path12, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new ReadStream(this, path11, options);
+        return new ReadStream(this, path12, options);
       }
-      createWriteStream(path11, options) {
+      createWriteStream(path12, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new WriteStream(this, path11, options);
+        return new WriteStream(this, path12, options);
       }
-      open(path11, flags_, attrs, cb) {
+      open(path12, flags_, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         if (typeof attrs === "function") {
@@ -37311,7 +37311,7 @@ var require_SFTP = __commonJS({
           attrsFlags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37319,7 +37319,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         writeUInt32BE(buf, attrsFlags, p += 4);
         if (attrsLen) {
@@ -37443,14 +37443,14 @@ var require_SFTP = __commonJS({
       fastGet(remotePath, localPath, opts, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        fastXfer(this, fs8, remotePath, localPath, opts, cb);
+        fastXfer(this, fs9, remotePath, localPath, opts, cb);
       }
       fastPut(localPath, remotePath, opts, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        fastXfer(fs8, this, localPath, remotePath, opts, cb);
+        fastXfer(fs9, this, localPath, remotePath, opts, cb);
       }
-      readFile(path11, options, callback_) {
+      readFile(path12, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -37523,13 +37523,13 @@ var require_SFTP = __commonJS({
             return callback && callback(er, buffer);
           });
         };
-        this.open(path11, flag, 438, (er, handle_) => {
+        this.open(path12, flag, 438, (er, handle_) => {
           if (er)
             return callback && callback(er);
           handle = handle_;
           const tryStat = (er2, st) => {
             if (er2) {
-              this.stat(path11, (er_, st_) => {
+              this.stat(path12, (er_, st_) => {
                 if (er_) {
                   return this.close(handle, () => {
                     callback && callback(er2);
@@ -37550,7 +37550,7 @@ var require_SFTP = __commonJS({
           this.fstat(handle, tryStat);
         });
       }
-      writeFile(path11, data, options, callback_) {
+      writeFile(path12, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -37569,7 +37569,7 @@ var require_SFTP = __commonJS({
         if (options.encoding && !Buffer.isEncoding(options.encoding))
           throw new Error(`Unknown encoding: ${options.encoding}`);
         const flag = options.flag || "w";
-        this.open(path11, flag, options.mode, (openErr, handle) => {
+        this.open(path12, flag, options.mode, (openErr, handle) => {
           if (openErr) {
             callback && callback(openErr);
           } else {
@@ -37578,7 +37578,7 @@ var require_SFTP = __commonJS({
             if (position === null) {
               const tryStat = (er, st) => {
                 if (er) {
-                  this.stat(path11, (er_, st_) => {
+                  this.stat(path12, (er_, st_) => {
                     if (er_) {
                       return this.close(handle, () => {
                         callback && callback(er);
@@ -37597,7 +37597,7 @@ var require_SFTP = __commonJS({
           }
         });
       }
-      appendFile(path11, data, options, callback_) {
+      appendFile(path12, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -37615,12 +37615,12 @@ var require_SFTP = __commonJS({
           throw new TypeError("Bad arguments");
         if (!options.flag)
           options = Object.assign({ flag: "a" }, options);
-        this.writeFile(path11, data, options, callback);
+        this.writeFile(path12, data, options, callback);
       }
-      exists(path11, cb) {
+      exists(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        this.stat(path11, (err) => {
+        this.stat(path12, (err) => {
           cb && cb(err ? false : true);
         });
       }
@@ -37663,7 +37663,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} RENAME`
         );
       }
-      mkdir(path11, attrs, cb) {
+      mkdir(path12, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -37677,7 +37677,7 @@ var require_SFTP = __commonJS({
           flags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37685,7 +37685,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -37701,10 +37701,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} MKDIR`
         );
       }
-      rmdir(path11, cb) {
+      rmdir(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37712,7 +37712,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
@@ -37802,10 +37802,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} FSTAT`
         );
       }
-      stat(path11, cb) {
+      stat(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37813,17 +37813,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} STAT`
         );
       }
-      lstat(path11, cb) {
+      lstat(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37831,17 +37831,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} LSTAT`
         );
       }
-      opendir(path11, cb) {
+      opendir(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37849,14 +37849,14 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} OPENDIR`
         );
       }
-      setstat(path11, attrs, cb) {
+      setstat(path12, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -37868,7 +37868,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37876,7 +37876,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -37936,8 +37936,8 @@ var require_SFTP = __commonJS({
           mtime: toUnixTimestamp(mtime)
         }, cb);
       }
-      utimes(path11, atime, mtime, cb) {
-        return this.setstat(path11, {
+      utimes(path12, atime, mtime, cb) {
+        return this.setstat(path12, {
           atime: toUnixTimestamp(atime),
           mtime: toUnixTimestamp(mtime)
         }, cb);
@@ -37948,8 +37948,8 @@ var require_SFTP = __commonJS({
           gid
         }, cb);
       }
-      chown(path11, uid, gid, cb) {
-        return this.setstat(path11, {
+      chown(path12, uid, gid, cb) {
+        return this.setstat(path12, {
           uid,
           gid
         }, cb);
@@ -37959,15 +37959,15 @@ var require_SFTP = __commonJS({
           mode
         }, cb);
       }
-      chmod(path11, mode, cb) {
-        return this.setstat(path11, {
+      chmod(path12, mode, cb) {
+        return this.setstat(path12, {
           mode
         }, cb);
       }
-      readlink(path11, cb) {
+      readlink(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -37975,7 +37975,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -38020,10 +38020,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} SYMLINK`
         );
       }
-      realpath(path11, cb) {
+      realpath(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -38031,7 +38031,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -38076,13 +38076,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${which} posix-rename@openssh.com`);
         }
       }
-      ext_openssh_statvfs(path11, cb) {
+      ext_openssh_statvfs(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["statvfs@openssh.com"];
         if (!ext || ext !== "2")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 19 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -38092,7 +38092,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 19, p);
         buf.utf8Write("statvfs@openssh.com", p += 4, 19);
         writeUInt32BE(buf, pathLen, p += 19);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = { extended: "statvfs@openssh.com", cb };
         const isBuffered = sendOrBuffer(this, buf);
         if (this._debug) {
@@ -38178,7 +38178,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} fsync@openssh.com`
         );
       }
-      ext_openssh_lsetstat(path11, attrs, cb) {
+      ext_openssh_lsetstat(path12, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["lsetstat@openssh.com"];
@@ -38193,7 +38193,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 20 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -38203,7 +38203,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 20, p);
         buf.utf8Write("lsetstat@openssh.com", p += 4, 20);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -38220,13 +38220,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${status} lsetstat@openssh.com`);
         }
       }
-      ext_openssh_expandPath(path11, cb) {
+      ext_openssh_expandPath(path12, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["expand-path@openssh.com"];
         if (ext !== "1")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path11);
+        const pathLen = Buffer.byteLength(path12);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 23 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -38236,7 +38236,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 23, p);
         buf.utf8Write("expand-path@openssh.com", p += 4, 23);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path11, p += 4, pathLen);
+        buf.utf8Write(path12, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -38709,13 +38709,13 @@ var require_SFTP = __commonJS({
             if (--left === 0)
               cb(err);
           };
-          if (srcHandle && (src === fs8 || src.outgoing.state === "open"))
+          if (srcHandle && (src === fs9 || src.outgoing.state === "open"))
             ++left;
-          if (dstHandle && (dst === fs8 || dst.outgoing.state === "open"))
+          if (dstHandle && (dst === fs9 || dst.outgoing.state === "open"))
             ++left;
-          if (srcHandle && (src === fs8 || src.outgoing.state === "open"))
+          if (srcHandle && (src === fs9 || src.outgoing.state === "open"))
             src.close(srcHandle, cbfinal);
-          if (dstHandle && (dst === fs8 || dst.outgoing.state === "open"))
+          if (dstHandle && (dst === fs9 || dst.outgoing.state === "open"))
             dst.close(dstHandle, cbfinal);
         } else {
           cb(err);
@@ -38731,7 +38731,7 @@ var require_SFTP = __commonJS({
           tryStat(null, { size: fileSize });
         function tryStat(err2, attrs) {
           if (err2) {
-            if (src !== fs8) {
+            if (src !== fs9) {
               src.stat(srcPath, (err_, attrs_) => {
                 if (err_)
                   return onerror(err2);
@@ -39514,12 +39514,12 @@ var require_SFTP = __commonJS({
       [REQUEST.LSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed LSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received LSTAT (id:${reqID})`);
-        if (!sftp.emit("LSTAT", reqID, path11)) {
+        if (!sftp.emit("LSTAT", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39538,13 +39538,13 @@ var require_SFTP = __commonJS({
       [REQUEST.SETSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed SETSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received SETSTAT (id:${reqID})`);
-        if (!sftp.emit("SETSTAT", reqID, path11, attrs)) {
+        if (!sftp.emit("SETSTAT", reqID, path12, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39566,12 +39566,12 @@ var require_SFTP = __commonJS({
       [REQUEST.OPENDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed OPENDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received OPENDIR (id:${reqID})`);
-        if (!sftp.emit("OPENDIR", reqID, path11)) {
+        if (!sftp.emit("OPENDIR", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39590,63 +39590,63 @@ var require_SFTP = __commonJS({
       [REQUEST.REMOVE]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed REMOVE packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received REMOVE (id:${reqID})`);
-        if (!sftp.emit("REMOVE", reqID, path11)) {
+        if (!sftp.emit("REMOVE", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.MKDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed MKDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received MKDIR (id:${reqID})`);
-        if (!sftp.emit("MKDIR", reqID, path11, attrs)) {
+        if (!sftp.emit("MKDIR", reqID, path12, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.RMDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed RMDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received RMDIR (id:${reqID})`);
-        if (!sftp.emit("RMDIR", reqID, path11)) {
+        if (!sftp.emit("RMDIR", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.REALPATH]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed REALPATH packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received REALPATH (id:${reqID})`
         );
-        if (!sftp.emit("REALPATH", reqID, path11)) {
+        if (!sftp.emit("REALPATH", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.STAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed STAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received STAT (id:${reqID})`);
-        if (!sftp.emit("STAT", reqID, path11)) {
+        if (!sftp.emit("STAT", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39666,14 +39666,14 @@ var require_SFTP = __commonJS({
       [REQUEST.READLINK]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path11 = bufferParser.readString(true);
+        const path12 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path11 === void 0)
+        if (path12 === void 0)
           return doFatalSFTPError(sftp, "Malformed READLINK packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received READLINK (id:${reqID})`
         );
-        if (!sftp.emit("READLINK", reqID, path11)) {
+        if (!sftp.emit("READLINK", reqID, path12)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -39744,7 +39744,7 @@ var require_SFTP = __commonJS({
     function roundUpToMultipleOf8(n) {
       return n + 7 & ~7;
     }
-    function ReadStream(sftp, path11, options) {
+    function ReadStream(sftp, path12, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -39758,7 +39758,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       ReadableStream.call(this, options);
-      this.path = path11;
+      this.path = path12;
       this.flags = options.flags === void 0 ? "r" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -39889,7 +39889,7 @@ var require_SFTP = __commonJS({
       },
       configurable: true
     });
-    function WriteStream(sftp, path11, options) {
+    function WriteStream(sftp, path12, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -39901,7 +39901,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       WritableStream.call(this, options);
-      this.path = path11;
+      this.path = path12;
       this.flags = options.flags === void 0 ? "w" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -40583,7 +40583,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash8,
+      createHash: createHash9,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -40805,7 +40805,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash8(hashAlgo).update(key).digest("hex");
+              key = createHash9(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -44655,13 +44655,13 @@ function operationPolicy(pathName, config = {}) {
       maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs
     };
   }
-  if (pathName === "/mongodb/query") {
+  if (pathName === "/mongodb/query" || pathName.startsWith("/sandbox/")) {
     return {
       defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
       maxMs: OPERATION_TIMEOUTS.mongodb.maxMs
     };
   }
-  if (pathName.startsWith("/mongodb/mutations/") || pathName.startsWith("/mongodb/bulk/") || pathName === "/mongodb/imports/prepare") {
+  if (pathName.startsWith("/mongodb/mutations/") || pathName.startsWith("/mongodb/bulk/") || pathName.startsWith("/mongodb/sandbox/access/") || pathName === "/mongodb/imports/prepare") {
     return {
       defaultMs: OPERATION_TIMEOUTS.mongodbMutation.defaultMs,
       maxMs: OPERATION_TIMEOUTS.mongodbMutation.maxMs
@@ -45308,6 +45308,71 @@ async function runMongoQuery(query, options = {}) {
   };
 }
 
+// mongodb-ttl-policy.js
+var MONGODB_TECHNICAL_RECEIPTS_COLLECTION = "__remote_debug_bulk_receipts";
+var MONGODB_TTL_POLICY_SCRIPT = String.raw`
+function __ttlRejectBusinessIndex(options) {
+  if (options && Object.prototype.hasOwnProperty.call(options, "expireAfterSeconds")) {
+    __ttlFail("MONGODB_TTL_INDEX_REJECTED", "business TTL indexes are not supported: automatic document deletion cannot be recovered by index rollback");
+  }
+}
+
+function __ttlAssertReceiptName(name) {
+  if (name !== "__remote_debug_bulk_receipts") {
+    __ttlFail("MONGODB_BULK_RECEIPTS_RESERVED", "TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection");
+  }
+}
+
+function __ttlValidReceiptMarker(marker, database, name) {
+  return marker && marker._id === "__remote_debug_bulk_storage_v1" && marker.schemaVersion === 1 && marker.database === database && marker.receiptsCollection === name;
+}
+
+function __ttlValidReceiptIndex(index) {
+  return index && index.name === "remote_debug_bulk_receipt_expiry" && index.key && Object.keys(index.key).length === 1 && index.key.expiresAt === 1 && index.expireAfterSeconds === 0 && !index.partialFilterExpression && !index.unique && !index.sparse;
+}
+
+async function __ttlCheckReceiptOwnership(collection, database, name, initialize) {
+  __ttlAssertReceiptName(name);
+  var markerId = "__remote_debug_bulk_storage_v1";
+  var existing = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
+  if (existing) {
+    if (!__ttlValidReceiptMarker(existing, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection has a different ownership marker");
+    return existing;
+  }
+  if (!initialize) __ttlFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "technical receipt ownership marker is missing");
+  if (await collection.findOne({}, { readPreference: "primary", maxTimeMS: 15000 })) {
+    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "cannot adopt a non-empty collection for automatic TTL cleanup");
+  }
+  var marker = { _id: markerId, schemaVersion: 1, database: database, receiptsCollection: name };
+  try { await collection.insertOne(marker); }
+  catch (error) {
+    if (error.code !== 11000) throw error;
+    var concurrent = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
+    if (!__ttlValidReceiptMarker(concurrent, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection ownership changed during initialization");
+  }
+  return marker;
+}
+
+async function __ttlInitializeReceiptCollection(client, database, name) {
+  __ttlAssertReceiptName(name);
+  var db = client.db(database);
+  var namespaces = await db.listCollections({ name: name }, { nameOnly: true }).toArray();
+  if (namespaces.some(function (item) { return item.type && item.type !== "collection"; })) {
+    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt namespace must be a regular collection");
+  }
+  var collection = db.collection(name);
+  // Verify or establish ownership before installing any automatically deleting index.
+  await __ttlCheckReceiptOwnership(collection, database, name, true);
+  var indexes = await collection.listIndexes().toArray();
+  var existing = indexes.filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (existing && !__ttlValidReceiptIndex(existing)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
+  if (!existing) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
+  var after = (await collection.listIndexes().toArray()).filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (!__ttlValidReceiptIndex(after)) __ttlFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
+  return { index: after.name, marker: "__remote_debug_bulk_storage_v1" };
+}
+`;
+
 // mongodb-bulk.js
 var import_node_crypto3 = require("node:crypto");
 var import_posix3 = __toESM(require("node:path/posix"), 1);
@@ -45453,7 +45518,7 @@ function __bulkManifest(jobId, allowMissing) {
     __bulkFail("MONGODB_BULK_JOB_NOT_FOUND", "bulk job was not found");
   }
   var manifest = __bulkReadJson(__path.join(directory, "manifest.json"), 4 * 1024 * 1024);
-  if (!manifest || manifest.schemaVersion !== 1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
+  if (!manifest || [1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
   return manifest;
 }
 
@@ -45559,10 +45624,10 @@ function __bulkLoadBatch(jobId, index) {
 
 function __bulkLoadPlan(jobId, manifest) {
   var plan = __bulkReadJson(__path.join(__bulkJobDir(jobId), "plan.json"), 8 * 1024 * 1024);
-  if (!plan || plan.schemaVersion !== 1 || plan.jobId !== jobId || plan.planHash !== manifest.planHash) {
+  if (!plan || [1, 2].indexOf(plan.schemaVersion) === -1 || plan.jobId !== jobId || plan.planHash !== manifest.planHash) {
     __bulkFail("MONGODB_BULK_LOG_INVALID", "final bulk plan is missing or does not match the manifest");
   }
-  var planHash = __bulkHash({
+  var hashValue = {
     schemaVersion: plan.schemaVersion,
     jobId: plan.jobId,
     database: plan.database,
@@ -45570,8 +45635,12 @@ function __bulkLoadPlan(jobId, manifest) {
     rollbackExpiresAt: plan.rollbackExpiresAt,
     chunks: plan.chunks,
     batches: plan.batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }),
-  });
+  };
+  if (plan.schemaVersion === 2) hashValue.receiptStorage = plan.receiptStorage;
+  var planHash = __bulkHash(hashValue);
   if (planHash !== plan.planHash) __bulkFail("MONGODB_BULK_LOG_INVALID", "final bulk plan integrity check failed");
+  if (plan.schemaVersion !== manifest.schemaVersion || __bulkHash(plan.receiptStorage || null) !== __bulkHash(manifest.receiptStorage || null)) __bulkFail("MONGODB_BULK_LOG_INVALID", "receipt storage does not match the immutable plan");
+  __bulkReceiptStorage(manifest);
   return plan;
 }
 
@@ -45620,6 +45689,7 @@ function __bulkStatus(manifest, plan, options) {
   return {
     jobId: manifest.jobId,
     database: manifest.database,
+    receiptStorage: __bulkReceiptStorage(manifest),
     status: current,
     mode: manifest.mode || "execute",
     desiredState: manifest.desiredState || "running",
@@ -45774,6 +45844,7 @@ function __bulkPlanSummary(manifest, plan) {
     jobId: manifest.jobId,
     status: manifest.status,
     database: manifest.database,
+    receiptStorage: __bulkReceiptStorage(manifest),
     planHash: manifest.planHash,
     unitCount: manifest.unitCount,
     operationCount: manifest.operationCount,
@@ -45835,15 +45906,14 @@ function __bulkFlatten(units) {
   return result;
 }
 
-function __bulkCheckStorageCollection(client) {
-  var collection = client.db(__config.database).collection(__config.receiptsCollection);
-  return collection.listIndexes().toArray().then(function (indexes) {
-    var valid = indexes.some(function (index) {
-      return index.name === "remote_debug_bulk_receipt_expiry" && index.key && index.key.expiresAt === 1 && index.expireAfterSeconds === 0;
-    });
-    if (!valid) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "the technical receipt expiry index is missing");
-    return collection;
-  });
+async function __bulkCheckStorageCollection(client, storage) {
+  storage = storage || { database: __config.sandboxDatabase, collection: __config.receiptsCollection };
+  __ttlAssertReceiptName(__config.receiptsCollection);
+  var collection = client.db(storage.database).collection(storage.collection);
+  await __ttlCheckReceiptOwnership(collection, storage.database, storage.collection, false);
+  var indexes = await collection.listIndexes().toArray();
+  if (!indexes.some(__ttlValidReceiptIndex)) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "the technical receipt expiry index is missing or has changed");
+  return collection;
 }
 
 async function __bulkLoadClient() {
@@ -45862,13 +45932,32 @@ async function __bulkLoadClient() {
   return client;
 }
 
-function __bulkReceiptId(jobId, index, action) {
-  return jobId + ":" + String(index) + ":" + action;
+function __bulkSourceScope() {
+  var source = JSON.parse(__fs.readFileSync(__config.configPath, "utf8"));
+  return __bulkHash({ database: __config.database, configPath: __config.configPath, profile: __config.configProfile, root: __config.bulkRoot, target: __sandboxSourceTarget(source) });
 }
 
-async function __bulkFindReceipt(client, jobId, index, action) {
-  var collection = client.db(__config.database).collection(__config.receiptsCollection);
-  return collection.findOne({ _id: __bulkReceiptId(jobId, index, action) }, { readPreference: "primary" });
+function __bulkReceiptStorage(manifest) {
+  if (manifest.database !== __config.database || __config.allowedDatabases.indexOf(manifest.database) === -1) __bulkFail("MONGODB_BULK_DATABASE_CONFLICT", "job belongs to another business database");
+  if (manifest.schemaVersion === 1) return { database: manifest.database, collection: __config.receiptsCollection, legacy: true };
+  var storage = manifest.receiptStorage;
+  var expectedScope;
+  try { expectedScope = __bulkSourceScope(); } catch (_) { __bulkFail("SANDBOX_DATABASE_CHANGED", "job source connection is missing or has changed"); }
+  if (!storage || storage.database !== __config.sandboxDatabase || storage.collection !== __config.receiptsCollection || storage.scope !== expectedScope) {
+    __bulkFail("SANDBOX_DATABASE_CHANGED", "job receipt storage is invalid or no longer allowlisted; restore the job's sandbox configuration");
+  }
+  return storage;
+}
+
+function __bulkReceiptId(jobId, index, action, storage) {
+  var id = jobId + ":" + String(index) + ":" + action;
+  return storage && !storage.legacy ? storage.scope + ":" + id : id;
+}
+
+async function __bulkFindReceipt(client, jobId, index, action, storage) {
+  storage = storage || __bulkReceiptStorage(__bulkManifest(jobId, false));
+  var collection = client.db(storage.database).collection(storage.collection);
+  return collection.findOne({ _id: __bulkReceiptId(jobId, index, action, storage) }, { readPreference: "primary" });
 }
 
 function __bulkApplySummary(manifest, summary) {
@@ -46001,16 +46090,18 @@ function __bulkCount(value, primary, fallback) {
 }
 
 async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
+  var manifest = __bulkManifest(jobId, false);
+  var storage = __bulkReceiptStorage(manifest);
   var client = await __bulkLoadClient();
   var session = client.startSession();
   var receiptAction = rollback ? "rollback" : "commit";
-  var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction);
+  var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction, storage);
   var summary = { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
   var after = [];
   var committing = false;
   try {
-    await __bulkCheckStorageCollection(client);
-    var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction);
+    await __bulkCheckStorageCollection(client, storage);
+    var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction, storage);
     if (previousReceipt) {
       if (previousReceipt.planHash !== planHash || previousReceipt.batchHash !== batch.hash || previousReceipt.action !== receiptAction) {
         __bulkFail("MONGODB_BULK_RECEIPT_CONFLICT", "technical receipt does not match this exact batch");
@@ -46081,10 +46172,10 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
       summary.unchanged = Math.max(0, summary.matched - summary.modified);
       __bulkWriteJson(__path.join(__bulkJobDir(jobId), "after-" + String(batch.index).padStart(6, "0") + ".json"), { batchHash: batch.hash, after: after }, 8 * 1024 * 1024);
     }
-    var receipts = client.db(__config.database).collection(__config.receiptsCollection);
+    var receipts = client.db(storage.database).collection(storage.collection);
     var now = new Date();
     var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
-    await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary }, { session: session });
+    await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary, businessDatabase: __config.database, scope: storage.scope }, { session: session });
     committing = true;
     await session.commitTransaction();
     return { alreadyCommitted: false, summary: summary };
@@ -46094,7 +46185,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
       try {
         var checkClient = await __bulkLoadClient();
         try {
-          var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction);
+          var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction, storage);
           if (receipt && receipt.planHash === planHash && receipt.batchHash === batch.hash) return { alreadyCommitted: true, summary: receipt.summary || summary };
         } finally { await checkClient.close(); }
       } catch (_checkError) {}
@@ -46108,18 +46199,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
 }
 
 async function __bulkInitializeReceiptCollection(client) {
-  var database = client.db(__config.database);
-  var collection = database.collection(__config.receiptsCollection);
-  await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  var index = (await collection.listIndexes().toArray()).filter(function (item) { return item.name === "remote_debug_bulk_receipt_expiry"; })[0];
-  if (!index || !index.key || index.key.expiresAt !== 1 || index.expireAfterSeconds !== 0) __bulkFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
-  var marker = { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: __config.database, receiptsCollection: __config.receiptsCollection };
-  var existing = await collection.findOne({ _id: marker._id }, { readPreference: "primary" });
-  if (existing && (existing.schemaVersion !== 1 || existing.database !== marker.database || existing.receiptsCollection !== marker.receiptsCollection)) {
-    __bulkFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection contains a different storage marker");
-  }
-  if (!existing) await collection.insertOne(marker);
-  return { index: index.name, marker: marker._id };
+  return __ttlInitializeReceiptCollection(client, __config.sandboxDatabase, __config.receiptsCollection);
 }
 
 async function __bulkPrepareStorage() {
@@ -46153,11 +46233,11 @@ async function __bulkUpload() {
   var accepted = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
     var manifestPath = __path.join(dir, "manifest.json");
     var manifest = __bulkReadJson(manifestPath, 4 * 1024 * 1024);
-    var identity = { schemaVersion: 1, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    var identity = { schemaVersion: 2, receiptStorage: { database: __config.sandboxDatabase, collection: __config.receiptsCollection, scope: __bulkSourceScope() }, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     if (!manifest) {
       if (chunk.chunkIndex !== 0) __bulkFail("MONGODB_BULK_CHUNK_ORDER", "the first upload chunk must have index 0");
       manifest = identity;
-    } else if (manifest.schemaVersion !== 1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
+    } else if ([1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
       __bulkFail("MONGODB_BULK_JOB_CONFLICT", "jobId already belongs to a different upload plan");
     }
     var chunkHash = __bulkHash({ jobId: jobId, database: chunk.database, chunkIndex: chunk.chunkIndex, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, units: chunk.units });
@@ -46274,12 +46354,14 @@ async function __bulkFinalize(jobId) {
       var partitions = __bulkPartition(units);
       var batches = [];
       client = await __bulkLoadClient();
-      await __bulkCheckStorageCollection(client);
+      await __bulkCheckStorageCollection(client, __bulkReceiptStorage(manifest));
       await __bulkCheckTargetCollections(client, units);
       for (var i = 0; i < partitions.length; i += 1) await __bulkPrepareSlice(client, jobId, partitions[i], 0, seenTargets, seenUnits, batches);
       var rollbackExpiresAt = new Date(Date.now() + manifest.rollbackTtlMs).toISOString();
-      var planValue = { schemaVersion: 1, jobId: jobId, database: manifest.database, purpose: manifest.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: manifest.chunks, batches: batches };
-      var planHash = __bulkHash({ schemaVersion: planValue.schemaVersion, jobId: planValue.jobId, database: planValue.database, purpose: planValue.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: planValue.chunks, batches: batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }) });
+      var planValue = { schemaVersion: manifest.schemaVersion, jobId: jobId, database: manifest.database, purpose: manifest.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: manifest.chunks, batches: batches };
+      var hashValue = { schemaVersion: planValue.schemaVersion, jobId: planValue.jobId, database: planValue.database, purpose: planValue.purpose, rollbackExpiresAt: rollbackExpiresAt, chunks: planValue.chunks, batches: batches.map(function (batch) { return { index: batch.index, hash: batch.hash, documents: batch.documents, inputBytes: batch.inputBytes, rollbackBytes: batch.rollbackBytes, unitCount: batch.unitCount }; }) };
+      if (manifest.schemaVersion === 2) { planValue.receiptStorage = manifest.receiptStorage; hashValue.receiptStorage = manifest.receiptStorage; }
+      var planHash = __bulkHash(hashValue);
       planValue.planHash = planHash;
       __bulkWriteJson(__path.join(__bulkJobDir(jobId), "plan.json"), planValue, 8 * 1024 * 1024);
       manifest.status = "prepared";
@@ -46535,6 +46617,11 @@ async function __bulkMain() {
   try {
     __bulkEnsureRoot();
     var action = __request.action;
+    if (action.indexOf("sandbox") === 0) {
+      data = await __sandboxManage();
+      process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
+      return;
+    }
     if (action === "list") {
       data = __bulkList();
       process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
@@ -46572,10 +46659,161 @@ async function __bulkMain() {
 }
 `;
 
+// mongodb-sandbox-runtime.js
+var MONGODB_SANDBOX_RUNTIME = String.raw`
+function __sandboxConnectionTarget(uri) {
+  var match = /^(mongodb(?:\+srv)?):\/\/([^/?#]+)(?:[/?]|$)/i.exec(uri || "");
+  if (!match) __bulkFail("SANDBOX_SOURCE_INVALID", "MongoDB source connection is invalid");
+  var authority = match[2].split("@").pop().toLowerCase().split(",").sort().join(",");
+  var replicaSet = /[?&]replicaSet=([^&]+)/i.exec(uri);
+  return match[1].toLowerCase() + "://" + authority + (replicaSet ? "/" + decodeURIComponent(replicaSet[1]) : "");
+}
+
+function __sandboxSourceTarget(source) {
+  var profile = source[__config.configProfile];
+  var uri = (__config.uriKey || "url").split(".").reduce(function (current, key) { return current && current[key]; }, profile);
+  return __sandboxConnectionTarget(uri);
+}
+
+function __sandboxRedact(value, depth) {
+  depth = depth || 0;
+  if (depth > 6) return "[bounded]";
+  if (typeof value === "string") return value.replace(/(mongodb(?:\+srv)?:\/\/)[^@\s]+@/gi, "$1[redacted]@").replace(/((?:password|token|secret|passwd|pwd)\s*[=:]\s*|--(?:token|password|secret)\s+)[^\s,;]+/gi, "$1[redacted]").slice(0, 2048);
+  if (Array.isArray(value)) return value.slice(0, 100).map(function (item) { return __sandboxRedact(item, depth + 1); });
+  if (value && typeof value === "object") {
+    var result = {};
+    Object.keys(value).slice(0, 100).forEach(function (key) {
+      if (/password|passphrase|secret|token|credential|uri|before|document|privatekey/i.test(key)) result[key] = "[redacted]";
+      else result[key] = __sandboxRedact(value[key], depth + 1);
+    });
+    return result;
+  }
+  return value;
+}
+
+async function __sandboxLoadClient() {
+  var profileName = __config.sandboxManagementProfile;
+  if (!profileName || profileName === __config.configProfile || !/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/.test(profileName)) {
+    __bulkFail("SANDBOX_MANAGEMENT_NOT_CONFIGURED", "configure a separate sandboxManagementProfile with sandbox-only MongoDB permissions");
+  }
+  var source = JSON.parse(__fs.readFileSync(__config.configPath, "utf8"));
+  var profile = source[profileName];
+  var uri = (__config.sandboxManagementUriKey || "url").split(".").reduce(function (current, key) { return current && current[key]; }, profile);
+  if (typeof uri !== "string" || !uri) __bulkFail("SANDBOX_MANAGEMENT_NOT_CONFIGURED", "the sandbox management profile has no connection URI");
+  if (__sandboxConnectionTarget(uri) !== __sandboxSourceTarget(source)) __bulkFail("SANDBOX_CLUSTER_MISMATCH", "management and execution profiles must use the same MongoDB endpoints and replica set");
+  var driver = require(__config.driverPath);
+  var client = new driver.MongoClient(uri, { serverSelectionTimeoutMS: 15000 });
+  try {
+    await client.connect();
+    var status = await client.db("admin").command({ connectionStatus: 1, showPrivileges: true });
+    var privileges = status.authInfo && status.authInfo.authenticatedUserPrivileges;
+    if (!Array.isArray(privileges) || !privileges.length || privileges.some(function (entry) {
+      var resource = entry.resource || {};
+      return resource.db !== __config.sandboxDatabase || ["", __config.receiptsCollection].indexOf(resource.collection) === -1 ||
+        !Array.isArray(entry.actions) || entry.actions.some(function (action) { return ["find", "remove", "listIndexes", "listCollections", "collStats", "dbStats"].indexOf(action) === -1; });
+    })) __bulkFail("SANDBOX_MANAGEMENT_ROLE_UNSAFE", "management credentials must have only read/cleanup permissions in the dedicated sandbox database");
+    var collection = client.db(__config.sandboxDatabase).collection(__config.receiptsCollection);
+    await __ttlCheckReceiptOwnership(collection, __config.sandboxDatabase, __config.receiptsCollection, false);
+    return client;
+  } catch (error) { try { await client.close(); } catch (_) {} throw error; }
+}
+
+function __sandboxFiles(jobId) {
+  var root = __fs.realpathSync(__bulkRoot());
+  var directory = __bulkJobDir(jobId);
+  var stat = __fs.lstatSync(directory);
+  if (stat.isSymbolicLink() || !stat.isDirectory() || __path.dirname(__fs.realpathSync(directory)) !== root) __bulkFail("SANDBOX_PATH_REJECTED", "job directory escapes the sandbox");
+  var names = __fs.readdirSync(directory);
+  if (names.length > 2000) __bulkFail("SANDBOX_SCAN_LIMIT", "job directory exceeds the bounded cleanup file count");
+  return names.filter(function (name) { return name !== ".manifest.lock"; }).sort().map(function (name) {
+    if (!/^(manifest|plan|control)\.json$|^(chunk|batch|after|differences)-[0-9]+\.json$|^events\.jsonl$/.test(name)) __bulkFail("SANDBOX_PATH_REJECTED", "sandbox job contains an unknown file or active lock");
+    var file = __path.join(directory, name), metadata = __fs.lstatSync(file);
+    if (metadata.isSymbolicLink() || !metadata.isFile() || __path.dirname(__fs.realpathSync(file)) !== __fs.realpathSync(directory)) __bulkFail("SANDBOX_PATH_REJECTED", "job file is not a regular sandbox file");
+    return { name: name, bytes: metadata.size, modified: metadata.mtimeMs };
+  });
+}
+
+function __sandboxCleanupPlan(jobId) {
+  var manifest = __bulkManifest(jobId, false);
+  var plan = __bulkLoadPlan(jobId, manifest);
+  var storage = __bulkReceiptStorage(manifest);
+  if (storage.legacy) __bulkFail("SANDBOX_LEGACY_READ_ONLY", "legacy business-database receipt collections are retained and cannot be cleaned by sandbox management");
+  var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
+  if (["completed", "rolled_back"].indexOf(manifest.status) === -1 || (lease && lease.jobId === jobId && Date.now() - Date.parse(lease.heartbeatAt) < 60000)) __bulkFail("SANDBOX_JOB_IN_USE", "only finished jobs without an active lease can be cleaned");
+  var retainedUntil = Date.parse(plan.rollbackExpiresAt) + 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(retainedUntil) || Date.now() <= retainedUntil) __bulkFail("SANDBOX_RETENTION_ACTIVE", "job recovery records are retained through rollback expiry plus 24 hours");
+  var files = __sandboxFiles(jobId);
+  var body = { jobId: jobId, planHash: plan.planHash, manifestHash: __bulkHash(manifest), receiptStorage: storage, retainedUntil: retainedUntil, files: files };
+  return { jobId: jobId, cleanupHash: __bulkHash(body), fileCount: files.length, bytes: files.reduce(function (sum, file) { return sum + file.bytes; }, 0), retainedUntil: new Date(retainedUntil).toISOString(), receiptStorage: storage };
+}
+
+function __sandboxLog(jobId, limit) {
+  var manifest = __bulkManifest(jobId, false);
+  if (manifest.planHash) __bulkLoadPlan(jobId, manifest);
+  var file = __path.join(__bulkJobDir(jobId), "events.jsonl");
+  if (!__fs.existsSync(file)) return { jobId: jobId, records: [] };
+  var stat = __fs.lstatSync(file);
+  if (stat.isSymbolicLink() || !stat.isFile()) __bulkFail("SANDBOX_PATH_REJECTED", "log is not a regular sandbox file");
+  var start = Math.max(0, stat.size - 65536), buffer = Buffer.alloc(Math.min(stat.size, 65536));
+  var fd = __fs.openSync(file, "r");
+  try { __fs.readSync(fd, buffer, 0, buffer.length, start); } finally { __fs.closeSync(fd); }
+  var lines = buffer.toString("utf8").split(/\r?\n/); if (start) lines.shift();
+  var records = lines.filter(Boolean).slice(-limit).map(function (line) {
+    try { var event = JSON.parse(line), allowed = {}; ["at", "event", "batchIndex", "chunkIndex", "reason", "summary"].forEach(function (key) { if (event[key] !== undefined) allowed[key] = event[key]; }); return __sandboxRedact(allowed); }
+    catch (_) { return { event: "unparseable_record" }; }
+  });
+  return { jobId: jobId, records: records, scannedBytes: buffer.length, truncated: start > 0 };
+}
+
+async function __sandboxManage() {
+  if (__request.action === "sandboxCleanup" && __request.confirmation !== "确认清理") __bulkFail("SANDBOX_CONFIRMATION_REQUIRED", "cleanup requires explicit 确认清理");
+  var client = await __sandboxLoadClient();
+  try {
+    var action = __request.action;
+    if (action === "sandboxStatus") {
+      var entries = __fs.readdirSync(__bulkRoot()).filter(function (name) { return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name) && name[0] !== "."; });
+      if (entries.length > 2000) __bulkFail("SANDBOX_SCAN_LIMIT", "sandbox exceeds the bounded job scan limit");
+      var jobs = [], bytes = 0, scannedEntries = 0;
+      for (var index = 0; index < entries.length; index++) {
+        var name = entries[index];
+        if (!__fs.lstatSync(__bulkJobDir(name)).isDirectory() || __fs.lstatSync(__bulkJobDir(name)).isSymbolicLink()) continue;
+        var manifest = __bulkManifest(name, false);
+        if (manifest.planHash) __bulkLoadPlan(name, manifest);
+        var files = __fs.readdirSync(__bulkJobDir(name));
+        scannedEntries += files.length + 1;
+        if (scannedEntries > 10000) __bulkFail("SANDBOX_SCAN_LIMIT", "sandbox inspection exceeds the bounded metadata scan limit");
+        if (files.length > 2000) __bulkFail("SANDBOX_SCAN_LIMIT", "job exceeds the bounded file scan limit");
+        files.forEach(function (file) { var stat = __fs.lstatSync(__path.join(__bulkJobDir(name), file)); if (stat.isFile() && !stat.isSymbolicLink()) bytes += stat.size; });
+        jobs.push({ jobId: name, status: manifest.status, rollbackExpiresAt: manifest.rollbackExpiresAt, receiptStorage: __bulkReceiptStorage(manifest) });
+      }
+      return { sandboxDatabase: __config.sandboxDatabase, storageRoot: __bulkRoot(), jobs: jobs.slice(__request.offset, __request.offset + __request.limit), jobCount: jobs.length, bytes: bytes, hasMore: jobs.length > __request.offset + __request.limit };
+    }
+    var jobId = __request.jobId;
+    if (action === "sandboxExport") return __sandboxLog(jobId, __request.limit);
+    if (action === "sandboxPrepareCleanup") return __bulkWithLock(__bulkManifestLockPath(jobId), function () { return __sandboxCleanupPlan(jobId); });
+    if (action === "sandboxCleanup") {
+      var deleted = await __bulkWithAsyncLock(__bulkManifestLockPath(jobId), async function () {
+        var preview = __sandboxCleanupPlan(jobId);
+        if (preview.cleanupHash !== __request.cleanupHash) __bulkFail("SANDBOX_CLEANUP_CONFLICT", "sandbox job changed after cleanup was prepared");
+        var manifest = __bulkManifest(jobId, false), storage = __bulkReceiptStorage(manifest);
+        var collection = client.db(__config.sandboxDatabase).collection(__config.receiptsCollection);
+        var result = await collection.deleteMany({ jobId: jobId, planHash: manifest.planHash, scope: storage.scope, businessDatabase: manifest.database, expiresAt: { $lte: new Date() } });
+        __sandboxFiles(jobId).forEach(function (file) { __fs.unlinkSync(__path.join(__bulkJobDir(jobId), file.name)); });
+        return { jobId: jobId, removedFiles: preview.fileCount, removedBytes: preview.bytes, removedReceipts: result.deletedCount || 0 };
+      });
+      __fs.rmdirSync(__bulkJobDir(jobId));
+      return deleted;
+    }
+    __bulkFail("SANDBOX_ACTION_INVALID", "unknown sandbox management action");
+  } finally { try { await client.close(); } catch (_) {} }
+}
+`;
+
 // mongodb-bulk.js
 var MONGODB_BULK_CONFIRMATION = "确认执行";
 var MONGODB_BULK_ROLLBACK_CONFIRMATION = "确认回滚";
 var DEFAULT_MONGODB_BULK_ROOT = "/var/lib/remote-debug-agent/bulk-jobs";
+var DEFAULT_SANDBOX_DATABASE = "remote_debug_agent";
 var DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS = 500;
 var MAX_MONGODB_BULK_BATCH_DOCUMENTS = 2e3;
 var MAX_MONGODB_BULK_UNIT_OPERATIONS = 20;
@@ -46714,10 +46952,14 @@ function normalizeMongoBulkConfig(config = {}, options = {}) {
   if (!DATABASE_PATTERN.test(database)) throw bulkError("a valid default MongoDB database is required", "MONGODB_BULK_DATABASE_REQUIRED");
   const allowedDatabases = Array.isArray(config.allowedDatabases) ? config.allowedDatabases : [database];
   if (!allowedDatabases.includes(database)) throw bulkError("bulk jobs must use an allowlisted database", "MONGODB_DATABASE_NOT_ALLOWED", 403);
+  const sandboxDatabase = String(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE).trim();
+  if (!DATABASE_PATTERN.test(sandboxDatabase) || ["admin", "local", "config", database].includes(sandboxDatabase) || allowedDatabases.includes(sandboxDatabase)) {
+    throw bulkError("sandboxDatabase must be a dedicated database outside the business allowlist", "SANDBOX_DATABASE_INVALID", 403);
+  }
   const allowedCollections = Array.isArray(config.allowedCollections) ? config.allowedCollections : [];
   const receiptsCollection = String(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts").trim();
-  if (!COLLECTION_PATTERN.test(receiptsCollection) || !allowedCollections.includes(receiptsCollection)) {
-    throw bulkError(`the technical collection ${receiptsCollection} must be included in mongodb.allowedCollections`, "MONGODB_BULK_RECEIPTS_NOT_ALLOWED", 403);
+  if (receiptsCollection !== MONGODB_TECHNICAL_RECEIPTS_COLLECTION) {
+    throw bulkError("TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection", "MONGODB_BULK_RECEIPTS_RESERVED", 403);
   }
   const rawRoot = String(config.bulkRoot || DEFAULT_MONGODB_BULK_ROOT).trim();
   const root = import_posix3.default.normalize(rawRoot);
@@ -46739,6 +46981,7 @@ function normalizeMongoBulkConfig(config = {}, options = {}) {
   return {
     ...config,
     database,
+    sandboxDatabase,
     allowedDatabases: [...allowedDatabases],
     allowedCollections: [...allowedCollections],
     bulkRoot: root.replace(/\/$/, ""),
@@ -46763,7 +47006,7 @@ function normalizeUpdate(value) {
       if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
-      if (paths.some((path11) => path11 === field || path11.startsWith(`${field}.`) || field.startsWith(`${path11}.`))) {
+      if (paths.some((path12) => path12 === field || path12.startsWith(`${field}.`) || field.startsWith(`${path12}.`))) {
         throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
       }
       if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
@@ -46879,6 +47122,7 @@ function normalizeMongoBulkStorage(input = {}, config = {}, options = {}) {
     operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto3.randomUUID)(),
     purpose: typeof input.purpose === "string" ? input.purpose.trim().slice(0, 500) : "Initialize MongoDB bulk job storage",
     database: policy.database,
+    receiptsDatabase: policy.sandboxDatabase,
     collection: policy.bulkReceiptsCollection,
     storageRoot: policy.bulkRoot,
     rollbackTtlMs: policy.bulkRollbackTtlMs,
@@ -46896,12 +47140,15 @@ function buildMongoBulkScript(request, config, normalizationOptions = {}) {
     'const __path = require("path");',
     'const __crypto = require("crypto");',
     `const __request = ${safeLiteral2(request)};`,
-    `const __config = ${safeLiteral2({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4) })};`,
+    `const __config = ${safeLiteral2({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, sandboxDatabase: policy.sandboxDatabase, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4), sandboxManagementProfile: policy.sandboxManagementProfile, sandboxManagementUriKey: policy.sandboxManagementUriKey || "url" })};`,
     `const __marker = ${safeLiteral2(`${MONGODB_RESULT_MARKER}BULK:`)};`,
     "const __driverPath = __config.driverPath;",
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
+    "var __ttlFail = __bulkFail;",
+    MONGODB_TTL_POLICY_SCRIPT,
+    MONGODB_SANDBOX_RUNTIME,
     "__bulkMain();"
   ].join("\n");
   const limit = request.action === "upload" ? MAX_MONGODB_BULK_CHUNK_BYTES + 1024 * 1024 : MAX_BULK_RESULT_BYTES * 2;
@@ -46922,6 +47169,12 @@ function parseMarker(stdout) {
 }
 function normalizeActionRequest(input, config) {
   const action = input.action;
+  if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
+    const jobId = input.jobId;
+    if (action !== "sandboxStatus" && (typeof jobId !== "string" || !JOB_ID_PATTERN.test(jobId))) throw bulkError("sandbox jobId is invalid", "SANDBOX_JOB_INVALID");
+    if (action === "sandboxCleanup" && (!HASH_PATTERN.test(input.cleanupHash || "") || input.confirmation !== "确认清理")) throw bulkError("cleanup requires the prepared hash and 确认清理", "SANDBOX_CONFIRMATION_REQUIRED");
+    return { action, jobId, cleanupHash: input.cleanupHash, confirmation: input.confirmation, offset: Math.max(0, Math.min(1e5, Number.isInteger(input.offset) ? input.offset : 0)), limit: Math.max(1, Math.min(100, Number.isInteger(input.limit) ? input.limit : 20)) };
+  }
   if (action === "upload") return { action, chunk: normalizeMongoBulkChunk(input.chunk || input, config) };
   if (action === "get" || action === "start" || action === "finish" || action === "pause" || action === "resume") {
     const jobId = String(input.jobId || "").trim();
@@ -46987,7 +47240,9 @@ function normalizeActionRequest(input, config) {
 async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
   const recoveryAction = input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
-  const config = normalizeMongoBulkConfig(rawConfig, { requireBulkEnabled: !recoveryAction });
+  const management = typeof input.action === "string" && input.action.startsWith("sandbox");
+  if (management && rawConfig.enabled === false) throw bulkError("MongoDB sandbox access is disabled for this instance", "SANDBOX_MANAGEMENT_NOT_CONFIGURED", 403);
+  const config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
   const request = normalizeActionRequest(input, config);
   if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
   let remoteResult;
@@ -46997,7 +47252,7 @@ async function runMongoBulk(input = {}, options = {}) {
       operation: options.operation,
       timeoutMs: options.timeoutMs || 6e5,
       priority: options.priority || "interactive",
-      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction })
+      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management })
     });
   } catch (error) {
     throw operationError(redactMongoSecrets(error.message || "MongoDB bulk helper could not be executed"), {
@@ -47403,6 +47658,7 @@ function normalizeMongoMutationConfig(config = {}) {
     ),
     bulkEnabled: config.bulkEnabled === true,
     bulkRoot: config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs",
+    sandboxDatabase: normalizeName(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE, "sandboxDatabase", SAFE_DATABASE_PATTERN2),
     bulkReceiptsCollection: config.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
     allowedDatabases,
     allowedCollections
@@ -47410,6 +47666,7 @@ function normalizeMongoMutationConfig(config = {}) {
 }
 function assertDatabaseAllowed(database, config) {
   const normalized = normalizeName(database, "database", SAFE_DATABASE_PATTERN2);
+  if (normalized === config.sandboxDatabase) throw mutationError("sandbox database is reserved for plugin management", "SANDBOX_DATABASE_RESERVED", 403);
   if (!config.allowedDatabases.includes(normalized)) {
     throw mutationError(
       `database is not allowed for mutations: ${normalized}`,
@@ -47572,6 +47829,9 @@ function normalizeCommonMutation(input, config, operationId, kind = "document") 
     config
   );
   const collection = assertCollectionAllowed(input.collection, config);
+  if (collection === MONGODB_TECHNICAL_RECEIPTS_COLLECTION && kind !== "bulk_storage") {
+    throw mutationError("the technical receipt collection is reserved for internal bulk storage operations", "MONGODB_BULK_RESERVED_COLLECTION", 403);
+  }
   const rollbackTtlMs = normalizePositiveInt(
     input.rollbackTtlMs,
     "rollbackTtlMs",
@@ -47773,7 +48033,10 @@ function normalizeIndexKey(value) {
 }
 function normalizeIndexOptions(value = {}) {
   assertPlainObject2(value, "options");
-  const allowed = /* @__PURE__ */ new Set(["unique", "sparse", "expireAfterSeconds"]);
+  if (Object.prototype.hasOwnProperty.call(value, "expireAfterSeconds")) {
+    throw mutationError("business TTL indexes are not supported: index rollback cannot recover automatically deleted documents", "MONGODB_TTL_INDEX_REJECTED", 403);
+  }
+  const allowed = /* @__PURE__ */ new Set(["unique", "sparse"]);
   for (const key of Object.keys(value)) {
     if (!allowed.has(key)) {
       throw mutationError(`index option is not allowed: ${key}`, "MONGODB_INDEX_OPTION_REJECTED");
@@ -47788,16 +48051,11 @@ function normalizeIndexOptions(value = {}) {
     if (typeof value.sparse !== "boolean") throw mutationError("options.sparse must be boolean", "INVALID_MONGODB_INDEX");
     options.sparse = value.sparse;
   }
-  if (value.expireAfterSeconds !== void 0) {
-    if (!Number.isInteger(value.expireAfterSeconds) || value.expireAfterSeconds < 0 || value.expireAfterSeconds > 31536e3) {
-      throw mutationError("options.expireAfterSeconds is out of range", "INVALID_MONGODB_INDEX");
-    }
-    options.expireAfterSeconds = value.expireAfterSeconds;
-  }
   return options;
 }
 function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
   const normalizedConfig = normalizeMongoMutationConfig(config);
+  const indexOptions = normalizeIndexOptions(input.options);
   if (!MONGODB_INDEX_OPERATIONS.includes(input.operation)) {
     throw mutationError(
       `operation must be one of ${MONGODB_INDEX_OPERATIONS.join(", ")}`,
@@ -47815,7 +48073,7 @@ function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
     name,
     ...input.operation === "createIndex" ? {
       key: normalizeIndexKey(input.key),
-      options: normalizeIndexOptions(input.options)
+      options: indexOptions
     } : {},
     riskLevel: riskForIndexOperation(input.operation, input.options)
   };
@@ -47857,6 +48115,7 @@ const __allowedDatabases = ${safeLiteral3(normalizedConfig.allowedDatabases)};
 const __allowedCollections = ${safeLiteral3(normalizedConfig.allowedCollections)};
 const __bulkEnabled = ${safeLiteral3(config.bulkEnabled === true)};
 const __bulkRoot = ${safeLiteral3(config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs")};
+const __sandboxDatabase = ${safeLiteral3(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE)};
 const __bulkReceiptsCollection = ${safeLiteral3(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts")};
 const __importBatchLimit = ${normalizedConfig.maxImportBatchDocuments};
 const __request = ${safeLiteral3(request)};
@@ -47875,6 +48134,9 @@ function __fail(code, message) {
   error.code = code;
   throw error;
 }
+
+const __ttlFail = __fail;
+${MONGODB_TTL_POLICY_SCRIPT}
 
 function __stable(value) {
   if (Array.isArray(value)) return value.map(__stable);
@@ -48039,7 +48301,9 @@ function __summary(manifest) {
     changedFields: manifest.changedFields,
     affectedIds: manifest.affectedIds,
     storageRoot: manifest.request.storageRoot,
+    ...(manifest.kind === "bulk_storage" ? { receiptsDatabase: manifest.request.receiptsDatabase || manifest.request.database } : {}),
     storageStatus: manifest.storageStatus,
+    ...(manifest.kind === "index" ? { rollbackRestoresDocuments: false } : {}),
     ...(manifest.kind === "import" ? {
       importId: manifest.request.importId,
       batchIndex: manifest.request.batchIndex,
@@ -48062,9 +48326,21 @@ function __assertManifestScope(manifest) {
     ? (manifest.request.operations || [])
     : [manifest.request];
   for (const request of requests) {
-    if (!__allowedDatabases.includes(request.database) || !__allowedCollections.includes(request.collection)) {
+    if (!__allowedDatabases.includes(request.database) || manifest.kind !== "bulk_storage" && !__allowedCollections.includes(request.collection)) {
       __fail("MONGODB_MUTATION_POLICY_CHANGED", "the mutation is no longer within the current database policy");
     }
+    if (manifest.kind !== "bulk_storage" && request.collection === ${safeLiteral3(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
+      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
+    }
+    if (manifest.kind !== "bulk_storage" && request.database === __sandboxDatabase) __fail("SANDBOX_DATABASE_RESERVED", "sandbox database is reserved for plugin management");
+  }
+  if (manifest.kind === "index") {
+    if (__request.mode === "commit" && manifest.request.operation === "createIndex") __ttlRejectBusinessIndex(manifest.request.options);
+    if (__request.mode === "rollback" && manifest.request.operation === "dropIndex") __ttlRejectBusinessIndex(manifest.beforeIndex);
+  }
+  if (manifest.kind === "bulk_storage") {
+    __ttlAssertReceiptName(manifest.request.collection);
+    if (manifest.request.receiptsDatabase && manifest.request.receiptsDatabase !== __sandboxDatabase) __fail("SANDBOX_DATABASE_CHANGED", "the prepared sandbox database no longer matches configuration");
   }
   if (manifest.kind === "bulk_storage" && (!manifest.request.storageRoot || !manifest.request.storageRoot.startsWith("/"))) {
     __fail("MONGODB_MUTATION_POLICY_CHANGED", "bulk storage root is missing from the prepared plan");
@@ -48195,9 +48471,12 @@ async function __prepare() {
   const { client } = await __loadClient();
   try {
     const request = __request.mutation;
+    if (__request.kind !== "bulk_storage" && request.collection === ${safeLiteral3(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
+      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
+    }
     const database = request.database;
     const collection = request.collection
-      ? client.db(database).collection(request.collection)
+      ? client.db(__request.kind === "bulk_storage" ? request.receiptsDatabase || database : database).collection(request.collection)
       : null;
     const now = Date.now();
     const manifest = {
@@ -48231,6 +48510,7 @@ async function __prepare() {
       const indexes = await collection.listIndexes().toArray();
       const existing = __indexByName(indexes, request.name);
       if (request.operation === "createIndex") {
+        __ttlRejectBusinessIndex(request.options);
         if (existing) __fail("MONGODB_INDEX_ALREADY_EXISTS", "the requested index already exists");
         const equivalent = indexes.find((index) => {
           const candidate = { name: request.name, key: __decode(request.key), ...__decode(request.options) };
@@ -48247,15 +48527,17 @@ async function __prepare() {
       } else {
         if (request.name === "_id_") __fail("MONGODB_INDEX_IMMUTABLE", "the _id_ index cannot be changed");
         if (!existing) __fail("MONGODB_INDEX_NOT_FOUND", "the requested index was not found");
+        __ttlRejectBusinessIndex(existing);
         manifest.beforeIndex = __encode(__indexComparable(existing));
         manifest.affectedCount = 1;
         manifest.changedFields = Object.keys(existing.key || {});
       }
     } else if (__request.kind === "bulk_storage") {
+      __ttlAssertReceiptName(request.collection);
       if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
         __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
       }
-      const databaseObject = client.db(database);
+      const databaseObject = client.db(request.receiptsDatabase || database);
       const namespaces = await databaseObject.listCollections({ name: request.collection }, { nameOnly: true }).toArray();
       let expiryIndex = null;
       if (namespaces.length) {
@@ -48483,6 +48765,7 @@ async function __commitIndex(manifest, collection) {
   const indexes = await collection.listIndexes().toArray();
   const current = __indexByName(indexes, request.name);
   if (request.operation === "createIndex") {
+    __ttlRejectBusinessIndex(request.options);
     if (current) __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
     await collection.createIndex(__decode(request.key), { name: request.name, ...__decode(request.options) });
     const afterIndexes = await collection.listIndexes().toArray();
@@ -48490,6 +48773,7 @@ async function __commitIndex(manifest, collection) {
     if (!after) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index was created but could not be verified");
     manifest.afterIndex = __encode(__indexComparable(after));
   } else {
+    __ttlRejectBusinessIndex(current);
     if (!current || !manifest.beforeIndex || !__indexMatches(current, __decode(manifest.beforeIndex))) {
       __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
     }
@@ -48505,6 +48789,7 @@ async function __commitIndex(manifest, collection) {
 
 async function __commitBulkStorage(manifest, client) {
   const request = manifest.request;
+  __ttlAssertReceiptName(request.collection);
   if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
     __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
   }
@@ -48527,26 +48812,12 @@ async function __commitBulkStorage(manifest, client) {
     __fail("MONGODB_BULK_STORAGE_DURABILITY_UNAVAILABLE", "bulk storage could not complete a durable owner-only write probe");
   }
 
-  const collection = client.db(request.database).collection(request.collection);
-  const indexes = await collection.listIndexes().toArray().catch((error) => {
-    if (error && (error.codeName === "NamespaceNotFound" || error.code === 26)) return [];
-    throw error;
-  });
-  const existingIndex = __indexByName(indexes, "remote_debug_bulk_receipt_expiry");
-  if (existingIndex && (!existingIndex.key || existingIndex.key.expiresAt !== 1 || existingIndex.expireAfterSeconds !== 0)) {
-    __fail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
-  }
-  if (!existingIndex) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  const marker = { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: request.database, receiptsCollection: request.collection };
-  const existingMarker = await collection.findOne({ _id: marker._id }, { readPreference: "primary" });
-  if (existingMarker && (existingMarker.schemaVersion !== marker.schemaVersion || existingMarker.database !== marker.database || existingMarker.receiptsCollection !== marker.receiptsCollection)) {
-    __fail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection contains a different initialization record");
-  }
-  if (!existingMarker) await collection.insertOne(marker);
+  await __ttlInitializeReceiptCollection(client, request.receiptsDatabase || request.database, request.collection);
   const storageMarker = {
     schemaVersion: 1,
     database: request.database,
     receiptsCollection: request.collection,
+    receiptsDatabase: request.receiptsDatabase || request.database,
     initializedAt: new Date().toISOString(),
   };
   const markerPath = __path.join(request.storageRoot, ".storage-v1.json");
@@ -48700,11 +48971,11 @@ async function __rollbackIndex(manifest, collection) {
     if (current) __fail("MONGODB_ROLLBACK_CONFLICT", "dropped index was recreated by another operation");
     if (!manifest.beforeIndex) __fail("MONGODB_ROLLBACK_MANIFEST_INVALID", "original index definition is missing");
     const original = __decode(manifest.beforeIndex);
+    __ttlRejectBusinessIndex(original);
     await collection.createIndex(original.key, {
       name: original.name,
       ...(original.unique === undefined ? {} : { unique: original.unique }),
       ...(original.sparse === undefined ? {} : { sparse: original.sparse }),
-      ...(original.expireAfterSeconds === undefined ? {} : { expireAfterSeconds: original.expireAfterSeconds }),
       ...(original.partialFilterExpression === undefined ? {} : { partialFilterExpression: original.partialFilterExpression }),
       ...(original.collation === undefined ? {} : { collation: original.collation }),
     });
@@ -49042,8 +49313,8 @@ function normalizeLogListOptions(input = {}) {
   return { category, limit, cursor };
 }
 function normalizeArchiveMemberListOptions(input = {}) {
-  const path11 = input.path;
-  if (typeof path11 !== "string" || path11.trim() === "") {
+  const path12 = input.path;
+  if (typeof path12 !== "string" || path12.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
@@ -49055,15 +49326,15 @@ function normalizeArchiveMemberListOptions(input = {}) {
     throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
   }
   return {
-    path: path11,
+    path: path12,
     prefix: normalizeArchiveMemberPrefix(prefix),
     limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
     cursor
   };
 }
 function normalizeLogReadOptions(input = {}) {
-  const path11 = input.path;
-  if (typeof path11 !== "string" || path11.trim() === "") {
+  const path12 = input.path;
+  if (typeof path12 !== "string" || path12.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
@@ -49078,7 +49349,7 @@ function normalizeLogReadOptions(input = {}) {
     );
   }
   return {
-    path: path11,
+    path: path12,
     memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
     tailLines: positiveInteger(
       input.tailLines,
@@ -49192,6 +49463,7 @@ var SECURITY_POLICY = {
       indexOperations: [...MONGODB_INDEX_OPERATIONS],
       rollback: true,
       rollbackModes: ["transactional", "compensating"],
+      ttlIndexes: { businessAllowed: false, restoreAllowed: false, technicalCollection: "__remote_debug_bulk_receipts", technicalIndex: "remote_debug_bulk_receipt_expiry", technicalKey: { expiresAt: 1 }, technicalExpireAfterSeconds: 0 },
       riskLevels: {
         insertOne: "medium",
         updateOne: "medium",
@@ -49226,7 +49498,17 @@ var SECURITY_POLICY = {
       defaultStorageRoot: DEFAULT_MONGODB_BULK_ROOT,
       transactionReceipts: true,
       backgroundJobs: true,
-      persistentRollback: true
+      persistentRollback: true,
+      sandboxAccessSetup: {
+        prepareTool: "remote_debug_prepare_sandbox_access",
+        executeTool: "remote_debug_configure_sandbox_access",
+        confirmation: "确认配置沙盒",
+        passwordSource: "per-instance-dashboard-config",
+        minimumServerMajor: 4,
+        checksServerEnvironment: true,
+        passwordResetRequiresOwnership: true,
+        businessWrites: false
+      }
     }
   },
   logs: { ...LOG_CAPABILITIES },
@@ -49370,6 +49652,9 @@ function securityCapabilities(config = {}) {
         ...SECURITY_POLICY.mongodb.bulk,
         enabled: Boolean(config.mongodb?.bulkEnabled),
         storageRoot: config.mongodb?.bulkRoot || DEFAULT_MONGODB_BULK_ROOT,
+        sandboxDatabase: config.mongodb?.sandboxDatabase || "remote_debug_agent",
+        sandboxManagementConfigured: Boolean(config.mongodb?.sandboxManagementProfile),
+        legacyJobsUseRecordedStorage: true,
         receiptsCollection: config.mongodb?.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
         batchDocuments: config.mongodb?.bulkBatchDocuments || DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS,
         concurrency: config.mongodb?.bulkConcurrency || 2,
@@ -50877,6 +51162,10 @@ function parseMongoConfig(value) {
     "maxImportBatchDocuments",
     "bulkEnabled",
     "bulkRoot",
+    "sandboxDatabase",
+    "sandboxManagementProfile",
+    "sandboxManagementUriKey",
+    "sandboxManagementPassword",
     "bulkReceiptsCollection",
     "bulkBatchDocuments",
     "bulkConcurrency",
@@ -51070,6 +51359,10 @@ function fingerprintConfig(config) {
       maxImportBatchDocuments: config.mongodb.maxImportBatchDocuments,
       bulkEnabled: Boolean(config.mongodb.bulkEnabled),
       bulkRoot: config.mongodb.bulkRoot,
+      sandboxDatabase: config.mongodb.sandboxDatabase,
+      sandboxManagementProfile: config.mongodb.sandboxManagementProfile,
+      sandboxManagementUriKey: config.mongodb.sandboxManagementUriKey,
+      sandboxManagementPassword: config.mongodb.sandboxManagementPassword,
       bulkReceiptsCollection: config.mongodb.bulkReceiptsCollection,
       bulkBatchDocuments: config.mongodb.bulkBatchDocuments,
       bulkConcurrency: config.mongodb.bulkConcurrency,
@@ -51123,33 +51416,98 @@ function installHttpAuth(app, config, options = {}) {
     response.set("Cache-Control", "no-store");
     response.set("X-Content-Type-Options", "nosniff");
     response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
-    const fail = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
+    const fail2 = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
     const port = request.socket.localPort;
     const host = request.headers.host;
     const listener = config.agent.host || "127.0.0.1";
     const allowedHosts = [`${listener.includes(":") ? `[${listener}]` : listener}:${port}`, `127.0.0.1:${port}`, `localhost:${port}`];
     if (port === 80) allowedHosts.push(listener.includes(":") ? `[${listener}]` : listener, "127.0.0.1", "localhost");
     if (!allowedHosts.includes(host)) {
-      return fail(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
+      return fail2(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
     }
     const origin = request.headers.origin;
     if (origin !== void 0 && origin !== new URL(`http://${host}`).origin) {
-      return fail(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
+      return fail2(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
     }
     if ((request.method === "GET" || request.method === "HEAD") && (request.path === "/health" || PUBLIC_ASSETS.has(request.path))) return next();
     const header = request.headers.authorization;
-    if (!header) return fail(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
+    if (!header) return fail2(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
     if (!import_local_auth.default.tokenMatches(header.startsWith("Bearer ") ? header.slice(7) : "", token)) {
-      return fail(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
+      return fail2(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
     }
     next();
   });
 }
 
+// local-sandbox.js
+var import_promises = __toESM(require("node:fs/promises"), 1);
+var import_node_path4 = __toESM(require("node:path"), 1);
+function sandboxError(message, code = "SANDBOX_PATH_REJECTED") {
+  return Object.assign(new Error(message), { code, statusCode: 400, retriable: false });
+}
+function redactSandboxLog(value, depth = 0) {
+  if (depth > 6) return "[bounded]";
+  if (typeof value === "string") return value.replace(/(mongodb(?:\+srv)?:\/\/)[^@\s]+@/gi, "$1[redacted]@").replace(/((?:password|passphrase|token|secret|passwd|pwd)\s*[=:]\s*|--(?:token|password|secret)\s+)[^\s,;]+/gi, "$1[redacted]").slice(0, 2048);
+  if (Array.isArray(value)) return value.slice(0, 100).map((item) => redactSandboxLog(item, depth + 1));
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).slice(0, 100).map(([key, item]) => [key, /password|passphrase|secret|token|credential|private.?key|before|document/i.test(key) ? "[redacted]" : redactSandboxLog(item, depth + 1)]));
+  return value;
+}
+async function inspectLocalSandbox(dataDir, instanceId, input) {
+  if (!["status", "export"].includes(input.action)) throw sandboxError("local sandbox supports status and bounded audit export only", "SANDBOX_ACTION_INVALID");
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(instanceId)) throw sandboxError("invalid instance id");
+  const root = import_node_path4.default.resolve(dataDir, ".remote-debug", "instances");
+  const directory = import_node_path4.default.join(root, instanceId);
+  for (const item of [root, directory]) {
+    try {
+      const stat = await import_promises.default.lstat(item);
+      if (stat.isSymbolicLink() || !stat.isDirectory()) throw sandboxError("local sandbox is not a regular directory");
+    } catch (error) {
+      if (error.code === "ENOENT") return { instanceId, initialized: false, files: [], bytes: 0, records: [] };
+      throw error;
+    }
+  }
+  const relativeRoot = import_node_path4.default.relative(await import_promises.default.realpath(dataDir), await import_promises.default.realpath(root));
+  if (relativeRoot.startsWith("..") || import_node_path4.default.isAbsolute(relativeRoot)) throw sandboxError("local sandbox root escapes the data directory");
+  if (import_node_path4.default.dirname(await import_promises.default.realpath(directory)) !== await import_promises.default.realpath(root)) throw sandboxError("instance directory escapes the local sandbox");
+  const files = [];
+  for (const name of ["audit.jsonl", "memory.json"]) {
+    const file = import_node_path4.default.join(directory, name);
+    try {
+      const stat = await import_promises.default.lstat(file);
+      if (stat.isSymbolicLink() || !stat.isFile()) throw sandboxError("sandbox file is not a regular file");
+      files.push({ name, bytes: stat.size });
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  if (input.action === "status") return { instanceId, initialized: true, files, bytes: files.reduce((sum, file) => sum + file.bytes, 0), activeFilesRetained: true };
+  if (input.action !== "export") throw sandboxError("local sandbox supports status and bounded audit export only", "SANDBOX_ACTION_INVALID");
+  const metadata = files.find((file) => file.name === "audit.jsonl");
+  if (!metadata) return { instanceId, records: [], scannedBytes: 0 };
+  const start = Math.max(0, metadata.bytes - 65536);
+  const handle = await import_promises.default.open(import_node_path4.default.join(directory, metadata.name), "r");
+  const buffer = Buffer.alloc(Math.min(metadata.bytes, 65536));
+  try {
+    await handle.read(buffer, 0, buffer.length, start);
+  } finally {
+    await handle.close();
+  }
+  const lines = buffer.toString("utf8").split(/\r?\n/);
+  if (start) lines.shift();
+  const limit = Math.max(1, Math.min(100, Number.isInteger(input.limit) ? input.limit : 20));
+  return { instanceId, scannedBytes: buffer.length, truncated: start > 0, records: lines.filter(Boolean).slice(-limit).map((line) => {
+    try {
+      return redactSandboxLog(JSON.parse(line));
+    } catch {
+      return { error: "unparseable_record" };
+    }
+  }) };
+}
+
 // server.js
-var import_node_crypto12 = require("node:crypto");
-var import_promises4 = __toESM(require("node:fs/promises"), 1);
-var import_node_path8 = __toESM(require("node:path"), 1);
+var import_node_crypto13 = require("node:crypto");
+var import_promises5 = __toESM(require("node:fs/promises"), 1);
+var import_node_path9 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
 var import_node_url2 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
@@ -51230,8 +51588,8 @@ function createActivityLog(options = {}) {
 }
 
 // audit.js
-var import_promises = __toESM(require("node:fs/promises"), 1);
-var import_node_path4 = __toESM(require("node:path"), 1);
+var import_promises2 = __toESM(require("node:fs/promises"), 1);
+var import_node_path5 = __toESM(require("node:path"), 1);
 function safeLength(value) {
   return typeof value === "string" ? Buffer.byteLength(value, "utf8") : 0;
 }
@@ -51300,10 +51658,411 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
 }
 async function writeAuditLog(logPath, event2, now) {
   const entry = buildAuditEntry(event2, now);
-  await import_promises.default.mkdir(import_node_path4.default.dirname(logPath), { recursive: true });
-  await import_promises.default.appendFile(logPath, `${JSON.stringify(entry)}
+  await import_promises2.default.mkdir(import_node_path5.default.dirname(logPath), { recursive: true });
+  await import_promises2.default.appendFile(logPath, `${JSON.stringify(entry)}
 `, "utf8");
   return entry;
+}
+
+// mongodb-sandbox-access.js
+var import_node_crypto9 = require("node:crypto");
+
+// mongodb-sandbox-access-runtime.js
+async function sandboxAccessRuntime(request, config, marker) {
+  const fs9 = require("fs"), path12 = require("path"), crypto = require("crypto");
+  const URLSearchParams = require("url").URLSearchParams;
+  const collection = "__remote_debug_bulk_receipts";
+  let client, managerClient, plan, lockFd, lockPath, temporary;
+  function fail2(code) {
+    const error = new Error(code);
+    error.safeCode = code;
+    throw error;
+  }
+  function stable(value) {
+    if (Array.isArray(value)) return value.map(stable);
+    if (value && typeof value === "object") return Object.keys(value).sort().reduce(function(out, key) {
+      out[key] = stable(value[key]);
+      return out;
+    }, {});
+    return value;
+  }
+  function hash(value) {
+    return crypto.createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+  }
+  function textHash(value) {
+    return crypto.createHash("sha256").update(value).digest("hex");
+  }
+  const publicConfig = Object.assign({}, config);
+  delete publicConfig.managementPassword;
+  const scope = hash(publicConfig);
+  const managerUser = "rda_sandbox_manager_" + scope.slice(0, 16);
+  const managerRole = "rda_sandbox_manager", executorRole = "rda_sandbox_executor";
+  const managerPrivileges = [{ resource: { db: config.sandboxDatabase, collection }, actions: ["find", "remove"] }];
+  const executorPrivileges = [
+    { resource: { db: config.sandboxDatabase, collection }, actions: ["find", "insert", "listIndexes", "createIndex"] },
+    { resource: { db: config.sandboxDatabase, collection: "" }, actions: ["listCollections", "createCollection"] }
+  ];
+  function shape(privileges) {
+    return privileges.map(function(entry) {
+      return { resource: stable(entry.resource), actions: entry.actions.slice().sort() };
+    }).sort(function(a, b) {
+      return JSON.stringify(a).localeCompare(JSON.stringify(b));
+    });
+  }
+  function can(privileges, action, database) {
+    return privileges.some(function(entry) {
+      return entry.actions.includes(action) && (entry.resource.anyResource === true || !entry.resource.cluster && entry.resource.collection === "" && ["", database].includes(entry.resource.db));
+    });
+  }
+  function regular(file, privateFile) {
+    const stat = fs9.lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || fs9.realpathSync(file) !== file || stat.size > (privateFile ? 65536 : 4 * 1024 * 1024) || privateFile && (stat.mode & 63 || stat.uid !== process.getuid())) fail2("SANDBOX_SETUP_FILE_UNSAFE");
+    return stat;
+  }
+  function directory(dir) {
+    if (!fs9.existsSync(dir)) fs9.mkdirSync(dir, { mode: 448 });
+    const stat = fs9.lstatSync(dir);
+    if (!stat.isDirectory() || stat.isSymbolicLink() || fs9.realpathSync(dir) !== dir || stat.mode & 63 || stat.uid !== process.getuid()) fail2("SANDBOX_SETUP_STORAGE_UNSAFE");
+  }
+  function atomic(file, value, owner) {
+    const suffix = crypto.randomBytes(8).toString("hex");
+    temporary = file + "." + suffix + ".tmp";
+    const fd = fs9.openSync(temporary, "wx", 384);
+    try {
+      fs9.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n", "utf8");
+      if (owner) fs9.fchownSync(fd, owner.uid, owner.gid);
+      fs9.fchmodSync(fd, 384);
+      fs9.fsyncSync(fd);
+    } finally {
+      fs9.closeSync(fd);
+    }
+    fs9.renameSync(temporary, file);
+    temporary = null;
+    const directoryFd = fs9.openSync(path12.dirname(file), "r");
+    try {
+      fs9.fsyncSync(directoryFd);
+    } finally {
+      fs9.closeSync(directoryFd);
+    }
+  }
+  function uriParts(uri) {
+    const match = /^(mongodb(?:\+srv)?:\/\/)([^/?#]+)(\/[^?#]*)?(\?[^#]*)?$/i.exec(uri || "");
+    if (!match) fail2("SANDBOX_SETUP_URI_INVALID");
+    const query = new URLSearchParams((match[4] || "").slice(1));
+    const mechanism = query.get("authMechanism");
+    if (mechanism && !["SCRAM-SHA-1", "SCRAM-SHA-256"].includes(mechanism) || query.has("authMechanismProperties")) fail2("SANDBOX_SETUP_AUTH_MECHANISM_UNSUPPORTED");
+    if (["authSource", "replicaSet", "authMechanism"].some(function(key) {
+      return query.getAll(key).length > 1;
+    })) fail2("SANDBOX_SETUP_URI_INVALID");
+    return { prefix: match[1].toLowerCase(), hosts: match[2].slice(match[2].lastIndexOf("@") + 1).toLowerCase(), authority: match[2], query };
+  }
+  function cluster(parts) {
+    return hash({ prefix: parts.prefix, hosts: parts.hosts, replicaSet: parts.query.get("replicaSet") });
+  }
+  function credential(parts) {
+    const authority = parts.authority.slice(0, parts.authority.lastIndexOf("@"));
+    const colon = authority.indexOf(":");
+    if (colon < 1) fail2("SANDBOX_SETUP_URI_INVALID");
+    return { user: decodeURIComponent(authority.slice(0, colon)), password: decodeURIComponent(authority.slice(colon + 1)) };
+  }
+  function desiredUri(parts) {
+    const query = new URLSearchParams(parts.query.toString());
+    query.set("authSource", config.sandboxDatabase);
+    return parts.prefix + encodeURIComponent(managerUser) + ":" + encodeURIComponent(config.managementPassword) + "@" + parts.hosts + "/" + config.sandboxDatabase + "?" + query.toString();
+  }
+  function getKey(value, key) {
+    return key.split(".").reduce(function(item, part) {
+      return item == null ? void 0 : item[part];
+    }, value);
+  }
+  const driver = require(config.driverPath), MongoClient = driver.MongoClient || driver.default && driver.default.MongoClient;
+  async function connect(uri) {
+    const connection = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverSelectionTimeoutMS: 15e3 });
+    try {
+      await connection.connect();
+      return connection;
+    } catch (error) {
+      try {
+        await connection.close();
+      } catch (_) {
+      }
+      throw error;
+    }
+  }
+  async function preflight() {
+    if (!["/home/app/", "/home/github/"].some(function(root) {
+      return config.configPath.startsWith(root);
+    }) || config.receiptsCollection !== collection) fail2("SANDBOX_SETUP_SCOPE_INVALID");
+    const stat = regular(config.configPath, false);
+    const original = fs9.readFileSync(config.configPath, "utf8"), fileConfig = JSON.parse(original);
+    const source = getKey(fileConfig[config.configProfile], config.uriKey), parts = uriParts(source);
+    if (!client) client = await connect(source);
+    const build = await client.db("admin").command({ buildInfo: 1 });
+    const topology = await client.db("admin").command({ isMaster: 1 });
+    const version = String(build.version || ""), major = Number(version.split(".")[0]);
+    if (!Number.isInteger(major) || major < 4 || Number(topology.maxWireVersion) < 7) fail2("SANDBOX_SETUP_SERVER_UNSUPPORTED");
+    const environment = {
+      serverVersion: version,
+      maxWireVersion: topology.maxWireVersion,
+      deployment: topology.msg === "isdbgrid" ? "sharded" : topology.setName ? "replicaSet" : "standalone",
+      replicaSet: topology.setName || null,
+      transactionsSupported: !!topology.setName || topology.msg === "isdbgrid" && Number(topology.maxWireVersion) >= 8
+    };
+    const authentication = await client.db("admin").command({ connectionStatus: 1, showPrivileges: true });
+    const users = authentication.authInfo.authenticatedUsers;
+    if (!users || users.length !== 1 || users[0].user === managerUser) fail2("SANDBOX_SETUP_EXECUTION_USER_INVALID");
+    const executionUser = users[0], privileges = authentication.authInfo.authenticatedUserPrivileges || [];
+    for (const item of [["createRole", config.sandboxDatabase], ["createUser", config.sandboxDatabase], ["grantRole", config.sandboxDatabase], ["grantRole", executionUser.db]]) {
+      if (!can(privileges, item[0], item[1])) fail2("SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED");
+    }
+    const db = client.db(config.sandboxDatabase), roles = [];
+    for (const item of [[managerRole, managerPrivileges], [executorRole, executorPrivileges]]) {
+      const result2 = await db.command({ rolesInfo: { role: item[0], db: config.sandboxDatabase }, showPrivileges: true });
+      const actual = result2.roles[0] || null;
+      if (actual && (actual.roles.length || hash(shape(actual.privileges)) !== hash(shape(item[1])))) fail2("SANDBOX_SETUP_ROLE_CONFLICT");
+      roles.push({ role: item[0], exists: !!actual });
+    }
+    const result = await db.command({ usersInfo: { user: managerUser, db: config.sandboxDatabase }, showCredentials: false });
+    const user = result.users[0];
+    if (user && (user.roles.length !== 1 || user.roles[0].db !== config.sandboxDatabase || user.roles[0].role !== managerRole)) fail2("SANDBOX_SETUP_USER_CONFLICT");
+    const ownership = { plugin: "remote-debug-agent", version: 1, scope };
+    if (user && hash(user.customData || null) !== hash(ownership)) fail2("SANDBOX_SETUP_ACCOUNT_NOT_OWNED");
+    const saved = fileConfig[config.managementProfile];
+    if (saved) {
+      const candidate = uriParts(saved.url);
+      if (cluster(candidate) !== cluster(parts) || candidate.query.get("authSource") !== config.sandboxDatabase || credential(candidate).user !== managerUser) fail2("SANDBOX_SETUP_PROFILE_CONFLICT");
+    }
+    let credentialAlreadyCurrent = false;
+    if (user) {
+      try {
+        managerClient = await connect(saved ? saved.url : desiredUri(parts));
+        credentialAlreadyCurrent = !saved || credential(uriParts(saved.url)).password === config.managementPassword;
+      } catch (_) {
+        if (!saved) fail2("SANDBOX_SETUP_EXISTING_PASSWORD_UNKNOWN");
+        managerClient = await connect(desiredUri(parts));
+        credentialAlreadyCurrent = true;
+      }
+      await verifyManager();
+      await managerClient.close();
+      managerClient = null;
+    }
+    const current = await client.db(executionUser.db).command({ usersInfo: executionUser, showCredentials: false });
+    if (!current.users[0]) fail2("SANDBOX_SETUP_EXECUTION_USER_INVALID");
+    const grants = current.users[0].roles;
+    const passwordChanged = !!user && !credentialAlreadyCurrent;
+    if (passwordChanged && user && !can(privileges, "changePassword", config.sandboxDatabase)) fail2("SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED");
+    const snapshot = {
+      scope,
+      configHash: textHash(original),
+      configMode: stat.mode & 511,
+      configOwner: { uid: stat.uid, gid: stat.gid },
+      clusterHash: cluster(parts),
+      executionUser,
+      executionRolesHash: hash(grants),
+      roles,
+      managerExists: !!user,
+      profileExists: !!saved,
+      passwordChanged,
+      profileNeedsUpdate: !saved || credential(uriParts(saved.url)).password !== config.managementPassword,
+      passwordConfigHash: textHash(request.setupId + ":" + config.managementPassword),
+      environment,
+      executorGranted: grants.some(function(role) {
+        return role.role === executorRole && role.db === config.sandboxDatabase;
+      })
+    };
+    return { stat, original, fileConfig, parts, snapshot, saved };
+  }
+  async function verifyManager() {
+    const result = await managerClient.db("admin").command({ connectionStatus: 1, showPrivileges: true });
+    const users = result.authInfo.authenticatedUsers || [], privileges = result.authInfo.authenticatedUserPrivileges || [];
+    if (users.length !== 1 || users[0].user !== managerUser || users[0].db !== config.sandboxDatabase || hash(shape(privileges)) !== hash(shape(managerPrivileges))) fail2("SANDBOX_SETUP_MANAGER_PRIVILEGES_UNSAFE");
+  }
+  function summary(value) {
+    return {
+      setupId: value.setupId,
+      planHash: value.planHash,
+      status: value.status,
+      expiresAt: value.expiresAt,
+      instanceId: config.instanceId,
+      sandboxDatabase: config.sandboxDatabase,
+      collection,
+      managerUser,
+      managerRole,
+      executorRole,
+      executionUser: value.snapshot.executionUser,
+      managementProfile: config.managementProfile,
+      configPath: config.configPath,
+      configModeAfter: "0600",
+      backupMode: "0600",
+      managerPrivileges,
+      executorPrivileges,
+      collectionsInitialized: false,
+      environment: value.snapshot.environment,
+      passwordReset: value.snapshot.passwordChanged,
+      requiresConfirmation: true,
+      confirmation: "确认配置沙盒",
+      rollbackMode: "manual_account_management",
+      existing: { roles: value.snapshot.roles, manager: value.snapshot.managerExists, profile: value.snapshot.profileExists, executorGranted: value.snapshot.executorGranted }
+    };
+  }
+  try {
+    directory(path12.dirname(config.journalRoot));
+    directory(config.journalRoot);
+    const planFile = path12.join(config.journalRoot, request.setupId + ".json");
+    if (request.action === "prepare") {
+      const state = await preflight();
+      plan = { version: 1, setupId: request.setupId, expiresAt: new Date(Date.now() + 30 * 60 * 1e3).toISOString(), snapshot: state.snapshot };
+      plan.planHash = hash(plan);
+      plan.status = "prepared";
+      if (fs9.existsSync(planFile)) fail2("SANDBOX_SETUP_PLAN_EXISTS");
+      fs9.writeFileSync(planFile, JSON.stringify(plan), { flag: "wx", mode: 384 });
+    } else {
+      if (request.confirmation !== "确认配置沙盒") fail2("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
+      regular(planFile, true);
+      plan = JSON.parse(fs9.readFileSync(planFile, "utf8"));
+      const body = { version: plan.version, setupId: plan.setupId, expiresAt: plan.expiresAt, snapshot: plan.snapshot };
+      if (plan.version !== 1 || plan.setupId !== request.setupId || plan.planHash !== request.planHash || hash(body) !== request.planHash || plan.snapshot.scope !== scope || plan.snapshot.passwordConfigHash !== textHash(request.setupId + ":" + config.managementPassword)) fail2("SANDBOX_SETUP_PLAN_CONFLICT");
+      if (plan.status !== "completed") {
+        if (plan.status !== "prepared") fail2("SANDBOX_SETUP_INSPECT_PARTIAL_CHANGES");
+        if (!(Date.parse(plan.expiresAt) > Date.now())) fail2("SANDBOX_SETUP_PLAN_EXPIRED");
+        lockPath = config.configPath + ".rda-sandbox-access.lock";
+        try {
+          lockFd = fs9.openSync(lockPath, "wx", 384);
+        } catch (_) {
+          fail2("SANDBOX_SETUP_BUSY");
+        }
+        const state = await preflight();
+        if (hash(state.snapshot) !== hash(plan.snapshot)) fail2("SANDBOX_SETUP_PLAN_CONFLICT");
+        plan.status = "started";
+        atomic(planFile, plan);
+        const password = config.managementPassword;
+        const uri = desiredUri(state.parts);
+        const sandbox = client.db(config.sandboxDatabase);
+        for (const item of [[managerRole, managerPrivileges], [executorRole, executorPrivileges]]) {
+          if (!plan.snapshot.roles.find(function(role) {
+            return role.role === item[0];
+          }).exists) await sandbox.command({ createRole: item[0], privileges: item[1], roles: [] });
+        }
+        if (!plan.snapshot.managerExists) await sandbox.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope } });
+        else if (state.snapshot.passwordChanged) await sandbox.command({ updateUser: managerUser, pwd: password });
+        if (!plan.snapshot.executorGranted) await client.db(plan.snapshot.executionUser.db).command({ grantRolesToUser: plan.snapshot.executionUser.user, roles: [{ role: executorRole, db: config.sandboxDatabase }] });
+        managerClient = await connect(uri);
+        await verifyManager();
+        if (state.snapshot.profileNeedsUpdate) {
+          if (textHash(fs9.readFileSync(config.configPath, "utf8")) !== plan.snapshot.configHash) fail2("SANDBOX_SETUP_PLAN_CONFLICT");
+          const backup = config.configPath + ".before-rda-sandbox-" + request.setupId;
+          fs9.writeFileSync(backup, state.original, { flag: "wx", mode: 384 });
+          state.fileConfig[config.managementProfile] = { url: uri };
+          atomic(config.configPath, state.fileConfig, state.stat);
+        } else if (state.stat.mode & 63) {
+          fs9.chmodSync(config.configPath, 384);
+        }
+        plan.status = "completed";
+        atomic(planFile, plan);
+      } else {
+        const current = await preflight();
+        if (!current.snapshot.managerExists || !current.snapshot.profileExists || !current.snapshot.executorGranted || current.snapshot.passwordChanged || current.snapshot.clusterHash !== plan.snapshot.clusterHash || hash(current.snapshot.executionUser) !== hash(plan.snapshot.executionUser)) fail2("SANDBOX_SETUP_PLAN_CONFLICT");
+      }
+    }
+    process.stdout.write(marker + JSON.stringify({ ok: true, data: summary(plan) }) + "\n");
+  } catch (error) {
+    if (plan && plan.status === "started") {
+      plan.status = "partial";
+      try {
+        atomic(path12.join(config.journalRoot, request.setupId + ".json"), plan);
+      } catch (_) {
+      }
+    }
+    process.stdout.write(marker + JSON.stringify({ ok: false, error: { code: error.safeCode || "SANDBOX_SETUP_FAILED" } }) + "\n");
+    process.exitCode = 1;
+  } finally {
+    if (temporary) try {
+      fs9.unlinkSync(temporary);
+    } catch (_) {
+    }
+    if (lockFd !== void 0) {
+      try {
+        fs9.closeSync(lockFd);
+      } catch (_) {
+      }
+      try {
+        fs9.unlinkSync(lockPath);
+      } catch (_) {
+      }
+    }
+    if (managerClient) try {
+      await managerClient.close();
+    } catch (_) {
+    }
+    if (client) try {
+      await client.close();
+    } catch (_) {
+    }
+  }
+}
+
+// mongodb-sandbox-access.js
+function fail(code, message = code) {
+  return operationError(message, { code, statusCode: 400, layer: "sandbox-access", phase: "validation", retriable: false });
+}
+function accessSettings(rawConfig, instanceId) {
+  const base = normalizeMongoConfig(rawConfig);
+  const policy = normalizeMongoBulkConfig(rawConfig, { requireBulkEnabled: false });
+  const managementProfile = rawConfig.sandboxManagementProfile || "remote_debug_manager";
+  const managementUriKey = rawConfig.sandboxManagementUriKey || "url";
+  const password = rawConfig.sandboxManagementPassword;
+  if (typeof password !== "string" || password.length < 16 || password.length > 256 || /[\r\n\0]/.test(password)) throw fail("SANDBOX_MANAGEMENT_PASSWORD_REQUIRED", "Configure this instance's sandbox management password (16–256 characters) before preparing setup");
+  if (!/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(managementProfile) || managementProfile === base.configProfile || managementUriKey !== "url") {
+    throw fail("SANDBOX_MANAGEMENT_PROFILE_INVALID");
+  }
+  const config = {
+    ...base,
+    instanceId,
+    sandboxDatabase: policy.sandboxDatabase,
+    managementProfile,
+    managementUriKey,
+    managementPassword: password,
+    receiptsCollection: policy.bulkReceiptsCollection,
+    journalRoot: "/tmp/remote-debug-agent/sandbox-access"
+  };
+  return config;
+}
+function sandboxSettingsHash(rawConfig, instanceId) {
+  return (0, import_node_crypto9.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
+}
+function buildSandboxAccessScript(request, rawConfig, instanceId) {
+  return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
+}
+async function runSandboxAccess(input = {}, options = {}) {
+  const action = options.action;
+  const rawConfig = options.config?.mongodb || options.config || {};
+  const instanceId = options.instanceId || process.env.REMOTE_DEBUG_INSTANCE_ID || "standalone";
+  if (options.expectedSettingsHash && options.expectedSettingsHash !== sandboxSettingsHash(rawConfig, instanceId)) throw fail("SANDBOX_SETUP_CONFIG_STALE", "Reload this instance's configuration before preparing or applying sandbox setup");
+  const allowed = action === "prepare" ? ["purpose", "operationId", "timeoutMs", "deadlineAt"] : ["setupId", "planHash", "confirmation", "operationId", "timeoutMs", "deadlineAt"];
+  if (Object.keys(input).some((key) => !allowed.includes(key))) throw fail("SANDBOX_SETUP_INPUT_INVALID");
+  if (!["prepare", "execute"].includes(action)) throw fail("SANDBOX_SETUP_ACTION_INVALID");
+  if (action === "execute" && (!/^[a-f0-9-]{36}$/.test(input.setupId || "") || !/^[a-f0-9]{64}$/.test(input.planHash || "") || input.confirmation !== "确认配置沙盒")) {
+    throw fail("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
+  }
+  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto9.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
+  const script = buildSandboxAccessScript(request, rawConfig, instanceId);
+  if (typeof options.runSSH !== "function") throw fail("MONGODB_RUNNER_UNAVAILABLE");
+  let remote;
+  try {
+    remote = await options.runSSH(MONGODB_REMOTE_COMMAND, { config: options.config, operation: options.operation, stdin: script });
+  } catch (error) {
+    throw operationError("Sandbox setup transport failed; inspect the plan before retrying", { code: error.code || "SANDBOX_SETUP_TRANSPORT_FAILED", statusCode: 502, layer: "sandbox-access", phase: action, retriable: false });
+  }
+  if (remote.stdoutTruncated || Buffer.byteLength(remote.stdout || "") > 65536) throw fail("SANDBOX_SETUP_RESPONSE_TOO_LARGE");
+  const line = String(remote.stdout || "").split(/\r?\n/).filter((item) => item.startsWith(MONGODB_RESULT_MARKER)).pop();
+  let payload;
+  try {
+    payload = JSON.parse(line.slice(MONGODB_RESULT_MARKER.length));
+  } catch {
+    throw fail("SANDBOX_SETUP_INVALID_RESPONSE");
+  }
+  if (!payload.ok || remote.exitCode !== 0 || remote.timedOut) throw fail(payload.error?.code || "SANDBOX_SETUP_FAILED", "Sandbox setup did not complete; prepare again to inspect partial configuration safely");
+  return payload.data;
 }
 
 // logs.js
@@ -51340,10 +52099,10 @@ function timestamp(value, field) {
 function normalizeLogQuery(input, config) {
   const projects = normalizeLogProjects(config.logs?.projects, config.security.allowedPaths, config.security.sourceRoots);
   const projectId = text(input.projectId, "projectId", 32);
-  const path11 = text(input.path, "path", 4096);
-  if (Boolean(projectId) === Boolean(path11)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
+  const path12 = text(input.path, "path", 4096);
+  if (Boolean(projectId) === Boolean(path12)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
   if (projectId && !Object.hasOwn(projects, projectId)) throw logInputError(`unknown log project: ${projectId}`, "LOG_PROJECT_NOT_FOUND");
-  if (path11) assertPathAllowed(path11, config.security.allowedPaths);
+  if (path12) assertPathAllowed(path12, config.security.allowedPaths);
   const contains = text(input.contains, "contains");
   const route = text(input.route, "route");
   if (route && !route.startsWith("/")) throw logInputError("route must be an exact absolute route", "INVALID_LOG_QUERY");
@@ -51353,7 +52112,7 @@ function normalizeLogQuery(input, config) {
   const toTime = timestamp(input.toTime, "toTime");
   const mode = input.mode || (contains || route || level || method || fromTime || toTime ? "search" : "latest");
   if (!LOG_QUERY_CAPABILITIES.modes.includes(mode)) throw logInputError("mode must be latest, search, files, or members", "INVALID_LOG_QUERY");
-  if (mode === "members" && (!path11 || !/\.(?:tar\.gz|tgz)$/i.test(path11))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
+  if (mode === "members" && (!path12 || !/\.(?:tar\.gz|tgz)$/i.test(path12))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
   if (mode === "latest" && (contains || route || level || method || fromTime || toTime)) throw logInputError("use search mode for record filters", "INVALID_LOG_QUERY");
   if (["files", "members"].includes(mode) && (contains || route || level || method || fromTime || toTime)) throw logInputError("record filters require search mode", "INVALID_LOG_QUERY");
   const dateFrom = date(input.date || input.dateFrom, "dateFrom");
@@ -51364,10 +52123,10 @@ function normalizeLogQuery(input, config) {
   const memberPath = text(input.memberPath, "memberPath", 4096);
   const memberOffset = input.memberOffset ?? 0;
   if (!Number.isInteger(memberOffset) || memberOffset < 0 || memberOffset > 5e3) throw logInputError("invalid memberOffset", "INVALID_LOG_QUERY");
-  if (memberPath && path11 && !/\.(?:tar\.gz|tgz)$/i.test(path11)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
+  if (memberPath && path12 && !/\.(?:tar\.gz|tgz)$/i.test(path12)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
   return {
     projectId,
-    path: path11,
+    path: path12,
     directories: projectId ? projects[projectId].directories : [],
     allowedRoots: config.security.allowedPaths,
     mode,
@@ -53928,8 +54687,9 @@ async function readLog(options = {}) {
 
 // instance-registry.js
 var import_node_fs3 = __toESM(require("node:fs"), 1);
-var import_node_path5 = __toESM(require("node:path"), 1);
-var import_node_crypto9 = require("node:crypto");
+var import_node_path6 = __toESM(require("node:path"), 1);
+var import_node_crypto10 = require("node:crypto");
+var import_local_auth2 = __toESM(require_local_auth(), 1);
 var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 var DEFAULT_HEALTH_INTERVAL_MS = 15e3;
@@ -54124,6 +54884,15 @@ function normalizeMongoSettings(input, existing) {
   if (raw.bulkEnabled !== void 0) {
     normalized.bulkEnabled = parseBooleanFlag3(raw.bulkEnabled, false);
   }
+  if (raw.sandboxManagementPassword !== void 0) {
+    if (typeof raw.sandboxManagementPassword !== "string" || raw.sandboxManagementPassword.length > 256 || raw.sandboxManagementPassword && (raw.sandboxManagementPassword.length < 16 || /[\r\n\0]/.test(raw.sandboxManagementPassword))) {
+      const error = new Error("sandbox management password must contain 16–256 characters");
+      error.code = "INVALID_INSTANCE_FIELD";
+      error.statusCode = 400;
+      throw error;
+    }
+    normalized.sandboxManagementPassword = raw.sandboxManagementPassword;
+  }
   if (raw.rollbackRoot !== void 0 && raw.rollbackRoot !== "") {
     normalized.rollbackRoot = String(raw.rollbackRoot).trim();
   }
@@ -54139,6 +54908,18 @@ function normalizeMongoSettings(input, existing) {
       throw error;
     }
     normalized.bulkReceiptsCollection = collection;
+  }
+  for (const field of ["sandboxDatabase", "sandboxManagementProfile", "sandboxManagementUriKey"]) {
+    if (raw[field] !== void 0) {
+      const value = String(raw[field]).trim();
+      if (value && !/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/.test(value)) {
+        const error = new Error(`mongodb.${field} has an invalid format`);
+        error.code = "INVALID_INSTANCE_FIELD";
+        error.statusCode = 400;
+        throw error;
+      }
+      normalized[field] = value;
+    }
   }
   for (const [fieldName, fieldValue] of [
     ["rollbackTtlMs", raw.rollbackTtlMs],
@@ -54174,7 +54955,7 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto9.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto10.randomUUID)());
   assertInstanceId(id);
   const name = String(input.name ?? existing.name ?? id).trim();
   if (!name) {
@@ -54250,18 +55031,18 @@ function hasUnavailablePreferredWorkerPort(rawInstances, manager, managerPort) {
   });
 }
 function registryRootFrom(cwd) {
-  const normalized = import_node_path5.default.resolve(cwd);
-  if (import_node_path5.default.basename(normalized).toLowerCase() === "agent") {
-    return import_node_path5.default.dirname(normalized);
+  const normalized = import_node_path6.default.resolve(cwd);
+  if (import_node_path6.default.basename(normalized).toLowerCase() === "agent") {
+    return import_node_path6.default.dirname(normalized);
   }
   return normalized;
 }
 function defaultRegistryPath(cwd = process.cwd(), env = process.env) {
   if (env.REMOTE_DEBUG_INSTANCE_REGISTRY) {
-    return import_node_path5.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
+    return import_node_path6.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
   }
-  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path5.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
-  return import_node_path5.default.resolve(root, ".remote-debug", "instances.json");
+  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path6.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
+  return import_node_path6.default.resolve(root, ".remote-debug", "instances.json");
 }
 function envDefaultInstance(env, cwd) {
   const dotEnv = loadDotEnv(cwd);
@@ -54345,6 +55126,7 @@ function publicInstance(instance) {
         configProfile: mongodb.configProfile,
         uriKey: mongodb.uriKey,
         database: mongodb.database,
+        ...mongodb.sandboxManagementPassword === void 0 ? {} : { hasSandboxManagementPassword: Boolean(mongodb.sandboxManagementPassword) },
         ...mongodb.writeEnabled === void 0 ? {} : { writeEnabled: Boolean(mongodb.writeEnabled) },
         ...mongodb.mutationsEnabled === void 0 ? {} : { mutationsEnabled: Boolean(mongodb.mutationsEnabled) },
         ...mongodb.rollbackRoot === void 0 ? {} : { rollbackRoot: mongodb.rollbackRoot },
@@ -54353,6 +55135,7 @@ function publicInstance(instance) {
         ...mongodb.maxImportBatchDocuments === void 0 ? {} : { maxImportBatchDocuments: mongodb.maxImportBatchDocuments },
         ...mongodb.bulkEnabled === void 0 ? {} : { bulkEnabled: Boolean(mongodb.bulkEnabled) },
         ...mongodb.bulkRoot === void 0 ? {} : { bulkRoot: mongodb.bulkRoot },
+        ...Object.fromEntries(["sandboxDatabase", "sandboxManagementProfile", "sandboxManagementUriKey"].filter((field) => mongodb[field] !== void 0).map((field) => [field, mongodb[field]])),
         ...mongodb.bulkReceiptsCollection === void 0 ? {} : { bulkReceiptsCollection: mongodb.bulkReceiptsCollection },
         ...mongodb.bulkBatchDocuments === void 0 ? {} : { bulkBatchDocuments: mongodb.bulkBatchDocuments },
         ...mongodb.bulkConcurrency === void 0 ? {} : { bulkConcurrency: mongodb.bulkConcurrency },
@@ -54389,12 +55172,19 @@ var InstanceRegistry = class {
     return registry;
   }
   save(nextRegistry = this.registry) {
-    this.registry = nextRegistry;
-    import_node_fs3.default.mkdirSync(import_node_path5.default.dirname(this.registryPath), { recursive: true });
+    import_node_fs3.default.mkdirSync(import_node_path6.default.dirname(this.registryPath), { recursive: true, mode: 448 });
+    const containsSandboxSecret = nextRegistry.instances.some((instance) => Boolean(instance.mongodb?.sandboxManagementPassword));
+    if (containsSandboxSecret) import_local_auth2.default.protectOrCheck(import_node_path6.default.dirname(this.registryPath), true, true);
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
-    import_node_fs3.default.writeFileSync(tempPath, `${JSON.stringify(this.registry, null, 2)}
-`, "utf8");
-    import_node_fs3.default.renameSync(tempPath, this.registryPath);
+    try {
+      import_node_fs3.default.writeFileSync(tempPath, `${JSON.stringify(nextRegistry, null, 2)}
+`, { flag: "wx", mode: 384 });
+      if (containsSandboxSecret) import_local_auth2.default.protectOrCheck(tempPath, false, true);
+      import_node_fs3.default.renameSync(tempPath, this.registryPath);
+      this.registry = nextRegistry;
+    } finally {
+      if (import_node_fs3.default.existsSync(tempPath)) import_node_fs3.default.unlinkSync(tempPath);
+    }
   }
   managerConfig() {
     return this.registry.manager;
@@ -54497,17 +55287,17 @@ var InstanceRegistry = class {
 
 // worker-manager.js
 var import_node_child_process2 = require("node:child_process");
-var import_node_crypto11 = require("node:crypto");
-var import_promises3 = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto12 = require("node:crypto");
+var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
-var import_node_path7 = __toESM(require("node:path"), 1);
+var import_node_path8 = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // memory-store.js
-var import_node_crypto10 = require("node:crypto");
+var import_node_crypto11 = require("node:crypto");
 var import_node_fs4 = __toESM(require("node:fs"), 1);
-var import_promises2 = __toESM(require("node:fs/promises"), 1);
-var import_node_path6 = __toESM(require("node:path"), 1);
+var import_promises3 = __toESM(require("node:fs/promises"), 1);
+var import_node_path7 = __toESM(require("node:path"), 1);
 var MEMORY_VERSION = 1;
 var MEMORY_STATUSES = /* @__PURE__ */ new Set([
   "missing",
@@ -54532,8 +55322,8 @@ function nowIso2() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function projectRootFrom(cwd) {
-  const normalized = import_node_path6.default.resolve(cwd);
-  return import_node_path6.default.basename(normalized).toLowerCase() === "agent" ? import_node_path6.default.dirname(normalized) : normalized;
+  const normalized = import_node_path7.default.resolve(cwd);
+  return import_node_path7.default.basename(normalized).toLowerCase() === "agent" ? import_node_path7.default.dirname(normalized) : normalized;
 }
 function stableJson(value) {
   if (Array.isArray(value)) {
@@ -54582,7 +55372,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto10.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto11.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -54597,9 +55387,9 @@ function targetSummary(instance = {}) {
 }
 function memoryRootFromOptions(options) {
   if (options.memoryRoot) {
-    return import_node_path6.default.resolve(options.memoryRoot);
+    return import_node_path7.default.resolve(options.memoryRoot);
   }
-  return import_node_path6.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
+  return import_node_path7.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
 }
 function isObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -54907,7 +55697,7 @@ var MemoryStore = class {
     this.records = /* @__PURE__ */ new Map();
   }
   memoryPath(instanceId) {
-    return import_node_path6.default.resolve(this.root, instanceId, "memory.json");
+    return import_node_path7.default.resolve(this.root, instanceId, "memory.json");
   }
   ensureLoaded(instanceId) {
     if (this.records.has(instanceId)) {
@@ -54947,11 +55737,11 @@ var MemoryStore = class {
   }
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
-    await import_promises2.default.mkdir(import_node_path6.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto10.randomUUID)()}.tmp`;
-    await import_promises2.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
+    await import_promises3.default.mkdir(import_node_path7.default.dirname(filePath), { recursive: true });
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto11.randomUUID)()}.tmp`;
+    await import_promises3.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
-    await import_promises2.default.rename(tempPath, filePath);
+    await import_promises3.default.rename(tempPath, filePath);
     this.records.set(instanceId, memory);
   }
   async markInitializing(instance, source = "worker-start") {
@@ -55115,13 +55905,13 @@ var MemoryStore = class {
   }
   async deleteInstance(instanceId) {
     this.records.delete(instanceId);
-    await import_promises2.default.rm(this.memoryPath(instanceId), { force: true });
+    await import_promises3.default.rm(this.memoryPath(instanceId), { force: true });
   }
 };
 
 // worker-manager.js
 var moduleFilePath = typeof __filename === "string" ? __filename : (0, import_node_url.fileURLToPath)(void 0);
-var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path7.default.dirname(moduleFilePath);
+var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path8.default.dirname(moduleFilePath);
 var RESTORE_SNAPSHOT_VERSION = 1;
 var RESTORE_SHUTDOWN_REASONS = /* @__PURE__ */ new Set(["lease-expired"]);
 var RESTORE_SNAPSHOT_REASONS = /* @__PURE__ */ new Set(["active-runtime", ...RESTORE_SHUTDOWN_REASONS]);
@@ -55213,17 +56003,17 @@ async function waitForExit(child, timeoutMs) {
   });
 }
 function projectRootFrom2(cwd) {
-  const normalized = import_node_path7.default.resolve(cwd);
-  return import_node_path7.default.basename(normalized).toLowerCase() === "agent" ? import_node_path7.default.dirname(normalized) : normalized;
+  const normalized = import_node_path8.default.resolve(cwd);
+  return import_node_path8.default.basename(normalized).toLowerCase() === "agent" ? import_node_path8.default.dirname(normalized) : normalized;
 }
 function defaultRestoreSnapshotPath(cwd) {
-  return import_node_path7.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
+  return import_node_path8.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
 }
 function defaultRestoreSnapshotDiagnosticPath(cwd) {
-  return import_node_path7.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
+  return import_node_path8.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
 }
 function configEnv(instance, port, manager, cwd, memoryInit) {
-  const instanceDir = import_node_path7.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance.id);
+  const instanceDir = import_node_path8.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance.id);
   return {
     REMOTE_DEBUG_WORKER: "1",
     REMOTE_DEBUG_INSTANCE_ID: instance.id,
@@ -55235,7 +56025,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_PRIVATE_KEY_PATH: instance.privateKeyPath,
     REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance.passphrase || "",
     REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance.hostKeyFingerprints || []),
-    REMOTE_DEBUG_AUDIT_LOG: instance.auditLog || import_node_path7.default.resolve(instanceDir, "audit.jsonl"),
+    REMOTE_DEBUG_AUDIT_LOG: instance.auditLog || import_node_path8.default.resolve(instanceDir, "audit.jsonl"),
     REMOTE_DEBUG_APPROVED_COMMANDS: instance.approvedCommands?.enabled ? "1" : "0",
     REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.executionTimeoutMs),
     REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.maxExecutionTimeoutMs),
@@ -55246,7 +56036,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
-    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path7.default.resolve(instanceDir, ".runtime", "agent-state.json"),
+    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path8.default.resolve(instanceDir, ".runtime", "agent-state.json"),
     REMOTE_DEBUG_RUNTIME_ID: process.env.REMOTE_DEBUG_RUNTIME_ID || "development",
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0"
   };
@@ -55257,7 +56047,7 @@ var WorkerManager = class {
     this.managerPort = options.managerPort;
     this.cwd = options.cwd || process.cwd();
     this.nodePath = options.nodePath || process.execPath;
-    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path7.default.resolve(moduleDirectory, "worker-entry.js");
+    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path8.default.resolve(moduleDirectory, "worker-entry.js");
     this.forkWorker = options.forkWorker || ((entryPath, forkOptions) => (0, import_node_child_process2.fork)(entryPath, [], forkOptions));
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
@@ -55330,7 +56120,7 @@ var WorkerManager = class {
   }
   async readRestoreSnapshotDiagnostic() {
     try {
-      return JSON.parse(await import_promises3.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
+      return JSON.parse(await import_promises4.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
     } catch (error) {
       if (error?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot diagnostic", error);
@@ -55340,11 +56130,11 @@ var WorkerManager = class {
   }
   async writeRestoreSnapshotDiagnostic(diagnostic) {
     try {
-      await import_promises3.default.mkdir(import_node_path7.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
+      await import_promises4.default.mkdir(import_node_path8.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
       const tempPath = `${this.restoreSnapshotDiagnosticPath}.${process.pid}.${Date.now()}.tmp`;
-      await import_promises3.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
+      await import_promises4.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
 `, "utf8");
-      await import_promises3.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
+      await import_promises4.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
     } catch (error) {
       console.error("failed to write manager restore snapshot diagnostic", error);
     }
@@ -55372,7 +56162,7 @@ var WorkerManager = class {
     let previousSnapshot = null;
     let previousSnapshotReadError = null;
     try {
-      previousSnapshot = JSON.parse(await import_promises3.default.readFile(this.restoreSnapshotPath, "utf8"));
+      previousSnapshot = JSON.parse(await import_promises4.default.readFile(this.restoreSnapshotPath, "utf8"));
     } catch (error) {
       if (error?.code !== "ENOENT") {
         previousSnapshotReadError = {
@@ -55396,7 +56186,7 @@ var WorkerManager = class {
       });
     }
     try {
-      await import_promises3.default.rm(this.restoreSnapshotPath, { force: true });
+      await import_promises4.default.rm(this.restoreSnapshotPath, { force: true });
     } catch (error) {
       console.error("failed to clear manager restore snapshot", error);
     }
@@ -55419,11 +56209,11 @@ var WorkerManager = class {
       lastReason: reason,
       instances
     };
-    await import_promises3.default.mkdir(import_node_path7.default.dirname(this.restoreSnapshotPath), { recursive: true });
+    await import_promises4.default.mkdir(import_node_path8.default.dirname(this.restoreSnapshotPath), { recursive: true });
     const tempPath = `${this.restoreSnapshotPath}.${process.pid}.${Date.now()}.tmp`;
-    await import_promises3.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
+    await import_promises4.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
 `, "utf8");
-    await import_promises3.default.rename(tempPath, this.restoreSnapshotPath);
+    await import_promises4.default.rename(tempPath, this.restoreSnapshotPath);
     return {
       written: true,
       reason,
@@ -55465,7 +56255,7 @@ var WorkerManager = class {
   async readRestoreSnapshot() {
     let parsed;
     try {
-      parsed = JSON.parse(await import_promises3.default.readFile(this.restoreSnapshotPath, "utf8"));
+      parsed = JSON.parse(await import_promises4.default.readFile(this.restoreSnapshotPath, "utf8"));
     } catch (error) {
       if (error?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot", error);
@@ -55670,7 +56460,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
-      authToken: (0, import_node_crypto11.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto12.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -56226,7 +57016,7 @@ var WorkerManager = class {
 
 // server.js
 var moduleFilePath2 = typeof __filename === "string" ? __filename : (0, import_node_url2.fileURLToPath)(void 0);
-var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path8.default.dirname(moduleFilePath2);
+var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path9.default.dirname(moduleFilePath2);
 var DEFAULT_AGENT_LIFETIME2 = "manual";
 var DESKTOP_AGENT_LIFETIME = "desktop";
 var DEFAULT_MANAGER_LEASE_TTL_MS = 45e3;
@@ -56235,7 +57025,7 @@ var MAX_MANAGER_LEASE_TTL_MS = 12e4;
 var DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5e3;
 var DEFAULT_DESKTOP_STARTUP_GRACE_MS = 6e4;
 function registerEnvironmentReport(app, config) {
-  const dataDir = import_node_path8.default.dirname(import_node_path8.default.dirname(config.runtime?.statePath || import_node_path8.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const dataDir = import_node_path9.default.dirname(import_node_path9.default.dirname(config.runtime?.statePath || import_node_path9.default.join(process.cwd(), ".runtime", "agent-state.json")));
   app.get("/api/environment-report", (_request, response) => {
     response.set("Cache-Control", "no-store");
     response.json({ ok: true, mode: "manager", report: import_environment_report.default.readReport(dataDir) });
@@ -56279,11 +57069,11 @@ async function writeRuntimeState(config, event2) {
     ...event2,
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
-  await import_promises4.default.mkdir(import_node_path8.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto12.randomUUID)()}.tmp`;
-  await import_promises4.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
+  await import_promises5.default.mkdir(import_node_path9.default.dirname(statePath), { recursive: true });
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto13.randomUUID)()}.tmp`;
+  await import_promises5.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
-  await import_promises4.default.rename(tempPath, statePath);
+  await import_promises5.default.rename(tempPath, statePath);
 }
 function requestText(value, maxChars = 256) {
   if (value === void 0 || value === null) {
@@ -56300,7 +57090,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto12.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto13.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -56533,6 +57323,7 @@ function createApp(options = {}) {
   const runMongoQueryImpl = options.runMongoQuery || runMongoQuery;
   const runMongoMutationImpl = options.runMongoMutation || runMongoMutation;
   const runMongoBulkImpl = options.runMongoBulk || runMongoBulk;
+  const runSandboxAccessImpl = options.runSandboxAccess || runSandboxAccess;
   const listLogsImpl = options.listLogs || listLogs;
   const listLogArchiveMembersImpl = options.listLogArchiveMembers || listLogArchiveMembers;
   const readLogImpl = options.readLog || readLog;
@@ -56586,13 +57377,13 @@ function createApp(options = {}) {
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = (0, import_express.default)();
-  const publicDir = import_node_path8.default.join(moduleDirectory2, "public");
+  const publicDir = import_node_path9.default.join(moduleDirectory2, "public");
   installHttpAuth(app, config, options);
   app.use("/mongodb/imports/prepare", import_express.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express.default.json({ limit: "5mb" }));
   app.use(import_express.default.json({ limit: "512kb" }));
   app.get("/", (_request, response) => {
-    response.sendFile(import_node_path8.default.join(publicDir, "dashboard.html"));
+    response.sendFile(import_node_path9.default.join(publicDir, "dashboard.html"));
   });
   registerEnvironmentReport(app, config);
   app.get("/favicon.ico", (_request, response) => {
@@ -57540,6 +58331,8 @@ function createApp(options = {}) {
         result = await runMongoBulk2({ action: "upload", chunk: raw }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk2({ action, ...raw }, { operation: requestOperation });
+      } else if (action.startsWith("sandbox")) {
+        result = await runMongoBulk2({ ...raw, action }, { operation: requestOperation, priority: "background" });
       } else if (action === "execute") {
         result = await getMongoBulkJobRunner().start(raw, "execute");
       } else if (action === "rollback") {
@@ -57601,6 +58394,24 @@ function createApp(options = {}) {
     }
   }
   app.post("/mongodb/bulk/storage/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/bulk/storage/prepare"));
+  for (const action of ["prepare", "execute"]) {
+    const route = `/mongodb/sandbox/access/${action}`;
+    app.post(route, async (request, response) => {
+      const operation = createRequestOperation(request, response, route, config);
+      try {
+        const { _sandboxSettingsHash, ...input } = request.body || {};
+        const result = await runSandboxAccessImpl(input, { action, config, runSSH: runSSH2, operation, expectedSettingsHash: _sandboxSettingsHash });
+        await audit(config, { tool: `sandbox-access-${action}`, setupId: result.setupId, planHash: result.planHash, sandboxDatabase: result.sandboxDatabase, status: result.status, ok: true });
+        response.json({ ok: true, ...result, operationId: operation.operationId });
+      } catch (error) {
+        await audit(config, { tool: `sandbox-access-${action}`, ok: false, errorCode: error.code });
+        response.status(errorStatus(error)).json(errorPayload(error));
+      }
+    });
+  }
+  for (const [route, action] of [["status", "sandboxStatus"], ["export", "sandboxExport"], ["prepare-cleanup", "sandboxPrepareCleanup"], ["cleanup", "sandboxCleanup"]]) {
+    app.post(`/sandbox/${route}`, (request, response) => handleMongoBulk(request, response, action, `/sandbox/${route}`));
+  }
   app.post("/mongodb/imports/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
   app.post("/mongodb/mutations/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
   app.post("/mongodb/mutations/execute", (request, response) => handleMongoMutation(request, response, "commit", "/mongodb/mutations/execute"));
@@ -57857,7 +58668,7 @@ function createManagerApp(options = {}) {
     ...options.lifecycleOptions
   });
   const app = (0, import_express.default)();
-  const publicDir = import_node_path8.default.join(moduleDirectory2, "public");
+  const publicDir = import_node_path9.default.join(moduleDirectory2, "public");
   let commandReviewInFlight = false;
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
@@ -57868,7 +58679,7 @@ function createManagerApp(options = {}) {
   app.use(import_express.default.json({ limit: "512kb" }));
   let restoreCheckScheduled = false;
   app.get("/", (_request, response) => {
-    response.sendFile(import_node_path8.default.join(publicDir, "dashboard.html"));
+    response.sendFile(import_node_path9.default.join(publicDir, "dashboard.html"));
   });
   registerEnvironmentReport(app, config);
   app.get("/favicon.ico", (_request, response) => {
@@ -58389,6 +59200,12 @@ function createManagerApp(options = {}) {
       ...result
     });
   }));
+  app.post("/api/sandbox/local", managerAsync(async (request, response) => {
+    const instanceId = registry.resolveId(request.body?.instanceId);
+    const dataDir = import_node_path9.default.dirname(import_node_path9.default.dirname(config.runtime?.statePath || import_node_path9.default.join(process.cwd(), ".runtime", "agent-state.json")));
+    const result = await inspectLocalSandbox(dataDir, instanceId, request.body || {});
+    response.json({ ok: true, ...result });
+  }));
   async function proxyToInstance(pathName, request, response) {
     const startedAt = import_node_perf_hooks.performance.now();
     const instanceId = request.body?.instanceId;
@@ -58421,6 +59238,10 @@ function createManagerApp(options = {}) {
       if (pathName === "/logs/query") {
         const instance2 = registry.getInternal(registry.resolveId(instanceId));
         payload._logProjects = normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots);
+      }
+      if (pathName.startsWith("/mongodb/sandbox/access/")) {
+        const resolvedId = registry.resolveId(instanceId);
+        payload._sandboxSettingsHash = sandboxSettingsHash(registry.getInternal(resolvedId).mongodb || {}, resolvedId);
       }
       const result = await workerManager.callInstance(
         instanceId,
@@ -58462,6 +59283,9 @@ function createManagerApp(options = {}) {
     }
   }
   app.post("/run", (request, response) => proxyToInstance("/run", request, response));
+  for (const route of ["status", "export", "prepare-cleanup", "cleanup"]) {
+    app.post(`/sandbox/${route}`, (request, response) => proxyToInstance(`/sandbox/${route}`, request, response));
+  }
   app.post("/read-file", (request, response) => proxyToInstance("/read-file", request, response));
   app.post("/list-dir", (request, response) => proxyToInstance("/list-dir", request, response));
   app.post("/logs/list", (request, response) => proxyToInstance("/logs/list", request, response));
@@ -58471,6 +59295,10 @@ function createManagerApp(options = {}) {
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/mongodb/imports/prepare", (request, response) => proxyToInstance("/mongodb/imports/prepare", request, response));
   app.post("/mongodb/bulk/storage/prepare", (request, response) => proxyToInstance("/mongodb/bulk/storage/prepare", request, response));
+  for (const action of ["prepare", "execute"]) {
+    const route = `/mongodb/sandbox/access/${action}`;
+    app.post(route, (request, response) => proxyToInstance(route, request, response));
+  }
   app.post("/mongodb/bulk/prepare", (request, response) => proxyToInstance("/mongodb/bulk/prepare", request, response));
   app.post("/mongodb/bulk/execute", (request, response) => proxyToInstance("/mongodb/bulk/execute", request, response));
   app.post("/mongodb/bulk/job", (request, response) => proxyToInstance("/mongodb/bulk/job", request, response));
@@ -58494,7 +59322,7 @@ function isServerEntrypointProcess(options = {}) {
   const env = options.env || process.env;
   const filePath = options.filePath || moduleFilePath2;
   return Boolean(
-    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path8.default.resolve(filePath) === import_node_path8.default.resolve(argv[1])
+    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path9.default.resolve(filePath) === import_node_path9.default.resolve(argv[1])
   );
 }
 function listenHttpServer(app, config, eventFactory) {
@@ -58625,8 +59453,8 @@ if (isServerEntrypointProcess()) {
 
 // ssh-connection-supervisor.js
 var import_node_events2 = require("node:events");
-var import_promises5 = __toESM(require("node:fs/promises"), 1);
-var import_node_crypto13 = require("node:crypto");
+var import_promises6 = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto14 = require("node:crypto");
 var import_ssh22 = __toESM(require_lib4(), 1);
 
 // channel-scheduler.js
@@ -58863,7 +59691,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     super();
     this.config = config;
     this.ClientClass = options.ClientClass || import_ssh22.Client;
-    this.readFile = options.readFile || import_promises5.default.readFile;
+    this.readFile = options.readFile || import_promises6.default.readFile;
     this.now = options.now || (() => Date.now());
     this.random = options.random || Math.random;
     this.setTimeoutFn = options.setTimeout || setTimeout;
@@ -58940,7 +59768,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
       keepaliveInterval: this.keepaliveIntervalMs,
       keepaliveCountMax: this.keepaliveCountMax,
       hostVerifier: (key) => {
-        const fingerprint = `SHA256:${(0, import_node_crypto13.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
+        const fingerprint = `SHA256:${(0, import_node_crypto14.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
         const matched = fingerprints.includes(fingerprint);
         this.hostVerification = { status: matched ? "verified" : "mismatch", observedFingerprint: fingerprint };
         if (!matched) this.hostVerificationError = operationError(`server host key does not match trusted fingerprints; observed ${fingerprint}`, {
@@ -58997,7 +59825,7 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
     try {
       await new Promise((resolve, reject) => {
         let settled = false;
-        const fail = (error) => {
+        const fail2 = (error) => {
           if (settled) return;
           settled = true;
           client.removeListener("ready", ready);
@@ -59009,8 +59837,8 @@ var SshConnectionSupervisor = class extends import_node_events2.EventEmitter {
           resolve();
         };
         client.once("ready", ready);
-        client.once("error", fail);
-        client.once("close", () => fail(new Error("SSH transport closed before authentication")));
+        client.once("error", fail2);
+        client.once("close", () => fail2(new Error("SSH transport closed before authentication")));
         client.connect(connectionOptions);
       });
     } catch (error) {
@@ -59483,7 +60311,7 @@ async function discoverMemory(config, options = {}) {
 }
 
 // worker-entry.js
-var import_node_path9 = __toESM(require("node:path"), 1);
+var import_node_path10 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
 var moduleFilePath3 = typeof __filename === "string" ? __filename : (0, import_node_url3.fileURLToPath)(void 0);
 function parsePositiveInt3(value, fallback) {
@@ -59567,7 +60395,7 @@ function scheduleMemoryInit(config, options = {}) {
 }
 function isEntrypointProcess() {
   return Boolean(
-    process.argv[1] && import_node_path9.default.resolve(moduleFilePath3) === import_node_path9.default.resolve(process.argv[1])
+    process.argv[1] && import_node_path10.default.resolve(moduleFilePath3) === import_node_path10.default.resolve(process.argv[1])
   );
 }
 function installWorkerShutdownHandlers(shutdown, processObject = process) {

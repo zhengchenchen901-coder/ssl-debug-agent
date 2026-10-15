@@ -11,6 +11,19 @@ MongoDB URI for writes.
 
 ## Required workflow
 
+For sandbox account setup or password resets, use the dedicated
+`remote_debug_prepare_sandbox_access` and `remote_debug_configure_sandbox_access`
+tools. Configure the password in the selected instance's Dashboard form; never
+ask the user to paste it into chat, reuse another instance's password, or send
+credentials as tool parameters. Inspect the exact instance, detected MongoDB
+version/topology, authenticated execution principal, fixed manager/executor
+privileges, configuration file permission change to 0600, expiry and plan hash.
+Only after the user explicitly confirms this displayed plan with `确认配置沙盒`,
+apply its exact setupId/planHash. Account ownership and role conflicts stop the
+workflow. Partial failure requires a fresh prepare; never substitute a command
+draft, raw script or HTTP call. Storage collection/index initialization remains
+a separate prepared mutation requiring `确认执行`.
+
 1. Confirm the exact instance first. `default` and `test-server` are separate
    targets and their database profiles must never be mixed.
 2. Use `remote_debug_mongodb_prepare_write` for a bounded document mutation or
@@ -93,3 +106,11 @@ changes explicitly enabled. The reference explains storage initialization,
 chunk identity, preflight, authorization, long-running job recovery, verification,
 rollback, and redacted examples. Do not substitute a script, shell command, or
 direct HTTP call for the structured tool workflow.
+
+## TTL index policy (2.2.2+)
+
+The generic index tool supports only non-TTL indexes and `unique`/`sparse` options. Do not request `expireAfterSeconds` or suggest a shell/command-draft workaround when `MONGODB_TTL_INDEX_REJECTED` is returned. TTL drops and restoring dropped TTL indexes are rejected because index rollback cannot recover automatically deleted documents. A legacy committed TTL creation may still be rolled back by removing the exact unchanged index; clearly explain that already deleted documents will not be restored. The fixed `__remote_debug_bulk_receipts` collection is reserved for internal bulk receipts; business operations must not target it. Only the dedicated bulk-storage workflow may initialize its fixed TTL index after ownership validation.
+
+## Storage sandbox (2.3.0+)
+
+Use the dedicated sandbox management tools for plugin capacity and redacted audit/job events. New bulk receipt databases are separate from business allowlists; old jobs retain their original storage. Remote management needs a separate sandbox-only connection profile and fails closed for overprivileged credentials. Do not delete old business-database receipt collections. Prepare cleanup and present its exact job and scope before an explicitly authorized 确认清理; no cleanup is allowed before the rollback window plus 24 hours has expired.

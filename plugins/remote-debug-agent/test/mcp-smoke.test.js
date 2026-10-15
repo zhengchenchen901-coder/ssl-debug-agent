@@ -198,6 +198,11 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
     });
     request.on("end", () => {
       const parsed = JSON.parse(body);
+      if (request.url.startsWith("/sandbox/") || request.url.startsWith("/mongodb/sandbox/access/") || request.url === "/api/sandbox/local") {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, forwardedRoute: request.url, forwardedBody: parsed }));
+        return;
+      }
       if (request.url === "/run") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(
@@ -1015,7 +1020,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "projectId", "path", "mode", "date", "dateFrom", "dateTo", "fileContains",
       "memberContains", "route", "method", "level", "fromTime", "toTime",
       "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
-      "memberPrefix", "memberOffset",
+      "memberPrefix", "memberOffset", "area", "jobId",
     ].includes(propertyName)) {
       continue;
     }
@@ -1039,6 +1044,12 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.deepEqual(
       list.result.tools.map((tool) => tool.name),
       [
+        "remote_debug_prepare_sandbox_access",
+        "remote_debug_configure_sandbox_access",
+        "remote_debug_get_sandbox",
+        "remote_debug_export_sandbox_log",
+        "remote_debug_prepare_sandbox_cleanup",
+        "remote_debug_cleanup_sandbox",
         "remote_debug_list_instances",
         "remote_debug_get_capabilities",
         "remote_debug_mongodb_query",
@@ -1379,6 +1390,35 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     child.kill();
     await close(agentStub);
   }
+});
+
+test("sandbox tools forward only scoped identities and keep local audit access on the Manager", async () => {
+  const agentStub = await startAgentStub();
+  const child = startMcp({ REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${agentStub.address().port}` });
+  const readMessage = createMessageReader(child);
+  try {
+    child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 1, method: "initialize" })); await readMessage();
+    let id = 2;
+    for (const [name, args, route] of [
+      ["remote_debug_prepare_sandbox_access", { instanceId: "test-server" }, "/mongodb/sandbox/access/prepare"],
+      ["remote_debug_configure_sandbox_access", { instanceId: "test-server", setupId: "12345678-1234-1234-1234-123456789abc", planHash: "b".repeat(64), confirmation: "确认配置沙盒" }, "/mongodb/sandbox/access/execute"],
+      ["remote_debug_get_sandbox", { area: "local", instanceId: "test-server" }, "/api/sandbox/local"],
+      ["remote_debug_get_sandbox", { area: "remote", instanceId: "test-server" }, "/sandbox/status"],
+      ["remote_debug_export_sandbox_log", { area: "remote", jobId: "job-1" }, "/sandbox/export"],
+      ["remote_debug_prepare_sandbox_cleanup", { jobId: "job-1" }, "/sandbox/prepare-cleanup"],
+      ["remote_debug_cleanup_sandbox", { jobId: "job-1", cleanupHash: "a".repeat(64), confirmation: "确认清理" }, "/sandbox/cleanup"],
+    ]) {
+      child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: id++, method: "tools/call", params: { name, arguments: args } }));
+      const message = await readMessage();
+      const result = JSON.parse(message.result.content[0].text);
+      assert.equal(result.forwardedRoute, route);
+      assert.equal(result.forwardedBody.jobId, args.jobId);
+      assert.equal(result.forwardedBody.cleanupHash, args.cleanupHash);
+      assert.equal(result.forwardedBody.setupId, args.setupId);
+      assert.equal(result.forwardedBody.planHash, args.planHash);
+      if (args.area === "local") assert.equal(result.forwardedBody.action, "status");
+    }
+  } finally { child.kill(); await close(agentStub); }
 });
 
 test("MCP server supports newline-delimited stdio clients", async () => {
@@ -1957,7 +1997,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     );
 
     const status = await waitForStatus(port);
-    assert.match(status.agent.runtimeId, /^2\.2\.1:[a-f0-9]{64}$/);
+    assert.match(status.agent.runtimeId, /^2\.3\.0:[a-f0-9]{64}$/);
     killPid(status.agent.pid);
     await waitForPortRelease(port);
     child.kill();
@@ -1979,7 +2019,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
       const restartedInstances = JSON.parse(restartedCall.result.content[0].text);
       assert.equal(restartedInstances.instances[0].id, "legacy-instance");
       const restartedStatus = await waitForStatus(port);
-      assert.match(restartedStatus.agent.runtimeId, /^2\.2\.1:[a-f0-9]{64}$/);
+      assert.match(restartedStatus.agent.runtimeId, /^2\.3\.0:[a-f0-9]{64}$/);
       killPid(restartedStatus.agent.pid);
     } finally {
       restarted.kill();

@@ -1,5 +1,41 @@
 # Remote Debug Agent
 
+## Plugin storage sandbox: 2.3.0
+
+Dashboard 的实例表单新增“沙盒管理账户密码”和“保存并配置沙盒账户”。密码按实例保存，编辑时不回显，留空保留原值；本地 registry 使用所有者专用权限（Unix 目录 0700、文件 0600；Windows 使用并验证专用 ACL）。保存后配置流程只重新加载所选实例，先检测该实例的 MongoDB 版本、拓扑和有效权限，再显示准备结果；确认后才创建固定沙盒角色、为执行账户追加沙盒权限，并创建管理账户。后续修改密码并再次配置，只重置带有本插件归属标记且权限完全匹配的账户。重新加载配置本身不修改 MongoDB 账户。进行配置前请结束该实例正在进行的操作；其他实例的环境与密码不复用。
+
+MCP 对应 `remote_debug_prepare_sandbox_access` → 展示实例、版本/拓扑、账户、完整权限范围、连接文件变更、到期时间与计划哈希 → 用户明确“确认配置沙盒” → `remote_debug_configure_sandbox_access`。准备只保存受保护的计划，不修改数据库账户或业务配置。执行使用该实例最新保存的密码，过期、密码/配置/环境变化、过期 Worker 配置、已有角色/账户冲突均拒绝执行；部分失败须重新准备，不执行猜测式回滚。现有连接必须已有创建角色/账户、授予角色及重置密码所需的管理权限，不自动提升权限，也不接受任意角色、数据库命令、连接串或脚本参数。
+
+配置会为远端连接文件建立 0600 备份，并把更新后的连接文件设为 0600（属主/属组保留）；请确保应用使用该文件属主身份读取。仅新增/更新一个沙盒管理连接分组，业务连接分组保留。管理用户仅能读取和清理固定技术集合，不能初始化集合、创建索引或修改业务文档；技术集合/TTL 仍通过单独的结构化存储初始化计划确认。账户设置要求 MongoDB 4.0+ 和相应 wire protocol；准备结果单独报告单机/复制集/分片与事务能力。单机配置账户不代表其支持事务批量写入。真实集成目前验证 MongoDB 4.4.30 + driver 3.3.4，其他版本仍需按实例验收。
+
+New resumable bulk jobs store receipts in `remote_debug_agent.__remote_debug_bulk_receipts` on the **same MongoDB deployment** as their business database. `mongodb.sandboxDatabase` may select another dedicated database, but it cannot be a business allowlisted database or `admin`/`local`/`config`. The execution helper uses the same MongoClient/session for business writes and the receipt insert, so both commit or abort together. The execution account needs the existing business privileges plus `find`/`insert` on the technical receipt collection; confirmed storage initialization additionally needs the appropriate index/collection creation privileges there. Do not add the sandbox database to the business write allowlist.
+
+New jobs use v2 manifests and plans that bind receipt database, collection and scope into the plan hash. Existing v1 jobs continue to use their original business-database collection and original receipt IDs/digests for resume, duplicate detection and rollback. No receipt collection is automatically moved or deleted. Reuse the existing configured `bulkRoot` so old job files remain reachable; changing the root does not move them. Existing pending storage initialization plans retain their recorded destination; prepare a new initialization plan for the dedicated database before preparing new jobs. If a dedicated database setting changes, jobs bound to the earlier setting stop with a clear error instead of silently using a new namespace; restore that setting for their recovery.
+
+Local audit and memory files remain in `<data-dir>/.remote-debug/instances/<instanceId>/`; remote bulk files remain under the protected configured `bulkRoot` (default `/var/lib/remote-debug-agent/bulk-jobs`). Ordinary mutation journals retain their existing `/tmp/remote-debug-agent/mutations` location for compatibility and remain inspectable through the mutation-list tool. The update does not move existing files or initialize production storage automatically.
+
+The dashboard instance details now include sandbox capacity, audit/event export and prepared expired-job cleanup. Equivalent MCP tools are `remote_debug_get_sandbox`, `remote_debug_export_sandbox_log`, `remote_debug_prepare_sandbox_cleanup`, and `remote_debug_cleanup_sandbox`. They accept instance/job IDs, never caller-selected paths, databases or collections. Local export reads only bounded redacted audit tails and excludes credentials/memory contents; active local audit files are retained. Remote export reads bounded redacted job events, not business before-images. Metadata scans are bounded and remote management uses a background SSH channel.
+
+Remote management requires a distinct connection profile using the same MongoDB endpoints, connection type and replica-set setting as execution, in the same remote application configuration, selected by `mongodb.sandboxManagementProfile`; `sandboxManagementUriKey` defaults to `url`. For example, configure business profile `production` and separate profile `remote_debug_manager`, then set:
+
+```json
+{
+  "sandboxDatabase": "remote_debug_agent",
+  "sandboxManagementProfile": "remote_debug_manager",
+  "sandboxManagementUriKey": "url"
+}
+```
+
+Use an authenticated MongoDB deployment and a custom manager role whose privileges are limited to `find` and `remove` on `{db:"remote_debug_agent",collection:"__remote_debug_bulk_receipts"}`. A database administrator must create this account and store its URI in that management profile. The plugin never creates users or grants roles. It inspects the authenticated user's effective privileges and refuses management credentials with business, wildcard, cluster-wide or write/index-management privileges. Execution and management connections remain distinct; no arbitrary URI is accepted through MCP. Local audit inspection needs only the existing authenticated local Manager session. This is application and database permission isolation, not an OS/container sandbox for the SSH process.
+
+Cleanup is per job: only `completed` or `rolled_back` v2 jobs with no live lease, no unknown files/symlinks, and an expired rollback window plus an extra 24 hours are eligible. Prepare returns an exact `cleanupHash`; execution requires that hash and `确认清理`, rechecks state/retention/files, and deletes only matching expired scoped receipts and that job's files. V1 receipts in business databases are **read-only to sandbox management** and are never automatically deleted. Old collections can be retired separately by an administrator only after all dependent jobs and recovery windows have ended. If management credentials are absent or overprivileged, management fails closed while ordinary authorized bulk execution remains available.
+
+## TTL index safety: 2.2.2
+
+Generic index tools support non-TTL indexes only (`unique` and `sparse` options). Business `expireAfterSeconds` is rejected during plan preparation and execution, including immutable plans prepared by older versions. Preparing or committing a TTL index drop is also rejected because its compensating rollback would restore automatic deletion. Restoring a previously dropped TTL index through an old rollback journal is blocked. An already committed legacy TTL creation can still be rolled back by removing that exact unchanged index, but the response explicitly reports `rollbackRestoresDocuments: false`: documents already deleted by MongoDB are not recovered. Existing business TTL indexes are not automatically changed by this update.
+
+The sole automatic-expiry exception is bulk job storage: the fixed `__remote_debug_bulk_receipts` collection with index `remote_debug_bulk_receipt_expiry`, key `{expiresAt: 1}` and `expireAfterSeconds: 0`. Both remote initialization helpers verify or establish the plugin ownership marker **before** creating the index and refuse non-empty unowned collections, foreign markers, views, or changed index definitions. Generic document/import/transaction/index tools cannot write to this reserved collection. Custom `bulkReceiptsCollection` names are no longer accepted by bulk tools; existing custom storage is not renamed or migrated automatically. Resolve any existing custom jobs with an administrator before upgrading their configuration; changing the name does not transfer their receipt history.
+
 ## Security upgrade: 2.2.1
 
 Stop the previous Manager after active operations finish before upgrading. The new MCP refuses to reuse an unauthenticated legacy Agent. Re-enable/reinstall the plugin and reload the chat after upgrading the runtime.

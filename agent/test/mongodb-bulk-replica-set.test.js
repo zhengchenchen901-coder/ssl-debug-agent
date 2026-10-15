@@ -80,6 +80,7 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
     configProfile: "integration",
     uriKey: "url",
     database: "testdb",
+    sandboxDatabase: `remote_debug_agent_${token}`,
     allowedDatabases: ["testdb"],
     allowedCollections: ["members", "private", "__remote_debug_bulk_receipts"],
     bulkRoot,
@@ -91,15 +92,18 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   const driver = driverRequire(driverPath);
   const client = new driver.MongoClient(replicaSetUri, { serverSelectionTimeoutMS: 10_000 });
   t.after(async () => {
+    try { await client.db(config.sandboxDatabase).command({ dropUser: `manager_${token}` }); } catch {}
+    try { await client.db(config.sandboxDatabase).command({ dropRole: `manager_${token}` }); } catch {}
+    try { await client.db(config.sandboxDatabase).dropDatabase(); } catch {}
     try { await client.close(); } catch {}
     try { fs.rmSync(nativeRoot, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(configPath, { force: true }); } catch {}
   });
   await client.connect();
   const db = client.db("testdb");
-  const receipts = db.collection("__remote_debug_bulk_receipts");
+  const receipts = client.db(config.sandboxDatabase).collection("__remote_debug_bulk_receipts");
   await receipts.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  await receipts.replaceOne({ _id: "__remote_debug_bulk_storage_v1" }, { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: "testdb", receiptsCollection: "__remote_debug_bulk_receipts" }, { upsert: true });
+  await receipts.replaceOne({ _id: "__remote_debug_bulk_storage_v1" }, { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: config.sandboxDatabase, receiptsCollection: "__remote_debug_bulk_receipts" }, { upsert: true });
   await db.createCollection("private").catch((error) => { if (error.code !== 48) throw error; });
 
   const memberId = `member-${token}`;
@@ -221,6 +225,25 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   const memberRestored = await db.collection("members").findOne({ _id: memberId });
   assert.deepEqual({ field: memberRestored.field, protected: memberRestored.protected }, { field: null, protected: "keep" });
   assert.equal(await db.collection("private").findOne({ _id: privateId }), null);
+
+  if (process.env.MONGODB_SANDBOX_AUTH_TEST === "1") {
+    const sandbox = client.db(config.sandboxDatabase);
+    const managerUser = `manager_${token}`;
+    await sandbox.command({ createRole: managerUser, privileges: [{ resource: { db: config.sandboxDatabase, collection: "__remote_debug_bulk_receipts" }, actions: ["find", "remove"] }], roles: [] });
+    await sandbox.command({ createUser: managerUser, pwd: "fixture_manager_password", roles: [{ role: managerUser, db: config.sandboxDatabase }] });
+    const managerUri = new URL(replicaSetUri);
+    managerUri.username = managerUser; managerUri.password = "fixture_manager_password"; managerUri.searchParams.set("authSource", config.sandboxDatabase);
+    config.sandboxManagementProfile = "sandbox_manager";
+    fs.writeFileSync(configPath, JSON.stringify({ integration: { url: replicaSetUri }, sandbox_manager: { url: managerUri.href }, unsafe_manager: { url: replicaSetUri } }), { mode: 0o600 });
+    const managerClient = new driver.MongoClient(managerUri.href, { serverSelectionTimeoutMS: 10000 });
+    await managerClient.connect();
+    try {
+      await assert.rejects(managerClient.db("testdb").collection("members").findOne({ _id: memberId }), (error) => error.code === 13);
+      assert.equal((await emit({ action: "sandboxStatus", offset: 0, limit: 20 })).sandboxDatabase, config.sandboxDatabase);
+      const exported = await emit({ action: "sandboxExport", jobId, limit: 20 });
+      assert.ok(exported.records.length > 0);
+    } finally { await managerClient.close(); }
+  }
 
   if (process.env.MONGODB_BULK_PERFORMANCE === "1") {
     const counts = () => ({ ...requestCounts });

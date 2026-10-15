@@ -1,5 +1,6 @@
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
-import { normalizeMongoBulkStorage } from "./mongodb-bulk.js";
+import { MONGODB_TECHNICAL_RECEIPTS_COLLECTION, MONGODB_TTL_POLICY_SCRIPT } from "./mongodb-ttl-policy.js";
+import { normalizeMongoBulkStorage, DEFAULT_SANDBOX_DATABASE } from "./mongodb-bulk.js";
 import { createHash, randomUUID } from "node:crypto";
 import posixPath from "node:path/posix";
 import {
@@ -262,6 +263,7 @@ export function normalizeMongoMutationConfig(config = {}) {
     ),
     bulkEnabled: config.bulkEnabled === true,
     bulkRoot: config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs",
+    sandboxDatabase: normalizeName(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE, "sandboxDatabase", SAFE_DATABASE_PATTERN),
     bulkReceiptsCollection: config.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
     allowedDatabases,
     allowedCollections,
@@ -270,6 +272,7 @@ export function normalizeMongoMutationConfig(config = {}) {
 
 function assertDatabaseAllowed(database, config) {
   const normalized = normalizeName(database, "database", SAFE_DATABASE_PATTERN);
+  if (normalized === config.sandboxDatabase) throw mutationError("sandbox database is reserved for plugin management", "SANDBOX_DATABASE_RESERVED", 403);
   if (!config.allowedDatabases.includes(normalized)) {
     throw mutationError(
       `database is not allowed for mutations: ${normalized}`,
@@ -446,6 +449,9 @@ function normalizeCommonMutation(input, config, operationId, kind = "document") 
     config,
   );
   const collection = assertCollectionAllowed(input.collection, config);
+  if (collection === MONGODB_TECHNICAL_RECEIPTS_COLLECTION && kind !== "bulk_storage") {
+    throw mutationError("the technical receipt collection is reserved for internal bulk storage operations", "MONGODB_BULK_RESERVED_COLLECTION", 403);
+  }
   const rollbackTtlMs = normalizePositiveInt(
     input.rollbackTtlMs,
     "rollbackTtlMs",
@@ -657,7 +663,10 @@ function normalizeIndexKey(value) {
 
 function normalizeIndexOptions(value = {}) {
   assertPlainObject(value, "options");
-  const allowed = new Set(["unique", "sparse", "expireAfterSeconds"]);
+  if (Object.prototype.hasOwnProperty.call(value, "expireAfterSeconds")) {
+    throw mutationError("business TTL indexes are not supported: index rollback cannot recover automatically deleted documents", "MONGODB_TTL_INDEX_REJECTED", 403);
+  }
+  const allowed = new Set(["unique", "sparse"]);
   for (const key of Object.keys(value)) {
     if (!allowed.has(key)) {
       throw mutationError(`index option is not allowed: ${key}`, "MONGODB_INDEX_OPTION_REJECTED");
@@ -672,17 +681,12 @@ function normalizeIndexOptions(value = {}) {
     if (typeof value.sparse !== "boolean") throw mutationError("options.sparse must be boolean", "INVALID_MONGODB_INDEX");
     options.sparse = value.sparse;
   }
-  if (value.expireAfterSeconds !== undefined) {
-    if (!Number.isInteger(value.expireAfterSeconds) || value.expireAfterSeconds < 0 || value.expireAfterSeconds > 31_536_000) {
-      throw mutationError("options.expireAfterSeconds is out of range", "INVALID_MONGODB_INDEX");
-    }
-    options.expireAfterSeconds = value.expireAfterSeconds;
-  }
   return options;
 }
 
 export function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
   const normalizedConfig = normalizeMongoMutationConfig(config);
+  const indexOptions = normalizeIndexOptions(input.options);
   if (!MONGODB_INDEX_OPERATIONS.includes(input.operation)) {
     throw mutationError(
       `operation must be one of ${MONGODB_INDEX_OPERATIONS.join(", ")}`,
@@ -701,7 +705,7 @@ export function normalizeMongoIndexChange(input = {}, config = {}, options = {})
     ...(input.operation === "createIndex"
       ? {
           key: normalizeIndexKey(input.key),
-          options: normalizeIndexOptions(input.options),
+          options: indexOptions,
         }
       : {}),
     riskLevel: riskForIndexOperation(input.operation, input.options),
@@ -757,6 +761,7 @@ const __allowedDatabases = ${safeLiteral(normalizedConfig.allowedDatabases)};
 const __allowedCollections = ${safeLiteral(normalizedConfig.allowedCollections)};
 const __bulkEnabled = ${safeLiteral(config.bulkEnabled === true)};
 const __bulkRoot = ${safeLiteral(config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs")};
+const __sandboxDatabase = ${safeLiteral(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE)};
 const __bulkReceiptsCollection = ${safeLiteral(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts")};
 const __importBatchLimit = ${normalizedConfig.maxImportBatchDocuments};
 const __request = ${safeLiteral(request)};
@@ -775,6 +780,9 @@ function __fail(code, message) {
   error.code = code;
   throw error;
 }
+
+const __ttlFail = __fail;
+${MONGODB_TTL_POLICY_SCRIPT}
 
 function __stable(value) {
   if (Array.isArray(value)) return value.map(__stable);
@@ -939,7 +947,9 @@ function __summary(manifest) {
     changedFields: manifest.changedFields,
     affectedIds: manifest.affectedIds,
     storageRoot: manifest.request.storageRoot,
+    ...(manifest.kind === "bulk_storage" ? { receiptsDatabase: manifest.request.receiptsDatabase || manifest.request.database } : {}),
     storageStatus: manifest.storageStatus,
+    ...(manifest.kind === "index" ? { rollbackRestoresDocuments: false } : {}),
     ...(manifest.kind === "import" ? {
       importId: manifest.request.importId,
       batchIndex: manifest.request.batchIndex,
@@ -962,9 +972,21 @@ function __assertManifestScope(manifest) {
     ? (manifest.request.operations || [])
     : [manifest.request];
   for (const request of requests) {
-    if (!__allowedDatabases.includes(request.database) || !__allowedCollections.includes(request.collection)) {
+    if (!__allowedDatabases.includes(request.database) || manifest.kind !== "bulk_storage" && !__allowedCollections.includes(request.collection)) {
       __fail("MONGODB_MUTATION_POLICY_CHANGED", "the mutation is no longer within the current database policy");
     }
+    if (manifest.kind !== "bulk_storage" && request.collection === ${safeLiteral(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
+      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
+    }
+    if (manifest.kind !== "bulk_storage" && request.database === __sandboxDatabase) __fail("SANDBOX_DATABASE_RESERVED", "sandbox database is reserved for plugin management");
+  }
+  if (manifest.kind === "index") {
+    if (__request.mode === "commit" && manifest.request.operation === "createIndex") __ttlRejectBusinessIndex(manifest.request.options);
+    if (__request.mode === "rollback" && manifest.request.operation === "dropIndex") __ttlRejectBusinessIndex(manifest.beforeIndex);
+  }
+  if (manifest.kind === "bulk_storage") {
+    __ttlAssertReceiptName(manifest.request.collection);
+    if (manifest.request.receiptsDatabase && manifest.request.receiptsDatabase !== __sandboxDatabase) __fail("SANDBOX_DATABASE_CHANGED", "the prepared sandbox database no longer matches configuration");
   }
   if (manifest.kind === "bulk_storage" && (!manifest.request.storageRoot || !manifest.request.storageRoot.startsWith("/"))) {
     __fail("MONGODB_MUTATION_POLICY_CHANGED", "bulk storage root is missing from the prepared plan");
@@ -1095,9 +1117,12 @@ async function __prepare() {
   const { client } = await __loadClient();
   try {
     const request = __request.mutation;
+    if (__request.kind !== "bulk_storage" && request.collection === ${safeLiteral(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
+      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
+    }
     const database = request.database;
     const collection = request.collection
-      ? client.db(database).collection(request.collection)
+      ? client.db(__request.kind === "bulk_storage" ? request.receiptsDatabase || database : database).collection(request.collection)
       : null;
     const now = Date.now();
     const manifest = {
@@ -1131,6 +1156,7 @@ async function __prepare() {
       const indexes = await collection.listIndexes().toArray();
       const existing = __indexByName(indexes, request.name);
       if (request.operation === "createIndex") {
+        __ttlRejectBusinessIndex(request.options);
         if (existing) __fail("MONGODB_INDEX_ALREADY_EXISTS", "the requested index already exists");
         const equivalent = indexes.find((index) => {
           const candidate = { name: request.name, key: __decode(request.key), ...__decode(request.options) };
@@ -1147,15 +1173,17 @@ async function __prepare() {
       } else {
         if (request.name === "_id_") __fail("MONGODB_INDEX_IMMUTABLE", "the _id_ index cannot be changed");
         if (!existing) __fail("MONGODB_INDEX_NOT_FOUND", "the requested index was not found");
+        __ttlRejectBusinessIndex(existing);
         manifest.beforeIndex = __encode(__indexComparable(existing));
         manifest.affectedCount = 1;
         manifest.changedFields = Object.keys(existing.key || {});
       }
     } else if (__request.kind === "bulk_storage") {
+      __ttlAssertReceiptName(request.collection);
       if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
         __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
       }
-      const databaseObject = client.db(database);
+      const databaseObject = client.db(request.receiptsDatabase || database);
       const namespaces = await databaseObject.listCollections({ name: request.collection }, { nameOnly: true }).toArray();
       let expiryIndex = null;
       if (namespaces.length) {
@@ -1383,6 +1411,7 @@ async function __commitIndex(manifest, collection) {
   const indexes = await collection.listIndexes().toArray();
   const current = __indexByName(indexes, request.name);
   if (request.operation === "createIndex") {
+    __ttlRejectBusinessIndex(request.options);
     if (current) __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
     await collection.createIndex(__decode(request.key), { name: request.name, ...__decode(request.options) });
     const afterIndexes = await collection.listIndexes().toArray();
@@ -1390,6 +1419,7 @@ async function __commitIndex(manifest, collection) {
     if (!after) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index was created but could not be verified");
     manifest.afterIndex = __encode(__indexComparable(after));
   } else {
+    __ttlRejectBusinessIndex(current);
     if (!current || !manifest.beforeIndex || !__indexMatches(current, __decode(manifest.beforeIndex))) {
       __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
     }
@@ -1405,6 +1435,7 @@ async function __commitIndex(manifest, collection) {
 
 async function __commitBulkStorage(manifest, client) {
   const request = manifest.request;
+  __ttlAssertReceiptName(request.collection);
   if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
     __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
   }
@@ -1427,26 +1458,12 @@ async function __commitBulkStorage(manifest, client) {
     __fail("MONGODB_BULK_STORAGE_DURABILITY_UNAVAILABLE", "bulk storage could not complete a durable owner-only write probe");
   }
 
-  const collection = client.db(request.database).collection(request.collection);
-  const indexes = await collection.listIndexes().toArray().catch((error) => {
-    if (error && (error.codeName === "NamespaceNotFound" || error.code === 26)) return [];
-    throw error;
-  });
-  const existingIndex = __indexByName(indexes, "remote_debug_bulk_receipt_expiry");
-  if (existingIndex && (!existingIndex.key || existingIndex.key.expiresAt !== 1 || existingIndex.expireAfterSeconds !== 0)) {
-    __fail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
-  }
-  if (!existingIndex) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  const marker = { _id: "__remote_debug_bulk_storage_v1", schemaVersion: 1, database: request.database, receiptsCollection: request.collection };
-  const existingMarker = await collection.findOne({ _id: marker._id }, { readPreference: "primary" });
-  if (existingMarker && (existingMarker.schemaVersion !== marker.schemaVersion || existingMarker.database !== marker.database || existingMarker.receiptsCollection !== marker.receiptsCollection)) {
-    __fail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection contains a different initialization record");
-  }
-  if (!existingMarker) await collection.insertOne(marker);
+  await __ttlInitializeReceiptCollection(client, request.receiptsDatabase || request.database, request.collection);
   const storageMarker = {
     schemaVersion: 1,
     database: request.database,
     receiptsCollection: request.collection,
+    receiptsDatabase: request.receiptsDatabase || request.database,
     initializedAt: new Date().toISOString(),
   };
   const markerPath = __path.join(request.storageRoot, ".storage-v1.json");
@@ -1600,11 +1617,11 @@ async function __rollbackIndex(manifest, collection) {
     if (current) __fail("MONGODB_ROLLBACK_CONFLICT", "dropped index was recreated by another operation");
     if (!manifest.beforeIndex) __fail("MONGODB_ROLLBACK_MANIFEST_INVALID", "original index definition is missing");
     const original = __decode(manifest.beforeIndex);
+    __ttlRejectBusinessIndex(original);
     await collection.createIndex(original.key, {
       name: original.name,
       ...(original.unique === undefined ? {} : { unique: original.unique }),
       ...(original.sparse === undefined ? {} : { sparse: original.sparse }),
-      ...(original.expireAfterSeconds === undefined ? {} : { expireAfterSeconds: original.expireAfterSeconds }),
       ...(original.partialFilterExpression === undefined ? {} : { partialFilterExpression: original.partialFilterExpression }),
       ...(original.collation === undefined ? {} : { collation: original.collation }),
     });

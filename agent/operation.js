@@ -82,7 +82,7 @@ export function operationPolicy(pathName, config = {}) {
       maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs,
     };
   }
-  if (pathName === "/mongodb/query") {
+  if (pathName === "/mongodb/query" || pathName.startsWith("/sandbox/")) {
     return {
       defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
       maxMs: OPERATION_TIMEOUTS.mongodb.maxMs,
@@ -91,6 +91,7 @@ export function operationPolicy(pathName, config = {}) {
   if (
     pathName.startsWith("/mongodb/mutations/") ||
     pathName.startsWith("/mongodb/bulk/") ||
+    pathName.startsWith("/mongodb/sandbox/access/") ||
     pathName === "/mongodb/imports/prepare"
   ) {
     return {

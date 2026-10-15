@@ -179,6 +179,9 @@ function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
     mongodbUriKey: new FakeElement("input"),
     mongodbDatabase: new FakeElement("input"),
     mongodbWriteEnabled: new FakeElement("input"),
+    sandboxDatabase: new FakeElement("input"),
+    sandboxManagementProfile: new FakeElement("input"),
+    sandboxManagementPassword: new FakeElement("input"),
     mongodbAllowedDatabases: new FakeElement("textarea"),
     mongodbAllowedCollections: new FakeElement("textarea"),
   };
@@ -329,6 +332,33 @@ test("MongoDB selectors discover names per instance and retain choices on failur
   assert.deepEqual(Array.from(form.mongodbAllowedDatabases.children, (o) => o.value), ["production"]);
 });
 
+test("Dashboard sandbox setup saves the selected password, previews its environment and requires confirmation", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const instances = [{ id: "test-server", name: "test", mongodb: { enabled: true, configPath: "/home/github/test/config.json", driverPath: "/home/github/test/driver", configProfile: "development", database: "business", writeEnabled: true, allowedDatabases: ["business"], allowedCollections: ["orders"], hasSandboxManagementPassword: true } }, { id: "default", name: "production" }];
+  const calls = [], plan = { setupId: "setup-1", planHash: "a".repeat(64), environment: { serverVersion: "4.4.30", deployment: "replicaSet" }, sandboxDatabase: "remote_debug_agent", managerUser: "scoped-manager", collection: "__remote_debug_bulk_receipts", executionUser: { user: "admin", db: "admin" }, configPath: "/home/github/test/config.json", passwordReset: true };
+  const { context, elements } = createDashboardHarness(async (url, options) => {
+    calls.push({ url, body: options.body ? JSON.parse(options.body) : null });
+    const result = url.endsWith("/prepare") ? plan : { ok: true, instances };
+    return { ok: true, text: async () => JSON.stringify(result) };
+  });
+  let preview = ""; context.window.confirm = (text) => { preview = text; return false; };
+  vm.runInContext(script, context); await context.loadInstances(); context.openModal(instances[0]);
+  const form = elements.get("instanceForm").elements;
+  assert.equal(form.sandboxManagementPassword.value, ""); assert.match(form.sandboxManagementPassword.placeholder, /已保存/);
+  form.sandboxManagementPassword.value = "new-test-private-password";
+  await context.submitForm({ preventDefault() {}, submitter: { value: "sandbox" } });
+  const saved = calls.find((item) => item.url === "/api/instances/test-server");
+  assert.equal(saved.body.mongodb.sandboxManagementPassword, "new-test-private-password");
+  assert.equal(form.sandboxManagementPassword.value, "");
+  assert.match(preview, /test-server/); assert.match(preview, /4.4.30/); assert.match(preview, /replicaSet/); assert.ok(!preview.includes("new-test-private-password"));
+  assert.ok(!calls.some((item) => item.url.endsWith("/execute"))); assert.ok(!calls.some((item) => item.url.includes("default")));
+  context.window.confirm = () => true; context.openModal(instances[0]);
+  await context.submitForm({ preventDefault() {}, submitter: { value: "sandbox" } });
+  const execute = calls.find((item) => item.url.endsWith("/execute"));
+  assert.deepEqual(execute.body, { instanceId: "test-server", setupId: plan.setupId, planHash: plan.planHash, confirmation: "确认配置沙盒" });
+  assert.ok(!JSON.stringify(execute.body).includes("password"));
+});
+
 test("dashboard edits only selected MongoDB permissions and validates write scope", async () => {
   const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
   const mongodb = { enabled: true, configPath: "/app/config.json", driverPath: "/app/node_modules/mongodb", configProfile: "test" };
@@ -415,6 +445,7 @@ test("dashboard creates a MongoDB connection with required fields and keeps it r
     uriKey: "mongodb.url",
     database: "",
     writeEnabled: false,
+    sandboxDatabase: "remote_debug_agent",
   });
   form.mongodbEnabled.checked = false;
   context.updateMongoConnectionState();

@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { loadDotEnv, normalizeSourceRoots, allowedPathsForSourceRoots, normalizeHostKeyFingerprints } from "./config.js";
 import { normalizeLogProjects } from "./log-projects.js";
+import localAuth from "../plugins/remote-debug-agent/local-auth.cjs";
 
 export const REGISTRY_VERSION = 4;
 export const DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -232,6 +233,13 @@ function normalizeMongoSettings(input, existing) {
   if (raw.bulkEnabled !== undefined) {
     normalized.bulkEnabled = parseBooleanFlag(raw.bulkEnabled, false);
   }
+  if (raw.sandboxManagementPassword !== undefined) {
+    if (typeof raw.sandboxManagementPassword !== "string" || raw.sandboxManagementPassword.length > 256 || raw.sandboxManagementPassword && (raw.sandboxManagementPassword.length < 16 || /[\r\n\0]/.test(raw.sandboxManagementPassword))) {
+      const error = new Error("sandbox management password must contain 16–256 characters");
+      error.code = "INVALID_INSTANCE_FIELD"; error.statusCode = 400; throw error;
+    }
+    normalized.sandboxManagementPassword = raw.sandboxManagementPassword;
+  }
   if (raw.rollbackRoot !== undefined && raw.rollbackRoot !== "") {
     normalized.rollbackRoot = String(raw.rollbackRoot).trim();
   }
@@ -247,6 +255,16 @@ function normalizeMongoSettings(input, existing) {
       throw error;
     }
     normalized.bulkReceiptsCollection = collection;
+  }
+  for (const field of ["sandboxDatabase", "sandboxManagementProfile", "sandboxManagementUriKey"]) {
+    if (raw[field] !== undefined) {
+      const value = String(raw[field]).trim();
+      if (value && !/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/.test(value)) {
+        const error = new Error(`mongodb.${field} has an invalid format`);
+        error.code = "INVALID_INSTANCE_FIELD"; error.statusCode = 400; throw error;
+      }
+      normalized[field] = value;
+    }
   }
   for (const [fieldName, fieldValue] of [
     ["rollbackTtlMs", raw.rollbackTtlMs],
@@ -503,6 +521,7 @@ function publicInstance(instance) {
             configProfile: mongodb.configProfile,
             uriKey: mongodb.uriKey,
             database: mongodb.database,
+            ...(mongodb.sandboxManagementPassword === undefined ? {} : { hasSandboxManagementPassword: Boolean(mongodb.sandboxManagementPassword) }),
             ...(mongodb.writeEnabled === undefined ? {} : { writeEnabled: Boolean(mongodb.writeEnabled) }),
             ...(mongodb.mutationsEnabled === undefined ? {} : { mutationsEnabled: Boolean(mongodb.mutationsEnabled) }),
             ...(mongodb.rollbackRoot === undefined ? {} : { rollbackRoot: mongodb.rollbackRoot }),
@@ -511,6 +530,7 @@ function publicInstance(instance) {
             ...(mongodb.maxImportBatchDocuments === undefined ? {} : { maxImportBatchDocuments: mongodb.maxImportBatchDocuments }),
             ...(mongodb.bulkEnabled === undefined ? {} : { bulkEnabled: Boolean(mongodb.bulkEnabled) }),
             ...(mongodb.bulkRoot === undefined ? {} : { bulkRoot: mongodb.bulkRoot }),
+            ...Object.fromEntries(["sandboxDatabase", "sandboxManagementProfile", "sandboxManagementUriKey"].filter((field) => mongodb[field] !== undefined).map((field) => [field, mongodb[field]])),
             ...(mongodb.bulkReceiptsCollection === undefined ? {} : { bulkReceiptsCollection: mongodb.bulkReceiptsCollection }),
             ...(mongodb.bulkBatchDocuments === undefined ? {} : { bulkBatchDocuments: mongodb.bulkBatchDocuments }),
             ...(mongodb.bulkConcurrency === undefined ? {} : { bulkConcurrency: mongodb.bulkConcurrency }),
@@ -558,11 +578,16 @@ export class InstanceRegistry {
   }
 
   save(nextRegistry = this.registry) {
-    this.registry = nextRegistry;
-    fs.mkdirSync(path.dirname(this.registryPath), { recursive: true });
+    fs.mkdirSync(path.dirname(this.registryPath), { recursive: true, mode: 0o700 });
+    const containsSandboxSecret = nextRegistry.instances.some((instance) => Boolean(instance.mongodb?.sandboxManagementPassword));
+    if (containsSandboxSecret) localAuth.protectOrCheck(path.dirname(this.registryPath), true, true);
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
-    fs.writeFileSync(tempPath, `${JSON.stringify(this.registry, null, 2)}\n`, "utf8");
-    fs.renameSync(tempPath, this.registryPath);
+    try {
+      fs.writeFileSync(tempPath, `${JSON.stringify(nextRegistry, null, 2)}\n`, { flag: "wx", mode: 0o600 });
+      if (containsSandboxSecret) localAuth.protectOrCheck(tempPath, false, true);
+      fs.renameSync(tempPath, this.registryPath);
+      this.registry = nextRegistry;
+    } finally { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); }
   }
 
   managerConfig() {

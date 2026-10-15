@@ -17,6 +17,26 @@ const depsInstalled =
   fs.existsSync(path.resolve(here, "..", "node_modules", "express")) &&
   fs.existsSync(path.resolve(here, "..", "node_modules", "ssh2"));
 
+test("sandbox account routes require auth, keep passwords out of audit and use structured runner only", { skip: !depsInstalled }, async (t) => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-access-api-")); t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const calls = [], config = makeConfig(path.join(dir, "audit.jsonl"));
+  const server = await listen(createApp({ config, authToken: TEST_AUTH_TOKEN, runSandboxAccess: async (input, options) => {
+    calls.push({ input, action: options.action, expectedSettingsHash: options.expectedSettingsHash });
+    return { setupId: "setup-1", planHash: "a".repeat(64), sandboxDatabase: "remote_debug_agent", status: options.action === "prepare" ? "prepared" : "completed" };
+  } }));
+  t.after(() => close(server));
+  const unauth = await globalThis.fetch(`http://127.0.0.1:${server.address().port}/mongodb/sandbox/access/prepare`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  assert.equal(unauth.status, 401); assert.equal(calls.length, 0);
+  await postJson(server, "/mongodb/sandbox/access/prepare", { purpose: "sandbox" });
+  await postJson(server, "/mongodb/sandbox/access/execute", { setupId: "setup-1", planHash: "a".repeat(64), confirmation: "确认配置沙盒", _sandboxSettingsHash: "expected-current-settings" });
+  assert.deepEqual(calls.map((item) => item.action), ["prepare", "execute"]);
+  assert.equal(calls[1].expectedSettingsHash, "expected-current-settings");
+  assert.equal(calls[1].input._sandboxSettingsHash, undefined);
+  const auditText = await fsPromises.readFile(config.audit.logPath, "utf8");
+  assert.ok(!auditText.includes("confirmation") && !auditText.includes("password"));
+});
+
 test("server entrypoint is disabled inside worker mode", { skip: !depsInstalled }, async () => {
   const { isServerEntrypointProcess } = await import("../server.js");
   const filePath = path.resolve("runtime", "agent", "worker-entry.cjs");

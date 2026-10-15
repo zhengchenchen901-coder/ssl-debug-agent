@@ -2,6 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 import posixPath from "node:path/posix";
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
 import { MONGODB_BULK_RUNTIME } from "./mongodb-bulk-runtime.js";
+import { MONGODB_TECHNICAL_RECEIPTS_COLLECTION, MONGODB_TTL_POLICY_SCRIPT } from "./mongodb-ttl-policy.js";
+import { MONGODB_SANDBOX_RUNTIME } from "./mongodb-sandbox-runtime.js";
 import {
   MONGODB_REMOTE_COMMAND,
   MONGODB_RESULT_MARKER,
@@ -12,6 +14,7 @@ import { operationError } from "./operation.js";
 export const MONGODB_BULK_CONFIRMATION = "确认执行";
 export const MONGODB_BULK_ROLLBACK_CONFIRMATION = "确认回滚";
 export const DEFAULT_MONGODB_BULK_ROOT = "/var/lib/remote-debug-agent/bulk-jobs";
+export const DEFAULT_SANDBOX_DATABASE = "remote_debug_agent";
 export const DEFAULT_MONGODB_BULK_BATCH_DOCUMENTS = 500;
 export const MAX_MONGODB_BULK_BATCH_DOCUMENTS = 2_000;
 export const MAX_MONGODB_BULK_UNIT_OPERATIONS = 20;
@@ -147,10 +150,14 @@ export function normalizeMongoBulkConfig(config = {}, options = {}) {
   if (!DATABASE_PATTERN.test(database)) throw bulkError("a valid default MongoDB database is required", "MONGODB_BULK_DATABASE_REQUIRED");
   const allowedDatabases = Array.isArray(config.allowedDatabases) ? config.allowedDatabases : [database];
   if (!allowedDatabases.includes(database)) throw bulkError("bulk jobs must use an allowlisted database", "MONGODB_DATABASE_NOT_ALLOWED", 403);
+  const sandboxDatabase = String(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE).trim();
+  if (!DATABASE_PATTERN.test(sandboxDatabase) || ["admin", "local", "config", database].includes(sandboxDatabase) || allowedDatabases.includes(sandboxDatabase)) {
+    throw bulkError("sandboxDatabase must be a dedicated database outside the business allowlist", "SANDBOX_DATABASE_INVALID", 403);
+  }
   const allowedCollections = Array.isArray(config.allowedCollections) ? config.allowedCollections : [];
   const receiptsCollection = String(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts").trim();
-  if (!COLLECTION_PATTERN.test(receiptsCollection) || !allowedCollections.includes(receiptsCollection)) {
-    throw bulkError(`the technical collection ${receiptsCollection} must be included in mongodb.allowedCollections`, "MONGODB_BULK_RECEIPTS_NOT_ALLOWED", 403);
+  if (receiptsCollection !== MONGODB_TECHNICAL_RECEIPTS_COLLECTION) {
+    throw bulkError("TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection", "MONGODB_BULK_RECEIPTS_RESERVED", 403);
   }
   const rawRoot = String(config.bulkRoot || DEFAULT_MONGODB_BULK_ROOT).trim();
   const root = posixPath.normalize(rawRoot);
@@ -172,6 +179,7 @@ export function normalizeMongoBulkConfig(config = {}, options = {}) {
   return {
     ...config,
     database,
+    sandboxDatabase,
     allowedDatabases: [...allowedDatabases],
     allowedCollections: [...allowedCollections],
     bulkRoot: root.replace(/\/$/, ""),
@@ -318,6 +326,7 @@ export function normalizeMongoBulkStorage(input = {}, config = {}, options = {})
     operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : randomUUID(),
     purpose: typeof input.purpose === "string" ? input.purpose.trim().slice(0, 500) : "Initialize MongoDB bulk job storage",
     database: policy.database,
+    receiptsDatabase: policy.sandboxDatabase,
     collection: policy.bulkReceiptsCollection,
     storageRoot: policy.bulkRoot,
     rollbackTtlMs: policy.bulkRollbackTtlMs,
@@ -337,12 +346,15 @@ export function buildMongoBulkScript(request, config, normalizationOptions = {})
     'const __path = require("path");',
     'const __crypto = require("crypto");',
     `const __request = ${safeLiteral(request)};`,
-    `const __config = ${safeLiteral({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4) })};`,
+    `const __config = ${safeLiteral({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, sandboxDatabase: policy.sandboxDatabase, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4), sandboxManagementProfile: policy.sandboxManagementProfile, sandboxManagementUriKey: policy.sandboxManagementUriKey || "url" })};`,
     `const __marker = ${safeLiteral(`${MONGODB_RESULT_MARKER}BULK:`)};`,
     'const __driverPath = __config.driverPath;',
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
+    "var __ttlFail = __bulkFail;",
+    MONGODB_TTL_POLICY_SCRIPT,
+    MONGODB_SANDBOX_RUNTIME,
     "__bulkMain();",
   ].join("\n");
   const limit = request.action === "upload" ? MAX_MONGODB_BULK_CHUNK_BYTES + 1024 * 1024 : MAX_BULK_RESULT_BYTES * 2;
@@ -365,6 +377,12 @@ function parseMarker(stdout) {
 
 function normalizeActionRequest(input, config) {
   const action = input.action;
+  if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
+    const jobId = input.jobId;
+    if (action !== "sandboxStatus" && (typeof jobId !== "string" || !JOB_ID_PATTERN.test(jobId))) throw bulkError("sandbox jobId is invalid", "SANDBOX_JOB_INVALID");
+    if (action === "sandboxCleanup" && (!HASH_PATTERN.test(input.cleanupHash || "") || input.confirmation !== "确认清理")) throw bulkError("cleanup requires the prepared hash and 确认清理", "SANDBOX_CONFIRMATION_REQUIRED");
+    return { action, jobId, cleanupHash: input.cleanupHash, confirmation: input.confirmation, offset: Math.max(0, Math.min(100000, Number.isInteger(input.offset) ? input.offset : 0)), limit: Math.max(1, Math.min(100, Number.isInteger(input.limit) ? input.limit : 20)) };
+  }
   if (action === "upload") return { action, chunk: normalizeMongoBulkChunk(input.chunk || input, config) };
   if (action === "get" || action === "start" || action === "finish" || action === "pause" || action === "resume") {
     const jobId = String(input.jobId || "").trim();
@@ -437,7 +455,9 @@ export async function runMongoBulk(input = {}, options = {}) {
     input.action === "control" && input.command === "pause" ||
     input.action === "dispatch" && input.phase === "rollback" ||
     input.action === "finish" && input.mode === "rollback";
-  const config = normalizeMongoBulkConfig(rawConfig, { requireBulkEnabled: !recoveryAction });
+  const management = typeof input.action === "string" && input.action.startsWith("sandbox");
+  if (management && rawConfig.enabled === false) throw bulkError("MongoDB sandbox access is disabled for this instance", "SANDBOX_MANAGEMENT_NOT_CONFIGURED", 403);
+  const config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
   const request = normalizeActionRequest(input, config);
   if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
   let remoteResult;
@@ -447,7 +467,7 @@ export async function runMongoBulk(input = {}, options = {}) {
       operation: options.operation,
       timeoutMs: options.timeoutMs || 600_000,
       priority: options.priority || "interactive",
-      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction }),
+      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management }),
     });
   } catch (error) {
     throw operationError(redactMongoSecrets(error.message || "MongoDB bulk helper could not be executed"), {

@@ -134,6 +134,8 @@ let activeAgentRecoveryPromise = null;
 const inFlightToolCalls = new Map();
 
 const toolOperationPolicies = {
+  remote_debug_prepare_sandbox_access: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
+  remote_debug_configure_sandbox_access: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_run_command: { defaultMs: DEFAULT_TIMEOUT_MS, maxMs: MAX_TIMEOUT_MS },
   remote_debug_read_file: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
   remote_debug_list_dir: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
@@ -293,6 +295,16 @@ function timeoutProperty(defaultMs, maxMs) {
 }
 
 const tools = [
+  ...[
+    ["remote_debug_prepare_sandbox_access", "Prepare a fixed sandbox-only MongoDB account/role setup without changing database accounts or connection configuration. Requires an existing administrator credential and enabled instance writes. Inspect the returned roles, config permission change to 0600, scope, expiry and plan hash before asking for approval.", { purpose: { type: "string", maxLength: 2000 } }, []],
+    ["remote_debug_configure_sandbox_access", "Apply one explicitly approved sandbox account setup. Creates fixed sandbox roles/user, grants only sandbox execution rights, and writes the latest per-instance password to one protected connection profile. Password resets require verified plugin account ownership. Does not modify business documents or initialize collections. Partial setup requires a new prepare.", { setupId: { type: "string", pattern: "^[a-f0-9-]{36}$" }, planHash: { type: "string", pattern: "^[a-f0-9]{64}$" }, confirmation: { type: "string", enum: ["确认配置沙盒"] } }, ["setupId", "planHash", "confirmation"]],
+  ].map(([name, description, properties, required]) => ({ name, description, inputSchema: { type: "object", additionalProperties: false, required, properties: { instanceId: instanceIdProperty, ...properties, timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS) } } })),
+  ...[
+    ["remote_debug_get_sandbox", "Inspect bounded plugin sandbox capacity and job retention state. Uses a sandbox-only management profile for remote storage; does not read business documents.", { area: { type: "string", enum: ["local", "remote"] }, offset: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 100 } }, []],
+    ["remote_debug_export_sandbox_log", "Export bounded redacted audit/job events only, without business preimages or credentials. Local export requires only the selected instance; remote export requires jobId.", { area: { type: "string", enum: ["local", "remote"] }, jobId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }, limit: { type: "integer", minimum: 1, maximum: 100 } }, []],
+    ["remote_debug_prepare_sandbox_cleanup", "Prepare cleanup for one finished sandbox job after rollback expiry plus 24 hours. Rejects active, retained, legacy or changed jobs; does not delete data.", { jobId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" } }, ["jobId"]],
+    ["remote_debug_cleanup_sandbox", "Clean one prepared expired sandbox job and its matching expired technical receipts only. Requires user authorization, cleanupHash and 确认清理. Never deletes legacy business-database collections.", { jobId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }, cleanupHash: { type: "string", pattern: "^[a-f0-9]{64}$" }, confirmation: { type: "string", enum: ["确认清理"] } }, ["jobId", "cleanupHash", "confirmation"]],
+  ].map(([name, description, properties, required]) => ({ name, description, inputSchema: { type: "object", additionalProperties: false, required, properties: { instanceId: instanceIdProperty, ...properties, timeoutMs: timeoutProperty(DEFAULT_MONGODB_TIMEOUT_MS, MAX_MONGODB_TIMEOUT_MS) } } })),
   {
     name: "remote_debug_list_instances",
     description:
@@ -463,7 +475,7 @@ const tools = [
   {
     name: "remote_debug_mongodb_prepare_index",
     description:
-      "Prepare a bounded MongoDB index create or drop operation without changing data. Index changes are compensating operations, not part of a document transaction, and require explicit commit confirmation.",
+      "Prepare a bounded non-TTL MongoDB index create or drop operation without changing data. Business TTL indexes and TTL restoration are rejected because automatic document deletion cannot be rolled back. Index changes are compensating operations and require explicit commit confirmation.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -498,7 +510,7 @@ const tools = [
         },
         options: {
           type: "object",
-          description: "Only unique, sparse, and expireAfterSeconds options are supported.",
+          description: "Only unique and sparse options are supported. expireAfterSeconds is rejected; business TTL indexes are not supported.",
         },
         rollbackTtlMs: {
           type: "integer",
@@ -2949,6 +2961,10 @@ async function callTool(name, args, operation) {
     }, operation);
   }
 
+  if (["remote_debug_prepare_sandbox_access", "remote_debug_configure_sandbox_access"].includes(name)) {
+    const action = name === "remote_debug_prepare_sandbox_access" ? "prepare" : "execute";
+    return callAgent(`/mongodb/sandbox/access/${action}`, args, operation);
+  }
   if (name === "remote_debug_mongodb_prepare_bulk_storage") {
     return callAgent("/mongodb/bulk/storage/prepare", {
       instanceId: args?.instanceId,
@@ -2956,6 +2972,11 @@ async function callTool(name, args, operation) {
       purpose: args?.purpose,
       timeoutMs: args?.timeoutMs,
     }, operation);
+  }
+  if (["remote_debug_get_sandbox", "remote_debug_export_sandbox_log", "remote_debug_prepare_sandbox_cleanup", "remote_debug_cleanup_sandbox"].includes(name)) {
+    const route = { remote_debug_get_sandbox: "status", remote_debug_export_sandbox_log: "export", remote_debug_prepare_sandbox_cleanup: "prepare-cleanup", remote_debug_cleanup_sandbox: "cleanup" }[name];
+    const local = args?.area === "local" && ["status", "export"].includes(route);
+    return callAgent(local ? "/api/sandbox/local" : `/sandbox/${route}`, { instanceId: args?.instanceId, ...(local ? { action: route } : {}), jobId: args?.jobId, cleanupHash: args?.cleanupHash, confirmation: args?.confirmation, offset: args?.offset, limit: args?.limit, timeoutMs: args?.timeoutMs }, operation);
   }
 
   if (name === "remote_debug_mongodb_prepare_bulk") {

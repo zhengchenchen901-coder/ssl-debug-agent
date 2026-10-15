@@ -140,6 +140,20 @@
             <input name="privateKeyPath" autocomplete="off" required placeholder="C:\Users\you\.ssh\id_ed25519" />
           </label>
           <label class="wide">
+            <span>插件专用数据库（默认 remote_debug_agent）</span>
+            <input name="sandboxDatabase" autocomplete="off" placeholder="remote_debug_agent" />
+          </label>
+          <label class="wide">
+            <span>沙盒管理连接配置名</span>
+            <input name="sandboxManagementProfile" autocomplete="off" placeholder="例如 remote_debug_manager" />
+            <small>填写远端配置文件中的独立连接配置名。该账户只应有插件专用库的读取和清理权限。</small>
+          </label>
+          <label class="wide">
+            <span>沙盒管理账户密码（仅当前实例）</span>
+            <input name="sandboxManagementPassword" type="password" autocomplete="new-password" minlength="16" maxlength="256" placeholder="16–256 位；编辑时留空保留原密码" />
+            <small>保存后点击“保存并配置沙盒账户”，先核对本实例的 MongoDB 版本、环境和权限，再确认创建或重置。密码不会回显，也不会复用其他实例的值。</small>
+          </label>
+          <label class="wide">
             <span>私钥口令</span>
             <input name="passphrase" type="password" autocomplete="new-password" placeholder="编辑时留空表示不修改" />
           </label>
@@ -230,6 +244,7 @@
           <div id="formMessage" class="form-message" aria-live="polite"></div>
           <div class="modal-actions">
             <button id="cancelModalButton" class="button" type="button">取消</button>
+            <button class="button" type="submit" value="sandbox">保存并配置沙盒账户</button>
             <button class="button primary" type="submit">保存</button>
           </div>
         </form>

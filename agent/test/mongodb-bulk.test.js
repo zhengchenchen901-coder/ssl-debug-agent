@@ -54,10 +54,11 @@ function fakeBulkResult(data) {
   };
 }
 
-test("bulk policy is opt-in and requires the technical receipt collection to be allowlisted", () => {
+test("bulk policy is opt-in and keeps sandbox storage outside business allowlists", () => {
   assert.throws(() => normalizeMongoBulkConfig({ ...config, bulkEnabled: false }), { code: "MONGODB_BULK_DISABLED" });
   assert.throws(() => normalizeMongoBulkConfig({ ...config, writeEnabled: false }), { code: "MONGODB_MUTATIONS_DISABLED" });
-  assert.throws(() => normalizeMongoBulkConfig({ ...config, allowedCollections: ["members"] }), { code: "MONGODB_BULK_RECEIPTS_NOT_ALLOWED" });
+  assert.equal(normalizeMongoBulkConfig({ ...config, allowedCollections: ["members"] }).sandboxDatabase, "remote_debug_agent");
+  assert.throws(() => normalizeMongoBulkConfig({ ...config, sandboxDatabase: "testdb" }), { code: "SANDBOX_DATABASE_INVALID" });
   assert.throws(() => normalizeMongoBulkConfig({ ...config, bulkRoot: "/" }), { code: "MONGODB_BULK_ROOT_INVALID" });
   assert.throws(() => normalizeMongoBulkConfig({ ...config, bulkConcurrency: 5 }), { code: "MONGODB_BULK_LIMIT_INVALID" });
   assert.equal(normalizeMongoBulkConfig(config).bulkRoot, DEFAULT_MONGODB_BULK_ROOT);

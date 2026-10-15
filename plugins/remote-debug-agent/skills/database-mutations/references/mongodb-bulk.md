@@ -200,3 +200,13 @@ assuming that the IDs are interchangeable.
 
 If the real schema requires upsert, array editing, or more than one write to the
 same document, stop. V1 intentionally does not infer those behaviors.
+
+### Reserved expiry storage (2.2.2+)
+
+Use only `__remote_debug_bulk_receipts` as the technical receipt collection. Custom receipt names are rejected; do not rename existing collections or move business data into the reserved name. Storage initialization refuses non-empty collections without the matching plugin ownership marker and validates the fixed `expiresAt` TTL index before reuse. Existing custom jobs require administrator-led recovery before changing this setting; a different name does not preserve their receipts. Business TTL creation/restoration is not supported by this workflow.
+
+### Dedicated database and sandbox management (2.3.0+)
+
+New jobs use the configured sandboxDatabase (default remote_debug_agent) on the same MongoDB deployment; business writes and technical receipts remain in the same transaction. Initialize the new receipt database through the separately confirmed storage plan. Do not put this database in the business allowlist. Preserve the configured bulkRoot and old v1 records: those jobs retain their original business-database receipts and hashes. Never manually move receipts or delete the old collection during an upgrade.
+
+Sandbox inspection/export/cleanup use the dedicated management tools and a separate sandboxManagementProfile with sandbox-only read/remove privileges. Read capacity and redacted events before cleanup; use prepare_sandbox_cleanup, show the exact job/file count/retention/cleanupHash, then execute only with user authorization and 确认清理. Cleanup rejects active, retained and legacy jobs, unknown files, symlinks and changed previews. It cannot touch business collections. Missing permissions or storage are configuration prerequisites, not reasons to generate arbitrary shell commands.

@@ -471,6 +471,10 @@ function resetForm(instance) {
     instanceForm.elements[name].value = mongodb?.[key] ?? (key === "uriKey" ? "url" : "");
   }
   instanceForm.elements.mongodbWriteEnabled.checked = Boolean(mongodb?.writeEnabled || mongodb?.mutationsEnabled);
+  instanceForm.elements.sandboxDatabase.value = mongodb?.sandboxDatabase || "remote_debug_agent";
+  instanceForm.elements.sandboxManagementProfile.value = mongodb?.sandboxManagementProfile || "";
+  instanceForm.elements.sandboxManagementPassword.value = "";
+  instanceForm.elements.sandboxManagementPassword.placeholder = mongodb?.hasSandboxManagementPassword ? "已保存；留空保留，输入新值用于重置" : "16–256 位，仅用于当前实例";
   mongoOptionsGeneration++;
   document.querySelector("#mongodbCollectionSearch").value = "";
   setMongoOptions(instanceForm.elements.mongodbAllowedDatabases, [], mongodb?.allowedDatabases || []);
@@ -640,6 +644,9 @@ function formPayload() {
     // New connections begin without write permissions; discovery uses the saved worker configuration.
     if (!mongodb) {
       payload.mongodb = { ...changes, enabled: true, writeEnabled: false };
+      if (form.sandboxDatabase.value.trim()) payload.mongodb.sandboxDatabase = form.sandboxDatabase.value.trim();
+      if (form.sandboxManagementProfile.value.trim()) payload.mongodb.sandboxManagementProfile = form.sandboxManagementProfile.value.trim();
+      if (form.sandboxManagementPassword.value) payload.mongodb.sandboxManagementPassword = form.sandboxManagementPassword.value;
       return payload;
     }
     const writeEnabled = form.mongodbWriteEnabled.checked;
@@ -663,6 +670,19 @@ function formPayload() {
       payload.mongodb = changes;
     }
   }
+  if (form.mongodbEnabled.checked) {
+    const current = findInstance(state.editingId)?.mongodb || {};
+    for (const field of ["sandboxDatabase", "sandboxManagementProfile"]) {
+      const value = form[field].value.trim();
+      if (value !== (current[field] || (field === "sandboxDatabase" ? "remote_debug_agent" : ""))) {
+        payload.mongodb = { ...(payload.mongodb || {}), [field]: value };
+      }
+    }
+    if (form.sandboxManagementPassword.value) {
+      if (form.sandboxManagementPassword.value.length < 16 || form.sandboxManagementPassword.value.length > 256) throw new Error("沙盒管理密码需为 16–256 位。");
+      payload.mongodb = { ...(payload.mongodb || {}), sandboxManagementPassword: form.sandboxManagementPassword.value };
+    }
+  }
   return payload;
 }
 
@@ -675,6 +695,8 @@ async function submitForm(event) {
   }
   try {
     const payload = formPayload();
+    const configureSandbox = event.submitter?.value === "sandbox";
+    let savedId = state.editingId;
     if (state.editingId) {
       await api(`/api/instances/${encodeURIComponent(state.editingId)}`, {
         method: "PUT",
@@ -682,16 +704,31 @@ async function submitForm(event) {
       });
       showToast("实例已保存，运行中的实例请点击行内“重新加载配置”生效");
     } else {
-      await api("/api/instances", {
+      const created = await api("/api/instances", {
         method: "POST",
         body: JSON.stringify(payload),
       });
+      savedId = created.instance?.id || payload.id;
       showToast("实例已创建");
     }
+    instanceForm.elements.sandboxManagementPassword.value = "";
     closeModal();
     await loadInstances();
+    if (configureSandbox) {
+      if (!savedId) throw new Error("无法识别已保存实例");
+      const current = findInstance(savedId);
+      if (current?.runtime?.health?.operations?.activeChannels > 0) throw new Error("实例有正在进行的操作，请结束后再配置沙盒账户");
+      await api(`/api/instances/${encodeURIComponent(savedId)}/refresh`, { method: "POST" });
+      const plan = await api("/mongodb/sandbox/access/prepare", { method: "POST", body: JSON.stringify({ instanceId: savedId }) });
+      const scope = `实例：${savedId}\nMongoDB：${plan.environment.serverVersion} / ${plan.environment.deployment}\n专用库：${plan.sandboxDatabase}\n管理账户：${plan.managerUser}\n管理权限：仅 ${plan.collection} 的读取和清理\n执行账户：${plan.executionUser.db}.${plan.executionUser.user}（追加专用库执行权限）\n密码：${plan.passwordReset ? "重置为此实例最新配置值" : "使用此实例配置值"}\n连接文件：${plan.configPath}，权限将设为 0600，并备份\n不会修改业务文档；集合另行初始化。\n\n确认配置沙盒？`;
+      if (window.confirm(scope)) {
+        await api("/mongodb/sandbox/access/execute", { method: "POST", body: JSON.stringify({ instanceId: savedId, setupId: plan.setupId, planHash: plan.planHash, confirmation: "确认配置沙盒" }) });
+        showToast("沙盒账户已配置，使用本实例的最新密码");
+      } else showToast("实例配置已保存，未修改数据库账户");
+    }
   } catch (error) {
     formMessage.textContent = `${error.code || "ERROR"}: ${error.message}`;
+    showToast(formMessage.textContent);
   }
 }
 
@@ -783,6 +820,44 @@ function openDrawer(instance) {
   }
 
   drawerBody.replaceChildren(details, createElement("h2", "", "最近事件"), eventList);
+  const sandboxPanel = createElement("section", "detail-list");
+  sandboxPanel.append(createElement("h2", "", "插件存储沙盒"));
+  const jobInput = createElement("input");
+  jobInput.placeholder = "任务 ID（导出远端日志或清理时填写）";
+  jobInput.setAttribute("aria-label", "沙盒任务 ID");
+  const output = createElement("pre", "sandbox-output", "清理只处理已结束、超过回滚保留期及额外 24 小时的任务。旧业务库的技术集合会保留。");
+  const buttons = createElement("div", "toolbar-actions");
+  for (const [label, route, body] of [
+    ["本机容量", "/api/sandbox/local", { action: "status" }],
+    ["导出审计摘要", "/api/sandbox/local", { action: "export" }],
+    ["远端容量与任务", "/sandbox/status", {}],
+    ["导出任务日志", "/sandbox/export", { jobId: true }],
+    ["清理过期任务", "/sandbox/prepare-cleanup", { jobId: true }],
+  ]) {
+    const button = createElement("button", "button", label);
+    button.type = "button";
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        const payload = { ...body, instanceId: instance.id };
+        if (body.jobId) {
+          const jobId = jobInput.value.trim();
+          if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(jobId)) throw new Error("请填写有效的任务 ID");
+          payload.jobId = jobId;
+        }
+        let result = await api(route, { method: "POST", body: JSON.stringify(payload) });
+        output.textContent = JSON.stringify(result, null, 2);
+        if (route === "/sandbox/prepare-cleanup" && window.confirm(`任务 ${payload.jobId} 已超过保留期。将清理 ${result.fileCount} 个文件及对应过期凭据，约 ${result.bytes} 字节。确定清理吗？`)) {
+          result = await api("/sandbox/cleanup", { method: "POST", body: JSON.stringify({ instanceId: instance.id, jobId: payload.jobId, cleanupHash: result.cleanupHash, confirmation: "确认清理" }) });
+          output.textContent = JSON.stringify(result, null, 2);
+        }
+      } catch (error) { output.textContent = `${error.code || "ERROR"}: ${error.message}`; }
+      finally { button.disabled = false; }
+    });
+    buttons.append(button);
+  }
+  sandboxPanel.append(jobInput, buttons, output);
+  drawerBody.append(sandboxPanel);
   drawer.hidden = false;
   drawerMask.hidden = false;
 }

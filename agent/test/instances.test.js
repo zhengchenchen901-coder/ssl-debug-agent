@@ -114,6 +114,23 @@ test("registry creates a default instance from env when no registry exists", asy
   assert.equal(registry.get("default").approvedCommands.enabled, true);
 });
 
+test("sandbox passwords persist privately per instance and never appear in public registry responses", async (t) => {
+  const dir = await tempDir("rda-sandbox-password-"); t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const registry = new InstanceRegistry({ cwd: dir, registryPath: path.join(dir, "private", "instances.json"), env: {} });
+  for (const id of ["test-server", "default"]) registry.create({ id, name: id, host: id, username: "app", privateKeyPath: "/key", mongodb: { enabled: true, configPath: "/home/github/" + id + "/config.json", driverPath: "/home/github/driver", configProfile: id, sandboxManagementPassword: id + "-private-password" } });
+  assert.ok(!JSON.stringify(registry.list()).includes("private-password"));
+  assert.equal(registry.get("test-server").mongodb.hasSandboxManagementPassword, true);
+  const before = registry.getInternal("default");
+  registry.update("test-server", { mongodb: { sandboxManagementPassword: "new-test-private-password" } });
+  assert.deepEqual(registry.getInternal("default"), before);
+  const reopened = new InstanceRegistry({ cwd: dir, registryPath: registry.registryPath, env: {} });
+  assert.equal(reopened.getInternal("test-server").mongodb.sandboxManagementPassword, "new-test-private-password");
+  if (process.platform !== "win32") {
+    assert.equal((await fs.stat(registry.registryPath)).mode & 0o777, 0o600);
+    assert.equal((await fs.stat(path.dirname(registry.registryPath))).mode & 0o777, 0o700);
+  }
+});
+
 test("registry preserves per-instance MongoDB profile metadata", async () => {
   const dir = await tempDir("remote-debug-mongodb-registry-");
   const registry = new InstanceRegistry({
