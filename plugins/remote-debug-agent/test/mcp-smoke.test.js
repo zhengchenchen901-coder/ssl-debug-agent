@@ -1997,7 +1997,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     );
 
     const status = await waitForStatus(port);
-    assert.match(status.agent.runtimeId, /^2\.3\.0:[a-f0-9]{64}$/);
+    assert.match(status.agent.runtimeId, /^2\.3\.1:[a-f0-9]{64}$/);
     killPid(status.agent.pid);
     await waitForPortRelease(port);
     child.kill();
@@ -2019,7 +2019,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
       const restartedInstances = JSON.parse(restartedCall.result.content[0].text);
       assert.equal(restartedInstances.instances[0].id, "legacy-instance");
       const restartedStatus = await waitForStatus(port);
-      assert.match(restartedStatus.agent.runtimeId, /^2\.3\.0:[a-f0-9]{64}$/);
+      assert.match(restartedStatus.agent.runtimeId, /^2\.3\.1:[a-f0-9]{64}$/);
       killPid(restartedStatus.agent.pid);
     } finally {
       restarted.kill();

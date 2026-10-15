@@ -1,0 +1,29 @@
+{
+  "instanceId": "test-server",
+  "mutationId": "619e4aaf-74c8-4a7a-8286-e81a04a280c8",
+  "operationId": "32bea041-f529-48a6-950a-ac8ae4ca79b2",
+  "kind": "bulk_storage",
+  "operation": "initializeBulkStorage",
+  "database": "yennefer",
+  "receiptsDatabase": "remote_debug_agent",
+  "collection": "__remote_debug_bulk_receipts",
+  "status": "planned",
+  "rollbackMode": "retained_non_rollbackable",
+  "riskLevel": "high",
+  "requiresConfirmation": true,
+  "purpose": "为 test-server 初始化独立插件沙盒技术集合、固定过期索引和受保护批量任务日志目录；不修改业务文档。",
+  "createdAt": "2026-10-15T00:43:50.989Z",
+  "rollbackExpiresAt": "2026-10-22T00:43:50.989Z",
+  "planHash": "a84813d598a7a528ff71a74978ef703a292cc1f6d87b0bba61c9d9d43f140db7",
+  "affectedCount": 1,
+  "changedFields": [
+    "expiresAt"
+  ],
+  "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+  "storageStatus": {
+    "rootState": "missing",
+    "collectionExists": false,
+    "expiryIndexExists": false
+  },
+  "journalPath": "/tmp/remote-debug-agent/mutations/619e4aaf-74c8-4a7a-8286-e81a04a280c8"
+}

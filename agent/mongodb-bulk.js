@@ -22,6 +22,7 @@ export const MAX_MONGODB_BULK_CHUNK_OPERATIONS = 10_000;
 export const MAX_MONGODB_BULK_CHUNK_BYTES = 4 * 1024 * 1024;
 export const MAX_MONGODB_BULK_JOB_OPERATIONS = 100_000;
 export const MAX_MONGODB_BULK_JOB_BYTES = 40 * 1024 * 1024;
+export const SANDBOX_STORAGE_LIMITS = Object.freeze({ maxBytes: 2 * 1024 * 1024 * 1024, controlReserveBytes: 64 * 1024 * 1024, maxJobs: 200, maxFiles: 20000, controlReserveFiles: 1024, maxJobFiles: 1950, maxEventBytes: 8 * 1024 * 1024 });
 export const MAX_MONGODB_BULK_BATCH_INPUT_BYTES = 512 * 1024;
 export const MAX_MONGODB_BULK_BATCH_JOURNAL_BYTES = 8 * 1024 * 1024;
 export const DEFAULT_MONGODB_BULK_ROLLBACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -55,6 +56,11 @@ function bulkError(message, code, statusCode = 400, details = {}) {
 
 function byteLength(value) {
   return Buffer.byteLength(String(value), "utf8");
+}
+
+function assertKnownFields(value, fields, label) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError(`${label} must be an object`, "MONGODB_BULK_INPUT_INVALID");
+  if (Object.keys(value).some((key) => !fields.includes(key))) throw bulkError(`${label} contains unsupported fields`, "MONGODB_BULK_UNKNOWN_FIELD");
 }
 
 function stableValue(value) {
@@ -259,9 +265,11 @@ function normalizeOperation(value, config, database, unitId, index) {
   }
   if (collection === config.bulkReceiptsCollection) throw bulkError("business operations cannot target the technical receipt collection", "MONGODB_BULK_RESERVED_COLLECTION", 403);
   if (value.operation === "insertOne") {
+    assertKnownFields(value, ["operation", "collection", "document"], "insertOne");
     return { collection, operation: "insertOne", document: normalizeDocument(value.document, `unit ${unitId} operation ${index}.document`) };
   }
   if (value.operation !== "updateOne") throw bulkError("bulk V1 supports only insertOne and updateOne", "MONGODB_BULK_OPERATION_UNSUPPORTED");
+  assertKnownFields(value, ["operation", "collection", "id", "expected", "update"], "updateOne");
   const updatePlan = normalizeUpdate(value.update);
   return {
     collection,
@@ -273,6 +281,7 @@ function normalizeOperation(value, config, database, unitId, index) {
 }
 
 function normalizeUnit(value, config, database) {
+  assertKnownFields(value, ["unitId", "operations"], "unit");
   if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError("each business unit must be an object", "MONGODB_BULK_UNIT_INVALID");
   const unitId = String(value.unitId || "").trim();
   if (!UNIT_ID_PATTERN.test(unitId)) throw bulkError("unitId must be a stable identifier of 1-64 safe characters", "MONGODB_BULK_UNIT_ID_INVALID");
@@ -284,6 +293,7 @@ function normalizeUnit(value, config, database) {
 }
 
 export function normalizeMongoBulkChunk(input = {}, config = {}) {
+  assertKnownFields(input, ["action", "jobId", "database", "chunkIndex", "purpose", "rollbackTtlMs", "units", "chunkHash", "endOfUpload", "operationId", "timeoutMs", "deadlineAt"], "bulk chunk");
   const policy = normalizeMongoBulkConfig(config);
   const jobId = String(input.jobId || "").trim();
   if (!JOB_ID_PATTERN.test(jobId)) throw bulkError("jobId must use 1-64 letters, numbers, dots, dashes, or underscores", "MONGODB_BULK_JOB_ID_INVALID");
@@ -348,6 +358,7 @@ export function buildMongoBulkScript(request, config, normalizationOptions = {})
     `const __request = ${safeLiteral(request)};`,
     `const __config = ${safeLiteral({ configPath: policy.configPath, driverPath: policy.driverPath, configProfile: policy.configProfile, uriKey: policy.uriKey, database: policy.database, sandboxDatabase: policy.sandboxDatabase, allowedDatabases: policy.allowedDatabases, allowedCollections: policy.allowedCollections, bulkRoot: policy.bulkRoot, receiptsCollection: policy.bulkReceiptsCollection, batchDocuments: policy.bulkBatchDocuments, concurrency: Math.min(policy.bulkConcurrency, 4), sandboxManagementProfile: policy.sandboxManagementProfile, sandboxManagementUriKey: policy.sandboxManagementUriKey || "url" })};`,
     `const __marker = ${safeLiteral(`${MONGODB_RESULT_MARKER}BULK:`)};`,
+    `const __storageLimits = ${safeLiteral(SANDBOX_STORAGE_LIMITS)};`,
     'const __driverPath = __config.driverPath;',
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
     MONGODB_CODEC_SCRIPT,
@@ -377,6 +388,17 @@ function parseMarker(stdout) {
 
 function normalizeActionRequest(input, config) {
   const action = input.action;
+  const fields = {
+    sandboxStatus: ["offset", "limit"], sandboxExport: ["jobId", "limit"], sandboxPrepareCleanup: ["jobId"], sandboxCleanup: ["jobId", "cleanupHash", "confirmation"],
+    upload: input.chunk ? ["chunk"] : ["jobId", "database", "chunkIndex", "purpose", "rollbackTtlMs", "units", "chunkHash", "endOfUpload"],
+    get: ["jobId", "includePlan", "includeDifferences", "offset", "limit", "query"], list: ["offset", "limit"],
+    start: ["jobId", "planHash", "leaseId", "mode"], finish: ["jobId", "planHash", "leaseId", "mode"], pause: ["jobId", "planHash", "leaseId", "reason"], resume: ["jobId", "planHash", "leaseId"],
+    executeBatch: ["jobId", "planHash", "leaseId", "batchIndex"], rollbackBatch: ["jobId", "planHash", "leaseId", "batchIndex"], verifyBatch: ["jobId", "planHash", "leaseId", "batchIndex"],
+    dispatch: ["jobId", "planHash", "leaseId", "phase", "batchIndexes"], control: ["jobId", "planHash", "command"], heartbeat: ["jobId", "planHash", "leaseId"],
+    rollbackStart: ["jobId", "planHash", "leaseId", "confirmation"], executeStart: ["jobId", "planHash", "leaseId", "confirmation"],
+  };
+  if (fields[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields[action]], "bulk action");
+  if (action === "get" && input.query) assertKnownFields(input.query, ["includeDifferences", "offset", "limit"], "bulk query");
   if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
     const jobId = input.jobId;
     if (action !== "sandboxStatus" && (typeof jobId !== "string" || !JOB_ID_PATTERN.test(jobId))) throw bulkError("sandbox jobId is invalid", "SANDBOX_JOB_INVALID");

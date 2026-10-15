@@ -22,6 +22,7 @@ import {
   MAX_MONGODB_BULK_JOB_BYTES,
   MAX_MONGODB_BULK_JOB_OPERATIONS,
   MAX_MONGODB_BULK_UNIT_OPERATIONS,
+  SANDBOX_STORAGE_LIMITS,
 } from "./mongodb-bulk.js";
 import { LOG_CAPABILITIES } from "./log-policy.js";
 
@@ -117,6 +118,7 @@ const SECURITY_POLICY = {
       transactionReceipts: true,
       backgroundJobs: true,
       persistentRollback: true,
+      sandboxFiles: { ...SANDBOX_STORAGE_LIMITS, strictTaskEnvelopes: true, generalFileUpload: false, recordExecutionSupported: false, privateSingleLinkFilesOnly: true },
       sandboxAccessSetup: {
         prepareTool: "remote_debug_prepare_sandbox_access",
         executeTool: "remote_debug_configure_sandbox_access",

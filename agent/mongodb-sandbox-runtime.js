@@ -121,7 +121,7 @@ async function __sandboxManage() {
         if (manifest.planHash) __bulkLoadPlan(name, manifest);
         var files = __fs.readdirSync(__bulkJobDir(name));
         scannedEntries += files.length + 1;
-        if (scannedEntries > 10000) __bulkFail("SANDBOX_SCAN_LIMIT", "sandbox inspection exceeds the bounded metadata scan limit");
+        if (scannedEntries > __storageLimits.maxFiles + __storageLimits.controlReserveFiles + 2000) __bulkFail("SANDBOX_SCAN_LIMIT", "sandbox inspection exceeds the bounded metadata scan limit");
         if (files.length > 2000) __bulkFail("SANDBOX_SCAN_LIMIT", "job exceeds the bounded file scan limit");
         files.forEach(function (file) { var stat = __fs.lstatSync(__path.join(__bulkJobDir(name), file)); if (stat.isFile() && !stat.isSymbolicLink()) bytes += stat.size; });
         jobs.push({ jobId: name, status: manifest.status, rollbackExpiresAt: manifest.rollbackExpiresAt, receiptStorage: __bulkReceiptStorage(manifest) });
@@ -138,7 +138,9 @@ async function __sandboxManage() {
         var manifest = __bulkManifest(jobId, false), storage = __bulkReceiptStorage(manifest);
         var collection = client.db(__config.sandboxDatabase).collection(__config.receiptsCollection);
         var result = await collection.deleteMany({ jobId: jobId, planHash: manifest.planHash, scope: storage.scope, businessDatabase: manifest.database, expiresAt: { $lte: new Date() } });
-        __sandboxFiles(jobId).forEach(function (file) { __fs.unlinkSync(__path.join(__bulkJobDir(jobId), file.name)); });
+        __bulkWithLock(__path.join(__bulkRoot(), ".storage-quota.lock"), function () {
+          __sandboxFiles(jobId).forEach(function (file) { __fs.unlinkSync(__path.join(__bulkJobDir(jobId), file.name)); });
+        });
         return { jobId: jobId, removedFiles: preview.fileCount, removedBytes: preview.bytes, removedReceipts: result.deletedCount || 0 };
       });
       __fs.rmdirSync(__bulkJobDir(jobId));

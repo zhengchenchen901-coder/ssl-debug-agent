@@ -42,12 +42,89 @@ function __bulkJobDir(jobId) {
   return __path.join(root, jobId);
 }
 
+function __bulkOwned(stat) {
+  return typeof process.getuid !== "function" || stat.uid === process.getuid();
+}
+
+function __bulkGuardDirectory(directory) {
+  var root = __bulkRoot(), canonical = __fs.realpathSync(root);
+  var relative = __path.relative(root, directory);
+  if (relative && (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(relative) || __path.isAbsolute(relative))) __bulkFail("MONGODB_BULK_PATH_INVALID", "directory escapes the fixed job root");
+  [root, directory].forEach(function (item) {
+    var stat = __fs.lstatSync(item);
+    if (stat.isSymbolicLink() || !stat.isDirectory() || !__bulkOwned(stat) || (stat.mode & 0o777) !== 0o700) __bulkFail("MONGODB_BULK_PATH_INVALID", "sandbox directories must be owned private directories");
+  });
+  if (relative && __path.dirname(__fs.realpathSync(directory)) !== canonical) __bulkFail("MONGODB_BULK_PATH_INVALID", "job directory escapes canonical root");
+}
+
+function __bulkAllowedFile(filePath, transient) {
+  var relative = __path.relative(__bulkRoot(), filePath), parts = relative.split(__path.sep);
+  if (__path.normalize(filePath) !== filePath || __path.isAbsolute(relative) || parts.length > 2) return false;
+  var name = parts[parts.length - 1];
+  if (transient) name = name.replace(/\.[0-9]+\.[a-f0-9]{16,24}\.tmp$/, "");
+  if (parts.length === 1) return /^(\.storage-v1\.json|\.worker-lease\.json|\.worker-lease\.lock|\.storage-quota\.lock)$/.test(name);
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(parts[0]) && /^(manifest|plan|control)\.json$|^(chunk|batch|after|differences)-[0-9]+\.json$|^events\.jsonl$|^\.(manifest|prepare)\.lock$/.test(name);
+}
+
+function __bulkGuardFile(filePath, transient) {
+  if (!__bulkAllowedFile(filePath, transient)) __bulkFail("MONGODB_BULK_PATH_INVALID", "only fixed JSON records, events and locks may be stored");
+  __bulkGuardDirectory(__path.dirname(filePath));
+  if (!__fs.existsSync(filePath)) {
+    // existsSync follows links; also reject a dangling symlink.
+    try { __fs.lstatSync(filePath); __bulkFail("MONGODB_BULK_PATH_INVALID", "dangling sandbox entry rejected"); } catch (error) { if (error.code !== "ENOENT") throw error; }
+    return null;
+  }
+  var stat = __fs.lstatSync(filePath);
+  if (stat.isSymbolicLink() || !stat.isFile() || !__bulkOwned(stat) || stat.nlink !== undefined && stat.nlink !== 1 || (stat.mode & 0o777) !== 0o600) __bulkFail("MONGODB_BULK_PATH_INVALID", "sandbox records must be private regular files without links");
+  return stat;
+}
+
+function __bulkStorageUsage() {
+  __bulkGuardDirectory(__bulkRoot());
+  var bytes = 0, files = 0, jobs = 0;
+  var names = __fs.readdirSync(__bulkRoot());
+  if (names.length > 2008) __bulkFail("SANDBOX_STORAGE_SCAN_LIMIT", "sandbox contains too many root entries");
+  names.forEach(function (name) {
+    var file = __path.join(__bulkRoot(), name), stat;
+    try { stat = __fs.lstatSync(file); } catch (error) { if (error.code === "ENOENT") return; throw error; }
+    if (stat.isDirectory() && !stat.isSymbolicLink()) {
+      __bulkGuardDirectory(file); jobs++;
+      var children = __fs.readdirSync(file);
+      if (children.length > __storageLimits.maxJobFiles + 50) __bulkFail("SANDBOX_STORAGE_FILE_LIMIT", "job contains too many records");
+      children.forEach(function (child) {
+        var metadata;
+        try { metadata = __bulkGuardFile(__path.join(file, child), true); } catch (error) { if (error.code === "ENOENT") return; throw error; }
+        if (metadata) { bytes += metadata.size; files++; }
+        if (files > __storageLimits.maxFiles + __storageLimits.controlReserveFiles) __bulkFail("SANDBOX_STORAGE_FILE_LIMIT", "sandbox file limit exceeded");
+      });
+    } else {
+      var metadata = __bulkGuardFile(file, true);
+      if (metadata) { bytes += metadata.size; files++; }
+    }
+  });
+  return { bytes: bytes, files: files, jobs: jobs };
+}
+
+function __bulkQuotaWrite(filePath, bytes, action) {
+  __bulkGuardFile(filePath);
+  return __bulkWithLock(__path.join(__bulkRoot(), ".storage-quota.lock"), function () {
+    var usage = __bulkStorageUsage(), existing = __bulkGuardFile(filePath);
+    var control = /\/(manifest|control)\.json$|\/\.worker-lease\.json$|\/events\.jsonl$/.test(filePath);
+    var limit = __storageLimits.maxBytes + (control ? __storageLimits.controlReserveBytes : 0);
+    var filesLimit = __storageLimits.maxFiles + (control ? __storageLimits.controlReserveFiles : 0);
+    var jobFiles = __path.dirname(filePath) === __bulkRoot() ? 0 : __fs.readdirSync(__path.dirname(filePath)).length;
+    if (usage.bytes + bytes > limit || !existing && (usage.files >= filesLimit || jobFiles >= __storageLimits.maxJobFiles + (control ? 50 : 0))) __bulkFail("SANDBOX_STORAGE_QUOTA_EXCEEDED", "sandbox capacity exceeded; existing recovery records are retained");
+    return action();
+  });
+}
+
 function __bulkEnsureRoot() {
   var root = __bulkRoot();
   if (!__fs.existsSync(root)) __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "bulk storage has not been initialized");
   var stat = __fs.lstatSync(root);
   if (stat.isSymbolicLink() || !stat.isDirectory()) __bulkFail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
   if ((stat.mode & 0o777) !== 0o700) __bulkFail("MONGODB_BULK_STORAGE_PERMISSIONS", "bulk storage root must have mode 0700");
+  if (!__bulkOwned(stat)) __bulkFail("MONGODB_BULK_STORAGE_PERMISSIONS", "bulk root must belong to the SSH execution user");
   var marker = __path.join(root, ".storage-v1.json");
   if (!__fs.existsSync(marker) || __fs.lstatSync(marker).isSymbolicLink()) {
     __bulkFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "bulk storage initialization record was not found");
@@ -65,24 +142,36 @@ function __bulkEnsureRoot() {
 function __bulkEnsureJobDir(jobId) {
   var root = __bulkEnsureRoot();
   var directory = __bulkJobDir(jobId);
-  if (!__fs.existsSync(directory)) __fs.mkdirSync(directory, { mode: 0o700 });
+  if (!__fs.existsSync(directory)) __bulkWithLock(__path.join(root, ".storage-quota.lock"), function () {
+    var usage = __bulkStorageUsage();
+    if (usage.jobs >= __storageLimits.maxJobs || usage.bytes >= __storageLimits.maxBytes) __bulkFail("SANDBOX_STORAGE_QUOTA_EXCEEDED", "new jobs exceed sandbox capacity");
+    __fs.mkdirSync(directory, { mode: 0o700 });
+  });
   var stat = __fs.lstatSync(directory);
   if (stat.isSymbolicLink() || !stat.isDirectory()) __bulkFail("MONGODB_BULK_PATH_INVALID", "bulk job path must be a real directory");
+  if (!__bulkOwned(stat)) __bulkFail("MONGODB_BULK_PATH_INVALID", "job directory belongs to a different user");
   if ((stat.mode & 0o777) !== 0o700) __fs.chmodSync(directory, 0o700);
   if (__path.dirname(directory) !== root) __bulkFail("MONGODB_BULK_PATH_INVALID", "bulk job path escaped the configured storage root");
+  __bulkGuardDirectory(directory);
   return directory;
 }
 
 function __bulkReadJson(filePath, maxBytes) {
+  __bulkGuardFile(filePath);
   if (!__fs.existsSync(filePath)) return null;
   var stat = __fs.lstatSync(filePath);
   if (stat.isSymbolicLink() || !stat.isFile()) __bulkFail("MONGODB_BULK_PATH_INVALID", "bulk metadata must be a regular file");
   if (stat.size > maxBytes) __bulkFail("MONGODB_BULK_FILE_TOO_LARGE", "bulk metadata exceeds its size limit");
+  var fd;
   try {
-    return JSON.parse(__fs.readFileSync(filePath, "utf8"));
+    fd = __fs.openSync(filePath, __fs.constants.O_RDONLY | (__fs.constants.O_NOFOLLOW || 0));
+    var opened = __fs.fstatSync(fd);
+    if (!opened.isFile() || !__bulkOwned(opened) || opened.nlink !== 1 || (opened.mode & 0o777) !== 0o600 || opened.size > maxBytes) __bulkFail("MONGODB_BULK_PATH_INVALID", "opened record is not a bounded private file");
+    return JSON.parse(__fs.readFileSync(fd, "utf8"));
   } catch (error) {
+    if (error.code && /^(MONGODB_|SANDBOX_)/.test(error.code)) throw error;
     __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk metadata is damaged");
-  }
+  } finally { if (fd !== undefined) try { __fs.closeSync(fd); } catch (_) {} }
 }
 
 function __bulkFsyncDirectory(directory) {
@@ -101,6 +190,7 @@ function __bulkWriteJson(filePath, value, maxBytes) {
   var directory = __path.dirname(filePath);
   var text = JSON.stringify(value, null, 2) + "\n";
   if (__bulkBytes(text) > maxBytes) __bulkFail("MONGODB_BULK_JOURNAL_TOO_LARGE", "bulk rollback log exceeds 8 MiB");
+  return __bulkQuotaWrite(filePath, __bulkBytes(text), function () {
   var temporary = filePath + "." + process.pid + "." + __crypto.randomBytes(12).toString("hex") + ".tmp";
   var fd;
   try {
@@ -118,19 +208,28 @@ function __bulkWriteJson(filePath, value, maxBytes) {
     if (error && error.code && /^MONGODB_/.test(error.code)) throw error;
     __bulkFail("MONGODB_BULK_DURABILITY_UNAVAILABLE", "bulk log could not be written atomically");
   }
+  });
 }
 
 function __bulkAppendJsonLine(filePath, value) {
+  var text = JSON.stringify(value) + "\n", metadata = __bulkGuardFile(filePath);
+  if ((metadata ? metadata.size : 0) + __bulkBytes(text) > __storageLimits.maxEventBytes) __bulkFail("SANDBOX_EVENT_LOG_LIMIT", "job event log reached its bounded retention limit");
+  return __bulkQuotaWrite(filePath, __bulkBytes(text), function () {
   var fd;
   try {
-    fd = __fs.openSync(filePath, __fs.constants.O_CREAT | __fs.constants.O_APPEND | __fs.constants.O_WRONLY, 0o600);
-    __fs.writeFileSync(fd, JSON.stringify(value) + "\n", "utf8");
+    fd = __fs.openSync(filePath, __fs.constants.O_CREAT | __fs.constants.O_APPEND | __fs.constants.O_WRONLY | (__fs.constants.O_NOFOLLOW || 0), 0o600);
+    var opened = __fs.fstatSync(fd);
+    if (!opened.isFile() || !__bulkOwned(opened) || opened.nlink !== 1 || (opened.mode & 0o777) !== 0o600) __bulkFail("MONGODB_BULK_PATH_INVALID", "event file is unsafe");
+    if (opened.size + __bulkBytes(text) > __storageLimits.maxEventBytes) __bulkFail("SANDBOX_EVENT_LOG_LIMIT", "job event log reached its bounded retention limit");
+    __fs.writeFileSync(fd, text, "utf8");
     __fs.fsyncSync(fd);
   } catch (_error) {
+    if (_error.code && /^(MONGODB_|SANDBOX_)/.test(_error.code)) throw _error;
     __bulkFail("MONGODB_BULK_DURABILITY_UNAVAILABLE", "bulk job event could not be durably recorded");
   } finally {
     if (fd !== undefined) try { __fs.closeSync(fd); } catch (_closeError) {}
   }
+  });
 }
 
 function __bulkManifest(jobId, allowMissing) {
@@ -149,6 +248,7 @@ function __bulkSaveManifest(manifest) {
 }
 
 function __bulkWithLock(lockPath, task) {
+  __bulkGuardFile(lockPath);
   var token = process.pid + ":" + __crypto.randomBytes(12).toString("hex");
   var startedAt = Date.now();
   var waitBuffer = new Int32Array(new SharedArrayBuffer(4));
@@ -192,6 +292,7 @@ function __bulkManifestLockPath(jobId) {
 }
 
 async function __bulkWithAsyncLock(lockPath, task) {
+  __bulkGuardFile(lockPath);
   var token = process.pid + ":" + __crypto.randomBytes(12).toString("hex");
   var startedAt = Date.now();
   while (true) {
@@ -830,7 +931,7 @@ async function __bulkPrepareStorage() {
   try { __fs.mkdirSync(root, { recursive: true, mode: 0o700 }); }
   catch (_error) { __bulkFail("MONGODB_BULK_STORAGE_PERMISSIONS", "bulk storage directory could not be created before any business write"); }
   var stat = __fs.lstatSync(root);
-  if (stat.isSymbolicLink() || !stat.isDirectory()) __bulkFail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
+  if (stat.isSymbolicLink() || !stat.isDirectory() || !__bulkOwned(stat)) __bulkFail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be an owned real directory");
   __fs.chmodSync(root, 0o700);
   var probe = __path.join(root, ".write-probe-" + process.pid + "-" + __crypto.randomBytes(8).toString("hex"));
   var fd;

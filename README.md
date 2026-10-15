@@ -1,5 +1,13 @@
 # Remote Debug Agent
 
+## Sandbox file boundary: 2.3.1
+
+服务器继续保留批量任务、日志和回滚副本。沙盒仅接受结构化任务记录：块、业务单元和操作的未知字段会被拒绝，调用方不能通过 `fileName`、`path`、`content` 等额外参数上传文件或指定落盘位置。合法业务字段仍可包含文本或 Extended JSON 数据；数据内容是否与业务任务相关，交给后续插件与实例之间的内容护栏判断。本轮不使用代码关键词或后缀检测替代内容授权。
+
+记录只写入配置的专用目录、插件生成的固定 JSON/JSONL 文件和控制锁；根目录、任务目录和已有记录须符合归属、0700/0600 权限及 canonical 路径检查，拒绝符号链接、硬链接和未知文件名。事件追加同时检查实际打开的文件描述符。所有记录按数据解析，不提供从沙盒加载模块或执行记录的接口。这是文件入口限制，不是 SSH 进程的容器隔离，也不会限制其他独立授权的远端管理功能。
+
+每实例文件数据上限为 2 GiB，另留 64 MiB 和 1024 个文件条目给进度、租约、控制及事件记录；最多接纳 200 个任务目录、20000 个普通文件条目，单任务普通记录最多 1950 个（另留 50 个控制条目），单事件日志最多 8 MiB。写入通过实例级锁重新统计容量，包含原子替换临时文件所需空间。超过限额拒绝继续增长，不自动删改恢复记录；需通过已授权的过期任务清理释放空间后重试。预留空间提高恢复可用性，不能保证磁盘满或保留任务异常时所有恢复操作仍可完成。目录统计会增加准备和写入的文件系统开销；限额为逻辑文件大小和条目数，不替代操作系统磁盘配额。
+
 ## Plugin storage sandbox: 2.3.0
 
 Dashboard 的实例表单新增“沙盒管理账户密码”和“保存并配置沙盒账户”。密码按实例保存，编辑时不回显，留空保留原值；本地 registry 使用所有者专用权限（Unix 目录 0700、文件 0600；Windows 使用并验证专用 ACL）。保存后配置流程只重新加载所选实例，先检测该实例的 MongoDB 版本、拓扑和有效权限，再显示准备结果；确认后才创建固定沙盒角色、为执行账户追加沙盒权限，并创建管理账户。后续修改密码并再次配置，只重置带有本插件归属标记且权限完全匹配的账户。重新加载配置本身不修改 MongoDB 账户。进行配置前请结束该实例正在进行的操作；其他实例的环境与密码不复用。
@@ -26,7 +34,7 @@ Remote management requires a distinct connection profile using the same MongoDB 
 }
 ```
 
-Use an authenticated MongoDB deployment and a custom manager role whose privileges are limited to `find` and `remove` on `{db:"remote_debug_agent",collection:"__remote_debug_bulk_receipts"}`. A database administrator must create this account and store its URI in that management profile. The plugin never creates users or grants roles. It inspects the authenticated user's effective privileges and refuses management credentials with business, wildcard, cluster-wide or write/index-management privileges. Execution and management connections remain distinct; no arbitrary URI is accepted through MCP. Local audit inspection needs only the existing authenticated local Manager session. This is application and database permission isolation, not an OS/container sandbox for the SSH process.
+Use an authenticated MongoDB deployment and a custom manager role whose privileges are limited to `find` and `remove` on `{db:"remote_debug_agent",collection:"__remote_debug_bulk_receipts"}`. Create this account through the explicitly confirmed structured sandbox-access setup, or have a database administrator provision it and store its URI in the management profile. The generic database mutation tools do not create users or grant roles. It inspects the authenticated user's effective privileges and refuses management credentials with business, wildcard, cluster-wide or write/index-management privileges. Execution and management connections remain distinct; no arbitrary URI is accepted through MCP. Local audit inspection needs only the existing authenticated local Manager session. This is application and database permission isolation, not an OS/container sandbox for the SSH process.
 
 Cleanup is per job: only `completed` or `rolled_back` v2 jobs with no live lease, no unknown files/symlinks, and an expired rollback window plus an extra 24 hours are eligible. Prepare returns an exact `cleanupHash`; execution requires that hash and `确认清理`, rechecks state/retention/files, and deletes only matching expired scoped receipts and that job's files. V1 receipts in business databases are **read-only to sandbox management** and are never automatically deleted. Old collections can be retired separately by an administrator only after all dependent jobs and recovery windows have ended. If management credentials are absent or overprivileged, management fails closed while ordinary authorized bulk execution remains available.
 

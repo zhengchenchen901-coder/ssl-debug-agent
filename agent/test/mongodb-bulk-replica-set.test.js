@@ -157,7 +157,7 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
       remoteDriver.MongoClient = CommitReplyLossMongoClient;
     }
     let stdout = "";
-    const remoteProcess = { pid: process.pid, exitCode: 0, stdout: { write(value) { stdout += value; } } };
+    const remoteProcess = { pid: process.pid, getuid: process.getuid, exitCode: 0, stdout: { write(value) { stdout += value; } } };
     const remoteRequire = (specifier) => {
       if (specifier === "fs") return remoteFs;
       if (specifier === "path") return path.posix;

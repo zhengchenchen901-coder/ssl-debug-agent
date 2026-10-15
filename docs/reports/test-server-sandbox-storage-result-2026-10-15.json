@@ -1,0 +1,86 @@
+{
+  "commit": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "619e4aaf-74c8-4a7a-8286-e81a04a280c8",
+    "operationId": "793c0d8d-88e1-4e6a-93ef-1f0e3d49f2cf",
+    "kind": "bulk_storage",
+    "operation": "initializeBulkStorage",
+    "database": "yennefer",
+    "collection": "__remote_debug_bulk_receipts",
+    "status": "committed",
+    "rollbackMode": "retained_non_rollbackable",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "为 test-server 初始化独立插件沙盒技术集合、固定过期索引和受保护批量任务日志目录；不修改业务文档。",
+    "createdAt": "2026-10-15T00:43:50.989Z",
+    "committedAt": "2026-10-15T00:47:13.951Z",
+    "rollbackExpiresAt": "2026-10-22T00:43:50.989Z",
+    "planHash": "a84813d598a7a528ff71a74978ef703a292cc1f6d87b0bba61c9d9d43f140db7",
+    "affectedCount": 1,
+    "changedFields": [
+      "expiresAt"
+    ],
+    "affectedIds": [],
+    "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+    "receiptsDatabase": "remote_debug_agent",
+    "storageStatus": {
+      "rootState": "directory",
+      "rootMode": 448,
+      "collectionExists": true,
+      "expiryIndexExists": true
+    },
+    "journalPath": "/tmp/remote-debug-agent/mutations/619e4aaf-74c8-4a7a-8286-e81a04a280c8",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 1906,
+      "connectionGeneration": 1
+    },
+    "durationMs": 1907
+  },
+  "verification": {
+    "instanceId": "test-server",
+    "bulkEnabled": true,
+    "managementProfile": "remote_debug_manager",
+    "instanceStatus": "running",
+    "technicalIndexes": [
+      {
+        "name": "remote_debug_bulk_receipt_expiry",
+        "key": {
+          "expiresAt": 1
+        },
+        "spec": {
+          "v": 2,
+          "key": {
+            "expiresAt": 1
+          },
+          "name": "remote_debug_bulk_receipt_expiry",
+          "expireAfterSeconds": 0,
+          "ns": "remote_debug_agent.__remote_debug_bulk_receipts"
+        }
+      },
+      {
+        "name": "_id_",
+        "key": {
+          "_id": 1
+        },
+        "spec": {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_",
+          "ns": "remote_debug_agent.__remote_debug_bulk_receipts"
+        }
+      }
+    ],
+    "bulkJobCount": 0,
+    "bulkStorageReadable": true
+  },
+  "initialAttempt": {
+    "errorCode": "MONGODB_BULK_STORAGE_INDEX_FAILED",
+    "resolution": "Verified the actual technical collection/index through read-only queries, then successfully retried the same authorized mutationId and planHash. No business documents were mutated. The cause of the initial visibility/validation failure was not conclusively established."
+  }
+}

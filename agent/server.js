@@ -488,7 +488,7 @@ export function createApp(options = {}) {
   app.use(express.json({ limit: "512kb" }));
 
   app.get("/", (_request, response) => {
-    response.sendFile(path.join(publicDir, "dashboard.html"));
+    response.sendFile("dashboard.html", { root: publicDir });
   });
 
   registerEnvironmentReport(app, config);
@@ -1886,7 +1886,7 @@ export function createManagerApp(options = {}) {
   let restoreCheckScheduled = false;
 
   app.get("/", (_request, response) => {
-    response.sendFile(path.join(publicDir, "dashboard.html"));
+    response.sendFile("dashboard.html", { root: publicDir });
   });
 
   registerEnvironmentReport(app, config);

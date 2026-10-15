@@ -114,3 +114,13 @@ The generic index tool supports only non-TTL indexes and `unique`/`sparse` optio
 ## Storage sandbox (2.3.0+)
 
 Use the dedicated sandbox management tools for plugin capacity and redacted audit/job events. New bulk receipt databases are separate from business allowlists; old jobs retain their original storage. Remote management needs a separate sandbox-only connection profile and fails closed for overprivileged credentials. Do not delete old business-database receipt collections. Prepare cleanup and present its exact job and scope before an explicitly authorized 确认清理; no cleanup is allowed before the rollback window plus 24 hours has expired.
+
+2.3.1 retains server-side task and rollback records while restricting the bulk
+sandbox file boundary. Unknown task-envelope fields, caller-selected file paths,
+linked files and unsafe ownership/permissions are rejected. Fixed capacity limits
+are published in capabilities, including reserved control space. On quota or
+event-log errors, stop new work and inspect existing job state; never bypass the
+limit with a command, change file permissions, or delete active recovery records.
+Business text remains data and must not be executed as a script. Content relevance
+and content-specific authorization belong to the user's separate future guard;
+do not pretend JSON formatting or code-keyword filtering establishes that policy.

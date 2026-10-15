@@ -11,12 +11,13 @@ export function bulkSandboxFixture(t) {
   const root = "/var/lib/remote-debug-agent/bulk-jobs";
   const config = { enabled: true, writeEnabled: true, bulkEnabled: true, configPath: "/home/app/config.json", driverPath: "/home/app/node_modules/mongodb", configProfile: "business", uriKey: "url", database: "business", sandboxDatabase: "remote_debug_agent", sandboxManagementProfile: "manager", allowedDatabases: ["business"], allowedCollections: ["orders"], bulkRoot: root, bulkBatchDocuments: 2, bulkConcurrency: 1 };
   const state = { collections: new Map(), indexes: new Map(), events: [], rejectReceipt: false, loseReply: false, unsafeManager: false };
-  const translate = (name) => name === config.configPath ? path.join(nativeRoot, "config.json") : name.startsWith(root) ? path.join(nativeRoot, "jobs", name.slice(root.length)) : name;
+  const translate = (name) => typeof name !== "string" ? name : name === config.configPath ? path.join(nativeRoot, "config.json") : name.startsWith(root) ? path.join(nativeRoot, "jobs", name.slice(root.length)) : name;
   fs.mkdirSync(translate(root), { mode: 0o700 });
   fs.writeFileSync(translate(config.configPath), JSON.stringify({ business: { url: "mongodb://business:fixture@127.0.0.1:27017/?replicaSet=fixture" }, manager: { url: "mongodb://manager:fixture@127.0.0.1:27017/?replicaSet=fixture" } }));
   const remoteFs = Object.create(fs);
   for (const method of ["existsSync", "lstatSync", "statSync", "mkdirSync", "chmodSync", "readFileSync", "readdirSync", "unlinkSync", "rmdirSync", "utimesSync"]) remoteFs[method] = (name, ...args) => fs[method](translate(name), ...args);
   if (process.platform === "win32") {
+    remoteFs.fstatSync = (fd) => { const stat = fs.fstatSync(fd); return new Proxy(stat, { get(target, property) { if (property === "mode") return (target.mode & ~0o777) | 0o600; const value = Reflect.get(target, property, target); return typeof value === "function" ? value.bind(target) : value; } }); };
     remoteFs.lstatSync = (name) => {
       const stat = fs.lstatSync(translate(name));
       return new Proxy(stat, { get(target, property) { if (property === "mode") return (target.mode & ~0o777) | (target.isDirectory() ? 0o700 : 0o600); const value = Reflect.get(target, property, target); return typeof value === "function" ? value.bind(target) : value; } });
@@ -102,7 +103,7 @@ export function bulkSandboxFixture(t) {
     const request = input.action === "upload" ? { ...input, chunk: normalizeMongoBulkChunk(input.chunk, policy) } : input;
     const script = buildMongoBulkScript(request, policy).replace(/\n__bulkMain\(\);\s*$/, "\nglobalThis.done = __bulkMain();");
     let stdout = "";
-    const context = { require: remoteRequire, process: { pid: process.pid, stdout: { write: (text) => { stdout += text; } } }, Buffer, setInterval, clearInterval, setTimeout };
+    const context = { require: remoteRequire, process: { pid: process.pid, getuid: process.getuid, stdout: { write: (text) => { stdout += text; } } }, Buffer, setInterval, clearInterval, setTimeout };
     vm.runInNewContext(script, context); await context.done;
     const result = JSON.parse(stdout.split("__REMOTE_DEBUG_MONGODB_RESULT__BULK:")[1]);
     if (!result.ok) throw Object.assign(new Error(result.error.message), { code: result.error.code });
@@ -112,10 +113,10 @@ export function bulkSandboxFixture(t) {
     // Exercise the exact initialization routine embedded in the helper.
     const script = buildMongoBulkScript({ action: "list" }, config);
     const definitions = script.slice(0, script.lastIndexOf("__bulkMain();"));
-    await vm.runInNewContext(definitions + "__bulkPrepareStorage();", { require: remoteRequire, process: { pid: process.pid }, Buffer });
+    await vm.runInNewContext(definitions + "__bulkPrepareStorage();", { require: remoteRequire, process: { pid: process.pid, getuid: process.getuid }, Buffer });
     rows("business", "orders").set("order-1", { _id: "order-1", count: 0 });
   }
   const read = (jobId, name) => JSON.parse(fs.readFileSync(translate(root + "/" + jobId + "/" + name), "utf8"));
   const write = (jobId, name, data) => fs.writeFileSync(translate(root + "/" + jobId + "/" + name), JSON.stringify(data), { mode: 0o600 });
-  return { config, state, rows, run, initialize, read, write, nativeRoot, translate, collection, async definitions(code) { const script = buildMongoBulkScript({ action: "list" }, config); return vm.runInNewContext(script.slice(0, script.lastIndexOf("__bulkMain();")) + code, { require: remoteRequire, process: { pid: process.pid }, Buffer, setInterval, clearInterval, setTimeout }); } };
+  return { config, state, rows, run, initialize, read, write, nativeRoot, translate, collection, async definitions(code) { const script = buildMongoBulkScript({ action: "list" }, config); return vm.runInNewContext(script.slice(0, script.lastIndexOf("__bulkMain();")) + code, { require: remoteRequire, process: { pid: process.pid, getuid: process.getuid }, Buffer, setInterval, clearInterval, setTimeout }); } };
 }

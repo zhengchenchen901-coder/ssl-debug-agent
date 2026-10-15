@@ -6,10 +6,13 @@ import os from "node:os";
 import { spawnSync } from "node:child_process";
 
 test("installed bundle enforces TTL policy without source checkout or node_modules", async (t) => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rda-bundled-ttl-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), "rda-bundled-ttl-"));
+  t.after(() => fs.rm(parent, { recursive: true, force: true }));
+  const root = path.join(parent, ".plugin-cache");
+  await fs.mkdir(root);
   const pluginRoot = path.resolve(import.meta.dirname, "..");
   await fs.copyFile(path.join(pluginRoot, "runtime/agent/server.cjs"), path.join(root, "server.cjs"));
+  await fs.cp(path.join(pluginRoot, "runtime/agent/public"), path.join(root, "public"), { recursive: true });
   const script = String.raw`
 const assert = require("node:assert/strict");
 const http = require("node:http");
@@ -24,14 +27,21 @@ const { createApp } = require("./server.cjs");
   await new Promise(resolve => server.listen(0,"127.0.0.1",resolve));
   const base = "http://127.0.0.1:" + server.address().port;
   try {
+    const home = await fetch(base + "/");
+    assert.equal(home.status, 200);
+    assert.match(await home.text(), /name="sandboxManagementPassword"/);
     async function post(route,body) { const response = await fetch(base+route,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)}); return {status:response.status,body:await response.json()}; }
     const ttl = await post("/mongodb/mutations/prepare",{kind:"index",operation:"createIndex",collection:"orders",name:"business_ttl",key:{createdAt:1},options:{expireAfterSeconds:0}});
     assert.equal(ttl.status,403); assert.equal(ttl.body.error.code,"MONGODB_TTL_INDEX_REJECTED");
     const redirect = await post("/mongodb/bulk/storage/prepare",{kind:"bulk_storage"});
     assert.equal(redirect.status,403); assert.equal(redirect.body.error.code,"MONGODB_BULK_RECEIPTS_RESERVED");
+    config.mongodb.bulkReceiptsCollection="__remote_debug_bulk_receipts";
+    const fileUpload = await post("/mongodb/bulk/prepare",{jobId:"unrelated-file",chunkIndex:0,units:[],fileName:"evil.sh",content:"echo unrelated"});
+    assert.equal(fileUpload.status,400); assert.equal(fileUpload.body.error.code,"MONGODB_BULK_UNKNOWN_FIELD");
     assert.equal(calls,0);
     const capabilities = await (await fetch(base+"/api/capabilities",{headers:{Authorization:"Bearer "+token}})).json();
     assert.equal(capabilities.capabilities.mongodb.mutations.ttlIndexes.businessAllowed,false);
+    assert.equal(capabilities.capabilities.mongodb.bulk.sandboxFiles.generalFileUpload,false);
     console.log("bundled TTL preparation and receipt-redirection rejection verified");
   } finally { await new Promise(resolve => server.close(resolve)); }
 })().catch(error => { console.error(error); process.exitCode=1; });
