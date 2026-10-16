@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>手动工作台 · Remote Debug Agent</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/assets/vendor/xterm.css" />
+    <link rel="stylesheet" href="/assets/manual.css" />
+    <script src="/assets/vendor/xterm.js" defer></script>
+    <script src="/assets/vendor/addon-fit.js" defer></script>
+    <script src="/assets/manual.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">&gt;_</span><div><span class="eyebrow">REMOTE DEBUG AGENT</span><h1>手动工作台</h1></div></div>
+      <div class="header-actions"><span class="mode">人工会话</span><button id="logoutButton" class="button subtle" hidden>退出登录</button></div>
+    </header>
+    <main>
+      <section id="loginPanel" class="login-panel" aria-labelledby="loginTitle">
+        <span class="section-label">ADMINISTRATOR ACCESS</span>
+        <h2 id="loginTitle">登录服务器工作台</h2>
+        <p>使用已注册的插件管理员账号登录。</p>
+        <div class="instance-chip">当前实例 <strong id="loginInstance">—</strong></div>
+        <form id="loginForm">
+          <label>管理员账号<input name="username" required autocomplete="username" minlength="3" maxlength="64" autofocus /></label>
+          <label>管理员密码<input name="password" type="password" required autocomplete="current-password" maxlength="256" /></label>
+          <button id="loginButton" class="button primary" type="submit">进入工作台 <span aria-hidden="true">→</span></button>
+          <p id="loginMessage" class="message" role="alert"></p>
+        </form>
+        <p class="login-note">首次使用请返回实例列表，点击“注册管理员”。刷新页面后需要重新登录。</p>
+      </section>
+
+      <section id="workspace" class="workspace" hidden aria-label="服务器手动操作">
+        <aside class="sidebar">
+          <span class="section-label">工作空间</span>
+          <div class="nav-item active"><span aria-hidden="true">&gt;_</span> SSH 终端</div>
+          <div class="sidebar-foot"><span class="live-dot"></span>管理员手动操作</div>
+        </aside>
+        <div class="work-area">
+          <section class="preview-panel" aria-label="连接预览">
+            <div class="panel-heading"><div><span class="section-label">连接预览</span><h2 id="instanceName">—</h2></div><span id="connectionStatus" class="status" role="status">未连接</span></div>
+            <div class="target-grid">
+              <div><span>服务器</span><strong id="targetHost">—</strong></div>
+              <div><span>SSH 连接账号</span><strong id="targetUser">—</strong></div>
+              <div><span>实例 ID</span><strong id="targetId">—</strong></div>
+              <div><span>主机校验</span><strong>使用实例已核验指纹</strong></div>
+            </div>
+          </section>
+          <section class="terminal-panel" aria-label="SSH 交互式终端">
+            <div class="terminal-heading"><div><span class="terminal-tab">SSH</span><span id="terminalTarget" class="terminal-target">—</span></div><button id="clearButton" class="button small subtle">清空显示</button></div>
+            <div id="terminal" aria-label="远端终端"></div>
+            <div class="terminal-footer"><span id="terminalHint">点击“连接 SSH”开始操作</span><span>Ctrl+C 中断 · 支持交互式命令</span></div>
+          </section>
+        </div>
+        <aside class="operations" aria-label="操作面板">
+          <span class="section-label">操作</span>
+          <h2>SSH 会话</h2>
+          <p>直接操作当前实例的远端 Shell。</p>
+          <button id="connectButton" class="button primary">连接 SSH</button>
+          <button id="disconnectButton" class="button" disabled>断开连接</button>
+          <div class="info-card"><h3>当前权限</h3><p>由远端 SSH 账号决定。需要提权时，可在终端中自行使用 sudo。</p></div>
+          <div class="info-card"><h3>会话有效期</h3><p>15 分钟未输入后退出，最长 8 小时。断线重连会创建新的 Shell。</p></div>
+          <p id="workMessage" class="message" role="alert"></p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

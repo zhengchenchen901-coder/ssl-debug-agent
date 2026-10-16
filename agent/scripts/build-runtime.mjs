@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, transform } from "esbuild";
 import { remoteLogQuery } from "../log-query-remote.js";
+import { buildTerminalAssets } from "./build-terminal-assets.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const agentDir = path.resolve(scriptDir, "..");
@@ -77,19 +78,26 @@ async function hashFile(filePath) {
 await fsp.rm(outputDir, { recursive: true, force: true });
 await fsp.mkdir(outputDir, { recursive: true });
 
+await buildTerminalAssets();
 await bundle("server.js", "server.cjs");
 await bundle("worker-entry.js", "worker-entry.cjs");
 await fsp.cp(path.resolve(agentDir, "public"), path.resolve(outputDir, "public"), {
   recursive: true,
 });
+await fsp.cp(path.resolve(agentDir, "native"), path.resolve(outputDir, "native"), { recursive: true });
 
-const artifactFiles = [
-  "server.cjs",
-  "worker-entry.cjs",
-  "public/dashboard.css",
-  "public/dashboard.html",
-  "public/dashboard.js",
-  "public/environment-report.js",
+async function listArtifacts(directory, prefix) {
+  const result = [];
+  for (const entry of (await fsp.readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name, "en"))) {
+    const name = `${prefix}/${entry.name}`;
+    if (entry.isDirectory()) result.push(...await listArtifacts(path.join(directory, entry.name), name));
+    else result.push(name);
+  }
+  return result;
+}
+const artifactFiles = ["server.cjs", "worker-entry.cjs",
+  ...await listArtifacts(path.join(outputDir, "public"), "public"),
+  ...await listArtifacts(path.join(outputDir, "native"), "native"),
 ];
 const hashes = {};
 for (const relativePath of artifactFiles) {

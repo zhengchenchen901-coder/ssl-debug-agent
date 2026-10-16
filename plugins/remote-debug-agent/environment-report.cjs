@@ -103,8 +103,8 @@ function collectReport(pluginRoot, env, options) {
     check("manifest", "预构建运行清单", valid ? manifest.runtimeId : "缺失或格式无效",
       "存在有效的 runtime-manifest.json", valid ? "pass" : "fail", "重新安装完整插件，开发环境可重新构建 runtime。");
     if (valid) {
-      const requiredFiles = [manifest.server, manifest.worker, "public/dashboard.html", "public/dashboard.css",
-        "public/dashboard.js", "public/environment-report.js"];
+      const requiredFiles = Array.from(new Set([manifest.server, manifest.worker, "public/dashboard.html", "public/dashboard.css",
+        "public/dashboard.js", "public/environment-report.js"].concat(Object.keys(manifest.hashes))));
       const invalid = requiredFiles.filter(function (file) {
         const resolved = path.resolve(runtimeRoot, file);
         if (!resolved.startsWith(runtimeRoot + path.sep) || !fs.existsSync(resolved)) return true;
@@ -179,7 +179,8 @@ function writeOfflineDashboard(dataDir, report) {
   html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function () { return "<style>" + css + "</style>"; })
     .replace('<script src="/environment-report.js" defer></script>',
       function () { return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>"; })
-    .replace('<script src="/dashboard.js" type="module"></script>', "");
+    .replace('<script src="/dashboard.js" type="module"></script>', "")
+    .replace('<script src="/admin-registration.js" type="module"></script>', "");
   fs.writeFileSync(file, html, { mode: 0o600 });
 }
 

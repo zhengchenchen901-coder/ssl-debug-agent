@@ -1,7 +1,7 @@
 import path from "node:path";
 import localAuth from "../plugins/remote-debug-agent/local-auth.cjs";
 
-const PUBLIC_ASSETS = new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/environment-report.js"]);
+const PUBLIC_ASSETS = new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/environment-report.js", "/admin-registration.js"]);
 
 export function publicHealth(request, token, identity) {
   const nonce = request.headers["x-remote-debug-challenge"];
@@ -21,7 +21,7 @@ export function installHttpAuth(app, config, options = {}) {
   app.use((request, response, next) => {
     response.set("Cache-Control", "no-store");
     response.set("X-Content-Type-Options", "nosniff");
-    response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     const fail = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
     const port = request.socket.localPort;
     const host = request.headers.host;

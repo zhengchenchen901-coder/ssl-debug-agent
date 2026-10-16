@@ -1,16 +1,27 @@
 {
   "version": 1,
-  "pluginVersion": "2.3.2+codex.20261015",
-  "runtimeId": "2.3.2:665cc164aa88e504dcf15c220947734d8e13dff1a0340fd000e83b6eb6c6597d",
+  "pluginVersion": "2.4.0+codex.20261016",
+  "runtimeId": "2.4.0:39e2f3cd7f54c501b679e4e16b46887c94a7314ac1146fcdd61eddb3ac89a3c3",
   "node": ">=22.18 <23",
   "server": "server.cjs",
   "worker": "worker-entry.cjs",
   "hashes": {
-    "server.cjs": "e0a889635e7c7274459df66a4d2ab25440df2203e4f942eb0926fa2c9a3e738c",
-    "worker-entry.cjs": "ef11e9a61e75f28cc8ffc412fc53c67d42191938601e08ac74d26b32f2a69b80",
+    "server.cjs": "af3b2ede77410c46731a09f38bff491b82325c122b8fd818596621600e1eac2b",
+    "worker-entry.cjs": "0238c93d67e99309672dcd18658be1facca7bf2bab9452d8bbda94cad1ca5593",
+    "public/admin-registration.js": "6b4489e6e97b50f56e0286ad28c3cba7428ee6db4af34a45881ec1be2ac44876",
     "public/dashboard.css": "e288d493ea7796a7fc0310cda344ae6d6db2fe28009a6cd232eb982769951702",
-    "public/dashboard.html": "872ea7508ed32f93e29d1562d35869a6cf84ea8ed6f7e7735eae91e29cf7f554",
-    "public/dashboard.js": "b359163d12b9af15cf35610589b5f6f598630d95bf1fa9cdd6ca04f60d885ce5",
-    "public/environment-report.js": "0086b34defbe38c7b972f393f133f386399ac1cdd0aa6fdb49fc16ed7e575f5d"
+    "public/dashboard.html": "484135b98680e9c0e15778e1fe4dcad8c1eebd1ea4c5a3b5f5bddf53fa548eb6",
+    "public/dashboard.js": "cba98ad70ccd22cfa64c96c3c9ea6bdfe3d7538355641e48424ed814266cf98d",
+    "public/environment-report.js": "0086b34defbe38c7b972f393f133f386399ac1cdd0aa6fdb49fc16ed7e575f5d",
+    "public/manual.css": "da92ef8d739ef853595ac81b8356b11d42b458986d9f8156260bb0d9cc76449d",
+    "public/manual.html": "1a72932824b51b057cc42ee40f2cf46ecb748ceaa99a05eba580d901adb9d85b",
+    "public/manual.js": "aefc2c9d7a55668274d8574a2f8b95dea494ac200b81a10c39fd6bee0ac7a931",
+    "public/vendor/addon-fit.js": "ba3ea256ce0620a0992a197d6c9baea64823fc93d8da07a9e366ca9943c18527",
+    "public/vendor/LICENSE-addon-fit.txt": "e256f01188af527e4d06d21d06fbf785ae9c50d4b328bf03cbe0ba7f0aa4228f",
+    "public/vendor/LICENSE-xterm.txt": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
+    "public/vendor/xterm.css": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
+    "public/vendor/xterm.js": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
+    "native/verify-owner.ps1": "0a3542da9139c3869b0cbd71eb59a5eea37e9e63745ec523a301cb3bcc73eceb",
+    "native/verify-owner.swift": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab"
   }
 }

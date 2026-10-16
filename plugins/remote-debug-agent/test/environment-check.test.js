@@ -71,6 +71,7 @@ test("diagnostic dashboard reuses the original page, has no business endpoints, 
   const page = await get(report.dashboardUrl + "/");
   assert.match(page.body, /插件环境检查/);
   assert.doesNotMatch(page.body, /src="\/dashboard.js"/);
+  assert.doesNotMatch(page.body, /src="\/admin-registration.js"/);
   assert.equal((await get(report.dashboardUrl + "/mongodb/query", "POST")).status, 405);
   assert.equal((await get(report.dashboardUrl + "/run", "POST")).status, 405);
   assert.equal((await get(report.dashboardUrl + "/diagnostics/shutdown", "POST")).status, 405);
@@ -89,6 +90,7 @@ test("offline report escapes embedded data and does not require an HTTP server",
   assert.match(html, /window.environmentSnapshot=/);
   assert.doesNotMatch(html, /<script>alert\("injected"\)/);
   assert.doesNotMatch(html, /src="\/dashboard.js"/);
+  assert.doesNotMatch(html, /src="\/admin-registration.js"/);
   assert.doesNotMatch(html, /href="\/dashboard.css"/);
 });
 
@@ -97,9 +99,11 @@ test("preflight rejects a corrupted runtime before MCP starts", async (t) => {
   const installed = path.join(dataDir, "plugin");
   await fs.cp(pluginRoot, installed, { recursive: true });
   await fs.appendFile(path.join(installed, "runtime/agent/public/dashboard.css"), "/* modified */");
+  await fs.appendFile(path.join(installed, "runtime/agent/public/manual.js"), "/* modified */");
   const report = environment.collectReport(installed, env, { nodeVersion: "22.23.3" });
   assert.equal(report.status, "failed");
   assert.match(report.checks.find((c) => c.id === "artifacts").actual, /dashboard.css/);
+  assert.match(report.checks.find((c) => c.id === "artifacts").actual, /manual.js/);
 });
 
 test("missing dashboard files still leave an escaped offline failure report", async (t) => {

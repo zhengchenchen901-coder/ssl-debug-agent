@@ -1,0 +1,65 @@
+:root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; color: #dce5ef; background: #0c121b; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .4; }
+button:focus-visible, input:focus-visible { outline: 2px solid #5ee0bf; outline-offset: 3px; }
+.topbar { height: 84px; padding: 0 32px; border-bottom: 1px solid #25303f; display: flex; align-items: center; justify-content: space-between; background: #101823; }
+.brand, .header-actions { display: flex; align-items: center; gap: 16px; }
+.brand-mark { color: #6ce1c3; font: 24px ui-monospace, monospace; border: 1px solid #354a54; border-radius: 10px; padding: 9px; }
+.eyebrow, .section-label { font-size: 10px; letter-spacing: .14em; color: #91a2b7; font-weight: 600; }
+h1 { font-size: 19px; font-weight: 600; margin: 4px 0 0; letter-spacing: .03em; }
+h2 { font-size: 20px; margin: 10px 0; font-weight: 550; }
+h3 { font-size: 12px; margin: 0 0 8px; font-weight: 600; }
+p { font-size: 13px; line-height: 1.8; color: #91a2b7; }
+.mode { border: 1px solid #304d46; color: #85d9c1; background: #142c27; border-radius: 99px; padding: 5px 12px; font-size: 12px; }
+.button { border: 1px solid #344456; background: #192431; color: #dce5ef; padding: 11px 16px; border-radius: 7px; line-height: 1.4; font-size: 13px; }
+.button:hover:not(:disabled) { background: #263546; }
+.button.primary { background: #69d9ba; border-color: #69d9ba; color: #09251e; font-weight: 650; }
+.button.primary:hover:not(:disabled) { background: #8be9cf; }
+.button.subtle { background: transparent; }
+.button.small { padding: 5px 10px; font-size: 11px; }
+.login-panel { width: min(440px, calc(100% - 32px)); margin: 70px auto; padding: 34px; background: #121d2a; border: 1px solid #2a394a; border-radius: 14px; box-shadow: 0 24px 70px #0003; }
+.login-panel h2 { font-size: 25px; margin-top: 18px; }
+.login-panel form { display: grid; gap: 19px; margin-top: 26px; }
+.login-panel label { display: grid; gap: 9px; font-size: 12px; color: #b7c4d5; }
+.login-panel input { width: 100%; background: #0b1420; border: 1px solid #344456; padding: 12px; color: #e4edf7; border-radius: 6px; }
+.login-panel .primary { display: flex; justify-content: space-between; }
+.instance-chip { margin-top: 24px; background: #1c2b3a; border-radius: 6px; padding: 12px; font-size: 12px; color: #91a2b7; overflow-wrap: anywhere; }
+.instance-chip strong { color: #c7d9ea; margin-left: 10px; font-family: ui-monospace, monospace; }
+.login-note { border-top: 1px solid #293848; margin-top: 24px; padding-top: 20px; font-size: 11px; }
+.message { color: #f2ad99; overflow-wrap: anywhere; margin: 0; min-height: 20px; }
+.workspace { display: grid; grid-template-columns: 170px minmax(0, 1fr) 232px; min-height: calc(100dvh - 84px); }
+.sidebar { padding: 28px 16px; border-right: 1px solid #25303f; position: relative; }
+.sidebar .section-label { padding: 0 12px; }
+.nav-item { margin-top: 20px; padding: 13px; border-radius: 7px; font-size: 13px; }
+.nav-item.active { background: #19332e; color: #8ce3cb; border: 1px solid #294d43; }
+.nav-item span { margin-right: 8px; font-family: ui-monospace, monospace; }
+.sidebar-foot { position: absolute; bottom: 25px; font-size: 10px; color: #8295ab; }
+.live-dot { display: inline-block; width: 6px; height: 6px; background: #74d8b9; border-radius: 50%; margin-right: 6px; }
+.work-area { min-width: 0; padding: 26px; display: flex; flex-direction: column; gap: 22px; }
+.preview-panel { border: 1px solid #293747; border-radius: 10px; background: #121c29; padding: 22px; }
+.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-heading h2 { margin-bottom: 20px; overflow-wrap: anywhere; }
+.status { font-size: 11px; color: #a9b8ca; background: #253244; padding: 6px 10px; border-radius: 99px; flex-shrink: 0; }
+.status.connected { color: #88e2c6; background: #1b3830; }
+.target-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; border-top: 1px solid #293747; padding-top: 18px; }
+.target-grid span, .target-grid strong { display: block; }
+.target-grid span { font-size: 11px; color: #8295ab; margin-bottom: 8px; }
+.target-grid strong { font: 12px ui-monospace, "PingFang SC", monospace; color: #c9d6e7; overflow-wrap: anywhere; }
+.terminal-panel { border: 1px solid #2d3d4e; border-radius: 10px; overflow: hidden; background: #090f17; flex: 1; min-height: 380px; display: flex; flex-direction: column; }
+.terminal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #15202d; border-bottom: 1px solid #2d3d4e; padding: 12px 16px; }
+.terminal-tab { font: 11px ui-monospace, monospace; color: #7de0bf; margin-right: 18px; }
+.terminal-target { font: 11px ui-monospace, monospace; color: #91a2b7; overflow-wrap: anywhere; }
+#terminal { padding: 16px 10px 8px 16px; flex: 1; min-height: 300px; height: calc(100dvh - 420px); }
+.terminal-footer { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid #1e2b3b; padding: 10px 16px; color: #768a9f; font-size: 10px; }
+.operations { border-left: 1px solid #25303f; padding: 28px 20px; background: #0f1823; }
+.operations h2 { font-size: 17px; margin-top: 22px; }
+.operations > .button { width: 100%; margin-top: 12px; }
+.info-card { margin-top: 24px; border-top: 1px solid #293747; padding-top: 22px; }
+.info-card p { font-size: 11px; margin: 0; }
+.operations .message { margin-top: 24px; font-size: 12px; }
+@media (max-width: 1100px) { .workspace { grid-template-columns: 130px minmax(0, 1fr) 200px; } .work-area { padding: 18px; } .target-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .terminal-footer span:last-child { display: none; } }
+@media (max-width: 760px) { .topbar { padding: 0 16px; } .eyebrow { font-size: 8px; } .brand { gap: 10px; } .brand-mark { display: none; } .mode { display: none; } .workspace { grid-template-columns: minmax(0, 1fr); } .sidebar { display: none; } .operations { border-left: 0; border-top: 1px solid #25303f; } .operations > .button { width: auto; margin-right: 10px; } .info-card { display: none; } #terminal { height: 48dvh; } .login-panel { margin-top: 36px; padding: 26px; } }

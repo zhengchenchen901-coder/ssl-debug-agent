@@ -99,7 +99,9 @@ async function serve(pluginRoot, dataDir, preferredPort) {
     if (!asset) { res.writeHead(404); res.end(); return; }
     try {
       let contents = fs.readFileSync(path.join(publicDir, asset[0]));
-      if (req.url === "/") contents = contents.toString().replace('<script src="/dashboard.js" type="module"></script>', "");
+      if (req.url === "/") contents = contents.toString()
+        .replace('<script src="/dashboard.js" type="module"></script>', "")
+        .replace('<script src="/admin-registration.js" type="module"></script>', "");
       res.setHeader("Content-Type", asset[1] + "; charset=utf-8"); res.end(contents);
     } catch (_) {
       if (req.url === "/") {

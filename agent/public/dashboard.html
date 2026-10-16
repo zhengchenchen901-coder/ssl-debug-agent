@@ -79,6 +79,7 @@
           <div class="toolbar-actions">
             <button id="shutdownButton" class="button danger" type="button" hidden>关闭 Manager</button>
             <button id="reloadButton" class="button" type="button">刷新列表</button>
+            <button id="registerAdminButton" class="button" type="button">注册管理员</button>
             <button id="newButton" class="button primary" type="button">新建实例</button>
           </div>
         </div>
@@ -263,9 +264,31 @@
     </aside>
     <div id="drawerMask" class="drawer-mask" hidden></div>
 
+    <div id="adminBackdrop" class="overlay" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+        <div class="modal-header"><h2 id="adminTitle">注册管理员</h2><button id="closeAdminButton" class="icon-button" type="button" aria-label="关闭">×</button></div>
+        <form id="adminForm" class="form-grid">
+          <p id="adminOwnerHint" class="wide muted">注册时会弹出系统身份验证窗口，验证本机用户身份。</p>
+          <label><span>新管理员账号</span><input name="username" autocomplete="username" required minlength="3" maxlength="64" placeholder="3–64 位字母、数字、下划线、点或短横线" /></label>
+          <label><span>新管理员密码</span><input name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="256" placeholder="至少 12 个字符" /></label>
+          <label class="wide"><span>确认新密码</span><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="256" /></label>
+          <fieldset id="existingAdminFields" class="wide form-grid" hidden>
+            <legend>已有管理员授权</legend>
+            <label><span>已有管理员账号</span><input name="existingUsername" autocomplete="off" maxlength="64" /></label>
+            <label><span>已有管理员密码</span><input name="existingPassword" type="password" autocomplete="off" maxlength="256" /></label>
+          </fieldset>
+          <p class="wide muted">此账号用于进入手动工作台；服务器实际权限由实例的 SSH 账号决定。</p>
+          <div id="adminMessage" class="wide form-message" role="status"></div>
+          <button id="adminResetMode" class="button wide" type="button" hidden>忘记密码？通过本机身份验证重置</button>
+          <div class="modal-actions"><button id="cancelAdminButton" class="button" type="button">取消</button><button id="saveAdminButton" class="button primary" type="submit">验证本机身份并注册</button></div>
+        </form>
+      </section>
+    </div>
+
     <div id="toast" class="toast" hidden></div>
 
     <script src="/environment-report.js" defer></script>
     <script src="/dashboard.js" type="module"></script>
+    <script src="/admin-registration.js" type="module"></script>
   </body>
 </html>

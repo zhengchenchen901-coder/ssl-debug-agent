@@ -1,5 +1,6 @@
 import express from "express";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
+import { ManualWorkbench, installManualManagerRoutes } from "./manual-workbench.js";
 import { inspectLocalSandbox } from "./local-sandbox.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
@@ -1885,6 +1886,15 @@ export function createManagerApp(options = {}) {
   app.use(express.json({ limit: "512kb" }));
   let restoreCheckScheduled = false;
 
+  const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
+    registry,
+    dataDirectory: path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
+    lifecycle,
+    ...options.manualOptions,
+  });
+  app.locals.manualWorkbench = manualWorkbench;
+  installManualManagerRoutes(app, manualWorkbench);
+
   app.get("/", (_request, response) => {
     response.sendFile("dashboard.html", { root: publicDir });
   });
@@ -2024,6 +2034,7 @@ export function createManagerApp(options = {}) {
 
   app.put("/api/instances/:id", managerAsync(async (request, response) => {
     const instance = registry.update(request.params.id, request.body || {});
+    manualWorkbench.invalidateInstance(instance.id);
     activity.publish({ type: "instance", stage: "updated", instanceId: instance.id });
     response.json({
       ok: true,
@@ -2053,6 +2064,7 @@ export function createManagerApp(options = {}) {
 
   app.delete("/api/instances/:id", managerAsync(async (request, response) => {
     const instance = await workerManager.deleteInstance(request.params.id);
+    manualWorkbench.invalidateInstance(instance.id);
     activity.publish({ type: "instance", stage: "deleted", instanceId: instance.id });
     response.json({ ok: true, instance });
   }));
@@ -2706,6 +2718,7 @@ export function startServer(config = loadConfig(), options = {}) {
     if (!shutdownPromise) {
       shutdownPromise = (async () => {
         lifecycle.stop();
+        await app.locals.manualWorkbench.close();
         await workerManager.shutdownAll(reason).catch((error) => {
           console.error("failed to stop worker processes", error);
         });

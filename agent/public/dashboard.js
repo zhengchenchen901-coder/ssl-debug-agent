@@ -40,6 +40,7 @@ function lockPanel() {
   document.querySelector("#environmentPanel").hidden = true;
   updateAuthVisibility();
   setConnection("offline", "面板未解锁");
+  window.dispatchEvent(new Event("remote-debug-locked"));
 }
 
 function updateAuthVisibility() {
@@ -381,6 +382,9 @@ function renderRow(instance) {
   const refresh = button("重新加载配置", "refresh", instance);
   refresh.disabled = !canUseManager;
   refresh.title = canUseManager ? "" : "主进程不可用";
+  const manual = button("手动操作", "manual", instance);
+  manual.disabled = !canUseManager || !instance.enabled;
+  manual.title = "使用管理员账号打开独立的 SSH 工作台";
   actionWrap.append(
     view,
     edit,
@@ -388,6 +392,7 @@ function renderRow(instance) {
     stop,
     deleteButton,
     refresh,
+    manual,
   );
   actions.append(actionWrap);
 
@@ -867,7 +872,7 @@ function closeDrawer() {
   drawerMask.hidden = true;
 }
 
-const managerActions = new Set(["edit", "delete", "start", "stop", "refresh"]);
+const managerActions = new Set(["edit", "delete", "start", "stop", "refresh", "manual"]);
 
 async function runAction(action, id) {
   const instance = findInstance(id);
@@ -886,6 +891,20 @@ async function runAction(action, id) {
   }
   if (action === "edit") {
     openModal(instance);
+    return;
+  }
+  if (action === "manual") {
+    const popup = window.open("about:blank", "_blank", "popup,width=1440,height=920");
+    if (!popup) { showToast("请允许本地面板打开弹出窗口后重试。"); return; }
+    popup.opener = null;
+    popup.document.title = "正在打开手动工作台";
+    popup.document.body.textContent = "正在准备手动工作台…";
+    try {
+      const result = await api("/api/manual/open", { method: "POST", body: JSON.stringify({ instanceId: id }) });
+      const url = new URL(result.url);
+      if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || url.username || url.password) throw new Error("工作台地址无效");
+      popup.location.replace(url.href);
+    } catch (error) { popup.close(); showToast(error.message); }
     return;
   }
   if (action === "delete" && !window.confirm(`删除实例 ${instance.name}？`)) {
