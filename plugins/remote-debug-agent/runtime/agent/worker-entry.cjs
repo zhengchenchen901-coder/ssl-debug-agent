@@ -55947,6 +55947,9 @@ var ManualOwnerVerification = class {
     this.platform = options.platform || process.platform;
     this.execute = options.execute || execute;
     this.nativeDirectory = options.nativeDirectory || import_node_path5.default.join(moduleDirectory, "native");
+    this.preparing = null;
+    this.architecture = options.architecture || process.arch;
+    this.nativeArchitecture = null;
   }
   status() {
     const supported = ["darwin", "win32"].includes(this.platform);
@@ -55956,20 +55959,51 @@ var ManualOwnerVerification = class {
       message: supported ? "注册时会弹出系统身份验证窗口；电脑密码不会提交到网页。" : "此平台暂未接入本机身份验证，暂不能注册管理员。"
     };
   }
+  async macArchitecture() {
+    if (this.nativeArchitecture) return this.nativeArchitecture;
+    if (this.architecture === "arm64") return this.nativeArchitecture = "arm64";
+    try {
+      const result = await this.execute("/usr/sbin/sysctl", ["-n", "hw.optional.arm64"], { timeout: 5e3, maxBuffer: 4096, signal: this.controller?.signal });
+      this.nativeArchitecture = result.stdout.trim() === "1" ? "arm64" : "x86_64";
+    } catch (error) {
+      if (error.name === "AbortError") throw error;
+      this.nativeArchitecture = "x86_64";
+    }
+    return this.nativeArchitecture;
+  }
+  async executeMac(command, args, options) {
+    if (await this.macArchitecture() === "arm64") {
+      return this.execute("/usr/bin/arch", ["-arm64", command, ...args], options);
+    }
+    return this.execute(command, args, options);
+  }
   async macHelper() {
     const source = import_node_path5.default.join(this.nativeDirectory, "verify-owner.swift");
-    const hash = (0, import_node_crypto9.createHash)("sha256").update(import_node_fs4.default.readFileSync(source)).update(process.arch).digest("hex").slice(0, 24);
+    const hash = (0, import_node_crypto9.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs4.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
     import_node_fs4.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
     import_local_auth3.default.protectOrCheck(this.directory, true, true);
     const helper = import_node_path5.default.join(this.directory, `verify-owner-${hash}`);
     if (!import_node_fs4.default.existsSync(helper)) {
       const temporary = `${helper}-${(0, import_node_crypto9.randomBytes)(8).toString("hex")}`;
+      let stage = "compiler";
       try {
-        await this.execute("/usr/bin/xcrun", ["swiftc", source, "-O", "-o", temporary], { timeout: 6e4, maxBuffer: 64 * 1024, signal: this.controller?.signal });
+        await this.executeMac("/usr/bin/xcrun", ["--find", "swiftc"], { timeout: 1e4, maxBuffer: 4096, signal: this.controller?.signal });
+        stage = "compile";
+        await this.executeMac("/usr/bin/xcrun", ["swiftc", source, "-O", "-o", temporary], { timeout: 6e4, maxBuffer: 64 * 1024, signal: this.controller?.signal });
+        stage = "install";
         import_node_fs4.default.chmodSync(temporary, 448);
         import_node_fs4.default.renameSync(temporary, helper);
-      } catch {
-        throw manualError("OWNER_HELPER_UNAVAILABLE", "无法准备系统认证组件。macOS 首次使用需要已安装 Xcode Command Line Tools。", 503);
+      } catch (error) {
+        if (error.name === "AbortError") throw manualError("OWNER_HELPER_CANCELLED", "系统认证组件准备已取消，请重试。", 503);
+        if (stage === "compiler") {
+          const code = Number.isInteger(error.code) || typeof error.code === "string" && /^[A-Z_]{1,64}$/.test(error.code) ? String(error.code) : "UNKNOWN";
+          throw manualError("OWNER_COMPILER_UNAVAILABLE", `无法启动 Swift 编译器检查（${code}）。请检查 Xcode Command Line Tools、xcode-select 配置和插件进程权限。`, 503);
+        }
+        if (stage === "install") throw manualError("OWNER_HELPER_INSTALL_FAILED", "认证组件已编译，但无法写入缓存。请检查本地认证目录的所有权与权限。", 503);
+        if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") throw manualError("OWNER_HELPER_COMPILE_FAILED", "Swift 编译器返回过多诊断信息，认证组件未生成。", 503);
+        if (error.killed) throw manualError("OWNER_HELPER_COMPILE_TIMEOUT", "Swift 编译认证组件超时，请稍后重试。", 503);
+        const exit = Number.isInteger(error.code) ? `（退出码 ${error.code}）` : "";
+        throw manualError("OWNER_HELPER_COMPILE_FAILED", `Swift 编译认证组件失败${exit}。编译器已找到，请检查系统 SDK 与命令行工具是否匹配。`, 503);
       } finally {
         import_node_fs4.default.rmSync(temporary, { force: true });
       }
@@ -55980,15 +56014,42 @@ var ManualOwnerVerification = class {
     }
     return helper;
   }
+  async prepare() {
+    if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
+    if (this.preparing) return this.preparing;
+    this.preparing = this.prepareOnce().finally(() => {
+      this.preparing = null;
+    });
+    return this.preparing;
+  }
+  async prepareOnce() {
+    if (this.platform !== "darwin") return { ...this.status(), prepared: true };
+    const controller = new AbortController();
+    this.controller = controller;
+    try {
+      const helper = await this.macHelper();
+      let result;
+      try {
+        result = JSON.parse((await this.executeMac(helper, ["--check"], { timeout: 1e4, maxBuffer: 4096, signal: controller.signal })).stdout.trim());
+      } catch {
+        throw manualError("OWNER_HELPER_CHECK_FAILED", "系统认证组件无法启动或系统身份验证暂不可用，请在已登录的本机桌面重试。", 503);
+      }
+      if (result?.available !== true) throw manualError("OWNER_HELPER_CHECK_FAILED", "系统身份验证暂不可用，请在已登录的本机桌面重试。", 503);
+      return { ...this.status(), prepared: true, processArchitecture: this.architecture, nativeArchitecture: await this.macArchitecture() };
+    } finally {
+      if (this.controller === controller) this.controller = null;
+    }
+  }
   async verify() {
     if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
     const nonce = (0, import_node_crypto9.randomBytes)(32).toString("hex");
     const controller = new AbortController();
+    if (this.preparing) await this.preparing;
     this.controller = controller;
     let result;
     try {
       if (this.platform === "darwin") {
-        result = await this.execute(await this.macHelper(), [nonce], { timeout: 12e4, maxBuffer: 4096, signal: controller.signal });
+        result = await this.executeMac(await this.macHelper(), [nonce], { timeout: 12e4, maxBuffer: 4096, signal: controller.signal });
       } else {
         const windowsRoot = process.env.SystemRoot || "C:\\Windows";
         result = await this.execute(
@@ -55998,7 +56059,7 @@ var ManualOwnerVerification = class {
         );
       }
     } catch (error) {
-      if (error.code === "OWNER_HELPER_UNAVAILABLE" || error.code === "OWNER_HELPER_UNSAFE") throw error;
+      if (/^OWNER_(HELPER_|COMPILER_)/.test(error.code || "")) throw error;
       throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过或已取消。", 403);
     } finally {
       if (this.controller === controller) this.controller = null;
@@ -56944,11 +57005,12 @@ var ManualWorkbench = class {
       next();
     });
     app.use(import_express.default.json({ limit: "8kb", strict: true }));
-    app.get("/", (_request, response) => response.sendFile(import_node_path6.default.join(moduleDirectory2, "public", "manual.html")));
+    const publicDirectory = import_node_path6.default.join(moduleDirectory2, "public");
+    app.get("/", (_request, response) => response.sendFile("manual.html", { root: publicDirectory }));
     app.get("/assets/{*asset}", (request, response) => {
       const asset = request.params.asset.join("/");
       if (!ASSETS.has(asset)) return response.sendStatus(404);
-      response.sendFile(import_node_path6.default.join(moduleDirectory2, "public", asset));
+      response.sendFile(asset, { root: publicDirectory });
     });
     app.post("/api/login", route(async (request, response) => response.json(await this.login(request.body))));
     const authorize = (request) => this.getSession(this.bearer(request));
@@ -57125,6 +57187,14 @@ var ManualWorkbench = class {
 };
 function installManualManagerRoutes(app, workbench) {
   app.get("/api/manual/status", route((_request, response) => response.json(workbench.status())));
+  app.post("/api/manual/prepare-owner", route(async (request, response) => {
+    assertFields(request.body, []);
+    if (workbench.closing) throw manualError("MANUAL_STOPPING", "工作台正在关闭。", 503);
+    if (workbench.registering) throw manualError("ADMIN_REGISTRATION_BUSY", "管理员身份验证正在进行中，请稍后重试。", 409);
+    const verification = workbench.ownerVerification;
+    const result = verification.prepare ? await verification.prepare() : verification.status();
+    response.json({ ok: true, ownerVerification: result });
+  }));
   app.post("/api/manual/register", route(async (request, response) => response.status(201).json(await workbench.register(request.body))));
   app.post("/api/manual/reset", route(async (request, response) => response.json(await workbench.resetAdmin(request.body))));
   app.post("/api/manual/open", route(async (request, response) => {

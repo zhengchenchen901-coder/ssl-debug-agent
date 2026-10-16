@@ -1926,7 +1926,7 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-cache-"));
   const projectDir = path.join(tempRoot, "源码 克隆");
   const renamedProjectDir = path.join(tempRoot, "源码 克隆 已移除");
-  const codexHome = path.join(tempRoot, "Codex Home");
+  const codexHome = path.join(tempRoot, ".codex");
   const dataDir = path.join(tempRoot, "用户 数据");
   const cacheDir = path.join(
     codexHome,
@@ -2006,6 +2006,25 @@ test("bundled MCP runs from an isolated cache after the clone directory is renam
     const status = await waitForStatus(port);
     const installedManifest = JSON.parse(await fs.readFile(path.join(cacheDir, "runtime", "agent", "runtime-manifest.json"), "utf8"));
     assert.equal(status.agent.runtimeId, installedManifest.runtimeId);
+    const managerOrigin = `http://127.0.0.1:${port}`;
+    const managerToken = localAuth.readAuthToken(localAuth.resolveAuthFile(dataDir));
+    const workspaceResponse = await fetch(managerOrigin + "/api/manual/open", {
+      method: "POST", headers: { Authorization: `Bearer ${managerToken}`, Origin: managerOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({ instanceId: "legacy-instance" }),
+    });
+    assert.equal(workspaceResponse.status, 200);
+    const workspace = await workspaceResponse.json();
+    const workspaceOrigin = new URL(workspace.url).origin;
+    const loginPage = await fetch(workspace.url);
+    assert.equal(loginPage.status, 200);
+    assert.match(await loginPage.text(), /登录服务器工作台/);
+    for (const asset of ["manual.js", "manual.css", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]) {
+      const assetResponse = await fetch(`${workspaceOrigin}/assets/${asset}`);
+      assert.equal(assetResponse.status, 200, `hidden cache asset: ${asset}`);
+      await assetResponse.arrayBuffer();
+    }
+    const denied = await fetch(workspaceOrigin + "/api/session", { headers: { Authorization: `Bearer ${managerToken}` } });
+    assert.equal(denied.status, 401);
     killPid(status.agent.pid);
     await waitForPortRelease(port);
     child.kill();

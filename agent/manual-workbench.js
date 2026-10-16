@@ -218,11 +218,12 @@ export class ManualWorkbench {
       next();
     });
     app.use(express.json({ limit: "8kb", strict: true }));
-    app.get("/", (_request, response) => response.sendFile(path.join(moduleDirectory, "public", "manual.html")));
+    const publicDirectory = path.join(moduleDirectory, "public");
+    app.get("/", (_request, response) => response.sendFile("manual.html", { root: publicDirectory }));
     app.get("/assets/{*asset}", (request, response) => {
       const asset = request.params.asset.join("/");
       if (!ASSETS.has(asset)) return response.sendStatus(404);
-      response.sendFile(path.join(moduleDirectory, "public", asset));
+      response.sendFile(asset, { root: publicDirectory });
     });
     app.post("/api/login", route(async (request, response) => response.json(await this.login(request.body))));
     const authorize = (request) => this.getSession(this.bearer(request));
@@ -366,6 +367,14 @@ export class ManualWorkbench {
 
 export function installManualManagerRoutes(app, workbench) {
   app.get("/api/manual/status", route((_request, response) => response.json(workbench.status())));
+  app.post("/api/manual/prepare-owner", route(async (request, response) => {
+    assertFields(request.body, []);
+    if (workbench.closing) throw manualError("MANUAL_STOPPING", "工作台正在关闭。", 503);
+    if (workbench.registering) throw manualError("ADMIN_REGISTRATION_BUSY", "管理员身份验证正在进行中，请稍后重试。", 409);
+    const verification = workbench.ownerVerification;
+    const result = verification.prepare ? await verification.prepare() : verification.status();
+    response.json({ ok: true, ownerVerification: result });
+  }));
   app.post("/api/manual/register", route(async (request, response) => response.status(201).json(await workbench.register(request.body))));
   app.post("/api/manual/reset", route(async (request, response) => response.json(await workbench.resetAdmin(request.body))));
   app.post("/api/manual/open", route(async (request, response) => {

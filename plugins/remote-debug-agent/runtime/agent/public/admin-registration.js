@@ -38,8 +38,12 @@ document.getElementById("registerAdminButton").addEventListener("click", async (
     adminCount = status.adminCount;
     updateMode();
     document.getElementById("adminOwnerHint").textContent = status.ownerVerification.message;
-    saveAdminButton.disabled = !status.ownerVerification.supported;
-    adminMessage.textContent = "";
+    if (status.ownerVerification.supported) {
+      adminMessage.textContent = "正在准备并检查系统认证组件，首次使用可能需要约一分钟…";
+      await adminApi("/api/manual/prepare-owner", {});
+      saveAdminButton.disabled = false;
+    }
+    adminMessage.textContent = status.ownerVerification.supported ? "系统认证组件已就绪。" : "";
     adminForm.elements.username.focus();
   } catch (error) { adminMessage.textContent = error.message; }
 });
@@ -53,7 +57,7 @@ adminForm.addEventListener("submit", async (event) => {
   fields.password.value = ""; fields.confirmPassword.value = ""; fields.existingPassword.value = "";
   busy = true;
   saveAdminButton.disabled = true;
-  adminMessage.textContent = "请在系统窗口中完成身份验证。首次使用 macOS 时，准备认证组件可能需要约一分钟。";
+  adminMessage.textContent = "请在系统窗口中完成身份验证。";
   try {
     await adminApi(resetting ? "/api/manual/reset" : "/api/manual/register", body);
     adminForm.reset();
