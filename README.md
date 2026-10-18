@@ -202,6 +202,53 @@ needs Node 12.12+ in its SSH command PATH; the helper is separately transpiled
 for older deployed Node versions. CPU/read I/O costs still exist despite zero
 temporary disk writes.
 
+For a full day, many files, or a large archive, use the background search tools:
+
+1. `remote_debug_start_log_query` accepts the same project/path, date, record
+   and member filters as a synchronous search. It returns a `jobId` immediately.
+   It selects all matching files within the bounded directory manifest, rather
+   than stopping at a file page. Do not pass synchronous `maxFiles`,
+   `maxScanBytes` or `maxExpandedBytes`; `batchScanBytes` (default 256 MiB) is a
+   progress boundary and never restarts or truncates the stream.
+2. `remote_debug_get_log_query` returns cumulative progress, resource metrics,
+   exact match counts, up to 100 error groups and bounded evidence. Poll about
+   every 5 seconds initially, backing off for longer tasks. Use `offset` and
+   `nextOffset` to page retained evidence. Only `status: "completed"` and
+   `countsAreComplete: true` certify full coverage. `partial` records skipped
+   lines, changed/unreadable files or incomplete discovery. Evidence and group
+   truncation are reported separately from scan coverage.
+3. `remote_debug_control_log_query` accepts `action: "pause"`, `"resume"` or
+   `"cancel"`. A pause retains the decompressor with bounded backpressure; it
+   expires after 5 minutes. Cancelling closes the remote process/channel.
+
+Each instance runs at most one background log task, with three queued tasks.
+Each archive is opened and streamed once for all selected members; there is no
+temporary extraction or remote result file. Background searches are not stopped
+at 2 GiB of expanded data. Resource control instead defaults to an average CPU
+target of 20% of one core, 2 MiB/s source reads, 4 MiB/s expanded processing, a
+64 MiB V8 heap and a monitored 192 MiB RSS termination threshold. CPU/throughput
+limits use cooperative pacing and bounded buffers, not OS-enforced quotas.
+Task deadlines default to 30 minutes (`jobTimeoutMs`, maximum 120 minutes),
+independent of individual tool request timeouts. Increase runtime for larger
+ranges before raising `cpuPercent`, `readBytesPerSecond` or
+`processBytesPerSecond`. `REMOTE_DEBUG_LOG_JOB_LIMITS` can lower administrative
+ceilings using a JSON object with `maxJobTimeoutMs`, `cpuPercent`,
+`readBytesPerSecond`, `processBytesPerSecond` and/or `rssLimitBytes`.
+
+Default retained evidence is the first 50 matches, with a 256 KiB serialized
+record budget. Samples are streamed once as they are found and can be paged
+while a task is running; statistics continue after samples fill. Interrupted
+tasks retain those samples with incomplete counts. Progress frames are coalesced to once
+per 5 seconds except control acknowledgements. No unmatched log text crosses
+SSH. Results are kept only in local worker memory, at most 16 jobs, expiring
+30 minutes after termination or earlier under retention pressure. A tool/MCP
+client disconnect does not cancel an accepted job. Loss of the local worker or
+SSH process cannot restore an in-memory gzip state; such queries must be
+restarted without adding old partial counts. Remote control loss has a
+60-second watchdog. Source metadata is checked before and after reads; changes
+invalidate complete coverage. This detects common changes, not a filesystem
+snapshot. Background tools need both the updated Agent and reloaded MCP tools.
+
 The existing `remote_debug_read_log` tool now uses the same remote helper and
 keeps its chronological output format. Its runtime improvement works in
 existing sessions; the new tools require an MCP/session reload to become

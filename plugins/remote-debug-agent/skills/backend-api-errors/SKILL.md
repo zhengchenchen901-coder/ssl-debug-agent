@@ -38,6 +38,31 @@ Prefer the structured project query tools when exposed:
 1. Call `remote_debug_list_log_projects` once to choose the exact instance and
    backend project. Reuse this mapping during the query; do not discover the
    whole filesystem before reading each log.
+   For a full day, many rotations, a large archive, or a previously truncated
+   search, prefer `remote_debug_start_log_query` when available. Supply the
+   project/date and exact route; use `memberContains` for archive members and
+   `fileContains` for container filenames. Archives named `*-logs.tar.gz` do
+   not match `fileContains: "-error.log"`; select the archive path or its date
+   and use `memberContains: "-error.log"` instead.
+   Background search automatically covers selected files and matching members
+   in one decompression pass per archive. Do not list all archive members and
+   launch a separate task per member. Defaults target 20% of one CPU core,
+   2 MiB/s source reads and 4 MiB/s expanded processing. Runtime defaults to
+   30 minutes; set `jobTimeoutMs` up to 120 minutes for larger ranges rather
+   than increasing resource rates without a reason.
+   Poll `remote_debug_get_log_query` with the same instance/job id, initially
+   about every 5 seconds and then less often for long tasks. Continue until
+   completed/partial/failed/cancelled/interrupted/expired. Report meaningful
+   progress without claiming complete counts before completion. Use returned
+   groups and bounded evidence pages (`nextOffset`); `outputTruncated` can be
+   true even with complete counts. `groupsTruncated` means group totals do not
+   account for every match. Do not sum cumulative progress snapshots.
+   `remote_debug_control_log_query` supports pause/resume/cancel. Pauses keep
+   the original decompressor alive and expire after 5 minutes. Worker/SSH
+   loss cannot restore gzip state; report interruption rather than silently
+   restarting and adding partial counts again. Tasks outlive individual tool
+   requests; cancel the task when abandoning it. These tools require both
+   updated MCP definitions and an updated Agent runtime.
 2. For latest records, use `remote_debug_query_logs` with `mode: "latest"`,
    `projectId`, a small `limit`, and a filename fragment such as `-error.log`.
 3. For an endpoint/date search, use `mode: "search"`, `date`, `fileContains`,

@@ -180,6 +180,9 @@ const toolOperationPolicies = {
   },
   remote_debug_read_log: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
   remote_debug_query_logs: { defaultMs: DEFAULT_FILE_TIMEOUT_MS, maxMs: MAX_FILE_TIMEOUT_MS },
+  remote_debug_start_log_query: { defaultMs: 30_000, maxMs: 60_000 },
+  remote_debug_get_log_query: { defaultMs: 30_000, maxMs: 60_000 },
+  remote_debug_control_log_query: { defaultMs: 30_000, maxMs: 60_000 },
   remote_debug_mongodb_query: {
     defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
     maxMs: MAX_MONGODB_TIMEOUT_MS,
@@ -1178,6 +1181,37 @@ const tools = [
   },
 ];
 
+const synchronousLogSchema = tools.find((tool) => tool.name === "remote_debug_query_logs").inputSchema;
+tools.push({
+  name: "remote_debug_start_log_query",
+  description: "Start a resource-throttled background log search. Automatically scans all selected files and matching archive members in one pass per archive, across scan batches and beyond 2 GiB expanded content. Returns jobId promptly; poll get_log_query until terminal. Runs independently of the tool request; cancel explicitly. No extraction files. Query runtime and resource limits are separate from timeoutMs.",
+  inputSchema: { type: "object", additionalProperties: false, oneOf: synchronousLogSchema.oneOf,
+    properties: {
+      ...Object.fromEntries(Object.entries(synchronousLogSchema.properties).filter(([key]) => !["mode", "maxFiles", "fileOffset", "memberOffset", "memberPrefix", "maxScanBytes", "maxExpandedBytes", "timeoutMs"].includes(key))),
+      jobTimeoutMs: { type: "integer", minimum: 1000, maximum: 7200000, description: "Task deadline, default 30 minutes, maximum 120 minutes." },
+      cpuPercent: { type: "integer", minimum: 1, maximum: 50, description: "Cooperative average CPU target as a percentage of one core; default 20." },
+      readBytesPerSecond: { type: "integer", minimum: 65536, maximum: 16777216, description: "Remote source read rate; default 2 MiB/s." },
+      processBytesPerSecond: { type: "integer", minimum: 65536, maximum: 33554432, description: "Expanded stream processing rate; default 4 MiB/s." },
+      batchScanBytes: { type: "integer", minimum: 65536, maximum: 268435456, description: "Progress batch size, default 256 MiB. Does not stop or restart the stream." },
+      timeoutMs: timeoutProperty(30000, 60000),
+    } },
+}, {
+  name: "remote_debug_get_log_query",
+  description: "Read a background log query's progress, resource use, completeness, grouped counts and bounded evidence pages. Continue polling while queued/running/paused; only completed has complete counts. Results expire after 30 minutes or earlier under retention capacity. A lost worker/process cannot restore an in-memory gzip stream.",
+  inputSchema: { type: "object", additionalProperties: false, required: ["jobId"], properties: {
+    instanceId: instanceIdProperty, jobId: { type: "string", maxLength: 64 },
+    offset: { type: "integer", minimum: 0, maximum: 2000 }, limit: { type: "integer", minimum: 1, maximum: 2000 },
+    timeoutMs: timeoutProperty(30000, 60000),
+  } },
+}, {
+  name: "remote_debug_control_log_query",
+  description: "Pause, resume or cancel one background log query. Pause keeps the decompressor in memory with bounded backpressure; it expires after 5 minutes. Resume is supported only while the original process/channel remains alive. Cancel releases the remote process and channel.",
+  inputSchema: { type: "object", additionalProperties: false, required: ["jobId", "action"], properties: {
+    instanceId: instanceIdProperty, jobId: { type: "string", maxLength: 64 },
+    action: { type: "string", enum: ["pause", "resume", "cancel"] }, timeoutMs: timeoutProperty(30000, 60000),
+  } },
+});
+
 function parseEnvFile(contents) {
   const parsed = {};
 
@@ -1735,10 +1769,14 @@ function toolArgumentSummary(name, args = {}) {
     };
   }
 
-  if (name === "remote_debug_query_logs" || name === "remote_debug_set_log_project") {
+  if (name === "remote_debug_query_logs" || name === "remote_debug_start_log_query" || name === "remote_debug_set_log_project") {
     return { instanceId: args.instanceId, projectId: args.projectId, mode: args.mode,
       path: args.path, date: args.date, dateFrom: args.dateFrom, dateTo: args.dateTo,
       hasContains: Boolean(args.contains), route: args.route, limit: args.limit, maxFiles: args.maxFiles };
+  }
+
+  if (name === "remote_debug_get_log_query" || name === "remote_debug_control_log_query") {
+    return { instanceId: args.instanceId, jobId: args.jobId, action: args.action, offset: args.offset, limit: args.limit };
   }
 
   if (name === "remote_debug_prepare_command_draft") {
@@ -3224,6 +3262,9 @@ async function callTool(name, args, operation) {
   }
 
   if (name === "remote_debug_query_logs") return callAgent("/logs/query", args, operation);
+  if (name === "remote_debug_start_log_query") return callAgent("/logs/jobs/start", args, operation);
+  if (name === "remote_debug_get_log_query") return callAgent("/logs/jobs/get", args, operation);
+  if (name === "remote_debug_control_log_query") return callAgent("/logs/jobs/control", args, operation);
   if (name === "remote_debug_list_log_projects") return getAgent("/api/log-projects", operation);
   if (name === "remote_debug_set_log_project") return callAgent("/api/log-projects", args, operation);
 

@@ -263,7 +263,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
           truncated: false, scannedTruncated: false, scannedBytes: 6, totalLines: 1, matchedLines: 1 }));
         return;
       }
-      if (request.url === "/logs/query" || request.url === "/api/log-projects") {
+      if (request.url === "/logs/query" || request.url.startsWith("/logs/jobs/") || request.url === "/api/log-projects") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(JSON.stringify({ ok: true, projectId: parsed.projectId, route: parsed.route,
           mode: parsed.mode, records: [], complete: true, instances: [] }));
@@ -1024,6 +1024,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "memberContains", "route", "method", "level", "fromTime", "toTime",
       "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
       "memberPrefix", "memberOffset", "area", "jobId",
+      "jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "batchScanBytes",
     ].includes(propertyName)) {
       continue;
     }
@@ -1085,6 +1086,9 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_get_command_draft",
         "remote_debug_review_command_draft",
         "remote_debug_execute_command_draft",
+        "remote_debug_start_log_query",
+        "remote_debug_get_log_query",
+        "remote_debug_control_log_query",
       ],
     );
     for (const tool of list.result.tools) {
@@ -1162,12 +1166,20 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       [403, "remote_debug_query_logs", { instanceId: "default", projectId: "be", mode: "search", route: "/v3/order" }],
       [404, "remote_debug_list_log_projects", {}],
       [405, "remote_debug_set_log_project", { instanceId: "default", projectId: "be", directories: ["/home/github/app/logs"] }],
+      [406, "remote_debug_start_log_query", { instanceId: "default", projectId: "be", route: "/v3/order", jobTimeoutMs: 3600000 }],
+      [407, "remote_debug_get_log_query", { instanceId: "default", jobId: "job-1", offset: 1 }],
+      [408, "remote_debug_control_log_query", { instanceId: "default", jobId: "job-1", action: "pause" }],
     ]) {
       child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: arguments_ } }));
       const result = JSON.parse((await readMessage()).result.content[0].text);
       assert.equal(result.ok, true, JSON.stringify(result));
-      if (name !== "remote_debug_list_log_projects") assert.equal(agentStub.forwardedRequests.at(-1).body.projectId, "be");
+      if (!["remote_debug_list_log_projects", "remote_debug_get_log_query", "remote_debug_control_log_query"].includes(name)) assert.equal(agentStub.forwardedRequests.at(-1).body.projectId, "be");
       if (name === "remote_debug_query_logs") assert.equal(agentStub.forwardedRequests.at(-1).body.route, "/v3/order");
+      if (name === "remote_debug_start_log_query") {
+        assert.equal(agentStub.forwardedRequests.at(-1).route, "/logs/jobs/start");
+        assert.equal(agentStub.forwardedRequests.at(-1).body.jobTimeoutMs, 3600000);
+      }
+      if (name === "remote_debug_control_log_query") assert.equal(agentStub.forwardedRequests.at(-1).body.action, "pause");
     }
 
     child.stdin.write(

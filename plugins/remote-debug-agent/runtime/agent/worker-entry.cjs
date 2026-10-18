@@ -1627,9 +1627,9 @@ var require_internal = __commonJS({
     }
     InternalCodec.prototype.encoder = InternalEncoder;
     InternalCodec.prototype.decoder = InternalDecoder;
-    var StringDecoder2 = require("string_decoder").StringDecoder;
+    var StringDecoder3 = require("string_decoder").StringDecoder;
     function InternalDecoder(options, codec) {
-      this.decoder = new StringDecoder2(codec.enc);
+      this.decoder = new StringDecoder3(codec.enc);
     }
     InternalDecoder.prototype.write = function(buf) {
       if (!Buffer2.isBuffer(buf)) {
@@ -48392,6 +48392,247 @@ function invalid(message) {
   return error;
 }
 
+// log-policy.js
+var import_posix2 = __toESM(require("node:path/posix"), 1);
+var LOG_CATEGORIES = Object.freeze([
+  "system",
+  "nginx",
+  "application",
+  "pm2"
+]);
+var LOG_DEFAULT_LIMIT = 200;
+var LOG_MAX_LIMIT = 500;
+var LOG_DEFAULT_TAIL_LINES = 200;
+var LOG_MAX_TAIL_LINES = 2e3;
+var LOG_DEFAULT_MAX_BYTES = 256 * 1024;
+var LOG_MAX_BYTES = 256 * 1024;
+var LOG_MAX_CONTAINS_LENGTH = 256;
+var LOG_DEFAULT_SCAN_BYTES = 8 * 1024 * 1024;
+var LOG_MAX_SCAN_BYTES = 256 * 1024 * 1024;
+var LOG_MAX_ARCHIVE_SCAN_BYTES = 1 * 1024 * 1024 * 1024;
+var LOG_MAX_COMPRESSED_SOURCE_BYTES = 256 * 1024 * 1024;
+var LOG_MAX_SCAN_ENTRIES = 5e3;
+var LOG_MAX_ARCHIVE_MEMBERS = 5e3;
+var LOG_MAX_PAX_BYTES = 1 * 1024 * 1024;
+var LOG_MAX_MEMBER_BYTES = 256 * 1024 * 1024;
+var LOG_QUERY_CAPABILITIES = Object.freeze({
+  modes: ["latest", "search", "files", "members"],
+  remoteFiltering: true,
+  temporaryExtraction: false,
+  supportedCompression: ["none", "gzip", "tar-gzip"],
+  maxFiles: 50,
+  maxScanBytes: 256 * 1024 * 1024,
+  maxExpandedBytes: 2 * 1024 * 1024 * 1024,
+  maxDirectoryEntries: 5e3,
+  maxReturnedLines: 2e3,
+  maxReturnedBytes: 256 * 1024,
+  backgroundJobs: {
+    start: "/logs/jobs/start",
+    get: "/logs/jobs/get",
+    control: "/logs/jobs/control",
+    maxConcurrentPerInstance: 1,
+    maxQueuedPerInstance: 3,
+    singlePassArchives: true,
+    defaultJobTimeoutMs: 18e5,
+    maxJobTimeoutMs: 72e5,
+    defaultCpuPercent: 20,
+    defaultReadBytesPerSecond: 2097152,
+    defaultProcessBytesPerSecond: 4194304,
+    rssLimitBytes: 201326592,
+    defaultBatchScanBytes: 268435456,
+    cumulativeExpandedByteLimit: null,
+    pauseTtlMs: 3e5,
+    retentionMs: 18e5,
+    maxRetainedJobs: 16,
+    survivesWorkerRestart: false
+  }
+});
+var LOG_SUPPORTED_COMPRESSION = Object.freeze([
+  "none",
+  "gzip",
+  "tar-gzip"
+]);
+var LOG_UNSUPPORTED_COMPRESSION = Object.freeze([
+  "bzip2",
+  "xz",
+  "zip"
+]);
+var LOG_CAPABILITIES = Object.freeze({
+  query: LOG_QUERY_CAPABILITIES,
+  categories: [...LOG_CATEGORIES],
+  supportedCompression: [...LOG_SUPPORTED_COMPRESSION],
+  unsupportedCompression: [...LOG_UNSUPPORTED_COMPRESSION],
+  archiveMemberListing: true,
+  defaultLimit: LOG_DEFAULT_LIMIT,
+  maxLimit: LOG_MAX_LIMIT,
+  defaultTailLines: LOG_DEFAULT_TAIL_LINES,
+  maxTailLines: LOG_MAX_TAIL_LINES,
+  defaultMaxBytes: LOG_DEFAULT_MAX_BYTES,
+  maxBytes: LOG_MAX_BYTES,
+  maxContainsLength: LOG_MAX_CONTAINS_LENGTH,
+  maxScanBytes: LOG_MAX_SCAN_BYTES,
+  maxArchiveScanBytes: LOG_MAX_ARCHIVE_SCAN_BYTES,
+  maxCompressedSourceBytes: LOG_MAX_COMPRESSED_SOURCE_BYTES,
+  maxMemberBytes: LOG_MAX_MEMBER_BYTES,
+  maxScanEntries: LOG_MAX_SCAN_ENTRIES,
+  maxArchiveMembers: LOG_MAX_ARCHIVE_MEMBERS,
+  pagination: "cursor"
+});
+function logInputError(message, code = "INVALID_LOG_REQUEST") {
+  const error = new Error(message);
+  error.code = code;
+  error.statusCode = 400;
+  error.layer = "worker";
+  error.phase = "validation";
+  error.retriable = false;
+  return error;
+}
+function normalizeLogJobLimits(value) {
+  if (value === void 0 || value === "") return {};
+  let parsed = value;
+  try {
+    if (typeof value === "string") parsed = JSON.parse(value);
+  } catch {
+    throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
+  }
+  const ranges = {
+    maxJobTimeoutMs: [1e3, 72e5],
+    cpuPercent: [1, 50],
+    readBytesPerSecond: [65536, 16777216],
+    processBytesPerSecond: [65536, 33554432],
+    rssLimitBytes: [64 * 1024 * 1024, 192 * 1024 * 1024]
+  };
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
+  for (const [key, number] of Object.entries(parsed)) {
+    const range = ranges[key];
+    if (!range || !Number.isInteger(number) || number < range[0] || number > range[1]) throw logInputError(`invalid log job limit: ${key}`);
+  }
+  return { ...parsed };
+}
+function positiveInteger(value, fallback, maximum, field) {
+  if (value === void 0 || value === null || value === "") {
+    return fallback;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw logInputError(`${field} must be a positive integer`, `INVALID_${field.toUpperCase()}`);
+  }
+  return Math.min(value, maximum);
+}
+function normalizeLogCategory(value) {
+  if (value === void 0 || value === null || value === "") {
+    return "all";
+  }
+  if (typeof value !== "string" || !["all", ...LOG_CATEGORIES].includes(value)) {
+    throw logInputError(
+      `category must be one of all, ${LOG_CATEGORIES.join(", ")}`,
+      "INVALID_LOG_CATEGORY"
+    );
+  }
+  return value;
+}
+function normalizeLogListOptions(input = {}) {
+  const category = normalizeLogCategory(input.category);
+  const limit = positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, "limit");
+  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
+  if (typeof cursor !== "string" || cursor.length > 4096) {
+    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
+  }
+  return { category, limit, cursor };
+}
+function normalizeArchiveMemberListOptions(input = {}) {
+  const path15 = input.path;
+  if (typeof path15 !== "string" || path15.trim() === "") {
+    throw logInputError("path must be a non-empty string", "INVALID_PATH");
+  }
+  const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
+  if (typeof prefix !== "string" || prefix.length > 512) {
+    throw logInputError("prefix must be a string no longer than 512 characters", "INVALID_MEMBER_PREFIX");
+  }
+  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
+  if (typeof cursor !== "string" || cursor.length > 4096) {
+    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
+  }
+  return {
+    path: path15,
+    prefix: normalizeArchiveMemberPrefix(prefix),
+    limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
+    cursor
+  };
+}
+function normalizeLogReadOptions(input = {}) {
+  const path15 = input.path;
+  if (typeof path15 !== "string" || path15.trim() === "") {
+    throw logInputError("path must be a non-empty string", "INVALID_PATH");
+  }
+  const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
+  if (typeof memberPath !== "string" || memberPath.length > 4096) {
+    throw logInputError("memberPath must be a string no longer than 4096 characters", "INVALID_MEMBER_PATH");
+  }
+  const contains = input.contains === void 0 || input.contains === null ? "" : input.contains;
+  if (typeof contains !== "string" || contains.length > LOG_MAX_CONTAINS_LENGTH) {
+    throw logInputError(
+      `contains must be a string no longer than ${LOG_MAX_CONTAINS_LENGTH} characters`,
+      "INVALID_LOG_CONTAINS"
+    );
+  }
+  return {
+    path: path15,
+    memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
+    tailLines: positiveInteger(
+      input.tailLines,
+      LOG_DEFAULT_TAIL_LINES,
+      LOG_MAX_TAIL_LINES,
+      "tailLines"
+    ),
+    maxBytes: positiveInteger(input.maxBytes, LOG_DEFAULT_MAX_BYTES, LOG_MAX_BYTES, "maxBytes"),
+    contains,
+    caseSensitive: input.caseSensitive === true
+  };
+}
+function normalizeArchiveMemberPrefix(value) {
+  if (!value) {
+    return "";
+  }
+  const normalized = normalizeArchiveMemberPath(value);
+  return value.endsWith("/") ? `${normalized}/` : normalized;
+}
+function normalizeArchiveMemberPath(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw logInputError("archive member path must be a non-empty string", "INVALID_MEMBER_PATH");
+  }
+  if (value.includes("\0") || value.includes("\\")) {
+    throw logInputError("archive member path contains an unsafe character", "INVALID_MEMBER_PATH");
+  }
+  if (value.startsWith("/")) {
+    throw logInputError("archive member path must be relative", "INVALID_MEMBER_PATH");
+  }
+  const normalized = import_posix2.default.normalize(value);
+  if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
+    throw logInputError("archive member path escapes the archive", "ARCHIVE_MEMBER_PATH_NOT_ALLOWED");
+  }
+  return normalized;
+}
+function encodeLogCursor(value) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+function decodeLogCursor(value, expectedKind) {
+  if (!value) {
+    return { kind: expectedKind, sourceIndex: 0, offset: 0 };
+  }
+  if (typeof value !== "string" || value.length > 4096) {
+    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
+  }
+  try {
+    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    if (decoded?.kind !== expectedKind || !Number.isInteger(decoded.sourceIndex) || decoded.sourceIndex < 0 || !Number.isInteger(decoded.offset) || decoded.offset < 0) {
+      throw new Error("invalid cursor fields");
+    }
+    return decoded;
+  } catch {
+    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
+  }
+}
+
 // approved-commands.js
 var import_node_crypto = require("node:crypto");
 var APPROVED_COMMAND_CONFIRMATION = "使用命令";
@@ -48813,7 +49054,7 @@ function __encode(value) {
 `;
 
 // mongodb.js
-var import_posix2 = __toESM(require("node:path/posix"), 1);
+var import_posix3 = __toESM(require("node:path/posix"), 1);
 
 // operation.js
 var import_node_crypto2 = require("node:crypto");
@@ -49079,7 +49320,7 @@ function normalizeString(value, fieldName, options = {}) {
   return normalized;
 }
 function normalizeRemoteConfigPath(value, fieldName) {
-  const normalized = import_posix2.default.normalize(normalizeString(value, fieldName));
+  const normalized = import_posix3.default.normalize(normalizeString(value, fieldName));
   if (!normalized.startsWith("/")) {
     throw mongoError(`${fieldName} must be an absolute path`, "INVALID_MONGODB_CONFIG");
   }
@@ -49606,7 +49847,7 @@ async function __ttlInitializeReceiptCollection(client, database, name) {
 
 // mongodb-bulk.js
 var import_node_crypto3 = require("node:crypto");
-var import_posix3 = __toESM(require("node:path/posix"), 1);
+var import_posix4 = __toESM(require("node:path/posix"), 1);
 
 // mongodb-bulk-runtime.js
 var MONGODB_BULK_RUNTIME = String.raw`
@@ -51301,7 +51542,7 @@ function normalizeMongoBulkConfig(config = {}, options = {}) {
     throw bulkError("TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection", "MONGODB_BULK_RECEIPTS_RESERVED", 403);
   }
   const rawRoot = String(config.bulkRoot || DEFAULT_MONGODB_BULK_ROOT).trim();
-  const root = import_posix3.default.normalize(rawRoot);
+  const root = import_posix4.default.normalize(rawRoot);
   if (!root.startsWith("/") || root === "/" || root.includes("\0") || root.split("/").includes("..")) {
     throw bulkError("mongodb.bulkRoot must be a dedicated absolute directory", "MONGODB_BULK_ROOT_INVALID");
   }
@@ -51804,7 +52045,7 @@ var MongoBulkJobRunner = class {
 
 // mongodb-mutations.js
 var import_node_crypto4 = require("node:crypto");
-var import_posix4 = __toESM(require("node:path/posix"), 1);
+var import_posix5 = __toESM(require("node:path/posix"), 1);
 var MONGODB_MUTATION_SCHEMA_VERSION = 1;
 var MONGODB_MUTATION_OPERATIONS = Object.freeze([
   "insertOne",
@@ -51958,7 +52199,7 @@ function normalizeAllowedNames(value, fieldName, pattern, fallback = []) {
 }
 function normalizeJournalRoot(value) {
   const raw = typeof value === "string" && value.trim() ? value.trim() : DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT;
-  const normalized = import_posix4.default.normalize(raw);
+  const normalized = import_posix5.default.normalize(raw);
   if (!normalized.startsWith("/tmp/remote-debug-agent/") || normalized === "/tmp" || normalized === "/tmp/" || normalized.includes("\0")) {
     throw mutationError(
       "mongodb mutation journal root must be a dedicated directory under /tmp",
@@ -53572,205 +53813,6 @@ async function runMongoMutation(input = {}, options = {}) {
     ...payload.data || {},
     timing: remoteResult.timing
   };
-}
-
-// log-policy.js
-var import_posix5 = __toESM(require("node:path/posix"), 1);
-var LOG_CATEGORIES = Object.freeze([
-  "system",
-  "nginx",
-  "application",
-  "pm2"
-]);
-var LOG_DEFAULT_LIMIT = 200;
-var LOG_MAX_LIMIT = 500;
-var LOG_DEFAULT_TAIL_LINES = 200;
-var LOG_MAX_TAIL_LINES = 2e3;
-var LOG_DEFAULT_MAX_BYTES = 256 * 1024;
-var LOG_MAX_BYTES = 256 * 1024;
-var LOG_MAX_CONTAINS_LENGTH = 256;
-var LOG_DEFAULT_SCAN_BYTES = 8 * 1024 * 1024;
-var LOG_MAX_SCAN_BYTES = 256 * 1024 * 1024;
-var LOG_MAX_ARCHIVE_SCAN_BYTES = 1 * 1024 * 1024 * 1024;
-var LOG_MAX_COMPRESSED_SOURCE_BYTES = 256 * 1024 * 1024;
-var LOG_MAX_SCAN_ENTRIES = 5e3;
-var LOG_MAX_ARCHIVE_MEMBERS = 5e3;
-var LOG_MAX_PAX_BYTES = 1 * 1024 * 1024;
-var LOG_MAX_MEMBER_BYTES = 256 * 1024 * 1024;
-var LOG_QUERY_CAPABILITIES = Object.freeze({
-  modes: ["latest", "search", "files", "members"],
-  remoteFiltering: true,
-  temporaryExtraction: false,
-  supportedCompression: ["none", "gzip", "tar-gzip"],
-  maxFiles: 50,
-  maxScanBytes: 256 * 1024 * 1024,
-  maxExpandedBytes: 2 * 1024 * 1024 * 1024,
-  maxDirectoryEntries: 5e3,
-  maxReturnedLines: 2e3,
-  maxReturnedBytes: 256 * 1024
-});
-var LOG_SUPPORTED_COMPRESSION = Object.freeze([
-  "none",
-  "gzip",
-  "tar-gzip"
-]);
-var LOG_UNSUPPORTED_COMPRESSION = Object.freeze([
-  "bzip2",
-  "xz",
-  "zip"
-]);
-var LOG_CAPABILITIES = Object.freeze({
-  query: LOG_QUERY_CAPABILITIES,
-  categories: [...LOG_CATEGORIES],
-  supportedCompression: [...LOG_SUPPORTED_COMPRESSION],
-  unsupportedCompression: [...LOG_UNSUPPORTED_COMPRESSION],
-  archiveMemberListing: true,
-  defaultLimit: LOG_DEFAULT_LIMIT,
-  maxLimit: LOG_MAX_LIMIT,
-  defaultTailLines: LOG_DEFAULT_TAIL_LINES,
-  maxTailLines: LOG_MAX_TAIL_LINES,
-  defaultMaxBytes: LOG_DEFAULT_MAX_BYTES,
-  maxBytes: LOG_MAX_BYTES,
-  maxContainsLength: LOG_MAX_CONTAINS_LENGTH,
-  maxScanBytes: LOG_MAX_SCAN_BYTES,
-  maxArchiveScanBytes: LOG_MAX_ARCHIVE_SCAN_BYTES,
-  maxCompressedSourceBytes: LOG_MAX_COMPRESSED_SOURCE_BYTES,
-  maxMemberBytes: LOG_MAX_MEMBER_BYTES,
-  maxScanEntries: LOG_MAX_SCAN_ENTRIES,
-  maxArchiveMembers: LOG_MAX_ARCHIVE_MEMBERS,
-  pagination: "cursor"
-});
-function logInputError(message, code = "INVALID_LOG_REQUEST") {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = 400;
-  error.layer = "worker";
-  error.phase = "validation";
-  error.retriable = false;
-  return error;
-}
-function positiveInteger(value, fallback, maximum, field) {
-  if (value === void 0 || value === null || value === "") {
-    return fallback;
-  }
-  if (!Number.isInteger(value) || value <= 0) {
-    throw logInputError(`${field} must be a positive integer`, `INVALID_${field.toUpperCase()}`);
-  }
-  return Math.min(value, maximum);
-}
-function normalizeLogCategory(value) {
-  if (value === void 0 || value === null || value === "") {
-    return "all";
-  }
-  if (typeof value !== "string" || !["all", ...LOG_CATEGORIES].includes(value)) {
-    throw logInputError(
-      `category must be one of all, ${LOG_CATEGORIES.join(", ")}`,
-      "INVALID_LOG_CATEGORY"
-    );
-  }
-  return value;
-}
-function normalizeLogListOptions(input = {}) {
-  const category = normalizeLogCategory(input.category);
-  const limit = positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, "limit");
-  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
-  if (typeof cursor !== "string" || cursor.length > 4096) {
-    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
-  }
-  return { category, limit, cursor };
-}
-function normalizeArchiveMemberListOptions(input = {}) {
-  const path15 = input.path;
-  if (typeof path15 !== "string" || path15.trim() === "") {
-    throw logInputError("path must be a non-empty string", "INVALID_PATH");
-  }
-  const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
-  if (typeof prefix !== "string" || prefix.length > 512) {
-    throw logInputError("prefix must be a string no longer than 512 characters", "INVALID_MEMBER_PREFIX");
-  }
-  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
-  if (typeof cursor !== "string" || cursor.length > 4096) {
-    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
-  }
-  return {
-    path: path15,
-    prefix: normalizeArchiveMemberPrefix(prefix),
-    limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
-    cursor
-  };
-}
-function normalizeLogReadOptions(input = {}) {
-  const path15 = input.path;
-  if (typeof path15 !== "string" || path15.trim() === "") {
-    throw logInputError("path must be a non-empty string", "INVALID_PATH");
-  }
-  const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
-  if (typeof memberPath !== "string" || memberPath.length > 4096) {
-    throw logInputError("memberPath must be a string no longer than 4096 characters", "INVALID_MEMBER_PATH");
-  }
-  const contains = input.contains === void 0 || input.contains === null ? "" : input.contains;
-  if (typeof contains !== "string" || contains.length > LOG_MAX_CONTAINS_LENGTH) {
-    throw logInputError(
-      `contains must be a string no longer than ${LOG_MAX_CONTAINS_LENGTH} characters`,
-      "INVALID_LOG_CONTAINS"
-    );
-  }
-  return {
-    path: path15,
-    memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
-    tailLines: positiveInteger(
-      input.tailLines,
-      LOG_DEFAULT_TAIL_LINES,
-      LOG_MAX_TAIL_LINES,
-      "tailLines"
-    ),
-    maxBytes: positiveInteger(input.maxBytes, LOG_DEFAULT_MAX_BYTES, LOG_MAX_BYTES, "maxBytes"),
-    contains,
-    caseSensitive: input.caseSensitive === true
-  };
-}
-function normalizeArchiveMemberPrefix(value) {
-  if (!value) {
-    return "";
-  }
-  const normalized = normalizeArchiveMemberPath(value);
-  return value.endsWith("/") ? `${normalized}/` : normalized;
-}
-function normalizeArchiveMemberPath(value) {
-  if (typeof value !== "string" || value.trim() === "") {
-    throw logInputError("archive member path must be a non-empty string", "INVALID_MEMBER_PATH");
-  }
-  if (value.includes("\0") || value.includes("\\")) {
-    throw logInputError("archive member path contains an unsafe character", "INVALID_MEMBER_PATH");
-  }
-  if (value.startsWith("/")) {
-    throw logInputError("archive member path must be relative", "INVALID_MEMBER_PATH");
-  }
-  const normalized = import_posix5.default.normalize(value);
-  if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
-    throw logInputError("archive member path escapes the archive", "ARCHIVE_MEMBER_PATH_NOT_ALLOWED");
-  }
-  return normalized;
-}
-function encodeLogCursor(value) {
-  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
-}
-function decodeLogCursor(value, expectedKind) {
-  if (!value) {
-    return { kind: expectedKind, sourceIndex: 0, offset: 0 };
-  }
-  if (typeof value !== "string" || value.length > 4096) {
-    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
-  }
-  try {
-    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-    if (decoded?.kind !== expectedKind || !Number.isInteger(decoded.sourceIndex) || decoded.sourceIndex < 0 || !Number.isInteger(decoded.offset) || decoded.offset < 0) {
-      throw new Error("invalid cursor fields");
-    }
-    return decoded;
-  } catch {
-    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
-  }
 }
 
 // security.js
@@ -55599,7 +55641,10 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
       hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS)
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
-    logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots) },
+    logs: {
+      projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots),
+      jobLimits: normalizeLogJobLimits(mergedEnv.REMOTE_DEBUG_LOG_JOB_LIMITS)
+    },
     security: {
       allowedPaths: allowedPathsForSourceRoots(sourceRoots),
       sourceRoots,
@@ -55713,6 +55758,7 @@ function fingerprintConfig(config) {
       hostKeyFingerprints: config.ssh.hostKeyFingerprints || []
     },
     security,
+    logs: config.logs,
     mongodb: config.mongodb ? {
       enabled: Boolean(config.mongodb.enabled),
       configPath: config.mongodb.configPath,
@@ -57050,7 +57096,7 @@ var ManualWorkbench = class {
     return typeof header === "string" && header.startsWith("Bearer ") ? header.slice(7) : "";
   }
   attachTerminal(ws) {
-    let session, token, terminal, ready = false, missedPong = false;
+    let session, token, terminal2, ready = false, missedPong = false;
     let pendingOutputBytes = 0;
     let inputBytes = 0, inputWindow = this.now();
     const send2 = (value) => {
@@ -57066,7 +57112,7 @@ var ManualWorkbench = class {
       if (ws.readyState === import_websocket.default.OPEN) ws.ping();
     }, 15e3);
     const drain = setInterval(() => {
-      if (pendingOutputBytes < 128 * 1024 && ws.bufferedAmount < 256 * 1024) terminal?.resume();
+      if (pendingOutputBytes < 128 * 1024 && ws.bufferedAmount < 256 * 1024) terminal2?.resume();
     }, 50);
     heartbeat.unref();
     drain.unref();
@@ -57079,7 +57125,7 @@ var ManualWorkbench = class {
       clearTimeout(authenticationTimer);
       clearInterval(heartbeat);
       clearInterval(drain);
-      terminal?.close();
+      terminal2?.close();
       if (session && session.socket === ws) {
         session.socket = null;
         session.terminal = null;
@@ -57102,7 +57148,7 @@ var ManualWorkbench = class {
           clearTimeout(authenticationTimer);
           this.audit("terminal-opening", session);
           session.socket = ws;
-          terminal = this.openTerminal(this.instance(session.instanceId), {
+          terminal2 = this.openTerminal(this.instance(session.instanceId), {
             ...size,
             onData: (data) => {
               if (ws.readyState !== import_websocket.default.OPEN) return;
@@ -57111,11 +57157,11 @@ var ManualWorkbench = class {
               pendingOutputBytes += bytes;
               if (pendingOutputBytes > 8 * 1024 * 1024 || ws.bufferedAmount > 8 * 1024 * 1024) {
                 ws.close(4008, "output overflow");
-                terminal?.close();
+                terminal2?.close();
                 return;
               }
               ws.send(data, { binary: true });
-              if (pendingOutputBytes > 512 * 1024 || ws.bufferedAmount > 1024 * 1024) terminal?.pause();
+              if (pendingOutputBytes > 512 * 1024 || ws.bufferedAmount > 1024 * 1024) terminal2?.pause();
             },
             onReady: () => {
               try {
@@ -57133,7 +57179,7 @@ var ManualWorkbench = class {
               if (ws.readyState === import_websocket.default.OPEN) ws.close(1e3, "SSH closed");
             }
           });
-          session.terminal = terminal;
+          session.terminal = terminal2;
           return;
         }
         this.getSession(token);
@@ -57147,16 +57193,16 @@ var ManualWorkbench = class {
           inputBytes += Buffer.byteLength(message.data);
           if (inputBytes > 256 * 1024) throw manualError("MANUAL_INPUT_LIMITED", "终端输入过快，请分批粘贴。");
           session.lastInputAt = this.now();
-          terminal.write(message.data);
+          terminal2.write(message.data);
         } else if (message.type === "output-ack") {
           assertFields(message, ["type", "bytes"]);
           if (!Number.isInteger(message.bytes) || message.bytes <= 0 || message.bytes > pendingOutputBytes) throw manualError("MANUAL_ACK_INVALID", "终端输出确认无效。");
           pendingOutputBytes -= message.bytes;
-          if (pendingOutputBytes < 128 * 1024 && ws.bufferedAmount < 256 * 1024) terminal.resume();
+          if (pendingOutputBytes < 128 * 1024 && ws.bufferedAmount < 256 * 1024) terminal2.resume();
         } else if (message.type === "resize") {
           assertFields(message, ["type", "cols", "rows"]);
           const size = terminalSize(message.cols, message.rows);
-          terminal.resize(size.cols, size.rows);
+          terminal2.resize(size.cols, size.rows);
         } else throw manualError("MANUAL_REQUEST_INVALID", "终端协议无效。");
       } catch (error) {
         send2({ type: "error", code: "MANUAL_TERMINAL_REJECTED", message: error.code?.startsWith("MANUAL_") ? error.message : "终端请求无效。" });
@@ -57415,7 +57461,7 @@ function installOutputPreviewRoutes(app, store, registry) {
 }
 
 // server.js
-var import_node_crypto18 = require("node:crypto");
+var import_node_crypto19 = require("node:crypto");
 var import_promises6 = __toESM(require("node:fs/promises"), 1);
 var import_node_path12 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
@@ -58009,7 +58055,8 @@ var import_node_string_decoder = require("node:string_decoder");
 var import_node_zlib = require("node:zlib");
 
 // log-query-runtime-source.js
-var LOG_QUERY_RUNTIME_SOURCE = 'const runRemoteLogQuery = async function remoteLogQuery(input) {\n  const fs = require("fs");\n  const path = require("path").posix;\n  const zlib = require("zlib");\n  const { StringDecoder } = require("string_decoder");\n  const { Readable } = require("stream");\n  const started = Date.now();\n  const warnings = [];\n  const files = [];\n  let records = [];\n  const retainedRecords = [];\n  let retainedBytes = 0;\n  const members = [];\n  let archiveMembersScanned = 0;\n  let memberListingStopped = false;\n  let memberBytes = 0;\n  let outputBytes = 0;\n  let scannedBytes = 0;\n  let expandedBytes = 0;\n  let matchedLines = 0;\n  let scannedLines = 0;\n  let outputTruncated = false;\n  let scanTruncated = false;\n  let filesTruncated = false;\n  let listingTruncated = false;\n  let directoryEntries = 0;\n  let warningsTruncated = false;\n  function warn(value) {\n    if (warnings.length < 100) warnings.push(value);\n    else warningsTruncated = true;\n  }\n  const inside = (value, root) => value === root || value.startsWith(`${root}/`);\n  const failure = (message, code) => Object.assign(new Error(message), { code });\n  function active() {\n    if (Date.now() >= input.deadlineAt) throw failure("log query deadline exceeded", "OPERATION_DEADLINE_EXCEEDED");\n  }\n  async function canonical(value) {\n    const normalized = path.normalize(value);\n    const roots = input.allowedRoots.filter((root) => inside(normalized, root));\n    if (!roots.length) throw failure("path is outside approved roots", "PATH_NOT_ALLOWED");\n    const resolvedRoots = [];\n    for (const root of roots) resolvedRoots.push(await fs.promises.realpath(root));\n    const resolved = await fs.promises.realpath(normalized);\n    if (!resolvedRoots.some((root) => inside(resolved, root))) throw failure("symlink escapes approved roots", "PATH_NOT_ALLOWED");\n    return resolved;\n  }\n  const dateIn = (name) => {\n    var _a;\n    return (_a = /\\d{4}-\\d{2}-\\d{2}/.exec(name)) == null ? void 0 : _a[0];\n  };\n  function fileMatches(name) {\n    if (input.fileContains && !name.toLowerCase().includes(input.fileContains.toLowerCase())) return false;\n    const date = dateIn(name);\n    if ((input.dateFrom || input.dateTo) && (!date || input.dateFrom && date < input.dateFrom || input.dateTo && date > input.dateTo)) return false;\n    return true;\n  }\n  function logName(name) {\n    return /\\.log(?:\\.\\d+)?(?:\\.gz)?$/i.test(name) || /\\.(?:tar\\.gz|tgz)$/i.test(name) || /^(?:syslog|messages|auth\\.log)(?:\\.\\d+)?(?:\\.gz)?$/i.test(name);\n  }\n  async function addFile(requested, directory) {\n    active();\n    const resolved = await canonical(requested);\n    if (directory && !inside(resolved, directory)) throw failure("log symlink escapes the selected directory", "PATH_NOT_ALLOWED");\n    const stats = await fs.promises.stat(resolved);\n    if (!stats.isFile()) return;\n    if (files.some((file) => file.path === resolved)) return;\n    const compression = /\\.(?:tar\\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\\.gz$/i.test(resolved) ? "gzip" : "none";\n    files.push({ path: resolved, name: path.basename(requested), size: stats.size, modifyTime: stats.mtimeMs, compression });\n  }\n  if (input.path) {\n    if (/\\.(?:bz2|xz|zip|tar)$/i.test(input.path)) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n    if (/\\/(?:btmp|wtmp|lastlog|faillog)(?:\\.\\d+)?(?:\\.gz)?$/.test(input.path)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n    if (fileMatches(path.basename(input.path))) await addFile(input.path);\n  } else {\n    for (const directory of input.directories) {\n      active();\n      try {\n        const resolved = await canonical(directory);\n        const handle = await fs.promises.opendir(resolved);\n        try {\n          for await (const entry of handle) {\n            active();\n            if (++directoryEntries > input.maxDirectoryEntries) {\n              listingTruncated = true;\n              break;\n            }\n            if (!entry.isFile() && !entry.isSymbolicLink() || !logName(entry.name) || !fileMatches(entry.name)) continue;\n            try {\n              await addFile(path.join(directory, entry.name), resolved);\n            } catch (error) {\n              if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n              warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });\n            }\n          }\n        } finally {\n          await handle.close().catch(() => {\n          });\n        }\n      } catch (error) {\n        if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n        warn({ path: directory, code: error.code, message: error.message });\n      }\n    }\n  }\n  files.sort((a, b) => b.modifyTime - a.modifyTime || a.name.localeCompare(b.name));\n  filesTruncated = files.length > input.maxFiles;\n  const selected = files.slice(input.fileOffset, input.fileOffset + input.maxFiles);\n  filesTruncated = input.fileOffset + selected.length < files.length;\n  const inspectedFiles = selected.map((file) => ({ ...file }));\n  if (input.mode === "files") return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    warnings,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    durationMs: Date.now() - started\n  };\n  function recordFields(line) {\n    var _a, _b;\n    let outer, inner;\n    try {\n      outer = JSON.parse(line);\n    } catch {\n    }\n    const message = typeof (outer == null ? void 0 : outer.message) === "string" ? outer.message : "";\n    const bracketTime = (_a = /^\\[([^\\]]+)\\]/.exec(message)) == null ? void 0 : _a[1];\n    const brace = message.indexOf("{");\n    if (brace >= 0) {\n      try {\n        inner = JSON.parse(message.slice(brace));\n      } catch {\n      }\n    }\n    inner || (inner = outer);\n    const timestamp = (inner == null ? void 0 : inner.timestamp) || (outer == null ? void 0 : outer.timestamp) || bracketTime || ((_b = /^\\[?((?:\\d{4}-\\d{2}-\\d{2})T[^\\s\\]]+)/.exec(line)) == null ? void 0 : _b[1]);\n    const scalar = (value, limit) => typeof value === "string" ? value.slice(0, limit) : void 0;\n    return {\n      timestamp: scalar(timestamp, 40),\n      level: scalar((outer == null ? void 0 : outer.level) || (inner == null ? void 0 : inner.level), 32),\n      route: scalar((inner == null ? void 0 : inner.path) || (inner == null ? void 0 : inner.route), 1024),\n      method: scalar(inner == null ? void 0 : inner.method, 32)\n    };\n  }\n  function match(line, fields) {\n    if (input.contains && !(input.caseSensitive ? line : line.toLowerCase()).includes(input.caseSensitive ? input.contains : input.contains.toLowerCase())) return false;\n    if (input.level && String(fields.level || "").toLowerCase() !== input.level) return false;\n    if (input.route && fields.route !== input.route) return false;\n    if (input.method && String(fields.method || "").toUpperCase() !== input.method) return false;\n    const timestamp = Date.parse(fields.timestamp);\n    if ((input.fromTime || input.toTime) && (!Number.isFinite(timestamp) || input.fromTime && timestamp < Date.parse(input.fromTime) || input.toTime && timestamp > Date.parse(input.toTime))) return false;\n    return true;\n  }\n  function addRecord(line, file, lineNumber, memberPath, lineFromEnd) {\n    scannedLines++;\n    const fields = recordFields(line);\n    if (!match(line, fields)) return;\n    matchedLines++;\n    const raw = Buffer.from(line);\n    const shortened = raw.length > input.maxBytes;\n    let text = shortened ? raw.subarray(0, input.maxBytes).toString("utf8").replace(/\\uFFFD$/, "") : line;\n    if (shortened) outputTruncated = true;\n    const record = { file, ...memberPath ? { memberPath } : {}, ...lineNumber ? { lineNumber } : {}, ...lineFromEnd ? { lineFromEnd } : {}, ...fields, text, ...shortened ? { truncated: true } : {} };\n    records.push(record);\n    outputBytes += Buffer.byteLength(text);\n    while (records.length > input.limit || outputBytes > input.maxBytes && records.length > 1) {\n      const removed = records.shift();\n      outputBytes -= Buffer.byteLength(removed.text);\n      outputTruncated = true;\n    }\n  }\n  function lineConsumer(file, memberPath, discardFirstLine = false) {\n    const decoder = new StringDecoder("utf8");\n    let pending = "";\n    let oversized = false;\n    let lineNumber = 0;\n    return {\n      write(chunk) {\n        const text = decoder.write(chunk);\n        let offset = 0;\n        while (offset < text.length) {\n          const end = text.indexOf("\\n", offset);\n          const piece = text.slice(offset, end < 0 ? text.length : end);\n          if (!oversized) pending += piece;\n          if (Buffer.byteLength(pending) > input.maxLineBytes) {\n            oversized = true;\n            pending = "";\n          }\n          if (end < 0) break;\n          lineNumber++;\n          if (oversized) {\n            scanTruncated = true;\n            warn({ file, memberPath, lineNumber, code: "LOG_LINE_TOO_LARGE" });\n          } else if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n          pending = "";\n          oversized = false;\n          offset = end + 1;\n        }\n      },\n      finish() {\n        pending += decoder.end();\n        if (oversized) {\n          scanTruncated = true;\n          return;\n        }\n        if (pending) {\n          lineNumber++;\n          if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n        }\n        if (discardFirstLine) for (const record of records) {\n          record.lineFromEnd = lineNumber - record.lineNumber + 1;\n          delete record.lineNumber;\n        }\n      }\n    };\n  }\n  function allowedMember(name) {\n    return name && path.normalize(name) !== "." && !name.startsWith("/") && !name.includes("\\0") && !name.includes("\\\\") && !name.split("/").includes("..");\n  }\n  function memberMatches(name) {\n    return (!input.memberPath || name === input.memberPath) && (!input.memberContains || name.toLowerCase().includes(input.memberContains.toLowerCase()));\n  }\n  function tarConsumer(file) {\n    let header = Buffer.alloc(0), remaining = 0, padding = 0, consumer = null;\n    let metadata = null, parts = [], pax = {}, globalPax = {}, longName = "";\n    let done = false, selectedMember = false, foundMember = false;\n    const number = (bytes) => {\n      if (bytes[0] & 128) throw failure("unsupported tar numeric format", "LOG_ARCHIVE_INVALID");\n      const value = bytes.toString("ascii").replace(/\\0/g, "").trim();\n      if (value && !/^[0-7]+$/.test(value)) throw failure("invalid tar number", "LOG_ARCHIVE_INVALID");\n      const parsed = value ? parseInt(value, 8) : 0;\n      if (!Number.isSafeInteger(parsed)) throw failure("invalid tar size", "LOG_ARCHIVE_INVALID");\n      return parsed;\n    };\n    const field = (buffer, offset, size) => buffer.subarray(offset, offset + size).toString("utf8").replace(/\\0.*$/, "");\n    function endEntry() {\n      consumer == null ? void 0 : consumer.finish();\n      consumer = null;\n      if (selectedMember && input.memberPath) done = true;\n      selectedMember = false;\n      if (metadata) {\n        const buffer = Buffer.concat(parts);\n        if (metadata === "L") longName = buffer.toString("utf8").replace(/\\0.*$/, "");\n        else if (metadata === "x" || metadata === "g") {\n          const fields = {};\n          for (let offset = 0; offset < buffer.length; ) {\n            const space = buffer.indexOf(32, offset);\n            const length = Number(buffer.subarray(offset, space).toString());\n            if (space < 0 || !Number.isInteger(length) || length <= space - offset + 1 || offset + length > buffer.length) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            const record = buffer.subarray(space + 1, offset + length).toString("utf8");\n            const equals = record.indexOf("=");\n            if (equals < 1) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            fields[record.slice(0, equals)] = record.slice(equals + 1).replace(/\\n$/, "");\n            offset += length;\n          }\n          if (metadata === "g") globalPax = { ...globalPax, ...fields };\n          else pax = fields;\n        }\n        parts = [];\n        metadata = null;\n      }\n    }\n    return {\n      write(chunk) {\n        let offset = 0;\n        while (offset < chunk.length && !done) {\n          if (remaining) {\n            const size = Math.min(remaining, chunk.length - offset);\n            const piece = chunk.subarray(offset, offset + size);\n            if (metadata) parts.push(Buffer.from(piece));\n            else if (consumer) {\n              if (scannedBytes + size > input.maxScanBytes) {\n                scanTruncated = true;\n                return false;\n              }\n              scannedBytes += size;\n              consumer.write(piece);\n            }\n            remaining -= size;\n            offset += size;\n            if (!remaining) endEntry();\n          } else if (padding) {\n            const size = Math.min(padding, chunk.length - offset);\n            padding -= size;\n            offset += size;\n          } else {\n            const needed = 512 - header.length;\n            const piece = chunk.subarray(offset, offset + needed);\n            offset += piece.length;\n            header = Buffer.concat([header, piece]);\n            if (header.length < 512) break;\n            if (header.every((byte) => byte === 0)) {\n              done = true;\n              header = Buffer.alloc(0);\n              break;\n            }\n            let checksum = 0;\n            for (let i = 0; i < 512; i++) checksum += i >= 148 && i < 156 ? 32 : header[i];\n            if (number(header.subarray(148, 156)) !== checksum) throw failure("invalid tar checksum", "LOG_ARCHIVE_INVALID");\n            let name = field(header, 0, 100);\n            const prefix = field(header, 345, 155);\n            if (prefix) name = `${prefix}/${name}`;\n            const type = field(header, 156, 1) || "0";\n            const extended = { ...globalPax, ...pax };\n            remaining = extended.size === void 0 ? number(header.subarray(124, 136)) : Number(extended.size);\n            if (!Number.isSafeInteger(remaining) || remaining < 0) throw failure("invalid tar member size", "LOG_ARCHIVE_INVALID");\n            padding = (512 - remaining % 512) % 512;\n            metadata = ["x", "g", "L", "K"].includes(type) ? type : null;\n            if (metadata && remaining > 1024 * 1024) throw failure("tar metadata too large", "LOG_ARCHIVE_INVALID");\n            if (!metadata) {\n              name = extended.path || longName || name;\n              pax = {};\n              longName = "";\n              if (name.length > 4096) throw failure("archive member name exceeds the path limit", "LOG_ARCHIVE_INVALID");\n              if (allowedMember(name)) name = path.normalize(name);\n              if (input.mode === "members") {\n                const index = archiveMembersScanned++;\n                if (archiveMembersScanned > input.maxArchiveMembers) {\n                  scanTruncated = true;\n                  return false;\n                }\n                if (index >= input.memberOffset && (!input.memberPrefix || name.startsWith(input.memberPrefix))) {\n                  const memberType = type === "0" ? "file" : type === "5" ? "directory" : type === "2" ? "symlink" : type === "1" ? "hardlink" : "special";\n                  const readable = type === "0" && Boolean(allowedMember(name));\n                  const member = {\n                    name,\n                    size: remaining,\n                    type: memberType,\n                    readable,\n                    ...readable ? {} : { readReason: "member must be a safe relative regular file" }\n                  };\n                  const bytes = Buffer.byteLength(JSON.stringify(member));\n                  if (members.length && memberBytes + bytes > input.maxBytes) {\n                    archiveMembersScanned--;\n                    memberListingStopped = true;\n                    done = true;\n                  } else {\n                    members.push(member);\n                    memberBytes += bytes;\n                  }\n                  if (members.length >= input.limit) {\n                    memberListingStopped = true;\n                    done = true;\n                  }\n                }\n              } else if (input.memberPath === name && (type !== "0" || !allowedMember(name))) throw failure("archive member must be a safe regular file", "ARCHIVE_MEMBER_NOT_READABLE");\n              if (input.mode !== "members" && type === "0" && allowedMember(name) && (logName(name) || input.memberPath === name) && memberMatches(name)) {\n                consumer = lineConsumer(file, name);\n                selectedMember = true;\n                foundMember = true;\n              }\n            }\n            header = Buffer.alloc(0);\n            if (!remaining) endEntry();\n          }\n        }\n        return !(done && (input.memberPath || memberListingStopped));\n      },\n      finish() {\n        if (done && input.memberPath) return;\n        if (remaining || padding || header.length) throw failure("incomplete tar archive", "LOG_ARCHIVE_INVALID");\n        if (input.memberPath && !foundMember) throw failure("archive member was not found", "ARCHIVE_MEMBER_NOT_FOUND");\n      }\n    };\n  }\n  const scannedFiles = [];\n  for (const file of selected) {\n    active();\n    if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) {\n      scanTruncated = true;\n      break;\n    }\n    if (input.mode === "latest" && retainedRecords.length >= input.limit) {\n      scanTruncated = true;\n      break;\n    }\n    records = [];\n    outputBytes = 0;\n    const before = scannedBytes;\n    let rangeStart = 0;\n    let fd;\n    try {\n      fd = await fs.promises.open(file.path, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));\n      const liveStats = await fd.stat();\n      if (!liveStats.isFile()) throw failure("path is not a regular log file", "LOG_NOT_FILE");\n      file.size = liveStats.size;\n      const prefix = Buffer.alloc(8);\n      const inspected = await fd.read(prefix, 0, Math.min(8, file.size), 0);\n      if (prefix[0] === 66 && prefix[1] === 90 && prefix[2] === 104 || prefix[0] === 253 && prefix[1] === 55 && prefix[2] === 122 || prefix[0] === 80 && prefix[1] === 75) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n      if (prefix[0] === 31 && prefix[1] === 139 && file.compression === "none") file.compression = "gzip";\n      if (file.compression === "none" && prefix.subarray(0, inspected.bytesRead).includes(0)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n      if (input.mode === "latest" && file.compression === "none") {\n        let position = file.size;\n        let suffix = Buffer.alloc(0);\n        while (position > 0 && scannedBytes < input.maxScanBytes) {\n          active();\n          const size = Math.min(32768, position, input.maxScanBytes - scannedBytes);\n          position -= size;\n          rangeStart = position;\n          const buffer = Buffer.allocUnsafe(size);\n          const read = await fd.read(buffer, 0, size, position);\n          scannedBytes += read.bytesRead;\n          if (read.bytesRead < size) warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n          suffix = Buffer.concat([buffer.subarray(0, read.bytesRead), suffix]);\n          const newline = suffix.indexOf(10);\n          const complete2 = position === 0 ? suffix : newline < 0 ? Buffer.alloc(0) : suffix.subarray(newline + 1);\n          const lines = complete2.toString("utf8").split("\\n");\n          if (lines[lines.length - 1] === "") lines.pop();\n          if (lines.length >= input.limit || position === 0 || suffix.length >= input.maxLineBytes) {\n            for (let i = Math.max(0, lines.length - input.limit); i < lines.length; i++) addRecord(lines[i].replace(/\\r$/, ""), file.path, null, null, lines.length - i);\n            if (position > 0) scanTruncated = true;\n            break;\n          }\n        }\n        if (position > 0) scanTruncated = true;\n      } else {\n        rangeStart = file.compression === "none" ? Math.max(0, file.size - (input.maxScanBytes - scannedBytes)) : 0;\n        if (rangeStart > 0) scanTruncated = true;\n        const source = Readable.from((async function* () {\n          let position = rangeStart;\n          while (position < file.size) {\n            active();\n            const buffer = Buffer.allocUnsafe(Math.min(65536, file.size - position));\n            const read = await fd.read(buffer, 0, buffer.length, position);\n            if (!read.bytesRead) {\n              warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n              break;\n            }\n            position += read.bytesRead;\n            yield buffer.subarray(0, read.bytesRead);\n          }\n        })());\n        let stream = source;\n        let gunzip;\n        let sourceError;\n        if (file.compression !== "none") {\n          gunzip = zlib.createGunzip();\n          source.on("error", (error) => {\n            sourceError = error;\n            gunzip.destroy(error);\n          });\n          stream = source.pipe(gunzip);\n        }\n        const consumer = file.compression === "tar-gzip" ? tarConsumer(file.path) : lineConsumer(file.path, null, rangeStart > 0);\n        let stopped = false;\n        try {\n          for await (const chunk of stream) {\n            active();\n            if (file.compression !== "none") {\n              if (expandedBytes + chunk.length > input.maxExpandedBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              expandedBytes += chunk.length;\n            }\n            if (file.compression !== "tar-gzip") {\n              if (scannedBytes + chunk.length > input.maxScanBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              scannedBytes += chunk.length;\n            }\n            if (consumer.write(chunk) === false) {\n              stopped = true;\n              break;\n            }\n          }\n          if (!stopped) consumer.finish();\n        } finally {\n          source.destroy();\n          gunzip == null ? void 0 : gunzip.destroy();\n        }\n        if (sourceError) throw sourceError;\n      }\n      scannedFiles.push({\n        path: file.path,\n        scannedBytes: scannedBytes - before,\n        ...file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}\n      });\n    } catch (error) {\n      if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n      if (input.path) throw error;\n      warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });\n    } finally {\n      await (fd == null ? void 0 : fd.close());\n      for (const record of records.reverse()) {\n        const bytes = Buffer.byteLength(record.text);\n        if (retainedRecords.length >= input.limit || retainedBytes + bytes > input.maxBytes) {\n          outputTruncated = true;\n          continue;\n        }\n        retainedRecords.push(record);\n        retainedBytes += bytes;\n      }\n    }\n  }\n  for (const file of inspectedFiles) {\n    const live = selected.find((selectedFile) => selectedFile.path === file.path);\n    file.size = live.size;\n    file.compression = live.compression;\n  }\n  const complete = !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;\n  return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    scannedFiles,\n    records: retainedRecords,\n    content: retainedRecords.map((record) => record.text).join("\\n") + (retainedRecords.length ? "\\n" : ""),\n    returnedLines: retainedRecords.length,\n    matchedLines,\n    scannedLines,\n    scannedBytes,\n    expandedBytes,\n    outputBytes: retainedBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    coverage: complete ? "complete" : input.mode === "latest" && selected.every((file) => file.compression === "none") ? "tail" : "bounded",\n    countsAreComplete: complete,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    ...input.mode === "members" ? {\n      members,\n      hasMoreMembers: memberListingStopped || scanTruncated,\n      nextMemberOffset: memberListingStopped || scanTruncated ? archiveMembersScanned : null,\n      memberBytes\n    } : {},\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    warnings,\n    durationMs: Date.now() - started\n  };\n};\n';
+var LOG_QUERY_RUNTIME_SOURCE = 'const runRemoteLogQuery = async function remoteLogQuery(input, runtime = {}) {\n  var _a;\n  const fs = require("fs");\n  const path = require("path").posix;\n  const zlib = require("zlib");\n  const { StringDecoder } = require("string_decoder");\n  const { Readable } = require("stream");\n  const started = Date.now();\n  const warnings = [];\n  const files = [];\n  let records = [];\n  const retainedRecords = [];\n  let retainedBytes = 0;\n  const members = [];\n  let archiveMembersScanned = 0;\n  let memberListingStopped = false;\n  let memberBytes = 0;\n  let outputBytes = 0;\n  let scannedBytes = 0;\n  let expandedBytes = 0;\n  let matchedLines = 0;\n  let scannedLines = 0;\n  let outputTruncated = false;\n  let scanTruncated = false;\n  let filesTruncated = false;\n  let listingTruncated = false;\n  let directoryEntries = 0;\n  let warningsTruncated = false;\n  const job = input.background === true;\n  let completedMembers = 0, selectedMembers = 0, completedFiles = 0, failedFiles = 0;\n  let currentFile = null, currentMember = null, manifestBytes = 0;\n  const groups = /* @__PURE__ */ new Map();\n  const jobRecords = [];\n  let jobOutputBytes = 0;\n  let groupsTruncated = false;\n  const progress = () => ({\n    scannedBytes,\n    expandedBytes,\n    matchedLines,\n    scannedLines,\n    totalFiles: selected.length,\n    completedFiles,\n    failedFiles,\n    selectedMembers,\n    completedMembers,\n    currentFile,\n    currentMember,\n    batchesCompleted: Math.floor(scannedBytes / input.batchScanBytes),\n    outputTruncated,\n    scanTruncated,\n    directoryListingTruncated: listingTruncated\n  });\n  async function checkpoint(kind, bytes = 0) {\n    var _a2;\n    if (job) await ((_a2 = runtime.check) == null ? void 0 : _a2.call(runtime, kind, bytes, progress));\n    active();\n  }\n  function warn(value) {\n    if (warnings.length < (job ? 20 : 100)) warnings.push(value);\n    else warningsTruncated = true;\n  }\n  const inside = (value, root) => value === root || value.startsWith(`${root}/`);\n  const failure = (message, code) => Object.assign(new Error(message), { code });\n  function active() {\n    if (Date.now() >= input.deadlineAt) throw failure("log query deadline exceeded", "OPERATION_DEADLINE_EXCEEDED");\n  }\n  async function canonical(value) {\n    const normalized = path.normalize(value);\n    const roots = input.allowedRoots.filter((root) => inside(normalized, root));\n    if (!roots.length) throw failure("path is outside approved roots", "PATH_NOT_ALLOWED");\n    const resolvedRoots = [];\n    for (const root of roots) resolvedRoots.push(await fs.promises.realpath(root));\n    const resolved = await fs.promises.realpath(normalized);\n    if (!resolvedRoots.some((root) => inside(resolved, root))) throw failure("symlink escapes approved roots", "PATH_NOT_ALLOWED");\n    return resolved;\n  }\n  const dateIn = (name) => {\n    var _a2;\n    return (_a2 = /\\d{4}-\\d{2}-\\d{2}/.exec(name)) == null ? void 0 : _a2[0];\n  };\n  function fileMatches(name) {\n    if (input.fileContains && !name.toLowerCase().includes(input.fileContains.toLowerCase())) return false;\n    const date = dateIn(name);\n    if ((input.dateFrom || input.dateTo) && (!date || input.dateFrom && date < input.dateFrom || input.dateTo && date > input.dateTo)) return false;\n    return true;\n  }\n  function logName(name) {\n    return /\\.log(?:\\.\\d+)?(?:\\.gz)?$/i.test(name) || /\\.(?:tar\\.gz|tgz)$/i.test(name) || /^(?:syslog|messages|auth\\.log)(?:\\.\\d+)?(?:\\.gz)?$/i.test(name);\n  }\n  async function addFile(requested, directory) {\n    active();\n    const resolved = await canonical(requested);\n    if (directory && !inside(resolved, directory)) throw failure("log symlink escapes the selected directory", "PATH_NOT_ALLOWED");\n    const stats = await fs.promises.stat(resolved);\n    if (!stats.isFile()) return;\n    if (files.some((file) => file.path === resolved)) return;\n    const compression = /\\.(?:tar\\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\\.gz$/i.test(resolved) ? "gzip" : "none";\n    const item = {\n      path: resolved,\n      name: path.basename(requested),\n      size: stats.size,\n      modifyTime: stats.mtimeMs,\n      compression,\n      ...job ? { inode: stats.ino, device: stats.dev, changeTime: stats.ctimeMs } : {}\n    };\n    if (job && manifestBytes + Buffer.byteLength(JSON.stringify(item)) > 2 * 1024 * 1024) {\n      listingTruncated = true;\n      return;\n    }\n    manifestBytes += Buffer.byteLength(JSON.stringify(item));\n    files.push(item);\n  }\n  if (input.path) {\n    if (/\\.(?:bz2|xz|zip|tar)$/i.test(input.path)) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n    if (/\\/(?:btmp|wtmp|lastlog|faillog)(?:\\.\\d+)?(?:\\.gz)?$/.test(input.path)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n    if (fileMatches(path.basename(input.path))) await addFile(input.path);\n  } else {\n    for (const directory of input.directories) {\n      active();\n      try {\n        const resolved = await canonical(directory);\n        const handle = await fs.promises.opendir(resolved);\n        try {\n          for await (const entry of handle) {\n            active();\n            if (job) await ((_a = runtime.check) == null ? void 0 : _a.call(runtime, "discovery", 0));\n            if (++directoryEntries > input.maxDirectoryEntries) {\n              listingTruncated = true;\n              break;\n            }\n            if (!entry.isFile() && !entry.isSymbolicLink() || !logName(entry.name) || !fileMatches(entry.name)) continue;\n            try {\n              await addFile(path.join(directory, entry.name), resolved);\n            } catch (error) {\n              if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n              warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });\n            }\n          }\n        } finally {\n          await handle.close().catch(() => {\n          });\n        }\n      } catch (error) {\n        if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n        warn({ path: directory, code: error.code, message: error.message });\n      }\n    }\n  }\n  files.sort((a, b) => b.modifyTime - a.modifyTime || a.name.localeCompare(b.name));\n  filesTruncated = files.length > input.maxFiles;\n  const selected = files.slice(input.fileOffset, input.fileOffset + input.maxFiles);\n  filesTruncated = input.fileOffset + selected.length < files.length;\n  const inspectedFiles = selected.map((file) => ({ ...file }));\n  if (job) runtime.progress = progress;\n  if (input.mode === "files") return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    warnings,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    durationMs: Date.now() - started\n  };\n  function recordFields(line) {\n    var _a2, _b;\n    let outer, inner;\n    try {\n      outer = JSON.parse(line);\n    } catch {\n    }\n    const message = typeof (outer == null ? void 0 : outer.message) === "string" ? outer.message : "";\n    const bracketTime = (_a2 = /^\\[([^\\]]+)\\]/.exec(message)) == null ? void 0 : _a2[1];\n    const brace = message.indexOf("{");\n    if (brace >= 0) {\n      try {\n        inner = JSON.parse(message.slice(brace));\n      } catch {\n      }\n    }\n    inner || (inner = outer);\n    const timestamp = (inner == null ? void 0 : inner.timestamp) || (outer == null ? void 0 : outer.timestamp) || bracketTime || ((_b = /^\\[?((?:\\d{4}-\\d{2}-\\d{2})T[^\\s\\]]+)/.exec(line)) == null ? void 0 : _b[1]);\n    const scalar = (value, limit) => typeof value === "string" ? value.slice(0, limit) : void 0;\n    return {\n      timestamp: scalar(timestamp, 40),\n      level: scalar((outer == null ? void 0 : outer.level) || (inner == null ? void 0 : inner.level), 32),\n      route: scalar((inner == null ? void 0 : inner.path) || (inner == null ? void 0 : inner.route), 1024),\n      method: scalar(inner == null ? void 0 : inner.method, 32)\n    };\n  }\n  function match(line, fields) {\n    if (input.contains && !(input.caseSensitive ? line : line.toLowerCase()).includes(input.caseSensitive ? input.contains : input.contains.toLowerCase())) return false;\n    if (input.level && String(fields.level || "").toLowerCase() !== input.level) return false;\n    if (input.route && fields.route !== input.route) return false;\n    if (input.method && String(fields.method || "").toUpperCase() !== input.method) return false;\n    const timestamp = Date.parse(fields.timestamp);\n    if ((input.fromTime || input.toTime) && (!Number.isFinite(timestamp) || input.fromTime && timestamp < Date.parse(input.fromTime) || input.toTime && timestamp > Date.parse(input.toTime))) return false;\n    return true;\n  }\n  function addRecord(line, file, lineNumber, memberPath, lineFromEnd) {\n    var _a2;\n    scannedLines++;\n    const fields = recordFields(line);\n    if (!match(line, fields)) return;\n    matchedLines++;\n    if (job) {\n      let payload;\n      try {\n        const outer = JSON.parse(line);\n        const message = outer.message;\n        payload = typeof message === "string" && message.includes("{") ? JSON.parse(message.slice(message.indexOf("{"))) : outer;\n      } catch {\n      }\n      const error = payload == null ? void 0 : payload.error;\n      const key = JSON.stringify([\n        fields.level,\n        fields.route,\n        fields.method,\n        typeof (error == null ? void 0 : error.code) === "string" ? error.code.slice(0, 128) : void 0,\n        typeof (error == null ? void 0 : error.message) === "string" ? error.message.slice(0, 512) : void 0\n      ]);\n      const group = groups.get(key);\n      if (group) group.count++;\n      else if (groups.size < 100) groups.set(key, {\n        level: fields.level,\n        route: fields.route,\n        method: fields.method,\n        code: typeof (error == null ? void 0 : error.code) === "string" ? error.code.slice(0, 128) : void 0,\n        message: typeof (error == null ? void 0 : error.message) === "string" ? error.message.slice(0, 512) : void 0,\n        count: 1\n      });\n      else groupsTruncated = true;\n      if (jobRecords.length >= input.limit || jobOutputBytes >= input.maxBytes) {\n        outputTruncated = true;\n        return;\n      }\n    }\n    const raw = Buffer.from(line);\n    const shortened = raw.length > input.maxBytes;\n    let text = shortened ? raw.subarray(0, input.maxBytes).toString("utf8").replace(/\\uFFFD$/, "") : line;\n    if (shortened) outputTruncated = true;\n    const record = { file, ...memberPath ? { memberPath } : {}, ...lineNumber ? { lineNumber } : {}, ...lineFromEnd ? { lineFromEnd } : {}, ...fields, text, ...shortened ? { truncated: true } : {} };\n    if (job && Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) {\n      let low = 0, high = text.length;\n      record.truncated = true;\n      while (low < high) {\n        const middle = Math.ceil((low + high) / 2);\n        record.text = text.slice(0, middle);\n        if (Buffer.byteLength(JSON.stringify(record)) <= input.maxBytes) low = middle;\n        else high = middle - 1;\n      }\n      record.text = text.slice(0, low).replace(/[\\uD800-\\uDBFF]$/, "");\n      outputTruncated = true;\n      if (Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) return;\n    }\n    if (job) {\n      const bytes = Buffer.byteLength(JSON.stringify(record));\n      if (jobOutputBytes + bytes > input.maxBytes) {\n        outputTruncated = true;\n        return;\n      }\n      jobRecords.push(record);\n      jobOutputBytes += bytes;\n      (_a2 = runtime.evidence) == null ? void 0 : _a2.call(runtime, record);\n      return;\n    }\n    records.push(record);\n    outputBytes += Buffer.byteLength(text);\n    while (records.length > input.limit || outputBytes > input.maxBytes && records.length > 1) {\n      const removed = records.shift();\n      outputBytes -= Buffer.byteLength(removed.text);\n      outputTruncated = true;\n    }\n  }\n  function lineConsumer(file, memberPath, discardFirstLine = false) {\n    const decoder = new StringDecoder("utf8");\n    let pending = "";\n    let oversized = false;\n    let lineNumber = 0;\n    return {\n      write(chunk) {\n        const text = decoder.write(chunk);\n        let offset = 0;\n        while (offset < text.length) {\n          const end = text.indexOf("\\n", offset);\n          const piece = text.slice(offset, end < 0 ? text.length : end);\n          if (!oversized) pending += piece;\n          if (Buffer.byteLength(pending) > input.maxLineBytes) {\n            oversized = true;\n            pending = "";\n          }\n          if (end < 0) break;\n          lineNumber++;\n          if (oversized) {\n            scanTruncated = true;\n            warn({ file, memberPath, lineNumber, code: "LOG_LINE_TOO_LARGE" });\n          } else if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n          pending = "";\n          oversized = false;\n          offset = end + 1;\n        }\n      },\n      finish() {\n        pending += decoder.end();\n        if (oversized) {\n          scanTruncated = true;\n          return;\n        }\n        if (pending) {\n          lineNumber++;\n          if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n        }\n        if (discardFirstLine) for (const record of records) {\n          record.lineFromEnd = lineNumber - record.lineNumber + 1;\n          delete record.lineNumber;\n        }\n      }\n    };\n  }\n  function allowedMember(name) {\n    return name && path.normalize(name) !== "." && !name.startsWith("/") && !name.includes("\\0") && !name.includes("\\\\") && !name.split("/").includes("..");\n  }\n  function memberMatches(name) {\n    return (!input.memberPath || name === input.memberPath) && (!input.memberContains || name.toLowerCase().includes(input.memberContains.toLowerCase()));\n  }\n  function tarConsumer(file) {\n    let header = Buffer.alloc(0), remaining = 0, padding = 0, consumer = null;\n    let metadata = null, parts = [], pax = {}, globalPax = {}, longName = "";\n    let done = false, selectedMember = false, foundMember = false;\n    const number = (bytes) => {\n      if (bytes[0] & 128) throw failure("unsupported tar numeric format", "LOG_ARCHIVE_INVALID");\n      const value = bytes.toString("ascii").replace(/\\0/g, "").trim();\n      if (value && !/^[0-7]+$/.test(value)) throw failure("invalid tar number", "LOG_ARCHIVE_INVALID");\n      const parsed = value ? parseInt(value, 8) : 0;\n      if (!Number.isSafeInteger(parsed)) throw failure("invalid tar size", "LOG_ARCHIVE_INVALID");\n      return parsed;\n    };\n    const field = (buffer, offset, size) => buffer.subarray(offset, offset + size).toString("utf8").replace(/\\0.*$/, "");\n    function endEntry() {\n      consumer == null ? void 0 : consumer.finish();\n      consumer = null;\n      if (selectedMember && job) {\n        completedMembers++;\n        currentMember = null;\n      }\n      if (selectedMember && input.memberPath) done = true;\n      selectedMember = false;\n      if (metadata) {\n        const buffer = Buffer.concat(parts);\n        if (metadata === "L") longName = buffer.toString("utf8").replace(/\\0.*$/, "");\n        else if (metadata === "x" || metadata === "g") {\n          const fields = {};\n          for (let offset = 0; offset < buffer.length; ) {\n            const space = buffer.indexOf(32, offset);\n            const length = Number(buffer.subarray(offset, space).toString());\n            if (space < 0 || !Number.isInteger(length) || length <= space - offset + 1 || offset + length > buffer.length) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            const record = buffer.subarray(space + 1, offset + length).toString("utf8");\n            const equals = record.indexOf("=");\n            if (equals < 1) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            fields[record.slice(0, equals)] = record.slice(equals + 1).replace(/\\n$/, "");\n            offset += length;\n          }\n          if (metadata === "g") globalPax = { ...globalPax, ...fields };\n          else pax = fields;\n        }\n        parts = [];\n        metadata = null;\n      }\n    }\n    return {\n      write(chunk) {\n        let offset = 0;\n        while (offset < chunk.length && !done) {\n          if (remaining) {\n            const size = Math.min(remaining, chunk.length - offset);\n            const piece = chunk.subarray(offset, offset + size);\n            if (metadata) parts.push(Buffer.from(piece));\n            else if (consumer) {\n              if (scannedBytes + size > input.maxScanBytes) {\n                scanTruncated = true;\n                return false;\n              }\n              scannedBytes += size;\n              consumer.write(piece);\n            }\n            remaining -= size;\n            offset += size;\n            if (!remaining) endEntry();\n          } else if (padding) {\n            const size = Math.min(padding, chunk.length - offset);\n            padding -= size;\n            offset += size;\n          } else {\n            const needed = 512 - header.length;\n            const piece = chunk.subarray(offset, offset + needed);\n            offset += piece.length;\n            header = Buffer.concat([header, piece]);\n            if (header.length < 512) break;\n            if (header.every((byte) => byte === 0)) {\n              done = true;\n              header = Buffer.alloc(0);\n              break;\n            }\n            let checksum = 0;\n            for (let i = 0; i < 512; i++) checksum += i >= 148 && i < 156 ? 32 : header[i];\n            if (number(header.subarray(148, 156)) !== checksum) throw failure("invalid tar checksum", "LOG_ARCHIVE_INVALID");\n            let name = field(header, 0, 100);\n            const prefix = field(header, 345, 155);\n            if (prefix) name = `${prefix}/${name}`;\n            const type = field(header, 156, 1) || "0";\n            const extended = { ...globalPax, ...pax };\n            remaining = extended.size === void 0 ? number(header.subarray(124, 136)) : Number(extended.size);\n            if (!Number.isSafeInteger(remaining) || remaining < 0) throw failure("invalid tar member size", "LOG_ARCHIVE_INVALID");\n            padding = (512 - remaining % 512) % 512;\n            metadata = ["x", "g", "L", "K"].includes(type) ? type : null;\n            if (metadata && remaining > 1024 * 1024) throw failure("tar metadata too large", "LOG_ARCHIVE_INVALID");\n            if (!metadata) {\n              name = extended.path || longName || name;\n              pax = {};\n              longName = "";\n              if (name.length > 4096) throw failure("archive member name exceeds the path limit", "LOG_ARCHIVE_INVALID");\n              if (allowedMember(name)) name = path.normalize(name);\n              if (input.mode === "members") {\n                const index = archiveMembersScanned++;\n                if (archiveMembersScanned > input.maxArchiveMembers) {\n                  scanTruncated = true;\n                  return false;\n                }\n                if (index >= input.memberOffset && (!input.memberPrefix || name.startsWith(input.memberPrefix))) {\n                  const memberType = type === "0" ? "file" : type === "5" ? "directory" : type === "2" ? "symlink" : type === "1" ? "hardlink" : "special";\n                  const readable = type === "0" && Boolean(allowedMember(name));\n                  const member = {\n                    name,\n                    size: remaining,\n                    type: memberType,\n                    readable,\n                    ...readable ? {} : { readReason: "member must be a safe relative regular file" }\n                  };\n                  const bytes = Buffer.byteLength(JSON.stringify(member));\n                  if (members.length && memberBytes + bytes > input.maxBytes) {\n                    archiveMembersScanned--;\n                    memberListingStopped = true;\n                    done = true;\n                  } else {\n                    members.push(member);\n                    memberBytes += bytes;\n                  }\n                  if (members.length >= input.limit) {\n                    memberListingStopped = true;\n                    done = true;\n                  }\n                }\n              } else if (input.memberPath === name && (type !== "0" || !allowedMember(name))) throw failure("archive member must be a safe regular file", "ARCHIVE_MEMBER_NOT_READABLE");\n              if (input.mode !== "members" && type === "0" && allowedMember(name) && (logName(name) || input.memberPath === name) && memberMatches(name)) {\n                consumer = lineConsumer(file, name);\n                selectedMember = true;\n                foundMember = true;\n                if (job) {\n                  selectedMembers++;\n                  currentMember = name;\n                }\n              }\n            }\n            header = Buffer.alloc(0);\n            if (!remaining) endEntry();\n          }\n        }\n        return !(done && (input.memberPath || memberListingStopped));\n      },\n      finish() {\n        if (done && input.memberPath) return;\n        if (remaining || padding || header.length) throw failure("incomplete tar archive", "LOG_ARCHIVE_INVALID");\n        if (input.memberPath && !foundMember) throw failure("archive member was not found", "ARCHIVE_MEMBER_NOT_FOUND");\n      }\n    };\n  }\n  const scannedFiles = [];\n  for (const file of selected) {\n    currentFile = file.path;\n    await checkpoint("file");\n    if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) {\n      scanTruncated = true;\n      break;\n    }\n    if (input.mode === "latest" && retainedRecords.length >= input.limit) {\n      scanTruncated = true;\n      break;\n    }\n    records = [];\n    outputBytes = 0;\n    const before = scannedBytes;\n    let rangeStart = 0;\n    let fd;\n    try {\n      fd = await fs.promises.open(file.path, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));\n      const liveStats = await fd.stat();\n      if (!liveStats.isFile()) throw failure("path is not a regular log file", "LOG_NOT_FILE");\n      if (job && (liveStats.size !== file.size || liveStats.mtimeMs !== file.modifyTime || liveStats.ctimeMs !== file.changeTime || liveStats.ino !== file.inode || liveStats.dev !== file.device)) throw failure("log changed after discovery", "LOG_FILE_CHANGED");\n      file.size = liveStats.size;\n      const prefix = Buffer.alloc(8);\n      const inspected = await fd.read(prefix, 0, Math.min(8, file.size), 0);\n      if (prefix[0] === 66 && prefix[1] === 90 && prefix[2] === 104 || prefix[0] === 253 && prefix[1] === 55 && prefix[2] === 122 || prefix[0] === 80 && prefix[1] === 75) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n      if (prefix[0] === 31 && prefix[1] === 139 && file.compression === "none") file.compression = "gzip";\n      if (file.compression === "none" && prefix.subarray(0, inspected.bytesRead).includes(0)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n      if (input.mode === "latest" && file.compression === "none") {\n        let position = file.size;\n        let suffix = Buffer.alloc(0);\n        while (position > 0 && scannedBytes < input.maxScanBytes) {\n          active();\n          const size = Math.min(32768, position, input.maxScanBytes - scannedBytes);\n          position -= size;\n          rangeStart = position;\n          const buffer = Buffer.allocUnsafe(size);\n          const read = await fd.read(buffer, 0, size, position);\n          scannedBytes += read.bytesRead;\n          if (read.bytesRead < size) warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n          suffix = Buffer.concat([buffer.subarray(0, read.bytesRead), suffix]);\n          const newline = suffix.indexOf(10);\n          const complete2 = position === 0 ? suffix : newline < 0 ? Buffer.alloc(0) : suffix.subarray(newline + 1);\n          const lines = complete2.toString("utf8").split("\\n");\n          if (lines[lines.length - 1] === "") lines.pop();\n          if (lines.length >= input.limit || position === 0 || suffix.length >= input.maxLineBytes) {\n            for (let i = Math.max(0, lines.length - input.limit); i < lines.length; i++) addRecord(lines[i].replace(/\\r$/, ""), file.path, null, null, lines.length - i);\n            if (position > 0) scanTruncated = true;\n            break;\n          }\n        }\n        if (position > 0) scanTruncated = true;\n      } else {\n        rangeStart = file.compression === "none" ? Math.max(0, file.size - (input.maxScanBytes - scannedBytes)) : 0;\n        if (rangeStart > 0) scanTruncated = true;\n        const source = Readable.from((async function* () {\n          let position = rangeStart;\n          while (position < file.size) {\n            await checkpoint("read", Math.min(65536, file.size - position));\n            const buffer = Buffer.allocUnsafe(Math.min(65536, file.size - position));\n            const read = await fd.read(buffer, 0, buffer.length, position);\n            if (!read.bytesRead) {\n              warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n              break;\n            }\n            position += read.bytesRead;\n            yield buffer.subarray(0, read.bytesRead);\n          }\n        })(), { highWaterMark: 1 });\n        let stream = source;\n        let gunzip;\n        let sourceError;\n        if (file.compression !== "none") {\n          gunzip = zlib.createGunzip({ chunkSize: 65536, highWaterMark: 65536 });\n          source.on("error", (error) => {\n            sourceError = error;\n            gunzip.destroy(error);\n          });\n          stream = source.pipe(gunzip);\n        }\n        const consumer = file.compression === "tar-gzip" ? tarConsumer(file.path) : lineConsumer(file.path, null, rangeStart > 0);\n        let stopped = false;\n        try {\n          for await (const chunk of stream) {\n            await checkpoint("process", chunk.length);\n            if (file.compression !== "none") {\n              if (expandedBytes + chunk.length > input.maxExpandedBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              expandedBytes += chunk.length;\n            }\n            if (file.compression !== "tar-gzip") {\n              if (scannedBytes + chunk.length > input.maxScanBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              scannedBytes += chunk.length;\n            }\n            if (consumer.write(chunk) === false) {\n              stopped = true;\n              break;\n            }\n          }\n          if (!stopped) consumer.finish();\n        } finally {\n          source.destroy();\n          gunzip == null ? void 0 : gunzip.destroy();\n        }\n        if (sourceError) throw sourceError;\n      }\n      if (job) {\n        const after = await fd.stat();\n        const named = await fs.promises.stat(file.path);\n        if (after.size !== liveStats.size || after.mtimeMs !== liveStats.mtimeMs || after.ctimeMs !== liveStats.ctimeMs || named.ino !== liveStats.ino || named.dev !== liveStats.dev) throw failure("log changed during query", "LOG_FILE_CHANGED");\n        completedFiles++;\n      }\n      scannedFiles.push({\n        path: file.path,\n        scannedBytes: scannedBytes - before,\n        ...file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}\n      });\n    } catch (error) {\n      if (job && !["LOG_FILE_CHANGED", "UNSUPPORTED_COMPRESSION", "BINARY_LOG_UNSUPPORTED", "LOG_ARCHIVE_INVALID", "ARCHIVE_MEMBER_NOT_FOUND", "ARCHIVE_MEMBER_NOT_READABLE", "ENOENT", "EACCES"].includes(error.code)) throw error;\n      if (job) failedFiles++;\n      if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n      if (input.path) throw error;\n      warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });\n    } finally {\n      await (fd == null ? void 0 : fd.close());\n      for (const record of records.reverse()) {\n        const bytes = Buffer.byteLength(record.text);\n        if (retainedRecords.length >= input.limit || retainedBytes + bytes > input.maxBytes) {\n          outputTruncated = true;\n          continue;\n        }\n        retainedRecords.push(record);\n        retainedBytes += bytes;\n      }\n    }\n  }\n  for (const file of inspectedFiles) {\n    const live = selected.find((selectedFile) => selectedFile.path === file.path);\n    file.size = live.size;\n    file.compression = live.compression;\n  }\n  const complete = !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;\n  if (job) return {\n    ...progress(),\n    currentFile: null,\n    currentMember: null,\n    records: jobRecords,\n    returnedLines: jobRecords.length,\n    outputBytes: jobOutputBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    countsAreComplete: complete,\n    coverage: complete ? "complete" : "bounded",\n    warnings,\n    warningsTruncated,\n    groups: [...groups.values()],\n    groupsTruncated,\n    durationMs: Date.now() - started\n  };\n  return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    scannedFiles,\n    records: retainedRecords,\n    content: retainedRecords.map((record) => record.text).join("\\n") + (retainedRecords.length ? "\\n" : ""),\n    returnedLines: retainedRecords.length,\n    matchedLines,\n    scannedLines,\n    scannedBytes,\n    expandedBytes,\n    outputBytes: retainedBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    coverage: complete ? "complete" : input.mode === "latest" && selected.every((file) => file.compression === "none") ? "tail" : "bounded",\n    countsAreComplete: complete,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    ...input.mode === "members" ? {\n      members,\n      hasMoreMembers: memberListingStopped || scanTruncated,\n      nextMemberOffset: memberListingStopped || scanTruncated ? archiveMembersScanned : null,\n      memberBytes\n    } : {},\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    warnings,\n    durationMs: Date.now() - started\n  };\n};\n';
+var LOG_JOB_RUNTIME_SOURCE = 'const runRemoteLogJob = function remoteLogJob() {\n  const readline = require("readline");\n  const { once } = require("events");\n  const controls = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });\n  let input, paused = false, pausedAt = 0, cancelled = false, lastHeartbeat = Date.now();\n  let finished = false, watchdog, lastPublished = 0, readBytes = 0, processedBytes = 0;\n  let started, initialCpu, runtime;\n  let readDue = 0, processDue = 0, cpuDue = 0, lastCpuMs = 0;\n  let peakRssBytes = 0;\n  const error = (code, message) => Object.assign(new Error(message), { code });\n  const cpuMs = () => {\n    const usage = process.cpuUsage(initialCpu);\n    return (usage.user + usage.system) / 1e3;\n  };\n  const resources = () => {\n    const rssBytes = process.memoryUsage().rss;\n    peakRssBytes = Math.max(peakRssBytes, rssBytes);\n    return {\n      rssBytes,\n      peakRssBytes,\n      cpuMs: cpuMs(),\n      readBytes,\n      processedBytes,\n      elapsedMs: Date.now() - started\n    };\n  };\n  const publish = (type, value) => {\n    if (type === "progress" && process.stdout.writableLength > 65536) return;\n    return process.stdout.write(JSON.stringify({ type, ...value }) + "\\n");\n  };\n  const snapshot = () => ({\n    ...runtime.progress ? runtime.progress() : {},\n    resources: resources(),\n    status: paused ? "paused" : "running",\n    countsAreComplete: false\n  });\n  const health = () => {\n    if (cancelled) throw error("LOG_JOB_CANCELLED", "log query cancelled");\n    if (Date.now() >= input.deadlineAt) throw error("LOG_JOB_TIMEOUT", "log query task deadline exceeded");\n    if (Date.now() - lastHeartbeat > 6e4) throw error("LOG_JOB_CONTROLLER_LOST", "log query controller heartbeat lost");\n    if (paused && Date.now() - pausedAt >= input.pauseTtlMs) throw error("LOG_JOB_PAUSE_EXPIRED", "paused log query expired");\n    peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss);\n    if (peakRssBytes > input.rssLimitBytes) throw error("LOG_JOB_MEMORY_LIMIT", "log query RSS threshold exceeded");\n  };\n  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n  async function check(kind, bytes, progress) {\n    if (progress) runtime.progress = progress;\n    health();\n    if (kind === "read") readBytes += bytes;\n    if (kind === "process") processedBytes += bytes;\n    const now = Date.now();\n    if (kind === "read") readDue = Math.max(readDue, now) + bytes * 1e3 / input.readBytesPerSecond;\n    if (kind === "process") processDue = Math.max(processDue, now) + bytes * 1e3 / input.processBytesPerSecond;\n    const usedCpu = cpuMs(), cpuDelta = Math.max(0, usedCpu - lastCpuMs);\n    lastCpuMs = usedCpu;\n    cpuDue = Math.max(cpuDue, now - cpuDelta) + cpuDelta * 100 / input.cpuPercent;\n    while (true) {\n      health();\n      const wait = Math.max(readDue, processDue, cpuDue) - Date.now();\n      if (!paused && wait <= 0) break;\n      await delay(paused ? 100 : Math.min(100, Math.max(1, wait)));\n    }\n    await new Promise((resolve) => setImmediate(resolve));\n    health();\n  }\n  async function finish(type, value, exitCode) {\n    if (finished) return;\n    finished = true;\n    clearInterval(watchdog);\n    controls.close();\n    process.stdin.destroy();\n    if (publish(type, value) === false) await once(process.stdout, "drain");\n    process.exitCode = exitCode;\n  }\n  controls.on("line", (line) => {\n    if (finished) return;\n    try {\n      if (Buffer.byteLength(line) > (input ? 1024 : 512 * 1024)) throw error("LOG_JOB_PROTOCOL", "oversized control frame");\n      const message = JSON.parse(line);\n      if (!input) {\n        if (message.type !== "start") throw error("LOG_JOB_PROTOCOL", "expected start frame");\n        input = message.input;\n        started = Date.now();\n        initialCpu = process.cpuUsage();\n        lastHeartbeat = started;\n        runtime = { check, evidence: (record) => publish("evidence", { record, progress: snapshot() }) };\n        watchdog = setInterval(() => {\n          try {\n            health();\n            if (Date.now() - lastPublished >= 5e3) {\n              lastPublished = Date.now();\n              publish("progress", snapshot());\n            }\n          } catch (failure) {\n            publish("error", { ...snapshot(), error: { code: failure.code, message: failure.message } });\n            process.exit(1);\n          }\n        }, 250);\n        runRemoteLogQuery(input, runtime).then(\n          (result) => finish("result", { result, resources: resources() }, 0),\n          (failure) => finish("error", { ...snapshot(), error: { code: failure.code || "LOG_JOB_FAILED", message: failure.message } }, 1)\n        ).catch(() => process.exit(1));\n      } else if (message.type === "heartbeat") lastHeartbeat = Date.now();\n      else if (message.type === "pause") {\n        if (!paused) pausedAt = Date.now();\n        paused = true;\n        publish("progress", snapshot());\n      } else if (message.type === "resume") {\n        paused = false;\n        pausedAt = 0;\n        publish("progress", snapshot());\n      } else if (message.type === "cancel") cancelled = true;\n      else throw error("LOG_JOB_PROTOCOL", "invalid control frame");\n    } catch (failure) {\n      publish("error", { error: { code: failure.code || "LOG_JOB_PROTOCOL", message: "invalid log job control frame" } });\n      process.exit(1);\n    }\n  });\n  controls.on("close", () => {\n    if (!finished) cancelled = true;\n  });\n  const bootstrapTimeout = setTimeout(() => {\n    if (!input) process.exit(1);\n  }, 6e4);\n  bootstrapTimeout.unref();\n};\n';
 
 // log-query.js
 var LOG_QUERY_MARKER = "__REMOTE_DEBUG_LOG_QUERY__";
@@ -58535,8 +58582,21 @@ function executeChannel(client, command, operation, options, supervisor) {
         return;
       }
       stream.on("data", (chunk) => {
-        stdout.append(chunk);
-        options.onStdout?.(chunk.toString("utf8"));
+        if (options.captureStdout !== false) stdout.append(chunk);
+        try {
+          options.onStdoutChunk?.(chunk);
+          options.onStdout?.(chunk.toString("utf8"));
+        } catch (error2) {
+          finish(error2);
+          try {
+            stream.signal?.("TERM");
+          } catch {
+          }
+          try {
+            stream.close?.();
+          } catch {
+          }
+        }
       });
       stream.stderr.on("data", (chunk) => {
         stderr.append(chunk);
@@ -58584,7 +58644,9 @@ function executeChannel(client, command, operation, options, supervisor) {
           if (typeof stream.end !== "function") {
             throw new Error("SSH exec channel does not support stdin");
           }
-          stream.end(options.stdin);
+          if (options.keepStdinOpen) stream.write(options.stdin);
+          else stream.end(options.stdin);
+          options.onChannel?.(stream);
         } catch (stdinError) {
           finish(operationError(stdinError.message || "failed to write SSH stdin", {
             code: "SSH_STDIN_FAILED",
@@ -61223,16 +61285,278 @@ var InstanceRegistry = class {
   }
 };
 
+// log-jobs.js
+var import_node_crypto16 = require("node:crypto");
+var import_node_string_decoder2 = require("node:string_decoder");
+var LOG_JOB_DEFAULTS = Object.freeze({
+  jobTimeoutMs: 30 * 60 * 1e3,
+  maxJobTimeoutMs: 120 * 60 * 1e3,
+  cpuPercent: 20,
+  readBytesPerSecond: 2 * 1024 * 1024,
+  processBytesPerSecond: 4 * 1024 * 1024,
+  rssLimitBytes: 192 * 1024 * 1024,
+  pauseTtlMs: 5 * 60 * 1e3,
+  batchScanBytes: 256 * 1024 * 1024
+});
+var terminal = /* @__PURE__ */ new Set(["completed", "partial", "failed", "cancelled", "interrupted", "expired"]);
+var fault = (message, code, statusCode = 400) => operationError(message, { code, statusCode, layer: "logs", phase: "job" });
+function bounded(value, fallback, min, max, field) {
+  if (value === void 0) return fallback;
+  if (!Number.isInteger(value) || value < min || value > max) throw logInputError(`invalid ${field}`, "INVALID_LOG_JOB");
+  return value;
+}
+function normalizeLogJob(input, config) {
+  if (input.mode !== void 0 && input.mode !== "search") throw logInputError("background queries support search only", "INVALID_LOG_JOB");
+  if (input.fileOffset || input.memberOffset) throw logInputError("background queries start from the full selected scope", "INVALID_LOG_JOB");
+  for (const key of ["maxScanBytes", "maxExpandedBytes", "maxFiles"]) {
+    if (input[key] !== void 0) throw logInputError(`${key} is for synchronous queries; use task resource limits`, "INVALID_LOG_JOB");
+  }
+  const query = normalizeLogQuery({ ...input, mode: "search" }, config);
+  const limits = normalizeLogJobLimits(config.logs?.jobLimits);
+  const timeoutMax = Math.min(limits.maxJobTimeoutMs || LOG_JOB_DEFAULTS.maxJobTimeoutMs, LOG_JOB_DEFAULTS.maxJobTimeoutMs);
+  return {
+    ...query,
+    background: true,
+    fileOffset: 0,
+    maxFiles: 5e3,
+    maxScanBytes: Number.MAX_SAFE_INTEGER,
+    maxExpandedBytes: Number.MAX_SAFE_INTEGER,
+    jobTimeoutMs: bounded(input.jobTimeoutMs, Math.min(LOG_JOB_DEFAULTS.jobTimeoutMs, timeoutMax), 1e3, timeoutMax, "jobTimeoutMs"),
+    cpuPercent: bounded(input.cpuPercent, Math.min(limits.cpuPercent || 20, 20), 1, Math.min(limits.cpuPercent || 50, 50), "cpuPercent"),
+    readBytesPerSecond: bounded(input.readBytesPerSecond, Math.min(limits.readBytesPerSecond || LOG_JOB_DEFAULTS.readBytesPerSecond, LOG_JOB_DEFAULTS.readBytesPerSecond), 65536, Math.min(limits.readBytesPerSecond || 16 * 1024 * 1024, 16 * 1024 * 1024), "readBytesPerSecond"),
+    processBytesPerSecond: bounded(input.processBytesPerSecond, Math.min(limits.processBytesPerSecond || LOG_JOB_DEFAULTS.processBytesPerSecond, LOG_JOB_DEFAULTS.processBytesPerSecond), 65536, Math.min(limits.processBytesPerSecond || 32 * 1024 * 1024, 32 * 1024 * 1024), "processBytesPerSecond"),
+    rssLimitBytes: Math.min(limits.rssLimitBytes || LOG_JOB_DEFAULTS.rssLimitBytes, LOG_JOB_DEFAULTS.rssLimitBytes),
+    pauseTtlMs: LOG_JOB_DEFAULTS.pauseTtlMs,
+    batchScanBytes: bounded(input.batchScanBytes, LOG_JOB_DEFAULTS.batchScanBytes, 65536, LOG_JOB_DEFAULTS.batchScanBytes, "batchScanBytes")
+  };
+}
+function logJobCommand() {
+  return "node --max-old-space-size=64 -e " + quotePosixArgument(`${LOG_QUERY_RUNTIME_SOURCE}
+${LOG_JOB_RUNTIME_SOURCE}
+runRemoteLogJob();`);
+}
+var LogJobRunner = class {
+  constructor({ config, runSSH: runSSH2, now = Date.now }) {
+    this.config = config;
+    this.runSSH = runSSH2;
+    this.now = now;
+    this.jobs = /* @__PURE__ */ new Map();
+    this.active = null;
+    this.closed = false;
+    this.retentionMs = 30 * 60 * 1e3;
+  }
+  prune() {
+    for (const [id, job] of this.jobs) {
+      if (terminal.has(job.status) && this.now() - job.finishedAt >= this.retentionMs) {
+        clearTimeout(job.expiryTimer);
+        this.jobs.delete(id);
+      }
+    }
+  }
+  retain(job) {
+    job.finishedAt = this.now();
+    job.expiryTimer = setTimeout(() => this.prune(), this.retentionMs + 1);
+    job.expiryTimer.unref?.();
+    job.query = Object.fromEntries(Object.entries(job.query).filter(([key]) => ["jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "rssLimitBytes", "batchScanBytes"].includes(key)));
+  }
+  start(input) {
+    this.prune();
+    if (this.closed) throw fault("log query runner is stopping", "LOG_JOB_RUNNER_CLOSED", 503);
+    const config = { ...this.config, logs: { ...this.config.logs, projects: input._logProjects || this.config.logs?.projects || {} } };
+    const query = normalizeLogJob(input, config);
+    if ([...this.jobs.values()].filter((job2) => !terminal.has(job2.status)).length >= 4) throw fault("log query queue is full", "LOG_JOB_QUEUE_FULL", 429);
+    if (this.jobs.size >= 16) {
+      const oldest = [...this.jobs.values()].find((job2) => terminal.has(job2.status));
+      if (oldest) {
+        clearTimeout(oldest.expiryTimer);
+        this.jobs.delete(oldest.jobId);
+      }
+    }
+    const job = {
+      jobId: (0, import_node_crypto16.randomUUID)(),
+      status: "queued",
+      createdAt: this.now(),
+      query,
+      evidence: [],
+      evidenceBytes: 0,
+      progress: { matchedLines: 0, scannedBytes: 0, expandedBytes: 0, countsAreComplete: false }
+    };
+    this.jobs.set(job.jobId, job);
+    setImmediate(() => this.pump());
+    return this.get({ jobId: job.jobId });
+  }
+  find(jobId) {
+    this.prune();
+    const job = this.jobs.get(jobId);
+    if (!job) throw fault("log query task not found or expired", "LOG_JOB_NOT_FOUND", 404);
+    return job;
+  }
+  get(input) {
+    const job = this.find(input.jobId);
+    const offset = bounded(input.offset, 0, 0, 2e3, "offset");
+    const limit = bounded(input.limit, 50, 1, 2e3, "limit");
+    const all = job.result?.records || job.evidence;
+    const records = [];
+    let bytes = 0;
+    for (const record of all.slice(offset, offset + limit)) {
+      const size = Buffer.byteLength(JSON.stringify(record));
+      if (records.length && bytes + size > 256 * 1024) break;
+      records.push(record);
+      bytes += size;
+    }
+    const { records: ignored, ...result } = job.result || {};
+    const hasMore = offset + records.length < all.length;
+    return {
+      jobId: job.jobId,
+      status: job.status,
+      createdAt: job.createdAt,
+      startedAt: job.startedAt,
+      finishedAt: job.finishedAt,
+      expiresAt: job.finishedAt ? job.finishedAt + this.retentionMs : void 0,
+      progress: job.progress,
+      ...result,
+      countsAreComplete: job.status === "completed" && result.countsAreComplete === true,
+      records,
+      hasMoreRecords: hasMore,
+      nextOffset: hasMore ? offset + records.length : null,
+      error: job.error,
+      requestedAction: job.requestedAction,
+      limits: {
+        jobTimeoutMs: job.query.jobTimeoutMs,
+        cpuPercent: job.query.cpuPercent,
+        readBytesPerSecond: job.query.readBytesPerSecond,
+        processBytesPerSecond: job.query.processBytesPerSecond,
+        rssLimitBytes: job.query.rssLimitBytes,
+        batchScanBytes: job.query.batchScanBytes
+      }
+    };
+  }
+  control(input) {
+    const job = this.find(input.jobId);
+    if (!["pause", "resume", "cancel"].includes(input.action)) throw fault("action must be pause, resume or cancel", "INVALID_LOG_JOB_ACTION");
+    if (terminal.has(job.status)) return this.get(input);
+    if (job.status === "queued") {
+      if (input.action !== "cancel") throw fault("queued tasks can only be cancelled", "LOG_JOB_NOT_RUNNING", 409);
+      job.status = "cancelled";
+      this.retain(job);
+    } else {
+      job.requestedAction = input.action;
+      if (job.channel && !job.channel.destroyed) job.channel.write(JSON.stringify({ type: input.action }) + "\n");
+      if (input.action === "cancel") job.controller.abort(fault("log query cancelled", "LOG_JOB_CANCELLED", 499));
+    }
+    return this.get({ jobId: job.jobId });
+  }
+  pump() {
+    if (this.active || this.closed) return;
+    const job = [...this.jobs.values()].find((item) => item.status === "queued");
+    if (!job) return;
+    this.active = job;
+    job.promise = this.execute(job).finally(() => {
+      this.active = null;
+      this.pump();
+    });
+  }
+  async execute(job) {
+    job.startedAt = this.now();
+    job.status = "running";
+    const envelope = { operationId: job.jobId, deadlineAt: this.now() + job.query.jobTimeoutMs, timeoutMs: job.query.jobTimeoutMs };
+    job.controller = new AbortController();
+    const linked = createOperationController(envelope, job.controller.signal, { layer: "logs", deadlinePhase: "job" });
+    const decoder = new import_node_string_decoder2.StringDecoder("utf8");
+    let pending = "", receivedFinal = false, heartbeat;
+    const onFrame = (frame) => {
+      if (receivedFinal) throw fault("duplicate terminal log frame", "LOG_JOB_PROTOCOL", 502);
+      if (frame.type === "progress") {
+        job.progress = frame;
+        if (frame.status === "paused" || frame.status === "running") job.status = frame.status;
+        if (job.requestedAction === "pause" && frame.status === "paused" || job.requestedAction === "resume" && frame.status === "running") job.requestedAction = void 0;
+      } else if (frame.type === "evidence") {
+        const bytes = Buffer.byteLength(JSON.stringify(frame.record));
+        if (job.evidence.length >= job.query.limit || job.evidenceBytes + bytes > job.query.maxBytes) throw fault("log evidence budget exceeded", "LOG_JOB_PROTOCOL", 502);
+        job.evidence.push(frame.record);
+        job.evidenceBytes += bytes;
+        job.progress = frame.progress;
+      } else if (frame.type === "result") {
+        receivedFinal = true;
+        job.result = { ...frame.result, resources: frame.resources };
+      } else if (frame.type === "error") {
+        receivedFinal = true;
+        job.progress = frame;
+        job.error = frame.error;
+      } else throw fault("unknown log job frame", "LOG_JOB_PROTOCOL", 502);
+    };
+    try {
+      const result = await this.runSSH(logJobCommand(), {
+        config: this.config,
+        operation: { ...envelope, signal: linked.signal },
+        priority: "background",
+        captureStdout: false,
+        keepStdinOpen: true,
+        stdin: JSON.stringify({ type: "start", input: { ...job.query, deadlineAt: envelope.deadlineAt } }) + "\n",
+        onChannel: (channel) => {
+          job.channel = channel;
+          if (job.requestedAction) channel.write(JSON.stringify({ type: job.requestedAction }) + "\n");
+          heartbeat = setInterval(() => {
+            if (!channel.destroyed && channel.writableLength < 4096) channel.write('{"type":"heartbeat"}\n');
+          }, 1e4);
+          heartbeat.unref?.();
+        },
+        onStdoutChunk: (chunk) => {
+          pending += decoder.write(chunk);
+          let index;
+          while ((index = pending.indexOf("\n")) >= 0) {
+            if (Buffer.byteLength(pending.slice(0, index)) > 1024 * 1024) throw fault("oversized log job frame", "LOG_JOB_PROTOCOL", 502);
+            const line = pending.slice(0, index);
+            pending = pending.slice(index + 1);
+            onFrame(JSON.parse(line));
+          }
+          if (Buffer.byteLength(pending) > 1024 * 1024) throw fault("oversized log job frame", "LOG_JOB_PROTOCOL", 502);
+        }
+      });
+      if (!receivedFinal || pending || result.exitCode !== 0 && !job.error) throw fault("SSH log task ended without a complete result", "LOG_JOB_INTERRUPTED", 502);
+      if (job.error) job.status = this.errorStatus(job.error.code);
+      else {
+        job.status = job.result.countsAreComplete ? "completed" : "partial";
+        job.progress = { ...job.result, records: void 0, groups: void 0, warnings: void 0 };
+        job.evidence = [];
+      }
+    } catch (error) {
+      job.result = void 0;
+      job.error = { code: error.code || "LOG_JOB_FAILED", message: error.message };
+      job.status = this.errorStatus(job.error.code);
+    } finally {
+      clearInterval(heartbeat);
+      linked.cleanup();
+      job.channel = null;
+      this.retain(job);
+      job.requestedAction = void 0;
+    }
+  }
+  errorStatus(code) {
+    if (code === "LOG_JOB_CANCELLED" || code === "OPERATION_CANCELLED") return "cancelled";
+    if (["LOG_JOB_PAUSE_EXPIRED", "LOG_JOB_TIMEOUT", "OPERATION_DEADLINE_EXCEEDED"].includes(code)) return "expired";
+    if (["SSH_TRANSPORT_LOST", "LOG_JOB_INTERRUPTED", "LOG_JOB_CONTROLLER_LOST"].includes(code)) return "interrupted";
+    return "failed";
+  }
+  async close() {
+    this.closed = true;
+    for (const job of this.jobs.values()) if (!terminal.has(job.status)) this.control({ jobId: job.jobId, action: "cancel" });
+    await this.active?.promise;
+    for (const job of this.jobs.values()) clearTimeout(job.expiryTimer);
+    this.jobs.clear();
+  }
+};
+
 // worker-manager.js
 var import_node_child_process3 = require("node:child_process");
-var import_node_crypto17 = require("node:crypto");
+var import_node_crypto18 = require("node:crypto");
 var import_promises5 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
 var import_node_path11 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
 
 // memory-store.js
-var import_node_crypto16 = require("node:crypto");
+var import_node_crypto17 = require("node:crypto");
 var import_node_fs7 = __toESM(require("node:fs"), 1);
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path10 = __toESM(require("node:path"), 1);
@@ -61310,7 +61634,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto16.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto17.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -61676,7 +62000,7 @@ var MemoryStore = class {
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
     await import_promises4.default.mkdir(import_node_path10.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto16.randomUUID)()}.tmp`;
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto17.randomUUID)()}.tmp`;
     await import_promises4.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
     await import_promises4.default.rename(tempPath, filePath);
@@ -62398,7 +62722,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
-      authToken: (0, import_node_crypto17.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto18.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -63008,7 +63332,7 @@ async function writeRuntimeState(config, event2) {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   await import_promises6.default.mkdir(import_node_path12.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto18.randomUUID)()}.tmp`;
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto19.randomUUID)()}.tmp`;
   await import_promises6.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises6.default.rename(tempPath, statePath);
@@ -63028,7 +63352,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto18.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto19.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -63311,6 +63635,7 @@ function createApp(options = {}) {
     operation,
     runSSH: runSSH2
   });
+  const logJobRunner = options.logJobRunner || new LogJobRunner({ config, runSSH: runSSH2 });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -63990,6 +64315,25 @@ function createApp(options = {}) {
       response.status(errorStatus(error)).json({ ...payload, durationMs });
     }
   });
+  for (const action of ["start", "get", "control"]) {
+    app.post(`/logs/jobs/${action}`, async (request, response) => {
+      try {
+        const input = request.body || {};
+        const result = action === "start" ? logJobRunner.start(input) : action === "get" ? logJobRunner.get(input) : logJobRunner.control(input);
+        await audit(config, {
+          tool: `logs-job-${action}`,
+          jobId: result.jobId,
+          status: result.status,
+          ok: true,
+          action: input.action
+        });
+        response.status(action === "start" ? 202 : 200).json({ ok: true, ...result });
+      } catch (error) {
+        await audit(config, { tool: `logs-job-${action}`, ok: false, errorCode: error.code });
+        response.status(errorStatus(error)).json(errorPayload(error));
+      }
+    });
+  }
   app.post("/logs/query", async (request, response) => {
     const startedAt = import_node_perf_hooks.performance.now();
     const operation = createRequestOperation(request, response, "/logs/query", config);
@@ -64363,6 +64707,8 @@ function createApp(options = {}) {
   app.post("/mongodb/bulk/rollback", (request, response) => handleMongoBulk(request, response, "rollback", "/mongodb/bulk/rollback"));
   app.locals.mongoBulkJobRunner = getMongoBulkJobRunner;
   app.locals.pauseMongoBulkJobRunner = () => mongoBulkJobRunner ? mongoBulkJobRunner.pauseForShutdown() : Promise.resolve();
+  app.locals.logJobRunner = logJobRunner;
+  app.locals.closeLogJobs = () => logJobRunner.close();
   return app;
 }
 function managerErrorPayload(error) {
@@ -65201,7 +65547,7 @@ function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
-      if (pathName === "/logs/query") {
+      if (pathName === "/logs/query" || pathName === "/logs/jobs/start") {
         const instance2 = registry.getInternal(resolvedId);
         payload._logProjects = normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots);
       }
@@ -65257,6 +65603,9 @@ function createManagerApp(options = {}) {
   app.post("/logs/archive-members", (request, response) => proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
   app.post("/logs/query", (request, response) => proxyToInstance("/logs/query", request, response));
+  for (const action of ["start", "get", "control"]) {
+    app.post(`/logs/jobs/${action}`, (request, response) => proxyToInstance(`/logs/jobs/${action}`, request, response));
+  }
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/mongodb/imports/prepare", (request, response) => proxyToInstance("/mongodb/imports/prepare", request, response));
   app.post("/mongodb/bulk/storage/prepare", (request, response) => proxyToInstance("/mongodb/bulk/storage/prepare", request, response));
@@ -65836,7 +66185,7 @@ async function main() {
     if (reportStopped) {
       send({ type: "health", status: "stopped", reason });
     }
-    Promise.resolve().then(() => app.locals.pauseMongoBulkJobRunner()).catch(() => {
+    Promise.resolve().then(() => app.locals.closeLogJobs()).then(() => app.locals.pauseMongoBulkJobRunner()).catch(() => {
     }).then(() => supervisor.stop(reason)).finally(() => {
       server.close(() => {
         process.exit(0);

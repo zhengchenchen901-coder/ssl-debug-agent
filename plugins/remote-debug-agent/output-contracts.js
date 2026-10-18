@@ -52,6 +52,16 @@ const access = {
   executionUser: fields("user db"), environment: json, managerPrivileges: json, executorPrivileges: json,
   existing: { ...fields("manager profile executorGranted"), roles: json },
 };
+const logResources = fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs");
+const logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete"), resources: logResources };
+const logJob = {
+  ...logProgress, ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction"),
+  progress: logProgress, resources: logResources, error,
+  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
+  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
+  groups: [fields("level route method code message count")],
+  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }],
+};
 const contracts = {
   remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
   remote_debug_get_capabilities: { capabilities: json },
@@ -90,6 +100,9 @@ const contracts = {
     records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
     members: [entry], warnings: [warning],
   },
+  remote_debug_start_log_query: logJob,
+  remote_debug_get_log_query: logJob,
+  remote_debug_control_log_query: logJob,
   remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
   remote_debug_set_log_project: { projects: json },
   remote_debug_prepare_command_draft: draft,

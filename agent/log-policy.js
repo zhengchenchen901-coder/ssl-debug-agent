@@ -28,6 +28,14 @@ export const LOG_QUERY_CAPABILITIES = Object.freeze({
   supportedCompression: ["none", "gzip", "tar-gzip"], maxFiles: 50,
   maxScanBytes: 256 * 1024 * 1024, maxExpandedBytes: 2 * 1024 * 1024 * 1024,
   maxDirectoryEntries: 5000, maxReturnedLines: 2000, maxReturnedBytes: 256 * 1024,
+  backgroundJobs: { start: "/logs/jobs/start", get: "/logs/jobs/get", control: "/logs/jobs/control",
+    maxConcurrentPerInstance: 1, maxQueuedPerInstance: 3, singlePassArchives: true,
+    defaultJobTimeoutMs: 1800000, maxJobTimeoutMs: 7200000,
+    defaultCpuPercent: 20, defaultReadBytesPerSecond: 2097152,
+    defaultProcessBytesPerSecond: 4194304, rssLimitBytes: 201326592,
+    defaultBatchScanBytes: 268435456, cumulativeExpandedByteLimit: null,
+    pauseTtlMs: 300000, retentionMs: 1800000, maxRetainedJobs: 16,
+    survivesWorkerRestart: false },
 });
 
 export const LOG_SUPPORTED_COMPRESSION = Object.freeze([
@@ -72,6 +80,21 @@ export function logInputError(message, code = "INVALID_LOG_REQUEST") {
   error.phase = "validation";
   error.retriable = false;
   return error;
+}
+
+export function normalizeLogJobLimits(value) {
+  if (value === undefined || value === "") return {};
+  let parsed = value;
+  try { if (typeof value === "string") parsed = JSON.parse(value); } catch { throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS"); }
+  const ranges = { maxJobTimeoutMs: [1000, 7200000], cpuPercent: [1, 50],
+    readBytesPerSecond: [65536, 16777216], processBytesPerSecond: [65536, 33554432],
+    rssLimitBytes: [64 * 1024 * 1024, 192 * 1024 * 1024] };
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
+  for (const [key, number] of Object.entries(parsed)) {
+    const range = ranges[key];
+    if (!range || !Number.isInteger(number) || number < range[0] || number > range[1]) throw logInputError(`invalid log job limit: ${key}`);
+  }
+  return { ...parsed };
 }
 
 function positiveInteger(value, fallback, maximum, field) {

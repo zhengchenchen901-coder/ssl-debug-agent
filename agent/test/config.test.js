@@ -5,6 +5,16 @@ import path from "node:path";
 import test from "node:test";
 import { configFingerprint, loadConfig, loadDotEnv } from "../config.js";
 
+test("log job ceilings are validated and participate in config identity", () => {
+  const base = loadConfig({ REMOTE_DEBUG_WORKER: "1" }, "/nonexistent-log-job-config");
+  const restricted = loadConfig({ REMOTE_DEBUG_WORKER: "1", REMOTE_DEBUG_LOG_JOB_LIMITS: '{"cpuPercent":10,"maxJobTimeoutMs":600000}' }, "/nonexistent-log-job-config");
+  assert.equal(restricted.logs.jobLimits.cpuPercent, 10);
+  assert.notEqual(configFingerprint(base), configFingerprint(restricted));
+  for (const value of ['{"cpuPercent":100}', '{"rssLimitBytes":1}', '{"unknown":1}', '[]', 'invalid']) {
+    assert.throws(() => loadConfig({ REMOTE_DEBUG_WORKER: "1", REMOTE_DEBUG_LOG_JOB_LIMITS: value }, "/nonexistent-log-job-config"), /invalid/);
+  }
+});
+
 test("loads root .env when agent starts from the agent directory", async () => {
   const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), "remote-debug-config-"));
   const agentDir = path.join(projectDir, "agent");

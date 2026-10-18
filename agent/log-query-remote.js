@@ -1,6 +1,6 @@
 // Serialized into a fixed read-only Node helper and sent over SSH stdin.
 // Keep all dependencies inside the function so the remote host needs only Node.
-export async function remoteLogQuery(input) {
+export async function remoteLogQuery(input, runtime = {}) {
   const fs = require("fs");
   const path = require("path").posix;
   const zlib = require("zlib");
@@ -27,8 +27,23 @@ export async function remoteLogQuery(input) {
   let listingTruncated = false;
   let directoryEntries = 0;
   let warningsTruncated = false;
+  const job = input.background === true;
+  let completedMembers = 0, selectedMembers = 0, completedFiles = 0, failedFiles = 0;
+  let currentFile = null, currentMember = null, manifestBytes = 0;
+  const groups = new Map();
+  const jobRecords = [];
+  let jobOutputBytes = 0;
+  let groupsTruncated = false;
+  const progress = () => ({ scannedBytes, expandedBytes, matchedLines, scannedLines,
+    totalFiles: selected.length, completedFiles, failedFiles, selectedMembers, completedMembers,
+    currentFile, currentMember, batchesCompleted: Math.floor(scannedBytes / input.batchScanBytes),
+    outputTruncated, scanTruncated, directoryListingTruncated: listingTruncated });
+  async function checkpoint(kind, bytes = 0) {
+    if (job) await runtime.check?.(kind, bytes, progress);
+    active();
+  }
   function warn(value) {
-    if (warnings.length < 100) warnings.push(value);
+    if (warnings.length < (job ? 20 : 100)) warnings.push(value);
     else warningsTruncated = true;
   }
   const inside = (value, root) => value === root || value.startsWith(`${root}/`);
@@ -65,7 +80,11 @@ export async function remoteLogQuery(input) {
     if (!stats.isFile()) return;
     if (files.some((file) => file.path === resolved)) return;
     const compression = /\.(?:tar\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\.gz$/i.test(resolved) ? "gzip" : "none";
-    files.push({ path: resolved, name: path.basename(requested), size: stats.size, modifyTime: stats.mtimeMs, compression });
+    const item = { path: resolved, name: path.basename(requested), size: stats.size, modifyTime: stats.mtimeMs, compression,
+      ...(job ? { inode: stats.ino, device: stats.dev, changeTime: stats.ctimeMs } : {}) };
+    if (job && manifestBytes + Buffer.byteLength(JSON.stringify(item)) > 2 * 1024 * 1024) { listingTruncated = true; return; }
+    manifestBytes += Buffer.byteLength(JSON.stringify(item));
+    files.push(item);
   }
   if (input.path) {
     if (/\.(?:bz2|xz|zip|tar)$/i.test(input.path)) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");
@@ -80,6 +99,7 @@ export async function remoteLogQuery(input) {
         try {
           for await (const entry of handle) {
             active();
+            if (job) await runtime.check?.("discovery", 0);
             if (++directoryEntries > input.maxDirectoryEntries) { listingTruncated = true; break; }
             if ((!entry.isFile() && !entry.isSymbolicLink()) || !logName(entry.name) || !fileMatches(entry.name)) continue;
             try { await addFile(path.join(directory, entry.name), resolved); }
@@ -100,6 +120,7 @@ export async function remoteLogQuery(input) {
   const selected = files.slice(input.fileOffset, input.fileOffset + input.maxFiles);
   filesTruncated = input.fileOffset + selected.length < files.length;
   const inspectedFiles = selected.map((file) => ({ ...file }));
+  if (job) runtime.progress = progress;
   if (input.mode === "files") return {
     mode: input.mode, projectId: input.projectId, files: inspectedFiles, warnings,
     hasMoreFiles: filesTruncated, nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,
@@ -133,11 +154,49 @@ export async function remoteLogQuery(input) {
     const fields = recordFields(line);
     if (!match(line, fields)) return;
     matchedLines++;
+    if (job) {
+      let payload;
+      try { const outer = JSON.parse(line); const message = outer.message;
+        payload = typeof message === "string" && message.includes("{") ? JSON.parse(message.slice(message.indexOf("{"))) : outer;
+      } catch { /* unstructured evidence remains in the bounded sample */ }
+      const error = payload?.error;
+      const key = JSON.stringify([fields.level, fields.route, fields.method,
+        typeof error?.code === "string" ? error.code.slice(0, 128) : undefined,
+        typeof error?.message === "string" ? error.message.slice(0, 512) : undefined]);
+      const group = groups.get(key);
+      if (group) group.count++;
+      else if (groups.size < 100) groups.set(key, { level: fields.level, route: fields.route,
+        method: fields.method, code: typeof error?.code === "string" ? error.code.slice(0, 128) : undefined,
+        message: typeof error?.message === "string" ? error.message.slice(0, 512) : undefined, count: 1 });
+      else groupsTruncated = true;
+      if (jobRecords.length >= input.limit || jobOutputBytes >= input.maxBytes) { outputTruncated = true; return; }
+    }
     const raw = Buffer.from(line);
     const shortened = raw.length > input.maxBytes;
     let text = shortened ? raw.subarray(0, input.maxBytes).toString("utf8").replace(/\uFFFD$/, "") : line;
     if (shortened) outputTruncated = true;
     const record = { file, ...(memberPath ? { memberPath } : {}), ...(lineNumber ? { lineNumber } : {}), ...(lineFromEnd ? { lineFromEnd } : {}), ...fields, text, ...(shortened ? { truncated: true } : {}) };
+    if (job && Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) {
+      // Include JSON escaping and source metadata in the background sample budget.
+      let low = 0, high = text.length;
+      record.truncated = true;
+      while (low < high) {
+        const middle = Math.ceil((low + high) / 2);
+        record.text = text.slice(0, middle);
+        if (Buffer.byteLength(JSON.stringify(record)) <= input.maxBytes) low = middle;
+        else high = middle - 1;
+      }
+      record.text = text.slice(0, low).replace(/[\uD800-\uDBFF]$/, "");
+      outputTruncated = true;
+      if (Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) return;
+    }
+    if (job) {
+      const bytes = Buffer.byteLength(JSON.stringify(record));
+      if (jobOutputBytes + bytes > input.maxBytes) { outputTruncated = true; return; }
+      jobRecords.push(record); jobOutputBytes += bytes;
+      runtime.evidence?.(record);
+      return;
+    }
     records.push(record);
     outputBytes += Buffer.byteLength(text);
     while (records.length > input.limit || (outputBytes > input.maxBytes && records.length > 1)) {
@@ -206,6 +265,7 @@ export async function remoteLogQuery(input) {
     const field = (buffer, offset, size) => buffer.subarray(offset, offset + size).toString("utf8").replace(/\0.*$/, "");
     function endEntry() {
       consumer?.finish(); consumer = null;
+      if (selectedMember && job) { completedMembers++; currentMember = null; }
       if (selectedMember && input.memberPath) done = true;
       selectedMember = false;
       if (metadata) {
@@ -283,6 +343,7 @@ export async function remoteLogQuery(input) {
               } else if (input.memberPath === name && (type !== "0" || !allowedMember(name))) throw failure("archive member must be a safe regular file", "ARCHIVE_MEMBER_NOT_READABLE");
               if (input.mode !== "members" && type === "0" && allowedMember(name) && (logName(name) || input.memberPath === name) && memberMatches(name)) {
                 consumer = lineConsumer(file, name); selectedMember = true; foundMember = true;
+                if (job) { selectedMembers++; currentMember = name; }
               }
             }
             header = Buffer.alloc(0);
@@ -300,7 +361,8 @@ export async function remoteLogQuery(input) {
   }
   const scannedFiles = [];
   for (const file of selected) {
-    active();
+    currentFile = file.path;
+    await checkpoint("file");
     if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) { scanTruncated = true; break; }
     if (input.mode === "latest" && retainedRecords.length >= input.limit) { scanTruncated = true; break; }
     records = []; outputBytes = 0;
@@ -311,6 +373,8 @@ export async function remoteLogQuery(input) {
       fd = await fs.promises.open(file.path, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
       const liveStats = await fd.stat();
       if (!liveStats.isFile()) throw failure("path is not a regular log file", "LOG_NOT_FILE");
+      if (job && (liveStats.size !== file.size || liveStats.mtimeMs !== file.modifyTime || liveStats.ctimeMs !== file.changeTime
+        || liveStats.ino !== file.inode || liveStats.dev !== file.device)) throw failure("log changed after discovery", "LOG_FILE_CHANGED");
       // Snapshot the file size; exclude bytes appended during this query.
       file.size = liveStats.size;
       const prefix = Buffer.alloc(8);
@@ -350,19 +414,19 @@ export async function remoteLogQuery(input) {
         const source = Readable.from((async function* () {
           let position = rangeStart;
           while (position < file.size) {
-            active();
+            await checkpoint("read", Math.min(65536, file.size - position));
             const buffer = Buffer.allocUnsafe(Math.min(65536, file.size - position));
             const read = await fd.read(buffer, 0, buffer.length, position);
             if (!read.bytesRead) { warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" }); break; }
             position += read.bytesRead;
             yield buffer.subarray(0, read.bytesRead);
           }
-        })());
+        })(), { highWaterMark: 1 });
         let stream = source;
         let gunzip;
         let sourceError;
         if (file.compression !== "none") {
-          gunzip = zlib.createGunzip();
+          gunzip = zlib.createGunzip({ chunkSize: 65536, highWaterMark: 65536 });
           source.on("error", (error) => { sourceError = error; gunzip.destroy(error); });
           stream = source.pipe(gunzip);
         }
@@ -370,7 +434,7 @@ export async function remoteLogQuery(input) {
         let stopped = false;
         try {
           for await (const chunk of stream) {
-            active();
+            await checkpoint("process", chunk.length);
             if (file.compression !== "none") {
               if (expandedBytes + chunk.length > input.maxExpandedBytes) { scanTruncated = true; stopped = true; break; }
               expandedBytes += chunk.length;
@@ -385,9 +449,18 @@ export async function remoteLogQuery(input) {
         } finally { source.destroy(); gunzip?.destroy(); }
         if (sourceError) throw sourceError;
       }
+      if (job) {
+        const after = await fd.stat();
+        const named = await fs.promises.stat(file.path);
+        if (after.size !== liveStats.size || after.mtimeMs !== liveStats.mtimeMs || after.ctimeMs !== liveStats.ctimeMs
+          || named.ino !== liveStats.ino || named.dev !== liveStats.dev) throw failure("log changed during query", "LOG_FILE_CHANGED");
+        completedFiles++;
+      }
       scannedFiles.push({ path: file.path, scannedBytes: scannedBytes - before,
         ...(file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}) });
     } catch (error) {
+      if (job && !["LOG_FILE_CHANGED", "UNSUPPORTED_COMPRESSION", "BINARY_LOG_UNSUPPORTED", "LOG_ARCHIVE_INVALID", "ARCHIVE_MEMBER_NOT_FOUND", "ARCHIVE_MEMBER_NOT_READABLE", "ENOENT", "EACCES"].includes(error.code)) throw error;
+      if (job) failedFiles++;
       if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;
       if (input.path) throw error;
       warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });
@@ -405,6 +478,11 @@ export async function remoteLogQuery(input) {
     file.size = live.size; file.compression = live.compression;
   }
   const complete = !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;
+  if (job) return { ...progress(), currentFile: null, currentMember: null,
+    records: jobRecords, returnedLines: jobRecords.length, outputBytes: jobOutputBytes,
+    outputTruncated, scanTruncated, complete, countsAreComplete: complete,
+    coverage: complete ? "complete" : "bounded", warnings, warningsTruncated,
+    groups: [...groups.values()], groupsTruncated, durationMs: Date.now() - started };
   return {
     mode: input.mode, projectId: input.projectId, files: inspectedFiles, scannedFiles,
     records: retainedRecords, content: retainedRecords.map((record) => record.text).join("\n") + (retainedRecords.length ? "\n" : ""),

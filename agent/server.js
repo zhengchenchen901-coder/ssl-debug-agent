@@ -60,6 +60,7 @@ import {
 import { InstanceRegistry } from "./instance-registry.js";
 import { normalizeLogProjects } from "./log-projects.js";
 import { queryLogs as defaultQueryLogs, normalizeLogQuery } from "./log-query.js";
+import { LogJobRunner } from "./log-jobs.js";
 import { WorkerManager } from "./worker-manager.js";
 import {
   API_VERSION,
@@ -477,6 +478,7 @@ export function createApp(options = {}) {
     config: { ...config, logs: { projects: input._logProjects || config.logs?.projects || {} } },
     operation, runSSH,
   });
+  const logJobRunner = options.logJobRunner || new LogJobRunner({ config, runSSH });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -1216,6 +1218,22 @@ export function createApp(options = {}) {
     }
   });
 
+  for (const action of ["start", "get", "control"]) {
+    app.post(`/logs/jobs/${action}`, async (request, response) => {
+      try {
+        const input = request.body || {};
+        const result = action === "start" ? logJobRunner.start(input)
+          : action === "get" ? logJobRunner.get(input) : logJobRunner.control(input);
+        await audit(config, { tool: `logs-job-${action}`, jobId: result.jobId,
+          status: result.status, ok: true, action: input.action });
+        response.status(action === "start" ? 202 : 200).json({ ok: true, ...result });
+      } catch (error) {
+        await audit(config, { tool: `logs-job-${action}`, ok: false, errorCode: error.code });
+        response.status(errorStatus(error)).json(errorPayload(error));
+      }
+    });
+  }
+
   app.post("/logs/query", async (request, response) => {
     const startedAt = performance.now();
     const operation = createRequestOperation(request, response, "/logs/query", config);
@@ -1598,6 +1616,8 @@ export function createApp(options = {}) {
 
   app.locals.mongoBulkJobRunner = getMongoBulkJobRunner;
   app.locals.pauseMongoBulkJobRunner = () => mongoBulkJobRunner ? mongoBulkJobRunner.pauseForShutdown() : Promise.resolve();
+  app.locals.logJobRunner = logJobRunner;
+  app.locals.closeLogJobs = () => logJobRunner.close();
   return app;
 }
 
@@ -2522,7 +2542,7 @@ export function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
-      if (pathName === "/logs/query") {
+      if (pathName === "/logs/query" || pathName === "/logs/jobs/start") {
         const instance = registry.getInternal(resolvedId);
         payload._logProjects = normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots);
       }
@@ -2580,6 +2600,9 @@ export function createManagerApp(options = {}) {
     proxyToInstance("/logs/archive-members", request, response));
   app.post("/logs/read", (request, response) => proxyToInstance("/logs/read", request, response));
   app.post("/logs/query", (request, response) => proxyToInstance("/logs/query", request, response));
+  for (const action of ["start", "get", "control"]) {
+    app.post(`/logs/jobs/${action}`, (request, response) => proxyToInstance(`/logs/jobs/${action}`, request, response));
+  }
   app.post("/mongodb/query", (request, response) => proxyToInstance("/mongodb/query", request, response));
   app.post("/mongodb/imports/prepare", (request, response) =>
     proxyToInstance("/mongodb/imports/prepare", request, response));

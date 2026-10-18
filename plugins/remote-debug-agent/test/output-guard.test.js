@@ -5,6 +5,21 @@ import { OUTPUT_CONTRACTS } from "../output-contracts.js";
 
 function payload(result) { return JSON.parse(result.content[0].text); }
 
+test("background log output preserves progress and redacts evidence and group messages", () => {
+  const guard = createOutputGuard();
+  for (const name of ["remote_debug_start_log_query", "remote_debug_get_log_query", "remote_debug_control_log_query"]) {
+    const result = payload(guard.toolResult(name, { ok: true, jobId: "job-1", status: "completed", countsAreComplete: true,
+      matchedLines: 12, progress: { completedFiles: 2, resources: { peakRssBytes: 64000000 } },
+      groups: [{ message: 'password="GROUP_PRIVATE"', count: 12 }],
+      records: [{ file: "/var/log/app.log", text: 'token="LOG_PRIVATE"' }],
+      limits: { cpuPercent: 20 }, unexpected: "MUST_NOT_LEAVE" }));
+    assert.equal(result.jobId, "job-1"); assert.equal(result.matchedLines, 12);
+    assert.equal(result.progress.completedFiles, 2);
+    assert.equal(result.limits.cpuPercent, 20);
+    assert.doesNotMatch(JSON.stringify(result), /GROUP_PRIVATE|LOG_PRIVATE|MUST_NOT_LEAVE/);
+  }
+});
+
 test("closed output contracts omit unknown metadata, including nested instance fields", () => {
   const guard = createOutputGuard();
   const result = payload(guard.toolResult("remote_debug_list_instances", {

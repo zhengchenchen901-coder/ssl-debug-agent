@@ -184,8 +184,45 @@ test("manager log mappings persist and override stale worker mappings immediatel
   const query = await postJson(server, "/logs/query", { instanceId: "default", projectId: "be", _logProjects: { be: { directories: ["/etc/ssh"] } } });
   assert.equal(query.status, 200);
   assert.deepEqual(forwarded._logProjects.be.directories, ["/home/github/app/logs"]);
+  const background = await postJson(server, "/logs/jobs/start", { instanceId: "default", projectId: "be", _logProjects: { be: { directories: ["/etc/ssh"] } } });
+  assert.equal(background.status, 200);
+  assert.deepEqual(forwarded._logProjects.be.directories, ["/home/github/app/logs"]);
   const invalid = await postJson(server, "/api/log-projects", { instanceId: "default", projectId: "be", directories: ["/etc/ssh"] });
   assert.equal(invalid.status, 400);
+});
+
+test("background log HTTP endpoints authenticate, validate scope, and keep jobs separate from requests", { skip: !depsInstalled }, async (t) => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "log-job-http-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const config = makeConfig(path.join(dir, "audit.jsonl"));
+  config.security.allowedPaths = [dir]; config.logs = { projects: { be: { directories: [dir] } } };
+  let finish, observed;
+  const app = createApp({ authToken: TEST_AUTH_TOKEN, config, runSSH: async (_command, options) => {
+    observed = options;
+    await new Promise((resolve) => { finish = resolve; });
+    options.onStdoutChunk(Buffer.from(JSON.stringify({ type: "result", result: { records: [], complete: true, countsAreComplete: true, matchedLines: 12 } }) + "\n"));
+    return { exitCode: 0 };
+  } });
+  const server = await listen(app);
+  t.after(async () => { finish?.(); await app.locals.closeLogJobs(); await close(server); });
+  const unauthorized = await globalThis.fetch(`http://127.0.0.1:${server.address().port}/logs/jobs/start`, { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"projectId":"be"}' });
+  assert.equal(unauthorized.status, 401);
+  assert.equal((await postJson(server, "/logs/jobs/start", { projectId: "unknown" })).status, 400);
+  const start = await postJson(server, "/logs/jobs/start", { projectId: "be", contains: "PRIVATE_SEARCH_EXAMPLE" });
+  assert.equal(start.status, 202);
+  await waitFor(() => observed);
+  assert.equal(observed.operation.signal.aborted, false);
+  assert.ok(observed.operation.timeoutMs > 300000);
+  assert.equal(observed.captureStdout, false);
+  finish();
+  await waitFor(() => app.locals.logJobRunner.find(start.body.jobId).status === "completed");
+  const get = await postJson(server, "/logs/jobs/get", { jobId: start.body.jobId });
+  assert.equal(get.body.matchedLines, 12);
+  assert.equal(get.body.countsAreComplete, true);
+  assert.equal((await postJson(server, "/logs/jobs/control", { jobId: start.body.jobId, action: "invalid" })).status, 400);
+  assert.equal((await postJson(server, "/logs/jobs/get", { jobId: "missing" })).status, 404);
+  assert.doesNotMatch(await fsPromises.readFile(config.audit.logPath, "utf8"), /PRIVATE_SEARCH_EXAMPLE/);
 });
 
 async function getText(server, route) {

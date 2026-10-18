@@ -215,6 +215,7 @@ async function main() {
       send({ type: "health", status: "stopped", reason });
     }
     Promise.resolve()
+      .then(() => app.locals.closeLogJobs())
       .then(() => app.locals.pauseMongoBulkJobRunner())
       .catch(() => {})
       .then(() => supervisor.stop(reason))

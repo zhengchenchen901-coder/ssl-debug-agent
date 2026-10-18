@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import posixPath from "node:path/posix";
 import { normalizeLogProjects } from "./log-projects.js";
+import { normalizeLogJobLimits } from "./log-policy.js";
 import {
   DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
   DEFAULT_APPROVED_COMMAND_TTL_MS,
@@ -327,7 +328,8 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS),
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
-    logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots) },
+    logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots),
+      jobLimits: normalizeLogJobLimits(mergedEnv.REMOTE_DEBUG_LOG_JOB_LIMITS) },
     security: {
       allowedPaths: allowedPathsForSourceRoots(sourceRoots),
       sourceRoots,
@@ -449,6 +451,7 @@ function fingerprintConfig(config) {
       hostKeyFingerprints: config.ssh.hostKeyFingerprints || [],
     },
     security,
+    logs: config.logs,
     mongodb: config.mongodb
       ? {
           enabled: Boolean(config.mongodb.enabled),

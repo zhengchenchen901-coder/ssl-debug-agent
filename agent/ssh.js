@@ -434,8 +434,13 @@ function executeChannel(client, command, operation, options, supervisor) {
         return;
       }
       stream.on("data", (chunk) => {
-        stdout.append(chunk);
-        options.onStdout?.(chunk.toString("utf8"));
+        if (options.captureStdout !== false) stdout.append(chunk);
+        try { options.onStdoutChunk?.(chunk); options.onStdout?.(chunk.toString("utf8")); }
+        catch (error) {
+          finish(error);
+          try { stream.signal?.("TERM"); } catch { /* server may not support signals */ }
+          try { stream.close?.(); } catch { /* controller watchdog is the final fallback */ }
+        }
       });
       stream.stderr.on("data", (chunk) => {
         stderr.append(chunk);
@@ -484,7 +489,9 @@ function executeChannel(client, command, operation, options, supervisor) {
           if (typeof stream.end !== "function") {
             throw new Error("SSH exec channel does not support stdin");
           }
-          stream.end(options.stdin);
+          if (options.keepStdinOpen) stream.write(options.stdin);
+          else stream.end(options.stdin);
+          options.onChannel?.(stream);
         } catch (stdinError) {
           finish(operationError(stdinError.message || "failed to write SSH stdin", {
             code: "SSH_STDIN_FAILED",

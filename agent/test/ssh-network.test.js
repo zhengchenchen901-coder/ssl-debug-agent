@@ -169,6 +169,35 @@ test("a command that prints output but never exits returns the real deadline err
   }
 });
 
+test("long-lived exec keeps controls writable and streams output without cumulative capture", async () => {
+  const config = makeConfig(); config.security.maxCommandOutputBytes = 16;
+  const writes = []; let chunks = 0;
+  class FakeClient extends EventEmitter {
+    connect() { setImmediate(() => this.emit("ready")); }
+    exec(_command, callback) {
+      const stream = new EventEmitter(); stream.stderr = new EventEmitter();
+      stream.signal = () => {}; stream.close = () => stream.emit("close", 0);
+      stream.write = (text) => { writes.push(text); return true; };
+      stream.end = () => { throw new Error("control channel must remain open"); };
+      setImmediate(() => {
+        callback(null, stream);
+        for (let i = 0; i < 100; i++) stream.emit("data", Buffer.from("progress\n"));
+        stream.emit("close", 0);
+      });
+    }
+    end() {}
+  }
+  const supervisor = new SshConnectionSupervisor(config, { ClientClass: FakeClient, readFile: async () => "key" });
+  await supervisor.start();
+  try {
+    const result = await runSSH("node", { config, supervisor, stdin: "start\n", keepStdinOpen: true,
+      captureStdout: false, onChannel: (channel) => channel.write("pause\n"),
+      onStdoutChunk: (chunk) => { chunks += chunk.length; } });
+    assert.deepEqual(writes, ["start\n", "pause\n"]);
+    assert.equal(chunks, 900); assert.equal(result.stdout, ""); assert.equal(result.stdoutTruncated, false);
+  } finally { await supervisor.stop(); }
+});
+
 test("SFTP retries once before data is returned", async () => {
   const config = makeConfig();
   let sftpCount = 0;
