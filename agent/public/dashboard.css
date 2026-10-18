@@ -45,6 +45,27 @@
 #authLogout { margin-bottom: 16px; }
 .sandbox-output { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow-y: auto; font-size: 12px; }
 
+.output-preview-row > td { padding: 0 16px 16px; background: #f8faff; white-space: normal; }
+.output-preview { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: left; overflow: hidden; }
+#globalOutputPreview { padding: 0 16px 16px; }
+.output-preview-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line-soft); }
+.output-preview-toolbar strong { margin-right: 8px; }
+.output-preview-status { color: var(--muted); font-size: 12px; flex: 1 1 160px; }
+.output-preview-follow { display: flex; gap: 5px; align-items: center; font-size: 12px; }
+.output-preview-hint { margin: 0; padding: 8px 12px; color: var(--muted); font-size: 12px; white-space: normal; }
+.output-preview-content { display: grid; grid-template-columns: 250px minmax(0, 1fr); height: 380px; border-top: 1px solid var(--line-soft); }
+.output-preview-list { overflow: auto; padding: 8px; border-right: 1px solid var(--line); }
+.output-preview-list > p { padding: 12px; }
+.output-preview-item { width: 100%; display: block; margin-bottom: 6px; padding: 10px; border: 1px solid transparent; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; line-height: 1.7; font-size: 12px; background: var(--bg); color: var(--ink); cursor: pointer; }
+.output-preview-item.selected { border-color: var(--primary); background: var(--blue-soft); }
+.output-preview-item.failed { color: var(--red); }
+.output-preview-detail { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.output-preview-meta { padding: 8px 12px; margin: 0; color: var(--muted); font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
+.output-preview-body { flex: 1; min-height: 0; margin: 0; padding: 12px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #dce6f5; background: #152033; font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.output-preview-expanded { position: fixed; inset: 20px; z-index: 100; display: flex; flex-direction: column; box-shadow: 0 0 0 100vmax #0008; }
+.output-preview-expanded .output-preview-content { flex: 1; min-height: 0; height: auto; }
+@media (max-width: 760px) { .output-preview-content { grid-template-columns: 180px minmax(0, 1fr); } .output-preview-expanded { inset: 8px; } }
+
 * {
   box-sizing: border-box;
 }

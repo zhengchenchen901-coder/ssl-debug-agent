@@ -77,6 +77,7 @@
             <p id="tableHint">管理本地 worker 与远端 SSH 连接</p>
           </div>
           <div class="toolbar-actions">
+            <button id="globalOutputButton" class="button" type="button" aria-expanded="false">全局输出</button>
             <button id="shutdownButton" class="button danger" type="button" hidden>关闭 Manager</button>
             <button id="reloadButton" class="button" type="button">刷新列表</button>
             <button id="registerAdminButton" class="button" type="button">注册管理员</button>
@@ -84,6 +85,7 @@
           </div>
         </div>
 
+        <div id="globalOutputPreview" hidden></div>
         <div id="emptyState" class="empty-state" hidden>
           当前还没有连接实例。
         </div>
@@ -288,6 +290,7 @@
     <div id="toast" class="toast" hidden></div>
 
     <script src="/environment-report.js" defer></script>
+    <script src="/output-preview.js" defer></script>
     <script src="/dashboard.js" type="module"></script>
     <script src="/admin-registration.js" type="module"></script>
   </body>

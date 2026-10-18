@@ -2,6 +2,7 @@ import express from "express";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
 import { ManualWorkbench, installManualManagerRoutes } from "./manual-workbench.js";
 import { inspectLocalSandbox } from "./local-sandbox.js";
+import { createOutputPreviewStore, installOutputPreviewRoutes } from "./output-preview.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1881,6 +1882,19 @@ export function createManagerApp(options = {}) {
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
   installHttpAuth(app, config, { ...options, initializeAuth: true });
+  // The final 8 MiB MCP message is a JSON string here (up to 2x escaping).
+  // Keep this limit separate from all business APIs and activity/audit buffers.
+  app.use("/api/output-preview/records", express.json({ limit: "17mb" }));
+  app.use("/api/output-preview", (error, _request, response, _next) => {
+    const tooLarge = error.type === "entity.too.large";
+    response.status(tooLarge ? 413 : 400).json({ ok: false, error: {
+      code: tooLarge ? "OUTPUT_PREVIEW_TOO_LARGE" : "OUTPUT_PREVIEW_INVALID",
+      message: tooLarge ? "Output preview exceeds the request limit" : "Invalid output preview request",
+    } });
+  });
+  const outputPreview = options.outputPreview || createOutputPreviewStore();
+  app.locals.outputPreview = outputPreview;
+  installOutputPreviewRoutes(app, outputPreview, registry);
   app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use(express.json({ limit: "512kb" }));
@@ -2051,6 +2065,7 @@ export function createManagerApp(options = {}) {
   }));
   app.post("/api/log-projects", managerAsync(async (request, response) => {
     const id = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", id);
     const instance = registry.getInternal(id);
     const projectId = request.body?.projectId;
     if (typeof projectId !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(projectId)) throw operationError("invalid projectId", { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
@@ -2065,6 +2080,7 @@ export function createManagerApp(options = {}) {
   app.delete("/api/instances/:id", managerAsync(async (request, response) => {
     const instance = await workerManager.deleteInstance(request.params.id);
     manualWorkbench.invalidateInstance(instance.id);
+    outputPreview.removeInstance(instance.id);
     activity.publish({ type: "instance", stage: "deleted", instanceId: instance.id });
     response.json({ ok: true, instance });
   }));
@@ -2193,6 +2209,7 @@ export function createManagerApp(options = {}) {
 
     try {
       instanceId = registry.resolveId(rawInstanceId);
+      response.set("X-Remote-Debug-Instance-Id", instanceId);
       const instance = registry.getInternal(instanceId);
       assertApprovedCommandsEnabled({ approvedCommands: instance?.approvedCommands });
       if (commandReviewInFlight) {
@@ -2437,6 +2454,7 @@ export function createManagerApp(options = {}) {
 
   app.post("/api/memory", managerAsync(async (request, response) => {
     const instanceId = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", instanceId);
     const instance = registry.getInternal(instanceId);
     if (!workerManager.memoryStore?.upsertNote) {
       throw managerRouteError(
@@ -2466,6 +2484,7 @@ export function createManagerApp(options = {}) {
 
   app.post("/api/sandbox/local", managerAsync(async (request, response) => {
     const instanceId = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", instanceId);
     const dataDir = path.dirname(path.dirname(config.runtime?.statePath || path.join(process.cwd(), ".runtime", "agent-state.json")));
     const result = await inspectLocalSandbox(dataDir, instanceId, request.body || {});
     response.json({ ok: true, ...result });
@@ -2501,16 +2520,17 @@ export function createManagerApp(options = {}) {
     publishStage(activity, operation, "started");
 
     try {
+      const resolvedId = registry.resolveId(instanceId);
+      response.set("X-Remote-Debug-Instance-Id", resolvedId);
       if (pathName === "/logs/query") {
-        const instance = registry.getInternal(registry.resolveId(instanceId));
+        const instance = registry.getInternal(resolvedId);
         payload._logProjects = normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots);
       }
       if (pathName.startsWith("/mongodb/sandbox/access/")) {
-        const resolvedId = registry.resolveId(instanceId);
         payload._sandboxSettingsHash = sandboxSettingsHash(registry.getInternal(resolvedId).mongodb || {}, resolvedId);
       }
       const result = await workerManager.callInstance(
-        instanceId,
+        resolvedId,
         pathName,
         payload,
         request.headers,

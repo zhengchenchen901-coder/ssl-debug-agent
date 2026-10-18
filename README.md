@@ -115,6 +115,47 @@ access or data previously placed in a chat. Unknown opaque secrets and arbitrary
 encodings cannot be guaranteed detectable. Phone/email/identity-number masking
 and per-collection business privacy policies are not part of this first layer.
 
+### Dashboard MCP output preview
+
+Each instance row has an **输出预览** button. It opens a live list of the
+plugin's final, guarded tool responses, including errors and guard blocks.
+**全局输出** shows tools without an instance, such as instance/capability lists.
+Tool content and the exact JSON-RPC message can be viewed or copied; the preview
+does not confirm Codex reception or subsequent context processing. Responses
+appear after each tool returns, rather than streaming unguarded SSH chunks.
+
+The wrapper copies the same final serialized message written to MCP stdout
+into a bounded asynchronous publisher. Separate authenticated endpoints handle
+ingest (`POST /api/output-preview/records`), summary snapshots
+(`GET /api/output-preview/records`), SSE notices
+(`GET /api/output-preview/events`) and full-message reads
+(`GET /api/output-preview/records/:id`). SSE contains metadata only. The browser
+uses an Authorization header for both streaming and full reads; tokens never
+appear in stream URLs. The Manager's resolved instance header also attributes
+failed and implicit single-instance calls without guessing from later config.
+
+This cache is independent of activity, audit and remote sandbox storage. It is
+memory-only: up to 100 responses / 10 MiB per instance (including the global
+bucket), and 500 responses / 50 MiB overall, whichever limit is reached first.
+Oldest records are evicted and Manager restarts clear the cache. The ingest
+route alone allows up to 17 MiB of JSON to carry an escaped final MCP message
+of at most 8 MiB; business API limits remain unchanged. The publisher queue is
+bounded to 64 messages / 20 MiB with short request timeouts and no retries or
+manager startup. A failed/full publisher never waits in the tool delivery path;
+its next successful notice reports dropped records.
+
+Preview controls include pause/resume, follow latest, clear display, full copy
+and an expanded window. Clearing affects only the current display, not the
+Manager cache. The page displays at most 256K characters per selected message;
+copy reads the complete retained message. Reconnects replay retained summaries,
+report cache gaps, and detect Manager restarts. Logout aborts streams and full
+reads and clears displayed content. Received text is never rendered as HTML.
+
+Run `cd agent && npm run test:preview-browser` for the isolated real-browser
+MCP-to-dashboard check. On macOS it uses installed Google Chrome; elsewhere set
+`RDA_PREVIEW_BROWSER_EXECUTABLE` to a compatible Chromium binary. The fixture
+uses temporary credentials/registry and a mocked worker, with no remote SSH.
+
 ## Project log queries
 
 Configure `logProjects` on each instance in the dashboard or with

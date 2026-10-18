@@ -393,6 +393,7 @@ function renderRow(instance) {
     deleteButton,
     refresh,
     manual,
+    button("输出预览", "preview", instance),
   );
   actions.append(actionWrap);
 
@@ -402,7 +403,8 @@ function renderRow(instance) {
 
 function render() {
   updateMetrics();
-  instanceRows.replaceChildren(...state.instances.map(renderRow));
+  if (window.remoteDebugOutputPreview) window.remoteDebugOutputPreview.renderRows(state.instances, renderRow, instanceRows);
+  else instanceRows.replaceChildren(...state.instances.map(renderRow));
   emptyState.hidden = state.instances.length > 0;
 }
 
@@ -879,6 +881,10 @@ async function runAction(action, id) {
   if (!instance) {
     return;
   }
+  if (action === "preview") {
+    window.remoteDebugOutputPreview?.toggle(id);
+    return;
+  }
 
   if (!state.online && managerActions.has(action)) {
     showToast("主进程不可用，恢复后再操作");
@@ -1003,9 +1009,11 @@ authForm.addEventListener("submit", async (event) => {
   } catch (error) { lockPanel(); authMessage.textContent = error.message; }
 });
 authLogout.addEventListener("click", lockPanel);
+window.addEventListener("remote-debug-auth-expired", lockPanel);
 for (const field of ["host", "port"]) {
   instanceForm.elements[field].addEventListener("input", () => { instanceForm.elements.hostKeyFingerprints.value = ""; });
 }
 updateAuthVisibility();
+window.remoteDebugOutputPreview?.unlock();
 loadInstances();
 setInterval(loadInstances, 5000);

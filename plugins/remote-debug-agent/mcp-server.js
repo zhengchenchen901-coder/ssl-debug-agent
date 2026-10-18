@@ -8,6 +8,7 @@ import environmentReport from "./environment-report.cjs";
 import diagnosticDashboard from "./diagnostic-dashboard.cjs";
 import localAuth from "./local-auth.cjs";
 import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard.js";
+import { createOutputPreviewPublisher, outputPreviewMetadata } from "./output-preview.js";
 import {
   migrateLegacyData,
   normalizeWindowsExtendedPath,
@@ -1783,16 +1784,41 @@ async function logMcpLifecycle(code, message, event = {}) {
 }
 
 let outputFraming = "content-length";
+const previewSessionId = randomUUID();
+let previewSequence = 0;
+const outputPreview = createOutputPreviewPublisher({
+  send: async (settings, event) => {
+    const result = await fetchAgentJson(settings, "/api/output-preview/records", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(event), timeoutMs: 1500,
+    });
+    if (!result.response.ok || result.parsed.ok === false) throw new Error("OUTPUT_PREVIEW_UNAVAILABLE");
+  },
+});
+
+function publishOutputPreview(body, context) {
+  // The wire message is already serialized by the final guard. Never rebuild it
+  // from upstream data or sanitize a second copy that could differ from stdout.
+  try {
+    const metadata = outputPreviewMetadata(outputGuard, {
+      sessionId: previewSessionId, sourceSequence: ++previewSequence,
+      operationId: context.operationId, requestId: typeof context.requestId === "string" && context.requestId.length > 128 ? null : context.requestId ?? null,
+      toolName: tools.some((tool) => tool.name === context.toolName) ? context.toolName : "unknown",
+      instanceId: context.instanceId ?? null, durationMs: Date.now() - context.startedAt,
+    });
+    outputPreview.publish(context.previewSettings || activeAgentSettings, { ...metadata, wireMessage: body.toString("utf8") });
+  } catch { /* Telemetry cannot affect tool delivery or expose guard failures. */ }
+}
 
 function sendMessage(message, options) {
   const body = outputGuard.serialize(message, options);
   if (outputFraming === "json-line") {
     process.stdout.write(`${body.toString("utf8")}\n`);
-    return;
+  } else {
+    process.stdout.write(`Content-Length: ${body.length}\r\n\r\n`);
+    process.stdout.write(body);
   }
-
-  process.stdout.write(`Content-Length: ${body.length}\r\n\r\n`);
-  process.stdout.write(body);
+  if (options?.previewContext) publishOutputPreview(body, options.previewContext);
 }
 
 function sendResult(id, result, options) {
@@ -2817,6 +2843,7 @@ async function requestAgent(pathName, payload, options = {}) {
     throw error;
   }
   const method = options.method || "POST";
+  if (operation) operation.previewSettings = settings;
   let response;
   let parsed;
 
@@ -2845,6 +2872,10 @@ async function requestAgent(pathName, payload, options = {}) {
     });
     response = result.response;
     parsed = result.parsed;
+    if (operation) {
+      const resolvedInstanceId = response.headers.get("X-Remote-Debug-Instance-Id");
+      if (resolvedInstanceId) operation.instanceId = resolvedInstanceId;
+    }
   } catch (error) {
     if (error.code === "OUTPUT_GUARD_BLOCKED") throw error;
     if (operation?.signal.aborted) {
@@ -3287,6 +3318,7 @@ async function handleRequest(message) {
     const toolName = params?.name;
     const toolArguments = params?.arguments || {};
     const operation = createToolOperation(toolName, toolArguments);
+    Object.assign(operation, { startedAt, requestId: id, toolName, instanceId: typeof toolArguments.instanceId === "string" ? toolArguments.instanceId : null });
     inFlightToolCalls.set(id, operation);
     await logMcpLifecycle("MCP_TOOLS_CALL_STARTED", "MCP tools/call started.", {
       requestId: id,
@@ -3306,7 +3338,7 @@ async function handleRequest(message) {
         durationMs: Date.now() - startedAt,
         ok: true,
       });
-      sendResult(id, outputGuard.toolResult(toolName, result));
+      sendResult(id, outputGuard.toolResult(toolName, result), { previewContext: operation });
     } catch (error) {
       await logMcpLifecycle("MCP_TOOLS_CALL_FAILED", "MCP tools/call failed.", {
         requestId: id,
@@ -3332,7 +3364,7 @@ async function handleRequest(message) {
           cause: error.cause,
         },
         details: error.payload,
-      }, true));
+      }, true), { previewContext: operation });
     } finally {
       inFlightToolCalls.delete(id);
     }

@@ -10,6 +10,7 @@
     "check:runtime": "npm run build:runtime && git diff --exit-code -- ../plugins/remote-debug-agent/runtime/agent",
     "start": "node server.js",
     "test:manual-browser": "node test/manual-browser.e2e.mjs",
+    "test:preview-browser": "node test/output-preview-browser.e2e.mjs",
     "test": "node --test \"test/*.test.js\""
   },
   "dependencies": {

@@ -48169,7 +48169,7 @@ var require_environment_report = __commonJS({
             "public/dashboard.js",
             "public/environment-report.js"
           ].concat(Object.keys(manifest.hashes))));
-          const invalid2 = requiredFiles.filter(function(file) {
+          const invalid3 = requiredFiles.filter(function(file) {
             const resolved = path14.resolve(runtimeRoot, file);
             if (!resolved.startsWith(runtimeRoot + path14.sep) || !fs12.existsSync(resolved)) return true;
             try {
@@ -48181,9 +48181,9 @@ var require_environment_report = __commonJS({
           check(
             "artifacts",
             "运行文件完整性",
-            invalid2.length ? "缺失或校验不匹配：" + invalid2.join("、") : "完整",
+            invalid3.length ? "缺失或校验不匹配：" + invalid3.join("、") : "完整",
             "运行文件存在且 SHA-256 与清单一致",
-            invalid2.length ? "fail" : "pass",
+            invalid3.length ? "fail" : "pass",
             "重新安装或重新构建插件，避免混用不同版本的文件。"
           );
         }
@@ -48352,7 +48352,7 @@ var import_express2 = __toESM(require_express2(), 1);
 // http-auth.js
 var import_node_path = __toESM(require("node:path"), 1);
 var import_local_auth = __toESM(require_local_auth(), 1);
-var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/environment-report.js", "/admin-registration.js"]);
+var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
 function publicHealth(request, token, identity) {
   const nonce = request.headers["x-remote-debug-challenge"];
   return {
@@ -54681,12 +54681,12 @@ function validatePathArguments(command, tokens, allowedPaths) {
   const flags = readPolicy.shortFlags[command];
   let optionsEnded = false;
   let hasPattern = false;
-  const invalid2 = (token) => {
+  const invalid3 = (token) => {
     throw new SecurityError(`unsupported ${command} argument: ${token}`, "UNSUPPORTED_COMMAND_ARGUMENTS");
   };
   const number = (value, option) => {
     const max = command === "tail" ? ["c", "bytes"].includes(option) ? readPolicy.tailMaxBytes : readPolicy.tailMaxLines : readPolicy.grepMaxContext;
-    if (!/^[1-9][0-9]*$/.test(value || "") || Number(value) > max) invalid2(`${option} ${value || ""}`);
+    if (!/^[1-9][0-9]*$/.test(value || "") || Number(value) > max) invalid3(`${option} ${value || ""}`);
   };
   for (let index = 1; index < tokens.length; index += 1) {
     const token = tokens[index];
@@ -54697,7 +54697,7 @@ function validatePathArguments(command, tokens, allowedPaths) {
     if (!optionsEnded && token.startsWith("-")) {
       if (command === "tail") {
         const match = /^(?:-([nc])([0-9]*)|--(lines|bytes)(?:=([0-9]+))?)$/.exec(token);
-        if (!match) invalid2(token);
+        if (!match) invalid3(token);
         number(match[2] || match[4] || tokens[++index], match[1] || match[3]);
       } else if (command === "grep") {
         for (let offset = 1; offset < token.length; offset += 1) {
@@ -54706,15 +54706,15 @@ function validatePathArguments(command, tokens, allowedPaths) {
           if (option === "e" || "mABC".includes(option)) {
             const value = token.slice(offset + 1) || tokens[++index];
             if (option === "e") {
-              if (hasPattern || value === void 0) invalid2(token);
+              if (hasPattern || value === void 0) invalid3(token);
               hasPattern = true;
             } else number(value, option);
             break;
           }
-          invalid2(token);
+          invalid3(token);
         }
-        if (token === "-") invalid2(token);
-      } else if (!new RegExp(`^-[${flags}]+$`).test(token)) invalid2(token);
+        if (token === "-") invalid3(token);
+      } else if (!new RegExp(`^-[${flags}]+$`).test(token)) invalid3(token);
       continue;
     }
     if (command === "grep" && !hasPattern) {
@@ -57267,8 +57267,153 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
   }) };
 }
 
+// output-preview.js
+var import_node_crypto12 = require("node:crypto");
+var MAX_WIRE_BYTES = 8 * 1024 * 1024;
+var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+var INSTANCE = /^[a-zA-Z0-9._-]{1,128}$/;
+var KEYS = /* @__PURE__ */ new Set(["sessionId", "sourceSequence", "operationId", "requestId", "toolName", "instanceId", "durationMs", "wireMessage", "droppedBefore"]);
+function invalid2() {
+  return Object.assign(new Error("Invalid output preview record"), { statusCode: 400, code: "OUTPUT_PREVIEW_INVALID" });
+}
+function validate(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).some((key) => !KEYS.has(key))) throw invalid2();
+  if (!UUID.test(input.sessionId) || !UUID.test(input.operationId) || !Number.isSafeInteger(input.sourceSequence) || input.sourceSequence < 1 || !/^(?:remote_debug_[a-z0-9_]{1,100}|unknown)$/.test(input.toolName) || input.instanceId !== null && (typeof input.instanceId !== "string" || !INSTANCE.test(input.instanceId)) || !Number.isSafeInteger(input.durationMs) || input.durationMs < 0 || !Number.isSafeInteger(input.droppedBefore) || input.droppedBefore < 0 || typeof input.wireMessage !== "string" || Buffer.byteLength(input.wireMessage) > MAX_WIRE_BYTES) throw invalid2();
+  if (input.requestId !== null && typeof input.requestId !== "number" && typeof input.requestId !== "string" || typeof input.requestId === "string" && input.requestId.length > 128 || typeof input.requestId === "number" && !Number.isSafeInteger(input.requestId)) throw invalid2();
+  let message, payload;
+  try {
+    message = JSON.parse(input.wireMessage);
+    const result = message.result;
+    if (message.jsonrpc !== "2.0" || !Object.hasOwn(message, "id") || Object.keys(message).some((key) => !["jsonrpc", "id", "result"].includes(key)) || !result || Object.keys(result).some((key) => !["isError", "content"].includes(key)) || Object.hasOwn(result, "isError") && typeof result.isError !== "boolean" || !Array.isArray(result.content) || result.content.length !== 1 || result.content[0].type !== "text" || typeof result.content[0].text !== "string" || Object.keys(result.content[0]).some((key) => !["type", "text"].includes(key))) throw invalid2();
+    payload = JSON.parse(result.content[0].text);
+    if (payload?.outputGuard?.policyVersion !== 1 && payload?.error?.code !== "OUTPUT_GUARD_BLOCKED") throw invalid2();
+  } catch {
+    throw invalid2();
+  }
+  return { message, payload };
+}
+function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxBytes = 50 * 1024 * 1024, maxInstanceEvents = 100, maxEvents = 500 } = {}) {
+  const epoch = (0, import_node_crypto12.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
+  let sequence = 0, bytes = 0, lastEvicted = 0;
+  function evict(id) {
+    const entry = records.get(id);
+    if (!entry) return;
+    records.delete(id);
+    bytes -= entry.bytes;
+    lastEvicted = sequence;
+  }
+  function snapshot(cursor) {
+    const split = typeof cursor === "string" ? cursor.split(":") : [];
+    const after = Number(split[1]);
+    const valid = split.length === 2 && split[0] === epoch && Number.isSafeInteger(after) && after >= 0 && after <= sequence;
+    const gap = Boolean(cursor) && (!valid || after < lastEvicted);
+    return {
+      cursor: `${epoch}:${sequence}`,
+      reset: !valid || gap,
+      gap,
+      records: [...records.values()].filter((entry) => !valid || gap || entry.summary.sequence > after).map((entry) => entry.summary)
+    };
+  }
+  function publish(input) {
+    const { message, payload } = validate(input);
+    const id = `${input.sessionId}:${input.sourceSequence}`;
+    if (records.has(id)) return records.get(id).summary;
+    const previousIds = [...records.keys()];
+    const summary = {
+      id,
+      sequence: ++sequence,
+      time: (/* @__PURE__ */ new Date()).toISOString(),
+      instanceId: input.instanceId,
+      sessionId: input.sessionId,
+      operationId: input.operationId,
+      requestId: typeof message.id === "string" ? message.id.slice(0, 128) : Number.isSafeInteger(message.id) ? message.id : null,
+      toolName: input.toolName,
+      durationMs: input.durationMs,
+      bytes: Buffer.byteLength(input.wireMessage),
+      isError: Boolean(message.result.isError || payload?.ok === false),
+      blocked: payload?.error?.code === "OUTPUT_GUARD_BLOCKED",
+      outputGuard: payload?.outputGuard ? {
+        policyVersion: 1,
+        replacements: Number.isSafeInteger(payload.outputGuard.replacements) ? payload.outputGuard.replacements : 0,
+        omittedFields: Number.isSafeInteger(payload.outputGuard.omittedFields) ? payload.outputGuard.omittedFields : 0
+      } : null,
+      droppedBefore: input.droppedBefore
+    };
+    const size = summary.bytes + Buffer.byteLength(JSON.stringify(summary));
+    records.set(id, { summary, wireMessage: input.wireMessage, bytes: size });
+    bytes += size;
+    const instanceEntries = [...records.values()].filter((entry) => entry.summary.instanceId === input.instanceId);
+    let instanceBytes = instanceEntries.reduce((total, entry) => total + entry.bytes, 0);
+    while (instanceEntries.length > maxInstanceEvents || instanceBytes > maxInstanceBytes) {
+      const entry = instanceEntries.shift();
+      instanceBytes -= entry.bytes;
+      evict(entry.summary.id);
+    }
+    while (records.size > maxEvents || bytes > maxBytes) evict(records.keys().next().value);
+    const event2 = {
+      cursor: `${epoch}:${sequence}`,
+      reset: false,
+      gap: false,
+      records: records.has(id) ? [summary] : [],
+      evictedIds: previousIds.filter((key) => !records.has(key))
+    };
+    for (const listener of listeners) listener(event2);
+    return summary;
+  }
+  function get(id) {
+    const entry = records.get(id);
+    return entry ? { ...entry.summary, wireMessage: entry.wireMessage } : null;
+  }
+  function removeInstance(instanceId) {
+    sequence++;
+    for (const [id, entry] of records) if (entry.summary.instanceId === instanceId) evict(id);
+    for (const listener of listeners) listener(snapshot());
+  }
+  function stream(request, response) {
+    if (listeners.size >= 16) return response.status(429).json({ ok: false, error: { code: "OUTPUT_PREVIEW_STREAM_LIMIT", message: "Too many preview connections" } });
+    response.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store, no-transform", "Connection": "keep-alive", "X-Accel-Buffering": "no" });
+    response.flushHeaders?.();
+    const write = (event2) => {
+      if (response.destroyed || response.writableEnded) return;
+      response.write(`event: preview
+data: ${JSON.stringify(event2)}
+
+`);
+      if (response.writableLength > 1024 * 1024) response.destroy();
+    };
+    listeners.add(write);
+    write(snapshot(request.query.cursor));
+    const heartbeat = setInterval(() => response.write(": keepalive\n\n"), 15e3);
+    heartbeat.unref?.();
+    response.on("close", () => {
+      clearInterval(heartbeat);
+      listeners.delete(write);
+    });
+  }
+  return { publish, snapshot, get, stream, removeInstance };
+}
+function installOutputPreviewRoutes(app, store, registry) {
+  app.post("/api/output-preview/records", (request, response) => {
+    try {
+      const input = request.body;
+      if (typeof input?.instanceId === "string" && INSTANCE.test(input.instanceId) && !registry.getInternal(input.instanceId)) input.instanceId = null;
+      const record = store.publish(input);
+      response.status(202).json({ ok: true, id: record.id });
+    } catch {
+      response.status(400).json({ ok: false, error: { code: "OUTPUT_PREVIEW_INVALID", message: "Invalid output preview record" } });
+    }
+  });
+  app.get("/api/output-preview/records", (request, response) => response.json({ ok: true, ...store.snapshot(request.query.cursor) }));
+  app.get("/api/output-preview/events", (request, response) => store.stream(request, response));
+  app.get("/api/output-preview/records/:id", (request, response) => {
+    const record = store.get(request.params.id);
+    if (!record) return response.status(410).json({ ok: false, error: { code: "OUTPUT_PREVIEW_EXPIRED", message: "Preview record has expired from memory" } });
+    response.json({ ok: true, record });
+  });
+}
+
 // server.js
-var import_node_crypto17 = require("node:crypto");
+var import_node_crypto18 = require("node:crypto");
 var import_promises6 = __toESM(require("node:fs/promises"), 1);
 var import_node_path12 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
@@ -57276,7 +57421,7 @@ var import_node_url4 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
 
 // activity.js
-var import_node_crypto12 = require("node:crypto");
+var import_node_crypto13 = require("node:crypto");
 var import_node_events2 = require("node:events");
 var DEFAULT_MAX_EVENTS = 200;
 var DEFAULT_PREVIEW_CHARS = 4e3;
@@ -57307,7 +57452,7 @@ function createActivityLog(options = {}) {
   const events = [];
   function publish(event2) {
     const entry = {
-      id: (0, import_node_crypto12.randomUUID)(),
+      id: (0, import_node_crypto13.randomUUID)(),
       time: (/* @__PURE__ */ new Date()).toISOString(),
       ...event2
     };
@@ -57428,7 +57573,7 @@ async function writeAuditLog(logPath, event2, now) {
 }
 
 // mongodb-sandbox-access.js
-var import_node_crypto13 = require("node:crypto");
+var import_node_crypto14 = require("node:crypto");
 
 // mongodb-sandbox-access-runtime.js
 async function sandboxAccessRuntime(request, config, marker) {
@@ -57812,7 +57957,7 @@ function accessSettings(rawConfig, instanceId) {
   return config;
 }
 function sandboxSettingsHash(rawConfig, instanceId) {
-  return (0, import_node_crypto13.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
+  return (0, import_node_crypto14.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
 }
 function buildSandboxAccessScript(request, rawConfig, instanceId) {
   return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
@@ -57828,7 +57973,7 @@ async function runSandboxAccess(input = {}, options = {}) {
   if (action === "execute" && (!/^[a-f0-9-]{36}$/.test(input.setupId || "") || !/^[a-f0-9]{64}$/.test(input.planHash || "") || input.confirmation !== "确认配置沙盒")) {
     throw fail("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
   }
-  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto13.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
+  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto14.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
   const script = buildSandboxAccessScript(request, rawConfig, instanceId);
   if (typeof options.runSSH !== "function") throw fail("MONGODB_RUNNER_UNAVAILABLE");
   let remote;
@@ -60388,7 +60533,7 @@ async function readLog(options = {}) {
 // instance-registry.js
 var import_node_fs6 = __toESM(require("node:fs"), 1);
 var import_node_path9 = __toESM(require("node:path"), 1);
-var import_node_crypto14 = require("node:crypto");
+var import_node_crypto15 = require("node:crypto");
 var import_local_auth5 = __toESM(require_local_auth(), 1);
 var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -60655,7 +60800,7 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto14.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto15.randomUUID)());
   assertInstanceId(id);
   const name = String(input.name ?? existing.name ?? id).trim();
   if (!name) {
@@ -60987,14 +61132,14 @@ var InstanceRegistry = class {
 
 // worker-manager.js
 var import_node_child_process3 = require("node:child_process");
-var import_node_crypto16 = require("node:crypto");
+var import_node_crypto17 = require("node:crypto");
 var import_promises5 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
 var import_node_path11 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
 
 // memory-store.js
-var import_node_crypto15 = require("node:crypto");
+var import_node_crypto16 = require("node:crypto");
 var import_node_fs7 = __toESM(require("node:fs"), 1);
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path10 = __toESM(require("node:path"), 1);
@@ -61072,7 +61217,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto15.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto16.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -61438,7 +61583,7 @@ var MemoryStore = class {
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
     await import_promises4.default.mkdir(import_node_path10.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto15.randomUUID)()}.tmp`;
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto16.randomUUID)()}.tmp`;
     await import_promises4.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
     await import_promises4.default.rename(tempPath, filePath);
@@ -62160,7 +62305,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
-      authToken: (0, import_node_crypto16.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto17.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -62770,7 +62915,7 @@ async function writeRuntimeState(config, event2) {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   await import_promises6.default.mkdir(import_node_path12.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto17.randomUUID)()}.tmp`;
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto18.randomUUID)()}.tmp`;
   await import_promises6.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises6.default.rename(tempPath, statePath);
@@ -62790,7 +62935,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto17.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto18.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -64374,6 +64519,17 @@ function createManagerApp(options = {}) {
   app.locals.workerManager = workerManager;
   app.locals.lifecycle = lifecycle;
   installHttpAuth(app, config, { ...options, initializeAuth: true });
+  app.use("/api/output-preview/records", import_express2.default.json({ limit: "17mb" }));
+  app.use("/api/output-preview", (error, _request, response, _next) => {
+    const tooLarge = error.type === "entity.too.large";
+    response.status(tooLarge ? 413 : 400).json({ ok: false, error: {
+      code: tooLarge ? "OUTPUT_PREVIEW_TOO_LARGE" : "OUTPUT_PREVIEW_INVALID",
+      message: tooLarge ? "Output preview exceeds the request limit" : "Invalid output preview request"
+    } });
+  });
+  const outputPreview = options.outputPreview || createOutputPreviewStore();
+  app.locals.outputPreview = outputPreview;
+  installOutputPreviewRoutes(app, outputPreview, registry);
   app.use("/mongodb/imports/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use(import_express2.default.json({ limit: "512kb" }));
@@ -64523,6 +64679,7 @@ function createManagerApp(options = {}) {
   }));
   app.post("/api/log-projects", managerAsync(async (request, response) => {
     const id = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", id);
     const instance = registry.getInternal(id);
     const projectId = request.body?.projectId;
     if (typeof projectId !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(projectId)) throw operationError("invalid projectId", { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
@@ -64536,6 +64693,7 @@ function createManagerApp(options = {}) {
   app.delete("/api/instances/:id", managerAsync(async (request, response) => {
     const instance = await workerManager.deleteInstance(request.params.id);
     manualWorkbench.invalidateInstance(instance.id);
+    outputPreview.removeInstance(instance.id);
     activity.publish({ type: "instance", stage: "deleted", instanceId: instance.id });
     response.json({ ok: true, instance });
   }));
@@ -64653,6 +64811,7 @@ function createManagerApp(options = {}) {
     };
     try {
       instanceId = registry.resolveId(rawInstanceId);
+      response.set("X-Remote-Debug-Instance-Id", instanceId);
       const instance = registry.getInternal(instanceId);
       assertApprovedCommandsEnabled({ approvedCommands: instance?.approvedCommands });
       if (commandReviewInFlight) {
@@ -64885,6 +65044,7 @@ function createManagerApp(options = {}) {
   });
   app.post("/api/memory", managerAsync(async (request, response) => {
     const instanceId = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", instanceId);
     const instance = registry.getInternal(instanceId);
     if (!workerManager.memoryStore?.upsertNote) {
       throw managerRouteError(
@@ -64912,6 +65072,7 @@ function createManagerApp(options = {}) {
   }));
   app.post("/api/sandbox/local", managerAsync(async (request, response) => {
     const instanceId = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", instanceId);
     const dataDir = import_node_path12.default.dirname(import_node_path12.default.dirname(config.runtime?.statePath || import_node_path12.default.join(process.cwd(), ".runtime", "agent-state.json")));
     const result = await inspectLocalSandbox(dataDir, instanceId, request.body || {});
     response.json({ ok: true, ...result });
@@ -64945,16 +65106,17 @@ function createManagerApp(options = {}) {
     };
     publishStage(activity, operation, "started");
     try {
+      const resolvedId = registry.resolveId(instanceId);
+      response.set("X-Remote-Debug-Instance-Id", resolvedId);
       if (pathName === "/logs/query") {
-        const instance2 = registry.getInternal(registry.resolveId(instanceId));
+        const instance2 = registry.getInternal(resolvedId);
         payload._logProjects = normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots);
       }
       if (pathName.startsWith("/mongodb/sandbox/access/")) {
-        const resolvedId = registry.resolveId(instanceId);
         payload._sandboxSettingsHash = sandboxSettingsHash(registry.getInternal(resolvedId).mongodb || {}, resolvedId);
       }
       const result = await workerManager.callInstance(
-        instanceId,
+        resolvedId,
         pathName,
         payload,
         request.headers,

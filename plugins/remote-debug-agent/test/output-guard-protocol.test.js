@@ -9,6 +9,7 @@ import test from "node:test";
 import localAuth from "../local-auth.cjs";
 
 async function fixture(t, framing) {
+  const previews = [], delivered = [];
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "rda-output-guard-"));
   const authFile = localAuth.resolveAuthFile(dataDir);
   const token = localAuth.ensureAuthToken(authFile);
@@ -25,6 +26,11 @@ async function fixture(t, framing) {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const input = JSON.parse(Buffer.concat(chunks).toString() || "{}");
+    if (req.url === "/api/output-preview/records") {
+      previews.push(input);
+      return res.end(JSON.stringify({ ok: true }));
+    }
+    if (req.url === "/run") res.setHeader("X-Remote-Debug-Instance-Id", "resolved-fixture");
     if (req.url === "/run" && input.cmd === "failure") {
       res.statusCode = 500;
       return res.end(JSON.stringify({ ok: false, error: { code: "SSH_TEST_ERROR", message: "password=FIXTURE_ERROR_PASSWORD", cause: "Bearer FIXTURE_ERROR_BEARER" }, raw: "FIXTURE_RAW_ERROR_PAYLOAD" }));
@@ -70,6 +76,7 @@ async function fixture(t, framing) {
         body = buffer.subarray(start, end); buffer = buffer.subarray(end);
       }
       const message = JSON.parse(body.toString());
+      delivered.push(body.toString());
       if (waiters.length) waiters.shift()(message); else messages.push(message);
     }
   });
@@ -92,7 +99,7 @@ async function fixture(t, framing) {
     assert.equal(message.id, id);
     return { ...message.result, payload: JSON.parse(message.result.content[0].text) };
   }
-  return { call, send, read, wire, diagnostics, token, writeRaw: (text) => child.stdin.write(text) };
+  return { call, send, read, wire, diagnostics, token, previews, delivered, writeRaw: (text) => child.stdin.write(text) };
 }
 
 for (const framing of ["json-line", "content-length"]) {
@@ -121,6 +128,14 @@ for (const framing of ["json-line", "content-length"]) {
     f.send({ jsonrpc: "2.0", id: "tools", method: "tools/list" });
     const tools = (await f.read()).result.tools;
     assert.ok(tools.find((tool) => tool.name === "remote_debug_run_command").inputSchema.properties.cmd);
+    const deadline = Date.now() + 5000;
+    while (f.previews.length < 7 && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(f.previews.length, 7);
+    assert.deepEqual(f.previews.map((event) => event.wireMessage), f.delivered.slice(0, 7));
+    assert.equal(f.previews[0].instanceId, "resolved-fixture");
+    assert.equal(f.previews[1].instanceId, "resolved-fixture");
+    assert.match(f.previews[6].wireMessage, /OUTPUT_GUARD_BLOCKED/);
+    assert.doesNotMatch(JSON.stringify(f.previews), /FIXTURE_(?:LOCAL_REGISTRY_PASSWORD|PASSPHRASE|SUCCESS_BEARER|ERROR_PASSWORD|PRIVATE_BODY|DOC_SECRET)/);
     const output = Buffer.concat([...f.wire, ...f.diagnostics]).toString();
     assert.ok(!output.includes(f.token));
     assert.doesNotMatch(output, /FIXTURE_(?:LOCAL_REGISTRY_PASSWORD|PASSPHRASE|SUCCESS_BEARER|UNKNOWN_FIELD|ERROR_PASSWORD|ERROR_BEARER|RAW_ERROR_PAYLOAD|PRIVATE_BODY|LOG_SECRET|DOC_SECRET|OVERSIZE_SECRET|PROTOCOL_SECRET)/);
