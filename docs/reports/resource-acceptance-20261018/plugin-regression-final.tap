@@ -1,0 +1,418 @@
+TAP version 13
+# Subtest: installed bundle enforces TTL policy without source checkout or node_modules
+ok 1 - installed bundle enforces TTL policy without source checkout or node_modules
+  ---
+  duration_ms: 156.334042
+  type: 'test'
+  ...
+# Subtest: bundled worker does not start the manager entrypoint
+ok 2 - bundled worker does not start the manager entrypoint
+  ---
+  duration_ms: 74.833166
+  type: 'test'
+  ...
+# Subtest: preflight enforces the packaged range without changing the default runtime
+ok 3 - preflight enforces the packaged range without changing the default runtime
+  ---
+  duration_ms: 31.779875
+  type: 'test'
+  ...
+# Subtest: diagnostic dashboard reuses the original page, has no business endpoints, and safely releases its port
+ok 4 - diagnostic dashboard reuses the original page, has no business endpoints, and safely releases its port
+  ---
+  duration_ms: 54.741334
+  type: 'test'
+  ...
+# Subtest: offline report escapes embedded data and does not require an HTTP server
+ok 5 - offline report escapes embedded data and does not require an HTTP server
+  ---
+  duration_ms: 4.970458
+  type: 'test'
+  ...
+# Subtest: preflight rejects a corrupted runtime before MCP starts
+ok 6 - preflight rejects a corrupted runtime before MCP starts
+  ---
+  duration_ms: 68.441875
+  type: 'test'
+  ...
+# Subtest: missing dashboard files still leave an escaped offline failure report
+ok 7 - missing dashboard files still leave an escaped offline failure report
+  ---
+  duration_ms: 44.257459
+  type: 'test'
+  ...
+# Subtest: an unreadable config file reports its condition without leaking values
+ok 8 - an unreadable config file reports its condition without leaking values
+  ---
+  duration_ms: 5.92575
+  type: 'test'
+  ...
+# Subtest: launcher preserves a directory failure and saves its report in a writable fallback
+ok 9 - launcher preserves a directory failure and saves its report in a writable fallback
+  ---
+  duration_ms: 33.736167
+  type: 'test'
+  ...
+# Subtest: runtime events update only their own attempt and do not claim tool availability before discovery
+ok 10 - runtime events update only their own attempt and do not claim tool availability before discovery
+  ---
+  duration_ms: 5.999375
+  type: 'test'
+  ...
+# Subtest: launcher preserves MCP JSON-line handshake and tool registration
+ok 11 - launcher preserves MCP JSON-line handshake and tool registration
+  ---
+  duration_ms: 46.73375
+  type: 'test'
+  ...
+# Subtest: a real Node 14 bootstrap relaunches MCP under the selected compatible runtime
+ok 12 - a real Node 14 bootstrap relaunches MCP under the selected compatible runtime
+  ---
+  duration_ms: 131.626125
+  type: 'test'
+  ...
+# Subtest: Python generates the offline dashboard when Node is absent
+ok 13 - Python generates the offline dashboard when Node is absent
+  ---
+  duration_ms: 52.563875
+  type: 'test'
+  ...
+# Subtest: install.ps1 supports check-only, repeat installs, migration, and safe conflicts
+ok 14 - install.ps1 supports check-only, repeat installs, migration, and safe conflicts # SKIP
+  ---
+  duration_ms: 0.288375
+  type: 'test'
+  ...
+# Subtest: health proofs cannot be replayed for another challenge or listener
+ok 15 - health proofs cannot be replayed for another challenge or listener
+  ---
+  duration_ms: 1.076125
+  type: 'test'
+  ...
+# Subtest: MCP preserves authentication errors and does not restart or fall back
+ok 16 - MCP preserves authentication errors and does not restart or fall back
+  ---
+  duration_ms: 78.316125
+  type: 'test'
+  ...
+# Subtest: MCP refuses legacy unauthenticated Managers before sending credentials
+ok 17 - MCP refuses legacy unauthenticated Managers before sending credentials
+  ---
+  duration_ms: 75.439042
+  type: 'test'
+  ...
+# Subtest: explicit Agent credentials are read-only and never regenerated when absent
+ok 18 - explicit Agent credentials are read-only and never regenerated when absent
+  ---
+  duration_ms: 49.687042
+  type: 'test'
+  ...
+# Subtest: MCP rejects HTTP redirects without forwarding credentials
+ok 19 - MCP rejects HTTP redirects without forwarding credentials
+  ---
+  duration_ms: 59.475667
+  type: 'test'
+  ...
+# Subtest: a process occupying the Agent port cannot obtain the bearer credential by claiming to be an Agent
+ok 20 - a process occupying the Agent port cannot obtain the bearer credential by claiming to be an Agent
+  ---
+  duration_ms: 60.654083
+  type: 'test'
+  ...
+# Subtest: MCP server exposes remote debug tools and forwards calls
+ok 21 - MCP server exposes remote debug tools and forwards calls
+  ---
+  duration_ms: 236.282708
+  type: 'test'
+  ...
+# Subtest: sandbox tools forward only scoped identities and keep local audit access on the Manager
+ok 22 - sandbox tools forward only scoped identities and keep local audit access on the Manager
+  ---
+  duration_ms: 92.550542
+  type: 'test'
+  ...
+# Subtest: MCP server supports newline-delimited stdio clients
+ok 23 - MCP server supports newline-delimited stdio clients
+  ---
+  duration_ms: 37.088542
+  type: 'test'
+  ...
+# Subtest: MCP forwards approved command draft tools
+ok 24 - MCP forwards approved command draft tools
+  ---
+  duration_ms: 71.628041
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent from .env port when no service is listening
+ok 25 - MCP starts the local agent from .env port when no service is listening
+  ---
+  duration_ms: 332.914709
+  type: 'test'
+  ...
+# Subtest: MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE
+ok 26 - MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE
+  ---
+  duration_ms: 62.602708
+  type: 'test'
+  ...
+# Subtest: MCP notifications/cancelled aborts an in-flight manager request
+ok 27 - MCP notifications/cancelled aborts an in-flight manager request
+  ---
+  duration_ms: 57.604375
+  type: 'test'
+  ...
+# Subtest: MCP serializes concurrent local agent startup across processes
+ok 28 - MCP serializes concurrent local agent startup across processes
+  ---
+  duration_ms: 1338.206791
+  type: 'test'
+  ...
+# Subtest: MCP clears stale startup locks before starting the local agent
+ok 29 - MCP clears stale startup locks before starting the local agent
+  ---
+  duration_ms: 591.165459
+  type: 'test'
+  ...
+# Subtest: MCP registers and renews a desktop lease for plugin-started local agents
+ok 30 - MCP registers and renews a desktop lease for plugin-started local agents
+  ---
+  duration_ms: 347.415791
+  type: 'test'
+  ...
+# Subtest: MCP heartbeat restarts a missing plugin-started local agent
+ok 31 - MCP heartbeat restarts a missing plugin-started local agent
+  ---
+  duration_ms: 15640.570375
+  type: 'test'
+  ...
+# Subtest: MCP uses 4343 as the default local agent port
+ok 32 - MCP uses 4343 as the default local agent port # SKIP port 4343 is already in use
+  ---
+  duration_ms: 1.3495
+  type: 'test'
+  ...
+# Subtest: MCP prewarms the local agent after initialize
+ok 33 - MCP prewarms the local agent after initialize
+  ---
+  duration_ms: 159.573875
+  type: 'test'
+  ...
+# Subtest: bundled MCP runs from an isolated cache after the clone directory is renamed
+ok 34 - bundled MCP runs from an isolated cache after the clone directory is renamed
+  ---
+  duration_ms: 1358.528125
+  type: 'test'
+  ...
+# Subtest: MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source
+ok 35 - MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source
+  ---
+  duration_ms: 70.957458
+  type: 'test'
+  ...
+# Subtest: external V2 agent URLs remain usable without a bundled runtime
+ok 36 - external V2 agent URLs remain usable without a bundled runtime
+  ---
+  duration_ms: 60.445416
+  type: 'test'
+  ...
+# Subtest: MCP replaces an outdated source manager when the runtime id differs
+ok 37 - MCP replaces an outdated source manager when the runtime id differs
+  ---
+  duration_ms: 620.401667
+  type: 'test'
+  ...
+# Subtest: MCP reuses an online manager even when target fields differ
+ok 38 - MCP reuses an online manager even when target fields differ
+  ---
+  duration_ms: 171.42275
+  type: 'test'
+  ...
+# Subtest: MCP keeps the manager process when .env target config changes
+ok 39 - MCP keeps the manager process when .env target config changes
+  ---
+  duration_ms: 334.964208
+  type: 'test'
+  ...
+# Subtest: MCP starts a new local agent when .env port changes
+ok 40 - MCP starts a new local agent when .env port changes
+  ---
+  duration_ms: 827.00075
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent on a fallback port when the configured port is occupied
+ok 41 - MCP starts the local agent on a fallback port when the configured port is occupied
+  ---
+  duration_ms: 343.889166
+  type: 'test'
+  ...
+# Subtest: compatible current Node is kept without probing another runtime
+ok 42 - compatible current Node is kept without probing another runtime
+  ---
+  duration_ms: 3.755459
+  type: 'test'
+  ...
+# Subtest: PATH selection uses the probed version and ignores incompatible runtimes
+ok 43 - PATH selection uses the probed version and ignores incompatible runtimes
+  ---
+  duration_ms: 4.0275
+  type: 'test'
+  ...
+# Subtest: NVM chooses the latest compatible version without changing its default
+ok 44 - NVM chooses the latest compatible version without changing its default
+  ---
+  duration_ms: 14.289167
+  type: 'test'
+  ...
+# Subtest: invalid explicit Node is reported instead of ignored
+ok 45 - invalid explicit Node is reported instead of ignored
+  ---
+  duration_ms: 1.341417
+  type: 'test'
+  ...
+# Subtest: an explicit symlink to the running Node resolves without a relaunch loop
+ok 46 - an explicit symlink to the running Node resolves without a relaunch loop
+  ---
+  duration_ms: 1.293458
+  type: 'test'
+  ...
+# Subtest: real MCP json-line output guards success, errors, files, logs and documents
+ok 47 - real MCP json-line output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 177.583959
+  type: 'test'
+  ...
+# Subtest: real MCP content-length output guards success, errors, files, logs and documents
+ok 48 - real MCP content-length output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 135.959875
+  type: 'test'
+  ...
+# Subtest: malformed JSON cannot expose parser input through stderr
+ok 49 - malformed JSON cannot expose parser input through stderr
+  ---
+  duration_ms: 43.549334
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 50 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 5.219
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 51 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 0.376875
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 52 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 0.453458
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 53 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 1.424125
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 54 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 0.402792
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 55 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.40075
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 56 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 1.0275
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 57 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 0.202375
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 58 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 0.593958
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 59 - each registered tool must have an output contract
+  ---
+  duration_ms: 3.160042
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 60 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 0.535583
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 61 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 30.209
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 62 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.179083
+  type: 'test'
+  ...
+# Subtest: an unavailable output guard still permits fixed block previews without echoing request metadata
+ok 63 - an unavailable output guard still permits fixed block previews without echoing request metadata
+  ---
+  duration_ms: 1.306417
+  type: 'test'
+  ...
+# Subtest: preview publisher stays bounded behind slow requests and reports dropped records
+ok 64 - preview publisher stays bounded behind slow requests and reports dropped records
+  ---
+  duration_ms: 1.893875
+  type: 'test'
+  ...
+# Subtest: data and config paths follow compatibility precedence
+ok 65 - data and config paths follow compatibility precedence
+  ---
+  duration_ms: 2.714917
+  type: 'test'
+  ...
+# Subtest: legacy migration copies only persistent data and never overwrites targets
+ok 66 - legacy migration copies only persistent data and never overwrites targets
+  ---
+  duration_ms: 12.122792
+  type: 'test'
+  ...
+# Subtest: legacy project-root mode migrates .env to config.env in place
+ok 67 - legacy project-root mode migrates .env to config.env in place
+  ---
+  duration_ms: 6.907833
+  type: 'test'
+  ...
+# Subtest: bundled runtime manifest is readable from the plugin root
+ok 68 - bundled runtime manifest is readable from the plugin root
+  ---
+  duration_ms: 0.93175
+  type: 'test'
+  ...
+1..68
+# tests 68
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 22817.2175

@@ -12,8 +12,8 @@ var __commonJS = (cb, mod) => function __require() {
   }
 };
 var __export = (target2, all) => {
-  for (var name in all)
-    __defProp(target2, name, { get: all[name], enumerable: true });
+  for (var name2 in all)
+    __defProp(target2, name2, { get: all[name2], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -142,9 +142,9 @@ var require_ms = __commonJS({
       }
       return ms + " ms";
     }
-    function plural(ms, msAbs, n, name) {
+    function plural(ms, msAbs, n, name2) {
       var isPlural = msAbs >= n * 1.5;
-      return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
+      return Math.round(ms / n) + " " + name2 + (isPlural ? "s" : "");
     }
   }
 });
@@ -297,14 +297,14 @@ var require_common = __commonJS({
         createDebug.enable("");
         return namespaces;
       }
-      function enabled(name) {
+      function enabled(name2) {
         for (const skip of createDebug.skips) {
-          if (matchesTemplate(name, skip)) {
+          if (matchesTemplate(name2, skip)) {
             return false;
           }
         }
         for (const ns of createDebug.names) {
-          if (matchesTemplate(name, ns)) {
+          if (matchesTemplate(name2, ns)) {
             return true;
           }
         }
@@ -620,15 +620,15 @@ var require_node = __commonJS({
       return "colors" in exports2.inspectOpts ? Boolean(exports2.inspectOpts.colors) : tty.isatty(process.stderr.fd);
     }
     function formatArgs(args) {
-      const { namespace: name, useColors: useColors2 } = this;
+      const { namespace: name2, useColors: useColors2 } = this;
       if (useColors2) {
         const c = this.color;
         const colorCode = "\x1B[3" + (c < 8 ? c : "8;5;" + c);
-        const prefix = `  ${colorCode};1m${name} \x1B[0m`;
+        const prefix = `  ${colorCode};1m${name2} \x1B[0m`;
         args[0] = prefix + args[0].split("\n").join("\n" + prefix);
         args.push(colorCode + "m+" + module2.exports.humanize(this.diff) + "\x1B[0m");
       } else {
-        args[0] = getDate() + name + " " + args[0];
+        args[0] = getDate() + name2 + " " + args[0];
       }
     }
     function getDate() {
@@ -1274,8 +1274,8 @@ var require_http_errors = __commonJS({
       inherits(HttpError, Error);
       return HttpError;
     }
-    function createClientErrorConstructor(HttpError, name, code) {
-      var className = toClassName(name);
+    function createClientErrorConstructor(HttpError, name2, code) {
+      var className = toClassName(name2);
       function ClientError(message) {
         var msg = message != null ? message : statuses.message[code];
         var err = new Error(msg);
@@ -1313,8 +1313,8 @@ var require_http_errors = __commonJS({
         return val instanceof Error && typeof val.expose === "boolean" && typeof val.statusCode === "number" && val.status === val.statusCode;
       };
     }
-    function createServerErrorConstructor(HttpError, name, code) {
-      var className = toClassName(name);
+    function createServerErrorConstructor(HttpError, name2, code) {
+      var className = toClassName(name2);
       function ServerError(message) {
         var msg = message != null ? message : statuses.message[code];
         var err = new Error(msg);
@@ -1341,33 +1341,33 @@ var require_http_errors = __commonJS({
       ServerError.prototype.expose = false;
       return ServerError;
     }
-    function nameFunc(func, name) {
+    function nameFunc(func, name2) {
       var desc = Object.getOwnPropertyDescriptor(func, "name");
       if (desc && desc.configurable) {
-        desc.value = name;
+        desc.value = name2;
         Object.defineProperty(func, "name", desc);
       }
     }
     function populateConstructorExports(exports3, codes, HttpError) {
       codes.forEach(function forEachCode(code) {
         var CodeError;
-        var name = toIdentifier(statuses.message[code]);
+        var name2 = toIdentifier(statuses.message[code]);
         switch (codeClass(code)) {
           case 400:
-            CodeError = createClientErrorConstructor(HttpError, name, code);
+            CodeError = createClientErrorConstructor(HttpError, name2, code);
             break;
           case 500:
-            CodeError = createServerErrorConstructor(HttpError, name, code);
+            CodeError = createServerErrorConstructor(HttpError, name2, code);
             break;
         }
         if (CodeError) {
           exports3[code] = CodeError;
-          exports3[name] = CodeError;
+          exports3[name2] = CodeError;
         }
       });
     }
-    function toClassName(name) {
-      return name.slice(-5) === "Error" ? name : name + "Error";
+    function toClassName(name2) {
+      return name2.slice(-5) === "Error" ? name2 : name2 + "Error";
     }
   }
 });
@@ -15225,11 +15225,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path14) {
-      if (!path14 || typeof path14 !== "string") {
+    function lookup(path15) {
+      if (!path15 || typeof path15 !== "string") {
         return false;
       }
-      var extension3 = extname("x." + path14).toLowerCase().slice(1);
+      var extension3 = extname("x." + path15).toLowerCase().slice(1);
       if (!extension3) {
         return false;
       }
@@ -16076,9 +16076,9 @@ var require_object_inspect = __commonJS({
         return inspect_(value, opts, depth + 1, seen);
       }
       if (typeof obj === "function" && !isRegExp(obj)) {
-        var name = nameOf(obj);
+        var name2 = nameOf(obj);
         var keys = arrObjKeys(obj, inspect);
-        return "[Function" + (name ? ": " + name : " (anonymous)") + "]" + (keys.length > 0 ? " { " + $join.call(keys, ", ") + " }" : "");
+        return "[Function" + (name2 ? ": " + name2 : " (anonymous)") + "]" + (keys.length > 0 ? " { " + $join.call(keys, ", ") + " }" : "");
       }
       if (isSymbol(obj)) {
         var symString = hasShammedSymbols ? $replace.call(String(obj), /^(Symbol\(.*\))_[^)]*$/, "$1") : symToString.call(obj);
@@ -16088,7 +16088,7 @@ var require_object_inspect = __commonJS({
         var s = "<" + $toLowerCase.call(String(obj.nodeName));
         var attrs = obj.attributes || [];
         for (var i = 0; i < attrs.length; i++) {
-          s += " " + attrs[i].name + "=" + wrapQuotes(quote(attrs[i].value), "double", opts);
+          s += " " + attrs[i].name + "=" + wrapQuotes(quote2(attrs[i].value), "double", opts);
         }
         s += ">";
         if (obj.childNodes && obj.childNodes.length) {
@@ -16191,7 +16191,7 @@ var require_object_inspect = __commonJS({
       var quoteChar = quotes[style];
       return quoteChar + s + quoteChar;
     }
-    function quote(s) {
+    function quote2(s) {
       return $replace.call(String(s), /"/g, "&quot;");
     }
     function canTrustToString(obj) {
@@ -17170,26 +17170,26 @@ var require_get_intrinsic = __commonJS({
       }
     }
     var errorProto;
-    var doEval = function doEval2(name) {
+    var doEval = function doEval2(name2) {
       var value;
-      if (name === "%AsyncFunction%") {
+      if (name2 === "%AsyncFunction%") {
         value = getEvalledConstructor("async function () {}");
-      } else if (name === "%GeneratorFunction%") {
+      } else if (name2 === "%GeneratorFunction%") {
         value = getEvalledConstructor("function* () {}");
-      } else if (name === "%AsyncGeneratorFunction%") {
+      } else if (name2 === "%AsyncGeneratorFunction%") {
         value = getEvalledConstructor("async function* () {}");
-      } else if (name === "%AsyncGenerator%") {
+      } else if (name2 === "%AsyncGenerator%") {
         var fn = doEval2("%AsyncGeneratorFunction%");
         if (fn) {
           value = fn.prototype;
         }
-      } else if (name === "%AsyncIteratorPrototype%") {
+      } else if (name2 === "%AsyncIteratorPrototype%") {
         var gen = doEval2("%AsyncGenerator%");
         if (gen && getProto) {
           value = getProto(gen.prototype);
         }
       }
-      INTRINSICS[name] = value;
+      INTRINSICS[name2] = value;
       return value;
     };
     var LEGACY_ALIASES = {
@@ -17264,13 +17264,13 @@ var require_get_intrinsic = __commonJS({
         throw new $SyntaxError("invalid intrinsic syntax, expected opening `%`");
       }
       var result = [];
-      $replace(string, rePropName, function(match, number, quote, subString) {
-        result[result.length] = quote ? $replace(subString, reEscapeChar, "$1") : number || match;
+      $replace(string, rePropName, function(match, number, quote2, subString) {
+        result[result.length] = quote2 ? $replace(subString, reEscapeChar, "$1") : number || match;
       });
       return result;
     };
-    var getBaseIntrinsic = function getBaseIntrinsic2(name, allowMissing) {
-      var intrinsicName = name;
+    var getBaseIntrinsic = function getBaseIntrinsic2(name2, allowMissing) {
+      var intrinsicName = name2;
       var alias;
       if (hasOwn(LEGACY_ALIASES, intrinsicName)) {
         alias = LEGACY_ALIASES[intrinsicName];
@@ -17282,7 +17282,7 @@ var require_get_intrinsic = __commonJS({
           value = doEval(intrinsicName);
         }
         if (typeof value === "undefined" && !allowMissing) {
-          throw new $TypeError("intrinsic " + name + " exists, but is not available. Please file an issue!");
+          throw new $TypeError("intrinsic " + name2 + " exists, but is not available. Please file an issue!");
         }
         return {
           alias,
@@ -17290,19 +17290,19 @@ var require_get_intrinsic = __commonJS({
           value
         };
       }
-      throw new $SyntaxError("intrinsic " + name + " does not exist!");
+      throw new $SyntaxError("intrinsic " + name2 + " does not exist!");
     };
-    module2.exports = function GetIntrinsic(name, allowMissing) {
-      if (typeof name !== "string" || name.length === 0) {
+    module2.exports = function GetIntrinsic(name2, allowMissing) {
+      if (typeof name2 !== "string" || name2.length === 0) {
         throw new $TypeError("intrinsic name must be a non-empty string");
       }
       if (arguments.length > 1 && typeof allowMissing !== "boolean") {
         throw new $TypeError('"allowMissing" argument must be a boolean');
       }
-      if ($exec(/^%?[^%]*%?$/, name) === null) {
+      if ($exec(/^%?[^%]*%?$/, name2) === null) {
         throw new $SyntaxError("`%` may not be present anywhere but at the beginning and end of the intrinsic name");
       }
-      var parts = stringToPath(name);
+      var parts = stringToPath(name2);
       var intrinsicBaseName = parts.length > 0 ? parts[0] : "";
       var intrinsic = getBaseIntrinsic("%" + intrinsicBaseName + "%", allowMissing);
       var intrinsicRealName = intrinsic.name;
@@ -17330,7 +17330,7 @@ var require_get_intrinsic = __commonJS({
         } else if (value != null) {
           if (!(part in value)) {
             if (!allowMissing) {
-              throw new $TypeError("base intrinsic for " + name + " exists, but the property is not available.");
+              throw new $TypeError("base intrinsic for " + name2 + " exists, but the property is not available.");
             }
             return void undefined2;
           }
@@ -17363,12 +17363,12 @@ var require_call_bound = __commonJS({
     var GetIntrinsic = require_get_intrinsic();
     var callBindBasic = require_call_bind_apply_helpers();
     var $indexOf = callBindBasic([GetIntrinsic("%String.prototype.indexOf%")]);
-    module2.exports = function callBoundIntrinsic(name, allowMissing) {
+    module2.exports = function callBoundIntrinsic(name2, allowMissing) {
       var intrinsic = (
         /** @type {(this: unknown, ...args: unknown[]) => unknown} */
-        GetIntrinsic(name, !!allowMissing)
+        GetIntrinsic(name2, !!allowMissing)
       );
-      if (typeof intrinsic === "function" && $indexOf(name, ".prototype.") > -1) {
+      if (typeof intrinsic === "function" && $indexOf(name2, ".prototype.") > -1) {
         return callBindBasic(
           /** @type {const} */
           [intrinsic]
@@ -18035,8 +18035,8 @@ var require_stringify = __commonJS({
       return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
     };
     var sentinel = {};
-    var stringify = function stringify2(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel, depth, currentDepth) {
-      var obj = object;
+    var stringify = function stringify2(object2, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel, depth, currentDepth) {
+      var obj = object2;
       if (currentDepth > depth) {
         throw new RangeError("Input depth exceeded depth option of " + depth);
       }
@@ -18044,7 +18044,7 @@ var require_stringify = __commonJS({
       var step = 0;
       var findFlag = false;
       while ((tmpSc = tmpSc.get(sentinel)) !== void 0 && !findFlag) {
-        var pos = tmpSc.get(object);
+        var pos = tmpSc.get(object2);
         step += 1;
         if (typeof pos !== "undefined") {
           if (pos === step) {
@@ -18112,7 +18112,7 @@ var require_stringify = __commonJS({
         }
         var encodedKey = allowDots && encodeDotInKeys ? String(key).replace(/\./g, "%2E") : String(key);
         var keyPrefix = isArray(obj) ? typeof generateArrayPrefix === "function" ? generateArrayPrefix(adjustedPrefix, encodedKey) : adjustedPrefix : adjustedPrefix + (allowDots ? "." + encodedKey : "[" + encodedKey + "]");
-        sideChannel.set(object, step);
+        sideChannel.set(object2, step);
         var valueSideChannel = getSideChannel();
         valueSideChannel.set(sentinel, sideChannel);
         pushToArray(values, stringify2(
@@ -18204,8 +18204,8 @@ var require_stringify = __commonJS({
         strictNullHandling: typeof opts.strictNullHandling === "boolean" ? opts.strictNullHandling : defaults.strictNullHandling
       };
     };
-    module2.exports = function(object, opts) {
-      var obj = object;
+    module2.exports = function(object2, opts) {
+      var obj = object2;
       var options = normalizeStringifyOptions(opts);
       var objKeys;
       var filter;
@@ -18803,12 +18803,12 @@ var require_merge_descriptors = __commonJS({
       if (!source) {
         throw new TypeError("The `source` argument is required.");
       }
-      for (const name of Object.getOwnPropertyNames(source)) {
-        if (!overwrite && Object.hasOwn(destination, name)) {
+      for (const name2 of Object.getOwnPropertyNames(source)) {
+        if (!overwrite && Object.hasOwn(destination, name2)) {
           continue;
         }
-        const descriptor = Object.getOwnPropertyDescriptor(source, name);
-        Object.defineProperty(destination, name, descriptor);
+        const descriptor = Object.getOwnPropertyDescriptor(source, name2);
+        Object.defineProperty(destination, name2, descriptor);
       }
       return destination;
     }
@@ -19093,24 +19093,24 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path14 = require("node:path");
+    var path15 = require("node:path");
     var fs12 = require("node:fs");
-    var dirname = path14.dirname;
-    var basename = path14.basename;
-    var extname = path14.extname;
-    var join = path14.join;
-    var resolve = path14.resolve;
+    var dirname = path15.dirname;
+    var basename = path15.basename;
+    var extname = path15.extname;
+    var join = path15.join;
+    var resolve = path15.resolve;
     module2.exports = View;
-    function View(name, options) {
+    function View(name2, options) {
       var opts = options || {};
       this.defaultEngine = opts.defaultEngine;
-      this.ext = extname(name);
-      this.name = name;
+      this.ext = extname(name2);
+      this.name = name2;
       this.root = opts.root;
       if (!this.ext && !this.defaultEngine) {
         throw new Error("No default engine was specified and no extension was provided.");
       }
-      var fileName = name;
+      var fileName = name2;
       if (!this.ext) {
         this.ext = this.defaultEngine[0] !== "." ? "." + this.defaultEngine : this.defaultEngine;
         fileName += this.ext;
@@ -19127,18 +19127,18 @@ var require_view = __commonJS({
       this.engine = opts.engines[this.ext];
       this.path = this.lookup(fileName);
     }
-    View.prototype.lookup = function lookup(name) {
-      var path15;
+    View.prototype.lookup = function lookup(name2) {
+      var path16;
       var roots = [].concat(this.root);
-      debug('lookup "%s"', name);
-      for (var i = 0; i < roots.length && !path15; i++) {
+      debug('lookup "%s"', name2);
+      for (var i = 0; i < roots.length && !path16; i++) {
         var root = roots[i];
-        var loc = resolve(root, name);
+        var loc = resolve(root, name2);
         var dir = dirname(loc);
         var file = basename(loc);
-        path15 = this.resolve(dir, file);
+        path16 = this.resolve(dir, file);
       }
-      return path15;
+      return path16;
     };
     View.prototype.render = function render(options, callback) {
       var sync = true;
@@ -19160,21 +19160,21 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path15 = join(dir, file);
-      var stat = tryStat(path15);
+      var path16 = join(dir, file);
+      var stat = tryStat(path16);
       if (stat && stat.isFile()) {
-        return path15;
+        return path16;
       }
-      path15 = join(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path15);
+      path16 = join(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path16);
       if (stat && stat.isFile()) {
-        return path15;
+        return path16;
       }
     };
-    function tryStat(path15) {
-      debug('stat "%s"', path15);
+    function tryStat(path16) {
+      debug('stat "%s"', path16);
       try {
-        return fs12.statSync(path15);
+        return fs12.statSync(path16);
       } catch (e) {
         return void 0;
       }
@@ -20365,8 +20365,8 @@ var require_once = __commonJS({
         f.called = true;
         return f.value = fn.apply(this, arguments);
       };
-      var name = fn.name || "Function wrapped with `once`";
-      f.onceError = name + " shouldn't be called more than once";
+      var name2 = fn.name || "Function wrapped with `once`";
+      f.onceError = name2 + " shouldn't be called more than once";
       f.called = false;
       return f;
     }
@@ -20430,15 +20430,15 @@ var require_dist3 = __commonJS({
       let index = 0;
       function consumeUntil(end) {
         const output = [];
-        let path14 = "";
+        let path15 = "";
         function writePath() {
-          if (!path14)
+          if (!path15)
             return;
           output.push({
             type: "text",
-            value: encodePath(path14)
+            value: encodePath(path15)
           });
-          path14 = "";
+          path15 = "";
         }
         while (index < chars.length) {
           const value = chars[index++];
@@ -20450,15 +20450,15 @@ var require_dist3 = __commonJS({
             if (index === chars.length) {
               throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            path14 += chars[index++];
+            path15 += chars[index++];
             continue;
           }
           if (value === ":" || value === "*") {
             const type = value === ":" ? "param" : "wildcard";
-            let name = "";
+            let name2 = "";
             if (ID_START.test(chars[index])) {
               do {
-                name += chars[index++];
+                name2 += chars[index++];
               } while (ID_CONTINUE.test(chars[index]));
             } else if (chars[index] === '"') {
               let quoteStart = index;
@@ -20470,17 +20470,17 @@ var require_dist3 = __commonJS({
                 }
                 if (chars[index] === "\\")
                   index++;
-                name += chars[index];
+                name2 += chars[index];
               }
               if (quoteStart) {
                 throw new PathError(`Unterminated quote at index ${quoteStart}`, str);
               }
             }
-            if (!name) {
+            if (!name2) {
               throw new PathError(`Missing parameter name at index ${index}`, str);
             }
             writePath();
-            output.push({ type, name });
+            output.push({ type, name: name2 });
             continue;
           }
           if (value === "{") {
@@ -20494,7 +20494,7 @@ var require_dist3 = __commonJS({
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
             throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
           }
-          path14 += value;
+          path15 += value;
         }
         if (end) {
           throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
@@ -20504,17 +20504,17 @@ var require_dist3 = __commonJS({
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path14, options = {}) {
+    function compile(path15, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const data = typeof path14 === "object" ? path14 : parse(path14, options);
+      const data = typeof path15 === "object" ? path15 : parse(path15, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
-      return function path15(params = {}) {
+      return function path16(params = {}) {
         const missing = [];
-        const path16 = fn(params, missing);
+        const path17 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path16;
+        return path17;
       };
     }
     function tokensToFunction(tokens, delimiter, encode) {
@@ -20576,9 +20576,9 @@ var require_dist3 = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path14, options = {}) {
+    function match(path15, options = {}) {
       const { decode = decodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path14, options);
+      const { regexp, keys } = pathToRegexp(path15, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20590,7 +20590,7 @@ var require_dist3 = __commonJS({
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path15 = m[0];
+        const path16 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20599,21 +20599,21 @@ var require_dist3 = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path15, params };
+        return { path: path16, params };
       };
     }
-    function pathToRegexp(path14, options = {}) {
+    function pathToRegexp(path15, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path15) {
-        if (Array.isArray(path15)) {
-          for (const p of path15)
+      function process2(path16) {
+        if (Array.isArray(path16)) {
+          for (const p of path16)
             process2(p);
           return;
         }
-        const data = typeof path15 === "object" ? path15 : parse(path15, options);
+        const data = typeof path16 === "object" ? path16 : parse(path16, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20624,7 +20624,7 @@ var require_dist3 = __commonJS({
           combinations++;
         });
       }
-      process2(path14);
+      process2(path15);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape2(delimiter) + "$)?";
@@ -20742,13 +20742,13 @@ var require_dist3 = __commonJS({
     function stringify(data) {
       return stringifyTokens(data.tokens, 0);
     }
-    function stringifyName(name, next) {
-      if (!ID.test(name))
-        return JSON.stringify(name);
+    function stringifyName(name2, next) {
+      if (!ID.test(name2))
+        return JSON.stringify(name2);
       if ((next === null || next === void 0 ? void 0 : next.type) === "text" && ID_CONTINUE.test(next.value[0])) {
-        return JSON.stringify(name);
+        return JSON.stringify(name2);
       }
-      return name;
+      return name2;
     }
   }
 });
@@ -20764,26 +20764,26 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path14, options, fn) {
+    function Layer(path15, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path14, options, fn);
+        return new Layer(path15, options, fn);
       }
-      debug("new %o", path14);
+      debug("new %o", path15);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path14 === "/" && opts.end === false;
+      this.slash = path15 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
-          let name = 0;
+          let name2 = 0;
           let m;
           while (m = MATCHING_GROUP_REGEXP.exec(_path.source)) {
             keys.push({
-              name: m[1] || name++,
+              name: m[1] || name2++,
               offset: m.index
             });
           }
@@ -20814,7 +20814,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path14) ? path14.map(matcher) : [matcher(path14)];
+      this.matchers = Array.isArray(path15) ? path15.map(matcher) : [matcher(path15)];
     }
     Layer.prototype.handleError = function handleError(error, req, res, next) {
       const fn = this.handle;
@@ -20854,9 +20854,9 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path14) {
+    Layer.prototype.match = function match(path15) {
       let match2;
-      if (path14 != null) {
+      if (path15 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
@@ -20864,7 +20864,7 @@ var require_layer = __commonJS({
         }
         let i = 0;
         while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path14);
+          match2 = this.matchers[i](path15);
           i++;
         }
       }
@@ -20892,13 +20892,13 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path14) {
-      if (path14 instanceof RegExp || path14 === "/") {
-        return path14;
+    function loosen(path15) {
+      if (path15 instanceof RegExp || path15 === "/") {
+        return path15;
       }
-      return Array.isArray(path14) ? path14.map(function(p) {
+      return Array.isArray(path15) ? path15.map(function(p) {
         return loosen(p);
-      }) : String(path14).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path15).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
@@ -20914,9 +20914,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path14) {
-      debug("new %o", path14);
-      this.path = path14;
+    function Route(path15) {
+      debug("new %o", path15);
+      this.path = path15;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -20924,11 +20924,11 @@ var require_route = __commonJS({
       if (this.methods._all) {
         return true;
       }
-      let name = typeof method === "string" ? method.toLowerCase() : method;
-      if (name === "head" && !this.methods.head) {
-        name = "get";
+      let name2 = typeof method === "string" ? method.toLowerCase() : method;
+      if (name2 === "head" && !this.methods.head) {
+        name2 = "get";
       }
-      return Boolean(this.methods[name]);
+      return Boolean(this.methods[name2]);
     };
     Route.prototype._methods = function _methods() {
       const methods2 = Object.keys(this.methods);
@@ -21057,11 +21057,11 @@ var require_router = __commonJS({
     }
     Router.prototype = function() {
     };
-    Router.prototype.param = function param(name, fn) {
-      if (!name) {
+    Router.prototype.param = function param(name2, fn) {
+      if (!name2) {
         throw new TypeError("argument name is required");
       }
-      if (typeof name !== "string") {
+      if (typeof name2 !== "string") {
         throw new TypeError("argument name must be a string");
       }
       if (!fn) {
@@ -21070,9 +21070,9 @@ var require_router = __commonJS({
       if (typeof fn !== "function") {
         throw new TypeError("argument fn must be a function");
       }
-      let params = this.params[name];
+      let params = this.params[name2];
       if (!params) {
-        params = this.params[name] = [];
+        params = this.params[name2] = [];
       }
       params.push(fn);
       return this;
@@ -21124,8 +21124,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path14 = getPathname(req);
-        if (path14 == null) {
+        const path15 = getPathname(req);
+        if (path15 == null) {
           return done(layerError);
         }
         let layer;
@@ -21133,7 +21133,7 @@ var require_router = __commonJS({
         let route2;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path14);
+          match = matchLayer(layer, path15);
           route2 = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -21171,18 +21171,18 @@ var require_router = __commonJS({
           } else if (route2) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path14);
+            trimPrefix(layer, layerError, layerPath, path15);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path14) {
+      function trimPrefix(layer, layerError, layerPath, path15) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path14.substring(0, layerPath.length)) {
+          if (layerPath !== path15.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path14[layerPath.length];
+          const c = path15[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -21206,7 +21206,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path14 = "/";
+      let path15 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21214,7 +21214,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path14 = handler;
+          path15 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21226,8 +21226,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path14, fn.name || "<anonymous>");
-        const layer = new Layer(path14, {
+        debug("use %o %s", path15, fn.name || "<anonymous>");
+        const layer = new Layer(path15, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -21237,9 +21237,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route2(path14) {
-      const route3 = new Route(path14);
-      const layer = new Layer(path14, {
+    Router.prototype.route = function route2(path15) {
+      const route3 = new Route(path15);
+      const layer = new Layer(path15, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -21252,8 +21252,8 @@ var require_router = __commonJS({
       return route3;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path14) {
-        const route2 = this.route(path14);
+      Router.prototype[method] = function(path15) {
+        const route2 = this.route(path15);
         route2[method].apply(route2, slice.call(arguments, 1));
         return this;
       };
@@ -21282,9 +21282,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path14) {
+    function matchLayer(layer, path15) {
       try {
-        return layer.match(path14);
+        return layer.match(path15);
       } catch (err) {
         return err;
       }
@@ -21512,7 +21512,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path14 = "/";
+      var path15 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21520,7 +21520,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path14 = fn;
+          path15 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21530,12 +21530,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path14, fn2);
+          return router.use(path15, fn2);
         }
-        debug(".use app under %s", path14);
-        fn2.mountpath = path14;
+        debug(".use app under %s", path15);
+        fn2.mountpath = path15;
         fn2.parent = this;
-        router.use(path14, function mounted_app(req, res, next) {
+        router.use(path15, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -21547,8 +21547,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route2(path14) {
-      return this.router.route(path14);
+    app.route = function route2(path15) {
+      return this.router.route(path15);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21558,14 +21558,14 @@ var require_application = __commonJS({
       this.engines[extension2] = fn;
       return this;
     };
-    app.param = function param(name, fn) {
-      if (Array.isArray(name)) {
-        for (var i = 0; i < name.length; i++) {
-          this.param(name[i], fn);
+    app.param = function param(name2, fn) {
+      if (Array.isArray(name2)) {
+        for (var i = 0; i < name2.length; i++) {
+          this.param(name2[i], fn);
         }
         return this;
       }
-      this.router.param(name, fn);
+      this.router.param(name2, fn);
       return this;
     };
     app.set = function set(setting, val) {
@@ -21591,7 +21591,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path14() {
+    app.path = function path15() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -21607,24 +21607,24 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path14) {
+      app[method] = function(path15) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path14);
+          return this.set(path15);
         }
-        var route2 = this.route(path14);
+        var route2 = this.route(path15);
         route2[method].apply(route2, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path14) {
-      var route2 = this.route(path14);
+    app.all = function all(path15) {
+      var route2 = this.route(path15);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route2[methods[i]].apply(route2, args);
       }
       return this;
     };
-    app.render = function render(name, options, callback) {
+    app.render = function render(name2, options, callback) {
       var cache = this.cache;
       var done = callback;
       var engines = this.engines;
@@ -21639,23 +21639,23 @@ var require_application = __commonJS({
         renderOptions.cache = this.enabled("view cache");
       }
       if (renderOptions.cache) {
-        view = cache[name];
+        view = cache[name2];
       }
       if (!view) {
         var View2 = this.get("view");
-        view = new View2(name, {
+        view = new View2(name2, {
           defaultEngine: this.get("view engine"),
           root: this.get("views"),
           engines
         });
         if (!view.path) {
           var dirs = Array.isArray(view.root) && view.root.length > 1 ? 'directories "' + view.root.slice(0, -1).join('", "') + '" or "' + view.root[view.root.length - 1] + '"' : 'directory "' + view.root + '"';
-          var err = new Error('Failed to lookup view "' + name + '" in views ' + dirs);
+          var err = new Error('Failed to lookup view "' + name2 + '" in views ' + dirs);
           err.view = view;
           return done(err);
         }
         if (renderOptions.cache) {
-          cache[name] = view;
+          cache[name2] = view;
         }
       }
       tryRender(view, renderOptions, done);
@@ -22443,14 +22443,14 @@ var require_request = __commonJS({
     var proxyaddr = require_proxy_addr();
     var req = Object.create(http2.IncomingMessage.prototype);
     module2.exports = req;
-    req.get = req.header = function header(name) {
-      if (!name) {
+    req.get = req.header = function header(name2) {
+      if (!name2) {
         throw new TypeError("name argument is required to req.get");
       }
-      if (typeof name !== "string") {
+      if (typeof name2 !== "string") {
         throw new TypeError("name must be a string to req.get");
       }
-      var lc = name.toLowerCase();
+      var lc = name2.toLowerCase();
       switch (lc) {
         case "referer":
         case "referrer":
@@ -22527,7 +22527,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path14() {
+    defineGetter(req, "path", function path15() {
       return parse(this).pathname;
     });
     defineGetter(req, "host", function host() {
@@ -22567,8 +22567,8 @@ var require_request = __commonJS({
       var val = this.get("X-Requested-With") || "";
       return val.toLowerCase() === "xmlhttprequest";
     });
-    function defineGetter(obj, name, getter) {
-      Object.defineProperty(obj, name, {
+    function defineGetter(obj, name2, getter) {
+      Object.defineProperty(obj, name2, {
         configurable: true,
         enumerable: true,
         get: getter
@@ -22616,15 +22616,15 @@ var require_content_disposition = __commonJS({
       if (typeof fallback === "string" && NON_LATIN1_REGEXP.test(fallback)) {
         throw new TypeError("fallback must be ISO-8859-1 string");
       }
-      var name = basename(filename);
-      var isQuotedString = TEXT_REGEXP.test(name);
-      var fallbackName = typeof fallback !== "string" ? fallback && getlatin1(name) : basename(fallback);
-      var hasFallback = typeof fallbackName === "string" && fallbackName !== name;
-      if (hasFallback || !isQuotedString || hasHexEscape(name)) {
-        params["filename*"] = name;
+      var name2 = basename(filename);
+      var isQuotedString = TEXT_REGEXP.test(name2);
+      var fallbackName = typeof fallback !== "string" ? fallback && getlatin1(name2) : basename(fallback);
+      var hasFallback = typeof fallbackName === "string" && fallbackName !== name2;
+      if (hasFallback || !isQuotedString || hasHexEscape(name2)) {
+        params["filename*"] = name2;
       }
       if (isQuotedString || hasFallback) {
-        params.filename = hasFallback ? fallbackName : name;
+        params.filename = hasFallback ? fallbackName : name2;
       }
       return params;
     }
@@ -22738,8 +22738,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename(path14) {
-      const normalized = path14.replaceAll("\\", "/");
+    function basename(path15) {
+      const normalized = path15.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22868,19 +22868,19 @@ var require_cookie = __commonJS({
       }
       return min;
     }
-    function serialize(name, val, opt) {
+    function serialize(name2, val, opt) {
       var enc = opt && opt.encode || encodeURIComponent;
       if (typeof enc !== "function") {
         throw new TypeError("option encode is invalid");
       }
-      if (!cookieNameRegExp.test(name)) {
+      if (!cookieNameRegExp.test(name2)) {
         throw new TypeError("argument name is invalid");
       }
       var value = enc(val);
       if (!cookieValueRegExp.test(value)) {
         throw new TypeError("argument val is invalid");
       }
-      var str = name + "=" + value;
+      var str = name2 + "=" + value;
       if (!opt) return str;
       if (null != opt.maxAge) {
         var maxAge = Math.floor(opt.maxAge);
@@ -22985,27 +22985,27 @@ var require_send = __commonJS({
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path14 = require("path");
+    var path15 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path14.extname;
-    var join = path14.join;
-    var normalize = path14.normalize;
-    var resolve = path14.resolve;
-    var sep = path14.sep;
+    var extname = path15.extname;
+    var join = path15.join;
+    var normalize = path15.normalize;
+    var resolve = path15.resolve;
+    var sep = path15.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send;
-    function send(req, path15, options) {
-      return new SendStream(req, path15, options);
+    function send(req, path16, options) {
+      return new SendStream(req, path16, options);
     }
-    function SendStream(req, path15, options) {
+    function SendStream(req, path16, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path15;
+      this.path = path16;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -23119,10 +23119,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path15) {
+    SendStream.prototype.redirect = function redirect(path16) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path15);
+        this.emit("directory", res, path16);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -23142,38 +23142,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path15 = decode(this.path);
-      if (path15 === -1) {
+      var path16 = decode(this.path);
+      if (path16 === -1) {
         this.error(400);
         return res;
       }
-      if (~path15.indexOf("\0")) {
+      if (~path16.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path15) {
-          path15 = normalize("." + sep + path15);
+        if (path16) {
+          path16 = normalize("." + sep + path16);
         }
-        if (UP_PATH_REGEXP.test(path15)) {
-          debug('malicious path "%s"', path15);
+        if (UP_PATH_REGEXP.test(path16)) {
+          debug('malicious path "%s"', path16);
           this.error(403);
           return res;
         }
-        parts = path15.split(sep);
-        path15 = normalize(join(root, path15));
+        parts = path16.split(sep);
+        path16 = normalize(join(root, path16));
       } else {
-        if (UP_PATH_REGEXP.test(path15)) {
-          debug('malicious path "%s"', path15);
+        if (UP_PATH_REGEXP.test(path16)) {
+          debug('malicious path "%s"', path16);
           this.error(403);
           return res;
         }
-        parts = normalize(path15).split(sep);
-        path15 = resolve(path15);
+        parts = normalize(path16).split(sep);
+        path16 = resolve(path16);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path15);
+        debug('%s dotfile "%s"', this._dotfiles, path16);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -23187,13 +23187,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path15);
+        this.sendIndex(path16);
         return res;
       }
-      this.sendFile(path15);
+      this.sendFile(path16);
       return res;
     };
-    SendStream.prototype.send = function send2(path15, stat) {
+    SendStream.prototype.send = function send2(path16, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -23205,9 +23205,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path15);
-      this.setHeader(path15, stat);
-      this.type(path15);
+      debug('pipe "%s"', path16);
+      this.setHeader(path16, stat);
+      this.type(path16);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -23256,28 +23256,28 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path15, opts);
+      this.stream(path16, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path15) {
+    SendStream.prototype.sendFile = function sendFile(path16) {
       var i = 0;
       var self2 = this;
-      debug('stat "%s"', path15);
-      fs12.stat(path15, function onstat(err, stat) {
-        var pathEndsWithSep = path15[path15.length - 1] === sep;
-        if (err && err.code === "ENOENT" && !extname(path15) && !pathEndsWithSep) {
+      debug('stat "%s"', path16);
+      fs12.stat(path16, function onstat(err, stat) {
+        var pathEndsWithSep = path16[path16.length - 1] === sep;
+        if (err && err.code === "ENOENT" && !extname(path16) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self2.onStatError(err);
-        if (stat.isDirectory()) return self2.redirect(path15);
+        if (stat.isDirectory()) return self2.redirect(path16);
         if (pathEndsWithSep) return self2.error(404);
-        self2.emit("file", path15, stat);
-        self2.send(path15, stat);
+        self2.emit("file", path16, stat);
+        self2.send(path16, stat);
       });
       function next(err) {
         if (self2._extensions.length <= i) {
           return err ? self2.onStatError(err) : self2.error(404);
         }
-        var p = path15 + "." + self2._extensions[i++];
+        var p = path16 + "." + self2._extensions[i++];
         debug('stat "%s"', p);
         fs12.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -23287,7 +23287,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path15) {
+    SendStream.prototype.sendIndex = function sendIndex(path16) {
       var i = -1;
       var self2 = this;
       function next(err) {
@@ -23295,7 +23295,7 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join(path15, self2._index[i]);
+        var p = join(path16, self2._index[i]);
         debug('stat "%s"', p);
         fs12.stat(p, function(err2, stat) {
           if (err2) return next(err2);
@@ -23306,10 +23306,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path15, options) {
+    SendStream.prototype.stream = function stream(path16, options) {
       var self2 = this;
       var res = this.res;
-      var stream2 = fs12.createReadStream(path15, options);
+      var stream2 = fs12.createReadStream(path16, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -23324,17 +23324,17 @@ var require_send = __commonJS({
         self2.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path15) {
+    SendStream.prototype.type = function type(path16) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path15);
+      var ext = extname(path16);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path15, stat) {
+    SendStream.prototype.setHeader = function setHeader(path16, stat) {
       var res = this.res;
-      this.emit("headers", res, path15, stat);
+      this.emit("headers", res, path16, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -23392,9 +23392,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path15) {
+    function decode(path16) {
       try {
-        return decodeURIComponent(path15);
+        return decodeURIComponent(path16);
       } catch (err) {
         return -1;
       }
@@ -23403,11 +23403,11 @@ var require_send = __commonJS({
       var count = typeof emitter.listenerCount !== "function" ? emitter.listeners(type).length : emitter.listenerCount(type);
       return count > 0;
     }
-    function normalizeList(val, name) {
+    function normalizeList(val, name2) {
       var list = [].concat(val || []);
       for (var i = 0; i < list.length; i++) {
         if (typeof list[i] !== "string") {
-          throw new TypeError(name + " must be array of strings or false");
+          throw new TypeError(name2 + " must be array of strings or false");
         }
       }
       return list;
@@ -23538,7 +23538,7 @@ var require_response = __commonJS({
     var http2 = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path14 = require("node:path");
+    var path15 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -23547,8 +23547,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send = require_send();
-    var extname = path14.extname;
-    var resolve = path14.resolve;
+    var extname = path15.extname;
+    var resolve = path15.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http2.ServerResponse.prototype);
@@ -23694,26 +23694,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path15, options, callback) {
+    res.sendFile = function sendFile(path16, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path15) {
+      if (!path16) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path15 !== "string") {
+      if (typeof path16 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path15)) {
+      if (!opts.root && !pathIsAbsolute(path16)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path15);
+      var pathname = encodeURI(path16);
       opts.etag = this.app.enabled("etag");
       var file = send(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23724,24 +23724,24 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path15, filename, options, callback) {
+    res.download = function download(path16, filename, options, callback) {
       var done = callback;
-      var name = filename;
+      var name2 = filename;
       var opts = options || null;
       if (typeof filename === "function") {
         done = filename;
-        name = null;
+        name2 = null;
         opts = null;
       } else if (typeof options === "function") {
         done = options;
         opts = null;
       }
       if (typeof filename === "object" && (typeof options === "function" || options === void 0)) {
-        name = null;
+        name2 = null;
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name || path15)
+        "Content-Disposition": contentDisposition(name2 || path16)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23754,7 +23754,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path15) : path15;
+      var fullPath = !opts.root ? resolve(path16) : path16;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -23818,12 +23818,12 @@ var require_response = __commonJS({
     res.get = function(field) {
       return this.getHeader(field);
     };
-    res.clearCookie = function clearCookie(name, options) {
+    res.clearCookie = function clearCookie(name2, options) {
       const opts = { path: "/", ...options, expires: /* @__PURE__ */ new Date(1) };
       delete opts.maxAge;
-      return this.cookie(name, "", opts);
+      return this.cookie(name2, "", opts);
     };
-    res.cookie = function(name, value, options) {
+    res.cookie = function(name2, value, options) {
       var opts = { ...options };
       var secret = this.req.secret;
       var signed = opts.signed;
@@ -23844,7 +23844,7 @@ var require_response = __commonJS({
       if (opts.path == null) {
         opts.path = "/";
       }
-      this.append("Set-Cookie", cookie.serialize(name, String(val), opts));
+      this.append("Set-Cookie", cookie.serialize(name2, String(val), opts));
       return this;
     };
     res.location = function location(url) {
@@ -24037,11 +24037,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path14 = parseUrl(req).pathname;
-        if (path14 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path14 = "";
+        var path15 = parseUrl(req).pathname;
+        if (path15 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path15 = "";
         }
-        var stream = send(req, path14, opts);
+        var stream = send(req, path15, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -24105,7 +24105,7 @@ var require_express = __commonJS({
   "node_modules/express/lib/express.js"(exports2, module2) {
     "use strict";
     var bodyParser = require_body_parser();
-    var EventEmitter3 = require("node:events").EventEmitter;
+    var EventEmitter4 = require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
     var Router = require_router();
@@ -24116,7 +24116,7 @@ var require_express = __commonJS({
       var app = function(req2, res2, next) {
         app.handle(req2, res2, next);
       };
-      mixin(app, EventEmitter3.prototype, false);
+      mixin(app, EventEmitter4.prototype, false);
       mixin(app, proto, false);
       app.request = Object.create(req, {
         app: { configurable: true, enumerable: true, writable: true, value: app }
@@ -24153,7 +24153,7 @@ var require_local_auth = __commonJS({
   "../plugins/remote-debug-agent/local-auth.cjs"(exports2, module2) {
     "use strict";
     var fs12 = require("fs");
-    var path14 = require("path");
+    var path15 = require("path");
     var crypto = require("crypto");
     var { execFileSync } = require("child_process");
     function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
@@ -24162,7 +24162,7 @@ var require_local_auth = __commonJS({
       return error;
     }
     function resolveAuthFile(dataDir, env = process.env) {
-      return path14.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path14.join(".runtime", "http-auth.json"));
+      return path15.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path15.join(".runtime", "http-auth.json"));
     }
     var aclScript = `
 $ErrorActionPreference = 'Stop'
@@ -24221,7 +24221,7 @@ if (-not $full) { throw 'Owner lacks access' }
     }
     function readAuthToken(filePath) {
       try {
-        protectOrCheck(path14.dirname(filePath), true, false);
+        protectOrCheck(path15.dirname(filePath), true, false);
         protectOrCheck(filePath, false, false);
         const stat = fs12.statSync(filePath);
         if (stat.size > 1024) throw authError("authentication credential file is invalid");
@@ -24234,13 +24234,13 @@ if (-not $full) { throw 'Owner lacks access' }
       }
     }
     function ensureAuthToken(filePath) {
-      const directory = path14.dirname(filePath);
+      const directory = path15.dirname(filePath);
       try {
         fs12.mkdirSync(directory, { recursive: true, mode: 448 });
         protectOrCheck(directory, true, true);
         if (fs12.existsSync(filePath)) return readAuthToken(filePath);
         const token = crypto.randomBytes(32).toString("hex");
-        const temporaryPath = path14.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
+        const temporaryPath = path15.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
         try {
           const fd = fs12.openSync(temporaryPath, "wx", 384);
           try {
@@ -26380,9 +26380,9 @@ var require_extension = __commonJS({
   "node_modules/ws/lib/extension.js"(exports2, module2) {
     "use strict";
     var { tokenChars } = require_validation();
-    function push(dest, name, elem) {
-      if (dest[name] === void 0) dest[name] = [elem];
-      else dest[name].push(elem);
+    function push(dest, name2, elem) {
+      if (dest[name2] === void 0) dest[name2] = [elem];
+      else dest[name2].push(elem);
     }
     function parse(header) {
       const offers = /* @__PURE__ */ Object.create(null);
@@ -26408,12 +26408,12 @@ var require_extension = __commonJS({
               throw new SyntaxError(`Unexpected character at index ${i}`);
             }
             if (end === -1) end = i;
-            const name = header.slice(start, end);
+            const name2 = header.slice(start, end);
             if (code === 44) {
-              push(offers, name, params);
+              push(offers, name2, params);
               params = /* @__PURE__ */ Object.create(null);
             } else {
-              extensionName = name;
+              extensionName = name2;
             }
             start = end = -1;
           } else {
@@ -26532,7 +26532,7 @@ var require_extension = __commonJS({
 var require_websocket = __commonJS({
   "node_modules/ws/lib/websocket.js"(exports2, module2) {
     "use strict";
-    var EventEmitter3 = require("events");
+    var EventEmitter4 = require("events");
     var https = require("https");
     var http2 = require("http");
     var net2 = require("net");
@@ -26564,7 +26564,7 @@ var require_websocket = __commonJS({
     var protocolVersions = [8, 13];
     var readyStates = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
     var subprotocolRegex = /^[!#$%&'*+\-.0-9A-Z^_`|a-z~]+$/;
-    var WebSocket2 = class _WebSocket extends EventEmitter3 {
+    var WebSocket2 = class _WebSocket extends EventEmitter4 {
       /**
        * Create a new `WebSocket`.
        *
@@ -27584,7 +27584,7 @@ var require_subprotocol = __commonJS({
 var require_websocket_server = __commonJS({
   "node_modules/ws/lib/websocket-server.js"(exports2, module2) {
     "use strict";
-    var EventEmitter3 = require("events");
+    var EventEmitter4 = require("events");
     var http2 = require("http");
     var { Duplex } = require("stream");
     var { createHash: createHash11 } = require("crypto");
@@ -27597,7 +27597,7 @@ var require_websocket_server = __commonJS({
     var RUNNING = 0;
     var CLOSING = 1;
     var CLOSED = 2;
-    var WebSocketServer2 = class extends EventEmitter3 {
+    var WebSocketServer2 = class extends EventEmitter4 {
       /**
        * Create a `WebSocketServer` instance.
        *
@@ -32022,7 +32022,7 @@ var require_constants2 = __commonJS({
     ]);
     var canUseCipher = (() => {
       const ciphers = crypto.getCiphers();
-      return (name) => ciphers.includes(CIPHER_INFO[name].sslName);
+      return (name2) => ciphers.includes(CIPHER_INFO[name2].sslName);
     })();
     var DEFAULT_CIPHER = [
       // http://tools.ietf.org/html/rfc5647
@@ -32060,7 +32060,7 @@ var require_constants2 = __commonJS({
     ].filter(canUseCipher));
     var canUseMAC = (() => {
       const hashes = crypto.getHashes();
-      return (name) => hashes.includes(MAC_INFO[name].sslName);
+      return (name2) => hashes.includes(MAC_INFO[name2].sslName);
     })();
     var DEFAULT_MAC = [
       "hmac-sha2-256-etm@openssh.com",
@@ -35962,11 +35962,11 @@ var require_agent = __commonJS({
       };
     })();
     var WINDOWS_PIPE_REGEX = /^[/\\][/\\]\.[/\\]pipe[/\\].+/;
-    function createAgent(path14) {
-      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path14)) {
-        return path14 === "pageant" ? new PageantAgent() : new CygwinAgent(path14);
+    function createAgent(path15) {
+      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path15)) {
+        return path15 === "pageant" ? new PageantAgent() : new CygwinAgent(path15);
       }
-      return new OpenSSHAgent(path14);
+      return new OpenSSHAgent(path15);
     }
     var AgentProtocol = (() => {
       const SSH_AGENTC_REQUEST_IDENTITIES = 11;
@@ -36780,31 +36780,31 @@ var require_handlers_misc = __commonJS({
       },
       [MESSAGE.SERVICE_REQUEST]: (self2, payload) => {
         bufferParser.init(payload, 1);
-        const name = bufferParser.readString(true);
+        const name2 = bufferParser.readString(true);
         bufferParser.clear();
-        if (name === void 0) {
+        if (name2 === void 0) {
           return doFatalError(
             self2,
             "Inbound: Malformed SERVICE_REQUEST packet"
           );
         }
-        self2._debug && self2._debug(`Inbound: Received SERVICE_REQUEST (${name})`);
+        self2._debug && self2._debug(`Inbound: Received SERVICE_REQUEST (${name2})`);
         const handler = self2._handlers.SERVICE_REQUEST;
-        handler && handler(self2, name);
+        handler && handler(self2, name2);
       },
       [MESSAGE.SERVICE_ACCEPT]: (self2, payload) => {
         bufferParser.init(payload, 1);
-        const name = bufferParser.readString(true);
+        const name2 = bufferParser.readString(true);
         bufferParser.clear();
-        if (name === void 0) {
+        if (name2 === void 0) {
           return doFatalError(
             self2,
             "Inbound: Malformed SERVICE_ACCEPT packet"
           );
         }
-        self2._debug && self2._debug(`Inbound: Received SERVICE_ACCEPT (${name})`);
+        self2._debug && self2._debug(`Inbound: Received SERVICE_ACCEPT (${name2})`);
         const handler = self2._handlers.SERVICE_ACCEPT;
-        handler && handler(self2, name);
+        handler && handler(self2, name2);
       },
       [MESSAGE.EXT_INFO]: (self2, payload) => {
         bufferParser.init(payload, 1);
@@ -36813,13 +36813,13 @@ var require_handlers_misc = __commonJS({
         if (numExts !== void 0) {
           exts = [];
           for (let i = 0; i < numExts; ++i) {
-            const name = bufferParser.readString(true);
+            const name2 = bufferParser.readString(true);
             const data = bufferParser.readString();
             if (data !== void 0) {
-              switch (name) {
+              switch (name2) {
                 case "server-sig-algs": {
                   const algs = data.latin1Slice(0, data.length).split(",");
-                  exts.push({ name, algs });
+                  exts.push({ name: name2, algs });
                   continue;
                 }
                 default:
@@ -37060,7 +37060,7 @@ var require_handlers_misc = __commonJS({
           }
           case "keyboard-interactive": {
             bufferParser.init(payload, 1);
-            const name = bufferParser.readString(true);
+            const name2 = bufferParser.readString(true);
             const instructions = bufferParser.readString(true);
             bufferParser.readString();
             const numPrompts = bufferParser.readUInt32BE();
@@ -37087,7 +37087,7 @@ var require_handlers_misc = __commonJS({
             }
             self2._debug && self2._debug("Inbound: Received USERAUTH_INFO_REQUEST");
             const handler = self2._handlers.USERAUTH_INFO_REQUEST;
-            handler && handler(self2, name, instructions, prompts);
+            handler && handler(self2, name2, instructions, prompts);
             break;
           }
           default:
@@ -37134,11 +37134,11 @@ var require_handlers_misc = __commonJS({
       // Connection protocol -- generic ============================================
       [MESSAGE.GLOBAL_REQUEST]: (self2, payload) => {
         bufferParser.init(payload, 1);
-        const name = bufferParser.readString(true);
+        const name2 = bufferParser.readString(true);
         const wantReply = bufferParser.readBool();
         let data;
         if (wantReply !== void 0) {
-          switch (name) {
+          switch (name2) {
             case "tcpip-forward":
             case "cancel-tcpip-forward": {
               const bindAddr = bufferParser.readString(true);
@@ -37182,10 +37182,10 @@ var require_handlers_misc = __commonJS({
             "Inbound: Malformed GLOBAL_REQUEST packet"
           );
         }
-        self2._debug && self2._debug(`Inbound: GLOBAL_REQUEST (${name})`);
+        self2._debug && self2._debug(`Inbound: GLOBAL_REQUEST (${name2})`);
         const handler = self2._handlers.GLOBAL_REQUEST;
         if (handler)
-          handler(self2, name, wantReply, data);
+          handler(self2, name2, wantReply, data);
         else
           self2.requestFailure();
       },
@@ -37476,13 +37476,13 @@ var require_handlers_misc = __commonJS({
                   const opcode = bufferParser.readByte();
                   if (opcode === TERMINAL_MODE.TTY_OP_END)
                     break;
-                  const name = TERMINAL_MODE_BY_VALUE[opcode];
+                  const name2 = TERMINAL_MODE_BY_VALUE[opcode];
                   const value = bufferParser.readUInt32BE();
-                  if (opcode === void 0 || name === void 0 || value === void 0) {
+                  if (opcode === void 0 || name2 === void 0 || value === void 0) {
                     modes = void 0;
                     break;
                   }
-                  modes[name] = value;
+                  modes[name2] = value;
                 }
                 if (modes !== void 0)
                   data = { term, cols, rows, width, height, modes };
@@ -37517,13 +37517,13 @@ var require_handlers_misc = __commonJS({
               break;
             }
             case "env": {
-              const name = bufferParser.readString(true);
+              const name2 = bufferParser.readString(true);
               const value = bufferParser.readString(true);
               if (value !== void 0)
-                data = { name, value };
+                data = { name: name2, value };
               if (self2._debug) {
                 self2._debug(
-                  `Inbound: CHANNEL_REQUEST (r:${recipient}, ${type}: ${name}=${value})`
+                  `Inbound: CHANNEL_REQUEST (r:${recipient}, ${type}: ${name2}=${value})`
                 );
               }
               break;
@@ -38130,10 +38130,10 @@ var require_kex = __commonJS({
             let parsedHostKey;
             {
               bufferParser.init(this._hostKey, 0);
-              const name = bufferParser.readString(true);
+              const name2 = bufferParser.readString(true);
               const hostKey = this._hostKey.slice(bufferParser.pos());
               bufferParser.clear();
-              parsedHostKey = parseDERKey(hostKey, name);
+              parsedHostKey = parseDERKey(hostKey, name2);
               if (parsedHostKey instanceof Error) {
                 parsedHostKey.level = "handshake";
                 return doFatalError(
@@ -39702,16 +39702,16 @@ var require_Protocol = __commonJS({
       // ===========================================================================
       // Global
       // ------
-      service(name) {
+      service(name2) {
         if (this._server)
           throw new Error("Client-only method called in server mode");
-        const nameLen = Buffer.byteLength(name);
+        const nameLen = Buffer.byteLength(name2);
         let p = this._packetRW.write.allocStart;
         const packet = this._packetRW.write.alloc(1 + 4 + nameLen);
         packet[p] = MESSAGE.SERVICE_REQUEST;
         writeUInt32BE(packet, nameLen, ++p);
-        packet.utf8Write(name, p += 4, nameLen);
-        this._debug && this._debug(`Outbound: Sending SERVICE_REQUEST (${name})`);
+        packet.utf8Write(name2, p += 4, nameLen);
+        this._debug && this._debug(`Outbound: Sending SERVICE_REQUEST (${name2})`);
         sendPacket(this, this._packetRW.write.finalize(packet));
       }
       // 'ssh-userauth' service-specific
@@ -40312,10 +40312,10 @@ var require_Protocol = __commonJS({
         this._debug && this._debug(`Outbound: Sending CHANNEL_REQUEST (r:${chan}, x11-req)`);
         sendPacket(this, this._packetRW.write.finalize(packet));
       }
-      subsystem(chan, name, wantReply) {
+      subsystem(chan, name2, wantReply) {
         if (this._server)
           throw new Error("Client-only method called in server mode");
-        const nameLen = Buffer.byteLength(name);
+        const nameLen = Buffer.byteLength(name2);
         let p = this._packetRW.write.allocStart;
         const packet = this._packetRW.write.alloc(1 + 4 + 4 + 9 + 1 + 4 + nameLen);
         packet[p] = MESSAGE.CHANNEL_REQUEST;
@@ -40324,9 +40324,9 @@ var require_Protocol = __commonJS({
         packet.utf8Write("subsystem", p += 4, 9);
         packet[p += 9] = wantReply === void 0 || wantReply === true ? 1 : 0;
         writeUInt32BE(packet, nameLen, ++p);
-        packet.utf8Write(name, p += 4, nameLen);
+        packet.utf8Write(name2, p += 4, nameLen);
         this._debug && this._debug(
-          `Outbound: Sending CHANNEL_REQUEST (r:${chan}, subsystem: ${name})`
+          `Outbound: Sending CHANNEL_REQUEST (r:${chan}, subsystem: ${name2})`
         );
         sendPacket(this, this._packetRW.write.finalize(packet));
       }
@@ -40511,13 +40511,13 @@ var require_Protocol = __commonJS({
         );
         sendPacket(this, this._packetRW.write.finalize(packet));
       }
-      exitSignal(chan, name, coreDumped, msg) {
+      exitSignal(chan, name2, coreDumped, msg) {
         if (!this._server)
           throw new Error("Server-only method called in client mode");
-        const origSignal = name;
+        const origSignal = name2;
         if (typeof origSignal !== "string" || !origSignal)
           throw new Error(`Invalid signal: ${origSignal}`);
-        let signal = name.toUpperCase();
+        let signal = name2.toUpperCase();
         if (signal.slice(0, 3) === "SIG")
           signal = signal.slice(3);
         if (SIGNALS[signal] !== 1)
@@ -40544,7 +40544,7 @@ var require_Protocol = __commonJS({
         }
         writeUInt32BE(packet, 0, p);
         this._debug && this._debug(
-          `Outbound: Sending CHANNEL_REQUEST (r:${chan}, exit-signal: ${name})`
+          `Outbound: Sending CHANNEL_REQUEST (r:${chan}, exit-signal: ${name2})`
         );
         sendPacket(this, this._packetRW.write.finalize(packet));
       }
@@ -40629,11 +40629,11 @@ var require_Protocol = __commonJS({
         this._debug && this._debug("Outbound: Sending USERAUTH_PASSWD_CHANGEREQ");
         sendPacket(this, this._packetRW.write.finalize(packet));
       }
-      authInfoReq(name, instructions, prompts) {
+      authInfoReq(name2, instructions, prompts) {
         if (!this._server)
           throw new Error("Server-only method called in client mode");
         let promptsLen = 0;
-        const nameLen = name ? Buffer.byteLength(name) : 0;
+        const nameLen = name2 ? Buffer.byteLength(name2) : 0;
         const instrLen = instructions ? Buffer.byteLength(instructions) : 0;
         for (let i = 0; i < prompts.length; ++i)
           promptsLen += 4 + Buffer.byteLength(prompts[i].prompt) + 1;
@@ -40644,8 +40644,8 @@ var require_Protocol = __commonJS({
         packet[p] = MESSAGE.USERAUTH_INFO_REQUEST;
         writeUInt32BE(packet, nameLen, ++p);
         p += 4;
-        if (name) {
-          packet.utf8Write(name, p, nameLen);
+        if (name2) {
+          packet.utf8Write(name2, p, nameLen);
           p += nameLen;
         }
         writeUInt32BE(packet, instrLen, p);
@@ -40906,10 +40906,10 @@ ${suffix}`;
       }
     };
     var ERR_INVALID_ARG_TYPE = class _ERR_INVALID_ARG_TYPE extends TypeError {
-      constructor(name, expected, actual) {
+      constructor(name2, expected, actual) {
         super();
         Error.captureStackTrace(this, _ERR_INVALID_ARG_TYPE);
-        assert(typeof name === "string", `'name' must be a string`);
+        assert(typeof name2 === "string", `'name' must be a string`);
         let determiner;
         if (typeof expected === "string" && expected.startsWith("not ")) {
           determiner = "must not be";
@@ -40918,20 +40918,20 @@ ${suffix}`;
           determiner = "must be";
         }
         let msg;
-        if (name.endsWith(" argument")) {
-          msg = `The ${name} ${determiner} ${oneOf(expected, "type")}`;
+        if (name2.endsWith(" argument")) {
+          msg = `The ${name2} ${determiner} ${oneOf(expected, "type")}`;
         } else {
-          const type = name.includes(".") ? "property" : "argument";
-          msg = `The "${name}" ${type} ${determiner} ${oneOf(expected, "type")}`;
+          const type = name2.includes(".") ? "property" : "argument";
+          msg = `The "${name2}" ${type} ${determiner} ${oneOf(expected, "type")}`;
         }
         msg += `. Received type ${typeof actual}`;
         this.message = msg;
       }
     };
     exports2.ERR_INVALID_ARG_TYPE = ERR_INVALID_ARG_TYPE;
-    exports2.validateNumber = function validateNumber(value, name) {
+    exports2.validateNumber = function validateNumber(value, name2) {
       if (typeof value !== "number")
-        throw new ERR_INVALID_ARG_TYPE(name, "number", value);
+        throw new ERR_INVALID_ARG_TYPE(name2, "number", value);
     };
   }
 });
@@ -40940,7 +40940,7 @@ ${suffix}`;
 var require_SFTP = __commonJS({
   "node_modules/ssh2/lib/protocol/SFTP.js"(exports2, module2) {
     "use strict";
-    var EventEmitter3 = require("events");
+    var EventEmitter4 = require("events");
     var fs12 = require("fs");
     var { constants } = fs12;
     var {
@@ -41072,7 +41072,7 @@ var require_SFTP = __commonJS({
     };
     function noop() {
     }
-    var SFTP = class extends EventEmitter3 {
+    var SFTP = class extends EventEmitter4 {
       constructor(client, chanInfo, cfg) {
         super();
         if (typeof cfg !== "object" || !cfg)
@@ -41210,17 +41210,17 @@ var require_SFTP = __commonJS({
       // ===========================================================================
       // Client-specific ===========================================================
       // ===========================================================================
-      createReadStream(path14, options) {
+      createReadStream(path15, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new ReadStream(this, path14, options);
+        return new ReadStream(this, path15, options);
       }
-      createWriteStream(path14, options) {
+      createWriteStream(path15, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new WriteStream(this, path14, options);
+        return new WriteStream(this, path15, options);
       }
-      open(path14, flags_, attrs, cb) {
+      open(path15, flags_, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         if (typeof attrs === "function") {
@@ -41239,7 +41239,7 @@ var require_SFTP = __commonJS({
           attrsFlags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41247,7 +41247,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         writeUInt32BE(buf, attrsFlags, p += 4);
         if (attrsLen) {
@@ -41378,7 +41378,7 @@ var require_SFTP = __commonJS({
           throw new Error("Client-only method called in server mode");
         fastXfer(fs12, this, localPath, remotePath, opts, cb);
       }
-      readFile(path14, options, callback_) {
+      readFile(path15, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41451,13 +41451,13 @@ var require_SFTP = __commonJS({
             return callback && callback(er, buffer);
           });
         };
-        this.open(path14, flag, 438, (er, handle_) => {
+        this.open(path15, flag, 438, (er, handle_) => {
           if (er)
             return callback && callback(er);
           handle = handle_;
           const tryStat = (er2, st) => {
             if (er2) {
-              this.stat(path14, (er_, st_) => {
+              this.stat(path15, (er_, st_) => {
                 if (er_) {
                   return this.close(handle, () => {
                     callback && callback(er2);
@@ -41478,7 +41478,7 @@ var require_SFTP = __commonJS({
           this.fstat(handle, tryStat);
         });
       }
-      writeFile(path14, data, options, callback_) {
+      writeFile(path15, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41497,7 +41497,7 @@ var require_SFTP = __commonJS({
         if (options.encoding && !Buffer.isEncoding(options.encoding))
           throw new Error(`Unknown encoding: ${options.encoding}`);
         const flag = options.flag || "w";
-        this.open(path14, flag, options.mode, (openErr, handle) => {
+        this.open(path15, flag, options.mode, (openErr, handle) => {
           if (openErr) {
             callback && callback(openErr);
           } else {
@@ -41506,7 +41506,7 @@ var require_SFTP = __commonJS({
             if (position === null) {
               const tryStat = (er, st) => {
                 if (er) {
-                  this.stat(path14, (er_, st_) => {
+                  this.stat(path15, (er_, st_) => {
                     if (er_) {
                       return this.close(handle, () => {
                         callback && callback(er);
@@ -41525,7 +41525,7 @@ var require_SFTP = __commonJS({
           }
         });
       }
-      appendFile(path14, data, options, callback_) {
+      appendFile(path15, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41543,12 +41543,12 @@ var require_SFTP = __commonJS({
           throw new TypeError("Bad arguments");
         if (!options.flag)
           options = Object.assign({ flag: "a" }, options);
-        this.writeFile(path14, data, options, callback);
+        this.writeFile(path15, data, options, callback);
       }
-      exists(path14, cb) {
+      exists(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        this.stat(path14, (err) => {
+        this.stat(path15, (err) => {
           cb && cb(err ? false : true);
         });
       }
@@ -41591,7 +41591,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} RENAME`
         );
       }
-      mkdir(path14, attrs, cb) {
+      mkdir(path15, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -41605,7 +41605,7 @@ var require_SFTP = __commonJS({
           flags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41613,7 +41613,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -41629,10 +41629,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} MKDIR`
         );
       }
-      rmdir(path14, cb) {
+      rmdir(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41640,7 +41640,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
@@ -41730,10 +41730,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} FSTAT`
         );
       }
-      stat(path14, cb) {
+      stat(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41741,17 +41741,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} STAT`
         );
       }
-      lstat(path14, cb) {
+      lstat(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41759,17 +41759,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} LSTAT`
         );
       }
-      opendir(path14, cb) {
+      opendir(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41777,14 +41777,14 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} OPENDIR`
         );
       }
-      setstat(path14, attrs, cb) {
+      setstat(path15, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -41796,7 +41796,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41804,7 +41804,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -41864,8 +41864,8 @@ var require_SFTP = __commonJS({
           mtime: toUnixTimestamp(mtime)
         }, cb);
       }
-      utimes(path14, atime, mtime, cb) {
-        return this.setstat(path14, {
+      utimes(path15, atime, mtime, cb) {
+        return this.setstat(path15, {
           atime: toUnixTimestamp(atime),
           mtime: toUnixTimestamp(mtime)
         }, cb);
@@ -41876,8 +41876,8 @@ var require_SFTP = __commonJS({
           gid
         }, cb);
       }
-      chown(path14, uid, gid, cb) {
-        return this.setstat(path14, {
+      chown(path15, uid, gid, cb) {
+        return this.setstat(path15, {
           uid,
           gid
         }, cb);
@@ -41887,15 +41887,15 @@ var require_SFTP = __commonJS({
           mode
         }, cb);
       }
-      chmod(path14, mode, cb) {
-        return this.setstat(path14, {
+      chmod(path15, mode, cb) {
+        return this.setstat(path15, {
           mode
         }, cb);
       }
-      readlink(path14, cb) {
+      readlink(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41903,7 +41903,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -41948,10 +41948,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} SYMLINK`
         );
       }
-      realpath(path14, cb) {
+      realpath(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41959,7 +41959,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42004,13 +42004,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${which} posix-rename@openssh.com`);
         }
       }
-      ext_openssh_statvfs(path14, cb) {
+      ext_openssh_statvfs(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["statvfs@openssh.com"];
         if (!ext || ext !== "2")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 19 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42020,7 +42020,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 19, p);
         buf.utf8Write("statvfs@openssh.com", p += 4, 19);
         writeUInt32BE(buf, pathLen, p += 19);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = { extended: "statvfs@openssh.com", cb };
         const isBuffered = sendOrBuffer(this, buf);
         if (this._debug) {
@@ -42106,7 +42106,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} fsync@openssh.com`
         );
       }
-      ext_openssh_lsetstat(path14, attrs, cb) {
+      ext_openssh_lsetstat(path15, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["lsetstat@openssh.com"];
@@ -42121,7 +42121,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 20 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42131,7 +42131,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 20, p);
         buf.utf8Write("lsetstat@openssh.com", p += 4, 20);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -42148,13 +42148,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${status} lsetstat@openssh.com`);
         }
       }
-      ext_openssh_expandPath(path14, cb) {
+      ext_openssh_expandPath(path15, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["expand-path@openssh.com"];
         if (ext !== "1")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path14);
+        const pathLen = Buffer.byteLength(path15);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 23 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42164,7 +42164,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 23, p);
         buf.utf8Write("expand-path@openssh.com", p += 4, 23);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path14, p += 4, pathLen);
+        buf.utf8Write(path15, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42426,13 +42426,13 @@ var require_SFTP = __commonJS({
         let nameAttrs;
         const attrs = [];
         for (let i = 0; i < count; ++i) {
-          const name = names[i];
-          const filename = !name || !name.filename || typeof name.filename !== "string" ? "" : name.filename;
+          const name2 = names[i];
+          const filename = !name2 || !name2.filename || typeof name2.filename !== "string" ? "" : name2.filename;
           namesLen += 4 + Buffer.byteLength(filename);
-          const longname = !name || !name.longname || typeof name.longname !== "string" ? "" : name.longname;
+          const longname = !name2 || !name2.longname || typeof name2.longname !== "string" ? "" : name2.longname;
           namesLen += 4 + Buffer.byteLength(longname);
-          if (typeof name.attrs === "object" && name.attrs !== null) {
-            nameAttrs = attrsToBytes(name.attrs);
+          if (typeof name2.attrs === "object" && name2.attrs !== null) {
+            nameAttrs = attrsToBytes(name2.attrs);
             namesLen += 4 + nameAttrs.nb;
             if (nameAttrs.nb) {
               let bytes;
@@ -42458,9 +42458,9 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, count, p);
         p += 4;
         for (let i = 0; i < count; ++i) {
-          const name = names[i];
+          const name2 = names[i];
           {
-            const filename = !name || !name.filename || typeof name.filename !== "string" ? "" : name.filename;
+            const filename = !name2 || !name2.filename || typeof name2.filename !== "string" ? "" : name2.filename;
             const len = Buffer.byteLength(filename);
             writeUInt32BE(buf, len, p);
             p += 4;
@@ -42470,7 +42470,7 @@ var require_SFTP = __commonJS({
             }
           }
           {
-            const longname = !name || !name.longname || typeof name.longname !== "string" ? "" : name.longname;
+            const longname = !name2 || !name2.longname || typeof name2.longname !== "string" ? "" : name2.longname;
             const len = Buffer.byteLength(longname);
             writeUInt32BE(buf, len, p);
             p += 4;
@@ -43442,12 +43442,12 @@ var require_SFTP = __commonJS({
       [REQUEST.LSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed LSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received LSTAT (id:${reqID})`);
-        if (!sftp.emit("LSTAT", reqID, path14)) {
+        if (!sftp.emit("LSTAT", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43466,13 +43466,13 @@ var require_SFTP = __commonJS({
       [REQUEST.SETSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed SETSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received SETSTAT (id:${reqID})`);
-        if (!sftp.emit("SETSTAT", reqID, path14, attrs)) {
+        if (!sftp.emit("SETSTAT", reqID, path15, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43494,12 +43494,12 @@ var require_SFTP = __commonJS({
       [REQUEST.OPENDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed OPENDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received OPENDIR (id:${reqID})`);
-        if (!sftp.emit("OPENDIR", reqID, path14)) {
+        if (!sftp.emit("OPENDIR", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43518,63 +43518,63 @@ var require_SFTP = __commonJS({
       [REQUEST.REMOVE]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed REMOVE packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received REMOVE (id:${reqID})`);
-        if (!sftp.emit("REMOVE", reqID, path14)) {
+        if (!sftp.emit("REMOVE", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.MKDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed MKDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received MKDIR (id:${reqID})`);
-        if (!sftp.emit("MKDIR", reqID, path14, attrs)) {
+        if (!sftp.emit("MKDIR", reqID, path15, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.RMDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed RMDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received RMDIR (id:${reqID})`);
-        if (!sftp.emit("RMDIR", reqID, path14)) {
+        if (!sftp.emit("RMDIR", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.REALPATH]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed REALPATH packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received REALPATH (id:${reqID})`
         );
-        if (!sftp.emit("REALPATH", reqID, path14)) {
+        if (!sftp.emit("REALPATH", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.STAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed STAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received STAT (id:${reqID})`);
-        if (!sftp.emit("STAT", reqID, path14)) {
+        if (!sftp.emit("STAT", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43594,14 +43594,14 @@ var require_SFTP = __commonJS({
       [REQUEST.READLINK]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path14 = bufferParser.readString(true);
+        const path15 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path14 === void 0)
+        if (path15 === void 0)
           return doFatalSFTPError(sftp, "Malformed READLINK packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received READLINK (id:${reqID})`
         );
-        if (!sftp.emit("READLINK", reqID, path14)) {
+        if (!sftp.emit("READLINK", reqID, path15)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43659,20 +43659,20 @@ var require_SFTP = __commonJS({
         pool = Buffer.allocUnsafe(poolSize);
       pool.used = 0;
     }
-    function checkPosition(pos, name) {
+    function checkPosition(pos, name2) {
       if (!Number.isSafeInteger(pos)) {
-        validateNumber(pos, name);
+        validateNumber(pos, name2);
         if (!Number.isInteger(pos))
-          throw new ERR_OUT_OF_RANGE(name, "an integer", pos);
-        throw new ERR_OUT_OF_RANGE(name, ">= 0 and <= 2 ** 53 - 1", pos);
+          throw new ERR_OUT_OF_RANGE(name2, "an integer", pos);
+        throw new ERR_OUT_OF_RANGE(name2, ">= 0 and <= 2 ** 53 - 1", pos);
       }
       if (pos < 0)
-        throw new ERR_OUT_OF_RANGE(name, ">= 0 and <= 2 ** 53 - 1", pos);
+        throw new ERR_OUT_OF_RANGE(name2, ">= 0 and <= 2 ** 53 - 1", pos);
     }
     function roundUpToMultipleOf8(n) {
       return n + 7 & ~7;
     }
-    function ReadStream(sftp, path14, options) {
+    function ReadStream(sftp, path15, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -43686,7 +43686,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       ReadableStream.call(this, options);
-      this.path = path14;
+      this.path = path15;
       this.flags = options.flags === void 0 ? "r" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -43817,7 +43817,7 @@ var require_SFTP = __commonJS({
       },
       configurable: true
     });
-    function WriteStream(sftp, path14, options) {
+    function WriteStream(sftp, path15, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -43829,7 +43829,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       WritableStream.call(this, options);
-      this.path = path14;
+      this.path = path15;
       this.flags = options.flags === void 0 ? "w" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -44517,7 +44517,7 @@ var require_client = __commonJS({
     } = require("crypto");
     var { Socket } = require("net");
     var { lookup: dnsLookup } = require("dns");
-    var EventEmitter3 = require("events");
+    var EventEmitter4 = require("events");
     var HASHES = getHashes();
     var {
       COMPAT,
@@ -44568,7 +44568,7 @@ var require_client = __commonJS({
     var RE_OPENSSH = /^OpenSSH_(?:(?![0-4])\d)|(?:\d{2,})/;
     var noop = (err) => {
     };
-    var Client3 = class extends EventEmitter3 {
+    var Client4 = class extends EventEmitter4 {
       constructor() {
         super();
         this.config = {
@@ -44796,8 +44796,8 @@ var require_client = __commonJS({
               }
               sock.end();
             },
-            SERVICE_ACCEPT: (p, name) => {
-              if (name === "ssh-userauth")
+            SERVICE_ACCEPT: (p, name2) => {
+              if (name2 === "ssh-userauth")
                 tryNextAuth();
             },
             EXT_INFO: (p, exts) => {
@@ -44915,7 +44915,7 @@ var require_client = __commonJS({
                 });
               }
             },
-            USERAUTH_INFO_REQUEST: (p, name, instructions, prompts) => {
+            USERAUTH_INFO_REQUEST: (p, name2, instructions, prompts) => {
               if (curAuth.type === "keyboard-interactive") {
                 const nprompts = Array.isArray(prompts) ? prompts.length : 0;
                 if (nprompts === 0) {
@@ -44926,7 +44926,7 @@ var require_client = __commonJS({
                   return;
                 }
                 curAuth.prompt(
-                  name,
+                  name2,
                   instructions,
                   "",
                   prompts,
@@ -44944,8 +44944,8 @@ var require_client = __commonJS({
               if (callbacks.length)
                 callbacks.shift()(true);
             },
-            GLOBAL_REQUEST: (p, name, wantReply, data) => {
-              switch (name) {
+            GLOBAL_REQUEST: (p, name2, wantReply, data) => {
+              switch (name2) {
                 case "hostkeys-00@openssh.com":
                   hostKeysProve(this, data, (err, keys) => {
                     if (err)
@@ -45626,7 +45626,7 @@ var require_client = __commonJS({
         });
         return this;
       }
-      subsys(name, cb) {
+      subsys(name2, cb) {
         if (!this._sock || !isWritable(this._sock))
           throw new Error("Not connected");
         openChannel(this, "session", (err, chan) => {
@@ -45634,7 +45634,7 @@ var require_client = __commonJS({
             cb(err);
             return;
           }
-          reqSubsystem(chan, name, (err2, stream) => {
+          reqSubsystem(chan, name2, (err2, stream) => {
             if (err2) {
               cb(err2);
               return;
@@ -46075,20 +46075,20 @@ var require_client = __commonJS({
         chan._client._protocol.env(chan.outgoing.id, key, val, wantReply);
       }
     }
-    function reqSubsystem(chan, name, cb) {
+    function reqSubsystem(chan, name2, cb) {
       if (chan.outgoing.state !== "open") {
         cb(new Error("Channel is not open"));
         return;
       }
       chan._callbacks.push((had_err) => {
         if (had_err) {
-          cb(had_err !== true ? had_err : new Error(`Unable to start subsystem: ${name}`));
+          cb(had_err !== true ? had_err : new Error(`Unable to start subsystem: ${name2}`));
           return;
         }
         chan.subtype = "subsystem";
         cb(void 0, chan);
       });
-      chan._client._protocol.subsystem(chan.outgoing.id, name, true);
+      chan._client._protocol.subsystem(chan.outgoing.id, name2, true);
     }
     function onCHANNEL_OPEN(self2, info) {
       let localChan = -1;
@@ -46311,7 +46311,7 @@ var require_client = __commonJS({
           return [["ssh-rsa", "sha1"]];
       }
     }
-    module2.exports = Client3;
+    module2.exports = Client4;
   }
 });
 
@@ -46322,7 +46322,7 @@ var require_http_agents = __commonJS({
     var { Agent: HttpAgent } = require("http");
     var { Agent: HttpsAgent } = require("https");
     var { connect: tlsConnect } = require("tls");
-    var Client3;
+    var Client4;
     for (const ctor of [HttpAgent, HttpsAgent]) {
       class SSHAgent extends ctor {
         constructor(connectCfg, agentOptions) {
@@ -46335,9 +46335,9 @@ var require_http_agents = __commonJS({
           const srcPort = options && options.localPort || 0;
           const dstIP = options.host;
           const dstPort = options.port;
-          if (Client3 === void 0)
-            Client3 = require_client();
-          const client = new Client3();
+          if (Client4 === void 0)
+            Client4 = require_client();
+          const client = new Client4();
           let triedForward = false;
           client.on("ready", () => {
             client.forwardOut(srcIP, srcPort, dstIP, dstPort, (err, stream) => {
@@ -46392,8 +46392,8 @@ var require_server = __commonJS({
   "node_modules/ssh2/lib/server.js"(exports2, module2) {
     "use strict";
     var { Server: netServer } = require("net");
-    var EventEmitter3 = require("events");
-    var { listenerCount } = EventEmitter3;
+    var EventEmitter4 = require("events");
+    var { listenerCount } = EventEmitter4;
     var {
       CHANNEL_OPEN_FAILURE,
       DEFAULT_CIPHER,
@@ -46430,7 +46430,7 @@ var require_server = __commonJS({
       onCHANNEL_CLOSE
     } = require_utils5();
     var MAX_PENDING_AUTHS = 10;
-    var AuthContext = class extends EventEmitter3 {
+    var AuthContext = class extends EventEmitter4 {
       constructor(protocol, username, service, method, cb) {
         super();
         this.username = this.user = username;
@@ -46545,7 +46545,7 @@ var require_server = __commonJS({
         this._protocol.authPasswdChg(prompt);
       }
     };
-    var Session = class extends EventEmitter3 {
+    var Session = class extends EventEmitter4 {
       constructor(client, info, localChan) {
         super();
         this.type = "session";
@@ -46570,7 +46570,7 @@ var require_server = __commonJS({
         };
       }
     };
-    var Server = class extends EventEmitter3 {
+    var Server = class extends EventEmitter4 {
       constructor(cfg, listener) {
         super();
         if (typeof cfg !== "object" || cfg === null)
@@ -46678,7 +46678,7 @@ var require_server = __commonJS({
               origDebug(`${debugPrefix}${msg}`);
             };
           }
-          new Client3(socket, hostKeys, ident, offer, debug, this, cfg);
+          new Client4(socket, hostKeys, ident, offer, debug, this, cfg);
         }).on("error", (err) => {
           this.emit("error", err);
         }).on("listening", () => {
@@ -46718,7 +46718,7 @@ var require_server = __commonJS({
     };
     Server.KEEPALIVE_CLIENT_INTERVAL = 15e3;
     Server.KEEPALIVE_CLIENT_COUNT_MAX = 3;
-    var Client3 = class extends EventEmitter3 {
+    var Client4 = class extends EventEmitter4 {
       constructor(socket, hostKeys, ident, offer, debug, server, srvCfg) {
         super();
         let exchanges = 0;
@@ -47363,7 +47363,7 @@ var require_server = __commonJS({
                 authCtx._onInfoResponse(responses);
             },
             // End service/auth-related ============================================
-            GLOBAL_REQUEST: (p, name, wantReply, data) => {
+            GLOBAL_REQUEST: (p, name2, wantReply, data) => {
               const reply = {
                 type: null,
                 buf: null
@@ -47375,7 +47375,7 @@ var require_server = __commonJS({
               }
               if (wantReply)
                 unsentGlobalRequestsReplies.push(reply);
-              if ((name === "tcpip-forward" || name === "cancel-tcpip-forward" || name === "no-more-sessions@openssh.com" || name === "streamlocal-forward@openssh.com" || name === "cancel-streamlocal-forward@openssh.com") && listenerCount(this, "request") && this.authenticated) {
+              if ((name2 === "tcpip-forward" || name2 === "cancel-tcpip-forward" || name2 === "no-more-sessions@openssh.com" || name2 === "streamlocal-forward@openssh.com" || name2 === "cancel-streamlocal-forward@openssh.com") && listenerCount(this, "request") && this.authenticated) {
                 let accept;
                 let reject;
                 if (wantReply) {
@@ -47385,7 +47385,7 @@ var require_server = __commonJS({
                       return;
                     replied = true;
                     let bufPort;
-                    if (name === "tcpip-forward" && data.bindPort === 0 && typeof chosenPort === "number") {
+                    if (name2 === "tcpip-forward" && data.bindPort === 0 && typeof chosenPort === "number") {
                       bufPort = Buffer.allocUnsafe(4);
                       writeUInt32BE(bufPort, chosenPort, 0);
                     }
@@ -47398,12 +47398,12 @@ var require_server = __commonJS({
                     setReply("FAILURE");
                   };
                 }
-                if (name === "no-more-sessions@openssh.com") {
+                if (name2 === "no-more-sessions@openssh.com") {
                   this.noMoreSessions = true;
                   accept && accept();
                   return;
                 }
-                this.emit("request", accept, reject, name, data);
+                this.emit("request", accept, reject, name2, data);
               } else if (wantReply) {
                 setReply("FAILURE");
               }
@@ -47559,7 +47559,7 @@ var require_server = __commonJS({
       return a - b;
     }
     module2.exports = Server;
-    module2.exports.IncomingClient = Client3;
+    module2.exports.IncomingClient = Client4;
   }
 });
 
@@ -48039,13 +48039,13 @@ var require_environment_report = __commonJS({
     "use strict";
     var fs12 = require("fs");
     var os2 = require("os");
-    var path14 = require("path");
+    var path15 = require("path");
     var crypto = require("crypto");
     function dataDirectory(env) {
-      return path14.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path14.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path14.join(os2.homedir(), ".remote-debug-agent")));
+      return path15.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path15.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path15.join(os2.homedir(), ".remote-debug-agent")));
     }
     function reportPath(dataDir) {
-      return path14.join(dataDir, ".runtime", "environment-report.json");
+      return path15.join(dataDir, ".runtime", "environment-report.json");
     }
     function readJson(file) {
       try {
@@ -48058,7 +48058,7 @@ var require_environment_report = __commonJS({
       return readJson(reportPath(dataDir));
     }
     function writeJson(file, value) {
-      fs12.mkdirSync(path14.dirname(file), { recursive: true, mode: 448 });
+      fs12.mkdirSync(path15.dirname(file), { recursive: true, mode: 448 });
       const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
       try {
         fs12.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
@@ -48087,7 +48087,7 @@ var require_environment_report = __commonJS({
       return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
     }
     function effectiveEnvironment(env, dataDir) {
-      const configPath = path14.resolve(env.REMOTE_DEBUG_ENV_PATH || path14.join(dataDir, "config.env"));
+      const configPath = path15.resolve(env.REMOTE_DEBUG_ENV_PATH || path15.join(dataDir, "config.env"));
       const effective = Object.assign({}, env);
       let configError = null;
       try {
@@ -48110,9 +48110,9 @@ var require_environment_report = __commonJS({
       options = options || {};
       const dataDir = dataDirectory(env);
       const settings = effectiveEnvironment(env, dataDir);
-      const runtimeRoot = path14.join(pluginRoot, "runtime", "agent");
-      const manifest = readJson(path14.join(runtimeRoot, "runtime-manifest.json"));
-      const pkg = readJson(path14.join(pluginRoot, "package.json"));
+      const runtimeRoot = path15.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path15.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path15.join(pluginRoot, "package.json"));
       const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
       const version = options.nodeVersion || process.versions.node;
       const checks = [];
@@ -48170,8 +48170,8 @@ var require_environment_report = __commonJS({
             "public/environment-report.js"
           ].concat(Object.keys(manifest.hashes))));
           const invalid3 = requiredFiles.filter(function(file) {
-            const resolved = path14.resolve(runtimeRoot, file);
-            if (!resolved.startsWith(runtimeRoot + path14.sep) || !fs12.existsSync(resolved)) return true;
+            const resolved = path15.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path15.sep) || !fs12.existsSync(resolved)) return true;
             try {
               return !manifest.hashes[file] || crypto.createHash("sha256").update(fs12.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
             } catch (_) {
@@ -48199,8 +48199,8 @@ var require_environment_report = __commonJS({
         settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
       );
       try {
-        fs12.mkdirSync(path14.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
-        const probe = path14.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs12.mkdirSync(path15.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path15.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
         fs12.writeFileSync(probe, "", { mode: 384 });
         fs12.unlinkSync(probe);
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
@@ -48235,15 +48235,15 @@ var require_environment_report = __commonJS({
         stage: "environment",
         checks,
         failures: history.slice(-10),
-        offlineDashboard: path14.join(dataDir, ".runtime", "environment-dashboard.html"),
+        offlineDashboard: path15.join(dataDir, ".runtime", "environment-dashboard.html"),
         dashboardUrl: null
       };
     }
     function writeOfflineDashboard(dataDir, report) {
-      const publicDir = path14.join(report.pluginRoot, "runtime", "agent", "public");
-      const file = path14.join(dataDir, ".runtime", "environment-dashboard.html");
-      if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name) {
-        return fs12.existsSync(path14.join(publicDir, name));
+      const publicDir = path15.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path15.join(dataDir, ".runtime", "environment-dashboard.html");
+      if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name2) {
+        return fs12.existsSync(path15.join(publicDir, name2));
       })) {
         let escape2 = function(value) {
           return String(value || "").replace(/[&<>"']/g, function(char) {
@@ -48258,9 +48258,9 @@ var require_environment_report = __commonJS({
         fs12.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
         return;
       }
-      let html = fs12.readFileSync(path14.join(publicDir, "dashboard.html"), "utf8");
-      const css = fs12.readFileSync(path14.join(publicDir, "dashboard.css"), "utf8");
-      const script = fs12.readFileSync(path14.join(publicDir, "environment-report.js"), "utf8");
+      let html = fs12.readFileSync(path15.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs12.readFileSync(path15.join(publicDir, "dashboard.css"), "utf8");
+      const script = fs12.readFileSync(path15.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
       html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
         return "<style>" + css + "</style>";
@@ -48352,7 +48352,7 @@ var import_express2 = __toESM(require_express2(), 1);
 // http-auth.js
 var import_node_path = __toESM(require("node:path"), 1);
 var import_local_auth = __toESM(require_local_auth(), 1);
-var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
+var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/instance-tasks.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
 function publicHealth(request, token, identity) {
   const nonce = request.headers["x-remote-debug-challenge"];
   return {
@@ -48399,7 +48399,7 @@ var import_node_http = __toESM(require("node:http"), 1);
 var import_node_fs5 = __toESM(require("node:fs"), 1);
 var import_node_path6 = __toESM(require("node:path"), 1);
 var import_node_url2 = require("node:url");
-var import_node_crypto11 = require("node:crypto");
+var import_node_crypto12 = require("node:crypto");
 
 // node_modules/ws/wrapper.mjs
 var import_stream = __toESM(require_stream(), 1);
@@ -48664,8 +48664,9 @@ var ManualOwnerVerification = class {
   }
 };
 
-// manual-terminal.js
+// manual-mongodb.js
 var import_ssh22 = __toESM(require_lib4(), 1);
+var import_node_crypto11 = require("node:crypto");
 
 // ssh-connection-supervisor.js
 var import_node_events = require("node:events");
@@ -48983,6 +48984,7 @@ var ChannelScheduler = class {
     if (this.activeBusiness >= this.maxBusiness) {
       return false;
     }
+    if (this.reserveInteractive && BACKGROUND_PRIORITIES.has(item.priority) && this.activeBusiness >= Math.max(1, this.maxBusiness - 1)) return false;
     if (item.priority === "bulk") {
       return this.activeBulk < this.maxBulk;
     }
@@ -49180,8 +49182,9 @@ var LOG_QUERY_CAPABILITIES = Object.freeze({
     start: "/logs/jobs/start",
     get: "/logs/jobs/get",
     control: "/logs/jobs/control",
-    maxConcurrentPerInstance: 1,
-    maxQueuedPerInstance: 3,
+    maxConcurrentPerInstance: 2,
+    maxQueuedPerInstance: 2,
+    maxActiveAndQueued: 4,
     singlePassArchives: true,
     defaultJobTimeoutMs: 18e5,
     maxJobTimeoutMs: 72e5,
@@ -49194,7 +49197,15 @@ var LOG_QUERY_CAPABILITIES = Object.freeze({
     pauseTtlMs: 3e5,
     retentionMs: 18e5,
     maxRetainedJobs: 16,
-    survivesWorkerRestart: false
+    survivesWorkerRestart: false,
+    perFileReceipts: true,
+    receiptAcknowledgement: true,
+    maxReceiptBytesPerJob: 8388608,
+    fileResultPagination: true,
+    controls: ["pause", "resume", "cancel", "stop_after_file", "narrow"],
+    startFileBoundary: "stopAfterFile",
+    evidencePaginationScope: "retained_evidence",
+    completeness: ["scanComplete", "countsAreComplete", "evidenceComplete"]
   }
 });
 var LOG_SUPPORTED_COMPRESSION = Object.freeze([
@@ -49290,8 +49301,8 @@ function normalizeLogListOptions(input = {}) {
   return { category, limit, cursor };
 }
 function normalizeArchiveMemberListOptions(input = {}) {
-  const path14 = input.path;
-  if (typeof path14 !== "string" || path14.trim() === "") {
+  const path15 = input.path;
+  if (typeof path15 !== "string" || path15.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
@@ -49303,15 +49314,15 @@ function normalizeArchiveMemberListOptions(input = {}) {
     throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
   }
   return {
-    path: path14,
+    path: path15,
     prefix: normalizeArchiveMemberPrefix(prefix),
     limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
     cursor
   };
 }
 function normalizeLogReadOptions(input = {}) {
-  const path14 = input.path;
-  if (typeof path14 !== "string" || path14.trim() === "") {
+  const path15 = input.path;
+  if (typeof path15 !== "string" || path15.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
@@ -49326,7 +49337,7 @@ function normalizeLogReadOptions(input = {}) {
     );
   }
   return {
-    path: path14,
+    path: path15,
     memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
     tailLines: positiveInteger(
       input.tailLines,
@@ -49381,6 +49392,54 @@ function decodeLogCursor(value, expectedKind) {
   } catch {
     throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
   }
+}
+
+// resource-policy.js
+var RESOURCE_TERMINAL = /* @__PURE__ */ new Set(["completed", "partial", "stopped", "failed", "cancelled", "interrupted", "expired"]);
+var RESOURCE_PROFILES = Object.freeze({
+  control: { bulk: false, cpuMilliCores: 50, memoryBytes: 32 * 1048576 },
+  diagnostic: { bulk: false, cpuMilliCores: 100, memoryBytes: 64 * 1048576 },
+  file_read: { bulk: false, cpuMilliCores: 100, memoryBytes: 64 * 1048576 },
+  mongo_read: { bulk: false, cpuMilliCores: 150, memoryBytes: 128 * 1048576 },
+  mongo_write: { bulk: false, cpuMilliCores: 150, memoryBytes: 128 * 1048576 },
+  discovery: { bulk: false, cpuMilliCores: 50, memoryBytes: 64 * 1048576 },
+  log_search: { bulk: true, cpuMilliCores: 200, memoryBytes: 192 * 1048576 },
+  mongo_bulk: { bulk: true, cpuMilliCores: 400, memoryBytes: 512 * 1048576 }
+});
+var RESOURCE_DEFAULTS = Object.freeze({
+  cpuMilliCores: 1e3,
+  protectedCpuMilliCores: 200,
+  controlCpuMilliCores: 50,
+  memoryBytes: 1024 * 1048576,
+  protectedMemoryBytes: 256 * 1048576,
+  readBytesPerSecond: 8 * 1048576,
+  processBytesPerSecond: 16 * 1048576,
+  transferBytesPerSecond: 4 * 1048576,
+  protectedTransferBytesPerSecond: 2 * 1048576,
+  controlTransferBytesPerSecond: 1048576,
+  protectedReadBytesPerSecond: 1048576,
+  protectedProcessBytesPerSecond: 1048576,
+  sampleIntervalMs: 5e3,
+  sampleTtlMs: 2e4,
+  memoryHeadroomRatio: 0.1
+});
+function normalizeResourcePolicy(value) {
+  if (value === void 0 || value === "") return { ...RESOURCE_DEFAULTS, domains: {} };
+  let input;
+  try {
+    input = typeof value === "string" ? JSON.parse(value) : value;
+  } catch {
+    throw new Error("invalid REMOTE_DEBUG_RESOURCE_POLICY");
+  }
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid resource policy");
+  for (const [key, number] of Object.entries(input)) {
+    if (key === "domains") {
+      if (!number || typeof number !== "object" || Array.isArray(number) || Object.entries(number).some(([id, domain]) => !/^[a-z][a-z0-9_-]{0,63}$/.test(id) || typeof domain !== "string" || !/^[a-zA-Z0-9._-]{1,128}$/.test(domain))) throw new Error("invalid resource domains");
+    } else if (!Object.hasOwn(RESOURCE_DEFAULTS, key) || !Number.isFinite(number) || number <= 0 || key !== "memoryHeadroomRatio" && !Number.isInteger(number)) throw new Error(`invalid resource policy: ${key}`);
+  }
+  const result = { ...RESOURCE_DEFAULTS, ...input, domains: input.domains || {} };
+  if (result.cpuMilliCores > 64e3 || result.protectedCpuMilliCores + result.controlCpuMilliCores >= result.cpuMilliCores || result.protectedMemoryBytes >= result.memoryBytes || result.memoryBytes > 64 * 1024 ** 3 || result.protectedReadBytesPerSecond >= result.readBytesPerSecond || result.protectedProcessBytesPerSecond >= result.processBytesPerSecond || result.controlTransferBytesPerSecond >= result.protectedTransferBytesPerSecond || result.protectedTransferBytesPerSecond >= result.transferBytesPerSecond || result.sampleIntervalMs < 1e3 || result.sampleIntervalMs > 6e4 || result.sampleTtlMs < result.sampleIntervalMs * 2 || result.sampleTtlMs > 12e4 || result.memoryHeadroomRatio > 0.5) throw new Error("invalid resource policy capacity/reserves");
+  return result;
 }
 
 // approved-commands.js
@@ -50265,7 +50324,8 @@ async function runMongoQuery(query, options = {}) {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
       config: options.config,
       operation: options.operation,
-      stdin
+      stdin,
+      taskType: "mongo_read"
     });
   } catch (error) {
     if (options.operation?.signal?.aborted) {
@@ -51171,6 +51231,8 @@ function __bulkAcquireLease(jobId, manifest, leaseId, mode) {
     manifest.activePhase = mode === "rollback" ? "rollback" : "execute";
     manifest.pauseReason = undefined;
     manifest.updatedAt = new Date().toISOString();
+    // A new execution/rollback lease also supersedes the previous pause request.
+    __bulkWriteJson(__path.join(__bulkJobDir(jobId), "control.json"), { desiredState: "running", at: manifest.updatedAt }, 64 * 1024);
     __bulkSaveManifest(manifest);
     return lease;
   });
@@ -52133,7 +52195,7 @@ function normalizeUpdate(value) {
       if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
-      if (paths.some((path14) => path14 === field || path14.startsWith(`${field}.`) || field.startsWith(`${path14}.`))) {
+      if (paths.some((path15) => path15 === field || path15.startsWith(`${field}.`) || field.startsWith(`${path15}.`))) {
         throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
       }
       if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
@@ -52407,6 +52469,8 @@ async function runMongoBulk(input = {}, options = {}) {
       operation: options.operation,
       timeoutMs: options.timeoutMs || 6e5,
       priority: options.priority || "interactive",
+      resourceTaskId: options.resourceTaskId,
+      taskType: options.priority === "control" ? "control" : "mongo_read",
       stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management })
     });
   } catch (error) {
@@ -52441,13 +52505,14 @@ async function runMongoBulk(input = {}, options = {}) {
 }
 var MongoBulkJobRunner = class {
   constructor(options = {}) {
-    this.run = options.runMongoBulk;
+    this.resourceClient = options.resourceClient;
+    this.run = (input, settings = {}) => options.runMongoBulk(input, { ...settings, resourceTaskId: this.active?.resourceTaskId });
     this.config = normalizeMongoBulkConfig(options.config && options.config.mongodb ? options.config.mongodb : options.config || {}, { requireBulkEnabled: false });
     this.effectiveConcurrency = Math.min(this.config.bulkConcurrency, 4);
     this.active = null;
     this.tasks = /* @__PURE__ */ new Map();
   }
-  async start(input, mode = "execute") {
+  async start(input, mode = "execute", metadata = {}) {
     if (mode !== "rollback" && this.config.bulkEnabled !== true) {
       throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly", "MONGODB_BULK_DISABLED", 403);
     }
@@ -52455,7 +52520,8 @@ var MongoBulkJobRunner = class {
     const action = mode === "rollback" ? "rollbackStart" : "executeStart";
     const leaseId = (0, import_node_crypto5.createHash)("sha256").update((0, import_node_crypto5.randomUUID)()).digest("hex");
     const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 6e4 });
-    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode };
+    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source };
+    this.attachResourceTask(this.active);
     const promise = this.#runLoop(this.active).finally(() => {
       if (this.active && this.active.leaseId === leaseId) this.active = null;
       this.tasks.delete(input.jobId);
@@ -52473,10 +52539,15 @@ var MongoBulkJobRunner = class {
       throw bulkError("another bulk job is active for this instance", "MONGODB_BULK_INSTANCE_BUSY", 409, { jobId: this.active.jobId });
     }
     const result = await this.run({ action: "control", ...input }, { priority: "control", timeoutMs: 6e4 });
+    if (input.command === "pause" && this.active?.resourceTaskId) {
+      this.resourceClient.update(this.active.resourceTaskId, { status: "stopping", phase: "pausing" });
+      this.active.resourceWaitController.abort(Object.assign(new Error("pause_requested"), { code: "pause_requested" }));
+    }
     if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
       const leaseId = (0, import_node_crypto5.createHash)("sha256").update((0, import_node_crypto5.randomUUID)()).digest("hex");
       const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 6e4 });
       this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
+      this.attachResourceTask(this.active);
       const promise = this.#runLoop(this.active).finally(() => {
         if (this.active && this.active.leaseId === leaseId) this.active = null;
         this.tasks.delete(input.jobId);
@@ -52488,16 +52559,69 @@ var MongoBulkJobRunner = class {
     }
     return result;
   }
+  attachResourceTask(job) {
+    if (!this.resourceClient) return;
+    for (const task of this.resourceClient.registry.tasks.values()) if (task.referenceId === job.jobId && task.type === "mongo_bulk" && task.status === "paused") this.resourceClient.update(task.taskId, { status: "stopped", phase: "resumed_as_new_execution" });
+    job.resourceWaitController = new AbortController();
+    job.resourceTaskId = this.resourceClient.register(
+      {
+        type: "mongo_bulk",
+        referenceId: job.jobId,
+        label: job.mode === "rollback" ? "数据库批量回滚" : "数据库批量修改",
+        source: job.source,
+        capabilities: ["pause", "resume", "detail"],
+        requested: {
+          cpuMilliCores: this.effectiveConcurrency * 200,
+          rssLimitBytes: this.effectiveConcurrency * 128 * 1048576,
+          parallelism: this.effectiveConcurrency
+        }
+      },
+      {
+        control: (command) => this.control({ jobId: job.jobId, planHash: job.planHash, command }),
+        onBudget: async (budget) => {
+          if (job.waveInFlight && budget.cpuMilliCores < (job.appliedBudget?.cpuMilliCores || 0)) await new Promise((resolve) => {
+            (job.budgetWaiters ||= []).push(resolve);
+          });
+          job.appliedBudget = budget;
+        }
+      }
+    );
+    this.resourceClient.update(job.resourceTaskId, { status: "starting", phase: "waiting_resources" });
+  }
   async #runLoop(job) {
+    let heartbeatBusy = false;
+    const heartbeatTimer = this.resourceClient ? setInterval(() => {
+      if (heartbeatBusy) return;
+      heartbeatBusy = true;
+      this.run({ action: "heartbeat", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId }, { priority: "control", timeoutMs: 2e4 }).catch(() => {
+      }).finally(() => {
+        heartbeatBusy = false;
+      });
+    }, 2e4) : null;
+    heartbeatTimer?.unref?.();
     try {
       while (true) {
         const state = await this.run({ action: "get", jobId: job.jobId, includePlan: true }, { priority: "control", timeoutMs: 6e4 });
+        if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, {
+          status: "running",
+          phase: state.nextBatch < state.batchCount ? "executing" : "verifying",
+          progress: Object.fromEntries(["batchCount", "nextBatch", "nextVerifyBatch", "committedBatchCount", "verifiedBatchCount", "operationCount"].filter((key) => Number.isFinite(state[key])).map((key) => [key, state[key]]))
+        });
         if (state.desiredState === "pause" || state.status === "pause_requested" || state.status === "recovery_required" || state.status === "paused" && state.desiredState !== "running") {
           try {
             await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason: "pause_requested" }, { priority: "control", timeoutMs: 3e4 });
           } catch {
           }
+          if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "paused", phase: "paused", inFlight: false });
           return;
+        }
+        let concurrency = this.effectiveConcurrency;
+        if (job.resourceTaskId) {
+          await this.resourceClient.synchronize(job.resourceTaskId);
+          await this.resourceClient.settled(job.resourceTaskId);
+          const budget = await this.resourceClient.wait(job.resourceTaskId, job.resourceWaitController.signal);
+          concurrency = Math.min(concurrency, budget.parallelism);
+          if (budget.dispatchDelayMs) await new Promise((resolve) => setTimeout(resolve, budget.dispatchDelayMs));
         }
         if (job.mode === "rollback" || state.mode === "rollback") {
           if (state.nextRollbackBatch === null || state.nextRollbackBatch === void 0) break;
@@ -52506,7 +52630,7 @@ var MongoBulkJobRunner = class {
         }
         if (state.nextBatch < state.batchCount) {
           const indexes = Array.from(
-            { length: Math.min(this.effectiveConcurrency, state.batchCount - state.nextBatch) },
+            { length: Math.min(concurrency, state.batchCount - state.nextBatch) },
             (_value, offset) => state.nextBatch + offset
           );
           await this.#runBatchWave(job, "execute", "executeBatch", indexes);
@@ -52514,7 +52638,7 @@ var MongoBulkJobRunner = class {
         }
         if (state.nextVerifyBatch < state.batchCount) {
           const indexes = Array.from(
-            { length: Math.min(this.effectiveConcurrency, state.batchCount - state.nextVerifyBatch) },
+            { length: Math.min(concurrency, state.batchCount - state.nextVerifyBatch) },
             (_value, offset) => state.nextVerifyBatch + offset
           );
           await this.#runBatchWave(job, "verify", "verifyBatch", indexes);
@@ -52523,11 +52647,16 @@ var MongoBulkJobRunner = class {
         break;
       }
       await this.run({ action: "finish", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, mode: job.mode }, { priority: "control", timeoutMs: 6e4 });
+      if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "completed", phase: "finished", inFlight: false });
     } catch (error) {
+      const reason = job.resourceWaitController?.signal.aborted && ["pause_requested", "MONGODB_BULK_LEASE_LOST"].includes(error.code) ? "pause_requested" : error.code || "MONGODB_BULK_FAILED";
       try {
-        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason: error.code || "MONGODB_BULK_FAILED" }, { priority: "control", timeoutMs: 3e4 });
+        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason }, { priority: "control", timeoutMs: 3e4 });
       } catch {
       }
+      if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "paused", phase: "paused", inFlight: false });
+    } finally {
+      clearInterval(heartbeatTimer);
     }
   }
   async #withHeartbeat(job, work) {
@@ -52550,6 +52679,8 @@ var MongoBulkJobRunner = class {
     }
   }
   async #runBatchWave(job, phase, action, indexes) {
+    job.waveInFlight = true;
+    if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { inFlight: true, phase });
     await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
       priority: "control",
       timeoutMs: 3e4
@@ -52578,6 +52709,10 @@ var MongoBulkJobRunner = class {
     } catch (error) {
       if (!failure) failure = error;
     }
+    job.waveInFlight = false;
+    for (const resolve of job.budgetWaiters || []) resolve();
+    job.budgetWaiters = [];
+    if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { inFlight: false });
     if (failure) throw failure;
   }
   async pauseForShutdown() {
@@ -53218,14 +53353,14 @@ function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
     );
   }
   const common = normalizeCommonMutation(input, normalizedConfig, options.operationId, "index");
-  const name = normalizeName(input.name, "name", SAFE_INDEX_NAME_PATTERN);
-  if (name === "_id_") {
+  const name2 = normalizeName(input.name, "name", SAFE_INDEX_NAME_PATTERN);
+  if (name2 === "_id_") {
     throw mutationError("the _id_ index cannot be changed", "MONGODB_INDEX_IMMUTABLE");
   }
   return {
     ...common,
     operation: input.operation,
-    name,
+    name: name2,
     ...input.operation === "createIndex" ? {
       key: normalizeIndexKey(input.key),
       options: indexOptions
@@ -54304,7 +54439,8 @@ async function runMongoMutation(input = {}, options = {}) {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
       config: options.config,
       operation: options.operation,
-      stdin: buildMongoMutationScript(request, config)
+      stdin: buildMongoMutationScript(request, config),
+      taskType: "mongo_write"
     });
   } catch (error) {
     if (options.operation?.signal?.aborted) {
@@ -54523,6 +54659,18 @@ function securityCapabilities(config = {}) {
     schemaVersion: SECURITY_POLICY.schemaVersion,
     policyVersion: SECURITY_POLICY_VERSION,
     authority: "remote-debug-agent",
+    resources: {
+      sharedHostPools: true,
+      taskRegistry: true,
+      dashboardManualMaximum: true,
+      manualMaximumTools: false,
+      cooperativeRuntime: true,
+      operatingSystemQuotas: false,
+      processCpuAdmissionOnlyTasks: ["diagnostic", "file_read", "mongo_read", "mongo_write", "discovery"],
+      batchBoundaryTasks: ["mongo_bulk"],
+      configuration: "REMOTE_DEBUG_RESOURCE_POLICY",
+      policy: config.resources || null
+    },
     ssh: { hostKeyVerification: "required", fingerprintAlgorithm: "SHA256", maxTrustedHostKeys: 4, configured: Boolean(config.ssh?.hostKeyFingerprints?.length) },
     commands: {
       allowedExecutables: [...SECURITY_POLICY.allowedExecutables],
@@ -54680,14 +54828,14 @@ function tokenizeCommand(command) {
   }
   const tokens = [];
   let token = "";
-  let quote = null;
+  let quote2 = null;
   let tokenStarted = false;
   for (const character of command.trim()) {
-    if (quote) {
-      if (character === quote) quote = null;
+    if (quote2) {
+      if (character === quote2) quote2 = null;
       else token += character;
     } else if (character === "'" || character === '"') {
-      quote = character;
+      quote2 = character;
       tokenStarted = true;
     } else if (/\s/.test(character)) {
       if (tokenStarted) {
@@ -54700,7 +54848,7 @@ function tokenizeCommand(command) {
       tokenStarted = true;
     }
   }
-  if (quote) throw new SecurityError("cmd contains an unterminated quoted argument", "INVALID_COMMAND");
+  if (quote2) throw new SecurityError("cmd contains an unterminated quoted argument", "INVALID_COMMAND");
   if (tokenStarted) tokens.push(token);
   if (!tokens.length) throw new SecurityError("cmd must contain an executable", "INVALID_COMMAND");
   for (const token2 of tokens) {
@@ -56005,13 +56153,13 @@ function loadDotEnv(cwd = process.cwd()) {
   }
   return loaded;
 }
-function parsePositiveInt(value, fallback, name) {
+function parsePositiveInt(value, fallback, name2) {
   if (value === void 0 || value === "") {
     return fallback;
   }
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${name} must be a positive integer`);
+    throw new Error(`${name2} must be a positive integer`);
   }
   return parsed;
 }
@@ -56188,6 +56336,7 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
       hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS)
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
+    resources: normalizeResourcePolicy(mergedEnv.REMOTE_DEBUG_RESOURCE_POLICY),
     logs: {
       projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots),
       jobLimits: normalizeLogJobLimits(mergedEnv.REMOTE_DEBUG_LOG_JOB_LIMITS)
@@ -56306,6 +56455,7 @@ function fingerprintConfig(config) {
     },
     security,
     logs: config.logs,
+    resources: config.resources,
     mongodb: config.mongodb ? {
       enabled: Boolean(config.mongodb.enabled),
       configPath: config.mongodb.configPath,
@@ -56679,7 +56829,8 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     });
   }
   schedule(operation, task, options = {}) {
-    return this.scheduler.schedule(operation, async ({ queueMs, priority }) => {
+    const schedule = (resourceContext) => this.scheduler.schedule(operation, async ({ queueMs, priority }) => {
+      resourceContext?.started?.();
       const connectStartedAt = this.now();
       const client = await this.waitUntilReady(operation);
       const connectMs = Math.max(0, this.now() - connectStartedAt);
@@ -56689,9 +56840,11 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
         queueMs,
         connectMs,
         priority,
-        connectionGeneration: this.generation
+        connectionGeneration: this.generation,
+        resourceContext
       });
     }, options);
+    return this.resourceClient ? this.resourceClient.operation(operation, options, schedule) : schedule();
   }
   registerChannel(channel, operation) {
     this.activeChannels.set(channel, operation);
@@ -56756,7 +56909,456 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
   }
 };
 
+// manual-mongodb-config.js
+var import_posix8 = __toESM(require("node:path/posix"), 1);
+function normalizeManualMongo(value, existing) {
+  if (value === void 0) return existing;
+  if (value === null) return void 0;
+  const fields = ["enabled", "configPath", "driverPath", "configProfile", "uriKey", "database", "mongoshPath", "nodePath"];
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields.includes(key))) {
+    throw manualError("MANUAL_DB_CONFIG_INVALID", "人工数据库配置包含不支持的字段。");
+  }
+  const config = { enabled: false, configPath: "", driverPath: "", configProfile: "", uriKey: "url", database: "", mongoshPath: "mongosh", nodePath: "node", ...existing, ...value };
+  if (typeof config.enabled !== "boolean") throw manualError("MANUAL_DB_CONFIG_INVALID", "启用状态无效。");
+  for (const key of fields.slice(1)) {
+    if (typeof config[key] !== "string" || config[key].length > (key.endsWith("Path") ? 4096 : 128) || /[\0\r\n]/.test(config[key])) {
+      throw manualError("MANUAL_DB_CONFIG_INVALID", "人工数据库配置字段无效。");
+    }
+    config[key] = config[key].trim();
+  }
+  if (config.enabled) {
+    for (const key of ["configPath", "driverPath"]) {
+      if (!import_posix8.default.isAbsolute(config[key])) throw manualError("MANUAL_DB_CONFIG_INVALID", "配置与驱动需要远端绝对路径。");
+    }
+    for (const key of ["configProfile", "uriKey"]) {
+      if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}$/.test(config[key]) || config[key].split(".").some((part) => ["__proto__", "constructor", "prototype"].includes(part))) {
+        throw manualError("MANUAL_DB_CONFIG_INVALID", "请填写有效的配置分组及 URI 字段。");
+      }
+    }
+    for (const key of ["nodePath", "mongoshPath"]) {
+      if (!config[key] || !import_posix8.default.isAbsolute(config[key]) && !/^[A-Za-z0-9_.-]+$/.test(config[key])) throw manualError("MANUAL_DB_CONFIG_INVALID", "客户端需为命令名称或远端绝对路径。");
+    }
+  }
+  return config;
+}
+
+// manual-mongodb-runtime.js
+function manualMongoRemote(config, shellFingerprint) {
+  const fs12 = require("fs"), crypto = require("crypto");
+  const fail2 = (code) => {
+    const error = new Error(code);
+    error.code = code;
+    throw error;
+  };
+  function connection() {
+    let file;
+    try {
+      file = JSON.parse(fs12.readFileSync(config.configPath, "utf8"));
+    } catch (_) {
+      fail2("MANUAL_DB_PROFILE_REQUIRED");
+    }
+    const profile = file[config.configProfile];
+    const uri = config.uriKey.split(".").reduce((current, key) => current && Object.prototype.hasOwnProperty.call(current, key) ? current[key] : void 0, profile);
+    if (typeof uri !== "string" || !/^mongodb(?:\+srv)?:\/\//.test(uri)) fail2("MANUAL_DB_PROFILE_REQUIRED");
+    const database = config.database || profile.database || profile.databaseName || "";
+    const fingerprint = crypto.createHash("sha256").update(JSON.stringify([uri, database])).digest("hex");
+    return { uri, database, fingerprint };
+  }
+  if (shellFingerprint) {
+    try {
+      const target3 = connection();
+      if (target3.fingerprint !== shellFingerprint) fail2("MANUAL_DB_TARGET_CHANGED");
+      const startup = "db = connect(process.env.RDA_MANUAL_MONGO_URI); delete process.env.RDA_MANUAL_MONGO_URI; if (process.env.RDA_MANUAL_MONGO_DATABASE) db = db.getSiblingDB(process.env.RDA_MANUAL_MONGO_DATABASE); delete process.env.RDA_MANUAL_MONGO_DATABASE;";
+      const child = require("child_process").spawn(config.mongoshPath, ["--nodb", "--norc", "--quiet", "--shell", "--eval", startup], {
+        stdio: "inherit",
+        env: Object.assign({}, process.env, { RDA_MANUAL_MONGO_URI: target3.uri, RDA_MANUAL_MONGO_DATABASE: target3.database })
+      });
+      child.on("error", () => {
+        process.stderr.write("\r\nMANUAL_DB_MONGOSH_REQUIRED: 请在远端安装兼容的 mongosh 并配置客户端路径。\r\n");
+        process.exitCode = 1;
+      });
+      child.on("exit", (code) => {
+        process.exitCode = code || 0;
+      });
+      for (const signal of ["SIGTERM", "SIGHUP"]) process.on(signal, () => child.kill(signal));
+    } catch (_) {
+      process.stderr.write("\r\nMANUAL_DB_TARGET_CHANGED: 数据库配置不可用或已变化，请断开数据库后重新连接。\r\n");
+      process.exitCode = 1;
+    }
+    return;
+  }
+  let client, EJSON, target2, cursor, pendingDocument, cursorKey, cursorKind, cursorDatabase, cursorCollection, cursorPageSize;
+  let connected = false, closing = false;
+  const encode = (value) => JSON.parse(EJSON.stringify(value, { relaxed: false }));
+  const decode = (value) => EJSON.parse(JSON.stringify(value), { relaxed: false });
+  const MAX_BYTES = 384 * 1024;
+  const emit = (value) => {
+    const line = JSON.stringify(value);
+    if (Buffer.byteLength(line) > 512 * 1024) fail2("MANUAL_DB_RESULT_LIMIT");
+    process.stdout.write(line + "\n");
+  };
+  async function closeCursor() {
+    if (cursor) await cursor.close().catch(() => {
+    });
+    cursor = null;
+    cursorKey = null;
+    pendingDocument = void 0;
+  }
+  async function close() {
+    if (closing) return;
+    closing = true;
+    clearTimeout(idle);
+    await closeCursor();
+    if (client) await client.close().catch(() => {
+    });
+  }
+  let idle = setTimeout(() => {
+    close().finally(() => process.exit(0));
+  }, 9e4);
+  function touch() {
+    clearTimeout(idle);
+    idle = setTimeout(() => {
+      close().finally(() => process.exit(0));
+    }, 9e4);
+  }
+  async function page() {
+    const data = [];
+    let bytes = 0;
+    while (data.length < cursorPageSize) {
+      const document2 = pendingDocument !== void 0 ? pendingDocument : await cursor.next();
+      pendingDocument = void 0;
+      if (document2 === null) break;
+      const value = encode(document2), size = Buffer.byteLength(JSON.stringify(value));
+      if (size > MAX_BYTES) {
+        await closeCursor();
+        fail2("MANUAL_DB_DOCUMENT_LIMIT");
+      }
+      if (bytes + size > MAX_BYTES) {
+        pendingDocument = document2;
+        break;
+      }
+      data.push(value);
+      bytes += size;
+    }
+    if (pendingDocument === void 0) pendingDocument = await cursor.next();
+    const hasMore = pendingDocument !== null;
+    const result = { data, hasMore, cursor: hasMore ? cursorKey : null, kind: cursorKind, database: cursorDatabase, collection: cursorCollection };
+    if (!hasMore) await closeCursor();
+    return result;
+  }
+  async function run(request) {
+    if (request.operation === "connect") {
+      if (connected) fail2("MANUAL_DB_ALREADY_CONNECTED");
+      target2 = connection();
+      let driver;
+      try {
+        driver = require(config.driverPath);
+      } catch (_) {
+        fail2("MANUAL_DB_DRIVER_REQUIRED");
+      }
+      let bson = driver.BSON || driver;
+      if (!bson.EJSON) {
+        try {
+          bson = require(require.resolve("bson", { paths: [config.driverPath] }));
+        } catch (_) {
+        }
+      }
+      EJSON = bson.EJSON;
+      if (!EJSON || typeof EJSON.parse !== "function") fail2("MANUAL_DB_DRIVER_REQUIRED");
+      client = new driver.MongoClient(target2.uri, {
+        serverSelectionTimeoutMS: 1e4,
+        connectTimeoutMS: 1e4,
+        socketTimeoutMS: 2e4,
+        maxPoolSize: 2,
+        promoteValues: false,
+        promoteLongs: false,
+        appName: "rda-manual-workbench"
+      });
+      await client.connect();
+      await client.db(target2.database || "admin").command({ ping: 1 }, { maxTimeMS: 1e4 });
+      let users;
+      try {
+        users = (await client.db("admin").command({ connectionStatus: 1, showPrivileges: false })).authInfo.authenticatedUsers;
+      } catch (_) {
+        fail2("MANUAL_DB_IDENTITY_REQUIRED");
+      }
+      const authority = target2.uri.replace(/^mongodb(?:\+srv)?:\/\//, "").split(/[/?]/)[0];
+      const hosts = authority.slice(authority.lastIndexOf("@") + 1);
+      connected = true;
+      return {
+        fingerprint: target2.fingerprint,
+        hosts,
+        database: target2.database || client.db().databaseName,
+        users: users.map((user) => ({ user: user.user, db: user.db })),
+        profile: config.configProfile,
+        configPath: config.configPath
+      };
+    }
+    if (!connected) fail2("MANUAL_DB_NOT_CONNECTED");
+    if (connection().fingerprint !== target2.fingerprint) fail2("MANUAL_DB_TARGET_CHANGED");
+    if (request.operation === "check") return {};
+    if (request.operation === "next") {
+      if (!cursor || request.cursor !== cursorKey) fail2("MANUAL_DB_CURSOR_EXPIRED");
+      return page();
+    }
+    if (request.operation === "replaceOne") {
+      await closeCursor();
+      const original = decode(request.original), replacement = decode(request.replacement);
+      if (!original || !replacement || !Object.prototype.hasOwnProperty.call(original, "_id") || EJSON.stringify(original._id, { relaxed: false }) !== EJSON.stringify(replacement._id, { relaxed: false })) fail2("MANUAL_DB_ID_IMMUTABLE");
+      const result = await client.db(request.database).collection(request.collection).replaceOne({
+        _id: original._id,
+        $expr: { $eq: [{ $objectToArray: "$$ROOT" }, { $literal: Object.keys(original).map((key) => ({ k: key, v: original[key] })) }] }
+      }, replacement, { upsert: false, maxTimeMS: 1e4 });
+      if (!result.acknowledged) fail2("MANUAL_DB_WRITE_UNKNOWN");
+      if (Number(result.matchedCount) !== 1) fail2("MANUAL_DB_WRITE_CONFLICT");
+      return { matchedCount: Number(result.matchedCount), modifiedCount: Number(result.modifiedCount) };
+    }
+    await closeCursor();
+    cursorPageSize = request.pageSize;
+    cursorKey = crypto.randomBytes(24).toString("hex");
+    cursorKind = request.operation;
+    cursorDatabase = request.database;
+    cursorCollection = request.collection;
+    if (request.operation === "databases") {
+      const listed = await client.db("admin").admin().listDatabases({ nameOnly: true, authorizedDatabases: true, maxTimeMS: 1e4 });
+      const names = listed.databases.filter((item) => item.name > (request.after || "")).sort((a, b) => a.name < b.name ? -1 : 1);
+      const data = [], limit = request.pageSize;
+      let bytes = 0;
+      for (const item of names) {
+        if (data.length >= limit) break;
+        bytes += Buffer.byteLength(JSON.stringify(item));
+        if (bytes > MAX_BYTES) break;
+        data.push({ name: item.name });
+      }
+      return { data, hasMore: names.length > data.length, after: data.length ? data[data.length - 1].name : null };
+    }
+    if (request.operation === "collections") {
+      cursor = client.db(request.database).listCollections({}, { nameOnly: true, authorizedCollections: true, batchSize: request.pageSize, maxTimeMS: 1e4 });
+    } else if (request.operation === "indexes") {
+      cursor = client.db(request.database).collection(request.collection).listIndexes({ batchSize: request.pageSize, maxTimeMS: 1e4 });
+    } else if (request.operation === "find") {
+      const sort = Object.assign({}, request.sort);
+      if (!Object.prototype.hasOwnProperty.call(sort, "_id")) sort._id = 1;
+      cursor = client.db(request.database).collection(request.collection).find(decode(request.filter), {
+        sort,
+        batchSize: request.pageSize,
+        maxTimeMS: 1e4,
+        allowDiskUse: false
+      });
+    } else fail2("MANUAL_DB_OPERATION_INVALID");
+    return page();
+  }
+  const lines = require("readline").createInterface({ input: process.stdin, crlfDelay: Infinity });
+  let sequence = Promise.resolve(), queued = 0;
+  lines.on("line", (line) => {
+    if (Buffer.byteLength(line) > 1024 * 1024 || ++queued > 2) {
+      close().finally(() => process.exit(1));
+      return;
+    }
+    sequence = sequence.then(async () => {
+      let request;
+      try {
+        request = JSON.parse(line);
+        touch();
+        const result = await run(request);
+        emit({ id: request.id, ok: true, result });
+      } catch (error) {
+        const code = error && /^MANUAL_DB_/.test(error.code) ? error.code : error && Number(error.code) === 13 ? "MANUAL_DB_PERMISSION_DENIED" : error && Number(error.code) === 18 ? "MANUAL_DB_AUTH_FAILED" : error && /BSON|EJSON/.test(error.name) ? "MANUAL_DB_BSON_INVALID" : "MANUAL_DB_REMOTE_FAILED";
+        emit({ id: request && request.id, ok: false, error: { code, serverCode: Number.isInteger(Number(error.code)) ? Number(error.code) : void 0 } });
+        if (!connected || code === "MANUAL_DB_TARGET_CHANGED") {
+          await close();
+          process.exitCode = 1;
+          lines.close();
+          process.stdin.destroy();
+        }
+      } finally {
+        queued--;
+      }
+    }).catch(() => close().finally(() => process.exit(1)));
+  });
+  lines.on("close", () => {
+    sequence.finally(close);
+  });
+  process.on("SIGTERM", () => close().finally(() => process.exit(0)));
+  process.on("SIGHUP", () => close().finally(() => process.exit(0)));
+}
+
+// manual-mongodb.js
+var MESSAGES = {
+  MANUAL_DB_REQUEST_INVALID: "数据库请求无效，请检查目标名称、JSON 格式与每页数量（1–100）。",
+  MANUAL_DB_BUSY: "数据库正在处理上一项操作，请等待完成后重试。",
+  MANUAL_DB_PLAN_INVALID: "文档替换确认已失效或目标不匹配，请重新准备。",
+  MANUAL_DB_NOT_CONNECTED: "数据库连接已失效，请重新连接并核对目标。",
+  MANUAL_DB_CLOSED: "数据库连接已关闭，请重新连接。",
+  MANUAL_DB_HOST_KEY_MISMATCH: "SSH 主机指纹不匹配，数据库连接已拒绝。",
+  MANUAL_DB_SSH_CONFIG_INVALID: "SSH 私钥或已核验主机指纹不可用，请检查实例连接配置。",
+  MANUAL_DB_BSON_INVALID: "BSON / Extended JSON 无效，请保留规范的类型标记并检查字段值。",
+  MANUAL_DB_AUTH_FAILED: "数据库身份验证失败，请检查远端人工连接 profile 中的凭据与 authSource。",
+  MANUAL_DB_NOT_CONFIGURED: "请在实例管理中配置并启用“人工数据库管理连接”。",
+  MANUAL_DB_PROFILE_REQUIRED: "远端配置分组或 MongoDB URI 无效，请检查人工连接配置。",
+  MANUAL_DB_DRIVER_REQUIRED: "远端需要支持 BSON EJSON 的 MongoDB Node 驱动（建议 4.x 或更新版）。",
+  MANUAL_DB_IDENTITY_REQUIRED: "数据库账户无法读取 connectionStatus，不能核验 GUI 与 shell 身份。",
+  MANUAL_DB_TARGET_CHANGED: "远端数据库配置已变化，请断开并重新连接数据库。",
+  MANUAL_DB_PERMISSION_DENIED: "数据库账户拒绝此操作，请核对数据库权限。",
+  MANUAL_DB_WRITE_CONFLICT: "文档已被修改或删除。本次未覆盖，请重新查询后编辑。",
+  MANUAL_DB_WRITE_UNKNOWN: "无法确认写入结果。请重新查询核对，切勿直接重复执行。",
+  MANUAL_DB_ID_IMMUTABLE: "替换文档必须保留原始 _id（包括 BSON 类型）。",
+  MANUAL_DB_DOCUMENT_LIMIT: "单文档超过 GUI 384 KiB 上限，请使用数据库 shell 处理。",
+  MANUAL_DB_CURSOR_EXPIRED: "分页游标已关闭，请重新查询。",
+  MANUAL_DB_REMOTE_FAILED: "远端数据库操作失败。请检查配置文件、驱动、网络及数据库账户；写入中断后需查询核对结果。",
+  MANUAL_DB_TIMEOUT: "数据库连接或操作超时；写入超时不代表未执行，请重新查询核对。"
+};
+function databaseError(code, status = 400) {
+  return manualError(code, MESSAGES[code] || "数据库请求无效或连接已关闭。", status);
+}
+function object(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+function name(value, database = false) {
+  if (typeof value !== "string" || !value || Buffer.byteLength(value) > 128 || /[\0\r\n]/.test(value) || database && /[/\\. "$]/.test(value)) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+  return value;
+}
+function normalizeManualQuery(body) {
+  const allowed = ["operation", "connectionId", "database", "collection", "filter", "sort", "pageSize", "cursor", "after"];
+  if (!object(body) || Object.keys(body).some((key) => !allowed.includes(key)) || !["databases", "collections", "indexes", "find", "next"].includes(body.operation)) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+  const result = { operation: body.operation, pageSize: body.pageSize ?? 30 };
+  if (!Number.isInteger(result.pageSize) || result.pageSize < 1 || result.pageSize > 100) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+  if (body.operation === "next") {
+    if (typeof body.cursor !== "string" || !/^[a-f0-9]{48}$/.test(body.cursor)) throw databaseError("MANUAL_DB_CURSOR_EXPIRED");
+    result.cursor = body.cursor;
+  } else if (body.operation === "databases") {
+    if (body.after !== void 0 && body.after !== "") result.after = name(body.after, true);
+  } else {
+    result.database = name(body.database, true);
+    if (["find", "indexes"].includes(body.operation)) result.collection = name(body.collection);
+  }
+  if (body.operation === "find") {
+    if (!object(body.filter ?? {}) || !object(body.sort ?? {}) || Buffer.byteLength(JSON.stringify(body.filter || {})) > 64 * 1024) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+    result.filter = body.filter || {};
+    result.sort = body.sort || {};
+    if (Object.keys(result.sort).length > 16 || Object.entries(result.sort).some(([key, direction]) => !key || key.startsWith("$") || ["__proto__", "constructor", "prototype"].includes(key) || ![1, -1].includes(direction))) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+  }
+  return result;
+}
+function validateReplacement(body) {
+  if (!object(body) || Object.keys(body).some((key) => !["connectionId", "database", "collection", "original", "replacement"].includes(key))) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+  const database = name(body.database, true), collection = name(body.collection);
+  for (const document2 of [body.original, body.replacement]) {
+    if (!object(document2) || !Object.hasOwn(document2, "_id") || Object.keys(document2).some((key) => key.startsWith("$")) || Buffer.byteLength(JSON.stringify(document2)) > 384 * 1024) throw databaseError("MANUAL_DB_REQUEST_INVALID");
+  }
+  return { database, collection, original: body.original, replacement: body.replacement };
+}
+var quote = (value) => "'" + String(value).replace(/'/g, "'\\''") + "'";
+function manualMongoCommand(instance, fingerprint) {
+  const config = normalizeManualMongo(instance.manualMongo);
+  if (!config?.enabled) throw databaseError("MANUAL_DB_NOT_CONFIGURED", 409);
+  const script = `(${manualMongoRemote.toString()})(${JSON.stringify(config)},${JSON.stringify(fingerprint || null)})`;
+  return `${quote(config.nodePath)} -e ${quote(script)}`;
+}
+function openManualDatabase(instance, { ClientClass = import_ssh22.Client } = {}) {
+  const client = new ClientClass();
+  const supervisor = new SshConnectionSupervisor({ ssh: { ...instance, readyTimeout: 15e3 } });
+  let stream, closed = false, buffer = Buffer.alloc(0), pending;
+  const id = (0, import_node_crypto11.randomUUID)();
+  let resolveReady, rejectReady;
+  const ready = new Promise((resolve, reject) => {
+    resolveReady = resolve;
+    rejectReady = reject;
+  });
+  ready.catch(() => {
+  });
+  const fail2 = (error = databaseError("MANUAL_DB_REMOTE_FAILED", 502)) => {
+    if (closed) return;
+    closed = true;
+    clearTimeout(openTimer);
+    rejectReady(error);
+    pending?.reject(error);
+    pending = null;
+    stream?.destroy();
+    client.destroy();
+  };
+  const openTimer = setTimeout(() => fail2(databaseError("MANUAL_DB_TIMEOUT", 504)), 2e4);
+  client.on("error", () => fail2(databaseError(supervisor.hostVerificationError?.code === "SSH_HOST_KEY_MISMATCH" ? "MANUAL_DB_HOST_KEY_MISMATCH" : "MANUAL_DB_REMOTE_FAILED", 502)));
+  client.on("close", () => fail2());
+  client.on("ready", () => {
+    if (closed) return;
+    client.exec(manualMongoCommand(instance), (error, channel) => {
+      if (closed) {
+        channel?.destroy();
+        return;
+      }
+      if (error) {
+        fail2();
+        return;
+      }
+      stream = channel;
+      channel.stderr.on("data", () => {
+      });
+      channel.on("error", () => fail2());
+      channel.on("close", () => fail2());
+      channel.on("data", (chunk) => {
+        buffer = Buffer.concat([buffer, chunk]);
+        if (buffer.length > 600 * 1024) {
+          fail2();
+          return;
+        }
+        let index;
+        while ((index = buffer.indexOf(10)) !== -1) {
+          const line = buffer.subarray(0, index);
+          buffer = buffer.subarray(index + 1);
+          try {
+            const message = JSON.parse(line.toString("utf8"));
+            if (!pending || message.id !== pending.id) {
+              fail2();
+              return;
+            }
+            const waiter = pending;
+            pending = null;
+            if (message.ok === true) waiter.resolve(message.result);
+            else waiter.reject(Object.assign(databaseError(Object.hasOwn(MESSAGES, message.error?.code || "") ? message.error.code : "MANUAL_DB_REMOTE_FAILED", 502), { serverCode: message.error?.serverCode }));
+          } catch {
+            fail2();
+          }
+        }
+      });
+      clearTimeout(openTimer);
+      resolveReady();
+    });
+  });
+  try {
+    manualMongoCommand(instance);
+  } catch (error) {
+    fail2(error);
+  }
+  if (!closed) supervisor.connectionOptions().then((settings) => {
+    if (!closed) client.connect(settings);
+  }).catch(() => fail2(databaseError("MANUAL_DB_SSH_CONFIG_INVALID", 503)));
+  return {
+    id,
+    close: () => fail2(databaseError("MANUAL_DB_CLOSED", 409)),
+    get closed() {
+      return closed;
+    },
+    async request(request) {
+      await ready;
+      if (closed) throw databaseError("MANUAL_DB_CLOSED", 409);
+      if (pending) throw databaseError("MANUAL_DB_BUSY", 409);
+      return new Promise((resolve, reject) => {
+        const requestId = (0, import_node_crypto11.randomUUID)();
+        const timer = setTimeout(() => fail2(databaseError("MANUAL_DB_TIMEOUT", 504)), 25e3);
+        const done = (callback) => (value) => {
+          clearTimeout(timer);
+          callback(value);
+        };
+        pending = { id: requestId, resolve: done(resolve), reject: done(reject) };
+        stream.write(JSON.stringify({ ...request, id: requestId }) + "\n");
+      });
+    }
+  };
+}
+
 // manual-terminal.js
+var import_ssh23 = __toESM(require_lib4(), 1);
 function terminalSize(cols = 100, rows = 30) {
   if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 2 || cols > 500 || rows < 2 || rows > 300) {
     throw Object.assign(new Error("终端尺寸无效。"), { code: "TERMINAL_SIZE_INVALID", statusCode: 400 });
@@ -56764,7 +57366,7 @@ function terminalSize(cols = 100, rows = 30) {
   return { cols, rows };
 }
 function openManualTerminal(instance, options) {
-  const client = new (options.ClientClass || import_ssh22.Client)();
+  const client = new (options.ClientClass || import_ssh23.Client)();
   const verifier = new SshConnectionSupervisor({ ssh: { ...instance, readyTimeout: 15e3 } });
   let stream;
   let closed = false;
@@ -56788,7 +57390,9 @@ function openManualTerminal(instance, options) {
   client.on("close", close);
   client.on("ready", () => {
     if (closed) return;
-    client.shell({ term: "xterm-256color", cols: size.cols, rows: size.rows }, (error, channel) => {
+    const pty = { term: "xterm-256color", cols: size.cols, rows: size.rows };
+    const open = options.command ? (callback) => client.exec(options.command, { pty }, callback) : (callback) => client.shell(pty, callback);
+    open((error, channel) => {
       if (closed) {
         channel?.destroy();
         return;
@@ -56835,7 +57439,7 @@ function openManualTerminal(instance, options) {
 
 // manual-workbench.js
 var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path6.default.dirname((0, import_node_url2.fileURLToPath)(void 0));
-var ASSETS = /* @__PURE__ */ new Set(["manual.html", "manual.js", "manual.css", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
+var ASSETS = /* @__PURE__ */ new Set(["manual.html", "manual.js", "manual.css", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
 var IDLE_MS = 15 * 6e4;
 var MAX_SESSION_MS = 8 * 60 * 6e4;
 var TOKEN = /^[a-f0-9]{64}$/;
@@ -56848,7 +57452,7 @@ var SSH_MESSAGES = {
   MANUAL_SHELL_FAILED: "远端交互式 Shell 无法启动或已断开。"
 };
 function digest(instance) {
-  return (0, import_node_crypto11.createHash)("sha256").update(JSON.stringify(instance)).digest("hex");
+  return (0, import_node_crypto12.createHash)("sha256").update(JSON.stringify(instance)).digest("hex");
 }
 function target(instance) {
   return { id: instance.id, name: instance.name, host: instance.host, port: instance.port, username: instance.username };
@@ -56862,6 +57466,8 @@ function route(action) {
   return (request, response, next) => Promise.resolve().then(() => action(request, response)).catch(next);
 }
 function sendError(error, _request, response, _next) {
+  if (error.type === "entity.too.large") error = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
+  else if (error.type === "entity.parse.failed") error = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
   const known = typeof error.code === "string" && /^(ADMIN_|OWNER_|MANUAL_|INSTANCE_)/.test(error.code);
   response.status(known ? error.statusCode || 400 : 503).json({ ok: false, error: {
     code: known ? error.code : "MANUAL_UNAVAILABLE",
@@ -56876,6 +57482,7 @@ var ManualWorkbench = class {
     this.store = options.store || new ManualAdminStore(this.directory);
     this.ownerVerification = options.ownerVerification || new ManualOwnerVerification(import_node_path6.default.join(this.directory, "native"));
     this.openTerminal = options.openTerminal || openManualTerminal;
+    this.openDatabase = options.openDatabase || openManualDatabase;
     this.now = options.now || Date.now;
     this.idleMs = options.idleMs || IDLE_MS;
     this.maxSessionMs = options.maxSessionMs || MAX_SESSION_MS;
@@ -56891,8 +57498,8 @@ var ManualWorkbench = class {
   status() {
     return { ok: true, adminCount: this.store.read().length, ownerVerification: this.ownerVerification.status() };
   }
-  audit(event2, session = {}) {
-    const entry = { time: new Date(this.now()).toISOString(), event: event2, sessionId: session.id, instanceId: session.instanceId, username: session.username };
+  audit(event2, session = {}, metadata = {}) {
+    const entry = { time: new Date(this.now()).toISOString(), event: event2, sessionId: session.id, instanceId: session.instanceId, username: session.username, ...metadata };
     this.store.protectDirectory();
     const logPath = import_node_path6.default.join(this.directory, "sessions.jsonl");
     if (import_node_fs5.default.existsSync(logPath)) {
@@ -56960,8 +57567,8 @@ var ManualWorkbench = class {
     const instance = this.instance(body.instanceId);
     this.prune();
     if (this.sessions.size >= 8) throw manualError("MANUAL_SESSION_LIMIT", "最多同时打开 8 个人工会话。", 409);
-    const token = (0, import_node_crypto11.randomBytes)(32).toString("hex");
-    const session = { id: (0, import_node_crypto11.randomUUID)(), username: body.username, instanceId: instance.id, fingerprint: digest(instance), createdAt: this.now(), lastInputAt: this.now(), socket: null };
+    const token = (0, import_node_crypto12.randomBytes)(32).toString("hex");
+    const session = { id: (0, import_node_crypto12.randomUUID)(), username: body.username, instanceId: instance.id, fingerprint: digest(instance), createdAt: this.now(), lastInputAt: this.now(), socket: null };
     this.audit("login", session);
     this.sessions.set(token, session);
     this.keepAlive(session);
@@ -56988,6 +57595,7 @@ var ManualWorkbench = class {
     this.lifecycle?.releaseLease(`manual:${session.id}`);
     session.socket?.close(4001, "session closed");
     session.terminal?.close();
+    this.closeDatabase(session);
     try {
       this.audit(reason, session);
     } catch {
@@ -57005,22 +57613,57 @@ var ManualWorkbench = class {
     }
     for (const [ticket, value] of this.tickets) if (value.expiresAt <= this.now()) this.tickets.delete(ticket);
   }
-  issueTicket(token) {
+  issueTicket(token, kind = "ssh") {
     const session = this.getSession(token);
-    if (session.socket) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端，请先断开。", 409);
-    for (const [ticket2, value] of this.tickets) if (value.token === token) this.tickets.delete(ticket2);
-    const ticket = (0, import_node_crypto11.randomBytes)(32).toString("hex");
-    this.tickets.set(ticket, { token, expiresAt: this.now() + 1e4 });
+    if (session[kind === "database" ? "databaseSocket" : "socket"]) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端，请先断开。", 409);
+    if (kind === "database" && !session.databaseTarget) throw databaseError("MANUAL_DB_NOT_CONNECTED", 409);
+    for (const [ticket2, value] of this.tickets) if (value.token === token && value.kind === kind) this.tickets.delete(ticket2);
+    const ticket = (0, import_node_crypto12.randomBytes)(32).toString("hex");
+    this.tickets.set(ticket, { token, kind, connectionId: session.database?.id, expiresAt: this.now() + 1e4 });
     return { ok: true, ticket };
   }
-  consumeTicket(ticket) {
+  consumeTicket(ticket, kind = "ssh") {
     const value = typeof ticket === "string" && this.tickets.get(ticket);
     if (!value) throw manualError("MANUAL_TICKET_INVALID", "终端授权无效。", 401);
     this.tickets.delete(ticket);
-    if (value.expiresAt <= this.now()) throw manualError("MANUAL_TICKET_INVALID", "终端授权已过期。", 401);
+    if (value.kind !== kind || value.expiresAt <= this.now()) throw manualError("MANUAL_TICKET_INVALID", "终端授权已过期。", 401);
     const session = this.getSession(value.token);
-    if (session.socket) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端。", 409);
+    if (session[kind === "database" ? "databaseSocket" : "socket"]) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端。", 409);
+    if (kind === "database" && (!session.databaseTarget || session.database?.id !== value.connectionId)) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
     return { session, token: value.token };
+  }
+  databaseTarget(session) {
+    const { fingerprint, ...descriptor } = session.databaseTarget;
+    return { ...descriptor, instanceId: session.instanceId, ssh: target(this.instance(session.instanceId)) };
+  }
+  requireDatabase(session, connectionId) {
+    if (!session.database || session.database.closed || !session.databaseTarget || session.database.id !== connectionId) throw databaseError("MANUAL_DB_NOT_CONNECTED", 409);
+    return session.database;
+  }
+  closeDatabase(session) {
+    session.databaseSocket?.close(4002, "database disconnected");
+    session.databaseTerminal?.close();
+    session.databaseSocket = null;
+    session.databaseTerminal = null;
+    session.database?.close();
+    session.database = null;
+    session.databaseTarget = null;
+    session.databasePlan = null;
+    if (session.databaseCheckTimer) clearInterval(session.databaseCheckTimer);
+    session.databaseCheckTimer = null;
+  }
+  async databaseRequest(token, connectionId, request) {
+    const session = this.getSession(token), database = this.requireDatabase(session, connectionId);
+    session.lastInputAt = this.now();
+    try {
+      const result = await database.request(request);
+      this.getSession(token);
+      if (session.database !== database) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
+      return result;
+    } catch (error) {
+      if (session.database === database && (database.closed || error.code === "MANUAL_DB_TARGET_CHANGED")) this.closeDatabase(session);
+      throw error;
+    }
   }
   async start() {
     if (this.closing) throw manualError("MANUAL_STOPPING", "工作台正在关闭。", 503);
@@ -57048,6 +57691,7 @@ var ManualWorkbench = class {
       }
       next();
     });
+    app.use("/api/database", import_express.default.json({ limit: "900kb", strict: true }));
     app.use(import_express.default.json({ limit: "8kb", strict: true }));
     const publicDirectory = import_node_path6.default.join(moduleDirectory2, "public");
     app.get("/", (_request, response) => response.sendFile("manual.html", { root: publicDirectory }));
@@ -57058,9 +57702,17 @@ var ManualWorkbench = class {
     });
     app.post("/api/login", route(async (request, response) => response.json(await this.login(request.body))));
     const authorize = (request) => this.getSession(this.bearer(request));
+    app.use("/api/database", (request, _response, next) => {
+      try {
+        authorize(request);
+        next();
+      } catch (error) {
+        next(error);
+      }
+    });
     app.get("/api/session", route((request, response) => {
       const session = authorize(request);
-      response.json({ ok: true, target: target(this.instance(session.instanceId)) });
+      response.json({ ok: true, target: target(this.instance(session.instanceId)), databaseConnectionId: session.database?.closed ? null : session.database?.id || null });
     }));
     app.post("/api/logout", route((request, response) => {
       authorize(request);
@@ -57068,16 +57720,105 @@ var ManualWorkbench = class {
       response.json({ ok: true });
     }));
     app.post("/api/terminal-ticket", route((request, response) => response.json(this.issueTicket(this.bearer(request)))));
+    app.get("/api/database/config", route((request, response) => {
+      const session = authorize(request), instance = this.instance(session.instanceId);
+      response.json({ ok: true, config: instance.manualMongo || { enabled: false } });
+    }));
+    app.post("/api/database/connect", route(async (request, response) => {
+      assertFields(request.body, []);
+      const token = this.bearer(request), session = this.getSession(token);
+      this.closeDatabase(session);
+      session.lastInputAt = this.now();
+      const database = this.openDatabase(this.instance(session.instanceId));
+      session.database = database;
+      try {
+        this.audit("database-opening", session);
+        const descriptor = await database.request({ operation: "connect" });
+        this.getSession(token);
+        if (session.database !== database) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
+        session.databaseTarget = descriptor;
+        session.databaseCheckTimer = setInterval(async () => {
+          if (session.database !== database || session.databaseChecking) return;
+          session.databaseChecking = true;
+          try {
+            this.getSession(token);
+            await database.request({ operation: "check" });
+          } catch (error) {
+            if (error.code !== "MANUAL_DB_BUSY" && session.database === database) this.closeDatabase(session);
+          } finally {
+            session.databaseChecking = false;
+          }
+        }, 3e4);
+        session.databaseCheckTimer.unref();
+        this.audit("database-connected", session);
+        response.json({ ok: true, connectionId: database.id, target: this.databaseTarget(session) });
+      } catch (error) {
+        database.close();
+        if (session.database === database) this.closeDatabase(session);
+        throw error;
+      }
+    }));
+    app.post("/api/database/activity", route((request, response) => {
+      assertFields(request.body, ["connectionId"]);
+      const session = authorize(request);
+      this.requireDatabase(session, request.body.connectionId);
+      session.lastInputAt = this.now();
+      response.json({ ok: true });
+    }));
+    app.post("/api/database/disconnect", route((request, response) => {
+      assertFields(request.body, ["connectionId"]);
+      const session = authorize(request);
+      this.requireDatabase(session, request.body.connectionId);
+      this.closeDatabase(session);
+      response.json({ ok: true });
+    }));
+    app.post("/api/database/query", route(async (request, response) => {
+      const query = normalizeManualQuery(request.body);
+      const result = await this.databaseRequest(this.bearer(request), request.body.connectionId, query);
+      response.json({ ok: true, ...result });
+    }));
+    app.post("/api/database/prepare", route(async (request, response) => {
+      const input = validateReplacement(request.body);
+      const token = this.bearer(request), session = this.getSession(token);
+      await this.databaseRequest(token, request.body.connectionId, { operation: "check" });
+      const planId = (0, import_node_crypto12.randomBytes)(32).toString("hex");
+      session.databasePlan = { ...input, planId, connectionId: session.database.id, expiresAt: this.now() + 6e4 };
+      this.audit("database-write-prepared", session, { database: input.database, collection: input.collection, connectionId: session.database.id, action: "replaceOne" });
+      response.json({ ok: true, planId, target: this.databaseTarget(session), database: input.database, collection: input.collection, action: "replaceOne", confirmation: "确认替换此文档", expiresInMs: 6e4 });
+    }));
+    app.post("/api/database/execute", route(async (request, response) => {
+      assertFields(request.body, ["connectionId", "planId", "confirmation"]);
+      const token = this.bearer(request), session = this.getSession(token);
+      this.requireDatabase(session, request.body.connectionId);
+      const plan = session.databasePlan;
+      if (!plan || request.body.planId !== plan.planId || plan.connectionId !== request.body.connectionId || plan.expiresAt <= this.now() || request.body.confirmation !== "确认替换此文档") throw databaseError("MANUAL_DB_PLAN_INVALID", 409);
+      session.databasePlan = null;
+      this.audit("database-write-dispatched", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
+      try {
+        const result = await this.databaseRequest(token, request.body.connectionId, { operation: "replaceOne", database: plan.database, collection: plan.collection, original: plan.original, replacement: plan.replacement });
+        this.audit("database-write-completed", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
+        response.json({ ok: true, ...result });
+      } catch (error) {
+        this.audit("database-write-failed-or-unknown", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
+        throw error;
+      }
+    }));
+    app.post("/api/database/shell-ticket", route(async (request, response) => {
+      assertFields(request.body, ["connectionId"]);
+      const token = this.bearer(request);
+      await this.databaseRequest(token, request.body.connectionId, { operation: "check" });
+      response.json(this.issueTicket(token, "database"));
+    }));
     app.use((_request, response) => response.sendStatus(404));
     app.use(sendError);
     this.server = import_node_http.default.createServer(app);
     this.wss = new import_websocket_server.default({ noServer: true, maxPayload: 64 * 1024, perMessageDeflate: false });
     this.server.on("upgrade", (request, socket, head) => {
-      if (request.url !== "/terminal" || request.headers.host !== this.authority || request.headers.origin !== this.origin || this.wss.clients.size >= 16) {
+      if (!["/terminal", "/database-terminal"].includes(request.url) || request.headers.host !== this.authority || request.headers.origin !== this.origin || this.wss.clients.size >= 16) {
         socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
         return;
       }
-      this.wss.handleUpgrade(request, socket, head, (ws) => this.attachTerminal(ws));
+      this.wss.handleUpgrade(request, socket, head, (ws) => this.attachTerminal(ws, request.url === "/database-terminal" ? "database" : "ssh"));
     });
     await new Promise((resolve, reject) => {
       this.server.once("error", reject);
@@ -57093,7 +57834,9 @@ var ManualWorkbench = class {
     const header = request.headers.authorization;
     return typeof header === "string" && header.startsWith("Bearer ") ? header.slice(7) : "";
   }
-  attachTerminal(ws) {
+  attachTerminal(ws, kind = "ssh") {
+    const socketField = kind === "database" ? "databaseSocket" : "socket";
+    const terminalField = kind === "database" ? "databaseTerminal" : "terminal";
     let session, token, terminal2, ready = false, missedPong = false;
     let pendingOutputBytes = 0;
     let inputBytes = 0, inputWindow = this.now();
@@ -57124,11 +57867,11 @@ var ManualWorkbench = class {
       clearInterval(heartbeat);
       clearInterval(drain);
       terminal2?.close();
-      if (session && session.socket === ws) {
-        session.socket = null;
-        session.terminal = null;
+      if (session && session[socketField] === ws) {
+        session[socketField] = null;
+        session[terminalField] = null;
         try {
-          this.audit("terminal-disconnected", session);
+          this.audit(`${kind}-terminal-disconnected`, session);
         } catch {
           this.revoke(token, "audit-unavailable");
         }
@@ -57142,12 +57885,13 @@ var ManualWorkbench = class {
           assertFields(message, ["type", "ticket", "cols", "rows"]);
           if (message.type !== "authenticate") throw manualError("MANUAL_AUTH_REQUIRED", "终端尚未授权。", 401);
           const size = terminalSize(message.cols, message.rows);
-          ({ session, token } = this.consumeTicket(message.ticket));
+          ({ session, token } = this.consumeTicket(message.ticket, kind));
           clearTimeout(authenticationTimer);
-          this.audit("terminal-opening", session);
-          session.socket = ws;
+          this.audit(`${kind}-terminal-opening`, session);
+          session[socketField] = ws;
           terminal2 = this.openTerminal(this.instance(session.instanceId), {
             ...size,
+            ...kind === "database" ? { command: manualMongoCommand(this.instance(session.instanceId), session.databaseTarget.fingerprint) } : {},
             onData: (data) => {
               if (ws.readyState !== import_websocket.default.OPEN) return;
               const bytes = Buffer.byteLength(data);
@@ -57164,7 +57908,7 @@ var ManualWorkbench = class {
             onReady: () => {
               try {
                 this.getSession(token);
-                this.audit("terminal-ready", session);
+                this.audit(`${kind}-terminal-ready`, session);
                 ready = true;
                 send({ type: "ready" });
               } catch {
@@ -57177,7 +57921,7 @@ var ManualWorkbench = class {
               if (ws.readyState === import_websocket.default.OPEN) ws.close(1e3, "SSH closed");
             }
           });
-          session.terminal = terminal2;
+          session[terminalField] = terminal2;
           return;
         }
         this.getSession(token);
@@ -57279,12 +58023,12 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
   if (relativeRoot.startsWith("..") || import_node_path7.default.isAbsolute(relativeRoot)) throw sandboxError("local sandbox root escapes the data directory");
   if (import_node_path7.default.dirname(await import_promises2.default.realpath(directory)) !== await import_promises2.default.realpath(root)) throw sandboxError("instance directory escapes the local sandbox");
   const files = [];
-  for (const name of ["audit.jsonl", "memory.json"]) {
-    const file = import_node_path7.default.join(directory, name);
+  for (const name2 of ["audit.jsonl", "memory.json"]) {
+    const file = import_node_path7.default.join(directory, name2);
     try {
       const stat = await import_promises2.default.lstat(file);
       if (stat.isSymbolicLink() || !stat.isFile()) throw sandboxError("sandbox file is not a regular file");
-      files.push({ name, bytes: stat.size });
+      files.push({ name: name2, bytes: stat.size });
     } catch (error) {
       if (error.code !== "ENOENT") throw error;
     }
@@ -57314,7 +58058,7 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
 }
 
 // output-preview.js
-var import_node_crypto12 = require("node:crypto");
+var import_node_crypto13 = require("node:crypto");
 var MAX_WIRE_BYTES = 8 * 1024 * 1024;
 var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 var INSTANCE = /^[a-zA-Z0-9._-]{1,128}$/;
@@ -57339,7 +58083,7 @@ function validate(input) {
   return { message, payload };
 }
 function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxBytes = 50 * 1024 * 1024, maxInstanceEvents = 100, maxEvents = 500 } = {}) {
-  const epoch = (0, import_node_crypto12.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
+  const epoch = (0, import_node_crypto13.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
   let sequence = 0, bytes = 0, lastEvicted = 0;
   function evict(id) {
     const entry = records.get(id);
@@ -57459,7 +58203,7 @@ function installOutputPreviewRoutes(app, store, registry) {
 }
 
 // server.js
-var import_node_crypto19 = require("node:crypto");
+var import_node_crypto20 = require("node:crypto");
 var import_promises6 = __toESM(require("node:fs/promises"), 1);
 var import_node_path12 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
@@ -57467,7 +58211,7 @@ var import_node_url4 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
 
 // activity.js
-var import_node_crypto13 = require("node:crypto");
+var import_node_crypto14 = require("node:crypto");
 var import_node_events2 = require("node:events");
 var DEFAULT_MAX_EVENTS = 200;
 var DEFAULT_PREVIEW_CHARS = 4e3;
@@ -57498,7 +58242,7 @@ function createActivityLog(options = {}) {
   const events = [];
   function publish(event2) {
     const entry = {
-      id: (0, import_node_crypto13.randomUUID)(),
+      id: (0, import_node_crypto14.randomUUID)(),
       time: (/* @__PURE__ */ new Date()).toISOString(),
       ...event2
     };
@@ -57619,11 +58363,11 @@ async function writeAuditLog(logPath, event2, now) {
 }
 
 // mongodb-sandbox-access.js
-var import_node_crypto14 = require("node:crypto");
+var import_node_crypto15 = require("node:crypto");
 
 // mongodb-sandbox-access-runtime.js
 async function sandboxAccessRuntime(request, config, marker) {
-  const fs12 = require("fs"), path14 = require("path"), crypto = require("crypto");
+  const fs12 = require("fs"), path15 = require("path"), crypto = require("crypto");
   const URLSearchParams = require("url").URLSearchParams;
   const collection = "__remote_debug_bulk_receipts";
   let client, managerClient, plan, lockFd, lockPath, temporary;
@@ -57694,7 +58438,7 @@ async function sandboxAccessRuntime(request, config, marker) {
     }
     fs12.renameSync(temporary, file);
     temporary = null;
-    const directoryFd = fs12.openSync(path14.dirname(file), "r");
+    const directoryFd = fs12.openSync(path15.dirname(file), "r");
     try {
       fs12.fsyncSync(directoryFd);
     } finally {
@@ -57866,9 +58610,9 @@ async function sandboxAccessRuntime(request, config, marker) {
     };
   }
   try {
-    directory(path14.dirname(config.journalRoot));
+    directory(path15.dirname(config.journalRoot));
     directory(config.journalRoot);
-    const planFile = path14.join(config.journalRoot, request.setupId + ".json");
+    const planFile = path15.join(config.journalRoot, request.setupId + ".json");
     if (request.action === "prepare") {
       const state = await preflight();
       plan = { version: 1, setupId: request.setupId, expiresAt: new Date(Date.now() + 30 * 60 * 1e3).toISOString(), snapshot: state.snapshot };
@@ -57944,7 +58688,7 @@ async function sandboxAccessRuntime(request, config, marker) {
       plan.status = "partial";
       plan.errorDiagnostic = diagnostic;
       try {
-        atomic(path14.join(config.journalRoot, request.setupId + ".json"), plan);
+        atomic(path15.join(config.journalRoot, request.setupId + ".json"), plan);
       } catch (_) {
       }
     }
@@ -58003,7 +58747,7 @@ function accessSettings(rawConfig, instanceId) {
   return config;
 }
 function sandboxSettingsHash(rawConfig, instanceId) {
-  return (0, import_node_crypto14.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
+  return (0, import_node_crypto15.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
 }
 function buildSandboxAccessScript(request, rawConfig, instanceId) {
   return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
@@ -58019,7 +58763,7 @@ async function runSandboxAccess(input = {}, options = {}) {
   if (action === "execute" && (!/^[a-f0-9-]{36}$/.test(input.setupId || "") || !/^[a-f0-9]{64}$/.test(input.planHash || "") || input.confirmation !== "确认配置沙盒")) {
     throw fail("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
   }
-  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto14.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
+  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto15.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
   const script = buildSandboxAccessScript(request, rawConfig, instanceId);
   if (typeof options.runSSH !== "function") throw fail("MONGODB_RUNNER_UNAVAILABLE");
   let remote;
@@ -58048,13 +58792,13 @@ async function runSandboxAccess(input = {}, options = {}) {
 }
 
 // logs.js
-var import_posix8 = __toESM(require("node:path/posix"), 1);
+var import_posix9 = __toESM(require("node:path/posix"), 1);
 var import_node_string_decoder = require("node:string_decoder");
 var import_node_zlib = require("node:zlib");
 
 // log-query-runtime-source.js
-var LOG_QUERY_RUNTIME_SOURCE = 'const runRemoteLogQuery = async function remoteLogQuery(input, runtime = {}) {\n  var _a;\n  const fs = require("fs");\n  const path = require("path").posix;\n  const zlib = require("zlib");\n  const { StringDecoder } = require("string_decoder");\n  const { Readable } = require("stream");\n  const started = Date.now();\n  const warnings = [];\n  const files = [];\n  let records = [];\n  const retainedRecords = [];\n  let retainedBytes = 0;\n  const members = [];\n  let archiveMembersScanned = 0;\n  let memberListingStopped = false;\n  let memberBytes = 0;\n  let outputBytes = 0;\n  let scannedBytes = 0;\n  let expandedBytes = 0;\n  let matchedLines = 0;\n  let scannedLines = 0;\n  let outputTruncated = false;\n  let scanTruncated = false;\n  let filesTruncated = false;\n  let listingTruncated = false;\n  let directoryEntries = 0;\n  let warningsTruncated = false;\n  const job = input.background === true;\n  let completedMembers = 0, selectedMembers = 0, completedFiles = 0, failedFiles = 0;\n  let currentFile = null, currentMember = null, manifestBytes = 0;\n  const groups = /* @__PURE__ */ new Map();\n  const jobRecords = [];\n  let jobOutputBytes = 0;\n  let groupsTruncated = false;\n  const progress = () => ({\n    scannedBytes,\n    expandedBytes,\n    matchedLines,\n    scannedLines,\n    totalFiles: selected.length,\n    completedFiles,\n    failedFiles,\n    selectedMembers,\n    completedMembers,\n    currentFile,\n    currentMember,\n    batchesCompleted: Math.floor(scannedBytes / input.batchScanBytes),\n    outputTruncated,\n    scanTruncated,\n    directoryListingTruncated: listingTruncated\n  });\n  async function checkpoint(kind, bytes = 0) {\n    var _a2;\n    if (job) await ((_a2 = runtime.check) == null ? void 0 : _a2.call(runtime, kind, bytes, progress));\n    active();\n  }\n  function warn(value) {\n    if (warnings.length < (job ? 20 : 100)) warnings.push(value);\n    else warningsTruncated = true;\n  }\n  const inside = (value, root) => value === root || value.startsWith(`${root}/`);\n  const failure = (message, code) => Object.assign(new Error(message), { code });\n  function active() {\n    if (Date.now() >= input.deadlineAt) throw failure("log query deadline exceeded", "OPERATION_DEADLINE_EXCEEDED");\n  }\n  async function canonical(value) {\n    const normalized = path.normalize(value);\n    const roots = input.allowedRoots.filter((root) => inside(normalized, root));\n    if (!roots.length) throw failure("path is outside approved roots", "PATH_NOT_ALLOWED");\n    const resolvedRoots = [];\n    for (const root of roots) resolvedRoots.push(await fs.promises.realpath(root));\n    const resolved = await fs.promises.realpath(normalized);\n    if (!resolvedRoots.some((root) => inside(resolved, root))) throw failure("symlink escapes approved roots", "PATH_NOT_ALLOWED");\n    return resolved;\n  }\n  const dateIn = (name) => {\n    var _a2;\n    return (_a2 = /\\d{4}-\\d{2}-\\d{2}/.exec(name)) == null ? void 0 : _a2[0];\n  };\n  function fileMatches(name) {\n    if (input.fileContains && !name.toLowerCase().includes(input.fileContains.toLowerCase())) return false;\n    const date = dateIn(name);\n    if ((input.dateFrom || input.dateTo) && (!date || input.dateFrom && date < input.dateFrom || input.dateTo && date > input.dateTo)) return false;\n    return true;\n  }\n  function logName(name) {\n    return /\\.log(?:\\.\\d+)?(?:\\.gz)?$/i.test(name) || /\\.(?:tar\\.gz|tgz)$/i.test(name) || /^(?:syslog|messages|auth\\.log)(?:\\.\\d+)?(?:\\.gz)?$/i.test(name);\n  }\n  async function addFile(requested, directory) {\n    active();\n    const resolved = await canonical(requested);\n    if (directory && !inside(resolved, directory)) throw failure("log symlink escapes the selected directory", "PATH_NOT_ALLOWED");\n    const stats = await fs.promises.stat(resolved);\n    if (!stats.isFile()) return;\n    if (files.some((file) => file.path === resolved)) return;\n    const compression = /\\.(?:tar\\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\\.gz$/i.test(resolved) ? "gzip" : "none";\n    const item = {\n      path: resolved,\n      name: path.basename(requested),\n      size: stats.size,\n      modifyTime: stats.mtimeMs,\n      compression,\n      ...job ? { inode: stats.ino, device: stats.dev, changeTime: stats.ctimeMs } : {}\n    };\n    if (job && manifestBytes + Buffer.byteLength(JSON.stringify(item)) > 2 * 1024 * 1024) {\n      listingTruncated = true;\n      return;\n    }\n    manifestBytes += Buffer.byteLength(JSON.stringify(item));\n    files.push(item);\n  }\n  if (input.path) {\n    if (/\\.(?:bz2|xz|zip|tar)$/i.test(input.path)) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n    if (/\\/(?:btmp|wtmp|lastlog|faillog)(?:\\.\\d+)?(?:\\.gz)?$/.test(input.path)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n    if (fileMatches(path.basename(input.path))) await addFile(input.path);\n  } else {\n    for (const directory of input.directories) {\n      active();\n      try {\n        const resolved = await canonical(directory);\n        const handle = await fs.promises.opendir(resolved);\n        try {\n          for await (const entry of handle) {\n            active();\n            if (job) await ((_a = runtime.check) == null ? void 0 : _a.call(runtime, "discovery", 0));\n            if (++directoryEntries > input.maxDirectoryEntries) {\n              listingTruncated = true;\n              break;\n            }\n            if (!entry.isFile() && !entry.isSymbolicLink() || !logName(entry.name) || !fileMatches(entry.name)) continue;\n            try {\n              await addFile(path.join(directory, entry.name), resolved);\n            } catch (error) {\n              if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n              warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });\n            }\n          }\n        } finally {\n          await handle.close().catch(() => {\n          });\n        }\n      } catch (error) {\n        if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n        warn({ path: directory, code: error.code, message: error.message });\n      }\n    }\n  }\n  files.sort((a, b) => b.modifyTime - a.modifyTime || a.name.localeCompare(b.name));\n  filesTruncated = files.length > input.maxFiles;\n  const selected = files.slice(input.fileOffset, input.fileOffset + input.maxFiles);\n  filesTruncated = input.fileOffset + selected.length < files.length;\n  const inspectedFiles = selected.map((file) => ({ ...file }));\n  if (job) runtime.progress = progress;\n  if (input.mode === "files") return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    warnings,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    durationMs: Date.now() - started\n  };\n  function recordFields(line) {\n    var _a2, _b;\n    let outer, inner;\n    try {\n      outer = JSON.parse(line);\n    } catch {\n    }\n    const message = typeof (outer == null ? void 0 : outer.message) === "string" ? outer.message : "";\n    const bracketTime = (_a2 = /^\\[([^\\]]+)\\]/.exec(message)) == null ? void 0 : _a2[1];\n    const brace = message.indexOf("{");\n    if (brace >= 0) {\n      try {\n        inner = JSON.parse(message.slice(brace));\n      } catch {\n      }\n    }\n    inner || (inner = outer);\n    const timestamp = (inner == null ? void 0 : inner.timestamp) || (outer == null ? void 0 : outer.timestamp) || bracketTime || ((_b = /^\\[?((?:\\d{4}-\\d{2}-\\d{2})T[^\\s\\]]+)/.exec(line)) == null ? void 0 : _b[1]);\n    const scalar = (value, limit) => typeof value === "string" ? value.slice(0, limit) : void 0;\n    return {\n      timestamp: scalar(timestamp, 40),\n      level: scalar((outer == null ? void 0 : outer.level) || (inner == null ? void 0 : inner.level), 32),\n      route: scalar((inner == null ? void 0 : inner.path) || (inner == null ? void 0 : inner.route), 1024),\n      method: scalar(inner == null ? void 0 : inner.method, 32)\n    };\n  }\n  function match(line, fields) {\n    if (input.contains && !(input.caseSensitive ? line : line.toLowerCase()).includes(input.caseSensitive ? input.contains : input.contains.toLowerCase())) return false;\n    if (input.level && String(fields.level || "").toLowerCase() !== input.level) return false;\n    if (input.route && fields.route !== input.route) return false;\n    if (input.method && String(fields.method || "").toUpperCase() !== input.method) return false;\n    const timestamp = Date.parse(fields.timestamp);\n    if ((input.fromTime || input.toTime) && (!Number.isFinite(timestamp) || input.fromTime && timestamp < Date.parse(input.fromTime) || input.toTime && timestamp > Date.parse(input.toTime))) return false;\n    return true;\n  }\n  function addRecord(line, file, lineNumber, memberPath, lineFromEnd) {\n    var _a2;\n    scannedLines++;\n    const fields = recordFields(line);\n    if (!match(line, fields)) return;\n    matchedLines++;\n    if (job) {\n      let payload;\n      try {\n        const outer = JSON.parse(line);\n        const message = outer.message;\n        payload = typeof message === "string" && message.includes("{") ? JSON.parse(message.slice(message.indexOf("{"))) : outer;\n      } catch {\n      }\n      const error = payload == null ? void 0 : payload.error;\n      const key = JSON.stringify([\n        fields.level,\n        fields.route,\n        fields.method,\n        typeof (error == null ? void 0 : error.code) === "string" ? error.code.slice(0, 128) : void 0,\n        typeof (error == null ? void 0 : error.message) === "string" ? error.message.slice(0, 512) : void 0\n      ]);\n      const group = groups.get(key);\n      if (group) group.count++;\n      else if (groups.size < 100) groups.set(key, {\n        level: fields.level,\n        route: fields.route,\n        method: fields.method,\n        code: typeof (error == null ? void 0 : error.code) === "string" ? error.code.slice(0, 128) : void 0,\n        message: typeof (error == null ? void 0 : error.message) === "string" ? error.message.slice(0, 512) : void 0,\n        count: 1\n      });\n      else groupsTruncated = true;\n      if (jobRecords.length >= input.limit || jobOutputBytes >= input.maxBytes) {\n        outputTruncated = true;\n        return;\n      }\n    }\n    const raw = Buffer.from(line);\n    const shortened = raw.length > input.maxBytes;\n    let text = shortened ? raw.subarray(0, input.maxBytes).toString("utf8").replace(/\\uFFFD$/, "") : line;\n    if (shortened) outputTruncated = true;\n    const record = { file, ...memberPath ? { memberPath } : {}, ...lineNumber ? { lineNumber } : {}, ...lineFromEnd ? { lineFromEnd } : {}, ...fields, text, ...shortened ? { truncated: true } : {} };\n    if (job && Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) {\n      let low = 0, high = text.length;\n      record.truncated = true;\n      while (low < high) {\n        const middle = Math.ceil((low + high) / 2);\n        record.text = text.slice(0, middle);\n        if (Buffer.byteLength(JSON.stringify(record)) <= input.maxBytes) low = middle;\n        else high = middle - 1;\n      }\n      record.text = text.slice(0, low).replace(/[\\uD800-\\uDBFF]$/, "");\n      outputTruncated = true;\n      if (Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) return;\n    }\n    if (job) {\n      const bytes = Buffer.byteLength(JSON.stringify(record));\n      if (jobOutputBytes + bytes > input.maxBytes) {\n        outputTruncated = true;\n        return;\n      }\n      jobRecords.push(record);\n      jobOutputBytes += bytes;\n      (_a2 = runtime.evidence) == null ? void 0 : _a2.call(runtime, record);\n      return;\n    }\n    records.push(record);\n    outputBytes += Buffer.byteLength(text);\n    while (records.length > input.limit || outputBytes > input.maxBytes && records.length > 1) {\n      const removed = records.shift();\n      outputBytes -= Buffer.byteLength(removed.text);\n      outputTruncated = true;\n    }\n  }\n  function lineConsumer(file, memberPath, discardFirstLine = false) {\n    const decoder = new StringDecoder("utf8");\n    let pending = "";\n    let oversized = false;\n    let lineNumber = 0;\n    return {\n      write(chunk) {\n        const text = decoder.write(chunk);\n        let offset = 0;\n        while (offset < text.length) {\n          const end = text.indexOf("\\n", offset);\n          const piece = text.slice(offset, end < 0 ? text.length : end);\n          if (!oversized) pending += piece;\n          if (Buffer.byteLength(pending) > input.maxLineBytes) {\n            oversized = true;\n            pending = "";\n          }\n          if (end < 0) break;\n          lineNumber++;\n          if (oversized) {\n            scanTruncated = true;\n            warn({ file, memberPath, lineNumber, code: "LOG_LINE_TOO_LARGE" });\n          } else if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n          pending = "";\n          oversized = false;\n          offset = end + 1;\n        }\n      },\n      finish() {\n        pending += decoder.end();\n        if (oversized) {\n          scanTruncated = true;\n          return;\n        }\n        if (pending) {\n          lineNumber++;\n          if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n        }\n        if (discardFirstLine) for (const record of records) {\n          record.lineFromEnd = lineNumber - record.lineNumber + 1;\n          delete record.lineNumber;\n        }\n      }\n    };\n  }\n  function allowedMember(name) {\n    return name && path.normalize(name) !== "." && !name.startsWith("/") && !name.includes("\\0") && !name.includes("\\\\") && !name.split("/").includes("..");\n  }\n  function memberMatches(name) {\n    return (!input.memberPath || name === input.memberPath) && (!input.memberContains || name.toLowerCase().includes(input.memberContains.toLowerCase()));\n  }\n  function tarConsumer(file) {\n    let header = Buffer.alloc(0), remaining = 0, padding = 0, consumer = null;\n    let metadata = null, parts = [], pax = {}, globalPax = {}, longName = "";\n    let done = false, selectedMember = false, foundMember = false;\n    const number = (bytes) => {\n      if (bytes[0] & 128) throw failure("unsupported tar numeric format", "LOG_ARCHIVE_INVALID");\n      const value = bytes.toString("ascii").replace(/\\0/g, "").trim();\n      if (value && !/^[0-7]+$/.test(value)) throw failure("invalid tar number", "LOG_ARCHIVE_INVALID");\n      const parsed = value ? parseInt(value, 8) : 0;\n      if (!Number.isSafeInteger(parsed)) throw failure("invalid tar size", "LOG_ARCHIVE_INVALID");\n      return parsed;\n    };\n    const field = (buffer, offset, size) => buffer.subarray(offset, offset + size).toString("utf8").replace(/\\0.*$/, "");\n    function endEntry() {\n      consumer == null ? void 0 : consumer.finish();\n      consumer = null;\n      if (selectedMember && job) {\n        completedMembers++;\n        currentMember = null;\n      }\n      if (selectedMember && input.memberPath) done = true;\n      selectedMember = false;\n      if (metadata) {\n        const buffer = Buffer.concat(parts);\n        if (metadata === "L") longName = buffer.toString("utf8").replace(/\\0.*$/, "");\n        else if (metadata === "x" || metadata === "g") {\n          const fields = {};\n          for (let offset = 0; offset < buffer.length; ) {\n            const space = buffer.indexOf(32, offset);\n            const length = Number(buffer.subarray(offset, space).toString());\n            if (space < 0 || !Number.isInteger(length) || length <= space - offset + 1 || offset + length > buffer.length) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            const record = buffer.subarray(space + 1, offset + length).toString("utf8");\n            const equals = record.indexOf("=");\n            if (equals < 1) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            fields[record.slice(0, equals)] = record.slice(equals + 1).replace(/\\n$/, "");\n            offset += length;\n          }\n          if (metadata === "g") globalPax = { ...globalPax, ...fields };\n          else pax = fields;\n        }\n        parts = [];\n        metadata = null;\n      }\n    }\n    return {\n      write(chunk) {\n        let offset = 0;\n        while (offset < chunk.length && !done) {\n          if (remaining) {\n            const size = Math.min(remaining, chunk.length - offset);\n            const piece = chunk.subarray(offset, offset + size);\n            if (metadata) parts.push(Buffer.from(piece));\n            else if (consumer) {\n              if (scannedBytes + size > input.maxScanBytes) {\n                scanTruncated = true;\n                return false;\n              }\n              scannedBytes += size;\n              consumer.write(piece);\n            }\n            remaining -= size;\n            offset += size;\n            if (!remaining) endEntry();\n          } else if (padding) {\n            const size = Math.min(padding, chunk.length - offset);\n            padding -= size;\n            offset += size;\n          } else {\n            const needed = 512 - header.length;\n            const piece = chunk.subarray(offset, offset + needed);\n            offset += piece.length;\n            header = Buffer.concat([header, piece]);\n            if (header.length < 512) break;\n            if (header.every((byte) => byte === 0)) {\n              done = true;\n              header = Buffer.alloc(0);\n              break;\n            }\n            let checksum = 0;\n            for (let i = 0; i < 512; i++) checksum += i >= 148 && i < 156 ? 32 : header[i];\n            if (number(header.subarray(148, 156)) !== checksum) throw failure("invalid tar checksum", "LOG_ARCHIVE_INVALID");\n            let name = field(header, 0, 100);\n            const prefix = field(header, 345, 155);\n            if (prefix) name = `${prefix}/${name}`;\n            const type = field(header, 156, 1) || "0";\n            const extended = { ...globalPax, ...pax };\n            remaining = extended.size === void 0 ? number(header.subarray(124, 136)) : Number(extended.size);\n            if (!Number.isSafeInteger(remaining) || remaining < 0) throw failure("invalid tar member size", "LOG_ARCHIVE_INVALID");\n            padding = (512 - remaining % 512) % 512;\n            metadata = ["x", "g", "L", "K"].includes(type) ? type : null;\n            if (metadata && remaining > 1024 * 1024) throw failure("tar metadata too large", "LOG_ARCHIVE_INVALID");\n            if (!metadata) {\n              name = extended.path || longName || name;\n              pax = {};\n              longName = "";\n              if (name.length > 4096) throw failure("archive member name exceeds the path limit", "LOG_ARCHIVE_INVALID");\n              if (allowedMember(name)) name = path.normalize(name);\n              if (input.mode === "members") {\n                const index = archiveMembersScanned++;\n                if (archiveMembersScanned > input.maxArchiveMembers) {\n                  scanTruncated = true;\n                  return false;\n                }\n                if (index >= input.memberOffset && (!input.memberPrefix || name.startsWith(input.memberPrefix))) {\n                  const memberType = type === "0" ? "file" : type === "5" ? "directory" : type === "2" ? "symlink" : type === "1" ? "hardlink" : "special";\n                  const readable = type === "0" && Boolean(allowedMember(name));\n                  const member = {\n                    name,\n                    size: remaining,\n                    type: memberType,\n                    readable,\n                    ...readable ? {} : { readReason: "member must be a safe relative regular file" }\n                  };\n                  const bytes = Buffer.byteLength(JSON.stringify(member));\n                  if (members.length && memberBytes + bytes > input.maxBytes) {\n                    archiveMembersScanned--;\n                    memberListingStopped = true;\n                    done = true;\n                  } else {\n                    members.push(member);\n                    memberBytes += bytes;\n                  }\n                  if (members.length >= input.limit) {\n                    memberListingStopped = true;\n                    done = true;\n                  }\n                }\n              } else if (input.memberPath === name && (type !== "0" || !allowedMember(name))) throw failure("archive member must be a safe regular file", "ARCHIVE_MEMBER_NOT_READABLE");\n              if (input.mode !== "members" && type === "0" && allowedMember(name) && (logName(name) || input.memberPath === name) && memberMatches(name)) {\n                consumer = lineConsumer(file, name);\n                selectedMember = true;\n                foundMember = true;\n                if (job) {\n                  selectedMembers++;\n                  currentMember = name;\n                }\n              }\n            }\n            header = Buffer.alloc(0);\n            if (!remaining) endEntry();\n          }\n        }\n        return !(done && (input.memberPath || memberListingStopped));\n      },\n      finish() {\n        if (done && input.memberPath) return;\n        if (remaining || padding || header.length) throw failure("incomplete tar archive", "LOG_ARCHIVE_INVALID");\n        if (input.memberPath && !foundMember) throw failure("archive member was not found", "ARCHIVE_MEMBER_NOT_FOUND");\n      }\n    };\n  }\n  const scannedFiles = [];\n  for (const file of selected) {\n    currentFile = file.path;\n    await checkpoint("file");\n    if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) {\n      scanTruncated = true;\n      break;\n    }\n    if (input.mode === "latest" && retainedRecords.length >= input.limit) {\n      scanTruncated = true;\n      break;\n    }\n    records = [];\n    outputBytes = 0;\n    const before = scannedBytes;\n    let rangeStart = 0;\n    let fd;\n    try {\n      fd = await fs.promises.open(file.path, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));\n      const liveStats = await fd.stat();\n      if (!liveStats.isFile()) throw failure("path is not a regular log file", "LOG_NOT_FILE");\n      if (job && (liveStats.size !== file.size || liveStats.mtimeMs !== file.modifyTime || liveStats.ctimeMs !== file.changeTime || liveStats.ino !== file.inode || liveStats.dev !== file.device)) throw failure("log changed after discovery", "LOG_FILE_CHANGED");\n      file.size = liveStats.size;\n      const prefix = Buffer.alloc(8);\n      const inspected = await fd.read(prefix, 0, Math.min(8, file.size), 0);\n      if (prefix[0] === 66 && prefix[1] === 90 && prefix[2] === 104 || prefix[0] === 253 && prefix[1] === 55 && prefix[2] === 122 || prefix[0] === 80 && prefix[1] === 75) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n      if (prefix[0] === 31 && prefix[1] === 139 && file.compression === "none") file.compression = "gzip";\n      if (file.compression === "none" && prefix.subarray(0, inspected.bytesRead).includes(0)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n      if (input.mode === "latest" && file.compression === "none") {\n        let position = file.size;\n        let suffix = Buffer.alloc(0);\n        while (position > 0 && scannedBytes < input.maxScanBytes) {\n          active();\n          const size = Math.min(32768, position, input.maxScanBytes - scannedBytes);\n          position -= size;\n          rangeStart = position;\n          const buffer = Buffer.allocUnsafe(size);\n          const read = await fd.read(buffer, 0, size, position);\n          scannedBytes += read.bytesRead;\n          if (read.bytesRead < size) warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n          suffix = Buffer.concat([buffer.subarray(0, read.bytesRead), suffix]);\n          const newline = suffix.indexOf(10);\n          const complete2 = position === 0 ? suffix : newline < 0 ? Buffer.alloc(0) : suffix.subarray(newline + 1);\n          const lines = complete2.toString("utf8").split("\\n");\n          if (lines[lines.length - 1] === "") lines.pop();\n          if (lines.length >= input.limit || position === 0 || suffix.length >= input.maxLineBytes) {\n            for (let i = Math.max(0, lines.length - input.limit); i < lines.length; i++) addRecord(lines[i].replace(/\\r$/, ""), file.path, null, null, lines.length - i);\n            if (position > 0) scanTruncated = true;\n            break;\n          }\n        }\n        if (position > 0) scanTruncated = true;\n      } else {\n        rangeStart = file.compression === "none" ? Math.max(0, file.size - (input.maxScanBytes - scannedBytes)) : 0;\n        if (rangeStart > 0) scanTruncated = true;\n        const source = Readable.from((async function* () {\n          let position = rangeStart;\n          while (position < file.size) {\n            await checkpoint("read", Math.min(65536, file.size - position));\n            const buffer = Buffer.allocUnsafe(Math.min(65536, file.size - position));\n            const read = await fd.read(buffer, 0, buffer.length, position);\n            if (!read.bytesRead) {\n              warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n              break;\n            }\n            position += read.bytesRead;\n            yield buffer.subarray(0, read.bytesRead);\n          }\n        })(), { highWaterMark: 1 });\n        let stream = source;\n        let gunzip;\n        let sourceError;\n        if (file.compression !== "none") {\n          gunzip = zlib.createGunzip({ chunkSize: 65536, highWaterMark: 65536 });\n          source.on("error", (error) => {\n            sourceError = error;\n            gunzip.destroy(error);\n          });\n          stream = source.pipe(gunzip);\n        }\n        const consumer = file.compression === "tar-gzip" ? tarConsumer(file.path) : lineConsumer(file.path, null, rangeStart > 0);\n        let stopped = false;\n        try {\n          for await (const chunk of stream) {\n            await checkpoint("process", chunk.length);\n            if (file.compression !== "none") {\n              if (expandedBytes + chunk.length > input.maxExpandedBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              expandedBytes += chunk.length;\n            }\n            if (file.compression !== "tar-gzip") {\n              if (scannedBytes + chunk.length > input.maxScanBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              scannedBytes += chunk.length;\n            }\n            if (consumer.write(chunk) === false) {\n              stopped = true;\n              break;\n            }\n          }\n          if (!stopped) consumer.finish();\n        } finally {\n          source.destroy();\n          gunzip == null ? void 0 : gunzip.destroy();\n        }\n        if (sourceError) throw sourceError;\n      }\n      if (job) {\n        const after = await fd.stat();\n        const named = await fs.promises.stat(file.path);\n        if (after.size !== liveStats.size || after.mtimeMs !== liveStats.mtimeMs || after.ctimeMs !== liveStats.ctimeMs || named.ino !== liveStats.ino || named.dev !== liveStats.dev) throw failure("log changed during query", "LOG_FILE_CHANGED");\n        completedFiles++;\n      }\n      scannedFiles.push({\n        path: file.path,\n        scannedBytes: scannedBytes - before,\n        ...file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}\n      });\n    } catch (error) {\n      if (job && !["LOG_FILE_CHANGED", "UNSUPPORTED_COMPRESSION", "BINARY_LOG_UNSUPPORTED", "LOG_ARCHIVE_INVALID", "ARCHIVE_MEMBER_NOT_FOUND", "ARCHIVE_MEMBER_NOT_READABLE", "ENOENT", "EACCES"].includes(error.code)) throw error;\n      if (job) failedFiles++;\n      if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n      if (input.path) throw error;\n      warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });\n    } finally {\n      await (fd == null ? void 0 : fd.close());\n      for (const record of records.reverse()) {\n        const bytes = Buffer.byteLength(record.text);\n        if (retainedRecords.length >= input.limit || retainedBytes + bytes > input.maxBytes) {\n          outputTruncated = true;\n          continue;\n        }\n        retainedRecords.push(record);\n        retainedBytes += bytes;\n      }\n    }\n  }\n  for (const file of inspectedFiles) {\n    const live = selected.find((selectedFile) => selectedFile.path === file.path);\n    file.size = live.size;\n    file.compression = live.compression;\n  }\n  const complete = !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;\n  if (job) return {\n    ...progress(),\n    currentFile: null,\n    currentMember: null,\n    records: jobRecords,\n    returnedLines: jobRecords.length,\n    outputBytes: jobOutputBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    countsAreComplete: complete,\n    coverage: complete ? "complete" : "bounded",\n    warnings,\n    warningsTruncated,\n    groups: [...groups.values()],\n    groupsTruncated,\n    durationMs: Date.now() - started\n  };\n  return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    scannedFiles,\n    records: retainedRecords,\n    content: retainedRecords.map((record) => record.text).join("\\n") + (retainedRecords.length ? "\\n" : ""),\n    returnedLines: retainedRecords.length,\n    matchedLines,\n    scannedLines,\n    scannedBytes,\n    expandedBytes,\n    outputBytes: retainedBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    coverage: complete ? "complete" : input.mode === "latest" && selected.every((file) => file.compression === "none") ? "tail" : "bounded",\n    countsAreComplete: complete,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    ...input.mode === "members" ? {\n      members,\n      hasMoreMembers: memberListingStopped || scanTruncated,\n      nextMemberOffset: memberListingStopped || scanTruncated ? archiveMembersScanned : null,\n      memberBytes\n    } : {},\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    warnings,\n    durationMs: Date.now() - started\n  };\n};\n';
-var LOG_JOB_RUNTIME_SOURCE = 'const runRemoteLogJob = function remoteLogJob() {\n  const readline = require("readline");\n  const { once } = require("events");\n  const controls = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });\n  let input, paused = false, pausedAt = 0, cancelled = false, lastHeartbeat = Date.now();\n  let finished = false, watchdog, lastPublished = 0, readBytes = 0, processedBytes = 0;\n  let started, initialCpu, runtime;\n  let readDue = 0, processDue = 0, cpuDue = 0, lastCpuMs = 0;\n  let peakRssBytes = 0;\n  const error = (code, message) => Object.assign(new Error(message), { code });\n  const cpuMs = () => {\n    const usage = process.cpuUsage(initialCpu);\n    return (usage.user + usage.system) / 1e3;\n  };\n  const resources = () => {\n    const rssBytes = process.memoryUsage().rss;\n    peakRssBytes = Math.max(peakRssBytes, rssBytes);\n    return {\n      rssBytes,\n      peakRssBytes,\n      cpuMs: cpuMs(),\n      readBytes,\n      processedBytes,\n      elapsedMs: Date.now() - started\n    };\n  };\n  const publish = (type, value) => {\n    if (type === "progress" && process.stdout.writableLength > 65536) return;\n    return process.stdout.write(JSON.stringify({ type, ...value }) + "\\n");\n  };\n  const snapshot = () => ({\n    ...runtime.progress ? runtime.progress() : {},\n    resources: resources(),\n    status: paused ? "paused" : "running",\n    countsAreComplete: false\n  });\n  const health = () => {\n    if (cancelled) throw error("LOG_JOB_CANCELLED", "log query cancelled");\n    if (Date.now() >= input.deadlineAt) throw error("LOG_JOB_TIMEOUT", "log query task deadline exceeded");\n    if (Date.now() - lastHeartbeat > 6e4) throw error("LOG_JOB_CONTROLLER_LOST", "log query controller heartbeat lost");\n    if (paused && Date.now() - pausedAt >= input.pauseTtlMs) throw error("LOG_JOB_PAUSE_EXPIRED", "paused log query expired");\n    peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss);\n    if (peakRssBytes > input.rssLimitBytes) throw error("LOG_JOB_MEMORY_LIMIT", "log query RSS threshold exceeded");\n  };\n  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n  async function check(kind, bytes, progress) {\n    if (progress) runtime.progress = progress;\n    health();\n    if (kind === "read") readBytes += bytes;\n    if (kind === "process") processedBytes += bytes;\n    const now = Date.now();\n    if (kind === "read") readDue = Math.max(readDue, now) + bytes * 1e3 / input.readBytesPerSecond;\n    if (kind === "process") processDue = Math.max(processDue, now) + bytes * 1e3 / input.processBytesPerSecond;\n    const usedCpu = cpuMs(), cpuDelta = Math.max(0, usedCpu - lastCpuMs);\n    lastCpuMs = usedCpu;\n    cpuDue = Math.max(cpuDue, now - cpuDelta) + cpuDelta * 100 / input.cpuPercent;\n    while (true) {\n      health();\n      const wait = Math.max(readDue, processDue, cpuDue) - Date.now();\n      if (!paused && wait <= 0) break;\n      await delay(paused ? 100 : Math.min(100, Math.max(1, wait)));\n    }\n    await new Promise((resolve) => setImmediate(resolve));\n    health();\n  }\n  async function finish(type, value, exitCode) {\n    if (finished) return;\n    finished = true;\n    clearInterval(watchdog);\n    controls.close();\n    process.stdin.destroy();\n    if (publish(type, value) === false) await once(process.stdout, "drain");\n    process.exitCode = exitCode;\n  }\n  controls.on("line", (line) => {\n    if (finished) return;\n    try {\n      if (Buffer.byteLength(line) > (input ? 1024 : 512 * 1024)) throw error("LOG_JOB_PROTOCOL", "oversized control frame");\n      const message = JSON.parse(line);\n      if (!input) {\n        if (message.type !== "start") throw error("LOG_JOB_PROTOCOL", "expected start frame");\n        input = message.input;\n        started = Date.now();\n        initialCpu = process.cpuUsage();\n        lastHeartbeat = started;\n        runtime = { check, evidence: (record) => publish("evidence", { record, progress: snapshot() }) };\n        watchdog = setInterval(() => {\n          try {\n            health();\n            if (Date.now() - lastPublished >= 5e3) {\n              lastPublished = Date.now();\n              publish("progress", snapshot());\n            }\n          } catch (failure) {\n            publish("error", { ...snapshot(), error: { code: failure.code, message: failure.message } });\n            process.exit(1);\n          }\n        }, 250);\n        runRemoteLogQuery(input, runtime).then(\n          (result) => finish("result", { result, resources: resources() }, 0),\n          (failure) => finish("error", { ...snapshot(), error: { code: failure.code || "LOG_JOB_FAILED", message: failure.message } }, 1)\n        ).catch(() => process.exit(1));\n      } else if (message.type === "heartbeat") lastHeartbeat = Date.now();\n      else if (message.type === "pause") {\n        if (!paused) pausedAt = Date.now();\n        paused = true;\n        publish("progress", snapshot());\n      } else if (message.type === "resume") {\n        paused = false;\n        pausedAt = 0;\n        publish("progress", snapshot());\n      } else if (message.type === "cancel") cancelled = true;\n      else throw error("LOG_JOB_PROTOCOL", "invalid control frame");\n    } catch (failure) {\n      publish("error", { error: { code: failure.code || "LOG_JOB_PROTOCOL", message: "invalid log job control frame" } });\n      process.exit(1);\n    }\n  });\n  controls.on("close", () => {\n    if (!finished) cancelled = true;\n  });\n  const bootstrapTimeout = setTimeout(() => {\n    if (!input) process.exit(1);\n  }, 6e4);\n  bootstrapTimeout.unref();\n};\n';
+var LOG_QUERY_RUNTIME_SOURCE = 'const runRemoteLogQuery = async function remoteLogQuery(input, runtime = {}) {\n  var _a, _b, _c, _d, _e, _f;\n  const fs = require("fs");\n  const path = require("path").posix;\n  const zlib = require("zlib");\n  const { StringDecoder } = require("string_decoder");\n  const { Readable } = require("stream");\n  const started = Date.now();\n  const warnings = [];\n  const files = [];\n  let records = [];\n  const retainedRecords = [];\n  let retainedBytes = 0;\n  const members = [];\n  let archiveMembersScanned = 0;\n  let memberListingStopped = false;\n  let memberBytes = 0;\n  let outputBytes = 0;\n  let scannedBytes = 0;\n  let expandedBytes = 0;\n  let matchedLines = 0;\n  let scannedLines = 0;\n  let outputTruncated = false;\n  let scanTruncated = false;\n  let filesTruncated = false;\n  let listingTruncated = false;\n  let directoryEntries = 0;\n  let warningsTruncated = false;\n  const job = input.background === true;\n  let completedMembers = 0, selectedMembers = 0, completedFiles = 0, failedFiles = 0;\n  let currentFile = null, currentMember = null, manifestBytes = 0;\n  const groups = /* @__PURE__ */ new Map();\n  const jobRecords = [];\n  let jobOutputBytes = 0;\n  let groupsTruncated = false;\n  let currentReceipt = null, fileBaseline = null, stoppedAtBoundary = false, skippedFiles = 0, discoveryIncomplete = false;\n  const fileProgress = () => currentReceipt && {\n    ...currentReceipt,\n    countsAreComplete: currentReceipt.scanComplete && currentReceipt.countsAreComplete,\n    scannedBytes: scannedBytes - fileBaseline.scannedBytes,\n    expandedBytes: expandedBytes - fileBaseline.expandedBytes,\n    scannedLines: scannedLines - fileBaseline.scannedLines,\n    matchedLines: matchedLines - fileBaseline.matchedLines,\n    selectedMembers: selectedMembers - fileBaseline.selectedMembers,\n    completedMembers: completedMembers - fileBaseline.completedMembers,\n    retainedEvidenceCount: jobRecords.length - fileBaseline.retainedEvidenceCount,\n    evidenceBytes: jobOutputBytes - fileBaseline.evidenceBytes\n  };\n  const progress = () => ({\n    scannedBytes,\n    expandedBytes,\n    matchedLines,\n    scannedLines,\n    totalFiles: selected.length,\n    completedFiles,\n    failedFiles,\n    selectedMembers,\n    completedMembers,\n    skippedFiles,\n    stoppedAtBoundary,\n    currentFileProgress: fileProgress(),\n    currentFile,\n    currentMember,\n    batchesCompleted: Math.floor(scannedBytes / input.batchScanBytes),\n    outputTruncated,\n    scanTruncated,\n    directoryListingTruncated: listingTruncated\n  });\n  async function checkpoint(kind, bytes = 0) {\n    var _a2;\n    if (job) await ((_a2 = runtime.check) == null ? void 0 : _a2.call(runtime, kind, bytes, progress));\n    active();\n  }\n  function warn(value) {\n    var _a2;\n    if (job && !currentReceipt) discoveryIncomplete = true;\n    if (job && currentReceipt) {\n      currentReceipt.countsAreComplete = false;\n      if (currentReceipt.warnings.length < 8) currentReceipt.warnings.push({\n        code: value.code,\n        message: String(value.message || "").slice(0, 512),\n        memberPath: (_a2 = value.memberPath) == null ? void 0 : _a2.slice(0, 1024),\n        lineNumber: value.lineNumber\n      });\n      else currentReceipt.warningsTruncated = true;\n    }\n    if (warnings.length < (job ? 20 : 100)) warnings.push(value);\n    else warningsTruncated = true;\n  }\n  const inside = (value, root) => value === root || value.startsWith(`${root}/`);\n  const failure = (message, code) => Object.assign(new Error(message), { code });\n  function active() {\n    if (Date.now() >= input.deadlineAt) throw failure("log query deadline exceeded", "OPERATION_DEADLINE_EXCEEDED");\n  }\n  async function canonical(value) {\n    const normalized = path.normalize(value);\n    const roots = input.allowedRoots.filter((root) => inside(normalized, root));\n    if (!roots.length) throw failure("path is outside approved roots", "PATH_NOT_ALLOWED");\n    const resolvedRoots = [];\n    for (const root of roots) resolvedRoots.push(await fs.promises.realpath(root));\n    const resolved = await fs.promises.realpath(normalized);\n    if (!resolvedRoots.some((root) => inside(resolved, root))) throw failure("symlink escapes approved roots", "PATH_NOT_ALLOWED");\n    return resolved;\n  }\n  const dateIn = (name) => {\n    var _a2;\n    return (_a2 = /\\d{4}-\\d{2}-\\d{2}/.exec(name)) == null ? void 0 : _a2[0];\n  };\n  function fileMatches(name) {\n    if (input.fileContains && !name.toLowerCase().includes(input.fileContains.toLowerCase())) return false;\n    const date = dateIn(name);\n    if ((input.dateFrom || input.dateTo) && (!date || input.dateFrom && date < input.dateFrom || input.dateTo && date > input.dateTo)) return false;\n    return true;\n  }\n  function logName(name) {\n    return /\\.log(?:\\.\\d+)?(?:\\.gz)?$/i.test(name) || /\\.(?:tar\\.gz|tgz)$/i.test(name) || /^(?:syslog|messages|auth\\.log)(?:\\.\\d+)?(?:\\.gz)?$/i.test(name);\n  }\n  async function addFile(requested, directory) {\n    active();\n    const resolved = await canonical(requested);\n    if (directory && !inside(resolved, directory)) throw failure("log symlink escapes the selected directory", "PATH_NOT_ALLOWED");\n    const stats = await fs.promises.stat(resolved);\n    if (!stats.isFile()) return;\n    if (files.some((file) => file.path === resolved)) return;\n    const compression = /\\.(?:tar\\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\\.gz$/i.test(resolved) ? "gzip" : "none";\n    if (job && (input.memberPath || input.memberContains) && compression !== "tar-gzip") return;\n    const item = {\n      path: resolved,\n      name: path.basename(requested),\n      size: stats.size,\n      modifyTime: stats.mtimeMs,\n      compression,\n      ...job ? { inode: stats.ino, device: stats.dev, changeTime: stats.ctimeMs } : {}\n    };\n    if (job && manifestBytes + Buffer.byteLength(JSON.stringify(item)) > 2 * 1024 * 1024) {\n      listingTruncated = true;\n      return;\n    }\n    manifestBytes += Buffer.byteLength(JSON.stringify(item));\n    files.push(item);\n  }\n  if (input.path) {\n    if (/\\.(?:bz2|xz|zip|tar)$/i.test(input.path)) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n    if (/\\/(?:btmp|wtmp|lastlog|faillog)(?:\\.\\d+)?(?:\\.gz)?$/.test(input.path)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n    if (fileMatches(path.basename(input.path))) await addFile(input.path);\n  } else {\n    for (const directory of input.directories) {\n      active();\n      try {\n        const resolved = await canonical(directory);\n        const handle = await fs.promises.opendir(resolved);\n        try {\n          for await (const entry of handle) {\n            active();\n            if (job) await ((_a = runtime.check) == null ? void 0 : _a.call(runtime, "discovery", 0));\n            if (++directoryEntries > input.maxDirectoryEntries) {\n              listingTruncated = true;\n              break;\n            }\n            if (!entry.isFile() && !entry.isSymbolicLink() || !logName(entry.name) || !fileMatches(entry.name)) continue;\n            try {\n              await addFile(path.join(directory, entry.name), resolved);\n            } catch (error) {\n              if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n              warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });\n            }\n          }\n        } finally {\n          await handle.close().catch(() => {\n          });\n        }\n      } catch (error) {\n        if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n        warn({ path: directory, code: error.code, message: error.message });\n      }\n    }\n  }\n  files.sort((a, b) => b.modifyTime - a.modifyTime || a.name.localeCompare(b.name));\n  filesTruncated = files.length > input.maxFiles;\n  const selected = files.slice(input.fileOffset, input.fileOffset + input.maxFiles);\n  filesTruncated = input.fileOffset + selected.length < files.length;\n  const inspectedFiles = selected.map((file) => ({ ...file }));\n  if (job) runtime.progress = progress;\n  if (job) {\n    if (input.stopAfterFile) input.stopAfterFile = await canonical(input.stopAfterFile);\n    (_b = runtime.configureFiles) == null ? void 0 : _b.call(runtime, selected);\n  }\n  if (input.mode === "files") return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    warnings,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    durationMs: Date.now() - started\n  };\n  function recordFields(line) {\n    var _a2, _b2;\n    let outer, inner;\n    try {\n      outer = JSON.parse(line);\n    } catch {\n    }\n    const message = typeof (outer == null ? void 0 : outer.message) === "string" ? outer.message : "";\n    const bracketTime = (_a2 = /^\\[([^\\]]+)\\]/.exec(message)) == null ? void 0 : _a2[1];\n    const brace = message.indexOf("{");\n    if (brace >= 0) {\n      try {\n        inner = JSON.parse(message.slice(brace));\n      } catch {\n      }\n    }\n    inner || (inner = outer);\n    const timestamp = (inner == null ? void 0 : inner.timestamp) || (outer == null ? void 0 : outer.timestamp) || bracketTime || ((_b2 = /^\\[?((?:\\d{4}-\\d{2}-\\d{2})T[^\\s\\]]+)/.exec(line)) == null ? void 0 : _b2[1]);\n    const scalar = (value, limit) => typeof value === "string" ? value.slice(0, limit) : void 0;\n    return {\n      timestamp: scalar(timestamp, 40),\n      level: scalar((outer == null ? void 0 : outer.level) || (inner == null ? void 0 : inner.level), 32),\n      route: scalar((inner == null ? void 0 : inner.path) || (inner == null ? void 0 : inner.route), 1024),\n      method: scalar(inner == null ? void 0 : inner.method, 32)\n    };\n  }\n  function match(line, fields) {\n    if (input.contains && !(input.caseSensitive ? line : line.toLowerCase()).includes(input.caseSensitive ? input.contains : input.contains.toLowerCase())) return false;\n    if (input.level && String(fields.level || "").toLowerCase() !== input.level) return false;\n    if (input.route && fields.route !== input.route) return false;\n    if (input.method && String(fields.method || "").toUpperCase() !== input.method) return false;\n    const timestamp = Date.parse(fields.timestamp);\n    if ((input.fromTime || input.toTime) && (!Number.isFinite(timestamp) || input.fromTime && timestamp < Date.parse(input.fromTime) || input.toTime && timestamp > Date.parse(input.toTime))) return false;\n    return true;\n  }\n  function addRecord(line, file, lineNumber, memberPath, lineFromEnd) {\n    var _a2;\n    scannedLines++;\n    const fields = recordFields(line);\n    if (!match(line, fields)) return;\n    matchedLines++;\n    if (job) {\n      let payload;\n      try {\n        const outer = JSON.parse(line);\n        const message = outer.message;\n        payload = typeof message === "string" && message.includes("{") ? JSON.parse(message.slice(message.indexOf("{"))) : outer;\n      } catch {\n      }\n      const error = payload == null ? void 0 : payload.error;\n      const key = JSON.stringify([\n        fields.level,\n        fields.route,\n        fields.method,\n        typeof (error == null ? void 0 : error.code) === "string" ? error.code.slice(0, 128) : void 0,\n        typeof (error == null ? void 0 : error.message) === "string" ? error.message.slice(0, 512) : void 0\n      ]);\n      const group = groups.get(key);\n      if (group) group.count++;\n      else if (groups.size < 100) groups.set(key, {\n        level: fields.level,\n        route: fields.route,\n        method: fields.method,\n        code: typeof (error == null ? void 0 : error.code) === "string" ? error.code.slice(0, 128) : void 0,\n        message: typeof (error == null ? void 0 : error.message) === "string" ? error.message.slice(0, 512) : void 0,\n        count: 1\n      });\n      else groupsTruncated = true;\n      if (jobRecords.length >= input.limit || jobOutputBytes >= input.maxBytes) {\n        outputTruncated = true;\n        return;\n      }\n    }\n    const raw = Buffer.from(line);\n    const shortened = raw.length > input.maxBytes;\n    let text = shortened ? raw.subarray(0, input.maxBytes).toString("utf8").replace(/\\uFFFD$/, "") : line;\n    if (shortened) outputTruncated = true;\n    const record = { file, ...memberPath ? { memberPath } : {}, ...lineNumber ? { lineNumber } : {}, ...lineFromEnd ? { lineFromEnd } : {}, ...fields, text, ...shortened ? { truncated: true } : {} };\n    if (job && Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) {\n      let low = 0, high = text.length;\n      record.truncated = true;\n      while (low < high) {\n        const middle = Math.ceil((low + high) / 2);\n        record.text = text.slice(0, middle);\n        if (Buffer.byteLength(JSON.stringify(record)) <= input.maxBytes) low = middle;\n        else high = middle - 1;\n      }\n      record.text = text.slice(0, low).replace(/[\\uD800-\\uDBFF]$/, "");\n      outputTruncated = true;\n      if (Buffer.byteLength(JSON.stringify(record)) > input.maxBytes) return;\n    }\n    if (job) {\n      const bytes = Buffer.byteLength(JSON.stringify(record));\n      if (jobOutputBytes + bytes > input.maxBytes) {\n        outputTruncated = true;\n        return;\n      }\n      jobRecords.push(record);\n      jobOutputBytes += bytes;\n      if (record.truncated && currentReceipt) currentReceipt.evidenceTruncated = true;\n      (_a2 = runtime.evidence) == null ? void 0 : _a2.call(runtime, record);\n      return;\n    }\n    records.push(record);\n    outputBytes += Buffer.byteLength(text);\n    while (records.length > input.limit || outputBytes > input.maxBytes && records.length > 1) {\n      const removed = records.shift();\n      outputBytes -= Buffer.byteLength(removed.text);\n      outputTruncated = true;\n    }\n  }\n  function lineConsumer(file, memberPath, discardFirstLine = false) {\n    const decoder = new StringDecoder("utf8");\n    let pending = "";\n    let oversized = false;\n    let lineNumber = 0;\n    return {\n      write(chunk) {\n        const text = decoder.write(chunk);\n        let offset = 0;\n        while (offset < text.length) {\n          const end = text.indexOf("\\n", offset);\n          const piece = text.slice(offset, end < 0 ? text.length : end);\n          if (!oversized) pending += piece;\n          if (Buffer.byteLength(pending) > input.maxLineBytes) {\n            oversized = true;\n            pending = "";\n          }\n          if (end < 0) break;\n          lineNumber++;\n          if (oversized) {\n            scanTruncated = true;\n            warn({ file, memberPath, lineNumber, code: "LOG_LINE_TOO_LARGE" });\n          } else if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n          pending = "";\n          oversized = false;\n          offset = end + 1;\n        }\n      },\n      finish() {\n        pending += decoder.end();\n        if (oversized) {\n          scanTruncated = true;\n          warn({ file, memberPath, lineNumber: lineNumber + 1, code: "LOG_LINE_TOO_LARGE" });\n          return;\n        }\n        if (pending) {\n          lineNumber++;\n          if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\\r$/, ""), file, lineNumber, memberPath);\n        }\n        if (discardFirstLine) for (const record of records) {\n          record.lineFromEnd = lineNumber - record.lineNumber + 1;\n          delete record.lineNumber;\n        }\n      }\n    };\n  }\n  function allowedMember(name) {\n    return name && path.normalize(name) !== "." && !name.startsWith("/") && !name.includes("\\0") && !name.includes("\\\\") && !name.split("/").includes("..");\n  }\n  function memberMatches(name) {\n    return (!input.memberPath || name === input.memberPath) && (!input.memberContains || name.toLowerCase().includes(input.memberContains.toLowerCase()));\n  }\n  function tarConsumer(file) {\n    let header = Buffer.alloc(0), remaining = 0, padding = 0, consumer = null;\n    let metadata = null, parts = [], pax = {}, globalPax = {}, longName = "";\n    let done = false, selectedMember = false, foundMember = false;\n    const number = (bytes) => {\n      if (bytes[0] & 128) throw failure("unsupported tar numeric format", "LOG_ARCHIVE_INVALID");\n      const value = bytes.toString("ascii").replace(/\\0/g, "").trim();\n      if (value && !/^[0-7]+$/.test(value)) throw failure("invalid tar number", "LOG_ARCHIVE_INVALID");\n      const parsed = value ? parseInt(value, 8) : 0;\n      if (!Number.isSafeInteger(parsed)) throw failure("invalid tar size", "LOG_ARCHIVE_INVALID");\n      return parsed;\n    };\n    const field = (buffer, offset, size) => buffer.subarray(offset, offset + size).toString("utf8").replace(/\\0.*$/, "");\n    function endEntry() {\n      consumer == null ? void 0 : consumer.finish();\n      consumer = null;\n      if (selectedMember && job) {\n        completedMembers++;\n        currentMember = null;\n      }\n      if (selectedMember && input.memberPath) done = true;\n      selectedMember = false;\n      if (metadata) {\n        const buffer = Buffer.concat(parts);\n        if (metadata === "L") longName = buffer.toString("utf8").replace(/\\0.*$/, "");\n        else if (metadata === "x" || metadata === "g") {\n          const fields = {};\n          for (let offset = 0; offset < buffer.length; ) {\n            const space = buffer.indexOf(32, offset);\n            const length = Number(buffer.subarray(offset, space).toString());\n            if (space < 0 || !Number.isInteger(length) || length <= space - offset + 1 || offset + length > buffer.length) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            const record = buffer.subarray(space + 1, offset + length).toString("utf8");\n            const equals = record.indexOf("=");\n            if (equals < 1) throw failure("invalid PAX record", "LOG_ARCHIVE_INVALID");\n            fields[record.slice(0, equals)] = record.slice(equals + 1).replace(/\\n$/, "");\n            offset += length;\n          }\n          if (metadata === "g") globalPax = { ...globalPax, ...fields };\n          else pax = fields;\n        }\n        parts = [];\n        metadata = null;\n      }\n    }\n    return {\n      write(chunk) {\n        let offset = 0;\n        while (offset < chunk.length && !done) {\n          if (remaining) {\n            const size = Math.min(remaining, chunk.length - offset);\n            const piece = chunk.subarray(offset, offset + size);\n            if (metadata) parts.push(Buffer.from(piece));\n            else if (consumer) {\n              if (scannedBytes + size > input.maxScanBytes) {\n                scanTruncated = true;\n                return false;\n              }\n              scannedBytes += size;\n              consumer.write(piece);\n            }\n            remaining -= size;\n            offset += size;\n            if (!remaining) endEntry();\n          } else if (padding) {\n            const size = Math.min(padding, chunk.length - offset);\n            padding -= size;\n            offset += size;\n          } else {\n            const needed = 512 - header.length;\n            const piece = chunk.subarray(offset, offset + needed);\n            offset += piece.length;\n            header = Buffer.concat([header, piece]);\n            if (header.length < 512) break;\n            if (header.every((byte) => byte === 0)) {\n              done = true;\n              header = Buffer.alloc(0);\n              break;\n            }\n            let checksum = 0;\n            for (let i = 0; i < 512; i++) checksum += i >= 148 && i < 156 ? 32 : header[i];\n            if (number(header.subarray(148, 156)) !== checksum) throw failure("invalid tar checksum", "LOG_ARCHIVE_INVALID");\n            let name = field(header, 0, 100);\n            const prefix = field(header, 345, 155);\n            if (prefix) name = `${prefix}/${name}`;\n            const type = field(header, 156, 1) || "0";\n            const extended = { ...globalPax, ...pax };\n            remaining = extended.size === void 0 ? number(header.subarray(124, 136)) : Number(extended.size);\n            if (!Number.isSafeInteger(remaining) || remaining < 0) throw failure("invalid tar member size", "LOG_ARCHIVE_INVALID");\n            padding = (512 - remaining % 512) % 512;\n            metadata = ["x", "g", "L", "K"].includes(type) ? type : null;\n            if (metadata && remaining > 1024 * 1024) throw failure("tar metadata too large", "LOG_ARCHIVE_INVALID");\n            if (!metadata) {\n              name = extended.path || longName || name;\n              pax = {};\n              longName = "";\n              if (name.length > 4096) throw failure("archive member name exceeds the path limit", "LOG_ARCHIVE_INVALID");\n              if (allowedMember(name)) name = path.normalize(name);\n              if (input.mode === "members") {\n                const index = archiveMembersScanned++;\n                if (archiveMembersScanned > input.maxArchiveMembers) {\n                  scanTruncated = true;\n                  return false;\n                }\n                if (index >= input.memberOffset && (!input.memberPrefix || name.startsWith(input.memberPrefix))) {\n                  const memberType = type === "0" ? "file" : type === "5" ? "directory" : type === "2" ? "symlink" : type === "1" ? "hardlink" : "special";\n                  const readable = type === "0" && Boolean(allowedMember(name));\n                  const member = {\n                    name,\n                    size: remaining,\n                    type: memberType,\n                    readable,\n                    ...readable ? {} : { readReason: "member must be a safe relative regular file" }\n                  };\n                  const bytes = Buffer.byteLength(JSON.stringify(member));\n                  if (members.length && memberBytes + bytes > input.maxBytes) {\n                    archiveMembersScanned--;\n                    memberListingStopped = true;\n                    done = true;\n                  } else {\n                    members.push(member);\n                    memberBytes += bytes;\n                  }\n                  if (members.length >= input.limit) {\n                    memberListingStopped = true;\n                    done = true;\n                  }\n                }\n              } else if (input.memberPath === name && (type !== "0" || !allowedMember(name))) throw failure("archive member must be a safe regular file", "ARCHIVE_MEMBER_NOT_READABLE");\n              if (input.mode !== "members" && type === "0" && allowedMember(name) && (logName(name) || input.memberPath === name) && memberMatches(name)) {\n                consumer = lineConsumer(file, name);\n                selectedMember = true;\n                foundMember = true;\n                if (job) {\n                  selectedMembers++;\n                  currentMember = name;\n                }\n              }\n            }\n            header = Buffer.alloc(0);\n            if (!remaining) endEntry();\n          }\n        }\n        return !(done && (input.memberPath || memberListingStopped));\n      },\n      finish() {\n        if (done && input.memberPath) return;\n        if (remaining || padding || header.length) throw failure("incomplete tar archive", "LOG_ARCHIVE_INVALID");\n        if (input.memberPath && !foundMember) throw failure("archive member was not found", "ARCHIVE_MEMBER_NOT_FOUND");\n      }\n    };\n  }\n  const scannedFiles = [];\n  for (const [fileIndex, file] of selected.entries()) {\n    if (job) {\n      const decision = await ((_c = runtime.beforeFile) == null ? void 0 : _c.call(runtime, file, fileIndex));\n      if (decision === "stop") {\n        stoppedAtBoundary = true;\n        break;\n      }\n      if (decision === "skip") {\n        skippedFiles++;\n        await ((_d = runtime.fileResult) == null ? void 0 : _d.call(runtime, {\n          fileIndex,\n          path: file.path,\n          compression: file.compression,\n          status: "skipped",\n          scanComplete: false,\n          countsAreComplete: false,\n          evidenceComplete: false,\n          reason: "remaining_scope_narrowed",\n          scannedBytes: 0,\n          expandedBytes: 0,\n          matchedLines: 0,\n          scannedLines: 0,\n          warnings: [],\n          finishedAt: Date.now()\n        }));\n        continue;\n      }\n      fileBaseline = {\n        scannedBytes,\n        expandedBytes,\n        scannedLines,\n        matchedLines,\n        selectedMembers,\n        completedMembers,\n        retainedEvidenceCount: jobRecords.length,\n        evidenceBytes: jobOutputBytes\n      };\n      currentReceipt = {\n        fileIndex,\n        path: file.path,\n        compression: file.compression,\n        status: "running",\n        startedAt: Date.now(),\n        scanComplete: false,\n        countsAreComplete: true,\n        warnings: [],\n        warningsTruncated: false,\n        source: { size: file.size, modifyTime: file.modifyTime, changeTime: file.changeTime, inode: file.inode, device: file.device }\n      };\n      await ((_e = runtime.fileStarted) == null ? void 0 : _e.call(runtime, fileProgress()));\n    }\n    currentFile = file.path;\n    await checkpoint("file");\n    if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) {\n      scanTruncated = true;\n      break;\n    }\n    if (input.mode === "latest" && retainedRecords.length >= input.limit) {\n      scanTruncated = true;\n      break;\n    }\n    records = [];\n    outputBytes = 0;\n    const before = scannedBytes;\n    let rangeStart = 0;\n    let fd;\n    try {\n      fd = await fs.promises.open(file.path, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));\n      const liveStats = await fd.stat();\n      if (!liveStats.isFile()) throw failure("path is not a regular log file", "LOG_NOT_FILE");\n      if (job && (liveStats.size !== file.size || liveStats.mtimeMs !== file.modifyTime || liveStats.ctimeMs !== file.changeTime || liveStats.ino !== file.inode || liveStats.dev !== file.device)) throw failure("log changed after discovery", "LOG_FILE_CHANGED");\n      file.size = liveStats.size;\n      const prefix = Buffer.alloc(8);\n      const inspected = await fd.read(prefix, 0, Math.min(8, file.size), 0);\n      if (prefix[0] === 66 && prefix[1] === 90 && prefix[2] === 104 || prefix[0] === 253 && prefix[1] === 55 && prefix[2] === 122 || prefix[0] === 80 && prefix[1] === 75) throw failure("unsupported log compression", "UNSUPPORTED_COMPRESSION");\n      if (prefix[0] === 31 && prefix[1] === 139 && file.compression === "none") file.compression = "gzip";\n      if (file.compression === "none" && prefix.subarray(0, inspected.bytesRead).includes(0)) throw failure("binary log cannot be read as text", "BINARY_LOG_UNSUPPORTED");\n      if (input.mode === "latest" && file.compression === "none") {\n        let position = file.size;\n        let suffix = Buffer.alloc(0);\n        while (position > 0 && scannedBytes < input.maxScanBytes) {\n          active();\n          const size = Math.min(32768, position, input.maxScanBytes - scannedBytes);\n          position -= size;\n          rangeStart = position;\n          const buffer = Buffer.allocUnsafe(size);\n          const read = await fd.read(buffer, 0, size, position);\n          scannedBytes += read.bytesRead;\n          if (read.bytesRead < size) warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n          suffix = Buffer.concat([buffer.subarray(0, read.bytesRead), suffix]);\n          const newline = suffix.indexOf(10);\n          const complete2 = position === 0 ? suffix : newline < 0 ? Buffer.alloc(0) : suffix.subarray(newline + 1);\n          const lines = complete2.toString("utf8").split("\\n");\n          if (lines[lines.length - 1] === "") lines.pop();\n          if (lines.length >= input.limit || position === 0 || suffix.length >= input.maxLineBytes) {\n            for (let i = Math.max(0, lines.length - input.limit); i < lines.length; i++) addRecord(lines[i].replace(/\\r$/, ""), file.path, null, null, lines.length - i);\n            if (position > 0) scanTruncated = true;\n            break;\n          }\n        }\n        if (position > 0) scanTruncated = true;\n      } else {\n        rangeStart = file.compression === "none" ? Math.max(0, file.size - (input.maxScanBytes - scannedBytes)) : 0;\n        if (rangeStart > 0) scanTruncated = true;\n        const source = Readable.from((async function* () {\n          let position = rangeStart;\n          while (position < file.size) {\n            await checkpoint("read", Math.min(65536, file.size - position));\n            const buffer = Buffer.allocUnsafe(Math.min(65536, file.size - position));\n            const read = await fd.read(buffer, 0, buffer.length, position);\n            if (!read.bytesRead) {\n              warn({ path: file.path, code: "LOG_FILE_CHANGED", message: "file was truncated during the query" });\n              break;\n            }\n            position += read.bytesRead;\n            yield buffer.subarray(0, read.bytesRead);\n          }\n        })(), { highWaterMark: 1 });\n        let stream = source;\n        let gunzip;\n        let sourceError;\n        if (file.compression !== "none") {\n          gunzip = zlib.createGunzip({ chunkSize: 65536, highWaterMark: 65536 });\n          source.on("error", (error) => {\n            sourceError = error;\n            gunzip.destroy(error);\n          });\n          stream = source.pipe(gunzip);\n        }\n        const consumer = file.compression === "tar-gzip" ? tarConsumer(file.path) : lineConsumer(file.path, null, rangeStart > 0);\n        let stopped = false;\n        try {\n          for await (const chunk of stream) {\n            await checkpoint("process", chunk.length);\n            if (file.compression !== "none") {\n              if (expandedBytes + chunk.length > input.maxExpandedBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              expandedBytes += chunk.length;\n            }\n            if (file.compression !== "tar-gzip") {\n              if (scannedBytes + chunk.length > input.maxScanBytes) {\n                scanTruncated = true;\n                stopped = true;\n                break;\n              }\n              scannedBytes += chunk.length;\n            }\n            if (consumer.write(chunk) === false) {\n              stopped = true;\n              break;\n            }\n          }\n          if (!stopped) consumer.finish();\n        } finally {\n          source.destroy();\n          gunzip == null ? void 0 : gunzip.destroy();\n        }\n        if (sourceError) throw sourceError;\n      }\n      if (job) {\n        const after = await fd.stat();\n        const named = await fs.promises.stat(file.path);\n        if (after.size !== liveStats.size || after.mtimeMs !== liveStats.mtimeMs || after.ctimeMs !== liveStats.ctimeMs || named.ino !== liveStats.ino || named.dev !== liveStats.dev) throw failure("log changed during query", "LOG_FILE_CHANGED");\n        completedFiles++;\n        currentReceipt.scanComplete = true;\n        currentReceipt.status = currentReceipt.countsAreComplete ? "completed" : "partial";\n      }\n      scannedFiles.push({\n        path: file.path,\n        scannedBytes: scannedBytes - before,\n        ...file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}\n      });\n    } catch (error) {\n      if (job) {\n        currentReceipt.status = "failed";\n        currentReceipt.countsAreComplete = false;\n        currentReceipt.error = { code: error.code || "LOG_READ_FAILED", message: String(error.message).slice(0, 512) };\n      }\n      if (job && !["LOG_FILE_CHANGED", "UNSUPPORTED_COMPRESSION", "BINARY_LOG_UNSUPPORTED", "LOG_ARCHIVE_INVALID", "ARCHIVE_MEMBER_NOT_FOUND", "ARCHIVE_MEMBER_NOT_READABLE", "ENOENT", "EACCES"].includes(error.code)) throw error;\n      if (job) failedFiles++;\n      if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;\n      if (input.path) throw error;\n      warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });\n    } finally {\n      await (fd == null ? void 0 : fd.close());\n      if (job) {\n        const receipt = { ...fileProgress(), finishedAt: Date.now() };\n        receipt.evidenceComplete = receipt.countsAreComplete && receipt.scanComplete && !receipt.evidenceTruncated && receipt.retainedEvidenceCount === receipt.matchedLines;\n        await ((_f = runtime.fileResult) == null ? void 0 : _f.call(runtime, receipt));\n        currentReceipt = null;\n        currentFile = null;\n        currentMember = null;\n      }\n      for (const record of records.reverse()) {\n        const bytes = Buffer.byteLength(record.text);\n        if (retainedRecords.length >= input.limit || retainedBytes + bytes > input.maxBytes) {\n          outputTruncated = true;\n          continue;\n        }\n        retainedRecords.push(record);\n        retainedBytes += bytes;\n      }\n    }\n  }\n  for (const file of inspectedFiles) {\n    const live = selected.find((selectedFile) => selectedFile.path === file.path);\n    file.size = live.size;\n    file.compression = live.compression;\n  }\n  const complete = !stoppedAtBoundary && !skippedFiles && !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;\n  if (job) return {\n    ...progress(),\n    currentFile: null,\n    currentMember: null,\n    records: jobRecords,\n    returnedLines: jobRecords.length,\n    outputBytes: jobOutputBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    countsAreComplete: complete,\n    scanComplete: completedFiles === selected.length && !failedFiles && !listingTruncated && !discoveryIncomplete,\n    stopReason: stoppedAtBoundary ? "file_boundary" : skippedFiles ? "remaining_scope_narrowed" : null,\n    coverage: complete ? "complete" : "bounded",\n    warnings,\n    warningsTruncated,\n    groups: [...groups.values()],\n    groupsTruncated,\n    durationMs: Date.now() - started\n  };\n  return {\n    mode: input.mode,\n    projectId: input.projectId,\n    files: inspectedFiles,\n    scannedFiles,\n    records: retainedRecords,\n    content: retainedRecords.map((record) => record.text).join("\\n") + (retainedRecords.length ? "\\n" : ""),\n    returnedLines: retainedRecords.length,\n    matchedLines,\n    scannedLines,\n    scannedBytes,\n    expandedBytes,\n    outputBytes: retainedBytes,\n    outputTruncated,\n    scanTruncated,\n    complete,\n    coverage: complete ? "complete" : input.mode === "latest" && selected.every((file) => file.compression === "none") ? "tail" : "bounded",\n    countsAreComplete: complete,\n    hasMoreFiles: filesTruncated,\n    nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,\n    ...input.mode === "members" ? {\n      members,\n      hasMoreMembers: memberListingStopped || scanTruncated,\n      nextMemberOffset: memberListingStopped || scanTruncated ? archiveMembersScanned : null,\n      memberBytes\n    } : {},\n    directoryListingTruncated: listingTruncated,\n    warningsTruncated,\n    warnings,\n    durationMs: Date.now() - started\n  };\n};\n';
+var LOG_JOB_RUNTIME_SOURCE = 'const runRemoteLogJob = function remoteLogJob() {\n  const readline = require("readline");\n  const { once } = require("events");\n  const controls = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });\n  let input, paused = false, pausedAt = 0, cancelled = false, lastHeartbeat = Date.now();\n  let finished = false, watchdog, lastPublished = 0, readBytes = 0, processedBytes = 0;\n  let started, runtime, resourceRuntime;\n  let selectedFiles, activeIndex = null, nextIndex = 0, stopIndex = null;\n  let remainingFrom = "", remainingTo = "";\n  const receipts = /* @__PURE__ */ new Map();\n  const error = (code, message) => Object.assign(new Error(message), { code });\n  const resources = () => resourceRuntime.snapshot();\n  const publish = (type, value) => {\n    if (type === "progress" && process.stdout.writableLength > 65536) return;\n    return process.stdout.write(JSON.stringify({ type, ...value }) + "\\n");\n  };\n  const snapshot = () => {\n    var _a;\n    return {\n      ...runtime.progress ? runtime.progress() : {},\n      resources: resources(),\n      status: cancelled ? "cancelling" : paused ? "paused" : stopIndex !== null ? "stopping" : "running",\n      remainingDateFrom: remainingFrom,\n      remainingDateTo: remainingTo,\n      stopAfterFile: stopIndex === null ? null : (_a = selectedFiles == null ? void 0 : selectedFiles[stopIndex]) == null ? void 0 : _a.path,\n      countsAreComplete: false\n    };\n  };\n  const health = () => {\n    if (cancelled) throw error("LOG_JOB_CANCELLED", "log query cancelled");\n    if (Date.now() >= input.deadlineAt) throw error("LOG_JOB_TIMEOUT", "log query task deadline exceeded");\n    if (Date.now() - lastHeartbeat > 6e4) throw error("LOG_JOB_CONTROLLER_LOST", "log query controller heartbeat lost");\n    if (paused && Date.now() - pausedAt >= input.pauseTtlMs) throw error("LOG_JOB_PAUSE_EXPIRED", "paused log query expired");\n  };\n  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n  async function check(kind, bytes, progress) {\n    if (progress) runtime.progress = progress;\n    await resourceRuntime.consume(kind, bytes);\n  }\n  async function finish(type, value, exitCode) {\n    if (finished) return;\n    finished = true;\n    clearInterval(watchdog);\n    controls.close();\n    process.stdin.destroy();\n    if (publish(type, value) === false) await once(process.stdout, "drain");\n    process.exitCode = exitCode;\n  }\n  async function fileResult(receipt) {\n    const receiptId = String(receipt.fileIndex);\n    let acknowledged = false;\n    receipts.set(receiptId, () => {\n      acknowledged = true;\n    });\n    try {\n      if (publish("file_result", { receiptId, receipt, progress: snapshot() }) === false) await once(process.stdout, "drain");\n      const until = Date.now() + 15e3;\n      while (!acknowledged) {\n        health();\n        if (Date.now() > until) throw error("LOG_JOB_RECEIPT_TIMEOUT", "file receipt was not acknowledged");\n        await delay(10);\n      }\n    } finally {\n      receipts.delete(receiptId);\n      activeIndex = null;\n    }\n  }\n  controls.on("line", async (line) => {\n    var _a, _b, _c;\n    if (finished) return;\n    try {\n      if (Buffer.byteLength(line) > (input ? 32768 : 512 * 1024)) throw error("LOG_JOB_PROTOCOL", "oversized control frame");\n      const message = JSON.parse(line);\n      if (!input) {\n        if (message.type !== "start") throw error("LOG_JOB_PROTOCOL", "expected start frame");\n        input = message.input;\n        started = Date.now();\n        lastHeartbeat = started;\n        resourceRuntime = createRemoteResourceRuntime(input, {\n          assertActive: health,\n          isPaused: () => paused,\n          memoryErrorCode: "LOG_JOB_MEMORY_LIMIT"\n        });\n        remainingFrom = input.dateFrom;\n        remainingTo = input.dateTo;\n        runtime = {\n          check,\n          evidence: (record) => publish("evidence", { record, progress: snapshot() }),\n          configureFiles: (files) => {\n            selectedFiles = files;\n            if (input.stopAfterFile) {\n              stopIndex = files.findIndex((file) => file.path === input.stopAfterFile);\n              if (stopIndex < 0) throw error("INVALID_LOG_JOB_BOUNDARY", "stopAfterFile is outside the selected files");\n            }\n          },\n          beforeFile: async (file, index) => {\n            var _a2;\n            nextIndex = index;\n            await check("boundary", 0);\n            if (stopIndex !== null && index > stopIndex) return "stop";\n            const date = (_a2 = /\\d{4}-\\d{2}-\\d{2}/.exec(file.name)) == null ? void 0 : _a2[0];\n            if ((remainingFrom || remainingTo) && (!date || remainingFrom && date < remainingFrom || remainingTo && date > remainingTo)) return "skip";\n            activeIndex = index;\n            nextIndex = index + 1;\n            return "read";\n          },\n          fileStarted: (receipt) => publish("file_started", { receipt }),\n          fileResult\n        };\n        watchdog = setInterval(() => {\n          try {\n            resourceRuntime.health();\n            if (Date.now() - lastPublished >= 5e3) {\n              lastPublished = Date.now();\n              publish("progress", snapshot());\n            }\n          } catch (failure) {\n            publish("error", { ...snapshot(), error: { code: failure.code, message: failure.message } });\n            process.exit(1);\n          }\n        }, 250);\n        runRemoteLogQuery(input, runtime).then(\n          (result) => finish("result", { result, resources: resources() }, 0),\n          (failure) => finish("error", { ...snapshot(), error: { code: failure.code || "LOG_JOB_FAILED", message: failure.message } }, 1)\n        ).catch(() => process.exit(1));\n      } else if (message.type === "heartbeat") lastHeartbeat = Date.now();\n      else if (message.type === "pause") {\n        if (!paused) pausedAt = Date.now();\n        paused = true;\n        publish("progress", snapshot());\n      } else if (message.type === "resume") {\n        paused = false;\n        pausedAt = 0;\n        publish("progress", snapshot());\n      } else if (message.type === "cancel") cancelled = true;\n      else if (message.type === "resource_renew") resourceRuntime.renew();\n      else if (message.type === "resource_update") {\n        resourceRuntime.update(message.budget, message.revision);\n        publish("resource_ack", { revision: message.revision, resources: resources() });\n      } else if (message.type === "receipt_ack") (_a = receipts.get(message.receiptId)) == null ? void 0 : _a();\n      else if (["stop_after_file", "narrow"].includes(message.type)) {\n        try {\n          if (!selectedFiles) throw error("LOG_JOB_NOT_READY", "file selection is not ready yet");\n          if (message.type === "stop_after_file") {\n            let target = message.stopAfterFile;\n            if (target && !selectedFiles.some((file) => file.path === target)) {\n              try {\n                target = await require("fs").promises.realpath(target);\n              } catch {\n                throw error("INVALID_LOG_JOB_BOUNDARY", "stopAfterFile is outside the selected files");\n              }\n            }\n            if (finished) return;\n            const index = target ? selectedFiles.findIndex((file) => file.path === target) : activeIndex != null ? activeIndex : nextIndex;\n            if (index < 0 || index >= selectedFiles.length) throw error("INVALID_LOG_JOB_BOUNDARY", "stopAfterFile is outside the selected files");\n            if (index < (activeIndex != null ? activeIndex : nextIndex)) throw error("LOG_JOB_BOUNDARY_PASSED", "the requested file boundary has already passed");\n            if (stopIndex !== null && index > stopIndex) throw error("INVALID_LOG_JOB_BOUNDARY", "cannot extend an existing stop boundary");\n            stopIndex = index;\n          } else {\n            const from = (_b = message.dateFrom) != null ? _b : remainingFrom, to = (_c = message.dateTo) != null ? _c : remainingTo;\n            if (remainingFrom && from < remainingFrom || remainingTo && to > remainingTo || from && to && from > to) throw error("INVALID_LOG_JOB_SCOPE", "remaining dates must narrow the existing range");\n            remainingFrom = from;\n            remainingTo = to;\n          }\n          publish("control_ack", { requestId: message.requestId, progress: snapshot(), ok: true });\n        } catch (failure) {\n          publish("control_ack", { requestId: message.requestId, ok: false, error: { code: failure.code, message: failure.message } });\n        }\n      } else throw error("LOG_JOB_PROTOCOL", "invalid control frame");\n    } catch (failure) {\n      publish("error", { error: { code: failure.code || "LOG_JOB_PROTOCOL", message: "invalid log job control frame" } });\n      process.exit(1);\n    }\n  });\n  controls.on("close", () => {\n    if (!finished) cancelled = true;\n  });\n  const bootstrapTimeout = setTimeout(() => {\n    if (!input) process.exit(1);\n  }, 6e4);\n  bootstrapTimeout.unref();\n};\n';
 
 // log-query.js
 var LOG_QUERY_MARKER = "__REMOTE_DEBUG_LOG_QUERY__";
@@ -58082,10 +58826,10 @@ function timestamp(value, field) {
 function normalizeLogQuery(input, config) {
   const projects = normalizeLogProjects(config.logs?.projects, config.security.allowedPaths, config.security.sourceRoots);
   const projectId = text(input.projectId, "projectId", 32);
-  const path14 = text(input.path, "path", 4096);
-  if (Boolean(projectId) === Boolean(path14)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
+  const path15 = text(input.path, "path", 4096);
+  if (Boolean(projectId) === Boolean(path15)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
   if (projectId && !Object.hasOwn(projects, projectId)) throw logInputError(`unknown log project: ${projectId}`, "LOG_PROJECT_NOT_FOUND");
-  if (path14) assertPathAllowed(path14, config.security.allowedPaths);
+  if (path15) assertPathAllowed(path15, config.security.allowedPaths);
   const contains = text(input.contains, "contains");
   const route2 = text(input.route, "route");
   if (route2 && !route2.startsWith("/")) throw logInputError("route must be an exact absolute route", "INVALID_LOG_QUERY");
@@ -58095,7 +58839,7 @@ function normalizeLogQuery(input, config) {
   const toTime = timestamp(input.toTime, "toTime");
   const mode = input.mode || (contains || route2 || level || method || fromTime || toTime ? "search" : "latest");
   if (!LOG_QUERY_CAPABILITIES.modes.includes(mode)) throw logInputError("mode must be latest, search, files, or members", "INVALID_LOG_QUERY");
-  if (mode === "members" && (!path14 || !/\.(?:tar\.gz|tgz)$/i.test(path14))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
+  if (mode === "members" && (!path15 || !/\.(?:tar\.gz|tgz)$/i.test(path15))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
   if (mode === "latest" && (contains || route2 || level || method || fromTime || toTime)) throw logInputError("use search mode for record filters", "INVALID_LOG_QUERY");
   if (["files", "members"].includes(mode) && (contains || route2 || level || method || fromTime || toTime)) throw logInputError("record filters require search mode", "INVALID_LOG_QUERY");
   const dateFrom = date(input.date || input.dateFrom, "dateFrom");
@@ -58106,10 +58850,10 @@ function normalizeLogQuery(input, config) {
   const memberPath = text(input.memberPath, "memberPath", 4096);
   const memberOffset = input.memberOffset ?? 0;
   if (!Number.isInteger(memberOffset) || memberOffset < 0 || memberOffset > 5e3) throw logInputError("invalid memberOffset", "INVALID_LOG_QUERY");
-  if (memberPath && path14 && !/\.(?:tar\.gz|tgz)$/i.test(path14)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
+  if (memberPath && path15 && !/\.(?:tar\.gz|tgz)$/i.test(path15)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
   return {
     projectId,
-    path: path14,
+    path: path15,
     directories: projectId ? projects[projectId].directories : [],
     allowedRoots: config.security.allowedPaths,
     mode,
@@ -58191,6 +58935,8 @@ async function queryLogs(input, options) {
 
 // ssh.js
 var remoteReadStreams = /* @__PURE__ */ new WeakMap();
+var sftpResourceContexts = /* @__PURE__ */ new WeakMap();
+var readResourceContexts = /* @__PURE__ */ new WeakMap();
 function quotePosixArgument(value) {
   return "'" + String(value).replace(/'/g, `'"'"'`) + "'";
 }
@@ -58409,12 +59155,13 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
     const chunks = [];
     let total = 0;
     let settled = false;
+    let paced = Promise.resolve();
     const finish = (error) => {
       if (settled) return;
       settled = true;
       operation.signal?.removeEventListener("abort", onAbort);
       if (error) reject(error);
-      else resolve(Buffer.concat(chunks).subarray(0, maxBytes));
+      else paced.then(() => resolve(Buffer.concat(chunks).subarray(0, maxBytes)), reject);
     };
     const onAbort = () => {
       stream.destroy();
@@ -58428,6 +59175,14 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
       markProgress();
       chunks.push(chunk);
       total += chunk.length;
+      const resource = readResourceContexts.get(stream);
+      if (resource) {
+        stream.pause?.();
+        paced = paced.then(() => resource(chunk.length)).then(() => {
+          if (!stream.destroyed) stream.resume?.();
+        });
+        paced.catch(finish);
+      }
       if (total >= maxBytes) stream.destroy();
     });
     stream.on("error", (error) => finish(operationError(error.message || "SFTP read failed", {
@@ -58452,6 +59207,10 @@ async function withSftp(supervisor, operation, callback, options = {}) {
       try {
         const client = attempt === 0 ? timing.client : await supervisor.waitUntilReady(operation);
         sftp = await openSftp(client, operation);
+        if (timing.resourceContext?.taskId && supervisor.resourceClient) sftpResourceContexts.set(
+          sftp,
+          (bytes) => supervisor.resourceClient.receiveBytes(timing.resourceContext.taskId, bytes, operation.signal)
+        );
         const unregister = supervisor.registerChannel(sftp, operation);
         const closeOnAbort = () => {
           destroyRemoteReadStreams(sftp);
@@ -58486,7 +59245,12 @@ async function withSftp(supervisor, operation, callback, options = {}) {
       }
     }
     throw lastError;
-  }, { priority: options.priority || "interactive" });
+  }, {
+    priority: options.priority || "interactive",
+    resourceTaskId: options.resourceTaskId,
+    taskType: options.taskType || "file_read",
+    resourceIgnore: options.resourceIgnore
+  });
 }
 async function validateRemotePathsWithClient(client, remotePaths, config, operation, supervisor) {
   if (!remotePaths?.length) return [];
@@ -58521,6 +59285,7 @@ function executeChannel(client, command, operation, options, supervisor) {
     };
     let abortError;
     let forceCloseTimer;
+    let outputPacing = Promise.resolve();
     const finish = (error, result) => {
       if (settled) return;
       settled = true;
@@ -58554,6 +59319,25 @@ function executeChannel(client, command, operation, options, supervisor) {
         }
       }, 500);
       forceCloseTimer.unref?.();
+    };
+    const closeForError = (error) => {
+      finish(error);
+      try {
+        streamRef?.signal?.("TERM");
+      } catch {
+      }
+      try {
+        streamRef?.close?.();
+      } catch {
+      }
+    };
+    const paceOutput = (source, size) => {
+      if (settled || !options.resourceContext?.taskId || !supervisor.resourceClient || options.priority === "control") return;
+      source.pause?.();
+      outputPacing = outputPacing.then(() => supervisor.resourceClient.receiveBytes(options.resourceContext.taskId, size, operation.signal)).then(() => {
+        if (!source.destroyed) source.resume?.();
+      });
+      outputPacing.catch(closeForError);
     };
     operation.signal?.addEventListener("abort", onAbort, { once: true });
     client.exec(command, (error, stream) => {
@@ -58595,10 +59379,12 @@ function executeChannel(client, command, operation, options, supervisor) {
           } catch {
           }
         }
+        paceOutput(stream, chunk.length);
       });
       stream.stderr.on("data", (chunk) => {
         stderr.append(chunk);
         options.onStderr?.(chunk.toString("utf8"));
+        paceOutput(stream.stderr, chunk.length);
       });
       stream.on("error", (streamError) => finish(operationError(
         streamError.message || "SSH transport lost during command execution",
@@ -58628,14 +59414,14 @@ function executeChannel(client, command, operation, options, supervisor) {
           }));
           return;
         }
-        finish(null, {
+        outputPacing.then(() => finish(null, {
           stdout: stdout.value(),
           stderr: stderr.value(),
           exitCode: code,
           timedOut: false,
           stdoutTruncated: stdout.isTruncated(),
           stderrTruncated: stderr.isTruncated()
-        });
+        }), (error2) => finish(error2));
       });
       if (options.stdin !== void 0 && options.stdin !== null) {
         try {
@@ -58677,7 +59463,7 @@ async function runSSH(command, options) {
         timing.client,
         options.commandValidation ? canonicalCommand(options.commandValidation, canonicalPaths) : command,
         prepared.operation,
-        options,
+        { ...options, resourceContext: timing.resourceContext },
         supervisor
       );
       return {
@@ -58690,7 +59476,12 @@ async function runSSH(command, options) {
           connectionGeneration: timing.connectionGeneration
         }
       };
-    }, { priority: options.priority || "interactive" });
+    }, {
+      priority: options.priority || "interactive",
+      resourceTaskId: options.resourceTaskId,
+      taskType: options.taskType,
+      resourceIgnore: options.resourceIgnore
+    });
   } finally {
     prepared.cleanup();
   }
@@ -58780,6 +59571,7 @@ async function listRemoteDir(remotePath, options) {
 }
 function createRemoteReadStream(sftp, remotePath, options = {}) {
   const stream = sftp.createReadStream(remotePath, options);
+  if (sftpResourceContexts.has(sftp)) readResourceContexts.set(stream, sftpResourceContexts.get(sftp));
   let onClosed;
   const record = {
     stream,
@@ -59045,8 +59837,8 @@ function errorIsMissing(error) {
   const code = error?.cause?.code || error?.code;
   return code === 2 || code === "ENOENT" || /no such file/i.test(error?.message || "");
 }
-function compressionForName(name) {
-  const value = String(name || "").toLowerCase();
+function compressionForName(name2) {
+  const value = String(name2 || "").toLowerCase();
   if (value.endsWith(".tar.gz") || value.endsWith(".tgz")) return "tar-gzip";
   if (value.endsWith(".gz")) return "gzip";
   if (value.endsWith(".bz2")) return "bzip2";
@@ -59066,8 +59858,8 @@ function magicCompression(prefix) {
   if (prefix.length >= 2 && prefix[0] === 80 && prefix[1] === 75) return "zip";
   return "none";
 }
-function detectCompression(name, prefix) {
-  const byName = compressionForName(name);
+function detectCompression(name2, prefix) {
+  const byName = compressionForName(name2);
   const byMagic = magicCompression(prefix);
   if (byMagic !== "none") {
     if (byName === "tar-gzip") return "tar-gzip";
@@ -59079,12 +59871,12 @@ function detectCompression(name, prefix) {
 function supportedCompression(compression) {
   return LOG_SUPPORTED_COMPRESSION.includes(compression);
 }
-function binaryName(name) {
-  const base = String(name || "").toLowerCase().replace(/\.(?:gz|bz2|xz|zip)$/i, "").replace(/\.\d+$/i, "");
+function binaryName(name2) {
+  const base = String(name2 || "").toLowerCase().replace(/\.(?:gz|bz2|xz|zip)$/i, "").replace(/\.\d+$/i, "");
   return BINARY_SYSTEM_LOG_NAMES.has(base);
 }
-function likelyLogName(name, source) {
-  const value = String(name || "");
+function likelyLogName(name2, source) {
+  const value = String(name2 || "");
   const compression = compressionForName(value);
   const base = value.replace(/\.tar\.gz$/i, "").replace(/\.tgz$/i, "").replace(/\.(?:gz|bz2|xz|zip)$/i, "");
   const rotatedBase = base.replace(/\.\d+$/i, "");
@@ -59099,7 +59891,7 @@ function archiveEntryName(rawName) {
   if (!raw || raw.includes("\\") || raw.startsWith("/")) {
     return { name: raw || ".", safe: false };
   }
-  const normalized = import_posix8.default.normalize(raw);
+  const normalized = import_posix9.default.normalize(raw);
   if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
     return { name: normalized, safe: false };
   }
@@ -59140,11 +59932,11 @@ function verifyTarChecksum(block) {
 }
 function parseTarHeader(block) {
   verifyTarChecksum(block);
-  const name = tarField(block, 0, 100);
+  const name2 = tarField(block, 0, 100);
   const prefix = tarField(block, 345, 155);
   const typeFlag = tarField(block, 156, 1) || "0";
   return {
-    rawName: prefix ? `${prefix}/${name}` : name,
+    rawName: prefix ? `${prefix}/${name2}` : name2,
     size: parseTarNumber(block.subarray(124, 136)),
     modifyTime: parseTarNumber(block.subarray(136, 148)),
     typeFlag,
@@ -59608,19 +60400,19 @@ async function inspectRemoteFile(sftp, requestedPath, operation, allowedPaths, m
   return { canonicalPath, stats, prefix, compression };
 }
 function logEntryFromRaw(source, rawEntry) {
-  const name = rawEntry.name;
-  if (typeof name !== "string" || name.length === 0 || name.includes("/") || name.includes("\\") || name.includes("\0")) {
+  const name2 = rawEntry.name;
+  if (typeof name2 !== "string" || name2.length === 0 || name2.includes("/") || name2.includes("\\") || name2.includes("\0")) {
     return null;
   }
-  const compression = compressionForName(name);
-  if (!likelyLogName(name, source)) return null;
-  const entryPath = source.kind === "file" ? source.path : joinRemotePath(source.path, name);
+  const compression = compressionForName(name2);
+  if (!likelyLogName(name2, source)) return null;
+  const entryPath = source.kind === "file" ? source.path : joinRemotePath(source.path, name2);
   if (source.kind !== "file" && source.excludePaths?.has(entryPath)) return null;
   const unsupported = !supportedCompression(compression);
-  const binary = compression === "none" && binaryName(name);
+  const binary = compression === "none" && binaryName(name2);
   const readable = !unsupported && !binary && isRegularMode(rawEntry.permissions);
   return {
-    name,
+    name: name2,
     path: entryPath,
     category: source.category,
     source: source.source,
@@ -60039,9 +60831,9 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
   return { sources, warnings };
 }
 function listFileSourceEntry(source) {
-  const name = import_posix8.default.basename(source.path);
+  const name2 = import_posix9.default.basename(source.path);
   return logEntryFromRaw(source, {
-    name,
+    name: name2,
     size: source.stats.size,
     modifyTime: source.stats.mtime,
     permissions: source.stats.mode
@@ -60361,7 +61153,7 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
       "ARCHIVE_MEMBER_NOT_ALLOWED"
     );
   }
-  if (compression === "none" && (binaryName(import_posix8.default.basename(canonicalPath)) || prefix.includes(0))) {
+  if (compression === "none" && (binaryName(import_posix9.default.basename(canonicalPath)) || prefix.includes(0))) {
     throw logInputError("binary system logs cannot be decoded as text", "BINARY_LOG_UNSUPPORTED");
   }
   const sourceSize = Number(stats.size);
@@ -60595,7 +61387,7 @@ async function readLog(options = {}) {
 // instance-registry.js
 var import_node_fs6 = __toESM(require("node:fs"), 1);
 var import_node_path9 = __toESM(require("node:path"), 1);
-var import_node_crypto15 = require("node:crypto");
+var import_node_crypto16 = require("node:crypto");
 var import_local_auth5 = __toESM(require_local_auth(), 1);
 var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -60862,10 +61654,10 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto15.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto16.randomUUID)());
   assertInstanceId(id);
-  const name = String(input.name ?? existing.name ?? id).trim();
-  if (!name) {
+  const name2 = String(input.name ?? existing.name ?? id).trim();
+  if (!name2) {
     const error = new Error("instance name is required");
     error.code = "INVALID_INSTANCE_FIELD";
     error.statusCode = 400;
@@ -60893,7 +61685,7 @@ function normalizeInstance(input, existing = {}) {
   const logProjects = normalizeLogProjects(input.logProjects === void 0 ? existing.logProjects : input.logProjects, allowedPathsForSourceRoots(sourceRoots));
   return {
     id,
-    name,
+    name: name2,
     enabled: parseBooleanFlag3(input.enabled, existing.enabled ?? true),
     host,
     port: parsePort(input.port, existing.port || 22, "port"),
@@ -60908,6 +61700,7 @@ function normalizeInstance(input, existing = {}) {
       ...input.approvedCommands
     }),
     ...mongodb ? { mongodb } : {},
+    manualMongo: normalizeManualMongo(input.manualMongo, existing.manualMongo),
     ...Object.keys(sourceRoots).length > 0 ? { sourceRoots } : {},
     ...Object.keys(logProjects).length > 0 ? { logProjects } : {},
     createdAt: existing.createdAt || input.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
@@ -61193,8 +61986,14 @@ var InstanceRegistry = class {
 };
 
 // log-jobs.js
-var import_node_crypto16 = require("node:crypto");
+var import_node_crypto17 = require("node:crypto");
 var import_node_string_decoder2 = require("node:string_decoder");
+var import_posix10 = __toESM(require("node:path/posix"), 1);
+
+// remote-resource-runtime-source.js
+var REMOTE_RESOURCE_RUNTIME_SOURCE = 'const createRemoteResourceRuntime = function createRemoteResourceRuntime2(initial, options = {}) {\n  const started = Date.now(), initialCpu = process.cpuUsage();\n  let budget = {\n    cpuMilliCores: initial.cpuPercent * 10,\n    readBytesPerSecond: initial.readBytesPerSecond,\n    processBytesPerSecond: initial.processBytesPerSecond,\n    rssLimitBytes: initial.rssLimitBytes,\n    ...initial.resourceBudget\n  };\n  let revision = 0, readBytes = 0, processedBytes = 0, peakRssBytes = 0;\n  let readDue = 0, processDue = 0, cpuDue = 0, lastCpu = 0, lastLease = Date.now();\n  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n  const cpuMs = () => {\n    const value = process.cpuUsage(initialCpu);\n    return (value.user + value.system) / 1e3;\n  };\n  function snapshot() {\n    const rssBytes = process.memoryUsage().rss;\n    peakRssBytes = Math.max(peakRssBytes, rssBytes);\n    return {\n      rssBytes,\n      peakRssBytes,\n      cpuMs: cpuMs(),\n      readBytes,\n      processedBytes,\n      elapsedMs: Date.now() - started,\n      budget,\n      budgetRevision: revision,\n      resourceState: budget.cpuMilliCores === 0 ? "suspended" : budget.cpuMilliCores < initial.cpuPercent * 10 ? "throttled" : "normal"\n    };\n  }\n  function health() {\n    var _a;\n    (_a = options.assertActive) == null ? void 0 : _a.call(options);\n    peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss);\n    if (peakRssBytes > budget.rssLimitBytes) throw Object.assign(new Error("remote task RSS threshold exceeded"), { code: options.memoryErrorCode || "RESOURCE_MEMORY_LIMIT" });\n    if (initial.resourceLeaseRequired && Date.now() - lastLease > 6e4) throw Object.assign(new Error("resource lease expired"), { code: "RESOURCE_LEASE_EXPIRED" });\n  }\n  function update(next, nextRevision) {\n    if (!Number.isInteger(nextRevision) || nextRevision <= revision) return false;\n    for (const key of ["cpuMilliCores", "readBytesPerSecond", "processBytesPerSecond", "rssLimitBytes"]) {\n      if (!Number.isFinite(next[key]) || next[key] < 0 || next[key] > (key === "cpuMilliCores" ? 64e3 : 64 * 1024 ** 3)) throw Object.assign(new Error("invalid resource budget"), { code: "RESOURCE_PROTOCOL" });\n    }\n    budget = { ...next, rssLimitBytes: Math.min(next.rssLimitBytes, initial.rssLimitBytes) };\n    revision = nextRevision;\n    lastLease = Date.now();\n    readDue = processDue = cpuDue = 0;\n    lastCpu = cpuMs();\n    return true;\n  }\n  async function consume(kind, bytes = 0) {\n    var _a, _b;\n    health();\n    if (kind === "read") readBytes += bytes;\n    if (kind === "process") processedBytes += bytes;\n    let accountedRevision = -1;\n    while (true) {\n      health();\n      if (accountedRevision !== revision) {\n        const now = Date.now(), used = cpuMs(), delta = Math.max(0, used - lastCpu);\n        lastCpu = used;\n        if (kind === "read" && budget.readBytesPerSecond) readDue = Math.max(readDue, now) + bytes * 1e3 / budget.readBytesPerSecond;\n        if (kind === "process" && budget.processBytesPerSecond) processDue = Math.max(processDue, now) + bytes * 1e3 / budget.processBytesPerSecond;\n        if (budget.cpuMilliCores) cpuDue = Math.max(cpuDue, now - delta) + delta * 1e3 / budget.cpuMilliCores;\n        accountedRevision = revision;\n      }\n      const wait = Math.max(readDue, processDue, cpuDue) - Date.now();\n      const suspended = !budget.cpuMilliCores || kind === "read" && !budget.readBytesPerSecond || kind === "process" && !budget.processBytesPerSecond;\n      if (!suspended && !((_a = options.isPaused) == null ? void 0 : _a.call(options)) && wait <= 0) break;\n      await delay(suspended || ((_b = options.isPaused) == null ? void 0 : _b.call(options)) ? 100 : Math.min(100, Math.max(1, wait)));\n    }\n    await new Promise((resolve) => setImmediate(resolve));\n    health();\n  }\n  return { consume, health, snapshot, update, renew: () => {\n    lastLease = Date.now();\n  } };\n};\n';
+
+// log-jobs.js
 var LOG_JOB_DEFAULTS = Object.freeze({
   jobTimeoutMs: 30 * 60 * 1e3,
   maxJobTimeoutMs: 120 * 60 * 1e3,
@@ -61205,20 +62004,47 @@ var LOG_JOB_DEFAULTS = Object.freeze({
   pauseTtlMs: 5 * 60 * 1e3,
   batchScanBytes: 256 * 1024 * 1024
 });
-var terminal = /* @__PURE__ */ new Set(["completed", "partial", "failed", "cancelled", "interrupted", "expired"]);
+var terminal = /* @__PURE__ */ new Set(["completed", "partial", "stopped", "failed", "cancelled", "interrupted", "expired"]);
 var fault = (message, code, statusCode = 400) => operationError(message, { code, statusCode, layer: "logs", phase: "job" });
+var contextFields = ["instanceId", "operationId", "timeoutMs", "deadlineAt"];
+var startFields = ["projectId", "path", "mode", "date", "dateFrom", "dateTo", "fileContains", "memberPath", "memberContains", "contains", "caseSensitive", "route", "method", "level", "fromTime", "toTime", "limit", "maxBytes", "jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "batchScanBytes", "stopAfterFile", "_logProjects"];
+function validateFields(input, allowed) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw logInputError("log task arguments must be an object", "INVALID_LOG_JOB");
+  for (const [key, value] of Object.entries(input)) {
+    if (!allowed.includes(key) && !contextFields.includes(key)) throw logInputError(`unknown log task parameter: ${key}`, "INVALID_LOG_JOB");
+    if (value === null || value === void 0) throw logInputError(`invalid ${key}`, "INVALID_LOG_JOB");
+    if (key === "caseSensitive" && typeof value !== "boolean") throw logInputError("caseSensitive must be boolean", "INVALID_LOG_JOB");
+    if (["projectId", "path", "mode", "date", "dateFrom", "dateTo", "fileContains", "memberPath", "memberContains", "contains", "route", "method", "level", "fromTime", "toTime", "stopAfterFile", "jobId", "action"].includes(key) && (typeof value !== "string" || !value.trim() || value.includes("\0"))) throw logInputError(`invalid ${key}`, "INVALID_LOG_JOB");
+    const maxLength = { path: 4096, stopAfterFile: 4096, jobId: 64, action: 32, dateFrom: 10, dateTo: 10 }[key];
+    if (maxLength && value.length > maxLength) throw logInputError(`${key} is too long`, "INVALID_LOG_JOB");
+  }
+}
+function checkDate(value) {
+  if (value === void 0) return;
+  const time = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(time.getTime()) || time.toISOString().slice(0, 10) !== value) throw logInputError("invalid date bound", "INVALID_LOG_JOB_SCOPE");
+}
 function bounded(value, fallback, min, max, field) {
   if (value === void 0) return fallback;
   if (!Number.isInteger(value) || value < min || value > max) throw logInputError(`invalid ${field}`, "INVALID_LOG_JOB");
   return value;
 }
 function normalizeLogJob(input, config) {
+  validateFields(input, startFields);
+  if (input.date && (input.dateFrom || input.dateTo)) throw logInputError("date cannot be combined with dateFrom/dateTo", "INVALID_LOG_JOB_SCOPE");
   if (input.mode !== void 0 && input.mode !== "search") throw logInputError("background queries support search only", "INVALID_LOG_JOB");
   if (input.fileOffset || input.memberOffset) throw logInputError("background queries start from the full selected scope", "INVALID_LOG_JOB");
   for (const key of ["maxScanBytes", "maxExpandedBytes", "maxFiles"]) {
     if (input[key] !== void 0) throw logInputError(`${key} is for synchronous queries; use task resource limits`, "INVALID_LOG_JOB");
   }
   const query = normalizeLogQuery({ ...input, mode: "search" }, config);
+  bounded(input.limit, 50, 1, 2e3, "limit");
+  bounded(input.maxBytes, 262144, 1, 262144, "maxBytes");
+  if (input.path && (input.memberPath || input.memberContains) && !/\.(?:tar\.gz|tgz)$/i.test(input.path)) throw logInputError("member filters require a tar.gz/tgz archive", "INVALID_LOG_JOB");
+  if (input.stopAfterFile) {
+    assertPathAllowed(input.stopAfterFile, config.security.allowedPaths);
+    if (input.stopAfterFile.length > 4096) throw logInputError("stopAfterFile is too long", "INVALID_LOG_JOB_BOUNDARY");
+  }
   const limits = normalizeLogJobLimits(config.logs?.jobLimits);
   const timeoutMax = Math.min(limits.maxJobTimeoutMs || LOG_JOB_DEFAULTS.maxJobTimeoutMs, LOG_JOB_DEFAULTS.maxJobTimeoutMs);
   return {
@@ -61226,6 +62052,7 @@ function normalizeLogJob(input, config) {
     background: true,
     fileOffset: 0,
     maxFiles: 5e3,
+    stopAfterFile: input.stopAfterFile ? import_posix10.default.normalize(input.stopAfterFile) : void 0,
     maxScanBytes: Number.MAX_SAFE_INTEGER,
     maxExpandedBytes: Number.MAX_SAFE_INTEGER,
     jobTimeoutMs: bounded(input.jobTimeoutMs, Math.min(LOG_JOB_DEFAULTS.jobTimeoutMs, timeoutMax), 1e3, timeoutMax, "jobTimeoutMs"),
@@ -61238,12 +62065,13 @@ function normalizeLogJob(input, config) {
   };
 }
 function logJobCommand() {
-  return "node --max-old-space-size=64 -e " + quotePosixArgument(`${LOG_QUERY_RUNTIME_SOURCE}
+  return "node --max-old-space-size=64 -e " + quotePosixArgument(`${REMOTE_RESOURCE_RUNTIME_SOURCE}
+${LOG_QUERY_RUNTIME_SOURCE}
 ${LOG_JOB_RUNTIME_SOURCE}
 runRemoteLogJob();`);
 }
 var LogJobRunner = class {
-  constructor({ config, runSSH: runSSH2, now = Date.now }) {
+  constructor({ config, runSSH: runSSH2, now = Date.now, resourceClient }) {
     this.config = config;
     this.runSSH = runSSH2;
     this.now = now;
@@ -61251,6 +62079,8 @@ var LogJobRunner = class {
     this.active = null;
     this.closed = false;
     this.retentionMs = 30 * 60 * 1e3;
+    this.resourceClient = resourceClient;
+    this.activeJobs = /* @__PURE__ */ new Set();
   }
   prune() {
     for (const [id, job] of this.jobs) {
@@ -61266,7 +62096,7 @@ var LogJobRunner = class {
     job.expiryTimer.unref?.();
     job.query = Object.fromEntries(Object.entries(job.query).filter(([key]) => ["jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "rssLimitBytes", "batchScanBytes"].includes(key)));
   }
-  start(input) {
+  start(input, metadata = {}) {
     this.prune();
     if (this.closed) throw fault("log query runner is stopping", "LOG_JOB_RUNNER_CLOSED", 503);
     const config = { ...this.config, logs: { ...this.config.logs, projects: input._logProjects || this.config.logs?.projects || {} } };
@@ -61280,15 +62110,39 @@ var LogJobRunner = class {
       }
     }
     const job = {
-      jobId: (0, import_node_crypto16.randomUUID)(),
+      jobId: (0, import_node_crypto17.randomUUID)(),
       status: "queued",
       createdAt: this.now(),
       query,
       evidence: [],
       evidenceBytes: 0,
+      fileResults: /* @__PURE__ */ new Map(),
+      receiptBytes: 0,
+      controls: /* @__PURE__ */ new Map(),
+      evidenceLimits: { count: query.limit, bytes: query.maxBytes },
+      scopeControls: { dateFrom: query.dateFrom, dateTo: query.dateTo, stopAfterFile: query.stopAfterFile },
       progress: { matchedLines: 0, scannedBytes: 0, expandedBytes: 0, countsAreComplete: false }
     };
     this.jobs.set(job.jobId, job);
+    if (this.resourceClient) job.resourceTaskId = this.resourceClient.register(
+      {
+        type: "log_search",
+        referenceId: job.jobId,
+        label: `日志批量查询${query.dateFrom || query.dateTo ? ` · ${query.dateFrom || "起始"}—${query.dateTo || "至今"}` : ""}`,
+        source: metadata.source,
+        capabilities: ["pause", "resume", "cancel", "stop_after_file", "detail"],
+        requested: {
+          cpuMilliCores: query.cpuPercent * 10,
+          readBytesPerSecond: query.readBytesPerSecond,
+          processBytesPerSecond: query.processBytesPerSecond,
+          rssLimitBytes: query.rssLimitBytes,
+          ...config.logs?.jobLimits?.cpuPercent ? { maxCpuMilliCores: config.logs.jobLimits.cpuPercent * 10 } : {},
+          ...config.logs?.jobLimits?.readBytesPerSecond ? { maxReadBytesPerSecond: config.logs.jobLimits.readBytesPerSecond } : {},
+          ...config.logs?.jobLimits?.processBytesPerSecond ? { maxProcessBytesPerSecond: config.logs.jobLimits.processBytesPerSecond } : {}
+        }
+      },
+      { control: (action) => this.control({ jobId: job.jobId, action }) }
+    );
     setImmediate(() => this.pump());
     return this.get({ jobId: job.jobId });
   }
@@ -61299,6 +62153,8 @@ var LogJobRunner = class {
     return job;
   }
   get(input) {
+    validateFields(input, ["jobId", "offset", "limit", "fileOffset", "fileLimit"]);
+    if (!input.jobId) throw fault("jobId is required", "INVALID_LOG_JOB");
     const job = this.find(input.jobId);
     const offset = bounded(input.offset, 0, 0, 2e3, "offset");
     const limit = bounded(input.limit, 50, 1, 2e3, "limit");
@@ -61313,6 +62169,20 @@ var LogJobRunner = class {
     }
     const { records: ignored, ...result } = job.result || {};
     const hasMore = offset + records.length < all.length;
+    const fileOffset = bounded(input.fileOffset, 0, 0, 5e3, "fileOffset"), fileLimit = bounded(input.fileLimit, 50, 1, 500, "fileLimit");
+    const receipts = [...job.fileResults.values()].sort((a, b) => a.fileIndex - b.fileIndex);
+    const fileResults = [];
+    let fileBytes = 0;
+    for (const receipt of receipts.slice(fileOffset, fileOffset + fileLimit)) {
+      const size = Buffer.byteLength(JSON.stringify(receipt));
+      if (fileResults.length && fileBytes + size > 128 * 1024) break;
+      fileResults.push(receipt);
+      fileBytes += size;
+    }
+    const countsAreComplete = job.status === "completed" && result.countsAreComplete === true;
+    const observed = result.matchedLines ?? job.progress.matchedLines ?? 0;
+    const evidenceTruncated = Boolean(result.outputTruncated || job.progress.outputTruncated || observed > all.length || all.some((r) => r.truncated));
+    const hasMoreFiles = fileOffset + fileResults.length < receipts.length;
     return {
       jobId: job.jobId,
       status: job.status,
@@ -61320,9 +62190,27 @@ var LogJobRunner = class {
       startedAt: job.startedAt,
       finishedAt: job.finishedAt,
       expiresAt: job.finishedAt ? job.finishedAt + this.retentionMs : void 0,
-      progress: job.progress,
+      progress: {
+        ...job.progress,
+        status: job.status,
+        countsAreComplete,
+        currentFileProgress: job.progress.currentFileProgress ? job.fileResults.get(job.progress.currentFileProgress.fileIndex) || job.progress.currentFileProgress : null
+      },
       ...result,
-      countsAreComplete: job.status === "completed" && result.countsAreComplete === true,
+      countsAreComplete,
+      scanComplete: result.scanComplete === true,
+      evidenceComplete: countsAreComplete && !evidenceTruncated,
+      evidenceTruncated,
+      retainedEvidenceCount: all.length,
+      evidenceLimits: job.evidenceLimits,
+      paginationScope: "retained_evidence",
+      observedMatchedLines: observed,
+      fileResults,
+      fileResultCount: receipts.length,
+      hasMoreFileResults: hasMoreFiles,
+      nextFileOffset: hasMoreFiles ? fileOffset + fileResults.length : null,
+      scopeControls: job.scopeControls,
+      resourceTaskId: job.resourceTaskId,
       records,
       hasMoreRecords: hasMore,
       nextOffset: hasMore ? offset + records.length : null,
@@ -61339,29 +62227,83 @@ var LogJobRunner = class {
     };
   }
   control(input) {
+    validateFields(input, ["jobId", "action", "stopAfterFile", "dateFrom", "dateTo"]);
+    if (!input.jobId) throw fault("jobId is required", "INVALID_LOG_JOB");
     const job = this.find(input.jobId);
-    if (!["pause", "resume", "cancel"].includes(input.action)) throw fault("action must be pause, resume or cancel", "INVALID_LOG_JOB_ACTION");
-    if (terminal.has(job.status)) return this.get(input);
+    if (!["pause", "resume", "cancel", "stop_after_file", "narrow"].includes(input.action)) throw fault("invalid log task action", "INVALID_LOG_JOB_ACTION");
+    if (input.stopAfterFile !== void 0 && input.action !== "stop_after_file" || (input.dateFrom !== void 0 || input.dateTo !== void 0) && input.action !== "narrow") throw fault("parameters do not apply to this action", "INVALID_LOG_JOB_ACTION");
+    if (input.action === "narrow") {
+      if (!input.dateFrom && !input.dateTo) throw fault("narrow requires dateFrom or dateTo", "INVALID_LOG_JOB_SCOPE");
+      checkDate(input.dateFrom);
+      checkDate(input.dateTo);
+      if (input.dateFrom && input.dateTo && input.dateFrom > input.dateTo) throw fault("invalid date range", "INVALID_LOG_JOB_SCOPE");
+    }
+    if (input.stopAfterFile) {
+      assertPathAllowed(input.stopAfterFile, this.config.security.allowedPaths);
+      input = { ...input, stopAfterFile: import_posix10.default.normalize(input.stopAfterFile) };
+    }
+    if (terminal.has(job.status)) return this.get({ jobId: job.jobId });
+    if (["stop_after_file", "narrow"].includes(input.action)) return this.sendControl(job, input);
     if (job.status === "queued") {
       if (input.action !== "cancel") throw fault("queued tasks can only be cancelled", "LOG_JOB_NOT_RUNNING", 409);
       job.status = "cancelled";
       this.retain(job);
+      this.resourceClient?.update(job.resourceTaskId, { status: "cancelled", phase: "finished" });
     } else {
       job.requestedAction = input.action;
+      if (input.action === "cancel") job.status = "cancelling";
       if (job.channel && !job.channel.destroyed) job.channel.write(JSON.stringify({ type: input.action }) + "\n");
       if (input.action === "cancel") job.controller.abort(fault("log query cancelled", "LOG_JOB_CANCELLED", 499));
     }
     return this.get({ jobId: job.jobId });
   }
+  async sendControl(job, input) {
+    if (!job.channel || job.status === "cancelling") throw fault("log task control channel is not ready", "LOG_JOB_NOT_READY", 409);
+    const requestId = (0, import_node_crypto17.randomUUID)();
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        job.controls.delete(requestId);
+        reject(fault("log task control acknowledgement timed out", "LOG_JOB_CONTROL_TIMEOUT", 504));
+      }, 5e3);
+      job.controls.set(requestId, { resolve: () => {
+        clearTimeout(timer);
+        resolve();
+      }, reject: (error) => {
+        clearTimeout(timer);
+        reject(error);
+      } });
+      job.channel.write(JSON.stringify({ type: input.action, requestId, stopAfterFile: input.stopAfterFile, dateFrom: input.dateFrom, dateTo: input.dateTo }) + "\n");
+    });
+    return this.get({ jobId: job.jobId });
+  }
   pump() {
-    if (this.active || this.closed) return;
-    const job = [...this.jobs.values()].find((item) => item.status === "queued");
+    if (this.activeJobs.size >= (this.resourceClient ? 2 : 1) || this.closed) return;
+    const job = [...this.jobs.values()].filter((item) => item.status === "queued").sort((a, b) => Number(this.resourceClient?.registry.tasks.get(b.resourceTaskId)?.resourceMode === "manual_max") - Number(this.resourceClient?.registry.tasks.get(a.resourceTaskId)?.resourceMode === "manual_max"))[0];
     if (!job) return;
     this.active = job;
+    this.activeJobs.add(job);
     job.promise = this.execute(job).finally(() => {
-      this.active = null;
+      this.activeJobs.delete(job);
+      this.active = [...this.activeJobs][0] || null;
       this.pump();
     });
+    this.pump();
+  }
+  storeReceipt(job, receipt) {
+    if (!Number.isInteger(receipt.fileIndex) || receipt.fileIndex < 0 || receipt.fileIndex >= 5e3 || typeof receipt.path !== "string") throw fault("invalid file receipt", "LOG_JOB_PROTOCOL", 502);
+    const previous = job.fileResults.get(receipt.fileIndex);
+    if (previous && previous.path !== receipt.path) throw fault("file receipt identity changed", "LOG_JOB_PROTOCOL", 502);
+    if (previous?.finishedAt !== void 0) return;
+    if (previous && previous.status !== "running" && receipt.status === "running") return;
+    const value = {
+      ...receipt,
+      queryId: job.jobId,
+      ...receipt.finishedAt === void 0 ? { status: "running", scanComplete: false, countsAreComplete: false, evidenceComplete: false } : {}
+    };
+    const bytes = job.receiptBytes - (previous ? Buffer.byteLength(JSON.stringify(previous)) : 0) + Buffer.byteLength(JSON.stringify(value));
+    if (bytes > 8 * 1024 * 1024) throw fault("file receipt storage budget exceeded", "LOG_JOB_RECEIPT_LIMIT", 502);
+    job.receiptBytes = bytes;
+    job.fileResults.set(receipt.fileIndex, value);
   }
   async execute(job) {
     job.startedAt = this.now();
@@ -61370,19 +62312,68 @@ var LogJobRunner = class {
     job.controller = new AbortController();
     const linked = createOperationController(envelope, job.controller.signal, { layer: "logs", deadlinePhase: "job" });
     const decoder = new import_node_string_decoder2.StringDecoder("utf8");
+    const resourcePending = /* @__PURE__ */ new Map();
+    if (job.resourceTaskId) {
+      this.resourceClient.update(job.resourceTaskId, { status: "starting", phase: "waiting_resources" });
+      this.resourceClient.bind(job.resourceTaskId, {
+        onBudget: (budget, revision) => {
+          job.resourceBudget = budget;
+          if (!job.channel) return;
+          return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+              resourcePending.delete(revision);
+              reject(new Error("resource update not acknowledged"));
+            }, 5e3);
+            resourcePending.set(revision, { resolve: () => {
+              clearTimeout(timer);
+              resolve();
+            }, reject: () => {
+              clearTimeout(timer);
+              reject(new Error("task terminated"));
+            } });
+            job.channel.write(JSON.stringify({ type: "resource_update", budget, revision }) + "\n");
+          });
+        },
+        renew: (valid) => {
+          if (valid && job.channel && !job.channel.destroyed) job.channel.write('{"type":"resource_renew"}\n');
+        }
+      });
+    }
     let pending = "", receivedFinal = false, heartbeat;
     const onFrame = (frame) => {
       if (receivedFinal) throw fault("duplicate terminal log frame", "LOG_JOB_PROTOCOL", 502);
       if (frame.type === "progress") {
         job.progress = frame;
-        if (frame.status === "paused" || frame.status === "running") job.status = frame.status;
-        if (job.requestedAction === "pause" && frame.status === "paused" || job.requestedAction === "resume" && frame.status === "running") job.requestedAction = void 0;
+        if (job.status !== "cancelling" && ["paused", "running", "stopping"].includes(frame.status)) job.status = frame.status;
+        if (job.requestedAction === "pause" && frame.status === "paused" || job.requestedAction === "resume" && ["running", "stopping"].includes(frame.status)) job.requestedAction = void 0;
+        if (frame.currentFileProgress) this.storeReceipt(job, frame.currentFileProgress);
+      } else if (frame.type === "resource_ack") {
+        resourcePending.get(frame.revision)?.resolve();
+        resourcePending.delete(frame.revision);
+      } else if (frame.type === "file_started") {
+        this.storeReceipt(job, frame.receipt);
+      } else if (frame.type === "file_result") {
+        this.storeReceipt(job, frame.receipt);
+        job.progress = frame.progress;
+        job.channel?.write(JSON.stringify({ type: "receipt_ack", receiptId: frame.receiptId }) + "\n");
+      } else if (frame.type === "control_ack") {
+        const pending2 = job.controls.get(frame.requestId);
+        if (pending2) {
+          job.controls.delete(frame.requestId);
+          if (frame.ok) {
+            job.progress = frame.progress;
+            job.scopeControls = { dateFrom: frame.progress.remainingDateFrom, dateTo: frame.progress.remainingDateTo, stopAfterFile: frame.progress.stopAfterFile };
+            if (job.status !== "cancelling") job.status = frame.progress.status;
+            pending2.resolve();
+          } else pending2.reject(fault(frame.error.message, frame.error.code, 409));
+        }
       } else if (frame.type === "evidence") {
         const bytes = Buffer.byteLength(JSON.stringify(frame.record));
         if (job.evidence.length >= job.query.limit || job.evidenceBytes + bytes > job.query.maxBytes) throw fault("log evidence budget exceeded", "LOG_JOB_PROTOCOL", 502);
         job.evidence.push(frame.record);
         job.evidenceBytes += bytes;
         job.progress = frame.progress;
+        if (frame.progress.currentFileProgress) this.storeReceipt(job, frame.progress.currentFileProgress);
       } else if (frame.type === "result") {
         receivedFinal = true;
         job.result = { ...frame.result, resources: frame.resources };
@@ -61391,17 +62382,38 @@ var LogJobRunner = class {
         job.progress = frame;
         job.error = frame.error;
       } else throw fault("unknown log job frame", "LOG_JOB_PROTOCOL", 502);
+      if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, {
+        status: job.status,
+        phase: "scanning",
+        usage: frame.resources || frame.progress?.resources || job.progress.resources || {},
+        progress: {
+          scannedBytes: job.progress.scannedBytes || 0,
+          expandedBytes: job.progress.expandedBytes || 0,
+          matchedLines: job.progress.matchedLines || 0,
+          completedFiles: job.progress.completedFiles || 0,
+          totalFiles: job.progress.totalFiles || 0
+        }
+      });
     };
     try {
+      if (job.resourceTaskId) await this.resourceClient.wait(job.resourceTaskId, linked.signal);
       const result = await this.runSSH(logJobCommand(), {
         config: this.config,
         operation: { ...envelope, signal: linked.signal },
         priority: "background",
         captureStdout: false,
         keepStdinOpen: true,
-        stdin: JSON.stringify({ type: "start", input: { ...job.query, deadlineAt: envelope.deadlineAt } }) + "\n",
+        resourceTaskId: job.resourceTaskId,
+        taskType: "log_search",
+        stdin: JSON.stringify({ type: "start", input: {
+          ...job.query,
+          deadlineAt: envelope.deadlineAt,
+          resourceBudget: job.resourceBudget,
+          resourceLeaseRequired: Boolean(job.resourceTaskId)
+        } }) + "\n",
         onChannel: (channel) => {
           job.channel = channel;
+          if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "running", phase: "scanning" });
           if (job.requestedAction) channel.write(JSON.stringify({ type: job.requestedAction }) + "\n");
           heartbeat = setInterval(() => {
             if (!channel.destroyed && channel.writableLength < 4096) channel.write('{"type":"heartbeat"}\n');
@@ -61423,7 +62435,7 @@ var LogJobRunner = class {
       if (!receivedFinal || pending || result.exitCode !== 0 && !job.error) throw fault("SSH log task ended without a complete result", "LOG_JOB_INTERRUPTED", 502);
       if (job.error) job.status = this.errorStatus(job.error.code);
       else {
-        job.status = job.result.countsAreComplete ? "completed" : "partial";
+        job.status = job.result.stopReason ? "stopped" : job.result.countsAreComplete ? "completed" : "partial";
         job.progress = { ...job.result, records: void 0, groups: void 0, warnings: void 0 };
         job.evidence = [];
       }
@@ -61435,8 +62447,24 @@ var LogJobRunner = class {
       clearInterval(heartbeat);
       linked.cleanup();
       job.channel = null;
+      for (const pending2 of resourcePending.values()) pending2.reject();
+      resourcePending.clear();
+      for (const pending2 of job.controls.values()) pending2.reject(fault("log task terminated before control acknowledgement", "LOG_JOB_NOT_RUNNING", 409));
+      job.controls.clear();
+      try {
+        if (job.progress.currentFileProgress) this.storeReceipt(job, job.progress.currentFileProgress);
+        for (const receipt of job.fileResults.values()) {
+          if (receipt.status === "running") this.storeReceipt(job, { ...receipt, status: job.status, scanComplete: false, countsAreComplete: false, evidenceComplete: false, finishedAt: this.now(), error: job.error });
+        }
+      } catch (error) {
+        job.status = "failed";
+        job.result = void 0;
+        job.error = { code: error.code || "LOG_JOB_PROTOCOL", message: error.message };
+      }
+      job.progress = { ...job.progress, status: job.status, countsAreComplete: job.status === "completed" && job.result?.countsAreComplete === true };
       this.retain(job);
       job.requestedAction = void 0;
+      if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: job.status, phase: "finished", usage: job.result?.resources || job.progress.resources || {} });
     }
   }
   errorStatus(code) {
@@ -61448,22 +62476,297 @@ var LogJobRunner = class {
   async close() {
     this.closed = true;
     for (const job of this.jobs.values()) if (!terminal.has(job.status)) this.control({ jobId: job.jobId, action: "cancel" });
-    await this.active?.promise;
+    await Promise.allSettled([...this.activeJobs].map((job) => job.promise));
     for (const job of this.jobs.values()) clearTimeout(job.expiryTimer);
     this.jobs.clear();
   }
 };
 
+// remote-resource-manager.js
+var import_node_events3 = require("node:events");
+var fault2 = (message, code, statusCode = 400) => Object.assign(new Error(message), { code, statusCode });
+var equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+var numeric = (value) => Number.isFinite(value) && value >= 0;
+var RemoteResourceManager = class extends import_node_events3.EventEmitter {
+  constructor({ policy, instance = () => null, now = Date.now } = {}) {
+    super();
+    this.policy = normalizeResourcePolicy(policy);
+    this.instance = instance;
+    this.now = now;
+    this.workers = /* @__PURE__ */ new Map();
+    this.tasks = /* @__PURE__ */ new Map();
+    this.domains = /* @__PURE__ */ new Map();
+    this.revision = 0;
+    this.timer = setInterval(() => this.rebalance(), 1e3);
+    this.timer.unref?.();
+  }
+  domainFor(instanceId) {
+    const instance = this.instance(instanceId);
+    return this.policy.domains[instanceId] || (instance?.host ? `${instance.host}:${instance.port || 22}` : instanceId);
+  }
+  domain(instanceId) {
+    const id = this.domainFor(instanceId);
+    if (!this.domains.has(id)) this.domains.set(id, { id, sample: null, factor: 1, recoveryAt: this.now() });
+    return this.domains.get(id);
+  }
+  attach(instanceId, epoch, send) {
+    const previous = this.workers.get(instanceId);
+    if (previous?.epoch === epoch) {
+      for (const task of this.tasks.values()) if (task.instanceId === instanceId && task.epoch === epoch && task.budget && !RESOURCE_TERMINAL.has(task.status)) send({ type: "resource_budget", epoch, taskId: task.taskId, revision: task.budgetRevision, budget: task.budget });
+      return;
+    }
+    if (previous && previous.epoch !== epoch) this.detach(instanceId, previous.epoch);
+    this.workers.set(instanceId, { epoch, send, domain: this.domainFor(instanceId) });
+    this.domain(instanceId);
+    this.electSamplers();
+    this.rebalance();
+  }
+  electSamplers() {
+    const selected = /* @__PURE__ */ new Set();
+    for (const worker of this.workers.values()) {
+      const sampler = !selected.has(worker.domain);
+      selected.add(worker.domain);
+      worker.send({ type: "resource_config", epoch: worker.epoch, policy: this.policy, sampler });
+    }
+  }
+  detach(instanceId, epoch) {
+    if (this.workers.get(instanceId)?.epoch !== epoch) return;
+    this.workers.delete(instanceId);
+    for (const entry of this.tasks.values()) if (entry.instanceId === instanceId && entry.epoch === epoch && !RESOURCE_TERMINAL.has(entry.status)) {
+      entry.status = "interrupted";
+      entry.finishedAt = this.now();
+      entry.resourceMode = "auto";
+      entry.reason = "连接已失效，等待远端执行器回收";
+      entry.orphanUntil = this.now() + 6e4;
+    }
+    this.electSamplers();
+    this.rebalance();
+  }
+  report(instanceId, epoch, task) {
+    if (this.workers.get(instanceId)?.epoch !== epoch || !/^[a-f0-9-]{36}$/.test(task?.taskId || "") || !Object.hasOwn(RESOURCE_PROFILES, task.type)) return;
+    const previous = this.tasks.get(task.taskId);
+    if (previous && (previous.epoch !== epoch || previous.instanceId !== instanceId)) return;
+    const profile = RESOURCE_PROFILES[task.type];
+    const resumed = !previous && task.type === "mongo_bulk" && task.referenceId ? [...this.tasks.values()].find((t) => t.instanceId === instanceId && t.type === task.type && t.referenceId === task.referenceId && t.handoverManual) : null;
+    const inheritedMaximum = resumed && ![...this.tasks.values()].some((t) => t.domain === resumed.domain && t.resourceMode === "manual_max");
+    if (resumed) resumed.handoverManual = false;
+    const usage = Object.fromEntries(Object.entries(task.usage || {}).filter(([key, v]) => ["rssBytes", "peakRssBytes", "cpuMs", "elapsedMs", "readBytes", "processedBytes", "transferBytes"].includes(key) && numeric(v)));
+    const progress = Object.fromEntries(Object.entries(task.progress || {}).filter(([key, v]) => ["scannedBytes", "expandedBytes", "matchedLines", "completedFiles", "totalFiles", "batchCount", "nextBatch", "nextVerifyBatch", "committedBatchCount", "verifiedBatchCount", "operationCount"].includes(key) && numeric(v)));
+    const request = {};
+    for (const key of ["cpuMilliCores", "readBytesPerSecond", "processBytesPerSecond", "rssLimitBytes", "parallelism", "maxCpuMilliCores", "maxReadBytesPerSecond", "maxProcessBytesPerSecond"]) if (numeric(task.requested?.[key])) request[key] = task.requested[key];
+    const statuses = ["queued", "starting", "running", "paused", "cancelling", "stopping", ...RESOURCE_TERMINAL];
+    if (!statuses.includes(task.status)) return;
+    const entry = {
+      ...previous,
+      taskId: task.taskId,
+      instanceId,
+      epoch,
+      domain: this.domainFor(instanceId),
+      type: task.type,
+      bulk: profile.bulk,
+      referenceId: String(task.referenceId || "").slice(0, 64),
+      label: String(task.label || task.type).slice(0, 160),
+      source: String(task.source || "api").slice(0, 80),
+      status: task.status,
+      phase: String(task.phase || task.status).slice(0, 48),
+      createdAt: previous?.createdAt || this.now(),
+      updatedAt: this.now(),
+      usage,
+      progress,
+      requested: request,
+      inFlight: task.inFlight === true,
+      appliedRevision: Number.isInteger(task.appliedRevision) ? task.appliedRevision : previous?.appliedRevision || 0,
+      capabilities: (Array.isArray(task.capabilities) ? task.capabilities : []).filter((v) => ["pause", "resume", "cancel", "stop_after_file", "detail"].includes(v)),
+      resourceMode: previous?.resourceMode || (inheritedMaximum ? "manual_max" : "auto"),
+      modeRevision: previous?.modeRevision || 1
+    };
+    if (previous?.usage?.elapsedMs < usage.elapsedMs && previous.usage.cpuMs <= usage.cpuMs) {
+      entry.cpuMilliCoresUsed = Math.min(64e3, (usage.cpuMs - previous.usage.cpuMs) / (usage.elapsedMs - previous.usage.elapsedMs) * 1e3);
+    }
+    if (RESOURCE_TERMINAL.has(entry.status)) {
+      entry.handoverManual = previous?.resourceMode === "manual_max" && task.phase === "resumed_as_new_execution";
+      entry.finishedAt ||= this.now();
+      entry.resourceMode = "auto";
+    }
+    this.tasks.set(entry.taskId, entry);
+    this.rebalance();
+  }
+  sample(instanceId, epoch, sample) {
+    if (this.workers.get(instanceId)?.epoch !== epoch) return;
+    const domain = this.domain(instanceId);
+    const keys = ["cpuCores", "cpuBusyRatio", "memoryAvailableBytes", "totalMemoryBytes", "load1", "ioWaitRatio"];
+    if (!sample || keys.some((key) => !numeric(sample[key])) || sample.cpuCores < 0.01 || sample.cpuCores > 4096 || sample.cpuBusyRatio > 1 || sample.ioWaitRatio > 1) return;
+    if (!domain.sample) domain.factor = 1;
+    domain.sample = Object.fromEntries(keys.map((key) => [key, sample[key]]));
+    domain.sample.scope = sample.scope === "cgroup" ? "cgroup" : "host";
+    domain.sample.sampledAt = this.now();
+    this.rebalance();
+  }
+  setMode(instanceId, taskId, mode, expectedRevision) {
+    const task = this.tasks.get(taskId);
+    if (!task || task.instanceId !== instanceId) throw fault2("任务不存在或已过期", "TASK_NOT_FOUND", 404);
+    if (!task.bulk || RESOURCE_TERMINAL.has(task.status)) throw fault2("只有未结束的批量任务可提档", "TASK_MODE_INVALID", 409);
+    if (task.status === "cancelling") throw fault2("任务正在取消，无法调整资源模式", "TASK_MODE_INVALID", 409);
+    if (!["auto", "manual_max"].includes(mode)) throw fault2("无效资源模式", "TASK_MODE_INVALID");
+    if (!Number.isInteger(expectedRevision) || expectedRevision !== task.modeRevision) throw fault2("任务模式已变化，请刷新后重试", "TASK_REVISION_CONFLICT", 409);
+    if (mode === "manual_max") for (const other of this.tasks.values()) {
+      if (other.domain === task.domain && other.taskId !== taskId && other.resourceMode === "manual_max") {
+        other.resourceMode = "auto";
+        other.modeRevision++;
+      }
+    }
+    task.resourceMode = mode;
+    task.modeRevision++;
+    this.rebalance();
+    return this.publicTask(task);
+  }
+  budget(entry, cpu, factor = 1, reason = "") {
+    const p = this.policy, profile = RESOURCE_PROFILES[entry.type], manual = entry.resourceMode === "manual_max";
+    const normalCpu = entry.requested.cpuMilliCores || profile.cpuMilliCores;
+    const bulkReadCap = (p.readBytesPerSecond - p.protectedReadBytesPerSecond) * cpu / (p.cpuMilliCores - p.protectedCpuMilliCores - p.controlCpuMilliCores);
+    const bulkProcessCap = (p.processBytesPerSecond - p.protectedProcessBytesPerSecond) * cpu / (p.cpuMilliCores - p.protectedCpuMilliCores - p.controlCpuMilliCores);
+    const activeBulk = [...this.tasks.values()].filter((t) => t.domain === entry.domain && t.bulk && !RESOURCE_TERMINAL.has(t.status) && t.status !== "queued").length;
+    const transferFloor = entry.status === "queued" ? 0 : 16384;
+    const bulkTransferCap = transferFloor + Math.max(0, p.transferBytesPerSecond - p.protectedTransferBytesPerSecond - activeBulk * 16384) * cpu / (p.cpuMilliCores - p.protectedCpuMilliCores - p.controlCpuMilliCores);
+    return {
+      cpuMilliCores: Math.max(0, Math.floor(cpu)),
+      readBytesPerSecond: cpu ? Math.max(1, Math.floor(profile.bulk ? Math.min(bulkReadCap, entry.requested.maxReadBytesPerSecond || Infinity, manual ? Infinity : entry.requested.readBytesPerSecond || 2 * 1048576) : p.protectedReadBytesPerSecond)) : 0,
+      processBytesPerSecond: cpu ? Math.max(1, Math.floor(profile.bulk ? Math.min(bulkProcessCap, entry.requested.maxProcessBytesPerSecond || Infinity, manual ? Infinity : entry.requested.processBytesPerSecond || 4 * 1048576) : p.protectedProcessBytesPerSecond)) : 0,
+      transferBytesPerSecond: Math.floor(profile.bulk ? bulkTransferCap : entry.type === "control" ? cpu ? p.controlTransferBytesPerSecond : 0 : (p.protectedTransferBytesPerSecond - p.controlTransferBytesPerSecond) * cpu / p.protectedCpuMilliCores),
+      rssLimitBytes: Math.min(entry.requested.rssLimitBytes || profile.memoryBytes, profile.memoryBytes),
+      parallelism: cpu ? Math.max(1, Math.min(entry.requested.parallelism || 1, Math.ceil(cpu / 200))) : 0,
+      dispatchDelayMs: cpu ? Math.max(0, Math.ceil(200 / cpu * 50) - 50) : 100,
+      mode: entry.resourceMode,
+      reason
+    };
+  }
+  rebalance() {
+    const now = this.now(), p = this.policy;
+    for (const [id, task] of this.tasks) if (task.finishedAt && now - task.finishedAt > 18e5 || this.tasks.size > 1e3 && task.finishedAt && !task.orphanUntil) this.tasks.delete(id);
+    for (const domain of this.domains.values()) {
+      const all = [...this.tasks.values()].filter((t) => t.domain === domain.id);
+      const live = all.filter((t) => !RESOURCE_TERMINAL.has(t.status));
+      if (live.some((task) => task.bulk) && now - (domain.lastProbeRequested || 0) >= p.sampleIntervalMs && (!domain.sample || now - domain.sample.sampledAt >= p.sampleIntervalMs)) {
+        const leader = [...this.workers.values()].find((worker) => worker.domain === domain.id);
+        if (leader) {
+          domain.lastProbeRequested = now;
+          leader.send({ type: "resource_probe_request", epoch: leader.epoch });
+        }
+      }
+      const fresh = domain.sample && now - domain.sample.sampledAt <= p.sampleTtlMs;
+      const desired = /* @__PURE__ */ new Map();
+      const managed = live.reduce((sum, t) => sum + (now - t.updatedAt < p.sampleTtlMs ? t.cpuMilliCoresUsed || 0 : 0), 0);
+      const raw = fresh ? Math.min(p.cpuMilliCores, Math.max(0, domain.sample.cpuCores * 1e3 * (0.8 - domain.sample.cpuBusyRatio) + managed)) : 0;
+      const targetFactor = Math.min(1, raw / p.cpuMilliCores, fresh && domain.sample.ioWaitRatio > 0.2 ? 0.5 : 1);
+      if (targetFactor < domain.factor) {
+        domain.factor = targetFactor;
+        domain.recoveryAt = now;
+      } else if (now - domain.recoveryAt >= 1e4) {
+        domain.factor = Math.min(targetFactor, domain.factor + 0.1);
+        domain.recoveryAt = now;
+      }
+      const orphan = all.filter((t) => t.orphanUntil > now);
+      let cpu = Math.max(0, p.cpuMilliCores * domain.factor - p.protectedCpuMilliCores - p.controlCpuMilliCores - orphan.reduce((n, t) => n + (t.budget?.cpuMilliCores || 0), 0));
+      const availableMemory = fresh ? Math.max(0, domain.sample.memoryAvailableBytes - Math.max(128 * 1048576, domain.sample.totalMemoryBytes * p.memoryHeadroomRatio) + live.reduce((n, t) => n + (t.usage.rssBytes || 0), 0)) : 0;
+      let memory = Math.min(p.memoryBytes - p.protectedMemoryBytes, availableMemory) - orphan.reduce((n, t) => n + (t.budget?.rssLimitBytes || 0), 0) - live.filter((t) => t.bulk && t.status === "paused").reduce((n, t) => n + (t.usage.rssBytes || 0), 0);
+      const bulk = live.filter((t) => t.bulk && !["paused", "queued"].includes(t.status)).sort((a, b) => Number(b.resourceMode === "manual_max") - Number(a.resourceMode === "manual_max") || a.createdAt - b.createdAt);
+      const pinned = bulk.filter((t) => t.type === "mongo_bulk" && t.inFlight);
+      for (const task of pinned) {
+        const grant = { ...task.budget || this.budget(task, 0), mode: task.resourceMode, reason: "等待当前数据库批次结束后调整资源" };
+        desired.set(task.taskId, grant);
+        cpu -= grant.cpuMilliCores;
+        memory -= grant.rssLimitBytes;
+      }
+      const eligible = bulk.filter((t) => !pinned.includes(t));
+      for (const task of eligible) {
+        const rss = Math.min(task.requested.rssLimitBytes || RESOURCE_PROFILES[task.type].memoryBytes, RESOURCE_PROFILES[task.type].memoryBytes);
+        let grant = 0, reason = "";
+        if (!fresh) reason = "远端资源采样失效";
+        else if (memory < rss) reason = "可用内存不足";
+        else if (cpu < 10) reason = "为其他任务保留资源";
+        else {
+          const manual = task.resourceMode === "manual_max";
+          const share = cpu / Math.max(1, eligible.filter((t) => !desired.has(t.taskId)).length);
+          grant = Math.min(cpu, task.requested.maxCpuMilliCores || Infinity, manual ? cpu : Math.min(task.requested.cpuMilliCores || RESOURCE_PROFILES[task.type].cpuMilliCores, share));
+          if (manual && pinned.length) reason = "等待其他数据库批次完成，逐步接管资源";
+          else if (domain.factor < 1) reason = "主机资源压力，降低执行预算";
+          else if (manual && task.requested.maxCpuMilliCores && grant >= task.requested.maxCpuMilliCores) reason = "已达到管理员配置的任务上限";
+          else if (grant < (task.requested.cpuMilliCores || RESOURCE_PROFILES[task.type].cpuMilliCores)) reason = "按共享资源池分配";
+          cpu -= grant;
+        }
+        memory -= Math.max(task.usage.rssBytes || 0, grant ? rss : 0);
+        desired.set(task.taskId, this.budget(task, grant, domain.factor, reason));
+      }
+      let protectedCpu = p.protectedCpuMilliCores, protectedMemory = p.protectedMemoryBytes - 32 * 1048576, controlAvailable = true;
+      for (const task of live.filter((t) => !desired.has(t.taskId)).sort((a, b) => Number(b.status === "running") - Number(a.status === "running") || a.createdAt - b.createdAt)) {
+        let cpu2 = 0;
+        if (!task.bulk && task.type === "control" && controlAvailable) {
+          cpu2 = p.controlCpuMilliCores;
+          controlAvailable = false;
+        } else if (!task.bulk && task.type !== "control" && protectedMemory >= RESOURCE_PROFILES[task.type].memoryBytes) {
+          cpu2 = Math.min(RESOURCE_PROFILES[task.type].cpuMilliCores, protectedCpu);
+          protectedCpu -= cpu2;
+          if (cpu2) protectedMemory -= RESOURCE_PROFILES[task.type].memoryBytes;
+        }
+        desired.set(task.taskId, this.budget(task, cpu2, 1, task.bulk ? task.status === "paused" ? "任务已暂停" : "等待执行通道" : "非批量任务保底"));
+      }
+      const reductions = live.filter((t) => desired.get(t.taskId).cpuMilliCores < (t.budget?.cpuMilliCores || 0));
+      const pendingReduction = live.some((t) => t.budget && t.appliedRevision < t.budgetRevision && t.reducing);
+      for (const task of live) {
+        const grant = desired.get(task.taskId);
+        if (equal(task.budget, grant)) continue;
+        const increase = grant.cpuMilliCores > (task.budget?.cpuMilliCores || 0);
+        if (increase && task.bulk && (reductions.length || pendingReduction)) continue;
+        task.reducing = grant.cpuMilliCores < (task.budget?.cpuMilliCores || 0);
+        task.budget = grant;
+        task.budgetRevision = ++this.revision;
+        task.resourceState = grant.cpuMilliCores ? grant.cpuMilliCores < (task.requested.cpuMilliCores || RESOURCE_PROFILES[task.type].cpuMilliCores) ? "throttled" : "normal" : task.status === "queued" ? "waiting" : "suspended";
+        task.reason = grant.reason;
+        const worker = this.workers.get(task.instanceId);
+        if (worker?.epoch === task.epoch) worker.send({ type: "resource_budget", epoch: task.epoch, taskId: task.taskId, revision: task.budgetRevision, budget: grant });
+      }
+      domain.available = { cpuMilliCores: Math.max(0, raw), factor: domain.factor, sampleFresh: Boolean(fresh) };
+    }
+    this.emit("change", { revision: ++this.revision });
+  }
+  publicTask(task) {
+    const { epoch, domain, requested, orphanUntil, reducing, handoverManual, ...value } = task;
+    const released = RESOURCE_TERMINAL.has(task.status) && !(task.orphanUntil > this.now());
+    return {
+      ...value,
+      resourceState: released ? "released" : task.orphanUntil > this.now() ? "reclaiming" : task.resourceState,
+      budget: released && task.budget ? { ...task.budget, cpuMilliCores: 0, readBytesPerSecond: 0, processBytesPerSecond: 0, transferBytesPerSecond: 0, parallelism: 0 } : task.budget,
+      enforcement: task.type === "log_search" ? "cooperative" : task.type === "mongo_bulk" ? "batch_dispatch" : "admission",
+      elapsedMs: Math.max(0, (task.finishedAt || this.now()) - task.createdAt)
+    };
+  }
+  list(instanceId, { offset = 0, limit = 50 } = {}) {
+    const tasks = [...this.tasks.values()].filter((t) => t.instanceId === instanceId).sort((a, b) => Number(RESOURCE_TERMINAL.has(a.status)) - Number(RESOURCE_TERMINAL.has(b.status)) || Number(b.resourceMode === "manual_max") - Number(a.resourceMode === "manual_max") || b.createdAt - a.createdAt);
+    const domain = this.domain(instanceId);
+    return {
+      tasks: tasks.slice(offset, offset + limit).map((t) => this.publicTask(t)),
+      total: tasks.length,
+      nextOffset: offset + limit < tasks.length ? offset + limit : null,
+      pool: { domain: domain.id, policy: this.policy, sample: domain.sample, available: domain.available },
+      revision: this.revision
+    };
+  }
+  close() {
+    clearInterval(this.timer);
+    this.workers.clear();
+  }
+};
+
 // worker-manager.js
 var import_node_child_process3 = require("node:child_process");
-var import_node_crypto18 = require("node:crypto");
+var import_node_crypto19 = require("node:crypto");
 var import_promises5 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
 var import_node_path11 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
 
 // memory-store.js
-var import_node_crypto17 = require("node:crypto");
+var import_node_crypto18 = require("node:crypto");
 var import_node_fs7 = __toESM(require("node:fs"), 1);
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path10 = __toESM(require("node:path"), 1);
@@ -61541,7 +62844,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto17.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto18.createHash)("sha256").update(stableJson({
     host: instance.host || "",
     port: instance.port || 22,
     username: instance.username || ""
@@ -61727,12 +63030,12 @@ function observationPatch(pathName, payload = {}, result = {}, observedAt = nowI
     let configPaths = [];
     let logPaths = [];
     for (const entry of entries) {
-      const name = entry?.name || "";
-      if (result.path.startsWith("/etc/nginx") && name.endsWith(".conf")) {
-        configPaths = addUniquePath(configPaths, joinRemotePath2(result.path, name));
+      const name2 = entry?.name || "";
+      if (result.path.startsWith("/etc/nginx") && name2.endsWith(".conf")) {
+        configPaths = addUniquePath(configPaths, joinRemotePath2(result.path, name2));
       }
-      if (name.endsWith(".log") || result.path.includes("/log")) {
-        logPaths = addUniquePath(logPaths, joinRemotePath2(result.path, name));
+      if (name2.endsWith(".log") || result.path.includes("/log")) {
+        logPaths = addUniquePath(logPaths, joinRemotePath2(result.path, name2));
       }
     }
     return {
@@ -61907,7 +63210,7 @@ var MemoryStore = class {
   async write(instanceId, memory) {
     const filePath = this.memoryPath(instanceId);
     await import_promises4.default.mkdir(import_node_path10.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto17.randomUUID)()}.tmp`;
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto18.randomUUID)()}.tmp`;
     await import_promises4.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
 `, "utf8");
     await import_promises4.default.rename(tempPath, filePath);
@@ -62226,6 +63529,10 @@ var WorkerManager = class {
     this.restorePromise = null;
     this.restoreSnapshotWritePromise = Promise.resolve();
     this.runtime = /* @__PURE__ */ new Map();
+    this.resourceManager = options.resourceManager || new RemoteResourceManager({
+      policy: options.resourcePolicy,
+      instance: (id) => this.registry.getInternal(id)
+    });
     this.portOwners = /* @__PURE__ */ new Map();
     const monitorEveryMs = Math.max(1e3, Math.floor(this.managerConfig().healthIntervalMs || 15e3));
     this.monitorTimer = setInterval(() => {
@@ -62629,7 +63936,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
-      authToken: (0, import_node_crypto18.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto19.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -62700,11 +64007,13 @@ var WorkerManager = class {
     });
     child.stderr?.resume();
     child.on("message", (message) => {
+      if (runtime.child !== child) return;
       this.handleWorkerMessage(id, message).catch((error) => {
         this.markUnhealthy(id, error);
       });
     });
     child.once("exit", (code, signal) => {
+      if (runtime.child !== child) return;
       this.handleWorkerExit(id, code, signal);
     });
     try {
@@ -62802,6 +64111,24 @@ var WorkerManager = class {
     if (!runtime || !message) {
       return;
     }
+    if (typeof message.type === "string" && message.type.startsWith("resource_")) {
+      if (!this.resourceManager) return;
+      if (message.type === "resource_hello") {
+        if (runtime.resourceEpoch && runtime.resourceEpoch !== message.epoch) return;
+        runtime.resourceEpoch = message.epoch;
+        this.resourceManager.attach(id, message.epoch, (frame) => {
+          if (runtime.child?.connected !== false) runtime.child?.send(frame, () => {
+          });
+        });
+      } else if (runtime.resourceEpoch === message.epoch && message.type === "resource_task") this.resourceManager.report(id, message.epoch, message.task);
+      else if (runtime.resourceEpoch === message.epoch && message.type === "resource_sample") this.resourceManager.sample(id, message.epoch, message.sample);
+      else if (runtime.resourceEpoch === message.epoch && message.type === "resource_sync") {
+        this.resourceManager.rebalance();
+        runtime.child?.send({ type: "resource_sync_ack", epoch: message.epoch, requestId: message.requestId }, () => {
+        });
+      }
+      return;
+    }
     if (message.type === "health") {
       runtime.lastHeartbeatAt = nowIso4();
       if (message.health) {
@@ -62890,6 +64217,7 @@ var WorkerManager = class {
     if (!runtime) {
       return;
     }
+    this.resourceManager?.detach(id, runtime.resourceEpoch);
     const lastPort = runtime.workerPort;
     this.releasePort(lastPort);
     const stopped = runtime.intentionalStop;
@@ -63180,6 +64508,7 @@ var WorkerManager = class {
     }
     clearInterval(this.monitorTimer);
     await Promise.all([...this.runtime.keys()].map((id) => this.stopInstance(id, reason)));
+    this.resourceManager.close();
   }
 };
 
@@ -63239,7 +64568,7 @@ async function writeRuntimeState(config, event2) {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   await import_promises6.default.mkdir(import_node_path12.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto19.randomUUID)()}.tmp`;
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto20.randomUUID)()}.tmp`;
   await import_promises6.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises6.default.rename(tempPath, statePath);
@@ -63259,7 +64588,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto19.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto20.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -63517,7 +64846,7 @@ function createApp(options = {}) {
   });
   let mongoBulkJobRunner;
   const getMongoBulkJobRunner = () => {
-    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk: runMongoBulk2 });
+    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk: runMongoBulk2, resourceClient: options.resourceClient });
     return mongoBulkJobRunner;
   };
   const listLogs2 = (logOptions) => listLogsImpl({
@@ -63542,7 +64871,7 @@ function createApp(options = {}) {
     operation,
     runSSH: runSSH2
   });
-  const logJobRunner = options.logJobRunner || new LogJobRunner({ config, runSSH: runSSH2 });
+  const logJobRunner = options.logJobRunner || new LogJobRunner({ config, runSSH: runSSH2, resourceClient: options.resourceClient });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -63552,6 +64881,17 @@ function createApp(options = {}) {
   app.use("/mongodb/imports/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use(import_express2.default.json({ limit: "512kb" }));
+  app.post("/tasks/control", async (request, response) => {
+    try {
+      const { taskId, action } = request.body || {};
+      if (typeof taskId !== "string" || !["pause", "resume", "cancel", "stop_after_file"].includes(action)) throw Object.assign(new Error("invalid task control"), { code: "TASK_CONTROL_INVALID", statusCode: 400 });
+      if (!options.resourceClient) throw Object.assign(new Error("task controller unavailable"), { code: "TASK_CONTROL_UNAVAILABLE", statusCode: 409 });
+      await options.resourceClient.control(taskId, action);
+      response.json({ ok: true });
+    } catch (error) {
+      response.status(errorStatus(error)).json(errorPayload(error));
+    }
+  });
   app.get("/", (_request, response) => {
     response.sendFile("dashboard.html", { root: publicDir });
   });
@@ -64226,7 +65566,7 @@ function createApp(options = {}) {
     app.post(`/logs/jobs/${action}`, async (request, response) => {
       try {
         const input = request.body || {};
-        const result = action === "start" ? logJobRunner.start(input) : action === "get" ? logJobRunner.get(input) : logJobRunner.control(input);
+        const result = await (action === "start" ? logJobRunner.start(input, { source: sourceFrom(request) }) : action === "get" ? logJobRunner.get(input) : logJobRunner.control(input));
         await audit(config, {
           tool: `logs-job-${action}`,
           jobId: result.jobId,
@@ -64523,9 +65863,9 @@ function createApp(options = {}) {
       } else if (action.startsWith("sandbox")) {
         result = await runMongoBulk2({ ...raw, action }, { operation: requestOperation, priority: "background" });
       } else if (action === "execute") {
-        result = await getMongoBulkJobRunner().start(raw, "execute");
+        result = await getMongoBulkJobRunner().start(raw, "execute", { source: sourceFrom(request) });
       } else if (action === "rollback") {
-        result = await getMongoBulkJobRunner().start(raw, "rollback");
+        result = await getMongoBulkJobRunner().start(raw, "rollback", { source: sourceFrom(request) });
       } else if (action === "control") {
         if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw);
         else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw);
@@ -64847,8 +66187,15 @@ function createManagerApp(options = {}) {
     cwd: options.cwd || process.cwd(),
     workerEntryPath: options.workerEntryPath,
     forkWorker: options.forkWorker,
-    fetchImpl: options.fetchImpl
+    fetchImpl: options.fetchImpl,
+    resourceManager: options.resourceManager,
+    resourcePolicy: config.resources
   });
+  const resourceManager = options.resourceManager || workerManager.resourceManager || new RemoteResourceManager({
+    policy: config.resources,
+    instance: (id) => registry.getInternal(id)
+  });
+  workerManager.resourceManager = resourceManager;
   const commandReviewConfig = options.commandReviewConfig || config.commandReview || { status: "unavailable" };
   const runCodexReview2 = options.runCodexReview || runCodexReview;
   const activity = options.activity || createActivityLog();
@@ -64863,6 +66210,7 @@ function createManagerApp(options = {}) {
   let commandReviewInFlight = false;
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
+  app.locals.resourceManager = resourceManager;
   app.locals.lifecycle = lifecycle;
   installHttpAuth(app, config, { ...options, initializeAuth: true });
   app.use("/api/output-preview/records", import_express2.default.json({ limit: "17mb" }));
@@ -64923,6 +66271,30 @@ function createManagerApp(options = {}) {
       instances: workerManager.publicInstances()
     });
   });
+  app.get("/api/instances/:id/tasks", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.params.id);
+    const offset = Number(request.query.offset || 0), limit = Number(request.query.limit || 50);
+    if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw managerRouteError("无效分页参数", "TASK_PAGE_INVALID", 400);
+    response.json({ ok: true, ...resourceManager.list(id, { offset, limit }) });
+  }));
+  app.post("/api/instances/:id/tasks/:taskId/resource-mode", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.params.id);
+    const input = request.body || {};
+    if (Object.keys(input).some((key) => !["mode", "expectedRevision"].includes(key))) throw managerRouteError("无效调度参数", "TASK_MODE_INVALID", 400);
+    const task = resourceManager.setMode(id, request.params.taskId, input.mode, input.expectedRevision);
+    await audit(config, { tool: "task-resource-mode", instanceId: id, taskId: task.taskId, mode: input.mode, source: sourceFrom(request), ok: true });
+    response.json({ ok: true, task });
+  }));
+  app.post("/api/instances/:id/tasks/:taskId/control", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.params.id);
+    if (Object.keys(request.body || {}).some((key) => key !== "action")) throw managerRouteError("无效任务控制参数", "TASK_CONTROL_INVALID", 400);
+    const task = resourceManager.tasks.get(request.params.taskId);
+    if (!task || task.instanceId !== id) throw managerRouteError("任务不存在", "TASK_NOT_FOUND", 404);
+    if (!task.capabilities.includes(request.body?.action)) throw managerRouteError("任务不支持此操作", "TASK_CONTROL_INVALID", 400);
+    const result = await workerManager.callInstance(id, "/tasks/control", { taskId: task.taskId, action: request.body.action }, request.headers);
+    await audit(config, { tool: "task-control", instanceId: id, taskId: task.taskId, action: request.body.action, ok: true });
+    response.json(result);
+  }));
   function scheduleRestoreInstancesAfterLease(lease) {
     if (typeof workerManager.restoreInstancesFromSnapshot !== "function") {
       return;
@@ -65643,6 +67015,7 @@ function startServer(config = loadConfig(), options = {}) {
         await workerManager.shutdownAll(reason).catch((error) => {
           console.error("failed to stop worker processes", error);
         });
+        app.locals.resourceManager.close();
         if (shutdownOptions.closeServer !== false) {
           await closeServer();
         }

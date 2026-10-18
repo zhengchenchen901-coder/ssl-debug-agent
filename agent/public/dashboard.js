@@ -1,3 +1,4 @@
+let instanceTasksPanel;
 const connectionDot = document.querySelector("#connectionDot");
 const connectionText = document.querySelector("#connectionText");
 const totalCount = document.querySelector("#totalCount");
@@ -361,6 +362,8 @@ function renderRow(instance) {
   const actions = createElement("td");
   const actionWrap = createElement("div", "record-actions");
   const view = button("查看", "view", instance);
+  const tasks = button("任务", "tasks", instance);
+  tasks.disabled = !canUseManager;
   const edit = button("编辑", "edit", instance);
   edit.disabled = !canUseManager;
   edit.title = canUseManager ? "" : "主进程不可用";
@@ -387,6 +390,7 @@ function renderRow(instance) {
   manual.title = "使用管理员账号打开独立的 SSH 工作台";
   actionWrap.append(
     view,
+    tasks,
     edit,
     start,
     stop,
@@ -453,6 +457,11 @@ function updateMongoConnectionState() {
   document.querySelector("#mongodbOptionsStatus").textContent = "";
 }
 
+const manualMongoFields = [
+  ["configPath", "ConfigPath", ""], ["driverPath", "DriverPath", ""], ["configProfile", "ConfigProfile", ""],
+  ["uriKey", "UriKey", "url"], ["database", "Database", ""], ["mongoshPath", "MongoshPath", "mongosh"], ["nodePath", "NodePath", "node"],
+];
+
 function resetForm(instance) {
   instanceForm.reset();
   formMessage.textContent = "";
@@ -472,6 +481,9 @@ function resetForm(instance) {
   if (instanceForm.elements.logProjects) instanceForm.elements.logProjects.value = JSON.stringify(instance?.logProjects || {}, null, 2);
   instanceForm.elements.enabled.checked = instance ? Boolean(instance.enabled) : true;
   instanceForm.elements.approvedCommandsEnabled.checked = Boolean(instance?.approvedCommands?.enabled);
+  const manualMongo = instance?.manualMongo || {};
+  instanceForm.elements.manualMongoEnabled.checked = Boolean(manualMongo.enabled);
+  for (const [key, suffix, fallback] of manualMongoFields) instanceForm.elements[`manualMongo${suffix}`].value = manualMongo[key] ?? fallback;
   const mongodb = instance?.mongodb;
   instanceForm.elements.mongodbEnabled.checked = Boolean(mongodb && mongodb.enabled !== false);
   for (const [key, name] of mongoConnectionFields) {
@@ -639,6 +651,9 @@ function formPayload() {
   if (!payload.auditLog) {
     delete payload.auditLog;
   }
+  const manualMongo = { enabled: form.manualMongoEnabled.checked };
+  for (const [key, suffix] of manualMongoFields) manualMongo[key] = form[`manualMongo${suffix}`].value.trim();
+  if (manualMongo.enabled || findInstance(state.editingId)?.manualMongo) payload.manualMongo = manualMongo;
   const mongodb = findInstance(state.editingId)?.mongodb;
   const mongoEnabled = form.mongodbEnabled.checked;
   if (mongodb || mongoEnabled) {
@@ -766,6 +781,7 @@ function compactPathList(values) {
 }
 
 function openDrawer(instance) {
+  instanceTasksPanel?.destroy();
   const runtime = runtimeOf(instance);
   const health = healthOf(runtime);
   const transportHealth = health.transport || {};
@@ -827,6 +843,8 @@ function openDrawer(instance) {
   }
 
   drawerBody.replaceChildren(details, createElement("h2", "", "最近事件"), eventList);
+  instanceTasksPanel = window.remoteDebugInstanceTasks?.create({ instanceId: instance.id, api, notify: showToast });
+  if (instanceTasksPanel) drawerBody.prepend(instanceTasksPanel.element);
   const sandboxPanel = createElement("section", "detail-list");
   sandboxPanel.append(createElement("h2", "", "插件存储沙盒"));
   const jobInput = createElement("input");
@@ -870,6 +888,7 @@ function openDrawer(instance) {
 }
 
 function closeDrawer() {
+  instanceTasksPanel?.destroy(); instanceTasksPanel = null;
   drawer.hidden = true;
   drawerMask.hidden = true;
 }
@@ -891,7 +910,7 @@ async function runAction(action, id) {
     return;
   }
 
-  if (action === "view") {
+  if (action === "view" || action === "tasks") {
     openDrawer(instance);
     return;
   }

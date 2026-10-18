@@ -35,7 +35,11 @@ export function openManualTerminal(instance, options) {
   client.on("close", close);
   client.on("ready", () => {
     if (closed) return;
-    client.shell({ term: "xterm-256color", cols: size.cols, rows: size.rows }, (error, channel) => {
+    const pty = { term: "xterm-256color", cols: size.cols, rows: size.rows };
+    const open = options.command
+      ? (callback) => client.exec(options.command, { pty }, callback)
+      : (callback) => client.shell(pty, callback);
+    open((error, channel) => {
       if (closed) { channel?.destroy(); return; }
       if (error) { fail("MANUAL_SHELL_FAILED"); return; }
       clearTimeout(openTimer);

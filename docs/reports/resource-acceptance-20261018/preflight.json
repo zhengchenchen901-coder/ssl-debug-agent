@@ -1,0 +1,1056 @@
+{
+  "capabilities": {
+    "schemaVersion": 1,
+    "policyVersion": "9cef1c76243115b8879e86161f25ba52fd62978716565dbf88f6ec57a7ac8e8f",
+    "authority": "remote-debug-agent",
+    "resources": {
+      "sharedHostPools": true,
+      "taskRegistry": true,
+      "dashboardManualMaximum": true,
+      "manualMaximumTools": false,
+      "cooperativeRuntime": true,
+      "operatingSystemQuotas": false,
+      "processCpuAdmissionOnlyTasks": [
+        "diagnostic",
+        "file_read",
+        "mongo_read",
+        "mongo_write",
+        "discovery"
+      ],
+      "batchBoundaryTasks": [
+        "mongo_bulk"
+      ],
+      "configuration": "REMOTE_DEBUG_RESOURCE_POLICY",
+      "policy": {
+        "cpuMilliCores": 1000,
+        "protectedCpuMilliCores": 200,
+        "controlCpuMilliCores": 50,
+        "memoryBytes": 1073741824,
+        "protectedMemoryBytes": 268435456,
+        "readBytesPerSecond": 8388608,
+        "processBytesPerSecond": 16777216,
+        "transferBytesPerSecond": 4194304,
+        "protectedTransferBytesPerSecond": 2097152,
+        "controlTransferBytesPerSecond": 1048576,
+        "protectedReadBytesPerSecond": 1048576,
+        "protectedProcessBytesPerSecond": 1048576,
+        "sampleIntervalMs": 5000,
+        "sampleTtlMs": 20000,
+        "memoryHeadroomRatio": 0.1,
+        "domains": {}
+      }
+    },
+    "ssh": {
+      "hostKeyVerification": "required",
+      "fingerprintAlgorithm": "SHA256",
+      "maxTrustedHostKeys": 4,
+      "configured": false
+    },
+    "commands": {
+      "allowedExecutables": [
+        "ls",
+        "cat",
+        "ps",
+        "netstat",
+        "df",
+        "free",
+        "tail",
+        "grep",
+        "mongodump",
+        "mongo",
+        "mongosh",
+        "systemctl",
+        "nginx",
+        "which",
+        "pm2"
+      ],
+      "pathArguments": {
+        "absoluteOnly": true,
+        "canonicalExecution": true,
+        "recursiveReads": false,
+        "tailMaxLines": 10000,
+        "tailMaxBytes": 1048576,
+        "grepMaxContext": 10000,
+        "shortFlags": {
+          "cat": "nbsvETA",
+          "ls": "laAhdtrS1nipF",
+          "grep": "EFivnHhclLswxo",
+          "tail": ""
+        },
+        "numericFlags": {
+          "tail": [
+            "-n",
+            "-c",
+            "--lines",
+            "--bytes"
+          ],
+          "grep": [
+            "-m",
+            "-A",
+            "-B",
+            "-C"
+          ]
+        },
+        "grepPatternOption": "-e"
+      },
+      "deniedExecutables": [
+        "rm",
+        "shutdown",
+        "reboot",
+        "mkfs",
+        "sudo",
+        "chmod",
+        "chown"
+      ],
+      "commandsRequiringAllowedAbsolutePath": [
+        "ls",
+        "cat",
+        "tail",
+        "grep"
+      ],
+      "versionOnlyExecutables": [
+        "mongodump",
+        "mongo",
+        "mongosh"
+      ],
+      "systemctl": {
+        "actions": [
+          "status",
+          "is-active",
+          "is-enabled"
+        ],
+        "manualActions": [
+          "reload",
+          "restart"
+        ],
+        "units": [
+          "mongod",
+          "mongod.service",
+          "nginx",
+          "nginx.service"
+        ],
+        "options": [
+          "--no-pager",
+          "--plain",
+          "--full"
+        ],
+        "additionalOptionPatterns": [
+          "--lines=<positive integer>"
+        ]
+      },
+      "nginxArguments": [
+        "-t",
+        "-T",
+        "-v",
+        "-V"
+      ],
+      "manualNginxArguments": [
+        "-s reload"
+      ],
+      "pm2": {
+        "actions": [
+          "list",
+          "describe <app-name-or-id>",
+          "env <numeric-process-id>"
+        ],
+        "manualActions": [
+          "reload <app-name-or-id>",
+          "restart <app-name-or-id>"
+        ]
+      },
+      "constraints": [
+        "Read-only commands are parsed as tokens and POSIX-quoted before SSH execution.",
+        "Shell control characters, redirects, substitutions, newlines, and unsafe tokens are rejected.",
+        "Commands that read paths require at least one absolute path under an allowed root.",
+        "tail follow mode (-f or --follow) is rejected; reads must be bounded by returned output limits.",
+        "Log reads use bounded SFTP pagination and streaming plain/gzip/tar-gzip decoding without remote extraction.",
+        "Tar archive members must be relative regular files; unsupported compression and binary logs are reported without decoding.",
+        "The dedicated MongoDB query tool is read-only and bounded; database writes use explicitly enabled, allowlisted mutation tools with transaction or compensating rollback journals.",
+        "Automatic command-draft execution requires the existing approved-command flag, the review flag, a hard-policy pass, and an explicit low-risk model approval."
+      ],
+      "examples": [
+        "netstat -tlnp",
+        "ps aux",
+        "df -h",
+        "free -m",
+        "ls /var/log",
+        "cat /var/log/app.log",
+        "tail -n 100 /var/log/nginx/error.log",
+        "grep error /var/log/app.log",
+        "systemctl --no-pager status nginx.service",
+        "nginx -t",
+        "which node",
+        "pm2 list",
+        "pm2 describe api-server",
+        "pm2 env 1",
+        "mongosh --version"
+      ]
+    },
+    "paths": {
+      "allowedRoots": [
+        "/var/log",
+        "/etc/nginx",
+        "/home/app",
+        "/root/.pm2",
+        "/home/github"
+      ],
+      "sourceRoots": {},
+      "byInstance": {
+        "default": {
+          "sourceRoots": {},
+          "allowedRoots": [
+            "/var/log",
+            "/etc/nginx",
+            "/home/app",
+            "/root/.pm2",
+            "/home/github"
+          ]
+        },
+        "test-server": {
+          "sourceRoots": {},
+          "allowedRoots": [
+            "/var/log",
+            "/etc/nginx",
+            "/home/app",
+            "/root/.pm2",
+            "/home/github"
+          ]
+        }
+      }
+    },
+    "limits": {
+      "defaultCommandTimeoutMs": 30000,
+      "maxCommandTimeoutMs": 120000,
+      "defaultFileTimeoutMs": 60000,
+      "maxFileTimeoutMs": 300000,
+      "defaultReadMaxBytes": 262144,
+      "maxCommandOutputBytes": 1048576
+    },
+    "approvedCommands": {
+      "enabled": false,
+      "ttlMs": 1800000,
+      "executionTimeoutMs": 300000,
+      "maxExecutionTimeoutMs": 900000,
+      "maxCommandLength": 16384,
+      "maxCommands": 20
+    },
+    "commandReview": {
+      "status": "disabled",
+      "configPath": "/Users/zhengchenchen/.remote-debug-agent/.remote-debug/command-review.json",
+      "codexConfigPath": "/Users/zhengchenchen/.codex/config.toml",
+      "source": "not_loaded",
+      "autoExecuteEnabled": false,
+      "reviewTimeoutMs": 30000,
+      "maxRetries": 1
+    },
+    "mongodb": {
+      "enabled": true,
+      "configured": false,
+      "readOnly": true,
+      "operations": [
+        "ping",
+        "listDatabases",
+        "listCollections",
+        "find",
+        "findOne",
+        "countDocuments",
+        "aggregate"
+      ],
+      "maxLimit": 500,
+      "allowedConfigRoots": [
+        "/home/app",
+        "/home/github"
+      ],
+      "mutations": {
+        "schemaVersion": 1,
+        "operations": [
+          "insertOne",
+          "updateOne",
+          "updateMany",
+          "softDeleteOne"
+        ],
+        "indexOperations": [
+          "createIndex",
+          "dropIndex"
+        ],
+        "rollback": true,
+        "rollbackModes": [
+          "transactional",
+          "compensating"
+        ],
+        "ttlIndexes": {
+          "businessAllowed": false,
+          "restoreAllowed": false,
+          "technicalCollection": "__remote_debug_bulk_receipts",
+          "technicalIndex": "remote_debug_bulk_receipt_expiry",
+          "technicalKey": {
+            "expiresAt": 1
+          },
+          "technicalExpireAfterSeconds": 0
+        },
+        "riskLevels": {
+          "insertOne": "medium",
+          "updateOne": "medium",
+          "updateMany": "high",
+          "softDeleteOne": "high",
+          "createIndex": "medium",
+          "dropIndex": "high",
+          "transaction": "high"
+        },
+        "maxAffectedDocuments": 1000,
+        "maxTransactionOperations": 20,
+        "maxJournalBytes": 8388608,
+        "indexedArrayUpdates": {
+          "enabled": true,
+          "maxIndex": 99999,
+          "requiresElementFilterGuard": true,
+          "appendMode": "immediate-tail-set",
+          "positionalOperators": false,
+          "absenceFilter": "$nin"
+        },
+        "enabled": false
+      },
+      "bulk": {
+        "schemaVersion": 1,
+        "enabledByDefault": false,
+        "defaultBatchDocuments": 500,
+        "maxBatchDocuments": 2000,
+        "maxUnitOperations": 20,
+        "maxChunkOperations": 10000,
+        "maxChunkBytes": 4194304,
+        "maxJobOperations": 100000,
+        "maxJobBytes": 41943040,
+        "defaultStorageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+        "transactionReceipts": true,
+        "backgroundJobs": true,
+        "persistentRollback": true,
+        "sandboxFiles": {
+          "maxBytes": 2147483648,
+          "controlReserveBytes": 67108864,
+          "maxJobs": 200,
+          "maxFiles": 20000,
+          "controlReserveFiles": 1024,
+          "maxJobFiles": 1950,
+          "maxEventBytes": 8388608,
+          "strictTaskEnvelopes": true,
+          "generalFileUpload": false,
+          "recordExecutionSupported": false,
+          "privateSingleLinkFilesOnly": true
+        },
+        "sandboxAccessSetup": {
+          "prepareTool": "remote_debug_prepare_sandbox_access",
+          "executeTool": "remote_debug_configure_sandbox_access",
+          "confirmation": "确认配置沙盒",
+          "passwordSource": "per-instance-dashboard-config",
+          "minimumServerMajor": 4,
+          "checksServerEnvironment": true,
+          "passwordResetRequiresOwnership": true,
+          "businessWrites": false
+        },
+        "enabled": false,
+        "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+        "sandboxDatabase": "remote_debug_agent",
+        "sandboxManagementConfigured": false,
+        "legacyJobsUseRecordedStorage": true,
+        "receiptsCollection": "__remote_debug_bulk_receipts",
+        "batchDocuments": 500,
+        "concurrency": 2,
+        "rollbackTtlMs": 604800000
+      }
+    },
+    "logs": {
+      "query": {
+        "modes": [
+          "latest",
+          "search",
+          "files",
+          "members"
+        ],
+        "remoteFiltering": true,
+        "temporaryExtraction": false,
+        "supportedCompression": [
+          "none",
+          "gzip",
+          "tar-gzip"
+        ],
+        "maxFiles": 50,
+        "maxScanBytes": 268435456,
+        "maxExpandedBytes": 2147483648,
+        "maxDirectoryEntries": 5000,
+        "maxReturnedLines": 2000,
+        "maxReturnedBytes": 262144,
+        "backgroundJobs": {
+          "start": "/logs/jobs/start",
+          "get": "/logs/jobs/get",
+          "control": "/logs/jobs/control",
+          "maxConcurrentPerInstance": 2,
+          "maxQueuedPerInstance": 2,
+          "maxActiveAndQueued": 4,
+          "singlePassArchives": true,
+          "defaultJobTimeoutMs": 1800000,
+          "maxJobTimeoutMs": 7200000,
+          "defaultCpuPercent": 20,
+          "defaultReadBytesPerSecond": 2097152,
+          "defaultProcessBytesPerSecond": 4194304,
+          "rssLimitBytes": 201326592,
+          "defaultBatchScanBytes": 268435456,
+          "cumulativeExpandedByteLimit": null,
+          "pauseTtlMs": 300000,
+          "retentionMs": 1800000,
+          "maxRetainedJobs": 16,
+          "survivesWorkerRestart": false,
+          "perFileReceipts": true,
+          "receiptAcknowledgement": true,
+          "maxReceiptBytesPerJob": 8388608,
+          "fileResultPagination": true,
+          "controls": [
+            "pause",
+            "resume",
+            "cancel",
+            "stop_after_file",
+            "narrow"
+          ],
+          "startFileBoundary": "stopAfterFile",
+          "evidencePaginationScope": "retained_evidence",
+          "completeness": [
+            "scanComplete",
+            "countsAreComplete",
+            "evidenceComplete"
+          ]
+        }
+      },
+      "categories": [
+        "system",
+        "nginx",
+        "application",
+        "pm2"
+      ],
+      "supportedCompression": [
+        "none",
+        "gzip",
+        "tar-gzip"
+      ],
+      "unsupportedCompression": [
+        "bzip2",
+        "xz",
+        "zip"
+      ],
+      "archiveMemberListing": true,
+      "defaultLimit": 200,
+      "maxLimit": 500,
+      "defaultTailLines": 200,
+      "maxTailLines": 2000,
+      "defaultMaxBytes": 262144,
+      "maxBytes": 262144,
+      "maxContainsLength": 256,
+      "maxScanBytes": 268435456,
+      "maxArchiveScanBytes": 1073741824,
+      "maxCompressedSourceBytes": 268435456,
+      "maxMemberBytes": 268435456,
+      "maxScanEntries": 5000,
+      "maxArchiveMembers": 5000,
+      "pagination": "cursor",
+      "projectsByInstance": {
+        "default": {
+          "be": {
+            "root": "/home/github/breBE/OD-Yennefer-BE",
+            "directories": [
+              "/home/github/breBE/OD-Yennefer-BE/logs"
+            ]
+          }
+        },
+        "test-server": {
+          "be": {
+            "root": "/home/github/OD-Yennefer-BE-next",
+            "directories": [
+              "/home/github/OD-Yennefer-BE-next/logs"
+            ]
+          }
+        }
+      }
+    },
+    "lifecycle": {
+      "instanceRestart": {
+        "allowedFrom": [
+          "stopped",
+          "unhealthy"
+        ],
+        "runningBehavior": "no-op",
+        "transitionalBehavior": "reject"
+      }
+    }
+  },
+  "seed": {
+    "ok": true,
+    "instanceId": "test-server",
+    "kind": "import_plan",
+    "importId": "rda-rp-20261018-01a14e14-seed",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "affectedCount": 128,
+    "batchCount": 1,
+    "atomicity": "per_batch",
+    "status": "prepared",
+    "batches": [
+      {
+        "mutationId": "import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+        "operationId": "88b4d604-6280-4e0a-9aea-30624012f145",
+        "kind": "import",
+        "operation": "insertMany",
+        "database": "yennefer",
+        "collection": "CustomerPrivate",
+        "status": "planned",
+        "rollbackMode": "transactional",
+        "riskLevel": "high",
+        "requiresConfirmation": true,
+        "purpose": "128 synthetic owned records for resource-pool acceptance; deleted/non-marketing; rollback after verification",
+        "createdAt": "2026-10-18T08:18:40.714Z",
+        "rollbackExpiresAt": "2026-10-19T08:18:40.714Z",
+        "planHash": "0f152ae8584dee11a8af5cfc04900b10ff8f6c053578a4694bf6b75371a6c901",
+        "affectedCount": 128,
+        "changedFields": [
+          "_id",
+          "belonged_group",
+          "member_code",
+          "create_user",
+          "is_deleted",
+          "is_marketing",
+          "is_marketing_opt_out",
+          "whatsapp_unsubscribed",
+          "is_synchronized",
+          "remark",
+          "internal_remark"
+        ],
+        "affectedIds": [
+          "rda-rp-20261018-01a14e14-0000",
+          "rda-rp-20261018-01a14e14-0001",
+          "rda-rp-20261018-01a14e14-0002",
+          "rda-rp-20261018-01a14e14-0003",
+          "rda-rp-20261018-01a14e14-0004",
+          "rda-rp-20261018-01a14e14-0005",
+          "rda-rp-20261018-01a14e14-0006",
+          "rda-rp-20261018-01a14e14-0007",
+          "rda-rp-20261018-01a14e14-0008",
+          "rda-rp-20261018-01a14e14-0009"
+        ],
+        "importId": "rda-rp-20261018-01a14e14-seed",
+        "batchIndex": 0,
+        "retryable": false,
+        "journalPath": "/tmp/remote-debug-agent/mutations/import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+        "preview": {
+          "affectedCount": 128,
+          "affectedIds": [
+            "rda-rp-20261018-01a14e14-0000",
+            "rda-rp-20261018-01a14e14-0001",
+            "rda-rp-20261018-01a14e14-0002",
+            "rda-rp-20261018-01a14e14-0003",
+            "rda-rp-20261018-01a14e14-0004",
+            "rda-rp-20261018-01a14e14-0005",
+            "rda-rp-20261018-01a14e14-0006",
+            "rda-rp-20261018-01a14e14-0007",
+            "rda-rp-20261018-01a14e14-0008",
+            "rda-rp-20261018-01a14e14-0009"
+          ],
+          "changedFields": [
+            "_id",
+            "belonged_group",
+            "member_code",
+            "create_user",
+            "is_deleted",
+            "is_marketing",
+            "is_marketing_opt_out",
+            "whatsapp_unsubscribed",
+            "is_synchronized",
+            "remark",
+            "internal_remark"
+          ],
+          "rollbackMode": "transactional"
+        }
+      }
+    ],
+    "requiresConfirmation": true,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3465,
+      "connectionGeneration": 1
+    },
+    "durationMs": 3518,
+    "operationId": "88b4d604-6280-4e0a-9aea-30624012f145",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "seedcommit": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+    "operationId": "c4c84219-b6d8-4660-b344-c1e7d6b1d595",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "committed",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "128 synthetic owned records for resource-pool acceptance; deleted/non-marketing; rollback after verification",
+    "createdAt": "2026-10-18T08:18:40.714Z",
+    "committedAt": "2026-10-18T08:18:59.729Z",
+    "rollbackExpiresAt": "2026-10-19T08:18:40.714Z",
+    "planHash": "0f152ae8584dee11a8af5cfc04900b10ff8f6c053578a4694bf6b75371a6c901",
+    "affectedCount": 128,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-0000",
+      "rda-rp-20261018-01a14e14-0001",
+      "rda-rp-20261018-01a14e14-0002",
+      "rda-rp-20261018-01a14e14-0003",
+      "rda-rp-20261018-01a14e14-0004",
+      "rda-rp-20261018-01a14e14-0005",
+      "rda-rp-20261018-01a14e14-0006",
+      "rda-rp-20261018-01a14e14-0007",
+      "rda-rp-20261018-01a14e14-0008",
+      "rda-rp-20261018-01a14e14-0009"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2567,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2618,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "storage": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "b84a414d-87b3-48b0-8ece-4021127dc4da",
+    "operationId": "2fddec7e-9d0b-485e-bb7e-0cbb3da60681",
+    "kind": "bulk_storage",
+    "operation": "initializeBulkStorage",
+    "database": "yennefer",
+    "collection": "__remote_debug_bulk_receipts",
+    "status": "committed",
+    "rollbackMode": "retained_non_rollbackable",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "resource-pool acceptance owned records only",
+    "createdAt": "2026-10-18T08:18:19.150Z",
+    "committedAt": "2026-10-18T08:18:57.353Z",
+    "rollbackExpiresAt": "2026-10-25T08:18:19.150Z",
+    "planHash": "dabe3494ecbc09e04c70b53275dff7eedd74d4a006c57b3f3ca28a3d8b8ec15a",
+    "affectedCount": 1,
+    "changedFields": [
+      "expiresAt"
+    ],
+    "affectedIds": [],
+    "storageRoot": "/var/lib/remote-debug-agent/bulk-jobs",
+    "receiptsDatabase": "remote_debug_agent",
+    "storageStatus": {
+      "rootState": "directory",
+      "rootMode": 448,
+      "collectionExists": true,
+      "expiryIndexExists": true
+    },
+    "journalPath": "/tmp/remote-debug-agent/mutations/b84a414d-87b3-48b0-8ece-4021127dc4da",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 1655,
+      "connectionGeneration": 1
+    },
+    "durationMs": 1706,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "ownership": {
+    "ok": true,
+    "operation": "countDocuments",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "data": 0,
+    "resultCount": 0,
+    "durationMs": 6217,
+    "operationId": "df1c497e-7434-4404-9e92-b1903cd3d4c9",
+    "timing": {
+      "queueMs": 1,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2857,
+      "connectionGeneration": 1
+    },
+    "instanceId": "test-server",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "schema": [
+    {
+      "ok": true,
+      "path": "/home/github/OD-Yennefer-BE-next/src/models/customer-private.entity.ts",
+      "content": "import { Entity, model, property } from \"@loopback/repository\";\nimport { getJsonSchema } from \"@loopback/repository-json-schema\";\nimport { ObjectId } from \"bson\";\nimport { JsonSchemaRedefined } from \"../constants/type.constant\";\nimport { Address, AddressJsonSchema } from \"./abstract/address.entity\";\nimport { PicVersion } from \"./abstract/pic-version.entity\";\n\n@model()\nexport class CustomerPrivate extends Entity {\n  // *********************\n  // Key [REDACTED]\n  // *********************\n\n  @property({\n    type: \"string\",\n    id: true,\n    generated: true,\n  })\n  public _id?: ObjectId;\n\n  // *********************\n  // [REDACTED]\n  // *********************\n\n  // 关联餐厅\n  // @property({\n  //   type: \"string\",\n  //   required: true,\n  // })\n  // public belonged_restaurant: string;\n  @property({\n    type: \"string\",\n    required: true,\n  })\n  public belonged_group: string;\n  @property({\n    type: \"array\",\n    itemType: \"string\", // ✅ 显式指定数组元素类型\n  })\n  public restaurant_member_ids?: string[];\n\n  @property({ type: \"object\" })\n  public customer_avatar?: PicVersion;\n\n  // 用户ID（匿名提交为null）\n  @property({\n    type: \"object\",\n  })\n  public customer_id?: ObjectId;\n\n  @property({\n    type: \"string\",\n    jsonSchema: {\n      enum: [\"0\", \"1\", \"2\"],\n    },\n  })\n  public customer_gender?: string;\n\n  @property({\n    type: \"string\",\n  })\n  public customer_first_name?: string;\n\n  @property({\n    type: \"string\",\n  })\n  public remark?: string;\n\n  @property({\n    type: \"string\",\n  })\n  public customer_last_name?: string;\n\n  @property({\n    type: \"string\",\n  })\n  public customer_phone?: string;\n\n  @property({\n    type: \"string\",\n  })\n  public customer_phone_prefix?: string;\n\n  @property({\n    type: \"array\",\n    itemType: \"string\", // 显式指定数组元素类型\n  })\n  public addtional_phones?: string[];\n\n  @property({\n    type: \"string\",\n  })\n  public customer_email?: string;\n\n  //是否接受营销\n  // @property({\n  //   type: \"boolean\",\n  // })\n  // public is_receiveed_marketing?: boolean;\n\n  @property({\n    type: \"string\",\n    jsonSchema: {\n      format: \"date-time\",\n    },\n  })\n  public customer_birth?: Date;\n\n  @property.array(Address, {\n    jsonSchema: {\n      type: \"array\",\n      items: {\n        default: AddressJsonSchema.properties.default,\n        first_name: AddressJsonSchema.properties.first_name,\n        last_name: AddressJsonSchema.properties.last_name,\n        phone: AddressJsonSchema.properties.phone,\n        phone_prefix: AddressJsonSchema.properties.phone_prefix,\n        country: AddressJsonSchema.properties.country,\n        state: AddressJsonSchema.properties.state,\n        city: AddressJsonSchema.properties.city,\n        region: AddressJsonSchema.properties.region,\n        home_number: AddressJsonSchema.properties.home_number,\n        street: AddressJsonSchema.properties.street,\n        details: AddressJsonSchema.properties.details,\n        code: AddressJsonSchema.properties.code,\n        google_map_place_id: AddressJsonSchema.properties.google_map_place_id,\n        google_map_formatted_address:\n          AddressJsonSchema.properties.google_map_formatted_address,\n        google_map_lat: AddressJsonSchema.properties.google_map_lat,\n        google_map_lng: AddressJsonSchema.properties.google_map_lng,\n      },\n    },\n  })\n  public customer_address?: Array<Address>;\n\n  @property({ type: \"string\" })\n  public customer_language?: string;\n\n  @property({\n    type: \"array\",\n    itemType: \"string\", // 使用itemType指定元素类型\n    default: [], // 直接定义默认值\n  })\n  public allergens?: string[];\n\n  //其他特征\n  @property({\n    type: \"array\",\n    itemType: \"string\", // 使用itemType指定元素类型\n    default: [], // 直接定义默认值\n  })\n  public others?: string[];\n\n  @property({\n    type: \"string\",\n    default: \"\", // 直接定义默认值\n  })\n  public prefer_food_drinks?: string;\n\n  @property({\n    type: \"boolean\",\n    default: false, // 直接定义默认值\n  })\n  public is_deleted?: boolean;\n  //是否接受营销\n  @property({\n    type: \"boolean\",\n  })\n  public is_marketing?: boolean;\n\n  @property({\n    type: \"string\",\n    default: \"\", // 直接定义默认值\n  })\n  public vip_label?: string;\n\n  @property.array(Object)\n  public vip_levels?: Array<{\n    group_id: string;\n    vip_level_id: string;\n  }>;\n\n  @property({\n    type: \"array\",\n    itemType: \"string\", // 使用itemType指定元素类型\n    default: [], // 直接定义默认值\n  })\n  public labels?: string[];\n\n  @property({\n    type: \"string\",\n    jsonSchema: {\n      format: \"date-time\",\n    },\n  })\n  public create_time?: Date;\n\n  @property({\n    type: \"string\",\n    jsonSchema: {\n      format: \"date-time\",\n    },\n  })\n  public update_time?: Date;\n\n  @property({ type: \"string\" })\n  public update_user?: string;\n\n  @property({ type: \"string\" })\n  public create_user?: string;\n\n  //是否同意图片分析\n  @property({ type: \"boolean\" })\n  public is_imageAnalysis?: boolean;\n\n  @property({ type: \"string\", description: \"内部备注\" })\n  public internal_remark?: string;\n\n  @property({ type: \"string\", description: \"会员编码\" })\n  public member_code?: string;\n\n  @property({\n    type: \"array\",\n    itemType: \"string\", // 使用itemType指定元素类型\n    default: [], // 直接定义默认值\n  })\n  public visitReason?: string[];\n\n  // 会员表单提交记录（历史记录，不影响会员状态判断）\n  @property.array(Object)\n  public member_form_records?: Array<{\n    restaurant_id: string;\n    form_template_id?: string;\n    form_data?: object;\n    submit_time: Date;\n  }>;\n\n  //默认关闭自动同步\n  @property({\n    type: \"boolean\",\n    default: false, // 直接定义默认值\n  })\n  public is_synchronized?: boolean;\n\n  @property({ type: \"boolean\" })\n  public is_first?: boolean;\n\n  //客户已明确拒绝营销信息\n  @property({\n    type: \"boolean\",\n    default: false, // 直接定义默认值\n  })\n  public is_marketing_opt_out?: boolean;\n\n  // WhatsApp营销选择退出，仅阻止WhatsApp营销广告\n  @property({\n    type: \"boolean\",\n    default: false,\n  })\n  public whatsapp_marketing_opt_out?: boolean;\n\n  // WhatsApp退出，阻止所有WhatsApp通知\n  @property({\n    type: \"boolean\",\n    default: false,\n  })\n  public whatsapp_unsubscribed?: boolean;\n\n  //客户允许隐私协议\n  @property({\n    type: \"boolean\",\n    default: false, // 直接定义默认值\n  })\n  public is_privacy_agreement?: boolean;\n\n\n  @property({\n    type: \"array\",\n    itemType: \"string\", // 使用itemType指定元素类型\n    default: [], // 直接定义默认值\n  })\n  public favorite_tables?: string[];\n\n\n  constructor(data?: Partial<CustomerPrivate>) {\n    super(data);\n  }\n}\n\nexport interface ICustomerPrivateRelations {\n  // describe navigational properties here\n}\n\nexport type CustomerPrivateWithRelations = CustomerPrivate &\n  ICustomerPrivateRelations;\n\nexport const CustomerPrivateJsonSchema = getJsonSchema(\n  CustomerPrivate\n) as JsonSchemaRedefined<CustomerPrivate>;\n",
+      "truncated": false,
+      "durationMs": 6810,
+      "operationId": "39d382f6-cfe8-48ae-8e0d-63960c6460d7",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "connectionGeneration": 1
+      },
+      "instanceId": "test-server",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 1,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "operation": "aggregate",
+      "database": "yennefer",
+      "collection": "CustomerPrivate",
+      "data": [
+        {
+          "name": "_id_",
+          "key": {
+            "_id": 1
+          },
+          "spec": {
+            "v": 2,
+            "key": {
+              "_id": 1
+            },
+            "name": "_id_",
+            "ns": "yennefer.CustomerPrivate"
+          }
+        },
+        {
+          "name": "uniq_customer_private_group_member_code",
+          "key": {
+            "belonged_group": 1,
+            "member_code": 1
+          },
+          "spec": {
+            "v": 2,
+            "unique": true,
+            "key": {
+              "belonged_group": 1,
+              "member_code": 1
+            },
+            "name": "uniq_customer_private_group_member_code",
+            "partialFilterExpression": {
+              "member_code": {
+                "$type": "string",
+                "$gt": ""
+              }
+            },
+            "ns": "yennefer.CustomerPrivate"
+          }
+        },
+        {
+          "name": "idx_customer_private_group_list_cover",
+          "key": {
+            "belonged_group": 1,
+            "customer_id": 1,
+            "customer_first_name": 1,
+            "customer_last_name": 1,
+            "customer_phone": 1,
+            "customer_phone_prefix": 1,
+            "customer_email": 1,
+            "is_deleted": 1,
+            "update_time": 1,
+            "create_time": 1
+          },
+          "spec": {
+            "v": 2,
+            "key": {
+              "belonged_group": 1,
+              "customer_id": 1,
+              "customer_first_name": 1,
+              "customer_last_name": 1,
+              "customer_phone": 1,
+              "customer_phone_prefix": 1,
+              "customer_email": 1,
+              "is_deleted": 1,
+              "update_time": 1,
+              "create_time": 1
+            },
+            "name": "idx_customer_private_group_list_cover",
+            "background": true,
+            "ns": "yennefer.CustomerPrivate"
+          }
+        },
+        {
+          "name": "idx_customer_private_customer_marketing",
+          "key": {
+            "customer_id": 1,
+            "is_marketing": 1
+          },
+          "spec": {
+            "v": 2,
+            "key": {
+              "customer_id": 1,
+              "is_marketing": 1
+            },
+            "name": "idx_customer_private_customer_marketing",
+            "background": true,
+            "ns": "yennefer.CustomerPrivate"
+          }
+        }
+      ],
+      "resultCount": 4,
+      "durationMs": 2304,
+      "operationId": "cf54d937-9d5d-44ca-baa3-86198b7ebaec",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2252,
+        "connectionGeneration": 1
+      },
+      "instanceId": "test-server",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "operation": "aggregate",
+      "database": "yennefer",
+      "collection": "CustomerPrivate",
+      "data": [
+        {
+          "storageStats": {
+            "count": 74653
+          }
+        }
+      ],
+      "resultCount": 1,
+      "durationMs": 2051,
+      "operationId": "8e08e43b-7984-4fe1-bc9b-defd1cb40de5",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1998,
+        "connectionGeneration": 1
+      },
+      "instanceId": "test-server",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "2026-10-18T08:19:01.512Z",
+      "phase": "baseline",
+      "i": 0,
+      "kind": "diagnostic",
+      "wallMs": 1372,
+      "ok": true,
+      "durationMs": 1341,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1288,
+        "connectionGeneration": 1
+      },
+      "operationId": "ec4afb62-5571-4829-97fb-fdf5c11b8486"
+    },
+    {
+      "at": "2026-10-18T08:19:05.007Z",
+      "phase": "baseline",
+      "i": 0,
+      "kind": "mongo_read",
+      "wallMs": 4866,
+      "ok": true,
+      "durationMs": 3468,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 3416,
+        "connectionGeneration": 1
+      },
+      "operationId": "c17d635f-d0bf-453f-ab73-94401a80c729",
+      "count": 1
+    },
+    {
+      "at": "2026-10-18T08:19:08.113Z",
+      "phase": "baseline",
+      "i": 1,
+      "kind": "diagnostic",
+      "wallMs": 3106,
+      "ok": true,
+      "durationMs": 3075,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 3024,
+        "connectionGeneration": 1
+      },
+      "operationId": "82b2515b-aca3-432c-9667-1a6224e7a929"
+    },
+    {
+      "at": "2026-10-18T08:19:10.470Z",
+      "phase": "baseline",
+      "i": 1,
+      "kind": "mongo_read",
+      "wallMs": 5463,
+      "ok": true,
+      "durationMs": 2333,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2282,
+        "connectionGeneration": 1
+      },
+      "operationId": "bdb956a3-074c-495d-8555-46e3b63bc505",
+      "count": 1
+    },
+    {
+      "at": "2026-10-18T08:19:13.506Z",
+      "phase": "baseline",
+      "i": 2,
+      "kind": "mongo_read",
+      "wallMs": 3036,
+      "ok": true,
+      "durationMs": 3010,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2958,
+        "connectionGeneration": 1
+      },
+      "operationId": "790811ad-d51d-4584-8a38-141710d05e3b",
+      "count": 1
+    },
+    {
+      "at": "2026-10-18T08:19:15.661Z",
+      "phase": "baseline",
+      "i": 2,
+      "kind": "diagnostic",
+      "wallMs": 5191,
+      "ok": true,
+      "durationMs": 2128,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2076,
+        "connectionGeneration": 1
+      },
+      "operationId": "627cf2e1-c681-4168-9f76-0449dba793a7"
+    },
+    {
+      "at": "2026-10-18T08:19:17.028Z",
+      "phase": "baseline",
+      "i": 3,
+      "kind": "diagnostic",
+      "wallMs": 1367,
+      "ok": true,
+      "durationMs": 1339,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1287,
+        "connectionGeneration": 1
+      },
+      "operationId": "23d0b088-37ab-478e-8e5d-45c63b1560eb"
+    },
+    {
+      "at": "2026-10-18T08:19:22.560Z",
+      "phase": "baseline",
+      "i": 3,
+      "kind": "mongo_read",
+      "wallMs": 6899,
+      "ok": true,
+      "durationMs": 5510,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 5458,
+        "connectionGeneration": 1
+      },
+      "operationId": "45a6bef0-ca04-47d9-ac2a-82ebdfdf4b7a",
+      "count": 1
+    },
+    {
+      "at": "2026-10-18T08:19:25.118Z",
+      "phase": "baseline",
+      "i": 4,
+      "kind": "diagnostic",
+      "wallMs": 2558,
+      "ok": true,
+      "durationMs": 2529,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2478,
+        "connectionGeneration": 1
+      },
+      "operationId": "313d6df3-a722-4a88-84a2-ff6c3ebe3f53"
+    },
+    {
+      "at": "2026-10-18T08:19:27.700Z",
+      "phase": "baseline",
+      "i": 4,
+      "kind": "mongo_read",
+      "wallMs": 5140,
+      "ok": true,
+      "durationMs": 2560,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2508,
+        "connectionGeneration": 1
+      },
+      "operationId": "1b3b8652-5e5c-4419-a0ca-11087b62e3d8",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+{
+  "mainLog": {
+    "ok": true,
+    "jobId": "8cff33cf-1778-4359-85aa-06f57c8b5e71",
+    "status": "stopped",
+    "createdAt": 1792311674501,
+    "startedAt": 1792311674502,
+    "finishedAt": 1792312036926,
+    "expiresAt": 1792313836926,
+    "progress": {
+      "scannedBytes": 373729763,
+      "expandedBytes": 373770240,
+      "matchedLines": 0,
+      "scannedLines": 37408,
+      "totalFiles": 10,
+      "completedFiles": 1,
+      "failedFiles": 0,
+      "selectedMembers": 42,
+      "completedMembers": 42,
+      "skippedFiles": 0,
+      "stoppedAtBoundary": true,
+      "currentFileProgress": null,
+      "currentFile": null,
+      "currentMember": null,
+      "batchesCompleted": 5702,
+      "outputTruncated": false,
+      "scanTruncated": false,
+      "directoryListingTruncated": false,
+      "countsAreComplete": false,
+      "scanComplete": false,
+      "resources": {
+        "rssBytes": 102899712,
+        "peakRssBytes": 105689088,
+        "cpuMs": 6733.943,
+        "readBytes": 18447231,
+        "processedBytes": 373770240,
+        "elapsedMs": 360587,
+        "budget": {
+          "cpuMilliCores": 750,
+          "readBytesPerSecond": 7340032,
+          "processBytesPerSecond": 15728640,
+          "transferBytesPerSecond": 2080768,
+          "rssLimitBytes": 201326592,
+          "parallelism": 1,
+          "dispatchDelayMs": 0,
+          "mode": "manual_max",
+          "reason": ""
+        },
+        "budgetRevision": 2509,
+        "resourceState": "normal"
+      },
+      "status": "stopped"
+    },
+    "scannedBytes": 373729763,
+    "expandedBytes": 373770240,
+    "matchedLines": 0,
+    "scannedLines": 37408,
+    "totalFiles": 10,
+    "completedFiles": 1,
+    "failedFiles": 0,
+    "selectedMembers": 42,
+    "completedMembers": 42,
+    "skippedFiles": 0,
+    "stoppedAtBoundary": true,
+    "currentFileProgress": null,
+    "currentFile": null,
+    "currentMember": null,
+    "batchesCompleted": 5702,
+    "outputTruncated": false,
+    "scanTruncated": false,
+    "directoryListingTruncated": false,
+    "returnedLines": 0,
+    "outputBytes": 0,
+    "complete": false,
+    "countsAreComplete": false,
+    "scanComplete": false,
+    "stopReason": "file_boundary",
+    "coverage": "bounded",
+    "warnings": [
+      {
+        "path": "/home/github/OD-Yennefer-BE-next/logs",
+        "code": "ERR_DIR_CLOSED",
+        "message": "Directory handle was closed"
+      }
+    ],
+    "warningsTruncated": false,
+    "groups": [],
+    "groupsTruncated": false,
+    "durationMs": 360581,
+    "resources": {
+      "rssBytes": 102899712,
+      "peakRssBytes": 105689088,
+      "cpuMs": 6733.943,
+      "readBytes": 18447231,
+      "processedBytes": 373770240,
+      "elapsedMs": 360587,
+      "budget": {
+        "cpuMilliCores": 750,
+        "readBytesPerSecond": 7340032,
+        "processBytesPerSecond": 15728640,
+        "transferBytesPerSecond": 2080768,
+        "rssLimitBytes": 201326592,
+        "parallelism": 1,
+        "dispatchDelayMs": 0,
+        "mode": "manual_max",
+        "reason": ""
+      },
+      "budgetRevision": 2509,
+      "resourceState": "normal"
+    },
+    "evidenceComplete": false,
+    "evidenceTruncated": false,
+    "retainedEvidenceCount": 0,
+    "evidenceLimits": {
+      "count": 1,
+      "bytes": 256
+    },
+    "paginationScope": "retained_evidence",
+    "observedMatchedLines": 0,
+    "fileResults": [
+      {
+        "fileIndex": 0,
+        "path": "/home/github/OD-Yennefer-BE-next/logs/2026-10-17-logs.tar.gz",
+        "compression": "tar-gzip",
+        "status": "completed",
+        "startedAt": 1792311676092,
+        "scanComplete": true,
+        "countsAreComplete": true,
+        "warnings": [],
+        "warningsTruncated": false,
+        "source": {
+          "size": 18447231,
+          "modifyTime": 1792276265918.376,
+          "changeTime": 1792276265922.3762,
+          "inode": 1310764,
+          "device": 64513
+        },
+        "scannedBytes": 373729763,
+        "expandedBytes": 373770240,
+        "scannedLines": 37408,
+        "matchedLines": 0,
+        "selectedMembers": 42,
+        "completedMembers": 42,
+        "retainedEvidenceCount": 0,
+        "evidenceBytes": 0,
+        "finishedAt": 1792312035974,
+        "evidenceComplete": true,
+        "queryId": "8cff33cf-1778-4359-85aa-06f57c8b5e71"
+      }
+    ],
+    "fileResultCount": 1,
+    "hasMoreFileResults": false,
+    "nextFileOffset": null,
+    "scopeControls": {
+      "dateFrom": "2026-10-08",
+      "dateTo": "2026-10-17",
+      "stopAfterFile": "/home/github/OD-Yennefer-BE-next/logs/2026-10-17-logs.tar.gz"
+    },
+    "resourceTaskId": "e0945d77-2962-4f63-a2d3-f259fcc4b377",
+    "records": [],
+    "hasMoreRecords": false,
+    "nextOffset": null,
+    "limits": {
+      "jobTimeoutMs": 1800000,
+      "cpuPercent": 20,
+      "readBytesPerSecond": 1048576,
+      "processBytesPerSecond": 1048576,
+      "rssLimitBytes": 201326592,
+      "batchScanBytes": 65536
+    },
+    "instanceId": "test-server",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 8
+    }
+  },
+  "third": {
+    "ok": true,
+    "jobId": "65a8ea02-7c25-4c01-b6cf-5345418d4a6d",
+    "status": "cancelled",
+    "createdAt": 1792311841602,
+    "startedAt": 1792311841602,
+    "finishedAt": 1792311965027,
+    "expiresAt": 1792313765027,
+    "progress": {
+      "scannedBytes": 65024,
+      "expandedBytes": 65536,
+      "matchedLines": 0,
+      "scannedLines": 138,
+      "totalFiles": 2,
+      "completedFiles": 0,
+      "failedFiles": 0,
+      "selectedMembers": 1,
+      "completedMembers": 0,
+      "skippedFiles": 0,
+      "stoppedAtBoundary": false,
+      "currentFileProgress": {
+        "fileIndex": 0,
+        "path": "/home/github/OD-Yennefer-BE-next/logs/2026-10-16-logs.tar.gz",
+        "compression": "tar-gzip",
+        "status": "failed",
+        "startedAt": 1792311903352,
+        "scanComplete": false,
+        "countsAreComplete": false,
+        "warnings": [],
+        "warningsTruncated": false,
+        "source": {
+          "size": 28418980,
+          "modifyTime": 1792189868132.9875,
+          "changeTime": 1792189868132.9875,
+          "inode": 1311120,
+          "device": 64513
+        },
+        "error": {
+          "code": "LOG_JOB_CANCELLED",
+          "message": "log query cancelled"
+        },
+        "scannedBytes": 65024,
+        "expandedBytes": 65536,
+        "scannedLines": 138,
+        "matchedLines": 0,
+        "selectedMembers": 1,
+        "completedMembers": 0,
+        "retainedEvidenceCount": 0,
+        "evidenceBytes": 0,
+        "finishedAt": 1792311964816,
+        "evidenceComplete": false,
+        "queryId": "65a8ea02-7c25-4c01-b6cf-5345418d4a6d"
+      },
+      "currentFile": "/home/github/OD-Yennefer-BE-next/logs/2026-10-16-logs.tar.gz",
+      "currentMember": "2026-10-16-connection.log",
+      "batchesCompleted": 0,
+      "outputTruncated": false,
+      "scanTruncated": false,
+      "directoryListingTruncated": false,
+      "resources": {
+        "rssBytes": 38584320,
+        "peakRssBytes": 39346176,
+        "cpuMs": 298.588,
+        "readBytes": 196608,
+        "processedBytes": 1294047,
+        "elapsedMs": 63280,
+        "budget": {
+          "cpuMilliCores": 50,
+          "readBytesPerSecond": 65536,
+          "processBytesPerSecond": 65536,
+          "transferBytesPerSecond": 152917,
+          "rssLimitBytes": 201326592,
+          "parallelism": 1,
+          "dispatchDelayMs": 150,
+          "mode": "auto",
+          "reason": "主机资源压力，降低执行预算"
+        },
+        "budgetRevision": 2228,
+        "resourceState": "throttled"
+      },
+      "status": "cancelled",
+      "remainingDateFrom": "2026-10-15",
+      "remainingDateTo": "2026-10-16",
+      "stopAfterFile": null,
+      "countsAreComplete": false
+    },
+    "countsAreComplete": false,
+    "scanComplete": false,
+    "evidenceComplete": false,
+    "evidenceTruncated": false,
+    "retainedEvidenceCount": 0,
+    "evidenceLimits": {
+      "count": 1,
+      "bytes": 256
+    },
+    "paginationScope": "retained_evidence",
+    "observedMatchedLines": 0,
+    "fileResults": [
+      {
+        "fileIndex": 0,
+        "path": "/home/github/OD-Yennefer-BE-next/logs/2026-10-16-logs.tar.gz",
+        "compression": "tar-gzip",
+        "status": "failed",
+        "startedAt": 1792311903352,
+        "scanComplete": false,
+        "countsAreComplete": false,
+        "warnings": [],
+        "warningsTruncated": false,
+        "source": {
+          "size": 28418980,
+          "modifyTime": 1792189868132.9875,
+          "changeTime": 1792189868132.9875,
+          "inode": 1311120,
+          "device": 64513
+        },
+        "error": {
+          "code": "LOG_JOB_CANCELLED",
+          "message": "log query cancelled"
+        },
+        "scannedBytes": 65024,
+        "expandedBytes": 65536,
+        "scannedLines": 138,
+        "matchedLines": 0,
+        "selectedMembers": 1,
+        "completedMembers": 0,
+        "retainedEvidenceCount": 0,
+        "evidenceBytes": 0,
+        "finishedAt": 1792311964816,
+        "evidenceComplete": false,
+        "queryId": "65a8ea02-7c25-4c01-b6cf-5345418d4a6d"
+      }
+    ],
+    "fileResultCount": 1,
+    "hasMoreFileResults": false,
+    "nextFileOffset": null,
+    "scopeControls": {
+      "dateFrom": "2026-10-15",
+      "dateTo": "2026-10-16"
+    },
+    "resourceTaskId": "db6df626-ceda-4e6a-9208-3d78bc72879d",
+    "records": [],
+    "hasMoreRecords": false,
+    "nextOffset": null,
+    "error": {
+      "code": "OPERATION_CANCELLED",
+      "message": "log query cancelled"
+    },
+    "limits": {
+      "jobTimeoutMs": 1800000,
+      "cpuPercent": 20,
+      "readBytesPerSecond": 65536,
+      "processBytesPerSecond": 65536,
+      "rssLimitBytes": 201326592,
+      "batchScanBytes": 65536
+    },
+    "instanceId": "test-server",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "fourth": {
+    "ok": true,
+    "jobId": "0db2dd72-1b0b-46d6-a4c1-540be49bd93a",
+    "status": "cancelled",
+    "createdAt": 1792312009561,
+    "startedAt": 1792312009561,
+    "finishedAt": 1792312009816,
+    "expiresAt": 1792313809816,
+    "progress": {
+      "matchedLines": 0,
+      "scannedBytes": 0,
+      "expandedBytes": 0,
+      "countsAreComplete": false,
+      "status": "cancelled",
+      "currentFileProgress": null
+    },
+    "countsAreComplete": false,
+    "scanComplete": false,
+    "evidenceComplete": false,
+    "evidenceTruncated": false,
+    "retainedEvidenceCount": 0,
+    "evidenceLimits": {
+      "count": 1,
+      "bytes": 256
+    },
+    "paginationScope": "retained_evidence",
+    "observedMatchedLines": 0,
+    "fileResults": [],
+    "fileResultCount": 0,
+    "hasMoreFileResults": false,
+    "nextFileOffset": null,
+    "scopeControls": {
+      "dateFrom": "2026-10-17",
+      "dateTo": "2026-10-17"
+    },
+    "resourceTaskId": "35ead64d-f7f0-4f76-ab02-d7ac146944b5",
+    "records": [],
+    "hasMoreRecords": false,
+    "nextOffset": null,
+    "error": {
+      "code": "OPERATION_CANCELLED",
+      "message": "log query cancelled"
+    },
+    "limits": {
+      "jobTimeoutMs": 1800000,
+      "cpuPercent": 20,
+      "readBytesPerSecond": 65536,
+      "processBytesPerSecond": 65536,
+      "rssLimitBytes": 201326592,
+      "batchScanBytes": 65536
+    },
+    "instanceId": "test-server",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "rollbackStart": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "leaseId": "d74e06ba7788acc32c97eacab0d05549c5bcdfcdff2f84e558637b1b58de6b4c",
+    "status": "rolling_back",
+    "mode": "rollback",
+    "batchCount": 128,
+    "effectiveConcurrency": 2,
+    "accepted": true,
+    "timing": {
+      "queueMs": 976,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 1734,
+      "connectionGeneration": 1
+    },
+    "background": true,
+    "durationMs": 2763,
+    "operationId": "b44b84bb-a561-4148-ac75-4d4a77ba6e7a",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  }
+}

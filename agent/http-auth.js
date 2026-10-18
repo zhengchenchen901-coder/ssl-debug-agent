@@ -1,7 +1,7 @@
 import path from "node:path";
 import localAuth from "../plugins/remote-debug-agent/local-auth.cjs";
 
-const PUBLIC_ASSETS = new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
+const PUBLIC_ASSETS = new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/instance-tasks.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
 
 export function publicHealth(request, token, identity) {
   const nonce = request.headers["x-remote-debug-challenge"];

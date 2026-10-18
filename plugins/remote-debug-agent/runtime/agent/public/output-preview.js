@@ -75,7 +75,7 @@
     const items = available(view);
     view.list.replaceChildren(...items.map((record) => {
       const label = `${clock(record.time)}  ${record.blocked ? "已拦截" : record.isError ? "失败" : "成功"}\n${record.toolName}\n${record.durationMs} ms · ${record.bytes.toLocaleString()} bytes`;
-      const button = action(label, () => { view.follow.checked = false; void select(view, record.id); });
+      const button = action(label, () => { void select(view, record.id); });
       button.className = `output-preview-item${record.id === view.selectedId ? " selected" : ""}${record.isError ? " failed" : ""}`;
       button.setAttribute("aria-pressed", String(record.id === view.selectedId));
       return button;
@@ -83,9 +83,13 @@
     if (!items.length) view.list.append(element("p", "muted", "暂无输出"));
   }
 
-  function refresh(view) {
+  function refresh(view, followLatest = false) {
     if (!view.open || view.paused) return;
     const items = available(view);
+    // Status refreshes and other instances' events must preserve manual selection.
+    const latestId = items[0]?.id;
+    const latestChanged = latestId !== view.latestId;
+    view.latestId = latestId;
     if (view.selectedId && (!records.has(view.selectedId) || !belongs(records.get(view.selectedId), view.key))) {
       view.selection++;
       view.selectedId = null;
@@ -94,7 +98,7 @@
       view.meta.textContent = "";
     }
     renderList(view);
-    if (items[0] && (!view.selectedId || view.follow.checked && view.selectedId !== items[0].id)) void select(view, items[0].id);
+    if (items[0] && (!view.selectedId || view.follow.checked && (latestChanged || followLatest) && view.selectedId !== latestId)) void select(view, latestId);
   }
 
   function createView(key) {
@@ -106,7 +110,7 @@
     const followLabel = element("label", "output-preview-follow");
     const follow = element("input"); follow.type = "checkbox"; follow.checked = true;
     followLabel.append(follow, document.createTextNode("跟随最新"));
-    const view = { key, panel, status: connectionLabel, open: false, paused: false, selectedId: null, selection: 0, mode: "content", clearedThrough: 0, follow };
+    const view = { key, panel, status: connectionLabel, open: false, paused: false, selectedId: null, latestId: null, selection: 0, mode: "content", clearedThrough: 0, follow };
     view.pause = action("暂停显示", () => { view.paused = !view.paused; view.pause.textContent = view.paused ? "继续显示" : "暂停显示"; status(); refresh(view); });
     const clear = action("清空显示", () => {
       view.clearedThrough = Math.max(0, ...[...records.values()].map((record) => record.sequence));
@@ -144,7 +148,7 @@
     view.meta = element("p", "output-preview-meta");
     view.body = element("pre", "output-preview-body", "等待插件返回工具结果…");
     detail.append(view.meta, view.body); content.append(view.list, detail); panel.append(toolbar, hint, content);
-    follow.addEventListener("change", () => refresh(view));
+    follow.addEventListener("change", () => refresh(view, true));
     views.set(key, view);
     return view;
   }

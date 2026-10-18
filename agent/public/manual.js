@@ -14,7 +14,7 @@ async function api(route, body) {
   const value = await response.json();
   if (!response.ok || !value.ok) {
     if (response.status === 401 && token) resetLogin("会话已失效，请重新登录。");
-    throw new Error(value.error?.message || "请求失败，请稍后重试。");
+    throw Object.assign(new Error(value.error?.message || "请求失败，请稍后重试。"), { code: value.error?.code });
   }
   return value;
 }
@@ -36,6 +36,7 @@ function disconnect() {
 }
 function resetLogin(message = "") {
   disconnect();
+  window.ManualDatabase?.reset();
   token = "";
   clearInterval(sessionPoll);
   terminal?.dispose(); terminal = null; fit = null;
@@ -47,7 +48,7 @@ function resetLogin(message = "") {
   loginForm.elements.username.focus();
 }
 function fitTerminal() {
-  if (!terminal || element("workspace").hidden) return;
+  if (!terminal || element("workspace").hidden || element("sshWorkArea").hidden) return;
   fit.fit();
   if (ready && socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
 }
@@ -136,7 +137,9 @@ loginForm.addEventListener("submit", async (event) => {
     element("workspace").hidden = false;
     element("loginPanel").hidden = true;
     element("logoutButton").hidden = false;
+    window.ManualDatabase?.show("ssh");
     createTerminal();
+    window.ManualDatabase?.loadConfig();
     lastInputAt = Date.now();
     sessionPoll = setInterval(() => {
       if (Date.now() - lastInputAt >= result.idleTimeoutMs) {
@@ -144,7 +147,7 @@ loginForm.addEventListener("submit", async (event) => {
         resetLogin("会话因长时间未输入而退出，请重新登录。");
         return;
       }
-      api("/api/session").catch((error) => { element("workMessage").textContent = error.message; });
+      api("/api/session").then((state) => window.ManualDatabase?.check(state)).catch((error) => { element("workMessage").textContent = error.message; });
     }, 15_000);
     await connect();
   } catch (error) {
@@ -166,5 +169,5 @@ window.addEventListener("resize", fitTerminal);
 window.addEventListener("pagehide", () => {
   if (token) fetch("/api/logout", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: "{}", keepalive: true, credentials: "omit", redirect: "error" }).catch(() => {});
-  socket?.close(); token = "";
+  socket?.close(); window.ManualDatabase?.reset(); token = "";
 });

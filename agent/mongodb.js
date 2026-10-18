@@ -528,6 +528,7 @@ export async function runMongoQuery(query, options = {}) {
       config: options.config,
       operation: options.operation,
       stdin,
+      taskType: "mongo_read",
     });
   } catch (error) {
     if (options.operation?.signal?.aborted) {

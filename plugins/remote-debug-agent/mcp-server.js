@@ -1193,24 +1193,44 @@ tools.push({
       readBytesPerSecond: { type: "integer", minimum: 65536, maximum: 16777216, description: "Remote source read rate; default 2 MiB/s." },
       processBytesPerSecond: { type: "integer", minimum: 65536, maximum: 33554432, description: "Expanded stream processing rate; default 4 MiB/s." },
       batchScanBytes: { type: "integer", minimum: 65536, maximum: 268435456, description: "Progress batch size, default 256 MiB. Does not stop or restart the stream." },
+      stopAfterFile: { type: "string", maxLength: 4096, description: "Exact selected archive/file path. Stop after this file, before opening the next. Set in advance for a known date boundary." },
       timeoutMs: timeoutProperty(30000, 60000),
     } },
 }, {
   name: "remote_debug_get_log_query",
-  description: "Read a background log query's progress, resource use, completeness, grouped counts and bounded evidence pages. Continue polling while queued/running/paused; only completed has complete counts. Results expire after 30 minutes or earlier under retention capacity. A lost worker/process cannot restore an in-memory gzip stream.",
+  description: "Read progress, per-file completion receipts and retained evidence pages. scanComplete, countsAreComplete and evidenceComplete are separate; evidence pagination never recovers discarded matches. File receipts remain valid after whole-task cancellation and have independent fileOffset/fileLimit pagination. Continue polling through cancelling/stopping until terminal. Results expire after 30 minutes or earlier under retention capacity.",
   inputSchema: { type: "object", additionalProperties: false, required: ["jobId"], properties: {
     instanceId: instanceIdProperty, jobId: { type: "string", maxLength: 64 },
     offset: { type: "integer", minimum: 0, maximum: 2000 }, limit: { type: "integer", minimum: 1, maximum: 2000 },
+    fileOffset: { type: "integer", minimum: 0, maximum: 5000 }, fileLimit: { type: "integer", minimum: 1, maximum: 500 },
     timeoutMs: timeoutProperty(30000, 60000),
   } },
 }, {
   name: "remote_debug_control_log_query",
-  description: "Pause, resume or cancel one background log query. Pause keeps the decompressor in memory with bounded backpressure; it expires after 5 minutes. Resume is supported only while the original process/channel remains alive. Cancel releases the remote process and channel.",
+  description: "Pause/resume/cancel, stop_after_file, or narrow a background log query. stop_after_file finishes the current file, or a selected stopAfterFile supplied in advance, without opening the next. narrow accepts dateFrom/dateTo and can only shrink the dates for files not yet started; completed/current files and their counts are retained. Boundary/range changes wait for remote acknowledgement and invalid scopes fail explicitly. Pause expires after 5 minutes.",
   inputSchema: { type: "object", additionalProperties: false, required: ["jobId", "action"], properties: {
     instanceId: instanceIdProperty, jobId: { type: "string", maxLength: 64 },
-    action: { type: "string", enum: ["pause", "resume", "cancel"] }, timeoutMs: timeoutProperty(30000, 60000),
+    action: { type: "string", enum: ["pause", "resume", "cancel", "stop_after_file", "narrow"] },
+    stopAfterFile: { type: "string", maxLength: 4096 }, dateFrom: { type: "string" }, dateTo: { type: "string" },
+    timeoutMs: timeoutProperty(30000, 60000),
   } },
 });
+
+function validateLogJobArguments(name, args) {
+  const schema = tools.find((tool) => tool.name === name).inputSchema;
+  const invalid = (field) => { throw Object.assign(new Error(`invalid or unknown log task parameter: ${field}`), { code: "INVALID_LOG_JOB", statusCode: 400 }); };
+  if (!args || typeof args !== "object" || Array.isArray(args)) invalid("arguments");
+  for (const [key, value] of Object.entries(args)) {
+    const rule = Object.hasOwn(schema.properties, key) ? schema.properties[key] : undefined;
+    if (!rule || value === null || value === undefined) invalid(key);
+    if (rule.type === "integer" && (!Number.isInteger(value) || value < rule.minimum || value > rule.maximum)) invalid(key);
+    if (rule.type === "string" && (typeof value !== "string" || !value.trim() || rule.maxLength && value.length > rule.maxLength || rule.pattern && !new RegExp(rule.pattern).test(value))) invalid(key);
+    if (rule.type === "boolean" && typeof value !== "boolean") invalid(key);
+    if (rule.enum && !rule.enum.includes(value)) invalid(key);
+  }
+  for (const key of schema.required || []) if (!Object.hasOwn(args, key)) invalid(key);
+  if (name === "remote_debug_start_log_query" && Boolean(args.path) === Boolean(args.projectId)) invalid("provide exactly one of projectId or path");
+}
 
 function parseEnvFile(contents) {
   const parsed = {};
@@ -3262,9 +3282,11 @@ async function callTool(name, args, operation) {
   }
 
   if (name === "remote_debug_query_logs") return callAgent("/logs/query", args, operation);
-  if (name === "remote_debug_start_log_query") return callAgent("/logs/jobs/start", args, operation);
-  if (name === "remote_debug_get_log_query") return callAgent("/logs/jobs/get", args, operation);
-  if (name === "remote_debug_control_log_query") return callAgent("/logs/jobs/control", args, operation);
+  if (["remote_debug_start_log_query", "remote_debug_get_log_query", "remote_debug_control_log_query"].includes(name)) {
+    validateLogJobArguments(name, args);
+    const action = name === "remote_debug_start_log_query" ? "start" : name === "remote_debug_get_log_query" ? "get" : "control";
+    return callAgent(`/logs/jobs/${action}`, args, operation);
+  }
   if (name === "remote_debug_list_log_projects") return getAgent("/api/log-projects", operation);
   if (name === "remote_debug_set_log_project") return callAgent("/api/log-projects", args, operation);
 

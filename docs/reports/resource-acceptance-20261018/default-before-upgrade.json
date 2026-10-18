@@ -1,0 +1,50 @@
+[
+  {
+    "at": "2026-10-18T08:33:22.588Z",
+    "path": "/api/instances/default/tasks",
+    "status": 200,
+    "data": {
+      "ok": true,
+      "tasks": [],
+      "total": 0,
+      "nextOffset": null,
+      "pool": {
+        "domain": "default-host:22",
+        "policy": {
+          "cpuMilliCores": 1000,
+          "protectedCpuMilliCores": 200,
+          "controlCpuMilliCores": 50,
+          "memoryBytes": 1073741824,
+          "protectedMemoryBytes": 268435456,
+          "readBytesPerSecond": 8388608,
+          "processBytesPerSecond": 16777216,
+          "transferBytesPerSecond": 4194304,
+          "protectedTransferBytesPerSecond": 2097152,
+          "controlTransferBytesPerSecond": 1048576,
+          "protectedReadBytesPerSecond": 1048576,
+          "protectedProcessBytesPerSecond": 1048576,
+          "sampleIntervalMs": 5000,
+          "sampleTtlMs": 20000,
+          "memoryHeadroomRatio": 0.1,
+          "domains": {}
+        },
+        "sample": {
+          "cpuCores": 4,
+          "cpuBusyRatio": 0.045580787453030513,
+          "memoryAvailableBytes": 5667274752,
+          "totalMemoryBytes": 8081317888,
+          "load1": 0.18603515625,
+          "ioWaitRatio": 0.00008168599901976801,
+          "scope": "host",
+          "sampledAt": 1792312390909
+        },
+        "available": {
+          "cpuMilliCores": 1000,
+          "factor": 0.1,
+          "sampleFresh": true
+        }
+      },
+      "revision": 3190
+    }
+  }
+]

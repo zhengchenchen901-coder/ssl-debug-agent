@@ -61,6 +61,7 @@ import { InstanceRegistry } from "./instance-registry.js";
 import { normalizeLogProjects } from "./log-projects.js";
 import { queryLogs as defaultQueryLogs, normalizeLogQuery } from "./log-query.js";
 import { LogJobRunner } from "./log-jobs.js";
+import { RemoteResourceManager } from "./remote-resource-manager.js";
 import { WorkerManager } from "./worker-manager.js";
 import {
   API_VERSION,
@@ -454,7 +455,7 @@ export function createApp(options = {}) {
   });
   let mongoBulkJobRunner;
   const getMongoBulkJobRunner = () => {
-    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk });
+    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk, resourceClient: options.resourceClient });
     return mongoBulkJobRunner;
   };
   const listLogs = (logOptions) => listLogsImpl({
@@ -478,7 +479,7 @@ export function createApp(options = {}) {
     config: { ...config, logs: { projects: input._logProjects || config.logs?.projects || {} } },
     operation, runSSH,
   });
-  const logJobRunner = options.logJobRunner || new LogJobRunner({ config, runSSH });
+  const logJobRunner = options.logJobRunner || new LogJobRunner({ config, runSSH, resourceClient: options.resourceClient });
   const customPathResolver = Boolean(options.resolveRemotePaths);
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
@@ -490,6 +491,15 @@ export function createApp(options = {}) {
   app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use(express.json({ limit: "512kb" }));
+  app.post("/tasks/control", async (request, response) => {
+    try {
+      const { taskId, action } = request.body || {};
+      if (typeof taskId !== "string" || !["pause", "resume", "cancel", "stop_after_file"].includes(action)) throw Object.assign(new Error("invalid task control"), { code: "TASK_CONTROL_INVALID", statusCode: 400 });
+      if (!options.resourceClient) throw Object.assign(new Error("task controller unavailable"), { code: "TASK_CONTROL_UNAVAILABLE", statusCode: 409 });
+      await options.resourceClient.control(taskId, action);
+      response.json({ ok: true });
+    } catch (error) { response.status(errorStatus(error)).json(errorPayload(error)); }
+  });
 
   app.get("/", (_request, response) => {
     response.sendFile("dashboard.html", { root: publicDir });
@@ -1222,8 +1232,8 @@ export function createApp(options = {}) {
     app.post(`/logs/jobs/${action}`, async (request, response) => {
       try {
         const input = request.body || {};
-        const result = action === "start" ? logJobRunner.start(input)
-          : action === "get" ? logJobRunner.get(input) : logJobRunner.control(input);
+        const result = await (action === "start" ? logJobRunner.start(input, { source: sourceFrom(request) })
+          : action === "get" ? logJobRunner.get(input) : logJobRunner.control(input));
         await audit(config, { tool: `logs-job-${action}`, jobId: result.jobId,
           status: result.status, ok: true, action: input.action });
         response.status(action === "start" ? 202 : 200).json({ ok: true, ...result });
@@ -1517,9 +1527,9 @@ export function createApp(options = {}) {
       } else if (action.startsWith("sandbox")) {
         result = await runMongoBulk({ ...raw, action }, { operation: requestOperation, priority: "background" });
       } else if (action === "execute") {
-        result = await getMongoBulkJobRunner().start(raw, "execute");
+        result = await getMongoBulkJobRunner().start(raw, "execute", { source: sourceFrom(request) });
       } else if (action === "rollback") {
-        result = await getMongoBulkJobRunner().start(raw, "rollback");
+        result = await getMongoBulkJobRunner().start(raw, "rollback", { source: sourceFrom(request) });
       } else if (action === "control") {
         if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw);
         else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw);
@@ -1881,7 +1891,11 @@ export function createManagerApp(options = {}) {
       workerEntryPath: options.workerEntryPath,
       forkWorker: options.forkWorker,
       fetchImpl: options.fetchImpl,
+      resourceManager: options.resourceManager, resourcePolicy: config.resources,
     });
+  const resourceManager = options.resourceManager || workerManager.resourceManager || new RemoteResourceManager({ policy: config.resources,
+    instance: (id) => registry.getInternal(id) });
+  workerManager.resourceManager = resourceManager;
   const commandReviewConfig =
     options.commandReviewConfig || config.commandReview || { status: "unavailable" };
   const runCodexReview = options.runCodexReview || defaultRunCodexReview;
@@ -1900,6 +1914,7 @@ export function createManagerApp(options = {}) {
 
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
+  app.locals.resourceManager = resourceManager;
   app.locals.lifecycle = lifecycle;
   installHttpAuth(app, config, { ...options, initializeAuth: true });
   // The final 8 MiB MCP message is a JSON string here (up to 2x escaping).
@@ -1971,6 +1986,31 @@ export function createManagerApp(options = {}) {
       instances: workerManager.publicInstances(),
     });
   });
+
+  app.get("/api/instances/:id/tasks", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.params.id);
+    const offset = Number(request.query.offset || 0), limit = Number(request.query.limit || 50);
+    if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw managerRouteError("无效分页参数", "TASK_PAGE_INVALID", 400);
+    response.json({ ok: true, ...resourceManager.list(id, { offset, limit }) });
+  }));
+  app.post("/api/instances/:id/tasks/:taskId/resource-mode", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.params.id);
+    const input = request.body || {};
+    if (Object.keys(input).some((key) => !["mode", "expectedRevision"].includes(key))) throw managerRouteError("无效调度参数", "TASK_MODE_INVALID", 400);
+    const task = resourceManager.setMode(id, request.params.taskId, input.mode, input.expectedRevision);
+    await audit(config, { tool: "task-resource-mode", instanceId: id, taskId: task.taskId, mode: input.mode, source: sourceFrom(request), ok: true });
+    response.json({ ok: true, task });
+  }));
+  app.post("/api/instances/:id/tasks/:taskId/control", managerAsync(async (request, response) => {
+    const id = registry.resolveId(request.params.id);
+    if (Object.keys(request.body || {}).some((key) => key !== "action")) throw managerRouteError("无效任务控制参数", "TASK_CONTROL_INVALID", 400);
+    const task = resourceManager.tasks.get(request.params.taskId);
+    if (!task || task.instanceId !== id) throw managerRouteError("任务不存在", "TASK_NOT_FOUND", 404);
+    if (!task.capabilities.includes(request.body?.action)) throw managerRouteError("任务不支持此操作", "TASK_CONTROL_INVALID", 400);
+    const result = await workerManager.callInstance(id, "/tasks/control", { taskId: task.taskId, action: request.body.action }, request.headers);
+    await audit(config, { tool: "task-control", instanceId: id, taskId: task.taskId, action: request.body.action, ok: true });
+    response.json(result);
+  }));
 
   function scheduleRestoreInstancesAfterLease(lease) {
     if (typeof workerManager.restoreInstancesFromSnapshot !== "function") {
@@ -2765,6 +2805,7 @@ export function startServer(config = loadConfig(), options = {}) {
         await workerManager.shutdownAll(reason).catch((error) => {
           console.error("failed to stop worker processes", error);
         });
+        app.locals.resourceManager.close();
         if (shutdownOptions.closeServer !== false) {
           await closeServer();
         }

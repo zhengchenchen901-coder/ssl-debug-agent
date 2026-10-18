@@ -1,0 +1,482 @@
+{
+  "seedplan": {
+    "ok": true,
+    "instanceId": "test-server",
+    "kind": "import_plan",
+    "importId": "rda-rp-20261018-01a14e14-final-seed",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "affectedCount": 4,
+    "batchCount": 1,
+    "atomicity": "per_batch",
+    "status": "prepared",
+    "batches": [
+      {
+        "mutationId": "import-3103e7107d9df8da86666a890f30b036db384189724e2541c6fb4e17feb055f4",
+        "operationId": "8fc8ef16-b21e-4206-9781-f057c6363aa5",
+        "kind": "import",
+        "operation": "insertMany",
+        "database": "yennefer",
+        "collection": "CustomerPrivate",
+        "status": "planned",
+        "rollbackMode": "transactional",
+        "riskLevel": "high",
+        "requiresConfirmation": true,
+        "purpose": "4 synthetic owned records for final pause-race real regression",
+        "createdAt": "2026-10-18T08:43:19.030Z",
+        "rollbackExpiresAt": "2026-10-19T08:43:19.030Z",
+        "planHash": "15e60beb459f7bcd91f4814c50e102b4afcca9ed4400cb521fdf754eb8bb9acd",
+        "affectedCount": 4,
+        "changedFields": [
+          "_id",
+          "belonged_group",
+          "member_code",
+          "create_user",
+          "is_deleted",
+          "is_marketing",
+          "is_marketing_opt_out",
+          "whatsapp_unsubscribed",
+          "is_synchronized",
+          "remark",
+          "internal_remark"
+        ],
+        "affectedIds": [
+          "rda-rp-20261018-01a14e14-final-0",
+          "rda-rp-20261018-01a14e14-final-1",
+          "rda-rp-20261018-01a14e14-final-2",
+          "rda-rp-20261018-01a14e14-final-3"
+        ],
+        "importId": "rda-rp-20261018-01a14e14-final-seed",
+        "batchIndex": 0,
+        "retryable": false,
+        "journalPath": "/tmp/remote-debug-agent/mutations/import-3103e7107d9df8da86666a890f30b036db384189724e2541c6fb4e17feb055f4",
+        "preview": {
+          "affectedCount": 4,
+          "affectedIds": [
+            "rda-rp-20261018-01a14e14-final-0",
+            "rda-rp-20261018-01a14e14-final-1",
+            "rda-rp-20261018-01a14e14-final-2",
+            "rda-rp-20261018-01a14e14-final-3"
+          ],
+          "changedFields": [
+            "_id",
+            "belonged_group",
+            "member_code",
+            "create_user",
+            "is_deleted",
+            "is_marketing",
+            "is_marketing_opt_out",
+            "whatsapp_unsubscribed",
+            "is_synchronized",
+            "remark",
+            "internal_remark"
+          ],
+          "rollbackMode": "transactional"
+        }
+      }
+    ],
+    "requiresConfirmation": true,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 4814,
+      "connectionGeneration": 1
+    },
+    "durationMs": 4869,
+    "operationId": "8fc8ef16-b21e-4206-9781-f057c6363aa5",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "seedcommit": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-3103e7107d9df8da86666a890f30b036db384189724e2541c6fb4e17feb055f4",
+    "operationId": "497dcb03-2b37-4b17-8c52-74676a04ea02",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "committed",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "4 synthetic owned records for final pause-race real regression",
+    "createdAt": "2026-10-18T08:43:19.030Z",
+    "committedAt": "2026-10-18T08:43:21.876Z",
+    "rollbackExpiresAt": "2026-10-19T08:43:19.030Z",
+    "planHash": "15e60beb459f7bcd91f4814c50e102b4afcca9ed4400cb521fdf754eb8bb9acd",
+    "affectedCount": 4,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-final-0",
+      "rda-rp-20261018-01a14e14-final-1",
+      "rda-rp-20261018-01a14e14-final-2",
+      "rda-rp-20261018-01a14e14-final-3"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-final-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-3103e7107d9df8da86666a890f30b036db384189724e2541c6fb4e17feb055f4",
+    "timing": {
+      "queueMs": 1,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2495,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2547,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "plan": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "status": "prepared",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "unitCount": 4,
+    "operationCount": 4,
+    "batchCount": 4,
+    "rollbackExpiresAt": "2026-10-19T08:43:30.170Z",
+    "changedFields": [
+      "remark"
+    ],
+    "batches": [
+      {
+        "batchIndex": 0,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-final-0"
+          }
+        ],
+        "rollbackBytes": 270642
+      },
+      {
+        "batchIndex": 1,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-final-1"
+          }
+        ],
+        "rollbackBytes": 270642
+      },
+      {
+        "batchIndex": 2,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-final-2"
+          }
+        ],
+        "rollbackBytes": 270642
+      },
+      {
+        "batchIndex": 3,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-final-3"
+          }
+        ],
+        "rollbackBytes": 270642
+      }
+    ],
+    "requiresConfirmation": true,
+    "atomicity": "per_batch",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2893,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2946,
+    "operationId": "f3a1d6a2-9fe9-48e9-b27c-a55fa4367be2",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "beforeFirstPause": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "running",
+    "mode": "execute",
+    "desiredState": "running",
+    "createdAt": "2026-10-18T08:43:26.740Z",
+    "updatedAt": "2026-10-18T08:43:36.951Z",
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "rollbackExpiresAt": "2026-10-19T08:43:30.170Z",
+    "operationCount": 4,
+    "unitCount": 4,
+    "batchCount": 4,
+    "nextBatch": 0,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 0,
+    "rolledBackBatchCount": 0,
+    "activeBatchIndexes": [],
+    "activePhase": "execute",
+    "queuedBatchCount": 4,
+    "committed": {
+      "matched": 0,
+      "modified": 0,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 5817,
+      "connectionGeneration": 1
+    },
+    "durationMs": 5870,
+    "operationId": "40808e84-aa14-45ef-a777-783944b44e74",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "firstPause": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "paused",
+    "mode": "execute",
+    "desiredState": "pause",
+    "createdAt": "2026-10-18T08:43:26.740Z",
+    "updatedAt": "2026-10-18T08:43:50.674Z",
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "rollbackExpiresAt": "2026-10-19T08:43:30.170Z",
+    "operationCount": 4,
+    "unitCount": 4,
+    "batchCount": 4,
+    "nextBatch": 0,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 0,
+    "rolledBackBatchCount": 0,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 0,
+      "modified": 0,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "pauseReason": "pause_requested",
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3050,
+      "connectionGeneration": 1
+    },
+    "durationMs": 3102,
+    "operationId": "fcaeed6e-a36d-4b95-aaea-9735f1c22bad",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "resume": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "status": "running",
+    "desiredState": "running",
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "batchCount": 4,
+    "mode": "execute",
+    "timing": {
+      "queueMs": 1682,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 1854,
+      "connectionGeneration": 1
+    },
+    "leaseId": "a4b0870e059c0f62ccf8b8e681b225eec712bfa555a095d3af6dbe4788166fb9",
+    "effectiveConcurrency": 2,
+    "accepted": true,
+    "background": true,
+    "durationMs": 5667,
+    "operationId": "6beca780-7da3-4199-80e9-eeac8bfce863",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "afterInflightPause": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "paused",
+    "mode": "execute",
+    "desiredState": "pause",
+    "createdAt": "2026-10-18T08:43:26.740Z",
+    "updatedAt": "2026-10-18T08:44:55.188Z",
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "rollbackExpiresAt": "2026-10-19T08:43:30.170Z",
+    "operationCount": 4,
+    "unitCount": 4,
+    "batchCount": 4,
+    "nextBatch": 4,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": 3,
+    "committedBatchCount": 4,
+    "rolledBackBatchCount": 0,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 4,
+      "modified": 4,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "pauseReason": "pause_requested",
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 1685,
+      "connectionGeneration": 1
+    },
+    "durationMs": 1737,
+    "operationId": "0865cc98-fbff-445e-a572-b087e2dc1853",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "rollbackStart": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "leaseId": "9df2a1079fd6bea7da89af36d2b2be950113c912fe0c1f5591b2330971ee9a8b",
+    "status": "rolling_back",
+    "mode": "rollback",
+    "batchCount": 4,
+    "effectiveConcurrency": 2,
+    "accepted": true,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3210,
+      "connectionGeneration": 1
+    },
+    "background": true,
+    "durationMs": 3264,
+    "operationId": "e2ae4869-7e77-41b1-a2ee-bf91bb6275a5",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  }
+}

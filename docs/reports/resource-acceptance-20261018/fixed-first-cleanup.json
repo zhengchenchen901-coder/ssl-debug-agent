@@ -1,0 +1,143 @@
+{
+  "bulk": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-fix-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "rolled_back",
+    "mode": "rollback",
+    "desiredState": "stop",
+    "createdAt": "2026-10-18T08:38:41.184Z",
+    "updatedAt": "2026-10-18T08:41:00.793Z",
+    "planHash": "0134b6ea1ba4677b736340d41eea3ce5f8d064aae866f4d2acda91839113175c",
+    "rollbackExpiresAt": "2026-10-19T08:38:43.802Z",
+    "operationCount": 6,
+    "unitCount": 6,
+    "batchCount": 6,
+    "nextBatch": 2,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 2,
+    "rolledBackBatchCount": 2,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 2,
+      "modified": 2,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2203,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2254,
+    "operationId": "ee510500-cb88-43a4-8ce1-7460fb7202c7",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "seed": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-4def42ec9db2a26847ea54d182bea87e6e181da9bd5380c1333f67de46da01e3",
+    "operationId": "aaf5c7db-ce23-4b14-b027-664871d61395",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "rolled_back",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "6 synthetic owned records for real regression of pause and rollback",
+    "createdAt": "2026-10-18T08:38:34.080Z",
+    "committedAt": "2026-10-18T08:38:36.239Z",
+    "rolledBackAt": "2026-10-18T08:41:39.037Z",
+    "rollbackExpiresAt": "2026-10-19T08:38:34.080Z",
+    "planHash": "8e1dc0ee217ca5ad8a930000cdbf469e0c1c65359cba1dba1ac2336816171432",
+    "affectedCount": 6,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-fix-0",
+      "rda-rp-20261018-01a14e14-fix-1",
+      "rda-rp-20261018-01a14e14-fix-2",
+      "rda-rp-20261018-01a14e14-fix-3",
+      "rda-rp-20261018-01a14e14-fix-4",
+      "rda-rp-20261018-01a14e14-fix-5"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-fix-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-4def42ec9db2a26847ea54d182bea87e6e181da9bd5380c1333f67de46da01e3",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2441,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2490,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "count": {
+    "ok": true,
+    "operation": "countDocuments",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "data": 0,
+    "resultCount": 0,
+    "durationMs": 3576,
+    "operationId": "94782025-beed-45a0-83a2-6875212d6790",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3524,
+      "connectionGeneration": 1
+    },
+    "instanceId": "test-server",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  }
+}

@@ -8,10 +8,11 @@ import { WebSocketServer, WebSocket } from "ws";
 import localAuth from "../plugins/remote-debug-agent/local-auth.cjs";
 import { ManualAdminStore, ManualLoginLimiter, manualError, validateAdminCredentials } from "./manual-auth.js";
 import { ManualOwnerVerification } from "./manual-owner-verification.js";
+import { openManualDatabase, manualMongoCommand, normalizeManualQuery, validateReplacement, databaseError } from "./manual-mongodb.js";
 import { openManualTerminal, terminalSize } from "./manual-terminal.js";
 
 const moduleDirectory = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-const ASSETS = new Set(["manual.html", "manual.js", "manual.css", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
+const ASSETS = new Set(["manual.html", "manual.js", "manual.css", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
 const IDLE_MS = 15 * 60_000;
 const MAX_SESSION_MS = 8 * 60 * 60_000;
 const TOKEN = /^[a-f0-9]{64}$/;
@@ -36,6 +37,8 @@ function route(action) {
   return (request, response, next) => Promise.resolve().then(() => action(request, response)).catch(next);
 }
 function sendError(error, _request, response, _next) {
+  if (error.type === "entity.too.large") error = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
+  else if (error.type === "entity.parse.failed") error = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
   const known = typeof error.code === "string" && /^(ADMIN_|OWNER_|MANUAL_|INSTANCE_)/.test(error.code);
   response.status(known ? error.statusCode || 400 : 503).json({ ok: false, error: {
     code: known ? error.code : "MANUAL_UNAVAILABLE", message: known ? error.message : "手动工作台暂不可用，请检查本地配置和文件权限。",
@@ -50,6 +53,7 @@ export class ManualWorkbench {
     this.store = options.store || new ManualAdminStore(this.directory);
     this.ownerVerification = options.ownerVerification || new ManualOwnerVerification(path.join(this.directory, "native"));
     this.openTerminal = options.openTerminal || openManualTerminal;
+    this.openDatabase = options.openDatabase || openManualDatabase;
     this.now = options.now || Date.now;
     this.idleMs = options.idleMs || IDLE_MS;
     this.maxSessionMs = options.maxSessionMs || MAX_SESSION_MS;
@@ -65,9 +69,9 @@ export class ManualWorkbench {
 
   status() { return { ok: true, adminCount: this.store.read().length, ownerVerification: this.ownerVerification.status() }; }
 
-  audit(event, session = {}) {
+  audit(event, session = {}, metadata = {}) {
     // Only metadata; never terminal bytes, passwords, tokens or private-key paths.
-    const entry = { time: new Date(this.now()).toISOString(), event, sessionId: session.id, instanceId: session.instanceId, username: session.username };
+    const entry = { time: new Date(this.now()).toISOString(), event, sessionId: session.id, instanceId: session.instanceId, username: session.username, ...metadata };
     this.store.protectDirectory();
     const logPath = path.join(this.directory, "sessions.jsonl");
     if (fs.existsSync(logPath)) {
@@ -164,6 +168,7 @@ export class ManualWorkbench {
     this.lifecycle?.releaseLease(`manual:${session.id}`);
     session.socket?.close(4001, "session closed");
     session.terminal?.close();
+    this.closeDatabase(session);
     try { this.audit(reason, session); } catch { /* revocation must complete even if storage is unavailable */ }
   }
 
@@ -178,23 +183,58 @@ export class ManualWorkbench {
     for (const [ticket, value] of this.tickets) if (value.expiresAt <= this.now()) this.tickets.delete(ticket);
   }
 
-  issueTicket(token) {
+  issueTicket(token, kind = "ssh") {
     const session = this.getSession(token);
-    if (session.socket) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端，请先断开。", 409);
-    for (const [ticket, value] of this.tickets) if (value.token === token) this.tickets.delete(ticket);
+    if (session[kind === "database" ? "databaseSocket" : "socket"]) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端，请先断开。", 409);
+    if (kind === "database" && !session.databaseTarget) throw databaseError("MANUAL_DB_NOT_CONNECTED", 409);
+    for (const [ticket, value] of this.tickets) if (value.token === token && value.kind === kind) this.tickets.delete(ticket);
     const ticket = randomBytes(32).toString("hex");
-    this.tickets.set(ticket, { token, expiresAt: this.now() + 10_000 });
+    this.tickets.set(ticket, { token, kind, connectionId: session.database?.id, expiresAt: this.now() + 10_000 });
     return { ok: true, ticket };
   }
 
-  consumeTicket(ticket) {
+  consumeTicket(ticket, kind = "ssh") {
     const value = typeof ticket === "string" && this.tickets.get(ticket);
     if (!value) throw manualError("MANUAL_TICKET_INVALID", "终端授权无效。", 401);
     this.tickets.delete(ticket);
-    if (value.expiresAt <= this.now()) throw manualError("MANUAL_TICKET_INVALID", "终端授权已过期。", 401);
+    if (value.kind !== kind || value.expiresAt <= this.now()) throw manualError("MANUAL_TICKET_INVALID", "终端授权已过期。", 401);
     const session = this.getSession(value.token);
-    if (session.socket) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端。", 409);
+    if (session[kind === "database" ? "databaseSocket" : "socket"]) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端。", 409);
+    if (kind === "database" && (!session.databaseTarget || session.database?.id !== value.connectionId)) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
     return { session, token: value.token };
+  }
+
+  databaseTarget(session) {
+    const { fingerprint, ...descriptor } = session.databaseTarget;
+    return { ...descriptor, instanceId: session.instanceId, ssh: target(this.instance(session.instanceId)) };
+  }
+
+  requireDatabase(session, connectionId) {
+    if (!session.database || session.database.closed || !session.databaseTarget || session.database.id !== connectionId) throw databaseError("MANUAL_DB_NOT_CONNECTED", 409);
+    return session.database;
+  }
+
+  closeDatabase(session) {
+    session.databaseSocket?.close(4002, "database disconnected");
+    session.databaseTerminal?.close();
+    session.databaseSocket = null; session.databaseTerminal = null;
+    session.database?.close(); session.database = null; session.databaseTarget = null; session.databasePlan = null;
+    if (session.databaseCheckTimer) clearInterval(session.databaseCheckTimer);
+    session.databaseCheckTimer = null;
+  }
+
+  async databaseRequest(token, connectionId, request) {
+    const session = this.getSession(token), database = this.requireDatabase(session, connectionId);
+    session.lastInputAt = this.now();
+    try {
+      const result = await database.request(request);
+      this.getSession(token);
+      if (session.database !== database) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
+      return result;
+    } catch (error) {
+      if (session.database === database && (database.closed || error.code === "MANUAL_DB_TARGET_CHANGED")) this.closeDatabase(session);
+      throw error;
+    }
   }
 
   async start() {
@@ -217,6 +257,7 @@ export class ManualWorkbench {
       }
       next();
     });
+    app.use("/api/database", express.json({ limit: "900kb", strict: true }));
     app.use(express.json({ limit: "8kb", strict: true }));
     const publicDirectory = path.join(moduleDirectory, "public");
     app.get("/", (_request, response) => response.sendFile("manual.html", { root: publicDirectory }));
@@ -227,21 +268,102 @@ export class ManualWorkbench {
     });
     app.post("/api/login", route(async (request, response) => response.json(await this.login(request.body))));
     const authorize = (request) => this.getSession(this.bearer(request));
+    app.use("/api/database", (request, _response, next) => {
+      try { authorize(request); next(); } catch (error) { next(error); }
+    });
     app.get("/api/session", route((request, response) => {
       const session = authorize(request);
-      response.json({ ok: true, target: target(this.instance(session.instanceId)) });
+      response.json({ ok: true, target: target(this.instance(session.instanceId)), databaseConnectionId: session.database?.closed ? null : session.database?.id || null });
     }));
     app.post("/api/logout", route((request, response) => { authorize(request); this.revoke(this.bearer(request)); response.json({ ok: true }); }));
     app.post("/api/terminal-ticket", route((request, response) => response.json(this.issueTicket(this.bearer(request)))));
+    app.get("/api/database/config", route((request, response) => {
+      const session = authorize(request), instance = this.instance(session.instanceId);
+      response.json({ ok: true, config: instance.manualMongo || { enabled: false } });
+    }));
+    app.post("/api/database/connect", route(async (request, response) => {
+      assertFields(request.body, []);
+      const token = this.bearer(request), session = this.getSession(token);
+      this.closeDatabase(session);
+      session.lastInputAt = this.now();
+      const database = this.openDatabase(this.instance(session.instanceId));
+      session.database = database;
+      try {
+        this.audit("database-opening", session);
+        const descriptor = await database.request({ operation: "connect" });
+        this.getSession(token);
+        if (session.database !== database) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
+        session.databaseTarget = descriptor;
+        session.databaseCheckTimer = setInterval(async () => {
+          if (session.database !== database || session.databaseChecking) return;
+          session.databaseChecking = true;
+          try { this.getSession(token); await database.request({ operation: "check" }); }
+          catch (error) { if (error.code !== "MANUAL_DB_BUSY" && session.database === database) this.closeDatabase(session); }
+          finally { session.databaseChecking = false; }
+        }, 30000);
+        session.databaseCheckTimer.unref();
+        this.audit("database-connected", session);
+        response.json({ ok: true, connectionId: database.id, target: this.databaseTarget(session) });
+      } catch (error) {
+        database.close();
+        if (session.database === database) this.closeDatabase(session);
+        throw error;
+      }
+    }));
+    app.post("/api/database/activity", route((request, response) => {
+      assertFields(request.body, ["connectionId"]);
+      const session = authorize(request); this.requireDatabase(session, request.body.connectionId);
+      session.lastInputAt = this.now();
+      response.json({ ok: true });
+    }));
+    app.post("/api/database/disconnect", route((request, response) => {
+      assertFields(request.body, ["connectionId"]);
+      const session = authorize(request); this.requireDatabase(session, request.body.connectionId);
+      this.closeDatabase(session); response.json({ ok: true });
+    }));
+    app.post("/api/database/query", route(async (request, response) => {
+      const query = normalizeManualQuery(request.body);
+      const result = await this.databaseRequest(this.bearer(request), request.body.connectionId, query);
+      response.json({ ok: true, ...result });
+    }));
+    app.post("/api/database/prepare", route(async (request, response) => {
+      const input = validateReplacement(request.body);
+      const token = this.bearer(request), session = this.getSession(token);
+      await this.databaseRequest(token, request.body.connectionId, { operation: "check" });
+      const planId = randomBytes(32).toString("hex");
+      session.databasePlan = { ...input, planId, connectionId: session.database.id, expiresAt: this.now() + 60000 };
+      this.audit("database-write-prepared", session, { database: input.database, collection: input.collection, connectionId: session.database.id, action: "replaceOne" });
+      response.json({ ok: true, planId, target: this.databaseTarget(session), database: input.database, collection: input.collection, action: "replaceOne", confirmation: "确认替换此文档", expiresInMs: 60000 });
+    }));
+    app.post("/api/database/execute", route(async (request, response) => {
+      assertFields(request.body, ["connectionId", "planId", "confirmation"]);
+      const token = this.bearer(request), session = this.getSession(token);
+      this.requireDatabase(session, request.body.connectionId);
+      const plan = session.databasePlan;
+      if (!plan || request.body.planId !== plan.planId || plan.connectionId !== request.body.connectionId || plan.expiresAt <= this.now() || request.body.confirmation !== "确认替换此文档") throw databaseError("MANUAL_DB_PLAN_INVALID", 409);
+      session.databasePlan = null; // Consume before dispatch: never replay an uncertain write.
+      this.audit("database-write-dispatched", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
+      try {
+        const result = await this.databaseRequest(token, request.body.connectionId, { operation: "replaceOne", database: plan.database, collection: plan.collection, original: plan.original, replacement: plan.replacement });
+        this.audit("database-write-completed", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
+        response.json({ ok: true, ...result });
+      } catch (error) { this.audit("database-write-failed-or-unknown", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" }); throw error; }
+    }));
+    app.post("/api/database/shell-ticket", route(async (request, response) => {
+      assertFields(request.body, ["connectionId"]);
+      const token = this.bearer(request);
+      await this.databaseRequest(token, request.body.connectionId, { operation: "check" });
+      response.json(this.issueTicket(token, "database"));
+    }));
     app.use((_request, response) => response.sendStatus(404));
     app.use(sendError);
     this.server = http.createServer(app);
     this.wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024, perMessageDeflate: false });
     this.server.on("upgrade", (request, socket, head) => {
-      if (request.url !== "/terminal" || request.headers.host !== this.authority || request.headers.origin !== this.origin || this.wss.clients.size >= 16) {
+      if (!["/terminal", "/database-terminal"].includes(request.url) || request.headers.host !== this.authority || request.headers.origin !== this.origin || this.wss.clients.size >= 16) {
         socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n"); return;
       }
-      this.wss.handleUpgrade(request, socket, head, (ws) => this.attachTerminal(ws));
+      this.wss.handleUpgrade(request, socket, head, (ws) => this.attachTerminal(ws, request.url === "/database-terminal" ? "database" : "ssh"));
     });
     await new Promise((resolve, reject) => {
       this.server.once("error", reject);
@@ -259,7 +381,9 @@ export class ManualWorkbench {
     return typeof header === "string" && header.startsWith("Bearer ") ? header.slice(7) : "";
   }
 
-  attachTerminal(ws) {
+  attachTerminal(ws, kind = "ssh") {
+    const socketField = kind === "database" ? "databaseSocket" : "socket";
+    const terminalField = kind === "database" ? "databaseTerminal" : "terminal";
     let session, token, terminal, ready = false, missedPong = false;
     let pendingOutputBytes = 0;
     let inputBytes = 0, inputWindow = this.now();
@@ -279,9 +403,9 @@ export class ManualWorkbench {
     ws.on("close", () => {
       clearTimeout(authenticationTimer); clearInterval(heartbeat); clearInterval(drain);
       terminal?.close();
-      if (session && session.socket === ws) {
-        session.socket = null; session.terminal = null;
-        try { this.audit("terminal-disconnected", session); } catch { this.revoke(token, "audit-unavailable"); }
+      if (session && session[socketField] === ws) {
+        session[socketField] = null; session[terminalField] = null;
+        try { this.audit(`${kind}-terminal-disconnected`, session); } catch { this.revoke(token, "audit-unavailable"); }
       }
     });
     ws.on("message", (raw, binary) => {
@@ -292,12 +416,13 @@ export class ManualWorkbench {
           assertFields(message, ["type", "ticket", "cols", "rows"]);
           if (message.type !== "authenticate") throw manualError("MANUAL_AUTH_REQUIRED", "终端尚未授权。", 401);
           const size = terminalSize(message.cols, message.rows);
-          ({ session, token } = this.consumeTicket(message.ticket));
+          ({ session, token } = this.consumeTicket(message.ticket, kind));
           clearTimeout(authenticationTimer);
-          this.audit("terminal-opening", session);
-          session.socket = ws;
+          this.audit(`${kind}-terminal-opening`, session);
+          session[socketField] = ws;
           terminal = this.openTerminal(this.instance(session.instanceId), {
             ...size,
+            ...(kind === "database" ? { command: manualMongoCommand(this.instance(session.instanceId), session.databaseTarget.fingerprint) } : {}),
             onData: (data) => {
               if (ws.readyState !== WebSocket.OPEN) return;
               const bytes = Buffer.byteLength(data);
@@ -308,13 +433,13 @@ export class ManualWorkbench {
               if (pendingOutputBytes > 512 * 1024 || ws.bufferedAmount > 1024 * 1024) terminal?.pause();
             },
             onReady: () => {
-              try { this.getSession(token); this.audit("terminal-ready", session); ready = true; send({ type: "ready" }); }
+              try { this.getSession(token); this.audit(`${kind}-terminal-ready`, session); ready = true; send({ type: "ready" }); }
               catch { ws.close(4001, "session expired"); }
             },
             onError: (code) => send({ type: "error", code, message: SSH_MESSAGES[code] || SSH_MESSAGES.MANUAL_SSH_FAILED }),
             onClose: () => { ready = false; if (ws.readyState === WebSocket.OPEN) ws.close(1000, "SSH closed"); },
           });
-          session.terminal = terminal;
+          session[terminalField] = terminal;
           return;
         }
         this.getSession(token);

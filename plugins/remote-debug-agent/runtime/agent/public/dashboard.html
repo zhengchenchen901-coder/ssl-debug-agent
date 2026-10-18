@@ -190,7 +190,7 @@
             <p class="form-note">查询只查指定项目目录；保存后项目查询立即生效。留空保留原配置，输入 {} 清空。</p>
           </fieldset>
           <fieldset class="wide mongo-connection">
-            <legend>MongoDB 连接配置</legend>
+            <legend>MongoDB 自动业务连接配置</legend>
             <label class="switch-row wide">
               <input name="mongodbEnabled" type="checkbox" />
               <span>启用 MongoDB</span>
@@ -217,6 +217,18 @@
             </label>
             <p class="wide muted">路径均为远程服务器上的绝对路径。配置分组为远程 JSON 文件中的分组名称，例如 production；URI 字段名为该分组中的连接地址字段，例如 url，支持 mongodb.url 这样的嵌套字段。</p>
             <p class="wide muted">连接地址和凭据由实例读取远程配置文件。保存后，运行中的实例需点击“重新加载配置”生效，已停止的实例下次启动时生效。</p>
+          </fieldset>
+          <fieldset class="wide mongo-connection">
+            <legend>人工数据库管理连接 · MongoDB</legend>
+            <label class="switch-row wide"><input name="manualMongoEnabled" type="checkbox"><span>启用管理员工作台数据库 GUI / shell</span></label>
+            <label class="wide"><span>远端 JSON 配置文件</span><input name="manualMongoConfigPath" autocomplete="off" maxlength="4096" placeholder="/home/app/config.json"></label>
+            <label class="wide"><span>远端 MongoDB Node 驱动（需 EJSON）</span><input name="manualMongoDriverPath" autocomplete="off" maxlength="4096" placeholder="/home/app/node_modules/mongodb"></label>
+            <label><span>人工连接配置分组</span><input name="manualMongoConfigProfile" autocomplete="off" maxlength="128" placeholder="manualAdmin"></label>
+            <label><span>URI 字段</span><input name="manualMongoUriKey" autocomplete="off" maxlength="128" value="url"></label>
+            <label><span>默认数据库（可选）</span><input name="manualMongoDatabase" autocomplete="off" maxlength="128"></label>
+            <label><span>远端 mongosh 路径 / 命令</span><input name="manualMongoMongoshPath" autocomplete="off" maxlength="4096" value="mongosh"></label>
+            <label class="wide"><span>远端 Node 路径 / 命令</span><input name="manualMongoNodePath" autocomplete="off" maxlength="4096" value="node"></label>
+            <p class="wide muted">仅用于管理员手动工作台，独立于自动业务连接及沙盒管理连接。可复用远端配置文件和已有 profile；凭据由服务器读取，不在此填写。实际权限由数据库账户决定，保存后旧人工会话失效。shell 需要远端已有兼容的 mongosh，不自动安装。</p>
           </fieldset>
           <fieldset id="mongodbPermissions" class="wide mongo-permissions">
             <legend>MongoDB 写入权限</legend>
@@ -291,6 +303,7 @@
 
     <script src="/environment-report.js" defer></script>
     <script src="/output-preview.js" defer></script>
+    <script src="/instance-tasks.js" defer></script>
     <script src="/dashboard.js" type="module"></script>
     <script src="/admin-registration.js" type="module"></script>
   </body>

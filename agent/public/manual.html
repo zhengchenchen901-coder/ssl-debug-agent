@@ -10,6 +10,7 @@
     <script src="/assets/vendor/xterm.js" defer></script>
     <script src="/assets/vendor/addon-fit.js" defer></script>
     <script src="/assets/manual.js" defer></script>
+    <script src="/assets/manual-database.js" defer></script>
   </head>
   <body>
     <header class="topbar">
@@ -34,10 +35,11 @@
       <section id="workspace" class="workspace" hidden aria-label="服务器手动操作">
         <aside class="sidebar">
           <span class="section-label">工作空间</span>
-          <div class="nav-item active"><span aria-hidden="true">&gt;_</span> SSH 终端</div>
+          <button id="sshNav" class="nav-item active"><span aria-hidden="true">&gt;_</span> SSH 终端</button>
+          <button id="databaseNav" class="nav-item">数据库</button>
           <div class="sidebar-foot"><span class="live-dot"></span>管理员手动操作</div>
         </aside>
-        <div class="work-area">
+        <div id="sshWorkArea" class="work-area">
           <section class="preview-panel" aria-label="连接预览">
             <div class="panel-heading"><div><span class="section-label">连接预览</span><h2 id="instanceName">—</h2></div><span id="connectionStatus" class="status" role="status">未连接</span></div>
             <div class="target-grid">
@@ -53,7 +55,7 @@
             <div class="terminal-footer"><span id="terminalHint">点击“连接 SSH”开始操作</span><span>Ctrl+C 中断 · 支持交互式命令</span></div>
           </section>
         </div>
-        <aside class="operations" aria-label="操作面板">
+        <aside id="sshOperations" class="operations" aria-label="操作面板">
           <span class="section-label">操作</span>
           <h2>SSH 会话</h2>
           <p>直接操作当前实例的远端 Shell。</p>
@@ -62,6 +64,35 @@
           <div class="info-card"><h3>当前权限</h3><p>由远端 SSH 账号决定。需要提权时，可在终端中自行使用 sudo。</p></div>
           <div class="info-card"><h3>会话有效期</h3><p>15 分钟未输入后退出，最长 8 小时。断线重连会创建新的 Shell。</p></div>
           <p id="workMessage" class="message" role="alert"></p>
+        </aside>
+        <div id="databaseWorkArea" class="work-area" hidden>
+          <section class="preview-panel">
+            <div class="panel-heading"><div><span class="section-label">MONGODB · 人工管理连接</span><h2 id="dbTitle">数据库</h2></div><span id="dbStatus" class="status">未连接</span></div>
+            <p id="dbTarget">从实例管理保存的人工连接配置建立连接。</p>
+            <p id="dbConfig"></p>
+            <div class="db-toolbar"><button id="dbConnect" class="button primary">连接数据库</button><button id="dbDisconnect" class="button" disabled>断开数据库</button></div>
+            <p id="dbMessage" class="message" role="alert"></p>
+          </section>
+          <section class="db-browser">
+            <div class="db-directory"><h3>数据库 / 集合</h3><button id="dbList" class="button small">刷新数据库</button><div id="dbDatabases"></div><button id="dbMoreDatabases" class="button small" hidden>更多数据库</button><hr><div id="dbCollections"></div><button id="dbMoreCollections" class="button small" hidden>更多集合</button></div>
+            <div class="db-documents">
+              <form id="dbQueryForm">
+                <div class="db-fields"><label>数据库<input id="dbDatabase" required maxlength="128" autocomplete="off"></label><label>集合<input id="dbCollection" required maxlength="128" autocomplete="off"></label></div>
+                <label>筛选 · Extended JSON<textarea id="dbFilter" rows="2" spellcheck="false">{}</textarea></label>
+                <label>排序 · JSON<textarea id="dbSort" rows="2" spellcheck="false">{"_id": 1}</textarea></label>
+                <div class="db-toolbar"><button id="dbFind" class="button primary">查询文档</button><button id="dbIndexes" type="button" class="button">查看索引</button><label>每页<select id="dbPageSize"><option>10</option><option selected>30</option><option>100</option></select></label></div>
+              </form>
+              <p id="dbPageInfo">选择集合后查询文档</p><div id="dbDocuments"></div><button id="dbNext" class="button" hidden>下一页</button>
+              <section id="dbEditorPanel" hidden><h3>文档查看与编辑 · Canonical Extended JSON</h3><p id="dbEditTarget"></p><textarea id="dbEditor" rows="16" spellcheck="false" aria-label="文档编辑器"></textarea><button id="dbPrepare" class="button">准备替换文档…</button></section>
+            </div>
+          </section>
+        </div>
+        <aside id="databaseOperations" class="operations" hidden aria-label="数据库 shell">
+          <span class="section-label">独立交互式客户端</span><h2>数据库 shell</h2><p id="dbShellTarget">先连接数据库并核验目标与身份。</p>
+          <button id="dbShellConnect" class="button primary" disabled>启动 mongosh</button><button id="dbShellDisconnect" class="button" disabled>断开 shell</button>
+          <p id="dbShellHint">需要远端已有兼容的 mongosh。shell 以 GUI 已核验的实例、配置分组及身份启动。</p>
+          <div id="dbTerminal" aria-label="MongoDB 交互式终端"></div><button id="dbShellClear" class="button small">清空显示</button>
+          <div class="info-card"><h3>数据库账户权限</h3><p>人工模式可执行数据库身份允许的读写。插件管理员身份不赋予远端或数据库权限。任意 shell 写入不保证回滚。</p></div>
         </aside>
       </section>
     </main>

@@ -774,6 +774,8 @@ function __bulkAcquireLease(jobId, manifest, leaseId, mode) {
     manifest.activePhase = mode === "rollback" ? "rollback" : "execute";
     manifest.pauseReason = undefined;
     manifest.updatedAt = new Date().toISOString();
+    // A new execution/rollback lease also supersedes the previous pause request.
+    __bulkWriteJson(__path.join(__bulkJobDir(jobId), "control.json"), { desiredState: "running", at: manifest.updatedAt }, 64 * 1024);
     __bulkSaveManifest(manifest);
     return lease;
   });

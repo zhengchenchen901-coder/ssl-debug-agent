@@ -25,7 +25,7 @@ try {
   config.runtime.statePath = path.join(directory, ".runtime", "state.json");
   const outputs = {
     first: "第一条输出\npassword=PREVIEW_PRIVATE_FIXTURE\n" + "诊断行：服务运行正常\n".repeat(80),
-    second: "第二条输出：运行正常", third: "第三条输出：更新完成", other: "其他实例的独立输出", unsafe: "<img src=x onerror=alert(1)>\n纯文本",
+    second: "第二条输出：运行正常", third: "第三条输出：更新完成", fourth: "第四条输出：继续更新", other: "其他实例的独立输出", unsafe: "<img src=x onerror=alert(1)>\n纯文本",
   };
   const app = createManagerApp({ config, registry, authToken: token, workerManager: {
     publicInstances: () => registry.list().map((instance) => ({ ...instance, runtime: { status: "stopped" } })),
@@ -65,14 +65,22 @@ try {
   await page.locator('[data-action="preview"][data-id="test"]').click();
   const panels = page.locator(".output-preview-row .output-preview");
   const panel = panels.nth(0), body = panel.locator(".output-preview-body");
+  const follow = panel.getByLabel("跟随最新");
   await call("first");
   await body.filter({ hasText: "第一条输出" }).waitFor();
   assert.doesNotMatch(await body.textContent(), /PREVIEW_PRIVATE_FIXTURE/);
   assert.match(await body.textContent(), /REDACTED/);
   await call("second"); await body.filter({ hasText: "第二条输出" }).waitFor();
   await panel.locator(".output-preview-item").nth(1).click(); await body.filter({ hasText: "第一条输出" }).waitFor();
+  assert.equal(await follow.isChecked(), true);
   await body.evaluate((node) => { node.scrollTop = 100; window.previewBodyFixture = node; });
-  await page.locator("#reloadButton").click();
+  await Promise.all([
+    page.waitForResponse((response) => new URL(response.url()).pathname === "/api/instances"),
+    page.locator("#reloadButton").click(),
+  ]);
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  assert.match(await body.textContent(), /第一条输出/);
+  assert.equal(await follow.isChecked(), true);
   assert.equal(await body.evaluate((node) => node === window.previewBodyFixture), true);
   assert.equal(await body.evaluate((node) => node.scrollTop), 100);
   await panel.getByRole("button", { name: "暂停显示", exact: true }).click();
@@ -82,10 +90,20 @@ try {
   assert.equal(await panel.locator(".output-preview-item").count(), 2);
   await panel.getByRole("button", { name: "继续显示", exact: true }).click();
   assert.equal(await panel.locator(".output-preview-item").count(), 3);
-  await panel.getByLabel("跟随最新").check(); await body.filter({ hasText: "第三条输出" }).waitFor();
+  await body.filter({ hasText: "第三条输出" }).waitFor();
+  assert.equal(await follow.isChecked(), true);
+  await follow.uncheck();
+  await panel.locator(".output-preview-item").nth(2).click(); await body.filter({ hasText: "第一条输出" }).waitFor();
+  assert.equal(await follow.isChecked(), false);
+  await call("fourth");
+  await page.waitForFunction(() => document.querySelector('[data-action="preview"][data-id="test"]').textContent.includes("(4)"));
+  assert.match(await body.textContent(), /第一条输出/);
+  await follow.check(); await body.filter({ hasText: "第四条输出" }).waitFor();
+  await panel.locator(".output-preview-item").nth(3).click(); await body.filter({ hasText: "第一条输出" }).waitFor();
+  assert.equal(await follow.isChecked(), true);
   await call("other", "other");
   await page.waitForFunction(() => document.querySelector('[data-action="preview"][data-id="other"]').textContent.includes("(1)"));
-  assert.doesNotMatch(await body.textContent(), /其他实例/);
+  assert.match(await body.textContent(), /第一条输出/);
   await page.locator('[data-action="preview"][data-id="other"]').click();
   await panels.nth(1).locator(".output-preview-body").filter({ hasText: "其他实例的独立输出" }).waitFor();
   await call("unsafe"); await body.filter({ hasText: "<img" }).waitFor();

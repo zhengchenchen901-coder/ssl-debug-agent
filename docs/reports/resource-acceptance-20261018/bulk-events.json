@@ -1,0 +1,275 @@
+{
+  "ok": true,
+  "instanceId": "test-server",
+  "jobId": "rda-rp-20261018-01a14e14-bulk",
+  "records": [
+    {
+      "at": "2026-10-18T08:19:59.598Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 0
+    },
+    {
+      "at": "2026-10-18T08:20:02.588Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 1
+    },
+    {
+      "at": "2026-10-18T08:20:05.326Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 2
+    },
+    {
+      "at": "2026-10-18T08:20:08.677Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 3
+    },
+    {
+      "at": "2026-10-18T08:20:22.038Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 4
+    },
+    {
+      "at": "2026-10-18T08:20:26.557Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 5
+    },
+    {
+      "at": "2026-10-18T08:20:29.526Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 6
+    },
+    {
+      "at": "2026-10-18T08:20:35.507Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 7
+    },
+    {
+      "at": "2026-10-18T08:20:46.930Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 8
+    },
+    {
+      "at": "2026-10-18T08:20:50.823Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 9
+    },
+    {
+      "at": "2026-10-18T08:20:54.005Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 10
+    },
+    {
+      "at": "2026-10-18T08:20:55.481Z",
+      "event": "upload_finished",
+      "chunkIndex": 11
+    },
+    {
+      "at": "2026-10-18T08:20:59.122Z",
+      "event": "prepared"
+    },
+    {
+      "at": "2026-10-18T08:21:50.361Z",
+      "event": "batch_committed",
+      "batchIndex": 0,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:22:50.452Z",
+      "event": "batch_committed",
+      "batchIndex": 1,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:23:18.324Z",
+      "event": "batch_committed",
+      "batchIndex": 2,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:23:42.808Z",
+      "event": "batch_committed",
+      "batchIndex": 3,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:23:43.075Z",
+      "event": "batch_committed",
+      "batchIndex": 4,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:24:09.401Z",
+      "event": "batch_committed",
+      "batchIndex": 5,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:24:09.699Z",
+      "event": "batch_committed",
+      "batchIndex": 6,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:25:07.988Z",
+      "event": "batch_committed",
+      "batchIndex": 7,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:25:29.635Z",
+      "event": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:25:34.350Z",
+      "event": "paused",
+      "reason": "MONGODB_BULK_FAILED"
+    },
+    {
+      "at": "2026-10-18T08:25:47.651Z",
+      "event": "resume_requested"
+    },
+    {
+      "at": "2026-10-18T08:26:02.770Z",
+      "event": "batch_committed",
+      "batchIndex": 8,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:26:25.594Z",
+      "event": "batch_committed",
+      "batchIndex": 9,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:26:48.995Z",
+      "event": "batch_committed",
+      "batchIndex": 10,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:26:49.049Z",
+      "event": "batch_committed",
+      "batchIndex": 11,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:26:53.382Z",
+      "event": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:27:11.390Z",
+      "event": "paused",
+      "reason": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:27:54.214Z",
+      "event": "paused",
+      "reason": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:27:58.427Z",
+      "event": "paused",
+      "reason": "MONGODB_BULK_LEASE_LOST"
+    },
+    {
+      "at": "2026-10-18T08:28:47.929Z",
+      "event": "resume_requested"
+    },
+    {
+      "at": "2026-10-18T08:29:05.112Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 11
+    },
+    {
+      "at": "2026-10-18T08:29:34.456Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 10
+    },
+    {
+      "at": "2026-10-18T08:30:24.150Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 9
+    },
+    {
+      "at": "2026-10-18T08:30:49.619Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 8
+    }
+  ],
+  "scannedBytes": 5382,
+  "truncated": false,
+  "timing": {
+    "queueMs": 0,
+    "connectMs": 0,
+    "validationMs": 0,
+    "executionMs": 4033,
+    "connectionGeneration": 1
+  },
+  "durationMs": 4085,
+  "operationId": "3c9e1ff4-9321-4413-ba85-c5e96ad2ced5",
+  "outputGuard": {
+    "policyVersion": 1,
+    "replacements": 0,
+    "omittedFields": 0
+  }
+}

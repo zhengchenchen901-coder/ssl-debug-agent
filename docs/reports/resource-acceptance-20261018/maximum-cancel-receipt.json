@@ -1,0 +1,162 @@
+{
+  "ok": true,
+  "jobId": "cb98b5a1-8625-4b8b-873e-51e2d81dc26e",
+  "status": "cancelled",
+  "createdAt": 1792313273540,
+  "startedAt": 1792313273541,
+  "finishedAt": 1792313305277,
+  "expiresAt": 1792315105277,
+  "progress": {
+    "scannedBytes": 66847268,
+    "expandedBytes": 66854624,
+    "matchedLines": 0,
+    "scannedLines": 20167,
+    "totalFiles": 1,
+    "completedFiles": 0,
+    "failedFiles": 0,
+    "selectedMembers": 9,
+    "completedMembers": 8,
+    "skippedFiles": 0,
+    "stoppedAtBoundary": false,
+    "currentFileProgress": {
+      "fileIndex": 0,
+      "path": "/home/github/OD-Yennefer-BE-next/logs/2026-10-16-logs.tar.gz",
+      "compression": "tar-gzip",
+      "status": "cancelled",
+      "startedAt": 1792313281137,
+      "scanComplete": false,
+      "countsAreComplete": false,
+      "warnings": [],
+      "warningsTruncated": false,
+      "source": {
+        "size": 28418980,
+        "modifyTime": 1792189868132.9875,
+        "changeTime": 1792189868132.9875,
+        "inode": 1311120,
+        "device": 64513
+      },
+      "scannedBytes": 66847268,
+      "expandedBytes": 66854624,
+      "scannedLines": 20167,
+      "matchedLines": 0,
+      "selectedMembers": 9,
+      "completedMembers": 8,
+      "retainedEvidenceCount": 0,
+      "evidenceBytes": 0,
+      "queryId": "cb98b5a1-8625-4b8b-873e-51e2d81dc26e",
+      "evidenceComplete": false,
+      "finishedAt": 1792313305277,
+      "error": {
+        "code": "OPERATION_CANCELLED",
+        "message": "log query cancelled"
+      }
+    },
+    "currentFile": "/home/github/OD-Yennefer-BE-next/logs/2026-10-16-logs.tar.gz",
+    "currentMember": "2026-10-16-info.log.14",
+    "batchesCompleted": 1020,
+    "outputTruncated": false,
+    "scanTruncated": false,
+    "directoryListingTruncated": false,
+    "resources": {
+      "rssBytes": 87388160,
+      "peakRssBytes": 97361920,
+      "cpuMs": 1762.911,
+      "readBytes": 5963776,
+      "processedBytes": 67724618,
+      "elapsedMs": 24574,
+      "budget": {
+        "cpuMilliCores": 250,
+        "readBytesPerSecond": 2446677,
+        "processBytesPerSecond": 5242880,
+        "transferBytesPerSecond": 709973,
+        "rssLimitBytes": 201326592,
+        "parallelism": 1,
+        "dispatchDelayMs": 0,
+        "mode": "manual_max",
+        "reason": "主机资源压力，降低执行预算"
+      },
+      "budgetRevision": 664,
+      "resourceState": "normal"
+    },
+    "status": "cancelled",
+    "remainingDateFrom": "2026-10-16",
+    "remainingDateTo": "2026-10-16",
+    "stopAfterFile": null,
+    "countsAreComplete": false
+  },
+  "countsAreComplete": false,
+  "scanComplete": false,
+  "evidenceComplete": false,
+  "evidenceTruncated": false,
+  "retainedEvidenceCount": 0,
+  "evidenceLimits": {
+    "count": 1,
+    "bytes": 256
+  },
+  "paginationScope": "retained_evidence",
+  "observedMatchedLines": 0,
+  "fileResults": [
+    {
+      "fileIndex": 0,
+      "path": "/home/github/OD-Yennefer-BE-next/logs/2026-10-16-logs.tar.gz",
+      "compression": "tar-gzip",
+      "status": "cancelled",
+      "startedAt": 1792313281137,
+      "scanComplete": false,
+      "countsAreComplete": false,
+      "warnings": [],
+      "warningsTruncated": false,
+      "source": {
+        "size": 28418980,
+        "modifyTime": 1792189868132.9875,
+        "changeTime": 1792189868132.9875,
+        "inode": 1311120,
+        "device": 64513
+      },
+      "scannedBytes": 66847268,
+      "expandedBytes": 66854624,
+      "scannedLines": 20167,
+      "matchedLines": 0,
+      "selectedMembers": 9,
+      "completedMembers": 8,
+      "retainedEvidenceCount": 0,
+      "evidenceBytes": 0,
+      "queryId": "cb98b5a1-8625-4b8b-873e-51e2d81dc26e",
+      "evidenceComplete": false,
+      "finishedAt": 1792313305277,
+      "error": {
+        "code": "OPERATION_CANCELLED",
+        "message": "log query cancelled"
+      }
+    }
+  ],
+  "fileResultCount": 1,
+  "hasMoreFileResults": false,
+  "nextFileOffset": null,
+  "scopeControls": {
+    "dateFrom": "2026-10-16",
+    "dateTo": "2026-10-16"
+  },
+  "resourceTaskId": "b0e641f6-69ff-412c-b4fc-5fa86d78014e",
+  "records": [],
+  "hasMoreRecords": false,
+  "nextOffset": null,
+  "error": {
+    "code": "OPERATION_CANCELLED",
+    "message": "log query cancelled"
+  },
+  "limits": {
+    "jobTimeoutMs": 1800000,
+    "cpuPercent": 20,
+    "readBytesPerSecond": 524288,
+    "processBytesPerSecond": 524288,
+    "rssLimitBytes": 201326592,
+    "batchScanBytes": 65536
+  },
+  "instanceId": "test-server",
+  "outputGuard": {
+    "policyVersion": 1,
+    "replacements": 0,
+    "omittedFields": 2
+  }
+}

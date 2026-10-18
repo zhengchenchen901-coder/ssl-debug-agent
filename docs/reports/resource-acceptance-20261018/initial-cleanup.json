@@ -1,0 +1,147 @@
+{
+  "bulk": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "rolled_back",
+    "mode": "rollback",
+    "desiredState": "stop",
+    "createdAt": "2026-10-18T08:19:59.519Z",
+    "updatedAt": "2026-10-18T08:36:24.711Z",
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "rollbackExpiresAt": "2026-10-19T08:20:59.106Z",
+    "operationCount": 128,
+    "unitCount": 128,
+    "batchCount": 128,
+    "nextBatch": 12,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 12,
+    "rolledBackBatchCount": 12,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 12,
+      "modified": 12,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3880,
+      "connectionGeneration": 1
+    },
+    "durationMs": 3932,
+    "operationId": "e3808a22-bced-44d0-a9cb-79d5a19efa5f",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "seed": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+    "operationId": "51dec082-e886-4c63-b852-bf8b80fe2189",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "rolled_back",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "128 synthetic owned records for resource-pool acceptance; deleted/non-marketing; rollback after verification",
+    "createdAt": "2026-10-18T08:18:40.714Z",
+    "committedAt": "2026-10-18T08:18:59.729Z",
+    "rolledBackAt": "2026-10-18T08:36:51.275Z",
+    "rollbackExpiresAt": "2026-10-19T08:18:40.714Z",
+    "planHash": "0f152ae8584dee11a8af5cfc04900b10ff8f6c053578a4694bf6b75371a6c901",
+    "affectedCount": 128,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-0000",
+      "rda-rp-20261018-01a14e14-0001",
+      "rda-rp-20261018-01a14e14-0002",
+      "rda-rp-20261018-01a14e14-0003",
+      "rda-rp-20261018-01a14e14-0004",
+      "rda-rp-20261018-01a14e14-0005",
+      "rda-rp-20261018-01a14e14-0006",
+      "rda-rp-20261018-01a14e14-0007",
+      "rda-rp-20261018-01a14e14-0008",
+      "rda-rp-20261018-01a14e14-0009"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2574,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2627,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "count": {
+    "ok": true,
+    "operation": "countDocuments",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "data": 0,
+    "resultCount": 0,
+    "durationMs": 3947,
+    "operationId": "7c5e2a4a-6e44-44e1-949a-016dcf7c0cdd",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3894,
+      "connectionGeneration": 1
+    },
+    "instanceId": "test-server",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  }
+}

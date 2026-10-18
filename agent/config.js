@@ -4,6 +4,7 @@ import path from "node:path";
 import posixPath from "node:path/posix";
 import { normalizeLogProjects } from "./log-projects.js";
 import { normalizeLogJobLimits } from "./log-policy.js";
+import { normalizeResourcePolicy } from "./resource-policy.js";
 import {
   DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS,
   DEFAULT_APPROVED_COMMAND_TTL_MS,
@@ -328,6 +329,7 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS),
     },
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
+    resources: normalizeResourcePolicy(mergedEnv.REMOTE_DEBUG_RESOURCE_POLICY),
     logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots),
       jobLimits: normalizeLogJobLimits(mergedEnv.REMOTE_DEBUG_LOG_JOB_LIMITS) },
     security: {
@@ -452,6 +454,7 @@ function fingerprintConfig(config) {
     },
     security,
     logs: config.logs,
+    resources: config.resources,
     mongodb: config.mongodb
       ? {
           enabled: Boolean(config.mongodb.enabled),

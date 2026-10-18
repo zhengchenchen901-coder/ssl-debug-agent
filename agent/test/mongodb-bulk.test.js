@@ -14,6 +14,7 @@ import {
   runMongoBulk,
 } from "../mongodb-bulk.js";
 import { MONGODB_RESULT_MARKER } from "../mongodb.js";
+import { bulkSandboxFixture } from "./helpers/bulk-sandbox-fixture.js";
 
 const config = {
   bulkEnabled: true,
@@ -53,6 +54,72 @@ function fakeBulkResult(data) {
     timing: { queueMs: 1, connectMs: 2, executionMs: 3 },
   };
 }
+
+test("rollback starts directly from a user-paused job without inheriting its pause control", async (t) => {
+  const fixture = bulkSandboxFixture(t);
+  await fixture.initialize();
+  const jobId = "paused-rollback", leaseId = "execute-lease", rollbackLease = "rollback-lease";
+  await fixture.run({ action: "upload", chunk: { jobId, chunkIndex: 0, units: [{ unitId: "owned-1", operations: [{
+    operation: "updateOne", collection: "orders", id: "order-1", expected: { count: { exists: true, value: 0 } }, update: { $set: { count: 1 } },
+  }] }] } });
+  const plan = await fixture.run({ action: "upload", chunk: { jobId, chunkIndex: 1, units: [], endOfUpload: true } });
+  await fixture.run({ action: "executeStart", jobId, planHash: plan.planHash, leaseId });
+  await fixture.run({ action: "executeBatch", jobId, planHash: plan.planHash, leaseId, batchIndex: 0 });
+  await fixture.run({ action: "control", jobId, planHash: plan.planHash, command: "pause" });
+  await fixture.run({ action: "pause", jobId, planHash: plan.planHash, leaseId, reason: "pause_requested" });
+  await fixture.run({ action: "rollbackStart", jobId, planHash: plan.planHash, leaseId: rollbackLease });
+  const result = await fixture.run({ action: "rollbackBatch", jobId, planHash: plan.planHash, leaseId: rollbackLease, batchIndex: 0 });
+  assert.equal(result.rolledBackBatchCount, 1);
+  assert.equal(fixture.rows("business", "orders").get("order-1").count, 0);
+  const finished = await fixture.run({ action: "finish", jobId, planHash: plan.planHash, leaseId: rollbackLease, mode: "rollback" });
+  assert.equal(finished.status, "rolled_back");
+});
+
+test("pausing a resource-waiting bulk job preserves the user pause reason", async () => {
+  let waiting;
+  const reachedWait = new Promise((resolve) => { waiting = resolve; });
+  const registry = { tasks: new Map() }, calls = [];
+  const resourceClient = {
+    registry, register() { return "waiting-task"; }, update() {}, synchronize: async () => {}, settled: async () => {},
+    wait: (_id, signal) => new Promise((_resolve, reject) => { waiting(); signal.addEventListener("abort", () => reject(signal.reason), { once: true }); }),
+  };
+  const runner = new MongoBulkJobRunner({ config, resourceClient, runMongoBulk: async (input) => {
+    calls.push(input);
+    if (input.action === "get") return { status: "running", desiredState: "running", batchCount: 1, nextBatch: 0 };
+    return { status: input.action === "control" ? "pause_requested" : "running", mode: "execute" };
+  } });
+  await runner.start({ jobId: "waiting-job", planHash: "c".repeat(64) });
+  const task = runner.tasks.get("waiting-job");
+  await reachedWait;
+  await runner.control({ jobId: "waiting-job", planHash: "c".repeat(64), command: "pause" });
+  await task;
+  assert.equal(calls.find((call) => call.action === "pause").reason, "pause_requested");
+  assert.equal(calls.some((call) => call.action === "executeBatch"), false);
+});
+
+test("a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts", async () => {
+  for (const failureCode of ["MONGODB_BULK_LEASE_LOST", "MONGODB_BULK_CONFLICT"]) {
+    let started, settle;
+    const reachedBatch = new Promise((resolve) => { started = resolve; });
+    const pendingBatch = new Promise((resolve) => { settle = resolve; });
+    const calls = [];
+    const resourceClient = { registry: { tasks: new Map() }, register: () => "race-task", update() {},
+      synchronize: async () => {}, settled: async () => {}, wait: async () => ({ parallelism: 1, dispatchDelayMs: 0 }) };
+    const runner = new MongoBulkJobRunner({ config, resourceClient, runMongoBulk: async (input) => {
+      calls.push(input);
+      if (input.action === "get") return { status: "running", desiredState: "running", batchCount: 1, nextBatch: 0 };
+      if (input.action === "executeBatch") { started(); await pendingBatch; if (failureCode === "MONGODB_BULK_CONFLICT") throw Object.assign(new Error("transaction conflict"), { code: failureCode }); }
+      if (input.action === "dispatch" && input.batchIndexes.length === 0) throw Object.assign(new Error("paused helper released its lease"), { code: "MONGODB_BULK_LEASE_LOST" });
+      return { status: "running", mode: "execute" };
+    } });
+    await runner.start({ jobId: "pause-race", planHash: "d".repeat(64) });
+    const task = runner.tasks.get("pause-race");
+    await reachedBatch;
+    await runner.control({ jobId: "pause-race", planHash: "d".repeat(64), command: "pause" });
+    settle(); await task;
+    assert.equal(calls.find((call) => call.action === "pause").reason, failureCode === "MONGODB_BULK_LEASE_LOST" ? "pause_requested" : failureCode);
+  }
+});
 
 test("bulk policy is opt-in and keeps sandbox storage outside business allowlists", () => {
   assert.throws(() => normalizeMongoBulkConfig({ ...config, bulkEnabled: false }), { code: "MONGODB_BULK_DISABLED" });

@@ -4,6 +4,9 @@ import { createSSHOperations } from "./ssh.js";
 import { SshConnectionSupervisor } from "./ssh-connection-supervisor.js";
 import { discoverMemory } from "./memory-discovery.js";
 import { API_VERSION } from "./operation.js";
+import { WorkerResourceClient } from "./worker-resource-client.js";
+import { RemoteResourceSampler } from "./remote-resource-sampler.js";
+import { REMOTE_RESOURCE_PROBE_SOURCE } from "./remote-resource-runtime-source.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,8 +19,8 @@ function parsePositiveInt(value, fallback) {
 }
 
 function send(message) {
-  if (typeof process.send === "function") {
-    process.send(message);
+  if (typeof process.send === "function" && process.connected) {
+    process.send(message, () => {});
   }
 }
 
@@ -145,6 +148,10 @@ async function main() {
   const config = loadConfig();
   const authToken = await receiveWorkerAuth();
   const supervisor = new SshConnectionSupervisor(config);
+  const resourceClient = new WorkerResourceClient({ instanceId: process.env.REMOTE_DEBUG_INSTANCE_ID || "default", send });
+  supervisor.resourceClient = resourceClient;
+  supervisor.scheduler.reserveInteractive = true;
+  supervisor.scheduler.maxBackground = Math.min(2, Math.max(1, supervisor.scheduler.maxBusiness - 1));
   const sshOperations = createSSHOperations(supervisor);
   const backgroundSshOperations = createSSHOperations(supervisor, { priority: "background" });
   const healthIntervalMs = parsePositiveInt(
@@ -160,7 +167,16 @@ async function main() {
     return;
   }
 
-  const app = createApp({ config, authToken, sshSupervisor: supervisor, ...sshOperations });
+  const sampler = new RemoteResourceSampler({ script: REMOTE_RESOURCE_PROBE_SOURCE,
+    runSSH: (command, options) => sshOperations.runSSH(command, { config, ...options }),
+    report: (sample) => resourceClient.reportSample(sample) });
+  resourceClient.probeNow = () => { if (resourceClient.samplerEnabled && supervisor.state === "ready" && Date.now() - (sampler.lastAttemptAt || 0) >= 1000) sampler.sample(); };
+  const samplingTimer = setInterval(() => {
+    const busy = [...resourceClient.registry.tasks.values()].some((task) => !task.finishedAt);
+    if (resourceClient.samplerEnabled && supervisor.state === "ready" && (busy || Date.now() - (sampler.lastAttemptAt || 0) >= 30000)) sampler.sample();
+  }, config.resources.sampleIntervalMs);
+  samplingTimer.unref?.();
+  const app = createApp({ config, authToken, sshSupervisor: supervisor, resourceClient, ...sshOperations });
   const server = app.listen(config.agent.port, config.agent.host, () => {
     send({
       type: "ready",
@@ -210,6 +226,7 @@ async function main() {
     }
     shuttingDown = true;
     clearInterval(healthTimer);
+    clearInterval(samplingTimer);
     supervisor.off("state", reportHealth);
     if (reportStopped) {
       send({ type: "health", status: "stopped", reason });
@@ -219,6 +236,7 @@ async function main() {
       .then(() => app.locals.pauseMongoBulkJobRunner())
       .catch(() => {})
       .then(() => supervisor.stop(reason))
+      .then(() => resourceClient.close())
       .finally(() => {
         server.close(() => {
           process.exit(0);

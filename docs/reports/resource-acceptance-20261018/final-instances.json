@@ -1,0 +1,52 @@
+[
+  {
+    "id": "default",
+    "status": "running",
+    "health": "healthy",
+    "operations": {
+      "active": 0,
+      "activeBusiness": 0,
+      "activeControl": 0,
+      "activeBackground": 0,
+      "activeBulk": 0,
+      "queued": 0,
+      "queuedByPriority": {
+        "control": 0,
+        "interactive": 0,
+        "background": 0,
+        "bulk": 0
+      },
+      "maxBusiness": 4,
+      "maxControl": 1,
+      "maxBackground": 2,
+      "maxBulk": 2,
+      "maxQueue": 100,
+      "activeChannels": 0
+    }
+  },
+  {
+    "id": "test-server",
+    "status": "running",
+    "health": "healthy",
+    "operations": {
+      "active": 0,
+      "activeBusiness": 0,
+      "activeControl": 0,
+      "activeBackground": 0,
+      "activeBulk": 0,
+      "queued": 0,
+      "queuedByPriority": {
+        "control": 0,
+        "interactive": 0,
+        "background": 0,
+        "bulk": 0
+      },
+      "maxBusiness": 4,
+      "maxControl": 1,
+      "maxBackground": 2,
+      "maxBulk": 2,
+      "maxQueue": 100,
+      "activeChannels": 0
+    }
+  }
+]

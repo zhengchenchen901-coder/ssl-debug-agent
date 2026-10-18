@@ -12,11 +12,18 @@ test("background log output preserves progress and redacts evidence and group me
       matchedLines: 12, progress: { completedFiles: 2, resources: { peakRssBytes: 64000000 } },
       groups: [{ message: 'password="GROUP_PRIVATE"', count: 12 }],
       records: [{ file: "/var/log/app.log", text: 'token="LOG_PRIVATE"' }],
+      scanComplete: true, evidenceComplete: false, evidenceTruncated: true, paginationScope: "retained_evidence",
+      fileResults: [{ queryId: "job-1", path: "/var/log/archive.tar.gz", status: "completed", scanComplete: true,
+        countsAreComplete: true, matchedLines: 12, source: { inode: 123, size: 2048 },
+        warnings: [{ code: "EXAMPLE", message: 'token="RECEIPT_PRIVATE"' }] }],
       limits: { cpuPercent: 20 }, unexpected: "MUST_NOT_LEAVE" }));
     assert.equal(result.jobId, "job-1"); assert.equal(result.matchedLines, 12);
     assert.equal(result.progress.completedFiles, 2);
     assert.equal(result.limits.cpuPercent, 20);
-    assert.doesNotMatch(JSON.stringify(result), /GROUP_PRIVATE|LOG_PRIVATE|MUST_NOT_LEAVE/);
+    assert.equal(result.paginationScope, "retained_evidence");
+    assert.equal(result.fileResults[0].countsAreComplete, true);
+    assert.equal(result.fileResults[0].source.inode, 123);
+    assert.doesNotMatch(JSON.stringify(result), /GROUP_PRIVATE|LOG_PRIVATE|RECEIPT_PRIVATE|MUST_NOT_LEAVE/);
   }
 });
 

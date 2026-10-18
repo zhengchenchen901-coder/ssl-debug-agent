@@ -6,7 +6,9 @@ Dashboard 在“新建实例”旁新增“注册管理员”，实例行新增�
 
 点击“手动操作”后，在独立本地端口的新窗口输入管理员账号和密码，即可连接交互式 SSH 终端。浏览器若拦截弹窗，需允许本地 dashboard 打开窗口。工作台包含连接预览、操作面板和可交互终端，支持窗口尺寸变化、Ctrl+C、清屏、断开和手动重连。自动 Worker 停止时仍可使用人工终端；禁用或删除实例则不能使用。实例编辑会撤销旧人工会话。
 
-人工终端复用所选实例的 SSH 用户、私钥及已核验的主机指纹，建立独立连接，不经过自动命令/路径白名单。插件管理员不自动获得远端 root 权限；需要时由操作者在终端使用远端允许的 sudo。自动 MCP 工具保留原有权限。数据库 GUI、数据库 shell、实时日志面板和 Agent 命令建议不在第一版范围内。
+人工终端复用所选实例的 SSH 用户、私钥及已核验的主机指纹，建立独立连接，不经过自动命令/路径白名单。插件管理员不自动获得远端 root 权限；需要时由操作者在终端使用远端允许的 sudo。自动 MCP 工具保留原有权限。第二阶段已加入 MongoDB GUI 与真实 mongosh；实时日志面板和 Agent 命令建议留待后续阶段。
+
+工作台“数据库”入口支持库/集合浏览、BSON Extended JSON 筛选与排序、有界游标分页、文档查看/确认替换和索引查看；操作区提供独立 mongosh。先在实例管理单独保存“人工数据库管理连接”，可复用远端 JSON/profile，但不沿用自动业务或沙盒权限。凭据留在远端，GUI 与 shell 启动时核验相同目标与数据库身份。切换入口保留 SSH 现场，变更连接撤销旧数据库授权。远端需有支持 EJSON 的 MongoDB Node 驱动和兼容的 mongosh，缺少客户端会明确报错。详见 [第二阶段说明](docs/plan/管理员手动工作台第二阶段.md)。
 
 macOS 使用 LocalAuthentication 系统窗口验证 Touch ID 或当前用户密码；首次注册/恢复时会通过 `/usr/bin/xcrun swiftc` 编译随包提供的认证组件，因此需要 Xcode Command Line Tools。Windows 使用系统凭据窗口并验证登录身份的 SID 与当前运行插件的 Windows 用户一致。电脑密码不会提交给网页或 Node。Linux 暂未提供系统认证适配，注册/恢复明确不可用，不降级为网页声明验证成功。Windows 系统认证需在实际交互式桌面环境验收。
 
@@ -145,8 +147,10 @@ manager startup. A failed/full publisher never waits in the tool delivery path;
 its next successful notice reports dropped records.
 
 Preview controls include pause/resume, follow latest, clear display, full copy
-and an expanded window. Clearing affects only the current display, not the
-Manager cache. The page displays at most 256K characters per selected message;
+and an expanded window. Selecting a message preserves the follow setting: new
+output in that view selects the latest message when enabled, while status
+refreshes preserve the selected message. Clearing affects only the current
+display, not the Manager cache. The page displays at most 256K characters per selected message;
 copy reads the complete retained message. Reconnects replay retained summaries,
 report cache gaps, and detect Manager restarts. Logout aborts streams and full
 reads and clears displayed content. Received text is never rendered as HTML.
@@ -221,7 +225,47 @@ For a full day, many files, or a large archive, use the background search tools:
    `"cancel"`. A pause retains the decompressor with bounded backpressure; it
    expires after 5 minutes. Cancelling closes the remote process/channel.
 
-Each instance runs at most one background log task, with three queued tasks.
+File completion is recorded independently of the whole task. `fileResults`
+contains each observed file's path, source identity, scanned/expanded bytes,
+line/match counts, retained evidence count, warnings and completeness. A receipt
+is acknowledged by the local worker before the next file begins, and remains
+available after cancellation. `fileOffset`/`fileLimit` and `nextFileOffset`
+page these receipts separately from evidence. The local receipt budget is
+8 MiB per job; exceeding it fails the task explicitly rather than dropping
+receipts. Receipt retention uses the same task expiry/worker lifetime as results.
+
+`scanComplete` means the selected stable bytes were covered;
+`countsAreComplete` means all matches were counted; `evidenceComplete` means
+all matching original records were retained. For example, an oversized line
+can make counts incomplete despite full byte coverage, and a 50-record sample
+can coexist with exact counts of millions of matches. `paginationScope` is
+`"retained_evidence"`: reaching the last evidence page cannot recover discarded
+matches. Responses expose `retainedEvidenceCount`, `observedMatchedLines`,
+`evidenceLimits` and `evidenceTruncated`. Per-file flags certify only that file
+under the task's member/record filters, including when the whole task is cancelled.
+
+Set `stopAfterFile` to an exact selected path at start for a known last archive,
+or control with `action: "stop_after_file"` and optionally that path. Omitting
+the path finishes the current file and stops before opening the next. Invalid
+or passed boundaries fail explicitly. `action: "narrow"` accepts inclusive
+`dateFrom`/`dateTo` and only shrinks the dates of files not yet started; it keeps
+completed/current files and their counts. Skipped files get receipts with zero
+scanned bytes. Boundary/range commands await a remote acknowledgement. Such
+early termination is `stopped` with a `stopReason` and incomplete original task
+scope, while earlier receipts remain independently complete. A boundary at the
+last selected file still completes the original scope. Set a boundary in advance;
+asking after a later file starts cannot undo that file's reads.
+
+Cancellation immediately reports `cancelling`; boundary stops report `stopping`.
+Terminal top-level and `progress.status` values agree. Unknown, null, empty,
+wrong-type, oversized and action-inapplicable parameters are rejected by the
+background tool/Agent rather than silently ignored. Synchronous limits such as
+`maxFiles`/`maxScanBytes`, member-list prefixes and start offsets are not
+background search parameters.
+
+Managed instances run at most two background log helpers, with at most four
+active/queued log jobs in total, subject to SSH channel and resource admission.
+The standalone log runner without the shared resource service retains one helper.
 Each archive is opened and streamed once for all selected members; there is no
 temporary extraction or remote result file. Background searches are not stopped
 at 2 GiB of expanded data. Resource control instead defaults to an average CPU
@@ -248,6 +292,70 @@ restarted without adding old partial counts. Remote control loss has a
 60-second watchdog. Source metadata is checked before and after reads; changes
 invalidate complete coverage. This detects common changes, not a filesystem
 snapshot. Background tools need both the updated Agent and reloaded MCP tools.
+
+### Shared remote resources and instance tasks
+
+The Manager owns a shared `RemoteResourceManager`; each Worker registers task
+metadata through private IPC using a per-execution generation. Log, database and
+ordinary SSH/SFTP operations appear under **任务** on the instance row. The task
+panel shows current/recent tasks, phases, progress, granted/observed resources,
+and reasons for waiting or throttling. It reads local bounded metadata rather
+than repeatedly enumerating remote database jobs. Refreshing/closing the page
+does not change scheduling. Worker history is bounded to 200 tasks; the Manager
+retains up to 1000 recent terminal/active records for 30 minutes. Manager restarts
+clear this metadata cache; durable MongoDB receipts and journals remain the
+authoritative recovery record. Worker loss marks its tasks interrupted and holds
+their grants for the 60-second remote-watchdog grace period.
+
+`resource-policy.js`, `remote-resource-manager.js`, `remote-resource-sampler.js`,
+`worker-resource-client.js`, `task-registry.js`, and the serialized
+`remote-resource-runtime.js` separate policy, telemetry, admission and cooperative
+enforcement from log-query business logic. Logs use the common runtime for CPU,
+source-read/expanded-byte pacing and RSS monitoring. SSH/SFTP receiving is paced
+using a separate transfer budget. Generic commands and database services use
+admission controls rather than OS-enforced CPU/memory quotas. Database bulk work
+changes only the concurrency/spacing of later approved batches, preserving
+in-flight waves and their original plan. A budget reduction must be acknowledged
+before its CPU can be reassigned to another executor.
+
+The resource domain defaults to SSH host/port. Configure `domains` explicitly
+when aliases refer to the same machine or different container/quota scopes need
+separate accounting. One Worker samples each busy domain every 5 seconds (idle
+domains every 30 seconds, with on-demand revalidation before work) using a
+fixed read-only Node helper. It reads CPU/memory counters, I/O wait and cgroup-v2
+CPU/memory ceilings when available; unsupported sampling remains unknown. There
+is no remote daemon installation or extraction file. Stale samples block heavy
+work conservatively while control/ordinary operations retain protected admission.
+CPU pressure lowers the bulk pool immediately; recovery increases in steps.
+
+Default domain limits are 1000 CPU millicores (one core), with 50m reserved for
+control and 200m for non-bulk tasks; 1 GiB of task memory with 256 MiB protected;
+8 MiB/s source reads, 16 MiB/s expanded processing and 4 MiB/s SSH transfers.
+The transfer pool reserves 2 MiB/s for control/non-bulk work. These are logical,
+cooperative budgets, not disk-device quotas or guarantees about `mongod` CPU.
+Task memory reservations and RSS ceilings are not enlarged by a manual boost.
+Paused helpers continue to count against resident-memory accounting.
+
+**手动最高档** applies to bulk tasks only and prioritizes the selected task for
+the remaining domain budget after control/non-bulk reserves and uninterruptible
+in-flight database work. There is one selected maximum per resource domain;
+selecting another task returns the previous one to auto. The mode is stored in
+the backend and can be reverted with **恢复自动**. It can raise a task's normal
+requested rates, but never the resource pool or explicit administrative
+`REMOTE_DEBUG_LOG_JOB_LIMITS` ceilings. Running commands, existing stream/channel
+occupancy and safe batch boundaries can delay activation; the panel reports the
+grant and reason. Pauses release CPU/throughput demand without reclaiming live
+RSS. Completion/cancellation/failure/connection loss releases the selection.
+This is a dashboard scheduling action and does not approve or start a database
+mutation. Task IDs and mode revisions protect against stale or cross-instance
+actions. Task controls and resource mode changes are authenticated and audited.
+
+`REMOTE_DEBUG_RESOURCE_POLICY` supplies validated JSON overrides for domain
+limits, protected reserves, sampling cadence and instance-to-domain mapping.
+For example, `{"cpuMilliCores":1500,"domains":{"default":"production"}}`.
+Restart the local Manager after changing this administrative configuration.
+Log API `limits` are the original requests; `resources.budget` is the effective
+remote grant. No manual-maximum MCP tool is exposed.
 
 The existing `remote_debug_read_log` tool now uses the same remote helper and
 keeps its chronological output format. Its runtime improvement works in

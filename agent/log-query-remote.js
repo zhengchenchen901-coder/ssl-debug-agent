@@ -34,8 +34,17 @@ export async function remoteLogQuery(input, runtime = {}) {
   const jobRecords = [];
   let jobOutputBytes = 0;
   let groupsTruncated = false;
+  let currentReceipt = null, fileBaseline = null, stoppedAtBoundary = false, skippedFiles = 0, discoveryIncomplete = false;
+  const fileProgress = () => currentReceipt && ({ ...currentReceipt,
+    countsAreComplete: currentReceipt.scanComplete && currentReceipt.countsAreComplete,
+    scannedBytes: scannedBytes - fileBaseline.scannedBytes, expandedBytes: expandedBytes - fileBaseline.expandedBytes,
+    scannedLines: scannedLines - fileBaseline.scannedLines, matchedLines: matchedLines - fileBaseline.matchedLines,
+    selectedMembers: selectedMembers - fileBaseline.selectedMembers, completedMembers: completedMembers - fileBaseline.completedMembers,
+    retainedEvidenceCount: jobRecords.length - fileBaseline.retainedEvidenceCount,
+    evidenceBytes: jobOutputBytes - fileBaseline.evidenceBytes });
   const progress = () => ({ scannedBytes, expandedBytes, matchedLines, scannedLines,
     totalFiles: selected.length, completedFiles, failedFiles, selectedMembers, completedMembers,
+    skippedFiles, stoppedAtBoundary, currentFileProgress: fileProgress(),
     currentFile, currentMember, batchesCompleted: Math.floor(scannedBytes / input.batchScanBytes),
     outputTruncated, scanTruncated, directoryListingTruncated: listingTruncated });
   async function checkpoint(kind, bytes = 0) {
@@ -43,6 +52,14 @@ export async function remoteLogQuery(input, runtime = {}) {
     active();
   }
   function warn(value) {
+    if (job && !currentReceipt) discoveryIncomplete = true;
+    if (job && currentReceipt) {
+      currentReceipt.countsAreComplete = false;
+      if (currentReceipt.warnings.length < 8) currentReceipt.warnings.push({
+        code: value.code, message: String(value.message || "").slice(0, 512),
+        memberPath: value.memberPath?.slice(0, 1024), lineNumber: value.lineNumber });
+      else currentReceipt.warningsTruncated = true;
+    }
     if (warnings.length < (job ? 20 : 100)) warnings.push(value);
     else warningsTruncated = true;
   }
@@ -80,6 +97,7 @@ export async function remoteLogQuery(input, runtime = {}) {
     if (!stats.isFile()) return;
     if (files.some((file) => file.path === resolved)) return;
     const compression = /\.(?:tar\.gz|tgz)$/i.test(resolved) ? "tar-gzip" : /\.gz$/i.test(resolved) ? "gzip" : "none";
+    if (job && (input.memberPath || input.memberContains) && compression !== "tar-gzip") return;
     const item = { path: resolved, name: path.basename(requested), size: stats.size, modifyTime: stats.mtimeMs, compression,
       ...(job ? { inode: stats.ino, device: stats.dev, changeTime: stats.ctimeMs } : {}) };
     if (job && manifestBytes + Buffer.byteLength(JSON.stringify(item)) > 2 * 1024 * 1024) { listingTruncated = true; return; }
@@ -121,6 +139,10 @@ export async function remoteLogQuery(input, runtime = {}) {
   filesTruncated = input.fileOffset + selected.length < files.length;
   const inspectedFiles = selected.map((file) => ({ ...file }));
   if (job) runtime.progress = progress;
+  if (job) {
+    if (input.stopAfterFile) input.stopAfterFile = await canonical(input.stopAfterFile);
+    runtime.configureFiles?.(selected);
+  }
   if (input.mode === "files") return {
     mode: input.mode, projectId: input.projectId, files: inspectedFiles, warnings,
     hasMoreFiles: filesTruncated, nextFileOffset: filesTruncated ? input.fileOffset + selected.length : null,
@@ -194,6 +216,7 @@ export async function remoteLogQuery(input, runtime = {}) {
       const bytes = Buffer.byteLength(JSON.stringify(record));
       if (jobOutputBytes + bytes > input.maxBytes) { outputTruncated = true; return; }
       jobRecords.push(record); jobOutputBytes += bytes;
+      if (record.truncated && currentReceipt) currentReceipt.evidenceTruncated = true;
       runtime.evidence?.(record);
       return;
     }
@@ -230,7 +253,7 @@ export async function remoteLogQuery(input, runtime = {}) {
       },
       finish() {
         pending += decoder.end();
-        if (oversized) { scanTruncated = true; return; }
+        if (oversized) { scanTruncated = true; warn({ file, memberPath, lineNumber: lineNumber + 1, code: "LOG_LINE_TOO_LARGE" }); return; }
         if (pending) {
           lineNumber++;
           if (!discardFirstLine || lineNumber > 1) addRecord(pending.replace(/\r$/, ""), file, lineNumber, memberPath);
@@ -360,7 +383,26 @@ export async function remoteLogQuery(input, runtime = {}) {
     };
   }
   const scannedFiles = [];
-  for (const file of selected) {
+  for (const [fileIndex, file] of selected.entries()) {
+    if (job) {
+      const decision = await runtime.beforeFile?.(file, fileIndex);
+      if (decision === "stop") { stoppedAtBoundary = true; break; }
+      if (decision === "skip") {
+        skippedFiles++;
+        await runtime.fileResult?.({ fileIndex, path: file.path, compression: file.compression,
+          status: "skipped", scanComplete: false, countsAreComplete: false, evidenceComplete: false,
+          reason: "remaining_scope_narrowed", scannedBytes: 0, expandedBytes: 0, matchedLines: 0,
+          scannedLines: 0, warnings: [], finishedAt: Date.now() });
+        continue;
+      }
+      fileBaseline = { scannedBytes, expandedBytes, scannedLines, matchedLines, selectedMembers, completedMembers,
+        retainedEvidenceCount: jobRecords.length, evidenceBytes: jobOutputBytes };
+      currentReceipt = { fileIndex, path: file.path, compression: file.compression, status: "running",
+        startedAt: Date.now(), scanComplete: false, countsAreComplete: true,
+        warnings: [], warningsTruncated: false,
+        source: { size: file.size, modifyTime: file.modifyTime, changeTime: file.changeTime, inode: file.inode, device: file.device } };
+      await runtime.fileStarted?.(fileProgress());
+    }
     currentFile = file.path;
     await checkpoint("file");
     if (scannedBytes >= input.maxScanBytes || expandedBytes >= input.maxExpandedBytes) { scanTruncated = true; break; }
@@ -455,10 +497,17 @@ export async function remoteLogQuery(input, runtime = {}) {
         if (after.size !== liveStats.size || after.mtimeMs !== liveStats.mtimeMs || after.ctimeMs !== liveStats.ctimeMs
           || named.ino !== liveStats.ino || named.dev !== liveStats.dev) throw failure("log changed during query", "LOG_FILE_CHANGED");
         completedFiles++;
+        currentReceipt.scanComplete = true;
+        currentReceipt.status = currentReceipt.countsAreComplete ? "completed" : "partial";
       }
       scannedFiles.push({ path: file.path, scannedBytes: scannedBytes - before,
         ...(file.compression === "none" ? { startByte: rangeStart, endByte: file.size } : {}) });
     } catch (error) {
+      if (job) {
+        currentReceipt.status = "failed";
+        currentReceipt.countsAreComplete = false;
+        currentReceipt.error = { code: error.code || "LOG_READ_FAILED", message: String(error.message).slice(0, 512) };
+      }
       if (job && !["LOG_FILE_CHANGED", "UNSUPPORTED_COMPRESSION", "BINARY_LOG_UNSUPPORTED", "LOG_ARCHIVE_INVALID", "ARCHIVE_MEMBER_NOT_FOUND", "ARCHIVE_MEMBER_NOT_READABLE", "ENOENT", "EACCES"].includes(error.code)) throw error;
       if (job) failedFiles++;
       if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;
@@ -466,6 +515,12 @@ export async function remoteLogQuery(input, runtime = {}) {
       warn({ path: file.path, code: error.code || "LOG_READ_FAILED", message: error.message });
     } finally {
       await fd?.close();
+      if (job) {
+        const receipt = { ...fileProgress(), finishedAt: Date.now() };
+        receipt.evidenceComplete = receipt.countsAreComplete && receipt.scanComplete && !receipt.evidenceTruncated && receipt.retainedEvidenceCount === receipt.matchedLines;
+        await runtime.fileResult?.(receipt);
+        currentReceipt = null; currentFile = null; currentMember = null;
+      }
       for (const record of records.reverse()) {
         const bytes = Buffer.byteLength(record.text);
         if (retainedRecords.length >= input.limit || retainedBytes + bytes > input.maxBytes) { outputTruncated = true; continue; }
@@ -477,10 +532,12 @@ export async function remoteLogQuery(input, runtime = {}) {
     const live = selected.find((selectedFile) => selectedFile.path === file.path);
     file.size = live.size; file.compression = live.compression;
   }
-  const complete = !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;
+  const complete = !stoppedAtBoundary && !skippedFiles && !memberListingStopped && !scanTruncated && !filesTruncated && !listingTruncated && !warnings.length && !warningsTruncated;
   if (job) return { ...progress(), currentFile: null, currentMember: null,
     records: jobRecords, returnedLines: jobRecords.length, outputBytes: jobOutputBytes,
     outputTruncated, scanTruncated, complete, countsAreComplete: complete,
+    scanComplete: completedFiles === selected.length && !failedFiles && !listingTruncated && !discoveryIncomplete,
+    stopReason: stoppedAtBoundary ? "file_boundary" : skippedFiles ? "remaining_scope_narrowed" : null,
     coverage: complete ? "complete" : "bounded", warnings, warningsTruncated,
     groups: [...groups.values()], groupsTruncated, durationMs: Date.now() - started };
   return {

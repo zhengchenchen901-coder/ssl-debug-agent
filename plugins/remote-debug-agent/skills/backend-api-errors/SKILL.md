@@ -52,11 +52,25 @@ Prefer the structured project query tools when exposed:
    than increasing resource rates without a reason.
    Poll `remote_debug_get_log_query` with the same instance/job id, initially
    about every 5 seconds and then less often for long tasks. Continue until
-   completed/partial/failed/cancelled/interrupted/expired. Report meaningful
+   completed/partial/stopped/failed/cancelled/interrupted/expired. `cancelling`
+   and `stopping` require continued polling. Report meaningful
    progress without claiming complete counts before completion. Use returned
    groups and bounded evidence pages (`nextOffset`); `outputTruncated` can be
    true even with complete counts. `groupsTruncated` means group totals do not
    account for every match. Do not sum cumulative progress snapshots.
+   Use `fileResults` and their separate `fileOffset`/`fileLimit` pagination
+   to certify completed archives after whole-task cancellation. Receipts contain
+   each path, source identity, bytes, counts, warnings and completeness; a total
+   completed-file count alone does not establish which dates were covered.
+   Distinguish `scanComplete`, `countsAreComplete` and `evidenceComplete`.
+   Evidence pagination covers retained samples only, not all matches. State
+   `retainedEvidenceCount`/`observedMatchedLines` and `evidenceTruncated`.
+   Set `stopAfterFile` at start for a known final archive; alternatively send
+   `action: "stop_after_file"` in advance (no path means the current file).
+   `action: "narrow"` only tightens `dateFrom`/`dateTo` for future files and
+   retains earlier/current counts. A stopped or narrowed task's original scope
+   is incomplete; earlier per-file receipts can still be complete. Unknown,
+   empty and action-inapplicable arguments fail explicitly.
    `remote_debug_control_log_query` supports pause/resume/cancel. Pauses keep
    the original decompressor alive and expire after 5 minutes. Worker/SSH
    loss cannot restore gzip state; report interruption rather than silently

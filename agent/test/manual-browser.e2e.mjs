@@ -62,6 +62,18 @@ try {
   await page.goto(`http://127.0.0.1:${manager.address().port}/`);
   await page.locator("#authToken").fill(token);
   await page.locator("#authForm button").click();
+  await page.locator('button[data-action="edit"]').click();
+  await page.locator('[name="manualMongoEnabled"]').check();
+  await page.locator('[name="manualMongoConfigPath"]').fill("/isolated/profiles.json");
+  await page.locator('[name="manualMongoDriverPath"]').fill("/isolated/node_modules/mongodb");
+  await page.locator('[name="manualMongoConfigProfile"]').fill("manualAdmin");
+  await page.locator('#instanceForm button[type="submit"]').filter({ hasText: /^保存$/ }).click();
+  await page.locator("#modalBackdrop").waitFor({ state: "hidden" });
+  assert.equal(registry.getInternal("test").manualMongo.configProfile, "manualAdmin");
+  assert.equal(registry.getInternal("test").mongodb, undefined);
+  await page.locator('button[data-action="edit"]').click();
+  assert.equal(await page.locator('[name="manualMongoConfigPath"]').inputValue(), "/isolated/profiles.json");
+  await page.locator("#closeModalButton").click();
   await page.locator("#registerAdminButton").click();
   await page.locator("#saveAdminButton").waitFor({ state: "visible" });
   await page.locator('#adminForm input[name="username"]').fill("admin");
@@ -122,6 +134,6 @@ try {
   await browser?.close();
   await manager?.gracefulShutdown("browser-test-complete");
   for (const connection of connections) connection.end();
-  if (sshServer.listening) await new Promise((resolve) => sshServer.close(resolve));
+  if (sshServer.address()) await new Promise((resolve) => sshServer.close(resolve));
   await fs.rm(directory, { recursive: true, force: true });
 }

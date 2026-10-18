@@ -1,0 +1,127 @@
+{
+  "ok": true,
+  "instanceId": "test-server",
+  "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+  "records": [
+    {
+      "at": "2026-10-18T08:43:26.786Z",
+      "event": "chunk_uploaded",
+      "chunkIndex": 0
+    },
+    {
+      "at": "2026-10-18T08:43:29.744Z",
+      "event": "upload_finished",
+      "chunkIndex": 1
+    },
+    {
+      "at": "2026-10-18T08:43:30.192Z",
+      "event": "prepared"
+    },
+    {
+      "at": "2026-10-18T08:43:45.817Z",
+      "event": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:43:50.674Z",
+      "event": "paused",
+      "reason": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:44:19.439Z",
+      "event": "resume_requested"
+    },
+    {
+      "at": "2026-10-18T08:44:35.063Z",
+      "event": "batch_committed",
+      "batchIndex": 0,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:44:35.327Z",
+      "event": "batch_committed",
+      "batchIndex": 1,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:44:43.055Z",
+      "event": "batch_committed",
+      "batchIndex": 2,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:44:43.308Z",
+      "event": "batch_committed",
+      "batchIndex": 3,
+      "summary": {
+        "matched": 1,
+        "modified": 1,
+        "inserted": 0,
+        "unchanged": 0
+      }
+    },
+    {
+      "at": "2026-10-18T08:44:44.791Z",
+      "event": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:44:55.188Z",
+      "event": "paused",
+      "reason": "pause_requested"
+    },
+    {
+      "at": "2026-10-18T08:45:17.518Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 3
+    },
+    {
+      "at": "2026-10-18T08:45:31.734Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 2
+    },
+    {
+      "at": "2026-10-18T08:45:50.017Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 1
+    },
+    {
+      "at": "2026-10-18T08:46:07.089Z",
+      "event": "batch_rolled_back",
+      "batchIndex": 0
+    },
+    {
+      "at": "2026-10-18T08:46:15.783Z",
+      "event": "rolled_back"
+    }
+  ],
+  "scannedBytes": 2015,
+  "truncated": false,
+  "timing": {
+    "queueMs": 0,
+    "connectMs": 0,
+    "validationMs": 0,
+    "executionMs": 2465,
+    "connectionGeneration": 1
+  },
+  "durationMs": 2518,
+  "operationId": "aa72d1ea-c4d0-4ea1-9b7d-e0c78ed94f16",
+  "outputGuard": {
+    "policyVersion": 1,
+    "replacements": 0,
+    "omittedFields": 0
+  }
+}

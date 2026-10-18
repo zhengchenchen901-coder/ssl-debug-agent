@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { loadDotEnv, normalizeSourceRoots, allowedPathsForSourceRoots, normalizeHostKeyFingerprints } from "./config.js";
 import { normalizeLogProjects } from "./log-projects.js";
+import { normalizeManualMongo } from "./manual-mongodb-config.js";
 import localAuth from "../plugins/remote-debug-agent/local-auth.cjs";
 
 export const REGISTRY_VERSION = 4;
@@ -357,6 +358,7 @@ function normalizeInstance(input, existing = {}) {
       ...input.approvedCommands,
     }),
     ...(mongodb ? { mongodb } : {}),
+    manualMongo: normalizeManualMongo(input.manualMongo, existing.manualMongo),
     ...(Object.keys(sourceRoots).length > 0 ? { sourceRoots } : {}),
     ...(Object.keys(logProjects).length > 0 ? { logProjects } : {}),
     createdAt: existing.createdAt || input.createdAt || new Date().toISOString(),

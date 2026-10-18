@@ -489,6 +489,8 @@ export async function runMongoBulk(input = {}, options = {}) {
       operation: options.operation,
       timeoutMs: options.timeoutMs || 600_000,
       priority: options.priority || "interactive",
+      resourceTaskId: options.resourceTaskId,
+      taskType: options.priority === "control" ? "control" : "mongo_read",
       stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management }),
     });
   } catch (error) {
@@ -524,14 +526,15 @@ export async function runMongoBulk(input = {}, options = {}) {
 
 export class MongoBulkJobRunner {
   constructor(options = {}) {
-    this.run = options.runMongoBulk;
+    this.resourceClient = options.resourceClient;
+    this.run = (input, settings = {}) => options.runMongoBulk(input, { ...settings, resourceTaskId: this.active?.resourceTaskId });
     this.config = normalizeMongoBulkConfig(options.config && options.config.mongodb ? options.config.mongodb : options.config || {}, { requireBulkEnabled: false });
     this.effectiveConcurrency = Math.min(this.config.bulkConcurrency, 4);
     this.active = null;
     this.tasks = new Map();
   }
 
-  async start(input, mode = "execute") {
+  async start(input, mode = "execute", metadata = {}) {
     if (mode !== "rollback" && this.config.bulkEnabled !== true) {
       throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly", "MONGODB_BULK_DISABLED", 403);
     }
@@ -539,7 +542,8 @@ export class MongoBulkJobRunner {
     const action = mode === "rollback" ? "rollbackStart" : "executeStart";
     const leaseId = createHash("sha256").update(randomUUID()).digest("hex");
     const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 60_000 });
-    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode };
+    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source };
+    this.attachResourceTask(this.active);
     const promise = this.#runLoop(this.active).finally(() => {
       if (this.active && this.active.leaseId === leaseId) this.active = null;
       this.tasks.delete(input.jobId);
@@ -557,10 +561,15 @@ export class MongoBulkJobRunner {
       throw bulkError("another bulk job is active for this instance", "MONGODB_BULK_INSTANCE_BUSY", 409, { jobId: this.active.jobId });
     }
     const result = await this.run({ action: "control", ...input }, { priority: "control", timeoutMs: 60_000 });
+    if (input.command === "pause" && this.active?.resourceTaskId) {
+      this.resourceClient.update(this.active.resourceTaskId, { status: "stopping", phase: "pausing" });
+      this.active.resourceWaitController.abort(Object.assign(new Error("pause_requested"), { code: "pause_requested" }));
+    }
     if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
       const leaseId = createHash("sha256").update(randomUUID()).digest("hex");
       const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 60_000 });
       this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
+      this.attachResourceTask(this.active);
       const promise = this.#runLoop(this.active).finally(() => {
         if (this.active && this.active.leaseId === leaseId) this.active = null;
         this.tasks.delete(input.jobId);
@@ -572,13 +581,49 @@ export class MongoBulkJobRunner {
     return result;
   }
 
+  attachResourceTask(job) {
+    if (!this.resourceClient) return;
+    for (const task of this.resourceClient.registry.tasks.values()) if (task.referenceId === job.jobId && task.type === "mongo_bulk" && task.status === "paused") this.resourceClient.update(task.taskId, { status: "stopped", phase: "resumed_as_new_execution" });
+    job.resourceWaitController = new AbortController();
+    job.resourceTaskId = this.resourceClient.register({ type: "mongo_bulk", referenceId: job.jobId,
+      label: job.mode === "rollback" ? "数据库批量回滚" : "数据库批量修改",
+      source: job.source,
+      capabilities: ["pause", "resume", "detail"], requested: { cpuMilliCores: this.effectiveConcurrency * 200,
+        rssLimitBytes: this.effectiveConcurrency * 128 * 1048576, parallelism: this.effectiveConcurrency } },
+      { control: (command) => this.control({ jobId: job.jobId, planHash: job.planHash, command }),
+        onBudget: async (budget) => {
+          if (job.waveInFlight && budget.cpuMilliCores < (job.appliedBudget?.cpuMilliCores || 0)) await new Promise((resolve) => { (job.budgetWaiters ||= []).push(resolve); });
+          job.appliedBudget = budget;
+        } });
+    this.resourceClient.update(job.resourceTaskId, { status: "starting", phase: "waiting_resources" });
+  }
+
   async #runLoop(job) {
+    let heartbeatBusy = false;
+    const heartbeatTimer = this.resourceClient ? setInterval(() => {
+      if (heartbeatBusy) return;
+      heartbeatBusy = true;
+      this.run({ action: "heartbeat", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId }, { priority: "control", timeoutMs: 20000 })
+        .catch(() => {}).finally(() => { heartbeatBusy = false; });
+    }, 20000) : null;
+    heartbeatTimer?.unref?.();
     try {
       while (true) {
         const state = await this.run({ action: "get", jobId: job.jobId, includePlan: true }, { priority: "control", timeoutMs: 60_000 });
+        if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "running", phase: state.nextBatch < state.batchCount ? "executing" : "verifying",
+          progress: Object.fromEntries(["batchCount", "nextBatch", "nextVerifyBatch", "committedBatchCount", "verifiedBatchCount", "operationCount"].filter((key) => Number.isFinite(state[key])).map((key) => [key, state[key]])) });
         if (state.desiredState === "pause" || state.status === "pause_requested" || state.status === "recovery_required" || state.status === "paused" && state.desiredState !== "running") {
           try { await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason: "pause_requested" }, { priority: "control", timeoutMs: 30_000 }); } catch {}
+          if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "paused", phase: "paused", inFlight: false });
           return;
+        }
+        let concurrency = this.effectiveConcurrency;
+        if (job.resourceTaskId) {
+          await this.resourceClient.synchronize(job.resourceTaskId);
+          await this.resourceClient.settled(job.resourceTaskId);
+          const budget = await this.resourceClient.wait(job.resourceTaskId, job.resourceWaitController.signal);
+          concurrency = Math.min(concurrency, budget.parallelism);
+          if (budget.dispatchDelayMs) await new Promise((resolve) => setTimeout(resolve, budget.dispatchDelayMs));
         }
         if (job.mode === "rollback" || state.mode === "rollback") {
           if (state.nextRollbackBatch === null || state.nextRollbackBatch === undefined) break;
@@ -587,7 +632,7 @@ export class MongoBulkJobRunner {
         }
         if (state.nextBatch < state.batchCount) {
           const indexes = Array.from(
-            { length: Math.min(this.effectiveConcurrency, state.batchCount - state.nextBatch) },
+            { length: Math.min(concurrency, state.batchCount - state.nextBatch) },
             (_value, offset) => state.nextBatch + offset,
           );
           await this.#runBatchWave(job, "execute", "executeBatch", indexes);
@@ -595,7 +640,7 @@ export class MongoBulkJobRunner {
         }
         if (state.nextVerifyBatch < state.batchCount) {
           const indexes = Array.from(
-            { length: Math.min(this.effectiveConcurrency, state.batchCount - state.nextVerifyBatch) },
+            { length: Math.min(concurrency, state.batchCount - state.nextVerifyBatch) },
             (_value, offset) => state.nextVerifyBatch + offset,
           );
           await this.#runBatchWave(job, "verify", "verifyBatch", indexes);
@@ -604,12 +649,20 @@ export class MongoBulkJobRunner {
         break;
       }
       await this.run({ action: "finish", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, mode: job.mode }, { priority: "control", timeoutMs: 60_000 });
+      if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "completed", phase: "finished", inFlight: false });
     } catch (error) {
+      // A helper can acknowledge pause by releasing its lease before dispatch
+      // cleanup runs. Preserve that intent, while keeping genuine conflicts.
+      const reason = job.resourceWaitController?.signal.aborted && ["pause_requested", "MONGODB_BULK_LEASE_LOST"].includes(error.code)
+        ? "pause_requested" : error.code || "MONGODB_BULK_FAILED";
       try {
-        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason: error.code || "MONGODB_BULK_FAILED" }, { priority: "control", timeoutMs: 30_000 });
+        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason }, { priority: "control", timeoutMs: 30_000 });
       } catch {
         // The last persisted batch receipt remains the recovery source of truth.
       }
+      if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "paused", phase: "paused", inFlight: false });
+    } finally {
+      clearInterval(heartbeatTimer);
     }
   }
 
@@ -633,6 +686,8 @@ export class MongoBulkJobRunner {
   }
 
   async #runBatchWave(job, phase, action, indexes) {
+    job.waveInFlight = true;
+    if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { inFlight: true, phase });
     await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
       priority: "control", timeoutMs: 30_000,
     });
@@ -655,6 +710,9 @@ export class MongoBulkJobRunner {
     } catch (error) {
       if (!failure) failure = error;
     }
+    job.waveInFlight = false;
+    for (const resolve of job.budgetWaiters || []) resolve(); job.budgetWaiters = [];
+    if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { inFlight: false });
     if (failure) throw failure;
   }
 

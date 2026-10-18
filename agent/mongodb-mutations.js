@@ -1822,6 +1822,7 @@ export async function runMongoMutation(input = {}, options = {}) {
       config: options.config,
       operation: options.operation,
       stdin: buildMongoMutationScript(request, config),
+      taskType: "mongo_write",
     });
   } catch (error) {
     if (options.operation?.signal?.aborted) {

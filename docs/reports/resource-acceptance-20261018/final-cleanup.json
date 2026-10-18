@@ -1,0 +1,478 @@
+{
+  "at": "2026-10-18T08:47:05.715Z",
+  "initialBulk": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "rolled_back",
+    "mode": "rollback",
+    "desiredState": "stop",
+    "createdAt": "2026-10-18T08:19:59.519Z",
+    "updatedAt": "2026-10-18T08:36:24.711Z",
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "rollbackExpiresAt": "2026-10-19T08:20:59.106Z",
+    "operationCount": 128,
+    "unitCount": 128,
+    "batchCount": 128,
+    "nextBatch": 12,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 12,
+    "rolledBackBatchCount": 12,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 12,
+      "modified": 12,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3880,
+      "connectionGeneration": 1
+    },
+    "durationMs": 3932,
+    "operationId": "e3808a22-bced-44d0-a9cb-79d5a19efa5f",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "initialSeed": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+    "operationId": "51dec082-e886-4c63-b852-bf8b80fe2189",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "rolled_back",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "128 synthetic owned records for resource-pool acceptance; deleted/non-marketing; rollback after verification",
+    "createdAt": "2026-10-18T08:18:40.714Z",
+    "committedAt": "2026-10-18T08:18:59.729Z",
+    "rolledBackAt": "2026-10-18T08:36:51.275Z",
+    "rollbackExpiresAt": "2026-10-19T08:18:40.714Z",
+    "planHash": "0f152ae8584dee11a8af5cfc04900b10ff8f6c053578a4694bf6b75371a6c901",
+    "affectedCount": 128,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-0000",
+      "rda-rp-20261018-01a14e14-0001",
+      "rda-rp-20261018-01a14e14-0002",
+      "rda-rp-20261018-01a14e14-0003",
+      "rda-rp-20261018-01a14e14-0004",
+      "rda-rp-20261018-01a14e14-0005",
+      "rda-rp-20261018-01a14e14-0006",
+      "rda-rp-20261018-01a14e14-0007",
+      "rda-rp-20261018-01a14e14-0008",
+      "rda-rp-20261018-01a14e14-0009"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-c1b1d6f518478b5db170fa6b5a345eb70fcca5cc0585b1f8c749290e3ad3ed83",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2574,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2627,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "firstFixBulk": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-fix-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "rolled_back",
+    "mode": "rollback",
+    "desiredState": "stop",
+    "createdAt": "2026-10-18T08:38:41.184Z",
+    "updatedAt": "2026-10-18T08:41:00.793Z",
+    "planHash": "0134b6ea1ba4677b736340d41eea3ce5f8d064aae866f4d2acda91839113175c",
+    "rollbackExpiresAt": "2026-10-19T08:38:43.802Z",
+    "operationCount": 6,
+    "unitCount": 6,
+    "batchCount": 6,
+    "nextBatch": 2,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 2,
+    "rolledBackBatchCount": 2,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 2,
+      "modified": 2,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2203,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2254,
+    "operationId": "ee510500-cb88-43a4-8ce1-7460fb7202c7",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "firstFixSeed": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-4def42ec9db2a26847ea54d182bea87e6e181da9bd5380c1333f67de46da01e3",
+    "operationId": "aaf5c7db-ce23-4b14-b027-664871d61395",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "rolled_back",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "6 synthetic owned records for real regression of pause and rollback",
+    "createdAt": "2026-10-18T08:38:34.080Z",
+    "committedAt": "2026-10-18T08:38:36.239Z",
+    "rolledBackAt": "2026-10-18T08:41:39.037Z",
+    "rollbackExpiresAt": "2026-10-19T08:38:34.080Z",
+    "planHash": "8e1dc0ee217ca5ad8a930000cdbf469e0c1c65359cba1dba1ac2336816171432",
+    "affectedCount": 6,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-fix-0",
+      "rda-rp-20261018-01a14e14-fix-1",
+      "rda-rp-20261018-01a14e14-fix-2",
+      "rda-rp-20261018-01a14e14-fix-3",
+      "rda-rp-20261018-01a14e14-fix-4",
+      "rda-rp-20261018-01a14e14-fix-5"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-fix-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-4def42ec9db2a26847ea54d182bea87e6e181da9bd5380c1333f67de46da01e3",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2441,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2490,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "finalBulk": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "rolled_back",
+    "mode": "rollback",
+    "desiredState": "stop",
+    "createdAt": "2026-10-18T08:43:26.740Z",
+    "updatedAt": "2026-10-18T08:46:15.783Z",
+    "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+    "rollbackExpiresAt": "2026-10-19T08:43:30.170Z",
+    "operationCount": 4,
+    "unitCount": 4,
+    "batchCount": 4,
+    "nextBatch": 4,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": null,
+    "committedBatchCount": 4,
+    "rolledBackBatchCount": 4,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 4,
+      "modified": 4,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2535,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2587,
+    "operationId": "67c2e9f5-c20e-4fe7-9f90-6b32d759898b",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "finalSeed": {
+    "ok": true,
+    "instanceId": "test-server",
+    "mutationId": "import-3103e7107d9df8da86666a890f30b036db384189724e2541c6fb4e17feb055f4",
+    "operationId": "3359fba0-1a69-45b6-8f10-187359817b85",
+    "kind": "import",
+    "operation": "insertMany",
+    "database": "yennefer",
+    "collection": "CustomerPrivate",
+    "status": "rolled_back",
+    "rollbackMode": "transactional",
+    "riskLevel": "high",
+    "requiresConfirmation": true,
+    "purpose": "4 synthetic owned records for final pause-race real regression",
+    "createdAt": "2026-10-18T08:43:19.030Z",
+    "committedAt": "2026-10-18T08:43:21.876Z",
+    "rolledBackAt": "2026-10-18T08:46:59.023Z",
+    "rollbackExpiresAt": "2026-10-19T08:43:19.030Z",
+    "planHash": "15e60beb459f7bcd91f4814c50e102b4afcca9ed4400cb521fdf754eb8bb9acd",
+    "affectedCount": 4,
+    "changedFields": [
+      "_id",
+      "belonged_group",
+      "member_code",
+      "create_user",
+      "is_deleted",
+      "is_marketing",
+      "is_marketing_opt_out",
+      "whatsapp_unsubscribed",
+      "is_synchronized",
+      "remark",
+      "internal_remark"
+    ],
+    "affectedIds": [
+      "rda-rp-20261018-01a14e14-final-0",
+      "rda-rp-20261018-01a14e14-final-1",
+      "rda-rp-20261018-01a14e14-final-2",
+      "rda-rp-20261018-01a14e14-final-3"
+    ],
+    "importId": "rda-rp-20261018-01a14e14-final-seed",
+    "batchIndex": 0,
+    "retryable": false,
+    "journalPath": "/tmp/remote-debug-agent/mutations/import-3103e7107d9df8da86666a890f30b036db384189724e2541c6fb4e17feb055f4",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 2179,
+      "connectionGeneration": 1
+    },
+    "durationMs": 2231,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "scope": {
+    "totalOwnedIds": 138,
+    "prefixes": [
+      "rda-rp-20261018-01a14e14",
+      "rda-rp-20261018-01a14e14-fix",
+      "rda-rp-20261018-01a14e14-final"
+    ]
+  },
+  "checks": [
+    {
+      "ok": true,
+      "operation": "countDocuments",
+      "database": "yennefer",
+      "collection": "CustomerPrivate",
+      "data": 0,
+      "resultCount": 0,
+      "durationMs": 1945,
+      "operationId": "caa866f2-54b9-4ce4-9f64-b23cfa695c24",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 1892,
+        "connectionGeneration": 1
+      },
+      "instanceId": "test-server",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "operation": "countDocuments",
+      "database": "yennefer",
+      "collection": "CustomerPrivate",
+      "data": 0,
+      "resultCount": 0,
+      "durationMs": 2239,
+      "operationId": "cf2656eb-ba26-4b61-a105-d6bda7738eab",
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 1,
+        "executionMs": 2185,
+        "connectionGeneration": 1
+      },
+      "instanceId": "test-server",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobs": [
+        {
+          "jobId": "rda-rp-20261018-01a14e14-final-bulk",
+          "database": "yennefer",
+          "status": "rolled_back",
+          "mode": "rollback",
+          "createdAt": "2026-10-18T08:43:26.740Z",
+          "updatedAt": "2026-10-18T08:46:15.783Z",
+          "planHash": "ba1cfce8dafee93d109e633d1f5db7da695cc7d485ee1d607ce9618b965c8d31",
+          "operationCount": 4,
+          "unitCount": 4,
+          "batchCount": 4,
+          "rollbackExpiresAt": "2026-10-19T08:43:30.170Z"
+        },
+        {
+          "jobId": "rda-rp-20261018-01a14e14-fix-bulk",
+          "database": "yennefer",
+          "status": "rolled_back",
+          "mode": "rollback",
+          "createdAt": "2026-10-18T08:38:41.184Z",
+          "updatedAt": "2026-10-18T08:41:00.793Z",
+          "planHash": "0134b6ea1ba4677b736340d41eea3ce5f8d064aae866f4d2acda91839113175c",
+          "operationCount": 6,
+          "unitCount": 6,
+          "batchCount": 6,
+          "rollbackExpiresAt": "2026-10-19T08:38:43.802Z"
+        },
+        {
+          "jobId": "rda-rp-20261018-01a14e14-bulk",
+          "database": "yennefer",
+          "status": "rolled_back",
+          "mode": "rollback",
+          "createdAt": "2026-10-18T08:19:59.519Z",
+          "updatedAt": "2026-10-18T08:36:24.711Z",
+          "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+          "operationCount": 128,
+          "unitCount": 128,
+          "batchCount": 128,
+          "rollbackExpiresAt": "2026-10-19T08:20:59.106Z"
+        }
+      ],
+      "offset": 0,
+      "limit": 10,
+      "total": 3,
+      "hasMore": false,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2249,
+        "connectionGeneration": 1
+      },
+      "durationMs": 2301,
+      "operationId": "a14a6a1c-6816-4b0c-bde3-7543e57398a2",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    }
+  ]
+}

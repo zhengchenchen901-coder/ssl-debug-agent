@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-18T08:44:42.953Z",
+  "task": {
+    "taskId": "c8463311-5cde-4c56-8dda-8b986e782ccf",
+    "instanceId": "test-server",
+    "type": "mongo_bulk",
+    "bulk": true,
+    "referenceId": "rda-rp-20261018-01a14e14-final-bulk",
+    "label": "数据库批量修改",
+    "source": "api",
+    "status": "running",
+    "phase": "execute",
+    "createdAt": 1792313063519,
+    "updatedAt": 1792313078901,
+    "usage": {
+      "transferBytes": 3590
+    },
+    "progress": {
+      "batchCount": 4,
+      "nextBatch": 2,
+      "nextVerifyBatch": 0,
+      "committedBatchCount": 2,
+      "verifiedBatchCount": 0,
+      "operationCount": 4
+    },
+    "inFlight": true,
+    "appliedRevision": 249,
+    "capabilities": [
+      "pause",
+      "resume",
+      "detail"
+    ],
+    "resourceMode": "auto",
+    "modeRevision": 1,
+    "budget": {
+      "cpuMilliCores": 400,
+      "readBytesPerSecond": 2097152,
+      "processBytesPerSecond": 4194304,
+      "transferBytesPerSecond": 1126126,
+      "rssLimitBytes": 268435456,
+      "parallelism": 2,
+      "dispatchDelayMs": 0,
+      "mode": "auto",
+      "reason": "等待当前数据库批次结束后调整资源"
+    },
+    "budgetRevision": 249,
+    "resourceState": "normal",
+    "reason": "等待当前数据库批次结束后调整资源",
+    "enforcement": "batch_dispatch",
+    "elapsedMs": 19414
+  }
+}

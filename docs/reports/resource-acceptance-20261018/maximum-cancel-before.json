@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-18T08:48:24.781Z",
+  "task": {
+    "taskId": "b0e641f6-69ff-412c-b4fc-5fa86d78014e",
+    "instanceId": "test-server",
+    "type": "log_search",
+    "bulk": true,
+    "referenceId": "cb98b5a1-8625-4b8b-873e-51e2d81dc26e",
+    "label": "日志批量查询 · 2026-10-16—2026-10-16",
+    "source": "codex-plugin",
+    "status": "running",
+    "phase": "scanning",
+    "createdAt": 1792313273541,
+    "updatedAt": 1792313301005,
+    "usage": {
+      "rssBytes": 88223744,
+      "peakRssBytes": 97361920,
+      "cpuMs": 1280.53,
+      "readBytes": 4194304,
+      "processedBytes": 47301908,
+      "elapsedMs": 20299,
+      "transferBytes": 8452
+    },
+    "progress": {
+      "scannedBytes": 46567939,
+      "expandedBytes": 46573726,
+      "matchedLines": 0,
+      "completedFiles": 0,
+      "totalFiles": 1
+    },
+    "inFlight": false,
+    "appliedRevision": 664,
+    "capabilities": [
+      "pause",
+      "resume",
+      "cancel",
+      "stop_after_file",
+      "detail"
+    ],
+    "resourceMode": "manual_max",
+    "modeRevision": 2,
+    "budget": {
+      "cpuMilliCores": 250,
+      "readBytesPerSecond": 2446677,
+      "processBytesPerSecond": 5242880,
+      "transferBytesPerSecond": 709973,
+      "rssLimitBytes": 201326592,
+      "parallelism": 1,
+      "dispatchDelayMs": 0,
+      "mode": "manual_max",
+      "reason": "主机资源压力，降低执行预算"
+    },
+    "budgetRevision": 664,
+    "resourceState": "normal",
+    "reason": "主机资源压力，降低执行预算",
+    "cpuMilliCoresUsed": 107.37616718541577,
+    "enforcement": "cooperative",
+    "elapsedMs": 30234
+  }
+}

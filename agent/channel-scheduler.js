@@ -119,6 +119,8 @@ export class ChannelScheduler {
     if (this.activeBusiness >= this.maxBusiness) {
       return false;
     }
+    if (this.reserveInteractive && BACKGROUND_PRIORITIES.has(item.priority)
+      && this.activeBusiness >= Math.max(1, this.maxBusiness - 1)) return false;
     if (item.priority === "bulk") {
       return this.activeBulk < this.maxBulk;
     }

@@ -1,0 +1,8 @@
+{
+  "snapshots": 821,
+  "maxManualOwners": 1,
+  "maxCpuGrantSum": 750,
+  "staleSnapshots": 66,
+  "maxSampleAgeMs": 38724,
+  "maxLogCpuUsedMilli": 423.9999999999782
+}

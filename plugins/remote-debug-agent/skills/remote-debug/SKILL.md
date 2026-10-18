@@ -30,6 +30,13 @@ described below.
 - `remote_debug_query_logs`: query mapped projects in latest/search/files
   modes with filename/date filters and exact structured route, method, level,
   keyword and timezone-aware timestamp filters.
+- `remote_debug_start_log_query`: start a throttled background search over a
+  full day, many files or a large archive; matching archive members share one
+  continuous decompression pass. Use this directly for large historical ranges.
+- `remote_debug_get_log_query`: read cumulative progress, independently paged
+  per-file completion receipts and retained evidence samples.
+- `remote_debug_control_log_query`: pause/resume/cancel, stop after a file, or
+  narrow the dates of files not yet started.
 - `remote_debug_mongodb_query`: run bounded, read-only MongoDB operations on
   the selected instance.
 - `remote_debug_list_instances`: list configured instances and runtime status.
@@ -61,6 +68,58 @@ decompression streams without temporary extraction. Inspect coverage and
 truncation fields before reporting complete counts. Use file dates/names to
 select candidates before record filters. Search/decompression concurrency,
 expanded bytes and execution time are bounded.
+
+For a full day, many rotations, large gzip/tar.gz archives or a truncated
+synchronous search, start a background task instead of repeatedly reading
+members or retrying a broad synchronous search. Use exact project/path, filename
+dates and record filters. `memberContains`/`memberPath` select inside tar.gz;
+`fileContains` selects container names. Member selectors exclude non-tar files.
+Do not pass synchronous scan/file limits, member-list prefixes or invented
+parameter names to background tools; invalid/irrelevant parameters are rejected.
+The default runtime is 30 minutes (configurable up to 120), with CPU/read/process
+throttling and bounded memory; there is no cumulative 2 GiB expansion cutoff.
+
+Poll the same instance/job, initially about every 5 seconds, backing off for
+longer work. `cancelling` and `stopping` are transitional; terminal states are
+completed/partial/stopped/cancelled/failed/interrupted/expired. Top-level status
+and `progress.status` agree. Preserve `fileResults` receipts, with path, source
+identity, per-file scanned/expanded bytes, matched counts, warnings and separate
+completeness flags. Page these using `fileOffset`/`fileLimit` and
+`nextFileOffset`. Receipts are acknowledged before the next file starts, so a
+cancelled task can still prove that specific earlier archives completed. Do not
+infer which dates completed solely from `completedFiles` or prior polling.
+
+Distinguish `scanComplete` (selected stable file bytes covered),
+`countsAreComplete` (all matching records counted), and `evidenceComplete`
+(all matching original records retained). Oversized lines can leave scan
+coverage complete but counts incomplete. Evidence `offset`/`nextOffset` pages
+only the `retained_evidence` sample; `hasMoreRecords: false` never means all
+matches were saved. Report `retainedEvidenceCount`, `observedMatchedLines` and
+`evidenceTruncated`; sampling does not stop counting. Never add cumulative
+progress snapshots together. Inspect each receipt when certifying a subset of
+a cancelled/stopped task; whole-task counts remain incomplete.
+
+Managed tasks share host resource pools. `limits` are requested settings;
+`resources.budget` reports the effective CPU/read/process/transfer grant.
+`resourceState: "suspended"` can mean host pressure or another bulk task's
+manual priority, rather than a user pause or an unhealthy SSH connection.
+Inspect task status and resource reasons in the instance dashboard. Manual
+maximum is a human dashboard action; do not raise another task's priority
+through private HTTP calls. Database bulk budgets take effect at safe batch
+boundaries and do not change approved plans.
+
+For a known last archive (for example "stop after the 16th"), set the exact
+`stopAfterFile` path at task start, or send `action: "stop_after_file"` with
+that path in advance. Without a path this action finishes the current file.
+It returns after remote acknowledgement and does not open the following file.
+A boundary already passed or outside the selected files is an explicit error.
+`action: "narrow"` accepts `dateFrom`/`dateTo` and only shrinks dates for
+not-yet-started files. Completed/current files and cumulative counts remain;
+skipped receipts and `stopReason` explain incomplete original scope. Do not
+claim those cumulative counts represent only the new dates. Use a new task for
+an independent range. Pause retains the in-memory decompressor for at most
+5 minutes; SSH/worker loss cannot restore gzip state. Do not silently restart
+and combine old partial counts. Cancel abandoned jobs explicitly.
 
 For unmapped logs, prefer `remote_debug_list_logs` over a full
 `remote_debug_list_dir`. It discovers `/var/log` and service subdirectories,

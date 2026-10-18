@@ -10,6 +10,7 @@ import {
 } from "./operation.js";
 
 const remoteReadStreams = new WeakMap();
+const sftpResourceContexts = new WeakMap(), readResourceContexts = new WeakMap();
 
 export function quotePosixArgument(value) {
   return "'" + String(value).replace(/'/g, "'\"'\"'") + "'";
@@ -250,12 +251,13 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
     const chunks = [];
     let total = 0;
     let settled = false;
+    let paced = Promise.resolve();
     const finish = (error) => {
       if (settled) return;
       settled = true;
       operation.signal?.removeEventListener("abort", onAbort);
       if (error) reject(error);
-      else resolve(Buffer.concat(chunks).subarray(0, maxBytes));
+      else paced.then(() => resolve(Buffer.concat(chunks).subarray(0, maxBytes)), reject);
     };
     const onAbort = () => {
       stream.destroy();
@@ -269,6 +271,12 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
       markProgress();
       chunks.push(chunk);
       total += chunk.length;
+      const resource = readResourceContexts.get(stream);
+      if (resource) {
+        stream.pause?.();
+        paced = paced.then(() => resource(chunk.length)).then(() => { if (!stream.destroyed) stream.resume?.(); });
+        paced.catch(finish);
+      }
       if (total >= maxBytes) stream.destroy();
     });
     stream.on("error", (error) => finish(operationError(error.message || "SFTP read failed", {
@@ -296,6 +304,8 @@ export async function withSftp(supervisor, operation, callback, options = {}) {
           ? timing.client
           : await supervisor.waitUntilReady(operation);
         sftp = await openSftp(client, operation);
+        if (timing.resourceContext?.taskId && supervisor.resourceClient) sftpResourceContexts.set(sftp,
+          (bytes) => supervisor.resourceClient.receiveBytes(timing.resourceContext.taskId, bytes, operation.signal));
         const unregister = supervisor.registerChannel(sftp, operation);
         const closeOnAbort = () => {
           destroyRemoteReadStreams(sftp);
@@ -335,7 +345,8 @@ export async function withSftp(supervisor, operation, callback, options = {}) {
       }
     }
     throw lastError;
-  }, { priority: options.priority || "interactive" });
+  }, { priority: options.priority || "interactive", resourceTaskId: options.resourceTaskId,
+    taskType: options.taskType || "file_read", resourceIgnore: options.resourceIgnore });
 }
 
 async function validateRemotePathsWithClient(client, remotePaths, config, operation, supervisor) {
@@ -372,6 +383,7 @@ function executeChannel(client, command, operation, options, supervisor) {
     let unregister = () => {};
     let abortError;
     let forceCloseTimer;
+    let outputPacing = Promise.resolve();
 
     const finish = (error, result) => {
       if (settled) return;
@@ -408,6 +420,18 @@ function executeChannel(client, command, operation, options, supervisor) {
       }, 500);
       forceCloseTimer.unref?.();
     };
+    const closeForError = (error) => {
+      finish(error);
+      try { streamRef?.signal?.("TERM"); } catch { /* optional SSH signal */ }
+      try { streamRef?.close?.(); } catch { /* remote watchdog remains active */ }
+    };
+    const paceOutput = (source, size) => {
+      if (settled || !options.resourceContext?.taskId || !supervisor.resourceClient || options.priority === "control") return;
+      source.pause?.();
+      outputPacing = outputPacing.then(() => supervisor.resourceClient.receiveBytes(options.resourceContext.taskId, size, operation.signal))
+        .then(() => { if (!source.destroyed) source.resume?.(); });
+      outputPacing.catch(closeForError);
+    };
 
     operation.signal?.addEventListener("abort", onAbort, { once: true });
     client.exec(command, (error, stream) => {
@@ -441,10 +465,12 @@ function executeChannel(client, command, operation, options, supervisor) {
           try { stream.signal?.("TERM"); } catch { /* server may not support signals */ }
           try { stream.close?.(); } catch { /* controller watchdog is the final fallback */ }
         }
+        paceOutput(stream, chunk.length);
       });
       stream.stderr.on("data", (chunk) => {
         stderr.append(chunk);
         options.onStderr?.(chunk.toString("utf8"));
+        paceOutput(stream.stderr, chunk.length);
       });
       stream.on("error", (streamError) => finish(operationError(
         streamError.message || "SSH transport lost during command execution",
@@ -474,14 +500,14 @@ function executeChannel(client, command, operation, options, supervisor) {
           }));
           return;
         }
-        finish(null, {
+        outputPacing.then(() => finish(null, {
           stdout: stdout.value(),
           stderr: stderr.value(),
           exitCode: code,
           timedOut: false,
           stdoutTruncated: stdout.isTruncated(),
           stderrTruncated: stderr.isTruncated(),
-        });
+        }), (error) => finish(error));
       });
 
       if (options.stdin !== undefined && options.stdin !== null) {
@@ -530,7 +556,7 @@ export async function runSSH(command, options) {
         timing.client,
         options.commandValidation ? canonicalCommand(options.commandValidation, canonicalPaths) : command,
         prepared.operation,
-        options,
+        { ...options, resourceContext: timing.resourceContext },
         supervisor,
       );
       return {
@@ -543,7 +569,8 @@ export async function runSSH(command, options) {
           connectionGeneration: timing.connectionGeneration,
         },
       };
-    }, { priority: options.priority || "interactive" });
+    }, { priority: options.priority || "interactive", resourceTaskId: options.resourceTaskId,
+      taskType: options.taskType, resourceIgnore: options.resourceIgnore });
   } finally {
     prepared.cleanup();
   }
@@ -728,6 +755,7 @@ export async function statRemotePathForOperation(sftp, remotePath, operation) {
 
 export function createRemoteReadStream(sftp, remotePath, options = {}) {
   const stream = sftp.createReadStream(remotePath, options);
+  if (sftpResourceContexts.has(sftp)) readResourceContexts.set(stream, sftpResourceContexts.get(sftp));
   let onClosed;
   const record = {
     stream,

@@ -1025,6 +1025,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
       "memberPrefix", "memberOffset", "area", "jobId",
       "jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "batchScanBytes",
+      "stopAfterFile", "fileLimit",
     ].includes(propertyName)) {
       continue;
     }
@@ -1167,7 +1168,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       [404, "remote_debug_list_log_projects", {}],
       [405, "remote_debug_set_log_project", { instanceId: "default", projectId: "be", directories: ["/home/github/app/logs"] }],
       [406, "remote_debug_start_log_query", { instanceId: "default", projectId: "be", route: "/v3/order", jobTimeoutMs: 3600000 }],
-      [407, "remote_debug_get_log_query", { instanceId: "default", jobId: "job-1", offset: 1 }],
+      [407, "remote_debug_get_log_query", { instanceId: "default", jobId: "job-1", offset: 1, fileOffset: 0, fileLimit: 1 }],
       [408, "remote_debug_control_log_query", { instanceId: "default", jobId: "job-1", action: "pause" }],
     ]) {
       child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: arguments_ } }));
@@ -1180,6 +1181,15 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         assert.equal(agentStub.forwardedRequests.at(-1).body.jobTimeoutMs, 3600000);
       }
       if (name === "remote_debug_control_log_query") assert.equal(agentStub.forwardedRequests.at(-1).body.action, "pause");
+    }
+    for (const [id, bad] of [[409, { projectId: "be", dateForm: "2026-10-16" }],
+      [410, { projectId: "be", contains: "" }], [411, { projectId: "be", caseSensitive: "false" }],
+      [412, { projectId: "be", maxFiles: 1 }]]) {
+      const before = agentStub.forwardedRequests.filter((request) => request.route === "/logs/jobs/start").length;
+      child.stdin.write(encodeMessage({ jsonrpc: "2.0", id, method: "tools/call", params: { name: "remote_debug_start_log_query", arguments: bad } }));
+      const response = JSON.parse((await readMessage()).result.content[0].text);
+      assert.equal(response.error.code, "INVALID_LOG_JOB");
+      assert.equal(agentStub.forwardedRequests.filter((request) => request.route === "/logs/jobs/start").length, before);
     }
 
     child.stdin.write(

@@ -63,3 +63,26 @@ p { font-size: 13px; line-height: 1.8; color: #91a2b7; }
 .operations .message { margin-top: 24px; font-size: 12px; }
 @media (max-width: 1100px) { .workspace { grid-template-columns: 130px minmax(0, 1fr) 200px; } .work-area { padding: 18px; } .target-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .terminal-footer span:last-child { display: none; } }
 @media (max-width: 760px) { .topbar { padding: 0 16px; } .eyebrow { font-size: 8px; } .brand { gap: 10px; } .brand-mark { display: none; } .mode { display: none; } .workspace { grid-template-columns: minmax(0, 1fr); } .sidebar { display: none; } .operations { border-left: 0; border-top: 1px solid #25303f; } .operations > .button { width: auto; margin-right: 10px; } .info-card { display: none; } #terminal { height: 48dvh; } .login-panel { margin-top: 36px; padding: 26px; } }
+.nav-item { display: block; width: 100%; background: transparent; color: #b5c5d6; border: 1px solid transparent; text-align: left; }
+.workspace.database-mode { grid-template-columns: 145px minmax(0, 1fr) 380px; }
+.db-toolbar, .db-fields { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.db-browser { display: grid; grid-template-columns: 160px minmax(0, 1fr); border: 1px solid #293747; border-radius: 10px; overflow: hidden; }
+.db-directory { padding: 16px 12px; border-right: 1px solid #293747; background: #101a26; }
+.db-directory button { margin: 5px 0; overflow-wrap: anywhere; }
+.db-directory .db-name { display: block; border: 0; background: transparent; color: #b5d4e5; text-align: left; padding: 8px; width: 100%; }
+.db-directory .db-name:hover { background: #19332e; }
+.db-directory hr { border: 0; border-top: 1px solid #293747; margin: 18px 0; }
+.db-documents { padding: 18px; min-width: 0; }
+.db-documents label { display: grid; gap: 6px; font-size: 12px; color: #9db0c5; margin-bottom: 12px; min-width: 0; }
+.db-fields > label { flex: 1; }
+.db-documents input, .db-documents textarea, .db-documents select { font: 12px ui-monospace, monospace; border: 1px solid #344456; background: #0b1420; color: #dce5ef; border-radius: 5px; padding: 9px; width: 100%; min-width: 0; }
+.db-documents textarea { resize: vertical; line-height: 1.6; }
+.db-document { width: 100%; display: block; text-align: left; border: 1px solid #293747; border-radius: 6px; padding: 10px; margin: 8px 0; background: #121d2a; color: #c7d9ea; }
+.db-document pre { font-size: 11px; line-height: 1.5; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 130px; overflow: hidden; }
+#dbEditorPanel { border-top: 1px solid #344456; margin-top: 24px; padding-top: 20px; }
+#dbEditor { width: 100%; margin-bottom: 12px; }
+#dbTerminal { height: 48dvh; min-height: 300px; background: #090f17; margin: 18px -12px 12px; padding: 10px 6px; }
+#dbConfig, #dbTarget, #dbShellTarget { overflow-wrap: anywhere; }
+#databaseOperations > p { font-size: 11px; }
+@media (max-width: 1150px) { .workspace.database-mode { grid-template-columns: 120px minmax(0, 1fr); } #databaseOperations { grid-column: 2; border-top: 1px solid #293747; } .db-browser { grid-template-columns: 140px minmax(0, 1fr); } }
+@media (max-width: 760px) { .workspace.database-mode { grid-template-columns: minmax(0, 1fr); } .sidebar { display: flex; padding: 10px; gap: 10px; } .sidebar .section-label, .sidebar-foot { display: none; } .nav-item { margin: 0; } #databaseOperations { grid-column: 1; } .db-browser { grid-template-columns: minmax(0, 1fr); } .db-directory { border-right: 0; border-bottom: 1px solid #293747; } }

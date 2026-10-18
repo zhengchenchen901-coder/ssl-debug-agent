@@ -172,6 +172,7 @@ function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
     auditLog: new FakeElement("input"),
     enabled: new FakeElement("input"),
     approvedCommandsEnabled: new FakeElement("input"),
+    ...Object.fromEntries(["Enabled", "ConfigPath", "DriverPath", "ConfigProfile", "UriKey", "Database", "MongoshPath", "NodePath"].map((suffix) => ["manualMongo" + suffix, new FakeElement("input")])),
     mongodbEnabled: new FakeElement("input"),
     mongodbConfigPath: new FakeElement("input"),
     mongodbDriverPath: new FakeElement("input"),
@@ -533,4 +534,22 @@ test("editing a connection discards pending discovery and blocks queries using t
   assert.deepEqual(Array.from(elements.get("instanceForm").elements.mongodbAllowedDatabases.children, (o) => o.value), ["yennefer"]);
   assert.equal(elements.get("reloadMongoOptions").disabled, true);
   assert.match(elements.get("mongodbHint").textContent, /先保存连接配置并重新加载实例/);
+});
+
+test("manual MongoDB profile editing is per-instance and does not alter automatic or sandbox connections", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const business = { enabled: false, configPath: "/business/config.json", driverPath: "/business/driver", configProfile: "business", uriKey: "url", database: "business" };
+  const instances = [{ id: "test", name: "test", host: "test", username: "ops", mongodb: business,
+    manualMongo: { enabled: true, configPath: "/manual/config.json", driverPath: "/manual/driver", configProfile: "human", uriKey: "url", database: "records", mongoshPath: "/bin/mongosh", nodePath: "node" } }, { id: "other", host: "other", username: "ops" }];
+  const { context, elements } = createDashboardHarness(async () => ({ ok: true, text: async () => JSON.stringify({ ok: true, instances }) }));
+  vm.runInContext(script, context); await context.loadInstances(); context.resetForm(instances[0]);
+  const form = elements.get("instanceForm").elements;
+  assert.equal(form.manualMongoConfigProfile.value, "human");
+  form.manualMongoConfigProfile.value = "humanReader";
+  const payload = JSON.parse(JSON.stringify(context.formPayload()));
+  assert.equal(payload.manualMongo.configProfile, "humanReader");
+  assert.equal(payload.mongodb, undefined);
+  context.resetForm(instances[1]);
+  assert.equal(form.manualMongoConfigProfile.value, ""); assert.equal(context.formPayload().manualMongo, undefined);
+  assert.equal(instances[0].manualMongo.configProfile, "human"); assert.equal(business.configProfile, "business");
 });

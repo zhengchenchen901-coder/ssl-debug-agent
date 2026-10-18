@@ -225,6 +225,34 @@ test("background log HTTP endpoints authenticate, validate scope, and keep jobs 
   assert.doesNotMatch(await fsPromises.readFile(config.audit.logPath, "utf8"), /PRIVATE_SEARCH_EXAMPLE/);
 });
 
+test("dashboard task APIs authenticate, isolate instances, and enforce manual mode revisions", { skip: !depsInstalled }, async (t) => {
+  const { createManagerApp } = await import("../server.js");
+  const { InstanceRegistry } = await import("../instance-registry.js");
+  const { randomUUID } = await import("node:crypto");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-resource-http-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const registry = new InstanceRegistry({ cwd: dir, env: {}, registryPath: path.join(dir, "instances.json") });
+  for (const id of ["a", "b"]) registry.create({ id, host: `${id}.fixture`, username: "ops", privateKeyPath: "key" });
+  const calls = [], worker = makeWorkerManagerStub();
+  worker.callInstance = async (...args) => { calls.push(args); return { ok: true }; };
+  const app = createManagerApp({ config: makeConfig(path.join(dir, "audit.jsonl")), registry, workerManager: worker, authToken: TEST_AUTH_TOKEN });
+  const server = await listen(app); t.after(async () => { app.locals.resourceManager.close(); await close(server); });
+  const resources = app.locals.resourceManager, id = randomUUID();
+  resources.attach("a", "execution-a", () => {});
+  resources.report("a", "execution-a", { taskId: id, referenceId: "query-1", type: "log_search", status: "running", label: "日志查询", capabilities: ["pause"] });
+  const unauthorized = await globalThis.fetch(`http://127.0.0.1:${server.address().port}/api/instances/a/tasks`);
+  assert.equal(unauthorized.status, 401);
+  const list = await getJson(server, "/api/instances/a/tasks"); assert.equal(list.body.tasks[0].taskId, id);
+  const promoted = await postJson(server, `/api/instances/a/tasks/${id}/resource-mode`, { mode: "manual_max", expectedRevision: 1 });
+  assert.equal(promoted.status, 200); assert.equal(promoted.body.task.resourceMode, "manual_max");
+  assert.equal((await postJson(server, `/api/instances/a/tasks/${id}/resource-mode`, { mode: "auto", expectedRevision: 1 })).status, 409);
+  assert.equal((await postJson(server, `/api/instances/b/tasks/${id}/resource-mode`, { mode: "manual_max", expectedRevision: 2 })).status, 404);
+  assert.equal((await postJson(server, `/api/instances/a/tasks/${id}/control`, { action: "resume" })).status, 400);
+  assert.equal((await postJson(server, `/api/instances/a/tasks/${id}/control`, { action: "pause" })).status, 200);
+  assert.equal(calls[0][0], "a"); assert.equal(calls[0][1], "/tasks/control"); assert.equal(calls[0][2].taskId, id);
+  assert.match(await fsPromises.readFile(path.join(dir, "audit.jsonl"), "utf8"), /task-resource-mode/);
+});
+
 async function getText(server, route) {
   const address = server.address();
   const response = await fetch(`http://127.0.0.1:${address.port}${route}`);

@@ -29,7 +29,7 @@ function tar(entries) {
   return gzipSync(Buffer.concat([...chunks, Buffer.alloc(1024)]));
 }
 async function fixture(t) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "log-jobs-"));
+  const dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "log-jobs-")));
   const config = { security: { allowedPaths: [dir] }, logs: { projects: { be: { directories: [dir] } } } };
   const children = new Set(), calls = [];
   const runSSH = (command, options) => new Promise((resolve, reject) => {
@@ -54,7 +54,7 @@ async function fixture(t) {
   t.after(async () => { await runner.close(); for (const child of children) child.kill(); await fs.rm(dir, { recursive: true, force: true }); });
   const finished = (id, timeout) => waitFor(() => {
     const result = runner.get({ jobId: id, limit: 2000 });
-    return ["completed", "partial", "failed", "cancelled", "expired", "interrupted"].includes(result.status) && result;
+    return ["completed", "partial", "stopped", "failed", "cancelled", "expired", "interrupted"].includes(result.status) && result;
   }, timeout);
   return { dir, config, runner, calls, children, finished };
 }
@@ -72,6 +72,12 @@ test("background search automatically covers more than one file page and scan ba
   assert.equal(result.countsAreComplete, true);
   assert.equal(result.outputTruncated, true);
   assert.equal(result.records.length, 3);
+  assert.equal(result.fileResultCount, 55);
+  assert.equal(result.fileResults[0].scanComplete, true);
+  assert.equal(result.fileResults[0].countsAreComplete, true);
+  assert.equal(result.scanComplete, true);
+  assert.equal(result.evidenceComplete, false);
+  assert.equal(result.paginationScope, "retained_evidence");
   assert.equal(calls.length, 1);
   const page = runner.get({ jobId: start.jobId, limit: 1 });
   assert.equal(page.hasMoreRecords, true);
@@ -115,7 +121,12 @@ test("pause/resume retain the stream, cancel releases the process and allows the
   const second = runner.start({ path: file, contains: "match" });
   assert.equal(second.status, "queued");
   runner.control({ jobId: first.jobId, action: "cancel" });
-  assert.equal((await finished(first.jobId)).status, "cancelled");
+  assert.equal(runner.get({ jobId: first.jobId }).status, "cancelling");
+  assert.equal(runner.get({ jobId: first.jobId }).progress.status, "cancelling");
+  const cancelled = await finished(first.jobId);
+  assert.equal(cancelled.status, "cancelled");
+  assert.equal(cancelled.progress.status, "cancelled");
+  if (cancelled.progress.currentFileProgress) assert.notEqual(cancelled.progress.currentFileProgress.status, "running");
   const result = await finished(second.jobId);
   assert.equal(result.matchedLines, 60000);
   assert.equal(result.countsAreComplete, true);
@@ -142,6 +153,93 @@ test("deadline, changed sources and oversized lines never produce complete count
   assert.equal(oversized.status, "partial");
   assert.equal(oversized.matchedLines, 1);
   assert.equal(oversized.countsAreComplete, false);
+  assert.equal(oversized.scanComplete, true);
+  assert.equal(oversized.fileResults[0].scanComplete, true);
+  assert.equal(oversized.fileResults[0].countsAreComplete, false);
+});
+
+async function datedArchives(dir, count = 3, content = "match\n") {
+  const paths = [];
+  for (let i = 0; i < count; i++) {
+    const file = path.join(dir, `2026-10-${17 - i}-logs.tar.gz`);
+    await fs.writeFile(file, tar([{ name: "error.log", content }]));
+    await fs.utimes(file, 100 - i, 100 - i); paths.push(file);
+  }
+  return paths;
+}
+
+test("an advance file boundary stops before the next archive and preserves paged completion receipts", async (t) => {
+  const { dir, runner, finished } = await fixture(t);
+  const paths = await datedArchives(dir);
+  const job = runner.start({ projectId: "be", contains: "match", stopAfterFile: paths[1] });
+  const result = await finished(job.jobId);
+  assert.equal(result.status, "stopped", JSON.stringify(result.error));
+  assert.equal(result.progress.status, "stopped");
+  assert.equal(result.completedFiles, 2);
+  assert.equal(result.countsAreComplete, false);
+  assert.equal(result.scanComplete, false);
+  assert.equal(result.stopReason, "file_boundary");
+  assert.deepEqual(result.fileResults.map((r) => r.path), paths.slice(0, 2));
+  for (const receipt of result.fileResults) {
+    assert.equal(receipt.status, "completed"); assert.equal(receipt.countsAreComplete, true);
+    assert.equal(receipt.matchedLines, 1); assert.ok(receipt.scannedBytes > 0);
+    assert.equal(receipt.evidenceComplete, true); assert.ok(receipt.source.inode);
+    assert.equal(receipt.queryId, job.jobId);
+  }
+  const first = runner.get({ jobId: job.jobId, fileLimit: 1 });
+  assert.equal(first.hasMoreFileResults, true);
+  assert.equal(runner.get({ jobId: job.jobId, fileOffset: first.nextFileOffset, fileLimit: 1 }).fileResults[0].path, paths[1]);
+});
+
+test("completed archive receipts survive cancellation without relying on previous polling", async (t) => {
+  const { dir, runner, finished } = await fixture(t);
+  const paths = await datedArchives(dir, 3, "match\n".repeat(12000));
+  const job = runner.start({ projectId: "be", contains: "match", processBytesPerSecond: 65536, limit: 1 });
+  await waitFor(() => runner.get({ jobId: job.jobId }).fileResults.some((r) => r.path === paths[1] && r.countsAreComplete), 15000);
+  runner.control({ jobId: job.jobId, action: "cancel" });
+  const result = await finished(job.jobId);
+  assert.equal(result.status, "cancelled"); assert.equal(result.progress.status, "cancelled");
+  assert.equal(result.countsAreComplete, false);
+  const completed = result.fileResults.filter((r) => r.countsAreComplete);
+  assert.deepEqual(completed.map((r) => r.path), paths.slice(0, 2));
+  assert.ok(completed.every((r) => r.matchedLines === 12000));
+  assert.equal(completed[1].evidenceComplete, false);
+});
+
+test("live boundary and range controls acknowledge changes and reject expansion and unknown targets", async (t) => {
+  const { dir, runner, finished } = await fixture(t);
+  const paths = await datedArchives(dir, 3, "match\n".repeat(12000));
+  const job = runner.start({ projectId: "be", contains: "match", processBytesPerSecond: 65536 });
+  await waitFor(() => runner.get({ jobId: job.jobId }).fileResultCount > 0);
+  await assert.rejects(runner.control({ jobId: job.jobId, action: "stop_after_file", stopAfterFile: path.join(dir, "missing.log") }), /outside/);
+  const accepted = await runner.control({ jobId: job.jobId, action: "stop_after_file", stopAfterFile: paths[1] });
+  assert.equal(accepted.status, "stopping");
+  assert.equal((await finished(job.jobId)).fileResultCount, 2);
+  const next = runner.start({ projectId: "be", contains: "match", processBytesPerSecond: 65536 });
+  await waitFor(() => runner.get({ jobId: next.jobId }).fileResultCount > 0);
+  const narrowed = await runner.control({ jobId: next.jobId, action: "narrow", dateFrom: "2026-10-16" });
+  assert.equal(narrowed.scopeControls.dateFrom, "2026-10-16");
+  await assert.rejects(runner.control({ jobId: next.jobId, action: "narrow", dateFrom: "2026-10-15" }), /narrow/);
+  const result = await finished(next.jobId);
+  assert.equal(result.status, "stopped"); assert.equal(result.skippedFiles, 1);
+  assert.equal(result.fileResults[2].status, "skipped");
+  assert.equal(result.fileResults[2].scannedBytes, 0);
+  assert.equal(result.countsAreComplete, false);
+});
+
+test("invalid and ignored-looking parameters fail before any remote scan", async (t) => {
+  const { runner, dir, calls } = await fixture(t);
+  for (const parameters of [{ fileContains: "" }, { memberPrefix: "error" }, { maxFiles: 1 }, { fileOffset: 0 },
+    { contains: null }, { caseSensitive: "false" }, { limit: 2001 }, { maxBytes: 262145 },
+    { typoDate: "2026-10-16" }, { memberContains: "error", path: path.join(dir, "plain.log") }]) {
+    assert.throws(() => runner.start({ projectId: "be", ...parameters }), (error) => error.statusCode === 400);
+  }
+  assert.equal(calls.length, 0);
+  const job = runner.start({ projectId: "be" });
+  assert.throws(() => runner.get({ jobId: job.jobId, fileOffest: 1 }), /unknown/);
+  assert.throws(() => runner.control({ jobId: job.jobId, action: "narrow" }), /requires/);
+  assert.throws(() => runner.control({ jobId: job.jobId, action: "narrow", dateFrom: "2026-02-30" }), /invalid/);
+  assert.throws(() => runner.control({ jobId: job.jobId, action: "pause", dateFrom: "2026-10-16" }), /do not apply/);
 });
 
 test("job policy bounds resources, queue size and retained task state", async (t) => {
@@ -188,6 +286,7 @@ test("background sample budget accounts for JSON escaping and metadata", async (
   assert.equal(result.matchedLines, 1);
   assert.ok(Buffer.byteLength(JSON.stringify(result.records[0])) <= 1024);
   assert.equal(result.outputTruncated, true);
+  assert.equal(result.fileResults[0].evidenceComplete, false);
 });
 
 test("a selected gzip log continues beyond the synchronous 256 MiB scan ceiling", { skip: process.env.REMOTE_DEBUG_LARGE_LOG_TEST !== "1" }, async (t) => {

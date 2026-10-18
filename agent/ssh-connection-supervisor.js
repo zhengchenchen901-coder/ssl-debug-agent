@@ -346,7 +346,8 @@ export class SshConnectionSupervisor extends EventEmitter {
   }
 
   schedule(operation, task, options = {}) {
-    return this.scheduler.schedule(operation, async ({ queueMs, priority }) => {
+    const schedule = (resourceContext) => this.scheduler.schedule(operation, async ({ queueMs, priority }) => {
+      resourceContext?.started?.();
       const connectStartedAt = this.now();
       const client = await this.waitUntilReady(operation);
       const connectMs = Math.max(0, this.now() - connectStartedAt);
@@ -357,8 +358,10 @@ export class SshConnectionSupervisor extends EventEmitter {
         connectMs,
         priority,
         connectionGeneration: this.generation,
+        resourceContext,
       });
     }, options);
+    return this.resourceClient ? this.resourceClient.operation(operation, options, schedule) : schedule();
   }
 
   registerChannel(channel, operation) {

@@ -29,13 +29,17 @@ export const LOG_QUERY_CAPABILITIES = Object.freeze({
   maxScanBytes: 256 * 1024 * 1024, maxExpandedBytes: 2 * 1024 * 1024 * 1024,
   maxDirectoryEntries: 5000, maxReturnedLines: 2000, maxReturnedBytes: 256 * 1024,
   backgroundJobs: { start: "/logs/jobs/start", get: "/logs/jobs/get", control: "/logs/jobs/control",
-    maxConcurrentPerInstance: 1, maxQueuedPerInstance: 3, singlePassArchives: true,
+    maxConcurrentPerInstance: 2, maxQueuedPerInstance: 2, maxActiveAndQueued: 4, singlePassArchives: true,
     defaultJobTimeoutMs: 1800000, maxJobTimeoutMs: 7200000,
     defaultCpuPercent: 20, defaultReadBytesPerSecond: 2097152,
     defaultProcessBytesPerSecond: 4194304, rssLimitBytes: 201326592,
     defaultBatchScanBytes: 268435456, cumulativeExpandedByteLimit: null,
     pauseTtlMs: 300000, retentionMs: 1800000, maxRetainedJobs: 16,
-    survivesWorkerRestart: false },
+    survivesWorkerRestart: false, perFileReceipts: true, receiptAcknowledgement: true,
+    maxReceiptBytesPerJob: 8388608, fileResultPagination: true,
+    controls: ["pause", "resume", "cancel", "stop_after_file", "narrow"],
+    startFileBoundary: "stopAfterFile", evidencePaginationScope: "retained_evidence",
+    completeness: ["scanComplete", "countsAreComplete", "evidenceComplete"] },
 });
 
 export const LOG_SUPPORTED_COMPRESSION = Object.freeze([

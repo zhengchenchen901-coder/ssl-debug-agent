@@ -1,0 +1,2248 @@
+{
+  "uploads": [
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 0,
+      "chunkHash": "72c5883ab0454c7733296aaaf652a0e7b04627d9303553f0468be3c57a204974",
+      "nextChunkIndex": 1,
+      "unitCount": 12,
+      "operationCount": 12,
+      "inputBytes": 3242941,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 14354,
+        "connectionGeneration": 1
+      },
+      "durationMs": 14426,
+      "operationId": "4552f9e4-a802-4c2c-8c7f-2366d86663e4",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 1,
+      "chunkHash": "d76e8ccf9b0fd6db6c10162b028db2d4dc68fdb607c233d8f2f0f9ebdca3da8c",
+      "nextChunkIndex": 2,
+      "unitCount": 24,
+      "operationCount": 24,
+      "inputBytes": 6485892,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2780,
+        "connectionGeneration": 1
+      },
+      "durationMs": 2856,
+      "operationId": "bd9153aa-5fbe-4073-b6fb-7ac5dcc84b7d",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 2,
+      "chunkHash": "b0ade15ecf5fd6883f53fde1776254c322a1b6112a84daf68ab49303f51bfab7",
+      "nextChunkIndex": 3,
+      "unitCount": 36,
+      "operationCount": 36,
+      "inputBytes": 9728843,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2564,
+        "connectionGeneration": 1
+      },
+      "durationMs": 2636,
+      "operationId": "b9b57439-c500-4257-9263-738ac63e8c60",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 3,
+      "chunkHash": "157fb448be6f4195f339c7f65477122d8122f7c2b29ab6a8f6def62e5496749a",
+      "nextChunkIndex": 4,
+      "unitCount": 48,
+      "operationCount": 48,
+      "inputBytes": 12971794,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 3178,
+        "connectionGeneration": 1
+      },
+      "durationMs": 3248,
+      "operationId": "ade82599-5b1a-4db3-b2d6-9a1705d33ed5",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 4,
+      "chunkHash": "c7400ab2b093296d27c1e53e959f6e46a832394f1a7084c83347cc97b36e29d9",
+      "nextChunkIndex": 5,
+      "unitCount": 60,
+      "operationCount": 60,
+      "inputBytes": 16214745,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 3875,
+        "connectionGeneration": 1
+      },
+      "durationMs": 3946,
+      "operationId": "de68c4e4-28c1-4281-8a00-af921e1d97db",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 5,
+      "chunkHash": "cd514500e32e78d359884e6fdee73ba46522852459b2b55bd281eb2c6b46a953",
+      "nextChunkIndex": 6,
+      "unitCount": 72,
+      "operationCount": 72,
+      "inputBytes": 19457696,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 4707,
+        "connectionGeneration": 1
+      },
+      "durationMs": 4779,
+      "operationId": "42518044-77ea-4147-ab54-e5b6ac04f330",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 6,
+      "chunkHash": "0b7523ea7bb669ef2561bd3e3c9705803f27e6f09c09d8b0eb313ae1f4d16c6d",
+      "nextChunkIndex": 7,
+      "unitCount": 84,
+      "operationCount": 84,
+      "inputBytes": 22700647,
+      "timing": {
+        "queueMs": 1,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2510,
+        "connectionGeneration": 1
+      },
+      "durationMs": 2582,
+      "operationId": "a86d27a3-e8e0-4674-ac9e-b34f6ee5f241",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 7,
+      "chunkHash": "03afffda8d6f34e01627169ccabbdf627997feef1dca932d3144819bddd19d95",
+      "nextChunkIndex": 8,
+      "unitCount": 96,
+      "operationCount": 96,
+      "inputBytes": 25943598,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 5823,
+        "connectionGeneration": 1
+      },
+      "durationMs": 5894,
+      "operationId": "3ac8f4a2-7631-4d24-a980-359c7b9e7bc1",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 8,
+      "chunkHash": "6c518a002c4e0d4f8386f92884f3b14e4febbd6b98430a41e529431ed72a8d51",
+      "nextChunkIndex": 9,
+      "unitCount": 108,
+      "operationCount": 108,
+      "inputBytes": 29186557,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 4817,
+        "connectionGeneration": 1
+      },
+      "durationMs": 4888,
+      "operationId": "30df043c-c6d2-4508-8157-55f0e8ce2baa",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 9,
+      "chunkHash": "120e0cc51995e3b41ada820104322acb669de5cc2748b351bef47f638d8cdeea",
+      "nextChunkIndex": 10,
+      "unitCount": 120,
+      "operationCount": 120,
+      "inputBytes": 32429520,
+      "timing": {
+        "queueMs": 1,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 4131,
+        "connectionGeneration": 1
+      },
+      "durationMs": 4204,
+      "operationId": "15a3f864-d9fb-4644-8fdd-9f879119accb",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    },
+    {
+      "ok": true,
+      "instanceId": "test-server",
+      "jobId": "rda-rp-20261018-01a14e14-bulk",
+      "status": "uploading",
+      "chunkIndex": 10,
+      "chunkHash": "297b97d03ce3d5a1a9a9da8b588c6da8726d86a65a68a89bd2aabaee195ddde4",
+      "nextChunkIndex": 11,
+      "unitCount": 128,
+      "operationCount": 128,
+      "inputBytes": 34591499,
+      "timing": {
+        "queueMs": 0,
+        "connectMs": 0,
+        "validationMs": 0,
+        "executionMs": 2001,
+        "connectionGeneration": 1
+      },
+      "durationMs": 2066,
+      "operationId": "221d4104-996c-42f4-ad0f-51bd047182b1",
+      "outputGuard": {
+        "policyVersion": 1,
+        "replacements": 0,
+        "omittedFields": 0
+      }
+    }
+  ],
+  "plan": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "status": "prepared",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "unitCount": 128,
+    "operationCount": 128,
+    "batchCount": 128,
+    "rollbackExpiresAt": "2026-10-19T08:20:59.106Z",
+    "changedFields": [
+      "remark"
+    ],
+    "batches": [
+      {
+        "batchIndex": 0,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0000"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 1,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0001"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 2,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0002"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 3,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0003"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 4,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0004"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 5,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0005"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 6,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0006"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 7,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0007"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 8,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0008"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 9,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0009"
+          }
+        ],
+        "rollbackBytes": 270639
+      },
+      {
+        "batchIndex": 10,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0010"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 11,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0011"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 12,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0012"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 13,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0013"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 14,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0014"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 15,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0015"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 16,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0016"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 17,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0017"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 18,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0018"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 19,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0019"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 20,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0020"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 21,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0021"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 22,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0022"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 23,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0023"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 24,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0024"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 25,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0025"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 26,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0026"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 27,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0027"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 28,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0028"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 29,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0029"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 30,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0030"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 31,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0031"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 32,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0032"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 33,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0033"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 34,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0034"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 35,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0035"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 36,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0036"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 37,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0037"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 38,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0038"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 39,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0039"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 40,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0040"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 41,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0041"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 42,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0042"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 43,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0043"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 44,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0044"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 45,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0045"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 46,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0046"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 47,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0047"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 48,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0048"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 49,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0049"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 50,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0050"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 51,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0051"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 52,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0052"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 53,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0053"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 54,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0054"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 55,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0055"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 56,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0056"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 57,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0057"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 58,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0058"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 59,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0059"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 60,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0060"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 61,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0061"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 62,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0062"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 63,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0063"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 64,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0064"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 65,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0065"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 66,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0066"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 67,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0067"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 68,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0068"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 69,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0069"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 70,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0070"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 71,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0071"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 72,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0072"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 73,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0073"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 74,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0074"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 75,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0075"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 76,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0076"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 77,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0077"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 78,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0078"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 79,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0079"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 80,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0080"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 81,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0081"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 82,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0082"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 83,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0083"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 84,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0084"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 85,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0085"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 86,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0086"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 87,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0087"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 88,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0088"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 89,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0089"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 90,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0090"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 91,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0091"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 92,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0092"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 93,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0093"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 94,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0094"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 95,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0095"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 96,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0096"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 97,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0097"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 98,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0098"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 99,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0099"
+          }
+        ],
+        "rollbackBytes": 270640
+      },
+      {
+        "batchIndex": 100,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0100"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 101,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0101"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 102,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0102"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 103,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0103"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 104,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0104"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 105,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0105"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 106,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0106"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 107,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0107"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 108,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0108"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 109,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0109"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 110,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0110"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 111,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0111"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 112,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0112"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 113,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0113"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 114,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0114"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 115,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0115"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 116,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0116"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 117,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0117"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 118,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0118"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 119,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0119"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 120,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0120"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 121,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0121"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 122,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0122"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 123,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0123"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 124,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0124"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 125,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0125"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 126,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0126"
+          }
+        ],
+        "rollbackBytes": 270641
+      },
+      {
+        "batchIndex": 127,
+        "operationCount": 1,
+        "unitCount": 1,
+        "changedFields": [
+          "remark"
+        ],
+        "sampleIds": [
+          {
+            "collection": "CustomerPrivate",
+            "id": "rda-rp-20261018-01a14e14-0127"
+          }
+        ],
+        "rollbackBytes": 270641
+      }
+    ],
+    "requiresConfirmation": true,
+    "atomicity": "per_batch",
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 6339,
+      "connectionGeneration": 1
+    },
+    "durationMs": 6391,
+    "operationId": "19eb0f03-b131-4af9-abc1-953978e3efb3",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  }
+}

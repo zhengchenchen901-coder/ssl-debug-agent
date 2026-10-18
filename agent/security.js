@@ -192,6 +192,10 @@ export function securityCapabilities(config = {}) {
     schemaVersion: SECURITY_POLICY.schemaVersion,
     policyVersion: SECURITY_POLICY_VERSION,
     authority: "remote-debug-agent",
+    resources: { sharedHostPools: true, taskRegistry: true, dashboardManualMaximum: true,
+      manualMaximumTools: false, cooperativeRuntime: true, operatingSystemQuotas: false,
+      processCpuAdmissionOnlyTasks: ["diagnostic", "file_read", "mongo_read", "mongo_write", "discovery"], batchBoundaryTasks: ["mongo_bulk"],
+      configuration: "REMOTE_DEBUG_RESOURCE_POLICY", policy: config.resources || null },
     ssh: { hostKeyVerification: "required", fingerprintAlgorithm: "SHA256", maxTrustedHostKeys: 4, configured: Boolean(config.ssh?.hostKeyFingerprints?.length) },
     commands: {
       allowedExecutables: [...SECURITY_POLICY.allowedExecutables],

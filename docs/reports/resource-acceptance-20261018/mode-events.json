@@ -1,0 +1,75 @@
+[
+  {
+    "at": "2026-10-18T08:21:46.990Z",
+    "status": 200,
+    "taskId": "e0945d77-2962-4f63-a2d3-f259fcc4b377",
+    "mode": "manual_max",
+    "modeRevision": 2
+  },
+  {
+    "at": "2026-10-18T08:22:35.763Z",
+    "status": 200,
+    "taskId": "e0945d77-2962-4f63-a2d3-f259fcc4b377",
+    "mode": "auto",
+    "modeRevision": 3
+  },
+  {
+    "at": "2026-10-18T08:23:15.663Z",
+    "status": 200,
+    "taskId": "9cded3d3-f54d-4e5c-9227-1a86ba0c6f90",
+    "mode": "manual_max",
+    "modeRevision": 2
+  },
+  {
+    "at": "2026-10-18T08:24:01.944Z",
+    "status": 200,
+    "taskId": "e0945d77-2962-4f63-a2d3-f259fcc4b377",
+    "mode": "manual_max",
+    "modeRevision": 4
+  },
+  {
+    "at": "2026-10-18T08:24:01.962Z",
+    "status": 409,
+    "error": {
+      "code": "TASK_REVISION_CONFLICT",
+      "message": "任务模式已变化，请刷新后重试",
+      "layer": "manager",
+      "retriable": false
+    }
+  },
+  {
+    "at": "2026-10-18T08:24:32.896Z",
+    "status": 200,
+    "taskId": "e0945d77-2962-4f63-a2d3-f259fcc4b377",
+    "mode": "auto",
+    "modeRevision": 5
+  },
+  {
+    "at": "2026-10-18T08:25:27.075Z",
+    "status": 200,
+    "taskId": "9cded3d3-f54d-4e5c-9227-1a86ba0c6f90",
+    "mode": "manual_max",
+    "modeRevision": 4
+  },
+  {
+    "at": "2026-10-18T08:26:04.544Z",
+    "status": 200,
+    "taskId": "650eec82-89c8-461f-9ed6-272ead2a3807",
+    "mode": "auto",
+    "modeRevision": 2
+  },
+  {
+    "at": "2026-10-18T08:26:49.672Z",
+    "status": 200,
+    "taskId": "35ead64d-f7f0-4f76-ab02-d7ac146944b5",
+    "mode": "manual_max",
+    "modeRevision": 2
+  },
+  {
+    "at": "2026-10-18T08:27:07.738Z",
+    "status": 200,
+    "taskId": "e0945d77-2962-4f63-a2d3-f259fcc4b377",
+    "mode": "manual_max",
+    "modeRevision": 6
+  }
+]

@@ -1,0 +1,151 @@
+{
+  "failure": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "paused",
+    "mode": "rollback",
+    "desiredState": "pause",
+    "createdAt": "2026-10-18T08:19:59.519Z",
+    "updatedAt": "2026-10-18T08:27:58.427Z",
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "rollbackExpiresAt": "2026-10-19T08:20:59.106Z",
+    "operationCount": 128,
+    "unitCount": 128,
+    "batchCount": 128,
+    "nextBatch": 12,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": 11,
+    "committedBatchCount": 12,
+    "rolledBackBatchCount": 0,
+    "activeBatchIndexes": [],
+    "activePhase": null,
+    "queuedBatchCount": 0,
+    "committed": {
+      "matched": 12,
+      "modified": 12,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "pauseReason": "MONGODB_BULK_LEASE_LOST",
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 8647,
+      "connectionGeneration": 1
+    },
+    "durationMs": 8699,
+    "operationId": "aa7ea321-5b35-4b90-8b52-9c6af8a9ec55",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "resume": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "status": "rolling_back",
+    "desiredState": "running",
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "batchCount": 128,
+    "mode": "rollback",
+    "timing": {
+      "queueMs": 1592,
+      "connectMs": 1,
+      "validationMs": 0,
+      "executionMs": 2551,
+      "connectionGeneration": 1
+    },
+    "leaseId": "4584d3840a95476e573a54abf1e576d10d5973ef08d8d39c1b48d91c4c7838c7",
+    "effectiveConcurrency": 2,
+    "accepted": true,
+    "background": true,
+    "durationMs": 8573,
+    "operationId": "b124db87-eb0a-4be7-987f-038e0ae9c0fe",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  },
+  "afterResume": {
+    "ok": true,
+    "instanceId": "test-server",
+    "jobId": "rda-rp-20261018-01a14e14-bulk",
+    "database": "yennefer",
+    "receiptStorage": {
+      "database": "remote_debug_agent",
+      "collection": "__remote_debug_bulk_receipts",
+      "scope": "15615e428630b421ca3cf373295675a22d4f0cf3a1c32198ff499a117f711884"
+    },
+    "status": "rolling_back",
+    "mode": "rollback",
+    "desiredState": "running",
+    "createdAt": "2026-10-18T08:19:59.519Z",
+    "updatedAt": "2026-10-18T08:29:01.505Z",
+    "planHash": "a294220ca82e2de57b8638cd1c699f066e3acc200b9f611affe31444162590d4",
+    "rollbackExpiresAt": "2026-10-19T08:20:59.106Z",
+    "operationCount": 128,
+    "unitCount": 128,
+    "batchCount": 128,
+    "nextBatch": 12,
+    "nextVerifyBatch": 0,
+    "nextRollbackBatch": 11,
+    "committedBatchCount": 12,
+    "rolledBackBatchCount": 0,
+    "activeBatchIndexes": [
+      11
+    ],
+    "activePhase": "rollback",
+    "queuedBatchCount": 11,
+    "committed": {
+      "matched": 12,
+      "modified": 12,
+      "inserted": 0,
+      "unchanged": 0
+    },
+    "verifiedBatchCount": 0,
+    "differences": [],
+    "differenceOffset": 0,
+    "differenceLimit": 1,
+    "differenceCount": 0,
+    "hasMoreDifferences": false,
+    "changedFields": [
+      "remark"
+    ],
+    "effectiveConcurrency": 2,
+    "timing": {
+      "queueMs": 0,
+      "connectMs": 0,
+      "validationMs": 0,
+      "executionMs": 3853,
+      "connectionGeneration": 1
+    },
+    "durationMs": 3906,
+    "operationId": "32c12f64-6a40-4bde-bf92-ebc090d65c60",
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0
+    }
+  }
+}

@@ -52,10 +52,15 @@ const access = {
   executionUser: fields("user db"), environment: json, managerPrivileges: json, executorPrivileges: json,
   existing: { ...fields("manager profile executorGranted"), roles: json },
 };
-const logResources = fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs");
-const logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete"), resources: logResources };
+const logResources = { ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
+  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason") };
+const fileReceipt = { ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
+  source: fields("size modifyTime changeTime inode device"), error,
+  warnings: [fields("code message memberPath lineNumber")] };
+const logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
 const logJob = {
-  ...logProgress, ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction"),
+  ...logProgress, ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
+  resourceTaskId: scalar, evidenceLimits: fields("count bytes"), fileResults: [fileReceipt], scopeControls: fields("dateFrom dateTo stopAfterFile"),
   progress: logProgress, resources: logResources, error,
   limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
   records: [fields("text file memberPath lineNumber timestamp level route method truncated")],

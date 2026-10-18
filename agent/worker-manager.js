@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isPortInRange } from "./instance-registry.js";
 import { MemoryStore } from "./memory-store.js";
+import { RemoteResourceManager } from "./remote-resource-manager.js";
 import {
   API_VERSION,
   operationError,
@@ -193,6 +194,8 @@ export class WorkerManager {
     this.restorePromise = null;
     this.restoreSnapshotWritePromise = Promise.resolve();
     this.runtime = new Map();
+    this.resourceManager = options.resourceManager || new RemoteResourceManager({ policy: options.resourcePolicy,
+      instance: (id) => this.registry.getInternal(id) });
     this.portOwners = new Map();
     const monitorEveryMs = Math.max(1000, Math.floor(this.managerConfig().healthIntervalMs || 15_000));
     this.monitorTimer = setInterval(() => {
@@ -724,11 +727,13 @@ export class WorkerManager {
     child.stderr?.resume();
 
     child.on("message", (message) => {
+      if (runtime.child !== child) return;
       this.handleWorkerMessage(id, message).catch((error) => {
         this.markUnhealthy(id, error);
       });
     });
     child.once("exit", (code, signal) => {
+      if (runtime.child !== child) return;
       this.handleWorkerExit(id, code, signal);
     });
 
@@ -833,6 +838,22 @@ export class WorkerManager {
     if (!runtime || !message) {
       return;
     }
+    if (typeof message.type === "string" && message.type.startsWith("resource_")) {
+      if (!this.resourceManager) return;
+      if (message.type === "resource_hello") {
+        if (runtime.resourceEpoch && runtime.resourceEpoch !== message.epoch) return;
+        runtime.resourceEpoch = message.epoch;
+        this.resourceManager.attach(id, message.epoch, (frame) => {
+          if (runtime.child?.connected !== false) runtime.child?.send(frame, () => {});
+        });
+      } else if (runtime.resourceEpoch === message.epoch && message.type === "resource_task") this.resourceManager.report(id, message.epoch, message.task);
+      else if (runtime.resourceEpoch === message.epoch && message.type === "resource_sample") this.resourceManager.sample(id, message.epoch, message.sample);
+      else if (runtime.resourceEpoch === message.epoch && message.type === "resource_sync") {
+        this.resourceManager.rebalance();
+        runtime.child?.send({ type: "resource_sync_ack", epoch: message.epoch, requestId: message.requestId }, () => {});
+      }
+      return;
+    }
 
     if (message.type === "health") {
       runtime.lastHeartbeatAt = nowIso();
@@ -926,6 +947,7 @@ export class WorkerManager {
     if (!runtime) {
       return;
     }
+    this.resourceManager?.detach(id, runtime.resourceEpoch);
 
     const lastPort = runtime.workerPort;
     this.releasePort(lastPort);
@@ -1241,5 +1263,6 @@ export class WorkerManager {
     }
     clearInterval(this.monitorTimer);
     await Promise.all([...this.runtime.keys()].map((id) => this.stopInstance(id, reason)));
+    this.resourceManager.close();
   }
 }
