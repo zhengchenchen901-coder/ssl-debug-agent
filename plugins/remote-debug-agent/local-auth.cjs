@@ -3,7 +3,6 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { execFileSync } = require("child_process");
 
 function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
   const error = new Error(message);
@@ -15,38 +14,6 @@ function resolveAuthFile(dataDir, env = process.env) {
   return path.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path.join(".runtime", "http-auth.json"));
 }
 
-const aclScript = `
-$ErrorActionPreference = 'Stop'
-$target = $env:RDA_AUTH_ACL_TARGET
-$item = Get-Item -LiteralPath $target -Force
-if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'Reparse point rejected' }
-$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User
-if ($env:RDA_AUTH_ACL_ACTION -eq 'protect') {
-  if ($item.PSIsContainer) {
-    $acl = New-Object Security.AccessControl.DirectorySecurity
-    $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
-  } else {
-    $acl = New-Object Security.AccessControl.FileSecurity
-    $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'Allow')
-  }
-  $acl.SetOwner($sid)
-  $acl.SetAccessRuleProtection($true, $false)
-  $acl.AddAccessRule($rule)
-  Set-Acl -LiteralPath $target -AclObject $acl
-}
-$actual = Get-Acl -LiteralPath $target
-if (-not $actual.AreAccessRulesProtected -or $actual.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value) { throw 'Unsafe owner or inheritance' }
-$rules = $actual.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])
-$full = $false
-foreach ($rule in $rules) {
-  if ($rule.AccessControlType -eq 'Allow') {
-    if ($rule.IdentityReference.Value -ne $sid.Value) { throw 'Other principal can access credential' }
-    if (($rule.FileSystemRights -band [Security.AccessControl.FileSystemRights]::FullControl) -eq [Security.AccessControl.FileSystemRights]::FullControl) { $full = $true }
-  }
-}
-if (-not $full) { throw 'Owner lacks access' }
-`;
-
 function protectOrCheck(target, directory, protect) {
   const stat = fs.lstatSync(target);
   if (stat.isSymbolicLink() || (directory ? !stat.isDirectory() : !stat.isFile())) {
@@ -54,10 +21,7 @@ function protectOrCheck(target, directory, protect) {
   }
   if (process.platform === "win32") {
     try {
-      execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", aclScript], {
-        env: { ...process.env, RDA_AUTH_ACL_TARGET: target, RDA_AUTH_ACL_ACTION: protect ? "protect" : "check" },
-        stdio: "pipe", windowsHide: true, timeout: 15_000,
-      });
+      require("./windows-storage.cjs").protectOrCheckWindows(target, protect);
     } catch {
       throw authError("could not establish or verify owner-only authentication storage ACL");
     }

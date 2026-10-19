@@ -6,6 +6,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import localAuth from "../plugins/remote-debug-agent/local-auth.cjs";
 import { manualError } from "./manual-auth.js";
+import { prepareWindowsOwner, verifyWindowsOwner } from "./manual-windows-owner.js";
 
 const execute = promisify(execFile);
 const moduleDirectory = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +25,7 @@ export class ManualOwnerVerification {
   status() {
     const supported = ["darwin", "win32"].includes(this.platform);
     return { supported, method: this.platform === "darwin" ? "macos-local-authentication" : this.platform === "win32" ? "windows-credentials" : "unavailable",
-      message: supported ? "注册时会弹出系统身份验证窗口；电脑密码不会提交到网页。" : "此平台暂未接入本机身份验证，暂不能注册管理员。" };
+      message: this.platform === "win32" ? "注册时会弹出 Windows 系统身份验证窗口，请使用当前 Windows 账户的登录密码（不是 PIN）；电脑密码不会提交到网页。" : supported ? "注册时会弹出系统身份验证窗口；电脑密码不会提交到网页。" : "此平台暂未接入本机身份验证，暂不能注册管理员。" };
   }
 
   async macArchitecture() {
@@ -93,6 +94,14 @@ export class ManualOwnerVerification {
   }
 
   async prepareOnce() {
+    if (this.platform === "win32") {
+      const controller = new AbortController();
+      this.controller = controller;
+      try {
+        await prepareWindowsOwner(this.execute, this.nativeDirectory, controller.signal);
+        return { ...this.status(), prepared: true };
+      } finally { if (this.controller === controller) this.controller = null; }
+    }
     if (this.platform !== "darwin") return { ...this.status(), prepared: true };
     const controller = new AbortController();
     this.controller = controller;
@@ -118,12 +127,10 @@ export class ManualOwnerVerification {
       if (this.platform === "darwin") {
         result = await this.executeMac(await this.macHelper(), [nonce], { timeout: 120_000, maxBuffer: 4096, signal: controller.signal });
       } else {
-        const windowsRoot = process.env.SystemRoot || "C:\\Windows";
-        result = await this.execute(path.join(windowsRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
-          ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", path.join(this.nativeDirectory, "verify-owner.ps1"), "-Nonce", nonce],
-          { timeout: 120_000, maxBuffer: 4096, windowsHide: true, signal: controller.signal });
+        result = await verifyWindowsOwner(this.execute, this.nativeDirectory, nonce, controller.signal);
       }
     } catch (error) {
+      if (this.platform === "win32") throw error;
       if (/^OWNER_(HELPER_|COMPILER_)/.test(error.code || "")) throw error;
       throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过或已取消。", 403);
     } finally { if (this.controller === controller) this.controller = null; }

@@ -2,6 +2,12 @@
 
 ## Manual administrator workbench: 2.4.0
 
+Windows 注册前会实际检查原生认证组件和交互式桌面是否可用。Windows
+返回的受保护凭据在原生组件内解包，并按本地账户、域账户或 UPN 格式登录；
+验证后的用户 SID 必须与插件当前用户一致。取消、凭据解析失败、登录被拒绝和
+账户不匹配会显示不同提示及适用的 Windows 错误码，不输出系统密码或原始诊断。
+macOS 保留现有 LocalAuthentication 流程。
+
 Dashboard 在“新建实例”旁新增“注册管理员”，实例行新增“手动操作”。先解锁现有本地面板，再注册独立的插件管理员账号（密码至少 12 个字符）。注册需要系统身份验证；已有管理员时还需已有管理员账号和密码授权。忘记密码可在注册窗口选择“通过本机身份验证重置”，完成后撤销该账号的全部旧人工会话。
 
 点击“手动操作”后，在独立本地端口的新窗口输入管理员账号和密码，即可连接交互式 SSH 终端。浏览器若拦截弹窗，需允许本地 dashboard 打开窗口。工作台包含连接预览、操作面板和可交互终端，支持窗口尺寸变化、Ctrl+C、清屏、断开和手动重连。自动 Worker 停止时仍可使用人工终端；禁用或删除实例则不能使用。实例编辑会撤销旧人工会话。
@@ -537,6 +543,18 @@ codex plugin marketplace upgrade <marketplace-name>
 ```
 
 ## Troubleshooting Plugin Loading
+
+Startup checks identify the host OS and exercise private directory/file permissions
+using disposable probes. Windows uses a separate ACL adapter through the system
+Windows PowerShell executable and .NET owner/DACL APIs, without loading
+PowerShell.Security or requesting audit/SACL privileges. macOS and Linux retain
+the existing owner checks and POSIX directory/file modes (`0700`/`0600`). Failed
+permission probes are shown in the environment report before MCP starts; the
+checks do not modify existing credentials or weaken permission requirements.
+
+Bundled assets use LF line endings on both platforms so a Windows checkout does
+not invalidate artifact hashes generated on macOS. Compatibility CI runs on both
+Windows and macOS; platform-specific tests still require their native runner.
 
 If Codex Desktop says the `remote_debug_*` tools are unavailable, check the
 loading path in three separate layers:

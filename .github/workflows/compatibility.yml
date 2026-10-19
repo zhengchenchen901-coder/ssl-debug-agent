@@ -5,8 +5,12 @@ on:
   pull_request:
 
 jobs:
-  windows-node-22:
-    runs-on: windows-latest
+  platform-node-22:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 

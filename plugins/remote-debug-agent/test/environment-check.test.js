@@ -40,6 +40,9 @@ test("preflight enforces the packaged range without changing the default runtime
   environment.saveReport(dataDir, report);
   const repaired = environment.collectReport(pluginRoot, env, { nodeVersion: "22.23.3" });
   assert.equal(repaired.status, "checked");
+  assert.match(repaired.checks.find((c) => c.id === "platform").actual, new RegExp(process.platform));
+  assert.equal(repaired.checks.find((c) => c.id === "private-storage").status, "pass");
+  assert.ok(!(await fs.readdir(path.join(dataDir, ".runtime"))).some((name) => name.startsWith(".permissions-probe-")));
   assert.equal(repaired.failures.length, 1);
   assert.equal(repaired.failures[0].checks[0].status, "fail");
   assert.equal(environment.compatibleNode("22.17.9", report.nodeRequirement), false);
@@ -171,7 +174,7 @@ async function verifyHandshake(t, executable = process.execPath, extraEnv = {}) 
   child.stderr.on("data", (chunk) => { stderr += chunk; });
   const results = [];
   await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("handshake timeout: " + stderr)), 5000);
+    const timer = setTimeout(() => reject(new Error("handshake timeout: " + stderr)), process.platform === "win32" ? 20000 : 5000);
     child.once("error", reject);
     child.stdout.on("data", (chunk) => {
       buffer += chunk;

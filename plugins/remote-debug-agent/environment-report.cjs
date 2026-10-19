@@ -4,6 +4,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
+const localAuth = require("./local-auth.cjs");
 
 function dataDirectory(env) {
   return path.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT ||
@@ -85,6 +86,10 @@ function collectReport(pluginRoot, env, options) {
     checks.push({ id: id, label: label, actual: actual, required: required, status: status,
       remedy: status === "fail" || status === "warn" ? remedy : "" });
   }
+  const storageBackend = process.platform === "win32" ? "Windows ACL" :
+    process.platform === "darwin" ? "macOS POSIX" : "POSIX";
+  check("platform", "系统权限适配", process.platform + " / " + storageBackend,
+    "Windows 使用当前用户专用 ACL；macOS/Linux 使用原有 0700/0600 权限", "pass", "");
   check("node", "插件启动使用的 Node.js", version + "（" + (options.execPath || process.execPath) + "）",
     requirement, compatibleNode(version, requirement) ? "pass" : "fail",
     "安装满足版本范围的 Node.js，或通过 REMOTE_DEBUG_NODE_PATH 指定已有版本；启动入口会自动查找 PATH/NVM，无需改变其他项目的默认版本。");
@@ -131,6 +136,28 @@ function collectReport(pluginRoot, env, options) {
     check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
   } catch (_) {
     check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "fail", "为当前用户提供目录写入权限，或设置 REMOTE_DEBUG_DATA_DIR 到可写目录。");
+  }
+  // Exercise the selected OS backend on disposable files, never on existing credentials.
+  if (checks.some(function (item) { return item.id === "storage" && item.status === "pass"; })) {
+    let probeDir;
+    try {
+      probeDir = fs.mkdtempSync(path.join(dataDir, ".runtime", ".permissions-probe-"));
+      const file = path.join(probeDir, "probe");
+      fs.writeFileSync(file, "", { mode: 0o600 });
+      localAuth.protectOrCheck(probeDir, true, true);
+      localAuth.protectOrCheck(file, false, true);
+      localAuth.protectOrCheck(probeDir, true, false);
+      localAuth.protectOrCheck(file, false, false);
+      check("private-storage", "本地认证存储权限", storageBackend + "：目录和文件验证通过",
+        "可设置并验证仅当前用户可访问的目录和文件", "pass", "");
+    } catch (error) {
+      check("private-storage", "本地认证存储权限", storageBackend + "：" + (error.code || "PERMISSION_CHECK_FAILED"),
+        "可设置并验证仅当前用户可访问的目录和文件", "fail",
+        process.platform === "win32" ? "检查 Windows PowerShell 是否可用，以及当前用户对数据目录的所有权和 ACL 修改权限。" :
+          "检查数据目录是否属于当前用户，以及文件系统是否支持 0700/0600 权限。");
+    } finally {
+      if (probeDir) { try { fs.rmSync(probeDir, { recursive: true, force: true }); } catch (_) { /* retain the diagnostic result */ } }
+    }
   }
   const previous = readReport(dataDir);
   const history = previous && Array.isArray(previous.failures) ? previous.failures.slice(-9) : [];

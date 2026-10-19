@@ -115,12 +115,15 @@ function createJsonLineMessageReader(child) {
 }
 
 function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir)) {
+  // Fixtures keep one immutable credential; avoid blocking the HTTP event loop
+  // with repeated native Windows ACL checks during deadline-sensitive requests.
+  const authToken = localAuth.ensureAuthToken(authFile);
   const drafts = new Map();
   const leaseRequests = [];
   const forwardedRequests = [];
   const server = http.createServer((request, response) => {
-    if (request.url === "/health") { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion: 2, authProof: localAuth.healthProof(localAuth.readAuthToken(authFile), request.headers["x-remote-debug-challenge"], `http://${request.headers.host}`) })); return; }
-    assert.equal(request.headers.authorization, `Bearer ${localAuth.readAuthToken(authFile)}`);
+    if (request.url === "/health") { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion: 2, authProof: localAuth.healthProof(authToken, request.headers["x-remote-debug-challenge"], `http://${request.headers.host}`) })); return; }
+    assert.equal(request.headers.authorization, `Bearer ${authToken}`);
     if (request.method === "GET" && request.url === "/status") {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({
@@ -2094,7 +2097,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "output-guard.js", "output-contracts.js", "output-preview.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2146,7 +2149,7 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "output-guard.js", "output-contracts.js", "output-preview.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(

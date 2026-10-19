@@ -91,6 +91,17 @@ test("cancelled native verification cannot create an account and unknown request
   await assert.rejects(workbench.register({ username: "admin", password: PASSWORD, verified: true }), { code: "MANUAL_REQUEST_INVALID" });
 });
 
+test("a Windows logon rejection is actionable and never creates an administrator", async (t) => {
+  const ownerVerification = new ManualOwnerVerification("unused", { platform: "win32", execute: async (_command, args) => {
+    throw Object.assign(new Error("private native diagnostic"), { code: 1,
+      stdout: JSON.stringify({ verified: false, nonce: args.at(-1), reason: "logon-error", nativeError: 1326 }) });
+  } });
+  const { workbench } = await fixture(t, { ownerVerification });
+  await assert.rejects(workbench.register({ username: "admin", password: PASSWORD }),
+    (error) => error.code === "OWNER_WINDOWS_LOGON_FAILED" && error.message.includes("1326") && !error.message.includes("private native diagnostic"));
+  assert.equal(workbench.store.read().length, 0);
+});
+
 test("native password recovery revokes old sessions and replaces the stored password", async (t) => {
   const { workbench, ownerChecks } = await fixture(t);
   await workbench.store.register("admin", PASSWORD);

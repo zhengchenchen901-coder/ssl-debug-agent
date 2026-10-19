@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "pluginVersion": "2.4.0+codex.20261016",
-  "runtimeId": "2.4.0:d24e23ebc7578b297f304f55ecc4921dfc64da6ccc2153c5e0ab273db70b8d59",
+  "pluginVersion": "2.4.0+codex.20261019.2",
+  "runtimeId": "2.4.0:b1dbd2939ee6ecab201c9ecefcb7316a6d76375083f545198e7811005a267264",
   "node": ">=22.18 <23",
   "server": "server.cjs",
   "worker": "worker-entry.cjs",
   "hashes": {
-    "server.cjs": "3b22142bfec8f1c838baea530d357837784a5f648c2568c84195ef951a3a675b",
-    "worker-entry.cjs": "9b3c0628848fe1df1788895ef23e129b11fb461bbcdb944f42d300588819c31b",
+    "server.cjs": "361ac8d1eeea3bf7caca2662ae85c694d6ad53f972865972fc1d2aa10bd7c483",
+    "worker-entry.cjs": "0fb88027bb538570641ee5558e298ba7c1b090e2fd26371ba69cf9c48f43b13a",
     "public/admin-registration.js": "b24f91e152e7217780070775c1471c805f21d13972a532d9739d41630097d840",
     "public/dashboard.css": "d6e45a2b72320ce2e63f32e994b46a094640e95e6f76b18704195370760cc47f",
     "public/dashboard.html": "dd593da14f40ab9a0e3303021011782c39a2e311834da04138ff40b619a8dd10",
@@ -24,7 +24,7 @@
     "public/vendor/LICENSE-xterm.txt": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
     "public/vendor/xterm.css": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
     "public/vendor/xterm.js": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
-    "native/verify-owner.ps1": "0a3542da9139c3869b0cbd71eb59a5eea37e9e63745ec523a301cb3bcc73eceb",
+    "native/verify-owner.ps1": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
     "native/verify-owner.swift": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab"
   }
 }

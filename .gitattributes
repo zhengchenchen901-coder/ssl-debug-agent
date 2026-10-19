@@ -1,0 +1,4 @@
+# Bundled artifact hashes must be identical on macOS and Windows.
+/agent/public/** text eol=lf
+/agent/native/** text eol=lf
+/plugins/remote-debug-agent/runtime/agent/** text eol=lf
