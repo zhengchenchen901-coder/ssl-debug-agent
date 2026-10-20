@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+ok 1 - real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 152.113292
+  type: 'test'
+  ...
+# Subtest: real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+ok 2 - real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 131.690125
+  type: 'test'
+  ...
+# Subtest: business field policy distinguishes identifier words from BSON tags, flags and index definitions
+ok 3 - business field policy distinguishes identifier words from BSON tags, flags and index definitions
+  ---
+  duration_ms: 0.568417
+  type: 'test'
+  ...
+# Subtest: typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+ok 4 - typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+  ---
+  duration_ms: 5.552708
+  type: 'test'
+  ...
+# Subtest: aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+ok 5 - aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+  ---
+  duration_ms: 0.671125
+  type: 'test'
+  ...
+# Subtest: references cannot cross processes, instances, endpoints, databases or changed target profiles
+ok 6 - references cannot cross processes, instances, endpoints, databases or changed target profiles
+  ---
+  duration_ms: 0.393458
+  type: 'test'
+  ...
+# Subtest: known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+ok 7 - known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+  ---
+  duration_ms: 0.89375
+  type: 'test'
+  ...
+# Subtest: index definitions, plugin identifiers, plan hashes and counts retain their contracts
+ok 8 - index definitions, plugin identifiers, plan hashes and counts retain their contracts
+  ---
+  duration_ms: 0.219208
+  type: 'test'
+  ...
+# Subtest: privacy capacity fails closed and leaves existing references valid
+ok 9 - privacy capacity fails closed and leaves existing references valid
+  ---
+  duration_ms: 0.977625
+  type: 'test'
+  ...
+# Subtest: business substrings never alter import/job IDs or database metadata
+ok 10 - business substrings never alter import/job IDs or database metadata
+  ---
+  duration_ms: 0.624542
+  type: 'test'
+  ...
+# Subtest: aggregation aliases and derived identifier values remain private while counts remain numeric
+ok 11 - aggregation aliases and derived identifier values remain private while counts remain numeric
+  ---
+  duration_ms: 0.555959
+  type: 'test'
+  ...
+# Subtest: historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+ok 12 - historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+  ---
+  duration_ms: 14.903875
+  type: 'test'
+  ...
+# Subtest: local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+ok 13 - local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+  ---
+  duration_ms: 385.824333
+  type: 'test'
+  ...
+# Subtest: real MCP json-line output guards success, errors, files, logs and documents
+ok 14 - real MCP json-line output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 164.548083
+  type: 'test'
+  ...
+# Subtest: real MCP content-length output guards success, errors, files, logs and documents
+ok 15 - real MCP content-length output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 150.406667
+  type: 'test'
+  ...
+# Subtest: malformed JSON cannot expose parser input through stderr
+ok 16 - malformed JSON cannot expose parser input through stderr
+  ---
+  duration_ms: 45.163333
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 17 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 4.23725
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 18 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 0.3065
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 19 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 0.259666
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 20 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 1.24825
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 21 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 0.304834
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 22 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.345875
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 23 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 0.806375
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 24 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 0.160292
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 25 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 0.354708
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 26 - each registered tool must have an output contract
+  ---
+  duration_ms: 3.79875
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 27 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 0.592834
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 28 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 29.935083
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 29 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.157
+  type: 'test'
+  ...
+# Subtest: service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+ok 30 - service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+  ---
+  duration_ms: 0.381208
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 455.956292

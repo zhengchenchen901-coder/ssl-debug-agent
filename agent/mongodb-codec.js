@@ -158,14 +158,42 @@ function __fallbackEncode(value) {
 function __decode(value) {
   if (value === undefined) return value;
   if (__bson && __bson.EJSON && typeof __bson.EJSON.parse === "function") {
-    return __bson.EJSON.parse(JSON.stringify(value));
+    // Native EJSON defaults to relaxed mode, which rounds large Long values.
+    // Preserve explicitly tagged BSON while keeping ordinary JSON numbers as
+    // ordinary numbers (strict EJSON otherwise promotes those to Int32/Double).
+    var wire = JSON.stringify(__preserveNativeBson(value, true));
+    return __restoreJsonNumbers(JSON.parse(wire), __bson.EJSON.parse(wire, { relaxed: false }));
   }
   return __fallbackDecode(value);
 }
 
+function __restoreJsonNumbers(wire, decoded) {
+  if (typeof wire === "number") return wire;
+  if (Array.isArray(wire)) return wire.map(function (item, index) { return __restoreJsonNumbers(item, decoded[index]); });
+  if (!wire || typeof wire !== "object") return decoded;
+  if (Object.keys(wire).some(function (key) { return /^\$(oid|date|numberLong|numberInt|numberDouble|numberDecimal|binary|timestamp|regularExpression|minKey|maxKey|undefined|symbol|code|dbPointer)$/.test(key); })) return decoded;
+  var result = {};
+  Object.keys(wire).forEach(function (key) {
+    Object.defineProperty(result, key, { value: __restoreJsonNumbers(wire[key], decoded[key]), enumerable: true, writable: true, configurable: true });
+  });
+  return result;
+}
+
+function __preserveNativeBson(value, canonicalDates) {
+  if (Array.isArray(value)) return value.map(function (item) { return __preserveNativeBson(item, canonicalDates); });
+  if (!value || typeof value !== "object") return value;
+  if (value._bsontype || canonicalDates && (Buffer.isBuffer(value) || Object.prototype.toString.call(value) === "[object Date]" || Object.prototype.toString.call(value) === "[object RegExp]")) return JSON.parse(__bson.EJSON.stringify(value, { relaxed: false }));
+  if (Buffer.isBuffer(value) || Object.prototype.toString.call(value) === "[object Date]" || Object.prototype.toString.call(value) === "[object RegExp]") return value;
+  var result = {};
+  Object.keys(value).forEach(function (key) {
+    Object.defineProperty(result, key, { value: __preserveNativeBson(value[key], canonicalDates), enumerable: true, writable: true, configurable: true });
+  });
+  return result;
+}
+
 function __encode(value) {
   if (__bson && __bson.EJSON && typeof __bson.EJSON.stringify === "function") {
-    return JSON.parse(__bson.EJSON.stringify(value));
+    return JSON.parse(__bson.EJSON.stringify(__preserveNativeBson(value)));
   }
   // Walk BSON values before JSON.stringify calls their toJSON methods.
   return JSON.parse(JSON.stringify(__fallbackEncode(value)));

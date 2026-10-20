@@ -107,3 +107,31 @@ test("codec continues to use native EJSON when available", () => {
   assert.equal(encode(decode({ value: 3 })).value, 3);
   assert.deepEqual(calls, ["parse", "stringify"]);
 });
+
+test("native codec preserves explicit Long precision and already decoded BSON without promoting ordinary JSON numbers", () => {
+  class Long {
+    constructor(value) { this.value = value; this._bsontype = "Long"; }
+    toString() { return this.value; }
+  }
+  const ejson = {
+    parse(text, options) {
+      assert.equal(options.relaxed, false);
+      return JSON.parse(text, (_key, value) => {
+        if (value?.$numberLong) return new Long(value.$numberLong);
+        if (typeof value === "number") return new Int32(value);
+        return value;
+      });
+    },
+    stringify(value, options) {
+      return JSON.stringify(value, (_key, child) => child instanceof Long
+        ? options?.relaxed === false ? { $numberLong: child.value } : Number(child.value) : child);
+    },
+  };
+  const { decode, encode } = codec({ EJSON: ejson });
+  const wire = { id: { $numberLong: "9007199254740993" }, count: 2, nested: [3] };
+  const decoded = decode(wire);
+  assert.equal(decoded.id.toString(), "9007199254740993"); assert.equal(decoded.count, 2); assert.equal(decoded.nested[0], 3);
+  assert.deepEqual(JSON.parse(JSON.stringify(encode(decoded))), wire);
+  const twice = decode(decoded);
+  assert.equal(twice.id.toString(), "9007199254740993"); assert.equal(twice.count, 2);
+});

@@ -8,6 +8,7 @@ import environmentReport from "./environment-report.cjs";
 import diagnosticDashboard from "./diagnostic-dashboard.cjs";
 import localAuth from "./local-auth.cjs";
 import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard.js";
+import { createBusinessPrivacy } from "./business-privacy.js";
 import { createOutputPreviewPublisher, outputPreviewMetadata } from "./output-preview.js";
 import {
   migrateLegacyData,
@@ -49,7 +50,8 @@ const DEFAULT_ALLOWED_PATHS = ["/var/log", "/etc/nginx", "/home/app", "/root/.pm
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const outputGuard = createOutputGuard();
+const businessPrivacy = createBusinessPrivacy();
+const outputGuard = createOutputGuard({ businessPrivacy });
 for (const [key, value] of Object.entries(process.env)) {
   if (isSensitiveKey(key)) outputGuard.remember(value);
 }
@@ -58,7 +60,7 @@ function safeDiagnostic(...values) {
   try {
     const diagnostic = values.map((value) => value instanceof Error
       ? { code: value.code, message: value.message } : value);
-    console.error(JSON.stringify(outputGuard.sanitize(diagnostic).value));
+    console.error(JSON.stringify(businessPrivacy.scrubKnown(outputGuard.sanitize(diagnostic).value)));
   } catch { console.error("OUTPUT_GUARD_BLOCKED"); }
 }
 
@@ -1248,6 +1250,10 @@ tools.push({
   } },
 });
 
+for (const tool of tools) {
+  if (tool.name.startsWith("remote_debug_mongodb_")) tool.description += " Business ID/key values in results are opaque rda_ref_v1_ references. Reuse the complete reference in structured business-value arguments; the local wrapper restores its original BSON/EJSON type before validation. References are scoped to this MCP process and target database; never edit them, put them inside $oid, interpolate them into text/shell, or calculate chunkHash from them (omit chunkHash and use the agent's returned hash). After MCP restart, query again for fresh references.";
+}
+
 function validateLogJobArguments(name, args) {
   const schema = tools.find((tool) => tool.name === name).inputSchema;
   const invalid = (field) => { throw Object.assign(new Error(`invalid or unknown log task parameter: ${field}`), { code: "INVALID_LOG_JOB", statusCode: 400 }); };
@@ -1562,7 +1568,7 @@ function agentSettingsWithPort(settings, port) {
 }
 
 async function appendPluginLog(settings, event) {
-  try { event = outputGuard.sanitize(event).value; }
+  try { event = businessPrivacy.scrubKnown(outputGuard.sanitize(event).value); }
   catch { event = { code: "OUTPUT_GUARD_BLOCKED", message: GUARD_BLOCKED.error.message }; }
   try {
     const report = environmentReport.recordRuntimeEvent(settings.dataDir, { agentUrl: settings.agentUrl, ...event },
@@ -2938,6 +2944,23 @@ async function requestAgent(pathName, payload, options = {}) {
   }
   const method = options.method || "POST";
   if (operation) operation.previewSettings = settings;
+  if (pathName.startsWith("/mongodb/") && operation?.toolName.startsWith("remote_debug_mongodb_")) {
+    // Pin omitted defaults before resolving references. Refresh target identity on
+    // every call so changing an instance/profile cannot redirect an old alias.
+    const catalog = await fetchAgentJson(settings, "/api/instances", { method: "GET", signal: operation.signal,
+      timeoutMs: Math.max(1, Math.min(5000, operation.deadlineAt - Date.now())) });
+    const instanceId = payload?.instanceId || catalog.parsed.defaultInstanceId;
+    const instance = catalog.parsed.instances?.find((item) => item.id === instanceId);
+    if (!catalog.response.ok || !instance) throw Object.assign(new Error("Cannot establish the MongoDB business privacy target."), { code: "BUSINESS_PRIVACY_SCOPE_REQUIRED" });
+    const database = payload?.database || instance.mongodb?.database;
+    const scopeForDatabase = (name) => businessPrivacy.targetScope(new URL(settings.agentUrl).origin, instance, name);
+    const scope = database ? scopeForDatabase(database) : undefined;
+    payload = businessPrivacy.resolve(operation.toolName, payload, scope);
+    const acceptsDatabase = tools.find((tool) => tool.name === operation.toolName)?.inputSchema.properties.database;
+    payload = { ...payload, instanceId, ...(database && acceptsDatabase ? { database } : {}) };
+    operation.privacyContext = { scope, scopeForDatabase, queryOperation: payload.operation, queryPipeline: payload.pipeline };
+    businessPrivacy.learnInput(operation.toolName, outputGuard.sanitize(payload).value, scope);
+  }
   let response;
   let parsed;
 
@@ -3049,6 +3072,9 @@ async function getAgent(pathName, operation) {
 }
 
 async function callTool(name, args, operation) {
+  // References have meaning only in explicitly supported structured arguments.
+  // In particular, never interpolate one into shell commands or file paths.
+  if (!name?.startsWith("remote_debug_mongodb_")) businessPrivacy.resolve(name, args);
   if (["remote_debug_list_service_profiles", "remote_debug_set_service_profile", "remote_debug_inspect_service", "remote_debug_start_service"].includes(name)) {
     const allowed = name === "remote_debug_list_service_profiles" ? [] : name === "remote_debug_set_service_profile" ? ["instanceId", "serviceId", "profile", "remove"] : ["instanceId", "serviceId", "profileHash", "timeoutMs", ...(name === "remote_debug_start_service" ? ["confirmation"] : [])];
     if (Object.keys(args).some(key => !allowed.includes(key)) || (allowed.length && (typeof args.instanceId !== "string" || !args.instanceId))) throw Object.assign(new Error("Explicit instance and structured service arguments required"), { code: "SERVICE_INPUT_INVALID" });
@@ -3444,7 +3470,7 @@ async function handleRequest(message) {
         durationMs: Date.now() - startedAt,
         ok: true,
       });
-      sendResult(id, outputGuard.toolResult(toolName, result), { previewContext: operation });
+      sendResult(id, outputGuard.toolResult(toolName, result, false, operation.privacyContext), { previewContext: operation });
     } catch (error) {
       await logMcpLifecycle("MCP_TOOLS_CALL_FAILED", "MCP tools/call failed.", {
         requestId: id,

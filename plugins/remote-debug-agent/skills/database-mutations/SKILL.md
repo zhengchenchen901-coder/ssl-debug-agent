@@ -5,6 +5,15 @@ description: Safely plan, confirm, commit, inspect, and roll back bounded MongoD
 
 # Database Mutations
 
+Business ID/key values can be opaque `rda_ref_v1_…` references. Reuse a complete
+reference directly in structured filters, documents, updates or bulk expected
+values; the local wrapper restores its BSON/EJSON type before validation. Never
+wrap references in `$oid`, concatenate them into text/shell, or calculate an
+optional `chunkHash` from them: omit it and use the Agent's returned hash.
+References are local to this MCP process and target database. After MCP restart,
+query again for fresh references. Mutation/job IDs, hashes and confirmations
+retain their existing meanings and authorization requirements.
+
 Use the structured MongoDB mutation tools for database changes. Do not use
 `remote_debug_run_command`, `mongosh --eval`, arbitrary JavaScript, or a raw
 MongoDB URI for writes.

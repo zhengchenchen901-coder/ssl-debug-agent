@@ -123,6 +123,53 @@ access or data previously placed in a chat. Unknown opaque secrets and arbitrary
 encodings cannot be guaranteed detectable. Phone/email/identity-number masking
 and per-collection business privacy policies are not part of this first layer.
 
+### MongoDB business references (phase 1)
+
+Structured MongoDB results now replace business identifier/key values with random
+`rda_ref_v1_…` references after credential redaction. This covers query documents,
+mutation `affectedIds`, bulk `sampleIds` and verification differences. Fields named
+`id`, `_id`, `ids`, `key`, `keys`, UUID/UID/GUID aliases, and camel/snake/kebab ID/key
+suffixes are recognized recursively; ordinary fields such as `valid` and `monkey`
+and BSON tags such as `$minKey` are preserved. Aggregation projections and derived
+expressions retain identifier provenance when fields are renamed. Credentials
+still become `[REDACTED]` and never become executable references.
+
+Reuse the **whole reference** as a structured value in query filters/pipelines,
+document writes, transactions, imports, and bulk operations/expected values. Do
+not put it inside `$oid`/`$numberLong`, interpolate it into shell/text, or compute a
+chunk hash over references. Omit optional `chunkHash` to let the Agent calculate
+the hash of the restored, normalized contents. Index definitions, plugin control
+IDs, database/collection names, counts, confirmation phrases and execution hashes
+retain their existing contracts; control identifiers should not embed business
+data. Existing allowlists, prepare/commit checks and confirmations still apply.
+
+References preserve the wire BSON/EJSON value and type. Native BSON encoding now
+preserves Long precision and supports decoding an already decoded ObjectId, while
+ordinary JSON counts remain numbers. Each MongoDB call refreshes the Manager's
+instance catalog, pins omitted instance/database defaults, and binds references
+to the MCP process, Agent origin, instance target/profile and database. Unknown,
+wrong-target, embedded or misplaced references fail before the business request.
+There is no tool to export the reference map.
+
+Phase 1 stores mappings **only in the MCP process memory**, bounded to 100,000
+entries/32 MiB; reaching the limit blocks new protected output rather than evicting
+live references. `outputGuard.businessPrivacy` reports the context ID and
+`storage: process_memory`. Restarting MCP invalidates old references: re-query to
+obtain new ones. Disk encryption, cross-process sharing and reboot recovery are
+phase 2. Known identifier strings of at least six characters are also scrubbed
+from flexible text/errors/diagnostics, including URL/JSON escaping; this is not a
+general guarantee for free-text logs, arbitrary encodings or unknown field names.
+New business values should enter through the local workbench/import path if they
+must never appear in the chat.
+
+Local isolated verification is in
+`plugins/remote-debug-agent/test/business-privacy*.test.js`. The opt-in real MongoDB
+test `test/business-privacy-mongo.e2e.mjs` requires `RDA_PRIVACY_TEST_URI` pointing to
+a **dedicated disposable loopback replica set** with `directConnection=true`, plus
+`RDA_PRIVACY_TEST_DRIVER` pointing to a local driver. It creates unique databases,
+runs the real Agent helpers through a fresh local MCP process, and removes its
+databases and temporary files afterward. It never loads saved remote instances.
+
 ### Dashboard MCP output preview
 
 Each instance row has an **输出预览** button. It opens a live list of the

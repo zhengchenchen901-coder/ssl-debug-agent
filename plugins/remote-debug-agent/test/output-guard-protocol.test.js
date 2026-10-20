@@ -23,6 +23,8 @@ async function fixture(t, framing) {
     assert.equal(req.headers.authorization, `Bearer ${token}`);
     if (req.url === "/status") return res.end(JSON.stringify({ ok: true, name: "remote-debug-agent", mode: "manager", apiVersion: 2,
       capabilities: { persistentSsh: true, operationDeadlines: true, cancellation: true, structuredHealth: true, localAuthentication: true } }));
+    if (req.url === "/api/instances") return res.end(JSON.stringify({ ok: true, defaultInstanceId: "fixture",
+      instances: [{ id: "fixture", host: "127.0.0.1", mongodb: { database: "fixture" } }] }));
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const input = JSON.parse(Buffer.concat(chunks).toString() || "{}");

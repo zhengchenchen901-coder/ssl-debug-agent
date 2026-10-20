@@ -5,6 +5,14 @@ description: Inspect MongoDB data deployed with a configured Remote Debug Agent 
 
 # MongoDB Inspection
 
+MongoDB business ID/key values may be returned as `rda_ref_v1_…` references.
+Reuse each complete reference directly as a structured value; do not wrap it in
+`$oid`/`$numberLong`, interpolate it into shell/text, or attempt to decode it.
+The local wrapper restores its BSON/EJSON type before validation. References are
+bound to this MCP process and target database; after MCP restarts, query again.
+Plugin control IDs and hashes keep their ordinary meaning. For bulk input that
+contains references, omit optional `chunkHash` and use the Agent's returned hash.
+
 Before querying, confirm `remote_debug_mongodb_query` is callable in this chat.
 If it is missing, follow [environment-check](../environment-check/SKILL.md) to
 show the plugin's environment report in the existing dashboard. Resume the

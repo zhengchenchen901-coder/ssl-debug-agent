@@ -25,7 +25,7 @@ function decodeEscapes(value) {
     (_, unicode, hex, literal) => literal || String.fromCharCode(parseInt(unicode || hex, 16)));
 }
 
-export function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1000 } = {}) {
+export function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1000, businessPrivacy } = {}) {
   // Process-local, never serialized. Retain rotated credentials until this MCP exits.
   const secrets = new Set();
   let unavailable = false;
@@ -172,11 +172,18 @@ export function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, 
     const checked = walk(safe, shape, ctx);
     return { value: checked, stats: { policyVersion: 1, replacements: ctx.replacements, omittedFields: ctx.omittedFields } };
   }
-  function toolResult(name, payload, isError = false) {
+  function toolResult(name, payload, isError = false, privacyContext) {
     try {
       const shape = isError ? ERROR_CONTRACT : Object.hasOwn(OUTPUT_CONTRACTS, name) ? OUTPUT_CONTRACTS[name] : undefined;
       if (!shape || !payload || typeof payload !== "object" || Array.isArray(payload)) blocked();
       const safe = sanitize(payload, shape);
+      if (businessPrivacy) {
+        const protectedBusiness = businessPrivacy.protect(name, safe.value, privacyContext);
+        safe.value = protectedBusiness.value;
+        safe.stats.replacements += protectedBusiness.replacements;
+        safe.value = businessPrivacy.scrubKnown(safe.value, shape);
+        safe.stats.businessPrivacy = businessPrivacy.metadata();
+      }
       safe.value.outputGuard = safe.stats;
       return { ...(isError ? { isError: true } : {}), content: [{ type: "text", text: JSON.stringify(safe.value, null, 2) }] };
     } catch {
@@ -187,7 +194,7 @@ export function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, 
     try {
       // The transport always checks the final envelope, before writing any bytes.
       // Field names in trusted tools/list schemas are definitions, not credentials.
-      const safeId = sanitize(message.id).value;
+      const safeId = businessPrivacy ? businessPrivacy.scrubKnown(sanitize(message.id).value) : sanitize(message.id).value;
       if (safeId !== message.id) blocked();
       const result = message.result;
       if (result && (Object.hasOwn(result, "content") || Object.hasOwn(result, "structuredContent"))) {
@@ -205,7 +212,8 @@ export function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, 
         if (keys.length && !initialized && !resources) blocked();
       }
       if (staticResult && (!Array.isArray(message.result?.tools) || Object.keys(message.result).length !== 1)) blocked();
-      const safe = staticResult ? message : sanitize(message).value;
+      let safe = staticResult ? message : sanitize(message).value;
+      if (businessPrivacy && !staticResult && !result?.content) safe = businessPrivacy.scrubKnown(safe);
       const body = JSON.stringify(safe);
       if (Buffer.byteLength(body) > maxBytes) blocked();
       return Buffer.from(body, "utf8");

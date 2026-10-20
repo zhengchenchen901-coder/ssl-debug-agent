@@ -157,6 +157,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
               id: "default",
               name: "default",
               host: "prod.example.com",
+              mongodb: { database: "yennefer" },
               runtime: { status: "running", workerPort: 4400, pid: 1234 },
             },
           ],
@@ -2146,7 +2147,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2198,7 +2199,7 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
