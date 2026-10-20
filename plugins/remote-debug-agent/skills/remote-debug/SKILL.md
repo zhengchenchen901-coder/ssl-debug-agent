@@ -1,6 +1,6 @@
 ---
 name: remote-debug
-description: Safely debug a remote Linux server through the Remote Debug Agent MCP tools. Use when the user asks about unreachable ports, nginx failures, process state, disk or memory pressure, or logs on the configured remote server.
+description: Safely debug a remote Linux server through the Remote Debug Agent MCP tools. Use when the user asks about unreachable ports, nginx failures, process state, disk or memory pressure, logs, or starting an instance backend service (for example “启动 test-server 的 be”).
 ---
 
 # Remote Debugging Skill
@@ -136,6 +136,54 @@ member as `memberPath`. Supported decoding is plain, gzip, and tar-gzip. Files
 marked as unsupported compression or binary in a listing must be reported as
 unreadable rather than opened through another command path.
 
+## Instance backend service startup / 按实例启动后端服务
+
+For “启动 test-server 的 be”, use the structured service capability when exposed:
+
+1. Read capabilities and instance listings, select the exact requested instance.
+   Never test or operate another instance as a substitute. Call
+   `remote_debug_list_service_profiles` and select only that instance's saved
+   service (`be`, if configured) with its current `profileHash`.
+2. If no verified profile exists, stop the startup path and explain that this
+   instance needs its own configuration. Never infer paths, ports, Node versions
+   or env files from test-server, default, another host, or historical memory.
+   `remote_debug_set_service_profile` saves local configuration only, and requires
+   user authorization to configure it. Save only verified paths and non-secret
+   allowlisted environment values. Never read/copy env-file contents. Refresh
+   that instance's Agent worker after saving, then list the current hash again.
+3. For a status/check request use `remote_debug_inspect_service` with explicit
+   `instanceId`, `serviceId`, `profileHash`. It does not start applications.
+4. A user's explicit request to start that exact instance/service authorizes
+   `remote_debug_start_service` with those identities and
+   `confirmation: "启动服务"`. Do not ask for a second “使用命令” confirmation or
+   generate a generic command draft for this fixed operation. A request merely
+   to inspect or configure does not authorize startup. The constant confirmation
+   declares existing user intent; it cannot create authorization by itself.
+5. Report success only for `status: "healthy"`; a CLI exitCode=0, `ok:true`,
+   `started`, or transient PM2 online is insufficient. Inspect `verified`,
+   `persisted`, `unchanged` and `persistenceWarning`. The Agent verifies actual
+   interpreter/fork mode/cwd/whitelisted environment, PID-owned TCP listeners,
+   startup completion and process stability before optional save.
+6. On blocked/partial/unknown results, report phase, structured error code and
+   attempted/started processes. Do not retry automatically after timeout or
+   transport loss. Inspect the same instance first. Never delete/restart a
+   healthy or uncertain process, clear locks, switch releases, or kill port
+   owners under startup authorization. Such recovery requires separate explicit
+   authorization and the existing reviewed maintenance workflow.
+
+This is a separate capability enforced by enabled, saved, target-bound profiles,
+current hashes, authenticated HTTP/SSH, fixed execFile templates and audit. It
+accepts no commands, path/env overrides, ecosystem files, cluster mode or arbitrary
+arguments. It does not relax diagnostic command policy or command-draft review.
+Healthy repeated start is idempotent. Missing configuration fails closed. If the
+structured tools/capability are unavailable, report that the installed plugin must
+be updated; do not bypass the boundary through private HTTP or arbitrary shell.
+
+The repository's `docs/service-start.md` explains setup, result statuses and
+limitations. `docs/examples/test-server-be-service.json` is an explicit verified
+example for test-server only, not an automatic default. Resolve `current` at
+execution time; never pin a historical release directory or PM2 ID.
+
 ## Tool Visibility
 
 Before inspecting the remote server, confirm that the current Codex tool table
@@ -233,8 +281,9 @@ service, or writing a helper script.
   draft.
 
 - Never request arbitrary shell execution.
-- For non-read-only commands, use approved-command drafts and require the user's
-  explicit `使用命令`; the automatic reviewer is limited to commands that pass
+- For non-read-only generic commands, use approved-command drafts and require the user's
+  explicit `使用命令`. The structured service-start capability above has its own
+  explicit startup authorization and fixed policy; the automatic reviewer is limited to commands that pass
   the existing read-only policy.
 - When the command-draft reviewer is available, always use it immediately after
   draft creation. The reviewer may auto-execute only when the local policy and

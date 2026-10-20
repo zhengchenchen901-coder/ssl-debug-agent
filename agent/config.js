@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { normalizeServiceProfiles } from "./service-profiles.js";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import posixPath from "node:path/posix";
@@ -328,6 +329,11 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
       readyTimeout: 10_000,
       hostKeyFingerprints: normalizeHostKeyFingerprints(mergedEnv.REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS),
     },
+    instanceId: mergedEnv.REMOTE_DEBUG_INSTANCE_ID || "standalone",
+    serviceProfiles: normalizeServiceProfiles(mergedEnv.REMOTE_DEBUG_SERVICE_PROFILES || {}, {
+      id: mergedEnv.REMOTE_DEBUG_INSTANCE_ID || "standalone", host: mergedEnv.REMOTE_DEBUG_HOST || "",
+      username: mergedEnv.REMOTE_DEBUG_USER || "", port: sshPort, allowedPaths: allowedPathsForSourceRoots(sourceRoots),
+    }),
     mongodb: parseMongoConfig(mergedEnv.REMOTE_DEBUG_MONGODB_CONFIG),
     resources: normalizeResourcePolicy(mergedEnv.REMOTE_DEBUG_RESOURCE_POLICY),
     logs: { projects: normalizeLogProjects(mergedEnv.REMOTE_DEBUG_LOG_PROJECTS, allowedPathsForSourceRoots(sourceRoots), sourceRoots),
@@ -454,6 +460,8 @@ function fingerprintConfig(config) {
     },
     security,
     logs: config.logs,
+    instanceId: config.instanceId,
+    serviceProfiles: config.serviceProfiles,
     resources: config.resources,
     mongodb: config.mongodb
       ? {

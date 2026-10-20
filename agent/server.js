@@ -1,4 +1,6 @@
 import express from "express";
+import { runService, validateServiceRequest } from "./services.js";
+import { assertServiceId, serviceProfileHash, selectServiceProfile, serviceError, serviceAuditFields, serviceTargetHash } from "./service-profiles.js";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
 import { ManualWorkbench, installManualManagerRoutes } from "./manual-workbench.js";
 import { inspectLocalSandbox } from "./local-sandbox.js";
@@ -536,6 +538,24 @@ export function createApp(options = {}) {
   app.get("/events", (request, response) => {
     activity.stream(request, response);
   });
+
+  for (const action of ["inspect", "start"]) {
+    const route = `/services/${action}`;
+    app.post(route, async (request, response) => {
+      const operation = createRequestOperation(request, response, route, config);
+      const { _serviceTargetHash, ...input } = request.body || {};
+      try {
+        if (_serviceTargetHash && _serviceTargetHash !== serviceTargetHash(config.ssh, config.security.allowedPaths)) throw serviceError("SERVICE_TARGET_STALE", "Refresh this instance worker after SSH trust or approved path changes");
+        const result = await runService(input, { action, config, operation, runSSH });
+        await audit(config, { tool: `service-${action}`, instanceId: config.instanceId, ...serviceAuditFields(input), status: result.status, phase: result.phase, started: result.started,
+          attempted: result.attempted, persisted: result.persisted, ok: result.status === "healthy", errorCode: result.error?.code });
+        response.json({ ok: true, instanceId: config.instanceId, ...result, operationId: operation.operationId });
+      } catch (error) {
+        await audit(config, { tool: `service-${action}`, instanceId: config.instanceId, ...serviceAuditFields(input), ok: false, errorCode: error.code });
+        response.status(errorStatus(error)).json(errorPayload(error));
+      }
+    });
+  }
 
   app.post("/run", async (request, response) => {
     const startedAt = performance.now();
@@ -2117,6 +2137,34 @@ export function createManagerApp(options = {}) {
     });
   }));
 
+  app.get("/api/service-profiles", managerAsync(async (_request, response) => {
+    response.json({ ok: true, instances: registry.list().map((instance) => ({ instanceId: instance.id,
+      profiles: Object.entries(instance.serviceProfiles || {}).map(([serviceId, profile]) => ({
+        serviceId, profileHash: serviceProfileHash(profile), profile,
+      })),
+    })) });
+  }));
+  app.post("/api/service-profiles", managerAsync(async (request, response) => {
+    const input = request.body || {};
+    try {
+      if (input.remove !== undefined && typeof input.remove !== "boolean" || input.remove === true && input.profile !== undefined) throw serviceError("SERVICE_INPUT_INVALID");
+      if (Object.keys(input).some((key) => !["instanceId", "serviceId", "profile", "remove", "operationId", "timeoutMs", "deadlineAt"].includes(key)) || typeof input.instanceId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(input.instanceId)) throw serviceError("SERVICE_INPUT_INVALID");
+      const id = registry.resolveId(input.instanceId);
+      assertServiceId(input.serviceId);
+      const profiles = { ...(registry.getInternal(id).serviceProfiles || {}) };
+      if (input.remove === true) delete profiles[input.serviceId];
+      else profiles[input.serviceId] = input.profile;
+      const updated = registry.update(id, { serviceProfiles: profiles });
+      await audit(config, { tool: "service-profile-set", instanceId: id, serviceId: input.serviceId, ok: true });
+      response.json({ ok: true, instanceId: id, serviceId: input.serviceId,
+        profileHash: updated.serviceProfiles[input.serviceId] ? serviceProfileHash(updated.serviceProfiles[input.serviceId]) : null,
+        workerRefreshRequired: true });
+    } catch (error) {
+      await audit(config, { tool: "service-profile-set", ...serviceAuditFields(input), ok: false, errorCode: error.code });
+      throw error;
+    }
+  }));
+
   app.get("/api/log-projects", managerAsync(async (_request, response) => {
     response.json({ ok: true, instances: registry.list().map((instance) => ({
       instanceId: instance.id,
@@ -2582,6 +2630,14 @@ export function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
+      if (pathName.startsWith("/services/")) {
+        if (!instanceId) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
+        const instance = registry.getInternal(resolvedId);
+        if (!instance.enabled) throw serviceError("INSTANCE_DISABLED");
+        validateServiceRequest(bodyWithoutInstanceId(request.body), pathName.split("/").pop());
+        selectServiceProfile(instance.serviceProfiles, payload);
+        payload._serviceTargetHash = serviceTargetHash(instance, allowedPathsForSourceRoots(instance.sourceRoots));
+      }
       if (pathName === "/logs/query" || pathName === "/logs/jobs/start") {
         const instance = registry.getInternal(resolvedId);
         payload._logProjects = normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots);
@@ -2615,6 +2671,9 @@ export function createManagerApp(options = {}) {
       response.json(memory ? { ...result, memory } : result);
     } catch (error) {
       error.operationId ||= requestOperation.operationId;
+      if (pathName.startsWith("/services/")) await audit(config, { tool: pathName.slice(1).replace("/", "-"),
+        instanceId: typeof instanceId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(instanceId) ? instanceId : undefined,
+        ...serviceAuditFields(request.body), operationId: requestOperation.operationId, ok: false, errorCode: error.code });
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs: durationSince(startedAt),
@@ -2629,6 +2688,7 @@ export function createManagerApp(options = {}) {
     }
   }
 
+  for (const action of ["inspect", "start"]) app.post(`/services/${action}`, (request, response) => proxyToInstance(`/services/${action}`, request, response));
   app.post("/run", (request, response) => proxyToInstance("/run", request, response));
   for (const route of ["status", "export", "prepare-cleanup", "cleanup"]) {
     app.post(`/sandbox/${route}`, (request, response) => proxyToInstance(`/sandbox/${route}`, request, response));

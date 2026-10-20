@@ -13,7 +13,8 @@
     "test:manual-browser": "node test/manual-browser.e2e.mjs",
     "test:preview-browser": "node test/output-preview-browser.e2e.mjs",
     "test:tasks-browser": "node test/tasks-browser.e2e.mjs",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "test:services-browser": "node test/services-browser.e2e.mjs"
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",

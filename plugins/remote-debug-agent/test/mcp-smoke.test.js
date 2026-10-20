@@ -141,7 +141,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
       }));
       return;
     }
-    if (request.method === "GET" && request.url === "/api/log-projects") {
+    if (request.method === "GET" && ["/api/log-projects", "/api/service-profiles"].includes(request.url)) {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({ ok: true, instances: [] }));
       return;
@@ -223,6 +223,12 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
         return;
       }
 
+      if (["/api/service-profiles", "/services/inspect", "/services/start"].includes(request.url)) {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ ok: true, serviceId: parsed.serviceId, profileHash: parsed.profileHash, status: "healthy", persisted: false,
+          verified: [{ name: "YenneferBE_Next_A", pid: 123, ports: [9999,3333], environmentVerified: true }], stdout: "SHOULD_BE_OMITTED" }));
+        return;
+      }
       if (request.url === "/logs/list") {
         response.writeHead(200, { "Content-Type": "application/json" });
         response.end(JSON.stringify({
@@ -1028,7 +1034,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
       "memberPrefix", "memberOffset", "area", "jobId",
       "jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "batchScanBytes",
-      "stopAfterFile", "fileLimit",
+      "stopAfterFile", "fileLimit", "profile",
     ].includes(propertyName)) {
       continue;
     }
@@ -1052,6 +1058,10 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.deepEqual(
       list.result.tools.map((tool) => tool.name),
       [
+        "remote_debug_list_service_profiles",
+        "remote_debug_set_service_profile",
+        "remote_debug_inspect_service",
+        "remote_debug_start_service",
         "remote_debug_prepare_sandbox_access",
         "remote_debug_configure_sandbox_access",
         "remote_debug_get_sandbox",
@@ -1419,6 +1429,45 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     child.kill();
     await close(agentStub);
   }
+});
+
+test("service tools preserve startup evidence and reject arbitrary arguments before forwarding", async () => {
+  const agentStub = await startAgentStub();
+  const child = startMcp({ REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${agentStub.address().port}` });
+  const readMessage = createMessageReader(child);
+  try {
+    child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: 1, method: "initialize" })); await readMessage();
+    let id = 2;
+    for (const [name, args, route] of [
+      ["remote_debug_list_service_profiles", {}, "/api/service-profiles"],
+      ["remote_debug_set_service_profile", { instanceId: "test-server", serviceId: "be", remove: true }, "/api/service-profiles"],
+      ["remote_debug_inspect_service", { instanceId: "test-server", serviceId: "be", profileHash: "a".repeat(64) }, "/services/inspect"],
+      ["remote_debug_start_service", { instanceId: "test-server", serviceId: "be", profileHash: "a".repeat(64), confirmation: "启动服务" }, "/services/start"],
+    ]) {
+      child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: id++, method: "tools/call", params: { name, arguments: args } }));
+      const message = await readMessage();
+      const result = JSON.parse(message.result.content[0].text);
+      assert.equal(result.ok, true); assert.equal(result.stdout, undefined);
+      if (route.startsWith("/services/")) {
+        assert.equal(result.status, "healthy"); assert.equal(result.profileHash, args.profileHash);
+        assert.equal(result.verified[0].environmentVerified, true);
+        assert.deepEqual(result.verified[0].ports, [9999,3333]);
+      }
+      if (Object.keys(args).length) {
+        const forwarded = agentStub.forwardedRequests.at(-1);
+        assert.equal(forwarded.route, route); assert.equal(forwarded.body.instanceId, "test-server");
+        if (route === "/services/start") assert.equal(forwarded.body.confirmation, "启动服务");
+        if (route.startsWith("/services/")) assert.ok(forwarded.body.deadlineAt - Date.now() > 105000);
+      }
+    }
+    for (const args of [{ serviceId: "be" }, { instanceId: "test-server", serviceId: "be", cmd: "id" }, { instanceId: "test-server", serviceId: "be", env: { NODE_OPTIONS: "bad" } }]) {
+      const countServices = () => agentStub.forwardedRequests.filter(item => item.route.startsWith("/services/")).length;
+      const before = countServices();
+      child.stdin.write(encodeMessage({ jsonrpc: "2.0", id: id++, method: "tools/call", params: { name: "remote_debug_start_service", arguments: args } }));
+      const message = await readMessage(); assert.equal(message.result.isError, true);
+      assert.equal(countServices(), before);
+    }
+  } finally { child.kill(); await close(agentStub); }
 });
 
 test("sandbox tools forward only scoped identities and keep local audit access on the Manager", async () => {

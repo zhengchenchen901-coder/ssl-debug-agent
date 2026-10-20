@@ -1327,3 +1327,9 @@ npm test
 The test suites use Node's built-in test runner and mock SSH/SFTP where needed.
 The plugin smoke tests also run the prebuilt runtime from an isolated cache with
 no `node_modules` or `NODE_PATH`.
+
+## 按实例启动后端服务
+
+Remote Debug Agent 支持为每个实例独立保存后端启动配置，通过管理面板「后端服务启动」或 `remote_debug_list_service_profiles` / `remote_debug_start_service` 选择并启动。它只补齐缺失的 PM2 fork 进程，核验实际 Node/PID/端口/环境/启动标记与稳定性，异常状态不会被自动删除或重启。配置缺失不继承其他实例。
+
+详见 [使用、安全边界与结果判定](docs/service-start.md)，以及 [仅绑定 test-server 的 BE 配置示例](docs/examples/test-server-be-service.json)。服务启动能力包含在插件中；示例配置不会自动写入任何实例。

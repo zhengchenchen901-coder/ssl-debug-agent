@@ -10,7 +10,7 @@ const memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summ
 const runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 const instance = {
   ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
-  sourceRoots: json, logProjects: json, approvedCommands: json, commandReview: json,
+  sourceRoots: json, logProjects: json, serviceProfiles: json, approvedCommands: json, commandReview: json,
   mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
   runtime, memory,
   hasPassphrase: "boolean",
@@ -68,6 +68,16 @@ const logJob = {
   warnings: [{ ...warning, ...fields("file memberPath lineNumber") }],
 };
 const contracts = {
+  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
+    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
+    target: fields("host port username"), envFiles: [scalar], processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }],
+  } }] }] },
+  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
+  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map(name => [name, {
+    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
+    started: [scalar], attempted: [scalar], missing: [scalar],
+    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }], error,
+  }])),
   remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
   remote_debug_get_capabilities: { capabilities: json },
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { normalizeServiceProfiles } from "./service-profiles.js";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { loadDotEnv, normalizeSourceRoots, allowedPathsForSourceRoots, normalizeHostKeyFingerprints } from "./config.js";
@@ -361,6 +362,10 @@ function normalizeInstance(input, existing = {}) {
     manualMongo: normalizeManualMongo(input.manualMongo, existing.manualMongo),
     ...(Object.keys(sourceRoots).length > 0 ? { sourceRoots } : {}),
     ...(Object.keys(logProjects).length > 0 ? { logProjects } : {}),
+    serviceProfiles: normalizeServiceProfiles(input.serviceProfiles === undefined ? existing.serviceProfiles : input.serviceProfiles, {
+      id, host, username, port: parsePort(input.port, existing.port || 22, "port"),
+      allowedPaths: allowedPathsForSourceRoots(sourceRoots),
+    }),
     createdAt: existing.createdAt || input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
   };

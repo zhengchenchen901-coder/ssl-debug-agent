@@ -63,6 +63,7 @@ export function normalizeTimeoutMs(value, policy) {
 }
 
 export function operationPolicy(pathName, config = {}) {
+  if (pathName.startsWith("/services/")) return { defaultMs: 110_000, maxMs: 120_000 };
   if (pathName === "/run") {
     return {
       defaultMs: config.security?.defaultTimeoutMs || OPERATION_TIMEOUTS.run.defaultMs,

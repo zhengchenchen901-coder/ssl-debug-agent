@@ -191,3 +191,21 @@ test("known-secret overlaps cannot obscure credential syntax or leak suffixes", 
   assert.doesNotMatch(result.content[0].text, /PEM_BODY|URI_PASSWORD|LONG_SECRET|PREFIX|SUFFIX/);
   assert.equal(payload(result).stdout.includes(REDACTED), true);
 });
+
+test("service output contracts preserve evidence and omit arbitrary environment or PM2 payloads", () => {
+  const guard = createOutputGuard();
+  const result = payload(guard.toolResult("remote_debug_start_service", {
+    ok: true, instanceId: "test-server", serviceId: "be", profileHash: "a".repeat(64), status: "partial", persisted: false,
+    attempted: ["A", "B"], started: ["A"], verified: [{ name: "A", pid: 321, ports: [9999,3333], environmentVerified: true, env: { PASSWORD: "PRIVATE_SERVICE_ENV" } }],
+    error: { code: "SERVICE_PROCESS_EXITED", rawPM2: "PRIVATE_PM2_RESPONSE" }, stdout: "PRIVATE_SERVICE_STDOUT",
+  }));
+  assert.equal(result.serviceId, "be"); assert.equal(result.status, "partial"); assert.equal(result.verified[0].environmentVerified, true);
+  assert.deepEqual(result.verified[0].ports, [9999,3333]); assert.equal(result.error.code, "SERVICE_PROCESS_EXITED");
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_SERVICE_ENV|PRIVATE_PM2_RESPONSE|PRIVATE_SERVICE_STDOUT/);
+  const listed = payload(guard.toolResult("remote_debug_list_service_profiles", { ok: true, instances: [{ instanceId: "test-server", profiles: [{
+    serviceId: "be", profileHash: "a".repeat(64), profile: { cwd: "/home/github/current", envFiles: ["/home/github/backend-secrets.env"],
+      processes: [{ name: "A", ports: [9999], env: { NODE_ENV: "development", PASSWORD: "PRIVATE_CONFIG_SECRET" } }], unexpected: "PRIVATE_UNEXPECTED" },
+  }] }] }));
+  assert.equal(listed.instances[0].profiles[0].profile.envFiles[0], "/home/github/backend-secrets.env");
+  assert.doesNotMatch(JSON.stringify(listed), /PRIVATE_CONFIG_SECRET|PRIVATE_UNEXPECTED/);
+});

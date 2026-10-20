@@ -168,6 +168,8 @@ let activeAgentRecoveryPromise = null;
 const inFlightToolCalls = new Map();
 
 const toolOperationPolicies = {
+  remote_debug_inspect_service: { defaultMs: 110000, maxMs: 120000 },
+  remote_debug_start_service: { defaultMs: 110000, maxMs: 120000 },
   remote_debug_prepare_sandbox_access: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_configure_sandbox_access: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_run_command: { defaultMs: DEFAULT_TIMEOUT_MS, maxMs: MAX_TIMEOUT_MS },
@@ -331,7 +333,37 @@ function timeoutProperty(defaultMs, maxMs) {
   };
 }
 
+const serviceIdProperty = { type: "string", pattern: "^[a-z][a-z0-9_-]{0,31}$" };
+const serviceHashProperty = { type: "string", pattern: "^[a-f0-9]{64}$" };
+const serviceProfileProperty = {
+  type: "object", additionalProperties: false,
+  required: ["instanceId", "target", "enabled", "cwd", "entry", "mode", "interpreter", "nodeVersion", "pm2Path", "pm2Home", "envFiles", "processes", "maxMemoryRestart", "startupMarker", "persist"],
+  properties: {
+    instanceId: instanceIdProperty,
+    target: { type: "object", additionalProperties: false, required: ["host", "port", "username"], properties: { host: { type: "string" }, port: { type: "integer", minimum: 1, maximum: 65535 }, username: { type: "string" } } },
+    enabled: { type: "boolean" }, cwd: { type: "string" }, releaseRoot: { type: "string" }, entry: { type: "string" },
+    mode: { type: "string", enum: ["fork"] }, interpreter: { type: "string" }, nodeVersion: { type: "string", pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    pm2Path: { type: "string", enum: ["/usr/local/bin/pm2", "/usr/bin/pm2"] }, pm2Home: { type: "string" },
+    envFiles: { type: "array", maxItems: 4, items: { type: "string" }, description: "Paths only. Never include env-file contents or secrets." },
+    processes: { type: "array", minItems: 1, maxItems: 8, items: { type: "object", additionalProperties: false, required: ["name", "env", "ports"], properties: {
+      name: { type: "string" }, env: { type: "object", additionalProperties: false, properties: Object.fromEntries(["NODE_ENV", "PORT", "WS_PORT", "CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED", "ORDER_AI_ALLOWED_RESTAURANTS"].map(key => [key, { type: "string" }])) },
+      ports: { type: "array", minItems: 1, maxItems: 8, items: { type: "integer", minimum: 1, maximum: 65535 } },
+    } } },
+    maxMemoryRestart: { type: "string" }, restartDelayMs: { type: "integer", minimum: 1000, maximum: 60000 },
+    stableMs: { type: "integer", minimum: 3000, maximum: 30000 }, startupTimeoutMs: { type: "integer", minimum: 4000, maximum: 90000 },
+    startupMarker: { type: "string", minLength: 1, maxLength: 128 }, persist: { type: "boolean" },
+  },
+};
+
 const tools = [
+  { name: "remote_debug_list_service_profiles", description: "List saved instance-bound backend service startup profiles and their current profileHash. Local configuration only; never contacts remote hosts or infers defaults.", inputSchema: { type: "object", additionalProperties: false, properties: {} } },
+  { name: "remote_debug_set_service_profile", description: "Save or remove one verified local service startup profile for an explicit instance. Use only when the user authorizes configuring service startup. Never copy another instance profile or save secret values. Does not start a remote process. Refresh the selected agent worker after configuration changes.",
+    inputSchema: { type: "object", additionalProperties: false, required: ["instanceId", "serviceId"], properties: { instanceId: instanceIdProperty, serviceId: serviceIdProperty, profile: serviceProfileProperty, remove: { type: "boolean" } } } },
+  ...["inspect", "start"].map(action => ({ name: `remote_debug_${action}_service`,
+    description: action === "start" ? "Start missing backend processes from one enabled saved instance profile after an explicit user start request. Requires current profileHash and 启动服务. Uses fixed PM2 fork templates, actual Node/PID/port/env/startup/stability verification, and conditional save. Healthy processes remain unchanged. No delete/restart, arbitrary command, env override or automatic recovery. Inspect partial/unknown outcomes before retrying." : "Inspect one saved instance service profile: verify release, runtime, same-name process identity, PID-owned ports, non-secret environment, startup marker and stability. Never starts, deletes or restarts an application or PM2 daemon.",
+    inputSchema: { type: "object", additionalProperties: false, required: ["instanceId", "serviceId", "profileHash", ...(action === "start" ? ["confirmation"] : [])], properties: { instanceId: instanceIdProperty, serviceId: serviceIdProperty, profileHash: serviceHashProperty,
+      ...(action === "start" ? { confirmation: { type: "string", enum: ["启动服务"] } } : {}), timeoutMs: timeoutProperty(110000, 120000) } },
+  })),
   ...[
     ["remote_debug_prepare_sandbox_access", "Prepare a fixed sandbox-only MongoDB account/role setup without changing database accounts or connection configuration. Requires an existing administrator credential and enabled instance writes. Inspect the returned roles, config permission change to 0600, scope, expiry and plan hash before asking for approval.", { purpose: { type: "string", maxLength: 2000 } }, []],
     ["remote_debug_configure_sandbox_access", "Apply one explicitly approved sandbox account setup. Creates fixed sandbox roles/user, grants only sandbox execution rights, and writes the latest per-instance password to one protected connection profile. Password resets require verified plugin account ownership. Does not modify business documents or initialize collections. Partial setup requires a new prepare.", { setupId: { type: "string", pattern: "^[a-f0-9-]{36}$" }, planHash: { type: "string", pattern: "^[a-f0-9]{64}$" }, confirmation: { type: "string", enum: ["确认配置沙盒"] } }, ["setupId", "planHash", "confirmation"]],
@@ -1716,6 +1748,10 @@ function toolArgumentSummary(name, args = {}) {
     };
   }
 
+  if (["remote_debug_list_service_profiles", "remote_debug_set_service_profile", "remote_debug_inspect_service", "remote_debug_start_service"].includes(name)) {
+    return { instanceId: args.instanceId, serviceId: args.serviceId, profileHash: args.profileHash };
+  }
+
   if (name === "remote_debug_restart_instance") {
     return {
       instanceId: typeof args.instanceId === "string" ? args.instanceId.slice(0, 128) : undefined,
@@ -3013,6 +3049,13 @@ async function getAgent(pathName, operation) {
 }
 
 async function callTool(name, args, operation) {
+  if (["remote_debug_list_service_profiles", "remote_debug_set_service_profile", "remote_debug_inspect_service", "remote_debug_start_service"].includes(name)) {
+    const allowed = name === "remote_debug_list_service_profiles" ? [] : name === "remote_debug_set_service_profile" ? ["instanceId", "serviceId", "profile", "remove"] : ["instanceId", "serviceId", "profileHash", "timeoutMs", ...(name === "remote_debug_start_service" ? ["confirmation"] : [])];
+    if (Object.keys(args).some(key => !allowed.includes(key)) || (allowed.length && (typeof args.instanceId !== "string" || !args.instanceId))) throw Object.assign(new Error("Explicit instance and structured service arguments required"), { code: "SERVICE_INPUT_INVALID" });
+    if (name === "remote_debug_list_service_profiles") return getAgent("/api/service-profiles", operation);
+    if (name === "remote_debug_set_service_profile") return callAgent("/api/service-profiles", args, operation);
+    return callAgent(`/services/${name === "remote_debug_start_service" ? "start" : "inspect"}`, args, operation);
+  }
   if (name === "remote_debug_list_instances") {
     const result = await getAgent("/api/instances", operation);
     return result;

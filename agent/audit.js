@@ -21,6 +21,13 @@ export function buildAuditEntry(event, now = () => new Date()) {
 
   for (const key of [
     "instanceId",
+    "serviceId",
+    "profileHash",
+    "status",
+    "phase",
+    "started",
+    "attempted",
+    "persisted",
     "draftId",
     "commandHash",
     "commandIndex",

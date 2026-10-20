@@ -163,6 +163,7 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_SOURCE_ROOTS: instance.sourceRoots
       ? JSON.stringify(instance.sourceRoots)
       : "",
+    REMOTE_DEBUG_SERVICE_PROFILES: JSON.stringify(instance.serviceProfiles || {}),
     REMOTE_DEBUG_LOG_PROJECTS: instance.logProjects ? JSON.stringify(instance.logProjects) : "",
     REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS: String(manager.sshNetwork.keepaliveIntervalMs),
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),

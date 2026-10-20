@@ -1,0 +1,65 @@
+{
+  "instanceId": "test-server",
+  "serviceId": "be",
+  "profile": {
+    "instanceId": "test-server",
+    "target": {
+      "host": "8.209.81.113",
+      "port": 22,
+      "username": "root"
+    },
+    "enabled": true,
+    "cwd": "/home/github/OD-Yennefer-BE-next-release/current",
+    "releaseRoot": "/home/github/OD-Yennefer-BE-next-release",
+    "entry": "index.js",
+    "mode": "fork",
+    "interpreter": "/home/github/OD-Yennefer-BE-next-release/shared/node-runtimes/v20.20.2-linux-x64/bin/node",
+    "nodeVersion": "20.20.2",
+    "pm2Path": "/usr/local/bin/pm2",
+    "pm2Home": "/root/.pm2",
+    "envFiles": [
+      "/home/github/OD-Yennefer-BE-next-release/shared/backend-secrets.env",
+      "/home/github/OD-Yennefer-BE-next-release/shared/backend-release.env"
+    ],
+    "processes": [
+      {
+        "name": "YenneferBE_Next_A",
+        "env": {
+          "NODE_ENV": "development",
+          "PORT": "9999",
+          "WS_PORT": "3333",
+          "CRON_PRIMARY": "true",
+          "TRANSLATION_ENABLED": "true",
+          "ORDER_AI_ENABLED": "true",
+          "ORDER_AI_ALLOWED_RESTAURANTS": "*"
+        },
+        "ports": [
+          9999,
+          3333
+        ]
+      },
+      {
+        "name": "YenneferBE_Next_B",
+        "env": {
+          "NODE_ENV": "development",
+          "PORT": "8887",
+          "WS_PORT": "2222",
+          "CRON_PRIMARY": "false",
+          "TRANSLATION_ENABLED": "true",
+          "ORDER_AI_ENABLED": "true",
+          "ORDER_AI_ALLOWED_RESTAURANTS": "*"
+        },
+        "ports": [
+          8887,
+          2222
+        ]
+      }
+    ],
+    "maxMemoryRestart": "2G",
+    "restartDelayMs": 5000,
+    "stableMs": 5000,
+    "startupTimeoutMs": 60000,
+    "startupMarker": "[StartupTiming] DONE application.main",
+    "persist": true
+  }
+}

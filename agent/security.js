@@ -1,3 +1,4 @@
+import { SERVICE_CAPABILITIES } from "./service-profiles.js";
 import posixPath from "node:path/posix";
 import { createHash } from "node:crypto";
 import {
@@ -132,6 +133,7 @@ const SECURITY_POLICY = {
     },
   },
   logs: { ...LOG_CAPABILITIES },
+  services: SERVICE_CAPABILITIES,
   lifecycle: {
     instanceRestart: {
       allowedFrom: ["stopped", "unhealthy"],
@@ -192,6 +194,7 @@ export function securityCapabilities(config = {}) {
     schemaVersion: SECURITY_POLICY.schemaVersion,
     policyVersion: SECURITY_POLICY_VERSION,
     authority: "remote-debug-agent",
+    services: { ...SECURITY_POLICY.services },
     resources: { sharedHostPools: true, taskRegistry: true, dashboardManualMaximum: true,
       manualMaximumTools: false, cooperativeRuntime: true, operatingSystemQuotas: false,
       processCpuAdmissionOnlyTasks: ["diagnostic", "file_read", "mongo_read", "mongo_write", "discovery"], batchBoundaryTasks: ["mongo_bulk"],

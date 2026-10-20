@@ -478,6 +478,7 @@ function resetForm(instance) {
   instanceForm.elements.hostKeyFingerprints.value = (instance?.hostKeyFingerprints || []).join("\n");
   instanceForm.elements.preferredWorkerPort.value = instance?.preferredWorkerPort || "";
   instanceForm.elements.auditLog.value = instance?.auditLog || "";
+  if (instanceForm.elements.serviceProfiles) instanceForm.elements.serviceProfiles.value = JSON.stringify(instance?.serviceProfiles || {}, null, 2);
   if (instanceForm.elements.logProjects) instanceForm.elements.logProjects.value = JSON.stringify(instance?.logProjects || {}, null, 2);
   instanceForm.elements.enabled.checked = instance ? Boolean(instance.enabled) : true;
   instanceForm.elements.approvedCommandsEnabled.checked = Boolean(instance?.approvedCommands?.enabled);
@@ -632,6 +633,7 @@ function formPayload() {
     hostKeyFingerprints: form.hostKeyFingerprints.value.split(/\s+/).filter(Boolean),
     preferredWorkerPort: form.preferredWorkerPort.value,
     auditLog: form.auditLog.value.trim(),
+    ...(form.serviceProfiles?.value.trim() ? { serviceProfiles: JSON.parse(form.serviceProfiles.value) } : {}),
     ...(form.logProjects?.value.trim() ? { logProjects: JSON.parse(form.logProjects.value) } : {}),
     enabled: form.enabled.checked,
     approvedCommands: {
@@ -845,6 +847,41 @@ function openDrawer(instance) {
   drawerBody.replaceChildren(details, createElement("h2", "", "最近事件"), eventList);
   instanceTasksPanel = window.remoteDebugInstanceTasks?.create({ instanceId: instance.id, api, notify: showToast });
   if (instanceTasksPanel) drawerBody.prepend(instanceTasksPanel.element);
+  const servicePanel = createElement("section", "detail-list");
+  servicePanel.append(createElement("h2", "", "后端服务启动"));
+  const serviceSelect = createElement("select");
+  serviceSelect.setAttribute("aria-label", "当前实例服务配置");
+  const serviceIds = Object.keys(instance.serviceProfiles || {});
+  for (const id of serviceIds) { const option = createElement("option", "", id); option.value = id; serviceSelect.append(option); }
+  const serviceOutput = createElement("pre", "sandbox-output", serviceIds.length ? "检查会验证实际进程与端口；启动只补齐缺失进程。异常恢复需要单独授权。" : "当前实例没有已验证的启动配置。请先编辑本实例配置，不会从其他实例复制。");
+  const serviceButtons = createElement("div", "toolbar-actions");
+  for (const [label, action] of [["检查服务", "inspect"], ["启动服务", "start"]]) {
+    const button = createElement("button", "secondary", label);
+    button.type = "button";
+    button.disabled = !serviceIds.length || !state.online || runtime.status !== "running";
+    button.addEventListener("click", async () => {
+      const serviceId = serviceSelect.value;
+      if (action === "start" && !window.confirm(`启动实例 ${instance.id} 的 ${serviceId}？只补齐缺失进程并验证，按配置保存 PM2。`)) return;
+      const all = Array.from(serviceButtons.querySelectorAll("button"));
+      all.forEach(item => { item.disabled = true; });
+      serviceSelect.disabled = true;
+      serviceOutput.textContent = "正在检查配置与实际运行状态…";
+      try {
+        const listed = await api("/api/service-profiles");
+        const selected = listed.instances.find(item => item.instanceId === instance.id)?.profiles.find(item => item.serviceId === serviceId);
+        if (!selected) throw new Error("配置已变更，请重新打开实例详情");
+        const result = await api(`/services/${action}`, { method: "POST", body: JSON.stringify({
+          instanceId: instance.id, serviceId, profileHash: selected.profileHash,
+          ...(action === "start" ? { confirmation: "启动服务" } : {}), timeoutMs: 110000,
+        }) });
+        serviceOutput.textContent = JSON.stringify(result, null, 2);
+      } catch (error) { serviceOutput.textContent = `${error.code || "ERROR"}: ${error.message}`; }
+      finally { all.forEach(item => { item.disabled = false; }); serviceSelect.disabled = false; }
+    });
+    serviceButtons.append(button);
+  }
+  servicePanel.append(serviceSelect, serviceButtons, serviceOutput);
+  drawerBody.append(servicePanel);
   const sandboxPanel = createElement("section", "detail-list");
   sandboxPanel.append(createElement("h2", "", "插件存储沙盒"));
   const jobInput = createElement("input");

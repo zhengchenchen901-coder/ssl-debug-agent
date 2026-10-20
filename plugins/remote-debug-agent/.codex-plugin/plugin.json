@@ -1,6 +1,6 @@
 {
   "name": "remote-debug-agent",
-  "version": "2.4.0+codex.20261019.2",
+  "version": "2.4.0+codex.20261020",
   "description": "Safe remote Linux debugging through a local SSH-backed agent.",
   "author": {
     "name": "Local Developer"
@@ -23,7 +23,7 @@
   "interface": {
     "displayName": "Remote Debug Agent",
     "shortDescription": "Debug Linux servers through a safe local SSH agent",
-    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. It provides categorized, paginated system, Nginx, application, and PM2 log discovery, bounded recent-line reads with substring filtering, and streaming reads from gzip and tar-gzip log archives without remote extraction. It also provides bounded read-only MongoDB queries plus explicitly enabled, allowlisted MongoDB document and index mutation plans with transaction or compensating rollback journals. One-time command drafts remain available for reviewed maintenance commands, while the local agent enforces command allowlists, path boundaries, SSH configuration, compression and archive limits, mutation scopes, BSON/update limits, temporary journal permissions, timeouts, one-time hashes, model-review bounds, and audit logging. Version 2.4.0 adds a separate local administrator workbench with native owner verification, instance-bound human sessions and an interactive SSH terminal. Human SSH access does not grant new permissions to MCP tools.",
+    "longDescription": "Remote Debug Agent lets Codex inspect approved paths and run whitelisted diagnostic commands on a remote Linux server through a local Node agent. It provides categorized, paginated system, Nginx, application, and PM2 log discovery, bounded recent-line reads with substring filtering, and streaming reads from gzip and tar-gzip log archives without remote extraction. It also provides bounded read-only MongoDB queries plus explicitly enabled, allowlisted MongoDB document and index mutation plans with transaction or compensating rollback journals. One-time command drafts remain available for reviewed maintenance commands, while the local agent enforces command allowlists, path boundaries, SSH configuration, compression and archive limits, mutation scopes, BSON/update limits, temporary journal permissions, timeouts, one-time hashes, model-review bounds, and audit logging. Version 2.4.0 adds a separate local administrator workbench with native owner verification, instance-bound human sessions and an interactive SSH terminal. Human SSH access does not grant new permissions to MCP tools. Instance-bound service startup profiles provide fixed PM2 fork startup with actual runtime, PID-owned port, environment, readiness and stability checks; healthy services are idempotent and destructive recovery is separate.",
     "developerName": "Local Developer",
     "category": "Coding",
     "capabilities": [
@@ -41,7 +41,8 @@
       "Inspect app logs under /home/app",
       "Check MongoDB records on test-server",
       "Prepare and roll back a bounded MongoDB change",
-      "Prepare and roll back a resumable MongoDB bulk job"
+      "Prepare and roll back a resumable MongoDB bulk job",
+      "启动 test-server 的 be"
     ],
     "brandColor": "#0F766E",
     "screenshots": []
