@@ -9,7 +9,9 @@ MongoDB business ID/key values may be returned as `rda_ref_v1_…` references.
 Reuse each complete reference directly as a structured value; do not wrap it in
 `$oid`/`$numberLong`, interpolate it into shell/text, or attempt to decode it.
 The local wrapper restores its BSON/EJSON type before validation. References are
-bound to this MCP process and target database; after MCP restarts, query again.
+bound to a protected privacy context and target database. After restart, they
+work only when the host reattaches the same local context file; otherwise query
+again. Do not request or expose context capabilities or encryption keys.
 Plugin control IDs and hashes keep their ordinary meaning. For bulk input that
 contains references, omit optional `chunkHash` and use the Agent's returned hash.
 

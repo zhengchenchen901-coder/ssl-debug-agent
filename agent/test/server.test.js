@@ -1317,3 +1317,20 @@ test("HTTP /run rejects canonical path escape detected before command execution"
     await close(server);
   }
 });
+
+test("MongoDB driver errors expose codes without business values in HTTP, activity or audit", { skip: !depsInstalled }, async (t) => {
+  const { createApp } = await import("../server.js");
+  const { createActivityLog } = await import("../activity.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-mongo-private-errors-"));
+  const config = makeConfig(path.join(dir, "audit.jsonl")), activity = createActivityLog();
+  config.mongodb = { enabled: true, writeEnabled: true, bulkEnabled: true, configPath: "/home/app/config.json", driverPath: "/home/app/node_modules/mongodb", configProfile: "fixture", uriKey: "url", database: "business", allowedDatabases: ["business"], allowedCollections: ["orders"] };
+  const throwPrivate = async () => { throw Object.assign(new Error("PRIVATE_UNSEEN_BUSINESS_VALUE"), { code: "MONGODB_FIXTURE_ERROR", details: { cause: "PRIVATE_UNSEEN_BUSINESS_VALUE" } }); };
+  const server = await listen(createApp({ config, activity, authToken: TEST_AUTH_TOKEN, runMongoQuery: throwPrivate, runMongoMutation: throwPrivate, runMongoBulk: throwPrivate }));
+  t.after(async () => { await close(server); await fsPromises.rm(dir, { recursive: true, force: true }); });
+  for (const [route, body] of [["/mongodb/query", { operation: "find", collection: "orders" }], ["/mongodb/mutations/prepare", {}], ["/mongodb/bulk/job", { jobId: "fixture-job" }]]) {
+    const response = await postJson(server, route, body);
+    assert.equal(response.body.error.code, "MONGODB_FIXTURE_ERROR");
+    assert.doesNotMatch(JSON.stringify(response.body), /PRIVATE_UNSEEN_BUSINESS_VALUE/);
+  }
+  assert.doesNotMatch(JSON.stringify(activity.list()) + await fsPromises.readFile(config.audit.logPath, "utf8"), /PRIVATE_UNSEEN_BUSINESS_VALUE/);
+});

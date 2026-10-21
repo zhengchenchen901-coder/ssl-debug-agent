@@ -1,0 +1,15 @@
+Source root: /Users/zhengchenchen/od-projects/ssl-debug-agent
+Installed cache: /Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020
+Codex plugin: remote-debug-agent@remote-debug-local (enabled)
+MCP server: /Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/launch.cjs
+Bundled runtime: 2.4.0:799ffc56e1eb4ba867c7d9729d9f345d388e58bbb719c5ed17e9092d51f54683
+Config: /var/folders/70/4wqx0chs0xzcxjvs0frf0g2m0000gn/T/rda-phase2-diagnose-auth-i7p8lkz3/config.env
+Data: /var/folders/70/4wqx0chs0xzcxjvs0frf0g2m0000gn/T/rda-phase2-diagnose-auth-i7p8lkz3
+MCP initialize: ok (remote-debug-agent 2.4.0+codex.20261020)
+MCP tools: remote_debug_list_service_profiles, remote_debug_set_service_profile, remote_debug_inspect_service, remote_debug_start_service, remote_debug_prepare_sandbox_access, remote_debug_configure_sandbox_access, remote_debug_get_sandbox, remote_debug_export_sandbox_log, remote_debug_prepare_sandbox_cleanup, remote_debug_cleanup_sandbox, remote_debug_list_instances, remote_debug_get_capabilities, remote_debug_mongodb_query, remote_debug_mongodb_prepare_write, remote_debug_mongodb_prepare_index, remote_debug_mongodb_prepare_transaction, remote_debug_mongodb_prepare_import, remote_debug_mongodb_prepare_bulk_storage, remote_debug_mongodb_prepare_bulk, remote_debug_mongodb_execute_bulk, remote_debug_mongodb_get_bulk_job, remote_debug_mongodb_list_bulk_jobs, remote_debug_mongodb_control_bulk_job, remote_debug_mongodb_rollback_bulk_job, remote_debug_mongodb_execute_mutation, remote_debug_mongodb_rollback_mutation, remote_debug_mongodb_list_mutations, remote_debug_restart_instance, remote_debug_update_memory, remote_debug_run_command, remote_debug_read_file, remote_debug_list_dir, remote_debug_list_logs, remote_debug_list_log_archive_members, remote_debug_read_log, remote_debug_query_logs, remote_debug_list_log_projects, remote_debug_set_log_project, remote_debug_prepare_command_draft, remote_debug_get_command_draft, remote_debug_review_command_draft, remote_debug_execute_command_draft, remote_debug_start_log_query, remote_debug_get_log_query, remote_debug_control_log_query
+Source wrapper self-test: ok
+MCP log: /var/folders/70/4wqx0chs0xzcxjvs0frf0g2m0000gn/T/rda-phase2-diagnose-auth-i7p8lkz3/logs/mcp-error.log
+Installed cache last initialize: 2026-10-21T03:44:58.916Z, pid 99779, path /Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/mcp-server.js, protocol 2025-06-18
+Installed cache last tools/list: 2026-10-21T03:44:58.920Z, pid 99779, path /Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/mcp-server.js, toolCount 45
+HTTP agent: ok (http://127.0.0.1:59215, target unknown)
+Current thread: diagnose verifies the MCP wrapper only; if this Codex thread still cannot see remote_debug_* tools, restart Codex Desktop or open a new thread after reinstalling/re-enabling the plugin.

@@ -1,0 +1,198 @@
+TAP version 13
+# (node:99420) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database
+ok 1 - real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database
+  ---
+  duration_ms: 174.844334
+  type: 'test'
+  ...
+# (node:99421) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+ok 2 - encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+  ---
+  duration_ms: 18.09025
+  type: 'test'
+  ...
+# Subtest: context capability, target database and AAD stop cross-scope resolution and record swapping
+ok 3 - context capability, target database and AAD stop cross-scope resolution and record swapping
+  ---
+  duration_ms: 6.729166
+  type: 'test'
+  ...
+# Subtest: tampered ciphertext, wrong key and missing OS credential fail without exporting data
+ok 4 - tampered ciphertext, wrong key and missing OS credential fail without exporting data
+  ---
+  duration_ms: 6.743709
+  type: 'test'
+  ...
+# Subtest: reverse-index tampering cannot redirect an alias to a different valid ciphertext
+ok 5 - reverse-index tampering cannot redirect an alias to a different valid ciphertext
+  ---
+  duration_ms: 4.514333
+  type: 'test'
+  ...
+# (node:99421) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent MCP clients get one committed reference through the unique HMAC index
+ok 6 - concurrent MCP clients get one committed reference through the unique HMAC index
+  ---
+  duration_ms: 65.263292
+  type: 'test'
+  ...
+# Subtest: mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+ok 7 - mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+  ---
+  duration_ms: 37.746667
+  type: 'test'
+  ...
+# Subtest: intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+ok 8 - intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+  ---
+  duration_ms: 16.538833
+  type: 'test'
+  ...
+# Subtest: reconciliation accepts only the same remote job, immutable plan and matching terminal state
+ok 9 - reconciliation accepts only the same remote job, immutable plan and matching terminal state
+  ---
+  duration_ms: 17.028458
+  type: 'test'
+  ...
+# Subtest: active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+ok 10 - active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+  ---
+  duration_ms: 30.363292
+  type: 'test'
+  ...
+# (node:99421) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: private service validates current instance/profile and refuses arbitrary actions
+ok 11 - private service validates current instance/profile and refuses arbitrary actions
+  ---
+  duration_ms: 38.530959
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL beforeCommit
+ok 12 - SQLite recovers atomically after actual process SIGKILL beforeCommit
+  ---
+  duration_ms: 46.162708
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL afterCommit
+ok 13 - SQLite recovers atomically after actual process SIGKILL afterCommit
+  ---
+  duration_ms: 46.099125
+  type: 'test'
+  ...
+# (node:99421) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: worker queue overload is bounded and returns a redacted busy error
+ok 14 - worker queue overload is bounded and returns a redacted busy error
+  ---
+  duration_ms: 33.975917
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+ok 15 - persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 907.112583
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+ok 16 - persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 860.166125
+  type: 'test'
+  ...
+# (node:99423) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+ok 17 - real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 244.864958
+  type: 'test'
+  ...
+# (node:99423) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+ok 18 - real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 203.859292
+  type: 'test'
+  ...
+# Subtest: business field policy distinguishes identifier words from BSON tags, flags and index definitions
+ok 19 - business field policy distinguishes identifier words from BSON tags, flags and index definitions
+  ---
+  duration_ms: 0.696875
+  type: 'test'
+  ...
+# Subtest: typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+ok 20 - typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+  ---
+  duration_ms: 4.635166
+  type: 'test'
+  ...
+# Subtest: aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+ok 21 - aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+  ---
+  duration_ms: 0.514167
+  type: 'test'
+  ...
+# Subtest: references cannot cross processes, instances, endpoints, databases or changed target profiles
+ok 22 - references cannot cross processes, instances, endpoints, databases or changed target profiles
+  ---
+  duration_ms: 0.409208
+  type: 'test'
+  ...
+# Subtest: known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+ok 23 - known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+  ---
+  duration_ms: 0.675458
+  type: 'test'
+  ...
+# Subtest: index definitions, plugin identifiers, plan hashes and counts retain their contracts
+ok 24 - index definitions, plugin identifiers, plan hashes and counts retain their contracts
+  ---
+  duration_ms: 0.174416
+  type: 'test'
+  ...
+# Subtest: privacy capacity fails closed and leaves existing references valid
+ok 25 - privacy capacity fails closed and leaves existing references valid
+  ---
+  duration_ms: 0.460583
+  type: 'test'
+  ...
+# Subtest: business substrings never alter import/job IDs or database metadata
+ok 26 - business substrings never alter import/job IDs or database metadata
+  ---
+  duration_ms: 0.370708
+  type: 'test'
+  ...
+# Subtest: aggregation aliases and derived identifier values remain private while counts remain numeric
+ok 27 - aggregation aliases and derived identifier values remain private while counts remain numeric
+  ---
+  duration_ms: 0.384083
+  type: 'test'
+  ...
+# Subtest: historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+ok 28 - historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+  ---
+  duration_ms: 16.937459
+  type: 'test'
+  ...
+# Subtest: local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+ok 29 - local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+  ---
+  duration_ms: 426.151791
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1816.128208

@@ -10,9 +10,18 @@ reference directly in structured filters, documents, updates or bulk expected
 values; the local wrapper restores its BSON/EJSON type before validation. Never
 wrap references in `$oid`, concatenate them into text/shell, or calculate an
 optional `chunkHash` from them: omit it and use the Agent's returned hash.
-References are local to this MCP process and target database. After MCP restart,
-query again for fresh references. Mutation/job IDs, hashes and confirmations
-retain their existing meanings and authorization requirements.
+References are bound to a protected local context and target database. The host
+can reattach the same local context file after MCP/Manager/computer restarts;
+otherwise query again. Never request its capability or encryption key in chat.
+Mutation/job IDs, hashes and confirmations retain their existing meanings and
+authorization requirements.
+
+On `BUSINESS_OPERATION_RECONCILIATION_REQUIRED`, inspect the existing mutation
+journal or bulk job with the same instance and immutable plan hash. Do not
+create a replacement job or change arguments to bypass the uncertain intent.
+The local store can recognize an exact matching remote terminal result without
+replaying the write. For an interrupted bulk job, inspect its lease/recovery
+state before using the existing resume flow within the original approval.
 
 Use the structured MongoDB mutation tools for database changes. Do not use
 `remote_debug_run_command`, `mongosh --eval`, arbitrary JavaScript, or a raw

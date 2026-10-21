@@ -1,6 +1,7 @@
 import localAuth from "../local-auth.cjs";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { PrivacyService, privacyRequest } from "../../../agent/privacy-service.js";
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -118,6 +119,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
   // Fixtures keep one immutable credential; avoid blocking the HTTP event loop
   // with repeated native Windows ACL checks during deadline-sensitive requests.
   const authToken = localAuth.ensureAuthToken(authFile);
+  const privacyService = new PrivacyService({ directory: path.join(sharedTestDataDir, "storage-" + randomUUID()), key: randomBytes(32) });
   const drafts = new Map();
   const leaseRequests = [];
   const forwardedRequests = [];
@@ -201,8 +203,16 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
     request.on("data", (chunk) => {
       body += chunk;
     });
-    request.on("end", () => {
+    request.on("end", async () => {
       const parsed = JSON.parse(body);
+      if (request.url === "/api/private/business-storage") {
+        try {
+          const result = await privacyRequest(privacyService, parsed, { origin: `http://${request.headers.host}`,
+            instance: () => ({ id: "default", host: "prod.example.com", mongodb: { database: "yennefer" } }) });
+          response.writeHead(200, { "Content-Type": "application/json" }); response.end(JSON.stringify({ ok: true, result }));
+        } catch (error) { response.writeHead(409, { "Content-Type": "application/json" }); response.end(JSON.stringify({ ok: false, error: { code: error.code, message: "Fixture storage unavailable" } })); }
+        return;
+      }
       forwardedRequests.push({ route: request.url, body: parsed });
       if (request.url.startsWith("/sandbox/") || request.url.startsWith("/mongodb/sandbox/access/") || request.url === "/api/sandbox/local") {
         response.writeHead(200, { "Content-Type": "application/json" });
@@ -504,6 +514,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
   });
   server.leaseRequests = leaseRequests;
   server.forwardedRequests = forwardedRequests;
+  server.once("close", () => { privacyService.close(); });
 
   return new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -2147,7 +2158,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2199,7 +2210,7 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(

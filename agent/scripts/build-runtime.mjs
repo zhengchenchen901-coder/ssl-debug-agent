@@ -65,6 +65,7 @@ await fsp.writeFile(path.join(agentDir, "log-query-runtime-source.js"),
 
 async function bundle(entryPoint, outfile) {
   await build({
+    absWorkingDir: agentDir,
     entryPoints: [path.resolve(agentDir, entryPoint)],
     outfile: path.resolve(outputDir, outfile),
     bundle: true,
@@ -95,6 +96,7 @@ await fsp.mkdir(outputDir, { recursive: true });
 await buildTerminalAssets();
 await bundle("server.js", "server.cjs");
 await bundle("worker-entry.js", "worker-entry.cjs");
+await bundle("privacy-worker.js", "privacy-worker.cjs");
 await fsp.cp(path.resolve(agentDir, "public"), path.resolve(outputDir, "public"), {
   recursive: true,
 });
@@ -109,7 +111,7 @@ async function listArtifacts(directory, prefix) {
   }
   return result;
 }
-const artifactFiles = ["server.cjs", "worker-entry.cjs",
+const artifactFiles = ["server.cjs", "worker-entry.cjs", "privacy-worker.cjs",
   ...await listArtifacts(path.join(outputDir, "public"), "public"),
   ...await listArtifacts(path.join(outputDir, "native"), "native"),
 ];
@@ -128,6 +130,7 @@ const manifest = {
   node: agentPackage.engines.node,
   server: "server.cjs",
   worker: "worker-entry.cjs",
+  privacyWorker: "privacy-worker.cjs",
   hashes,
 };
 

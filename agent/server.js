@@ -1,4 +1,5 @@
 import express from "express";
+import { installPrivacyRoutes } from "./privacy-service.js";
 import { runService, validateServiceRequest } from "./services.js";
 import { assertServiceId, serviceProfileHash, selectServiceProfile, serviceError, serviceAuditFields, serviceTargetHash } from "./service-profiles.js";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
@@ -116,6 +117,18 @@ function errorPayload(error) {
     error: operationErrorPayload(error),
     details: error.details,
   };
+}
+
+// Driver/validator exception text can contain unrelated document values that
+// this MCP cache has never seen. Keep those out of errors and activity events.
+function businessErrorPayload(error) {
+  const payload = operationErrorPayload(error);
+  return { ok: false, error: {
+    operationId: payload.operationId,
+    code: /^[A-Z][A-Z0-9_]{1,80}$/.test(payload.code || "") ? payload.code : "MONGODB_OPERATION_FAILED",
+    message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
+    layer: payload.layer, phase: payload.phase, retriable: payload.retriable,
+  } };
 }
 
 function publicAgent(config) {
@@ -1428,7 +1441,7 @@ export function createApp(options = {}) {
       response.json(payload);
     } catch (error) {
       error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+      const payload = businessErrorPayload(error);
       const durationMs = durationSince(startedAt);
       const summary = summarizeMongoQuery(rawQuery);
       await audit(config, {
@@ -1499,7 +1512,7 @@ export function createApp(options = {}) {
       response.json(payload);
     } catch (error) {
       error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+      const payload = businessErrorPayload(error);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: `mongodb-mutation-${mode}`,
@@ -1585,7 +1598,7 @@ export function createApp(options = {}) {
       response.status(payload.background ? 202 : 200).json(payload);
     } catch (error) {
       error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+      const payload = businessErrorPayload(error);
       const durationMs = durationSince(startedAt);
       const summary = {
         jobId: requestText(raw.jobId),
@@ -1952,8 +1965,15 @@ export function createManagerApp(options = {}) {
   installOutputPreviewRoutes(app, outputPreview, registry);
   app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
+  app.use("/api/private/business-storage", express.json({ limit: "17mb" }));
+  app.use("/api/private/business-storage", (_error, _request, response, _next) => {
+    response.status(400).json({ ok: false, error: { code: "BUSINESS_STORAGE_INVALID", message: "Invalid protected storage request", retriable: false } });
+  });
   app.use(express.json({ limit: "512kb" }));
   let restoreCheckScheduled = false;
+
+  installPrivacyRoutes(app, { registry, service: options.privacyService,
+    directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });
 
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
     registry,
@@ -2671,6 +2691,10 @@ export function createManagerApp(options = {}) {
       response.json(memory ? { ...result, memory } : result);
     } catch (error) {
       error.operationId ||= requestOperation.operationId;
+      if (pathName.startsWith("/mongodb/")) {
+        const safe = businessErrorPayload(error).error;
+        error = Object.assign(new Error(safe.message), safe, { statusCode: error.statusCode || error.status || 502 });
+      }
       if (pathName.startsWith("/services/")) await audit(config, { tool: pathName.slice(1).replace("/", "-"),
         instanceId: typeof instanceId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(instanceId) ? instanceId : undefined,
         ...serviceAuditFields(request.body), operationId: requestOperation.operationId, ok: false, errorCode: error.code });
@@ -2866,6 +2890,7 @@ export function startServer(config = loadConfig(), options = {}) {
           console.error("failed to stop worker processes", error);
         });
         app.locals.resourceManager.close();
+        await app.locals.privacyService.close();
         if (shutdownOptions.closeServer !== false) {
           await closeServer();
         }

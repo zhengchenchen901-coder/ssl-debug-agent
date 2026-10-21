@@ -1,0 +1,175 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { randomBytes } from "node:crypto";
+import { fork } from "node:child_process";
+import { once } from "node:events";
+import { PrivacyStore } from "../privacy-store.js";
+import { PrivacyService, privacyRequest } from "../privacy-service.js";
+import { loadPrivacyKey } from "../privacy-key.js";
+import { businessTargetScope } from "../../plugins/remote-debug-agent/business-privacy.js";
+
+const DAY = 86400000, alias = () => "rda_ref_v1_" + randomBytes(24).toString("hex");
+function fixture(t, options = {}) {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "rda-encrypted-store-")), key = randomBytes(32);
+  let time = Date.now(), store = new PrivacyStore({ directory, key, now: () => time, ...options });
+  const auth = store.execute("create"), scope = "PRIVATE_SCOPE_DATABASE";
+  const call = (action, input = {}) => store.execute(action, { auth, scope, ...input });
+  t.after(() => { store.close(); fs.rmSync(directory, { recursive: true, force: true }); });
+  return { directory, key, auth, scope, call, get store() { return store; }, advance: (ms) => { time += ms; },
+    reopen: (extra = {}) => { store.close(); store = new PrivacyStore({ directory, key, now: () => time, ...extra }); return store; },
+    commit: (value, extra = {}) => { const ref = alias(); const result = call("commit", { records: [{ ref, scope, value }], ...extra }); return result.aliases[ref]; } };
+}
+
+test("encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen", (t) => {
+  const f = fixture(t);
+  const values = ["PRIVATE_USER_001", 17, true, { $oid: "507f1f77bcf86cd799439011" }, { $numberLong: "9007199254740993" },
+    { $numberInt: "23" }, { $numberDouble: "NaN" }, { $numberDecimal: "123.000" }, { $date: { $numberLong: "1700000000000" } },
+    { $binary: { base64: "AP9B", subType: "80" } }, { $timestamp: { t: 5, i: 1 } }, { $regularExpression: { pattern: "private", options: "i" } },
+    { $minKey: 1 }, { $maxKey: 1 }, { tenant: "PRIVATE_TENANT", seq: 2 }, { seq: 2, tenant: "PRIVATE_TENANT" }];
+  const refs = values.map((value) => f.commit(value));
+  assert.notEqual(refs.at(-1), refs.at(-2)); f.reopen();
+  const result = f.call("resolve", { refs });
+  assert.deepEqual(result.records.map((r) => r.value), values);
+  assert.deepEqual(result.records.map((r) => JSON.stringify(r.value)), values.map(JSON.stringify));
+  assert.equal(f.store.db.prepare("PRAGMA journal_mode").get().journal_mode, "wal");
+  assert.equal(f.store.db.prepare("PRAGMA synchronous").get().synchronous, 2);
+  assert.equal(f.store.db.prepare("PRAGMA user_version").get().user_version, 1);
+  for (const filename of fs.readdirSync(f.directory)) {
+    const bytes = fs.readFileSync(path.join(f.directory, filename));
+    for (const raw of ["PRIVATE_USER_001", "PRIVATE_SCOPE_DATABASE", "PRIVATE_TENANT", "9007199254740993", f.key.toString("hex")]) assert.equal(bytes.includes(Buffer.from(raw)), false, filename);
+    assert.equal(fs.statSync(path.join(f.directory, filename)).mode & 0o077, 0);
+  }
+});
+
+test("context capability, target database and AAD stop cross-scope resolution and record swapping", (t) => {
+  const f = fixture(t), ref = f.commit("PRIVATE_VALUE");
+  assert.throws(() => f.call("resolve", { refs: [ref], scope: "other" }), { code: "BUSINESS_REFERENCE_INVALID" });
+  const other = f.store.execute("create");
+  assert.throws(() => f.call("resolve", { refs: [ref], auth: other }), { code: "BUSINESS_REFERENCE_INVALID" });
+  assert.throws(() => f.call("resolve", { refs: [ref], auth: { ...f.auth, capability: randomBytes(32).toString("hex") } }), { code: "BUSINESS_CONTEXT_DENIED" });
+  const another = f.commit("PRIVATE_OTHER");
+  const envelope = f.store.db.prepare("SELECT envelope FROM records WHERE id=?").get(another).envelope;
+  f.store.db.prepare("UPDATE records SET envelope=? WHERE id=?").run(envelope, ref);
+  assert.throws(() => f.call("resolve", { refs: [ref] }), { code: "BUSINESS_STORAGE_CORRUPT" });
+});
+
+test("tampered ciphertext, wrong key and missing OS credential fail without exporting data", (t) => {
+  const f = fixture(t), ref = f.commit("PRIVATE_CORRUPTION_VALUE");
+  assert.throws(() => f.reopen({ key: randomBytes(32) }), { code: "BUSINESS_STORAGE_CORRUPT" });
+  f.reopen();
+  const row = f.store.db.prepare("SELECT envelope FROM records WHERE id=?").get(ref), e = JSON.parse(row.envelope);
+  const bytes = Buffer.from(e.c, "base64"); bytes[0] ^= 1; e.c = bytes.toString("base64");
+  f.store.db.prepare("UPDATE records SET envelope=? WHERE id=?").run(JSON.stringify(e), ref);
+  assert.throws(() => f.call("resolve", { refs: [ref] }), { code: "BUSINESS_STORAGE_CORRUPT" });
+  assert.throws(() => loadPrivacyKey(f.directory, { platform: "linux" }), { code: "BUSINESS_KEYSTORE_UNSUPPORTED" });
+  let calls = 0;
+  assert.throws(() => loadPrivacyKey(f.directory, { platform: "darwin", existing: true, run: () => { calls++; throw Object.assign(new Error("PRIVATE_SYSTEM_ERROR"), { status: 44 }); } }), { code: "BUSINESS_KEYSTORE_UNAVAILABLE" });
+  assert.equal(calls, 1, "Never replace the key when a database already exists");
+});
+
+test("reverse-index tampering cannot redirect an alias to a different valid ciphertext", (t) => {
+  const f = fixture(t), first = f.commit("PRIVATE_FIRST"), second = f.commit("PRIVATE_SECOND");
+  const lookup = f.store.db.prepare("SELECT lookup FROM records WHERE id=?").get(first).lookup;
+  f.store.db.prepare("UPDATE records SET lookup=? WHERE id=?").run("temporary-index-tamper", first);
+  f.store.db.prepare("UPDATE records SET lookup=? WHERE id=?").run(lookup, second);
+  assert.throws(() => f.commit("PRIVATE_FIRST"), { code: "BUSINESS_STORAGE_CORRUPT" });
+  assert.throws(() => f.call("resolve", { refs: [second] }), { code: "BUSINESS_STORAGE_CORRUPT" });
+});
+
+test("concurrent MCP clients get one committed reference through the unique HMAC index", async (t) => {
+  const f = fixture(t); f.store.close();
+  const service = new PrivacyService({ directory: f.directory, key: f.key, maxQueue: 64 });
+  t.after(() => service.close());
+  const results = await Promise.all(Array.from({ length: 24 }, () => service.call("commit", { auth: f.auth, scope: f.scope,
+    records: [{ ref: alias(), scope: f.scope, value: { z: "PRIVATE_SAME", a: 1 } }] })));
+  assert.equal(new Set(results.flatMap((r) => Object.values(r.aliases))).size, 1);
+  await service.close(); f.reopen();
+  assert.equal(f.store.db.prepare("SELECT COUNT(*) AS n FROM records WHERE kind='mapping'").get().n, 1);
+});
+
+test("mapping commit is atomic across both crash boundaries and emits no uncommitted aliases", (t) => {
+  const f = fixture(t), before = alias(), after = alias();
+  f.reopen({ fault: (point) => { if (point === "beforeCommit") throw new Error("simulated crash"); } });
+  assert.throws(() => f.call("commit", { records: [{ ref: before, scope: f.scope, value: "PRIVATE_BEFORE" }], tasks: [{ id: "job-1" }] }));
+  f.reopen(); assert.throws(() => f.call("resolve", { refs: [before] }), { code: "BUSINESS_REFERENCE_INVALID" });
+  assert.equal(f.store.db.prepare("SELECT COUNT(*) AS n FROM records WHERE kind='task'").get().n, 0);
+  f.reopen({ fault: (point) => { if (point === "afterCommit") throw new Error("simulated lost response"); } });
+  assert.throws(() => f.call("commit", { records: [{ ref: after, scope: f.scope, value: "PRIVATE_AFTER" }], tasks: [{ id: "job-1" }] }));
+  f.reopen(); assert.equal(f.call("resolve", { refs: [after] }).records[0].value, "PRIVATE_AFTER");
+  assert.equal(f.store.db.prepare("SELECT COUNT(*) AS n FROM links").get().n, 1);
+});
+
+test("intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable", (t) => {
+  const f = fixture(t), request = { mutationId: "m-1", planHash: "a".repeat(64), confirmation: "确认执行" };
+  const first = f.call("intent", { route: "/mongodb/mutations/execute", request });
+  assert.equal(first.state, "new"); f.reopen();
+  const retry = f.call("intent", { route: "/mongodb/mutations/execute", request });
+  assert.equal(retry.id, first.id); assert.equal(retry.state, "uncertain");
+  f.call("reconcile", { id: first.id, result: { remoteStatus: "committed", lease: "expired" } });
+  assert.equal(f.call("intent", { route: "/mongodb/mutations/execute", request }).state, "uncertain");
+  f.call("outcome", { id: first.id, result: { status: "committed", affectedCount: 1 } }); f.reopen();
+  assert.equal(f.call("intent", { route: "/mongodb/mutations/execute", request }).result.affectedCount, 1);
+});
+
+test("reconciliation accepts only the same remote job, immutable plan and matching terminal state", (t) => {
+  const f = fixture(t), identity = { jobId: "job-recovery", planHash: "a".repeat(64) };
+  const intent = f.call("intent", { route: "/mongodb/bulk/execute", request: identity, identity });
+  for (const result of [{ ok: true, ...identity, status: "running" }, { ok: true, ...identity, planHash: "b".repeat(64), status: "completed" },
+    { ok: true, ...identity, jobId: "other", status: "completed" }, { ok: false, ...identity, status: "completed" }]) {
+    assert.equal(f.call("reconcile", { id: intent.id, result }).state, "uncertain");
+  }
+  assert.equal(f.call("reconcile", { id: intent.id, result: { ok: true, ...identity, status: "completed", committedBatchCount: 1 } }).state, "complete");
+  f.reopen(); assert.equal(f.call("intent", { route: "/mongodb/bulk/execute", request: identity, identity }).result.committedBatchCount, 1);
+});
+
+test("active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded", (t) => {
+  const f = fixture(t), active = f.commit("PRIVATE_ACTIVE", { tasks: [{ id: "job-active", status: "running" }] });
+  const stale = Array.from({ length: 6 }, (_, i) => f.commit(`PRIVATE_EXPIRED_${i}`));
+  f.advance(31 * DAY);
+  assert.equal(f.call("resolve", { refs: [active] }).records[0].value, "PRIVATE_ACTIVE");
+  assert.throws(() => f.call("resolve", { refs: [stale[0]] }), { code: "BUSINESS_REFERENCE_INVALID" });
+  assert.equal(f.call("cleanup", { limit: 2 }).removed, 2);
+  f.call("commit", { records: [], refs: [active], tasks: [{ id: "job-active", status: "completed" }] });
+  f.advance(31 * DAY);
+  for (let i = 0; i < 30; i++) assert.ok(f.call("cleanup", { limit: 2 }).removed <= 2);
+  assert.throws(() => f.call("resolve", { refs: [active] }), { code: "BUSINESS_REFERENCE_INVALID" });
+});
+
+test("private service validates current instance/profile and refuses arbitrary actions", async (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "rda-privacy-service-"));
+  const service = new PrivacyService({ directory, key: randomBytes(32) });
+  t.after(async () => { await service.close(); fs.rmSync(directory, { recursive: true, force: true }); });
+  const instance = { id: "local", host: "127.0.0.1", mongodb: { database: "business", configProfile: "fixture" } }, origin = "http://127.0.0.1:45000";
+  const options = { instance: () => instance, origin };
+  const auth = await privacyRequest(service, { action: "create" }, options), scope = businessTargetScope(origin, instance, "business");
+  await privacyRequest(service, { action: "commit", auth, scope, records: [] }, options);
+  instance.mongodb.configProfile = "other";
+  await assert.rejects(privacyRequest(service, { action: "resolve", auth, scope, refs: [] }, options), { code: "BUSINESS_REFERENCE_INVALID" });
+  await assert.rejects(privacyRequest(service, { action: "sql", auth, query: "SELECT * FROM records" }, options), { code: "BUSINESS_STORAGE_ACTION_DENIED" });
+});
+
+for (const boundary of ["beforeCommit", "afterCommit"]) test(`SQLite recovers atomically after actual process SIGKILL ${boundary}`, async (t) => {
+  const f = fixture(t), ref = alias(); f.store.close();
+  const child = fork(path.resolve(import.meta.dirname, "helpers/privacy-store-crash.mjs"), { stdio: ["ignore", "ignore", "pipe", "ipc"] });
+  const done = once(child, "exit"); child.send({ directory: f.directory, key: f.key.toString("hex"), auth: f.auth, scope: f.scope, ref, boundary });
+  const [code, signal] = await done; assert.equal(code, null); assert.equal(signal, "SIGKILL"); f.reopen();
+  if (boundary === "beforeCommit") {
+    assert.throws(() => f.call("resolve", { refs: [ref] }), { code: "BUSINESS_REFERENCE_INVALID" });
+    assert.equal(f.store.db.prepare("SELECT COUNT(*) AS n FROM links").get().n, 0);
+  } else {
+    assert.equal(f.call("resolve", { refs: [ref] }).records[0].value, "PRIVATE_CRASH_ATOMICITY");
+    assert.equal(f.store.db.prepare("SELECT COUNT(*) AS n FROM links").get().n, 1);
+    assert.equal(f.store.db.prepare("SELECT COUNT(*) AS n FROM records WHERE kind='delivery'").get().n, 1);
+  }
+});
+
+test("worker queue overload is bounded and returns a redacted busy error", async (t) => {
+  const f = fixture(t); f.store.close(); const service = new PrivacyService({ directory: f.directory, key: f.key, maxQueue: 2 });
+  t.after(() => service.close());
+  const results = await Promise.allSettled(Array.from({ length: 20 }, () => service.call("attach", { auth: f.auth })));
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 2);
+  for (const r of results.filter((r) => r.status === "rejected")) assert.equal(r.reason.code, "BUSINESS_STORAGE_BUSY");
+});

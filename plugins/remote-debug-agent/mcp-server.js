@@ -9,6 +9,7 @@ import diagnosticDashboard from "./diagnostic-dashboard.cjs";
 import localAuth from "./local-auth.cjs";
 import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard.js";
 import { createBusinessPrivacy } from "./business-privacy.js";
+import { createBusinessStorage } from "./business-storage.js";
 import { createOutputPreviewPublisher, outputPreviewMetadata } from "./output-preview.js";
 import {
   migrateLegacyData,
@@ -52,6 +53,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const businessPrivacy = createBusinessPrivacy();
 const outputGuard = createOutputGuard({ businessPrivacy });
+const businessStorage = createBusinessStorage({ privacy: businessPrivacy, guard: outputGuard, fetchJson: (...args) => fetchAgentJson(...args) });
 for (const [key, value] of Object.entries(process.env)) {
   if (isSensitiveKey(key)) outputGuard.remember(value);
 }
@@ -2955,11 +2957,15 @@ async function requestAgent(pathName, payload, options = {}) {
     const database = payload?.database || instance.mongodb?.database;
     const scopeForDatabase = (name) => businessPrivacy.targetScope(new URL(settings.agentUrl).origin, instance, name);
     const scope = database ? scopeForDatabase(database) : undefined;
+    operation.privacyRefs = await businessStorage.prepare(settings, payload, scope, operation.signal);
     payload = businessPrivacy.resolve(operation.toolName, payload, scope);
     const acceptsDatabase = tools.find((tool) => tool.name === operation.toolName)?.inputSchema.properties.database;
     payload = { ...payload, instanceId, ...(database && acceptsDatabase ? { database } : {}) };
     operation.privacyContext = { scope, scopeForDatabase, queryOperation: payload.operation, queryPipeline: payload.pipeline };
     businessPrivacy.learnInput(operation.toolName, outputGuard.sanitize(payload).value, scope);
+    operation.privacyInput = payload;
+    operation.privacyIntent = await businessStorage.intent(settings, pathName, payload, scope, operation.privacyRefs, operation.signal);
+    if (operation.privacyIntent?.state === "complete") return operation.privacyIntent.result;
   }
   let response;
   let parsed;
@@ -2989,6 +2995,7 @@ async function requestAgent(pathName, payload, options = {}) {
     });
     response = result.response;
     parsed = result.parsed;
+    if (operation?.privacyIntent && response.ok && parsed.ok !== false) await businessStorage.outcome(settings, operation.privacyIntent, operation.privacyContext.scope, parsed, operation.signal);
     if (operation) {
       const resolvedInstanceId = response.headers.get("X-Remote-Debug-Instance-Id");
       if (resolvedInstanceId) operation.instanceId = resolvedInstanceId;
@@ -3450,6 +3457,7 @@ async function handleRequest(message) {
     const toolName = params?.name;
     const toolArguments = params?.arguments || {};
     const operation = createToolOperation(toolName, toolArguments);
+    let releasePrivacy;
     Object.assign(operation, { startedAt, requestId: id, toolName, instanceId: typeof toolArguments.instanceId === "string" ? toolArguments.instanceId : null });
     inFlightToolCalls.set(id, operation);
     await logMcpLifecycle("MCP_TOOLS_CALL_STARTED", "MCP tools/call started.", {
@@ -3461,6 +3469,7 @@ async function handleRequest(message) {
     });
 
     try {
+      if (toolName?.startsWith("remote_debug_mongodb_")) releasePrivacy = await businessStorage.lock(operation.signal);
       const result = await callTool(toolName, toolArguments, operation);
       await logMcpLifecycle("MCP_TOOLS_CALL_COMPLETED", "MCP tools/call completed.", {
         requestId: id,
@@ -3470,7 +3479,10 @@ async function handleRequest(message) {
         durationMs: Date.now() - startedAt,
         ok: true,
       });
-      sendResult(id, outputGuard.toolResult(toolName, result, false, operation.privacyContext), { previewContext: operation });
+      let guarded = outputGuard.toolResult(toolName, result, false, operation.privacyContext);
+      if (operation.privacyContext) guarded = await businessStorage.finish(operation.previewSettings, guarded, operation.privacyContext, operation.privacyInput, operation.privacyIntent, operation.privacyRefs);
+      sendResult(id, guarded, { previewContext: operation });
+      if (operation.privacyContext) await businessStorage.published(operation.previewSettings, operation.privacyContext);
     } catch (error) {
       await logMcpLifecycle("MCP_TOOLS_CALL_FAILED", "MCP tools/call failed.", {
         requestId: id,
@@ -3499,6 +3511,7 @@ async function handleRequest(message) {
       }, true), { previewContext: operation });
     } finally {
       inFlightToolCalls.delete(id);
+      releasePrivacy?.();
     }
     return;
   }

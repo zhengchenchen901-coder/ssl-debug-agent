@@ -1,0 +1,6 @@
+{
+  "acceptanceContainersRemaining": [],
+  "uniqueMongoDatabasesDroppedByE2E": true,
+  "testKeychainEntriesRemovedByTestTeardown": true,
+  "installedProcessesStopped": false
+}

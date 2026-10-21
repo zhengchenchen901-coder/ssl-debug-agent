@@ -1,0 +1,144 @@
+{
+  "capturedAt": "2026-10-21T03:46:37.961548+00:00",
+  "source": {
+    "root": "/Users/zhengchenchen/od-projects/ssl-debug-agent",
+    "head": "a51a9dd7756d62a57d1b92f24c4fbdf219f09b19",
+    "initialWorkingTree": "clean; phase 1 already present",
+    "updated": true
+  },
+  "bundledRuntime": {
+    "updated": true,
+    "runtimeId": "2.4.0:799ffc56e1eb4ba867c7d9729d9f345d388e58bbb719c5ed17e9092d51f54683",
+    "verifiedArtifacts": 21,
+    "allHashesMatch": true,
+    "privacyWorker": "privacy-worker.cjs",
+    "builtFromRootAndAgentSameId": true
+  },
+  "installedPlugin": {
+    "path": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020",
+    "updatedByThisTask": false,
+    "runtimeId": "2.4.0:fa83b5c494af8f1722f634818888d5c6e9a13a175c3683f45ebc909f86f20017",
+    "hasPhase2Storage": false,
+    "files": {
+      "mcp-server.js": {
+        "sourceSha256": "75bd958aa41e33526af7a4fa34e78391d6d32c3ae7fc526bda1d34a30f29a9ba",
+        "installedSha256": "3eda6eab7c176197afd3c7084ed1630d54600d91dcef7e205e8e0aaf240c6c2c",
+        "equal": false
+      },
+      "business-privacy.js": {
+        "sourceSha256": "9789c67f1582c4fd80060d6e1320104f36cd13b88664bb4afe75f3ecffe7a84c",
+        "installedSha256": null,
+        "equal": false
+      },
+      "business-storage.js": {
+        "sourceSha256": "b8addd0d8624a29302579372bf5c1a6569c7034f51135ab168b15758a696b427",
+        "installedSha256": null,
+        "equal": false
+      }
+    }
+  },
+  "runningProcesses": {
+    "restartedByThisTask": false,
+    "entries": [
+      {
+        "pid": 3506,
+        "parentPid": 3454,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 3850,
+        "parentPid": 3799,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 4915,
+        "parentPid": 4886,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 6066,
+        "parentPid": 6006,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 6386,
+        "parentPid": 6334,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 7087,
+        "parentPid": 1,
+        "entrypoint": "/Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/diagnostic-dashboard.cjs",
+        "usesInstalledCache": false
+      },
+      {
+        "pid": 7088,
+        "parentPid": 1,
+        "entrypoint": "/Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/diagnostic-dashboard.cjs",
+        "usesInstalledCache": false
+      },
+      {
+        "pid": 7897,
+        "parentPid": 7869,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 10712,
+        "parentPid": 1,
+        "entrypoint": "/Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/diagnostic-dashboard.cjs",
+        "usesInstalledCache": false
+      },
+      {
+        "pid": 12357,
+        "parentPid": 1,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261016/runtime/agent/server.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 74378,
+        "parentPid": 1,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/runtime/agent/server.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 74428,
+        "parentPid": 74378,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/runtime/agent/worker-entry.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 85757,
+        "parentPid": 85696,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 87737,
+        "parentPid": 74378,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/runtime/agent/worker-entry.cjs",
+        "usesInstalledCache": true
+      },
+      {
+        "pid": 91988,
+        "parentPid": 91980,
+        "entrypoint": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261020/launch.cjs",
+        "usesInstalledCache": true
+      }
+    ],
+    "phase2ProductionActivationConfirmed": false,
+    "snapshotAt": "2026-10-21T03:38:49.441059+00:00"
+  },
+  "isolation": {
+    "remoteBusinessCalls": 0,
+    "onlineOrTestServerUsed": false,
+    "mongoImage": "mongo:4.4.30",
+    "driverVersion": "6.21.0",
+    "systemNodeConfigurationChanged": false
+  }
+}

@@ -7,12 +7,15 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import localAuth from "../local-auth.cjs";
+import { randomBytes } from "node:crypto";
+import { PrivacyService, privacyRequest } from "../../../agent/privacy-service.js";
 
 async function fixture(t, framing) {
   const previews = [], delivered = [];
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "rda-output-guard-"));
   const authFile = localAuth.resolveAuthFile(dataDir);
   const token = localAuth.ensureAuthToken(authFile);
+  const privacyService = new PrivacyService({ directory: path.join(dataDir, "storage"), key: randomBytes(32) });
   const registrySecret = "FIXTURE_LOCAL_REGISTRY_PASSWORD";
   await fs.mkdir(path.join(dataDir, ".remote-debug"), { recursive: true });
   await fs.writeFile(path.join(dataDir, ".remote-debug", "instances.json"), JSON.stringify({ instances: [{ passphrase: registrySecret }] }));
@@ -28,6 +31,11 @@ async function fixture(t, framing) {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const input = JSON.parse(Buffer.concat(chunks).toString() || "{}");
+    if (req.url === "/api/private/business-storage") {
+      const result = await privacyRequest(privacyService, input, { origin: `http://${req.headers.host}`,
+        instance: () => ({ id: "fixture", host: "127.0.0.1", mongodb: { database: "fixture" } }) });
+      return res.end(JSON.stringify({ ok: true, result }));
+    }
     if (req.url === "/api/output-preview/records") {
       previews.push(input);
       return res.end(JSON.stringify({ ok: true }));
@@ -90,6 +98,7 @@ async function fixture(t, framing) {
   t.after(async () => {
     child.kill();
     await once(child, "exit");
+    await privacyService.close();
     upstream.closeAllConnections();
     await new Promise((resolve) => upstream.close(resolve));
     await fs.rm(dataDir, { recursive: true, force: true });

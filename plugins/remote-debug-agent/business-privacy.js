@@ -23,6 +23,13 @@ function stable(value) {
 function encoded(value) { return JSON.stringify(stable(value)); }
 function object(entries) { return Object.fromEntries(entries); }
 
+export function businessTargetScope(endpoint, instance, database) {
+  if (!instance?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+  return encoded({ endpoint, id: instance.id, host: instance.host, port: instance.port, username: instance.username,
+    createdAt: instance.createdAt, configPath: instance.mongodb?.configPath, driverPath: instance.mongodb?.driverPath,
+    configProfile: instance.mongodb?.configProfile, uriKey: instance.mongodb?.uriKey, database });
+}
+
 export function isBusinessField(field) {
   const leaf = field.split(".").at(-1);
   if (leaf.startsWith("$")) return false; // BSON tags/operators are schema, not business fields.
@@ -64,10 +71,11 @@ function aggregationFields(pipeline = []) {
   return fields;
 }
 
-// Phase 1 deliberately keeps values process-local. No disk, telemetry, or
-// operational-memory API can enumerate or export this store.
+// Synchronous, bounded per-process cache. Production installs a private Manager
+// adapter and commits pending mappings before publishing any response.
 export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 1024 * 1024, maxNodes = 100_000, maxDepth = 40 } = {}) {
-  const contextId = randomUUID(), records = new Map(), reverse = new Map(), strings = new Set();
+  let contextId = randomUUID(), persistent = false;
+  const records = new Map(), reverse = new Map(), strings = new Set(), pending = new Set();
   let bytes = 0, referenceUses = 0;
   function budget() {
     let nodes = 0;
@@ -75,11 +83,7 @@ export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 10
     return (depth) => { if (++nodes > maxNodes || depth > maxDepth || performance.now() > deadline) fail("BUSINESS_PRIVACY_LIMIT"); };
   }
   function targetScope(endpoint, instance, database) {
-    if (!instance?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
-    // Bind to the configured target, not a worker PID/port that changes on restart.
-    return encoded({ endpoint, id: instance.id, host: instance.host, port: instance.port, username: instance.username,
-      createdAt: instance.createdAt, configPath: instance.mongodb?.configPath, driverPath: instance.mongodb?.driverPath,
-      configProfile: instance.mongodb?.configProfile, uriKey: instance.mongodb?.uriKey, database });
+    return businessTargetScope(endpoint, instance, database);
   }
   function reference(value, scope) {
     if (value === null || value === undefined || value === REDACTED) return value;
@@ -92,7 +96,7 @@ export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 10
     const size = Buffer.byteLength(canonical) + Buffer.byteLength(scope) + 160;
     if (records.size >= maxEntries || bytes + size > maxBytes) fail("BUSINESS_PRIVACY_LIMIT");
     const alias = PREFIX + randomBytes(24).toString("hex");
-    records.set(alias, { scope, value: JSON.parse(canonical) }); reverse.set(key, alias); bytes += size;
+    records.set(alias, { scope, value: JSON.parse(canonical) }); reverse.set(key, alias); pending.add(alias); bytes += size;
     const remember = (item) => {
       if (typeof item === "string" && item.length >= 6 && !item.includes(PREFIX)) strings.add(item);
       else if (item && typeof item === "object") for (const child of Object.values(item)) remember(child);
@@ -192,5 +196,25 @@ export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 10
     }
     return walk(value);
   }
-  return { targetScope, resolve, learnInput, protect, scrubKnown, metadata: () => ({ contextId, storage: "process_memory", policyVersion: 1 }) };
+  function hydrate(items) {
+    for (const { ref, scope, value } of items) {
+      // Learn known string echoes with the same credential-first policy as new values.
+      const alias = reference(value, scope), record = records.get(alias);
+      pending.delete(alias); records.delete(alias); records.set(ref, record);
+      reverse.set(createHash("sha256").update(scope + "\n" + JSON.stringify(value)).digest("hex"), ref);
+    }
+  }
+  function acknowledge(aliases) {
+    for (const [old, ref] of Object.entries(aliases)) {
+      const record = records.get(old); if (!record) continue;
+      pending.delete(old); records.delete(old); records.set(ref, record);
+      reverse.set(createHash("sha256").update(record.scope + "\n" + JSON.stringify(record.value)).digest("hex"), ref);
+    }
+  }
+  return { targetScope, resolve, learnInput, protect, scrubKnown, hydrate, acknowledge,
+    attach: (id) => { contextId = id; persistent = true; },
+    pending: () => [...pending].map((ref) => ({ ref, ...records.get(ref) })),
+    // Clear only the cache after an operation; disk mappings and task pins remain.
+    evict: () => { if (persistent && !pending.size) { records.clear(); reverse.clear(); strings.clear(); bytes = 0; } },
+    metadata: () => ({ contextId, storage: persistent ? "encrypted_sqlite" : "process_memory", policyVersion: 1 }) };
 }

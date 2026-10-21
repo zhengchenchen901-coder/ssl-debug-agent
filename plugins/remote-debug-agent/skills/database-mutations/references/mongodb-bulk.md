@@ -5,6 +5,14 @@ cross-collection write per business entity. For seeding documents into one
 collection, use `remote_debug_mongodb_prepare_import` instead. For a small,
 bounded change, use the existing mutation tools.
 
+Local references and task associations survive a restart when the host
+reattaches the same protected context file. SQLite stores local intent and
+delivery state; remote MongoDB transactions, batch receipts, immutable plans and
+leases remain authoritative. After uncertain execution, get the existing job
+first. A matching terminal job/plan can be reconciled without another execute;
+`recovery_required` needs the existing resume flow, which checks batch receipts.
+Never replace the job, widen the plan or treat local persistence as new approval.
+
 ## Preconditions and storage setup
 
 1. Confirm the exact instance and database profile. Read-only queries must

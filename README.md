@@ -147,16 +147,32 @@ References preserve the wire BSON/EJSON value and type. Native BSON encoding now
 preserves Long precision and supports decoding an already decoded ObjectId, while
 ordinary JSON counts remain numbers. Each MongoDB call refreshes the Manager's
 instance catalog, pins omitted instance/database defaults, and binds references
-to the MCP process, Agent origin, instance target/profile and database. Unknown,
+to a persistent privacy context, Agent origin, instance target/profile and database. Unknown,
 wrong-target, embedded or misplaced references fail before the business request.
 There is no tool to export the reference map.
 
-Phase 1 stores mappings **only in the MCP process memory**, bounded to 100,000
-entries/32 MiB; reaching the limit blocks new protected output rather than evicting
-live references. `outputGuard.businessPrivacy` reports the context ID and
-`storage: process_memory`. Restarting MCP invalidates old references: re-query to
-obtain new ones. Disk encryption, cross-process sharing and reboot recovery are
-phase 2. Known identifier strings of at least six characters are also scrubbed
+Phase 2 commits mappings, task associations, operation intents and output delivery
+records to **encrypted local SQLite** through an authenticated private Manager
+service and a dedicated storage Worker. WAL with `synchronous=FULL` commits before
+a reference is returned. `outputGuard.businessPrivacy` reports the context ID and
+`storage: encrypted_sqlite`. The bounded 100,000-entry/32 MiB MCP cache is not the
+source of truth. No raw-value enumeration, SQL, key export or mapping-export MCP
+tool is available.
+
+The macOS adapter keeps the master key in Keychain; Windows/Linux currently fail
+closed for protected MongoDB operations until a credential adapter is provided.
+An unavailable/locked keychain, changed target, corrupt record or wrong key never
+falls back to plaintext or process-only references. Configure the MCP-only
+`REMOTE_DEBUG_PRIVACY_CONTEXT_FILE` to reattach the **same owner-only local
+context file** across MCP/Manager/computer restarts. Without that setting each
+MCP starts a new context and saves its attachment file under
+`<data-dir>/.private/contexts/<contextId>.json`; reattach by configuring that file
+locally. Never paste its capability into chat. See
+[storage and recovery](docs/business-privacy-storage.md) for retention, key
+availability and uncertain-write reconciliation. References obtained in phase 1
+cannot be recovered after their original memory-only process exits.
+
+Known identifier strings of at least six characters are also scrubbed
 from flexible text/errors/diagnostics, including URL/JSON escaping; this is not a
 general guarantee for free-text logs, arbitrary encodings or unknown field names.
 New business values should enter through the local workbench/import path if they

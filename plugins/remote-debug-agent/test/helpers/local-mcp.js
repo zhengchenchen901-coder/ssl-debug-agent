@@ -5,6 +5,8 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { randomBytes } from "node:crypto";
+import { PrivacyService, privacyRequest } from "../../../../agent/privacy-service.js";
 import localAuth from "../../local-auth.cjs";
 
 // A fresh authenticated loopback Manager stub and real MCP process. The supplied
@@ -13,6 +15,8 @@ export async function localMcp(t, { instance, handler, framing = "json-line" }) 
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rda-privacy-mcp-"));
   const token = localAuth.ensureAuthToken(localAuth.resolveAuthFile(root));
   const requests = [], previews = [], wire = [], diagnostics = [];
+  const key = randomBytes(32);
+  let privacyService = new PrivacyService({ directory: path.join(root, "storage"), key }), dropReply;
   const server = http.createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     if (req.url === "/health") return res.end(JSON.stringify({ name: "remote-debug-agent", apiVersion: 2, localAuthentication: true,
@@ -23,18 +27,42 @@ export async function localMcp(t, { instance, handler, framing = "json-line" }) 
     if (req.url === "/api/instances") return res.end(JSON.stringify({ ok: true, defaultInstanceId: instance.id, instances: [instance] }));
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
     const input = JSON.parse(Buffer.concat(chunks).toString() || "{}");
+    if (req.url === "/api/private/business-storage") {
+      try { return res.end(JSON.stringify({ ok: true, result: await privacyRequest(privacyService, input, { instance: (id) => id === instance.id ? instance : undefined, origin: `http://${req.headers.host}` }) })); }
+      catch (error) { res.statusCode = 409; return res.end(JSON.stringify({ ok: false, error: { code: error.code, message: "Protected fixture state unavailable" } })); }
+    }
     if (req.url === "/api/output-preview/records") { previews.push(input); return res.end('{"ok":true}'); }
     if (!req.url.startsWith("/mongodb/")) return res.end('{"ok":true}');
     requests.push({ path: req.url, input });
     res.setHeader("X-Remote-Debug-Instance-Id", instance.id);
-    try { res.end(JSON.stringify({ ok: true, instanceId: instance.id, ...await handler(req.url, input) })); }
+    try {
+      const result = await handler(req.url, input);
+      if (dropReply === req.url) { dropReply = undefined; req.socket.destroy(); return; }
+      res.end(JSON.stringify({ ok: true, instanceId: instance.id, ...result }));
+    }
     catch (error) { res.statusCode = 400; res.end(JSON.stringify({ ok: false, error: { code: error.code || "FIXTURE_ERROR", message: error.message } })); }
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const peerOptions = { root, url: `http://127.0.0.1:${server.address().port}`, contextFile: path.join(root, "context.json"), framing, wire, diagnostics };
+  let peer = await mcpPeer(t, peerOptions);
+  t.after(async () => {
+    await peer.stop(); await privacyService.close();
+    server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await fs.rm(root, { recursive: true, force: true });
+  });
+  return { call: (...args) => peer.call(...args), requests, previews, wire, diagnostics, root,
+    dropNextReply: (route) => { dropReply = route; },
+    restart: async () => {
+      await peer.stop("SIGKILL"); await privacyService.close();
+      privacyService = new PrivacyService({ directory: path.join(root, "storage"), key }); peer = await mcpPeer(t, peerOptions);
+    },
+  };
+}
+
+export async function mcpPeer(t, { root, url, framing = "json-line", contextFile = "", wire = [], diagnostics = [] }) {
   const child = spawn(process.execPath, [path.resolve(import.meta.dirname, "../../mcp-server.js")], {
     env: { ...process.env, REMOTE_DEBUG_DATA_DIR: root, REMOTE_DEBUG_PROJECT_ROOT: "", REMOTE_DEBUG_INSTANCE_REGISTRY: "",
       REMOTE_DEBUG_ENV_PATH: path.join(root, "config.env"), REMOTE_DEBUG_AUTH_FILE: localAuth.resolveAuthFile(root),
-      REMOTE_DEBUG_AGENT_URL: `http://127.0.0.1:${server.address().port}` }, stdio: ["pipe", "pipe", "pipe"],
+      REMOTE_DEBUG_PRIVACY_CONTEXT_FILE: contextFile, REMOTE_DEBUG_AGENT_URL: url }, stdio: ["pipe", "pipe", "pipe"],
   });
   const messages = [], waiters = []; let buffer = Buffer.alloc(0), id = 0;
   child.stderr.on("data", (chunk) => diagnostics.push(chunk.toString()));
@@ -52,10 +80,11 @@ export async function localMcp(t, { instance, handler, framing = "json-line" }) 
       const waiter = waiters.shift(); if (waiter) waiter(message); else messages.push(message);
     }
   });
-  t.after(async () => {
-    const exited = child.exitCode !== null ? Promise.resolve() : once(child, "exit"); child.kill(); await exited;
-    server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await fs.rm(root, { recursive: true, force: true });
-  });
+  async function stop(signal = "SIGTERM") {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    const exited = once(child, "exit"); child.kill(signal); await exited;
+  }
+  t.after(() => stop());
   async function call(name, args = {}) {
     const requestId = ++id, body = JSON.stringify({ jsonrpc: "2.0", id: requestId, method: "tools/call", params: { name, arguments: args } });
     child.stdin.write(framing === "json-line" ? body + "\n" : `Content-Length: ${Buffer.byteLength(body)}\r\n\r\n${body}`);
@@ -65,5 +94,5 @@ export async function localMcp(t, { instance, handler, framing = "json-line" }) 
     assert.equal(message.id, requestId);
     return { ...message.result, payload: JSON.parse(message.result.content[0].text) };
   }
-  return { call, requests, previews, wire, diagnostics, root };
+  return { call, stop, child, wire, diagnostics, root };
 }

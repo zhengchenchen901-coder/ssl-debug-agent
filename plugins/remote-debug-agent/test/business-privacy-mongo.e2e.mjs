@@ -17,7 +17,7 @@ if (!uri || !/^mongodb:\/\/127\.0\.0\.1:\d+\//.test(uri) || !uri.includes("direc
   throw new Error("Set RDA_PRIVACY_TEST_URI to a dedicated disposable loopback replica set with directConnection=true, and RDA_PRIVACY_TEST_DRIVER to its local driver.");
 }
 
-test("real isolated MongoDB: MCP references preserve query, write, transaction, import, index, completed bulk and rollback behavior", { timeout: 120000 }, async (t) => {
+test("real isolated MongoDB: persistent MCP references, restart, write/transaction/import/index/bulk, uncertain receipt recovery and rollback", { timeout: 120000 }, async (t) => {
   const suffix = randomUUID().replaceAll("-", ""), database = `privacy_${suffix}`;
   const root = await fs.mkdtemp("/tmp/rda-privacy-db-");
   const rollbackRoot = `/tmp/remote-debug-agent/privacy-${suffix}`;
@@ -92,6 +92,7 @@ test("real isolated MongoDB: MCP references preserve query, write, transaction, 
   const rollback = (plan) => call("remote_debug_mongodb_rollback_mutation", { mutationId: plan.mutationId, planHash: plan.planHash, confirmation: "确认回滚" });
   const found = await call("remote_debug_mongodb_query", { operation: "findOne", collection: "orders", filter: {} });
   const row = found.data; assert.match(row._id, /^rda_ref_v1_/); assert.match(row.userId, /^rda_ref_v1_/); assert.match(row.businessKey, /^rda_ref_v1_/);
+  await f.restart();
   const selected = await call("remote_debug_mongodb_query", { operation: "find", collection: "orders", filter: { _id: row._id, userId: row.userId } });
   assert.equal(selected.resultCount, 1); assert.equal(selected.data[0]._id, row._id);
   const compound = await call("remote_debug_mongodb_query", { operation: "findOne", collection: "orders", filter: { _id: compoundId } });
@@ -120,7 +121,16 @@ test("real isolated MongoDB: MCP references preserve query, write, transaction, 
   assert.match(uploaded.chunkHash, /^[a-f0-9]{64}$/);
   const plan = await call("remote_debug_mongodb_prepare_bulk", { jobId, chunkIndex: 1, units: [], endOfUpload: true });
   assert.equal(plan.batches[0].sampleIds[0].id, row._id);
-  const done = await call("remote_debug_mongodb_execute_bulk", { jobId, planHash: plan.planHash, confirmation: "确认执行" });
+  f.dropNextReply("/mongodb/bulk/execute");
+  const execution = { jobId, planHash: plan.planHash, confirmation: "确认执行" };
+  const lost = await f.call("remote_debug_mongodb_execute_bulk", execution);
+  assert.equal(lost.isError, true); assert.equal((await db.collection("orders").findOne({ _id: raw._id })).count, 1);
+  await f.restart();
+  const retry = await f.call("remote_debug_mongodb_execute_bulk", execution);
+  assert.notEqual(retry.isError, true); assert.equal(retry.payload.status, "completed", "Exact remote job + plan terminal evidence reconciles the lost acknowledgment");
+  assert.equal((await db.collection("orders").findOne({ _id: raw._id })).count, 1, "Uncertain retry must not replay the increment");
+  assert.equal(f.requests.filter((request) => request.path === "/mongodb/bulk/execute").length, 1, "Reconciliation must not dispatch execute a second time");
+  const done = await call("remote_debug_mongodb_get_bulk_job", { jobId });
   assert.equal(done.status, "completed"); assert.equal((await db.collection("orders").findOne({ _id: raw._id })).count, 1);
   const completed = await call("remote_debug_mongodb_get_bulk_job", { jobId, includeDifferences: true });
   assert.equal(completed.status, "completed"); assert.equal(completed.planHash, plan.planHash);
