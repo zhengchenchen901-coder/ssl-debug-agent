@@ -5,7 +5,7 @@ const json = "json";
 const fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
 const timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 const warning = fields("code message path source phase");
-const error = { ...fields("operationId code message layer phase retriable cause"), diagnostic: fields("phase databaseCode filesystemCode") };
+const error = { ...fields("operationId code message layer phase retriable cause intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
 const memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 const runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 const instance = {
@@ -19,7 +19,7 @@ instance.mongodb.hasSandboxManagementPassword = "boolean";
 const common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
 const entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
 const mutation = {
-  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath"),
+  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
   collections: [scalar], changedFields: [scalar], affectedIds: json, storageStatus: json,
   rollbackRestoresDocuments: scalar, atomicity: scalar,
   failedBatch: fields("batchIndex mutationId code"),
@@ -81,6 +81,7 @@ const contracts = {
   remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
   remote_debug_get_capabilities: { capabilities: json },
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk } },
   remote_debug_mongodb_prepare_write: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,

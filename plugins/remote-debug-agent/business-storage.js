@@ -1,9 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { prepareRequestDigest } from "./prepare-protocol.js";
 
-function failure(code = "BUSINESS_STORAGE_UNAVAILABLE") {
-  return Object.assign(new Error("Protected local state requires recovery or reconciliation. No uncertain write was replayed."), { code, retriable: false });
+function failure(code = "BUSINESS_STORAGE_UNAVAILABLE", intentId) {
+  return Object.assign(new Error("Protected local state requires recovery or reconciliation. No uncertain write was replayed."), { code, retriable: false, intentId });
 }
 function refsIn(value, found = new Set()) {
   if (typeof value === "string" && /^rda_ref_v1_[a-f0-9]{48}$/.test(value)) found.add(value);
@@ -33,7 +34,9 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
   async function rpc(settings, input, signal) {
     try {
       const { response, parsed } = await fetchJson(settings, "/api/private/business-storage", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input), timeoutMs: 25000, signal,
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+        timeoutMs: ["dispatch_prepare", "recover_operation"].includes(input.action)
+          ? Math.max(1, Math.min(605000, (input.deadlineAt || Date.now() + 120000) - Date.now() + 5000)) : 25000, signal,
       });
       if (!response.ok || parsed.ok !== true || !parsed.result) throw failure(parsed.error?.code?.startsWith("BUSINESS_") ? parsed.error.code : undefined);
       return parsed.result;
@@ -111,8 +114,15 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
       const identity = Object.fromEntries(["instanceId", "jobId", "mutationId", "planHash", "chunkIndex"].filter((field) => request[field] !== undefined).map((field) => [field, request[field]]));
       // pause/resume are explicitly requested state transitions. A completed
       // pause must not suppress a later pause after an intervening resume.
-      const intent = await call(settings, { action: "intent", route, request, identity, scope, refs, renew: route === "/mongodb/bulk/control" }, signal);
+      const intent = await call(settings, { action: "intent", route, request, identity, scope, refs,
+        ...(route === "/mongodb/mutations/prepare" ? { dispatchDigest: prepareRequestDigest(payload) } : {}),
+        renew: route === "/mongodb/bulk/control" }, signal);
       if (intent.state === "uncertain") {
+        if (intent.prepare) {
+          const recovered = await call(settings, { action: "recover_operation", mode: "reconcile", scope, id: intent.id }, signal);
+          if (recovered.state === "prepared") return { id: intent.id, state: "prepared", result: recovered.result };
+          throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED", intent.id);
+        }
         let evidence = { state: "unavailable" };
         try {
           const statusRoute = identity.jobId ? "/mongodb/bulk/job" : identity.mutationId ? "/mongodb/mutations/list" : undefined;
@@ -126,9 +136,19 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
           const reconciled = await call(settings, { action: "reconcile", scope, id: intent.id, result: evidence }, signal);
           if (reconciled.state === "complete") return { id: intent.id, ...reconciled };
         } catch { /* Remain uncertain and pinned. */ }
-        throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+        throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED", intent.id);
       }
       return intent;
+    },
+    async dispatchPrepare(settings, intent, scope, request, operation) {
+      try {
+        return await call(settings, { action: "dispatch_prepare", id: intent.id, attempt: intent.prepare.attempt,
+          scope, request, operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: request.timeoutMs }, operation.signal);
+      } catch (error) { error.intentId = intent.id; throw error; }
+    },
+    async recover(settings, input, scope, operation) {
+      return call(settings, { action: "recover_operation", id: input.intentId, mode: input.mode || "inspect", scope,
+        operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: input.timeoutMs }, operation.signal);
     },
     async outcome(settings, intent, scope, result, signal) {
       if (intent) await call(settings, { action: "outcome", scope, id: intent.id, result: guard.sanitize(result).value }, signal);

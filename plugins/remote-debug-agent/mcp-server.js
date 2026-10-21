@@ -193,6 +193,7 @@ const toolOperationPolicies = {
     defaultMs: DEFAULT_MONGODB_TIMEOUT_MS,
     maxMs: MAX_MONGODB_TIMEOUT_MS,
   },
+  remote_debug_mongodb_recover_operation: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_mongodb_prepare_write: {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
     maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
@@ -541,6 +542,20 @@ const tools = [
           maxLength: 500,
           description: "Human-readable reason for the mutation; it is stored only as redacted metadata.",
         },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_recover_operation",
+    description: "Inspect or reconcile an exact protected MongoDB operation in this local context. Reconciliation may fence an unprepared attempt in the technical journal, but never executes business writes. Legacy operations without verifiable identity remain protected. Use the intentId from the error; never create a replacement request.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["instanceId", "database", "intentId"],
+      properties: {
+        instanceId: instanceIdProperty,
+        database: { type: "string", minLength: 1, maxLength: 128 },
+        intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        mode: { type: "string", enum: ["inspect", "reconcile"], default: "inspect" },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
       },
     },
@@ -1999,7 +2014,8 @@ async function fetchAgentJson(settings, pathName, options = {}) {
     ...options,
     headers: { ...options.headers, Authorization: `Bearer ${settings.authToken}` },
   });
-  if ([401, 403].includes(result.response.status)) {
+  if ([401, 403].includes(result.response.status) &&
+      (!result.parsed.error?.code || result.parsed.error.code.startsWith("LOCAL_") || result.parsed.error.code === "AGENT_AUTH_UPGRADE_REQUIRED")) {
     throw localAuth.authError(result.parsed.error?.message || "Agent authentication failed", result.parsed.error?.code || "LOCAL_AUTH_INVALID", result.response.status);
   }
   return result;
@@ -2962,10 +2978,17 @@ async function requestAgent(pathName, payload, options = {}) {
     const acceptsDatabase = tools.find((tool) => tool.name === operation.toolName)?.inputSchema.properties.database;
     payload = { ...payload, instanceId, ...(database && acceptsDatabase ? { database } : {}) };
     operation.privacyContext = { scope, scopeForDatabase, queryOperation: payload.operation, queryPipeline: payload.pipeline };
+    if (pathName === "/mongodb/operations/recover") return businessStorage.recover(settings, payload, scope, operation);
     businessPrivacy.learnInput(operation.toolName, outputGuard.sanitize(payload).value, scope);
     operation.privacyInput = payload;
     operation.privacyIntent = await businessStorage.intent(settings, pathName, payload, scope, operation.privacyRefs, operation.signal);
-    if (operation.privacyIntent?.state === "complete") return operation.privacyIntent.result;
+    if (["complete", "prepared"].includes(operation.privacyIntent?.state)) return operation.privacyIntent.result;
+    if (operation.privacyIntent?.prepare) {
+      const prepared = await businessStorage.dispatchPrepare(settings, operation.privacyIntent, scope, payload, operation);
+      if (prepared.ok !== true) throw Object.assign(new Error(prepared.error?.message || "MongoDB preparation failed"), prepared.error,
+        { intentId: prepared.intentId || operation.privacyIntent.id });
+      return prepared;
+    }
   }
   let response;
   let parsed;
@@ -3079,6 +3102,10 @@ async function getAgent(pathName, operation) {
 }
 
 async function callTool(name, args, operation) {
+  if (name === "remote_debug_mongodb_recover_operation") {
+    return callAgent("/mongodb/operations/recover", { instanceId: args?.instanceId, database: args?.database,
+      intentId: args?.intentId, mode: args?.mode || "inspect", timeoutMs: args?.timeoutMs }, operation);
+  }
   // References have meaning only in explicitly supported structured arguments.
   // In particular, never interpolate one into shell commands or file paths.
   if (!name?.startsWith("remote_debug_mongodb_")) businessPrivacy.resolve(name, args);
@@ -3506,6 +3533,7 @@ async function handleRequest(message) {
           phase: error.phase,
           retriable: error.retriable,
           cause: error.cause,
+          intentId: error.intentId || operation.privacyIntent?.id,
         },
         details: error.payload,
       }, true), { previewContext: operation });

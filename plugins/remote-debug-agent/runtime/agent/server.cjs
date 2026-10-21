@@ -464,14 +464,14 @@ var require_browser = __commonJS({
         } else {
           exports2.storage.removeItem("debug");
         }
-      } catch (error) {
+      } catch (error2) {
       }
     }
     function load() {
       let r;
       try {
         r = exports2.storage.getItem("debug") || exports2.storage.getItem("DEBUG");
-      } catch (error) {
+      } catch (error2) {
       }
       if (!r && typeof process !== "undefined" && "env" in process) {
         r = process.env.DEBUG;
@@ -481,7 +481,7 @@ var require_browser = __commonJS({
     function localstorage() {
       try {
         return localStorage;
-      } catch (error) {
+      } catch (error2) {
       }
     }
     module2.exports = require_common()(exports2);
@@ -489,8 +489,8 @@ var require_browser = __commonJS({
     formatters.j = function(v) {
       try {
         return JSON.stringify(v);
-      } catch (error) {
-        return "[UnexpectedJSONParseError]: " + error.message;
+      } catch (error2) {
+        return "[UnexpectedJSONParseError]: " + error2.message;
       }
     };
   }
@@ -595,7 +595,7 @@ var require_node = __commonJS({
           221
         ];
       }
-    } catch (error) {
+    } catch (error2) {
     }
     exports2.inspectOpts = Object.keys(process.env).filter((key) => {
       return /^debug_/i.test(key);
@@ -946,30 +946,30 @@ var require_depd = __commonJS({
       Object.defineProperty(obj, prop, descriptor);
     }
     function DeprecationError(namespace, message, stack) {
-      var error = new Error();
+      var error2 = new Error();
       var stackString;
-      Object.defineProperty(error, "constructor", {
+      Object.defineProperty(error2, "constructor", {
         value: DeprecationError
       });
-      Object.defineProperty(error, "message", {
+      Object.defineProperty(error2, "message", {
         configurable: true,
         enumerable: false,
         value: message,
         writable: true
       });
-      Object.defineProperty(error, "name", {
+      Object.defineProperty(error2, "name", {
         enumerable: false,
         configurable: true,
         value: "DeprecationError",
         writable: true
       });
-      Object.defineProperty(error, "namespace", {
+      Object.defineProperty(error2, "namespace", {
         configurable: true,
         enumerable: false,
         value: namespace,
         writable: true
       });
-      Object.defineProperty(error, "stack", {
+      Object.defineProperty(error2, "stack", {
         configurable: true,
         enumerable: false,
         get: function() {
@@ -982,7 +982,7 @@ var require_depd = __commonJS({
           stackString = val;
         }
       });
-      return error;
+      return error2;
     }
   }
 });
@@ -5559,11 +5559,11 @@ var require_on_finished = __commonJS({
       var eeMsg;
       var eeSocket;
       var finished = false;
-      function onFinish(error) {
+      function onFinish(error2) {
         eeMsg.cancel();
         eeSocket.cancel();
         finished = true;
-        callback(error);
+        callback(error2);
       }
       eeMsg = eeSocket = first([[msg, "end", "finish"]], onFinish);
       function onSocket(socket) {
@@ -15690,16 +15690,16 @@ var require_read = __commonJS({
         }));
       }
       debug("read body");
-      getBody(stream, opts, function(error, body) {
-        if (error) {
+      getBody(stream, opts, function(error2, body) {
+        if (error2) {
           let _error;
-          if (error.type === "encoding.unsupported") {
+          if (error2.type === "encoding.unsupported") {
             _error = createError(415, 'unsupported charset "' + encoding.toUpperCase() + '"', {
               charset: encoding.toLowerCase(),
               type: "charset.unsupported"
             });
           } else {
-            _error = createError(400, error);
+            _error = createError(400, error2);
           }
           if (stream !== req) {
             req.unpipe();
@@ -15791,11 +15791,11 @@ var require_json = __commonJS({
     var debug = require_src()("body-parser:json");
     var read = require_read();
     var { normalizeOptions } = require_utils();
-    module2.exports = json;
+    module2.exports = json2;
     var FIRST_CHAR_REGEXP = /^[\x20\x09\x0a\x0d]*([^\x20\x09\x0a\x0d])/;
     var JSON_SYNTAX_CHAR = "#";
     var JSON_SYNTAX_REGEXP = /#+/g;
-    function json(options) {
+    function json2(options) {
       const normalizedOptions = normalizeOptions(options, "application/json");
       const parse = createJsonParser(options);
       const readOptions = {
@@ -15868,17 +15868,17 @@ var require_json = __commonJS({
       const match = FIRST_CHAR_REGEXP.exec(str);
       return match ? match[1] : void 0;
     }
-    function normalizeJsonSyntaxError(error, obj) {
-      const keys = Object.getOwnPropertyNames(error);
+    function normalizeJsonSyntaxError(error2, obj) {
+      const keys = Object.getOwnPropertyNames(error2);
       for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
         if (key !== "stack" && key !== "message") {
-          delete error[key];
+          delete error2[key];
         }
       }
-      error.stack = obj.stack.replace(error.message, obj.message);
-      error.message = obj.message;
-      return error;
+      error2.stack = obj.stack.replace(error2.message, obj.message);
+      error2.message = obj.message;
+      return error2;
     }
   }
 });
@@ -19896,7 +19896,7 @@ var require_ipaddr = __commonJS({
         return new this(octets);
       };
       ipaddr.IPv4.broadcastAddressFromCIDR = function(string) {
-        var cidr, error, i, ipInterfaceOctets, octets, subnetMaskOctets;
+        var cidr, error2, i, ipInterfaceOctets, octets, subnetMaskOctets;
         try {
           cidr = this.parseCIDR(string);
           ipInterfaceOctets = cidr[0].toByteArray();
@@ -19909,12 +19909,12 @@ var require_ipaddr = __commonJS({
           }
           return new this(octets);
         } catch (error1) {
-          error = error1;
+          error2 = error1;
           throw new Error("ipaddr: the address does not have IPv4 CIDR format");
         }
       };
       ipaddr.IPv4.networkAddressFromCIDR = function(string) {
-        var cidr, error, i, ipInterfaceOctets, octets, subnetMaskOctets;
+        var cidr, error2, i, ipInterfaceOctets, octets, subnetMaskOctets;
         try {
           cidr = this.parseCIDR(string);
           ipInterfaceOctets = cidr[0].toByteArray();
@@ -19927,7 +19927,7 @@ var require_ipaddr = __commonJS({
           }
           return new this(octets);
         } catch (error1) {
-          error = error1;
+          error2 = error1;
           throw new Error("ipaddr: the address does not have IPv4 CIDR format");
         }
       };
@@ -20816,19 +20816,19 @@ var require_layer = __commonJS({
       }
       this.matchers = Array.isArray(path18) ? path18.map(matcher) : [matcher(path18)];
     }
-    Layer.prototype.handleError = function handleError(error, req, res, next) {
+    Layer.prototype.handleError = function handleError(error2, req, res, next) {
       const fn = this.handle;
       if (fn.length !== 4) {
-        return next(error);
+        return next(error2);
       }
       try {
-        const ret = fn(error, req, res, next);
+        const ret = fn(error2, req, res, next);
         if (isPromise(ret)) {
           if (!(ret instanceof Promise)) {
             deprecate("handlers that are Promise-like are deprecated, use a native Promise instead");
           }
-          ret.then(null, function(error2) {
-            next(error2 || new Error("Rejected promise"));
+          ret.then(null, function(error3) {
+            next(error3 || new Error("Rejected promise"));
           });
         }
       } catch (err) {
@@ -20846,8 +20846,8 @@ var require_layer = __commonJS({
           if (!(ret instanceof Promise)) {
             deprecate("handlers that are Promise-like are deprecated, use a native Promise instead");
           }
-          ret.then(null, function(error) {
-            next(error || new Error("Rejected promise"));
+          ret.then(null, function(error2) {
+            next(error2 || new Error("Rejected promise"));
           });
         }
       } catch (err) {
@@ -21365,8 +21365,8 @@ var require_router = __commonJS({
             if (!(ret instanceof Promise)) {
               deprecate("parameters that are Promise-like are deprecated, use a native Promise instead");
             }
-            ret.then(null, function(error) {
-              paramCallback(error || new Error("Rejected promise"));
+            ret.then(null, function(error2) {
+              paramCallback(error2 || new Error("Rejected promise"));
             });
           }
         } catch (e) {
@@ -23024,7 +23024,7 @@ var require_send = __commonJS({
       this._root = opts.root ? resolve(opts.root) : null;
     }
     util.inherits(SendStream, Stream);
-    SendStream.prototype.error = function error(status, err) {
+    SendStream.prototype.error = function error2(status, err) {
       if (hasListeners(this, "error")) {
         return this.emit("error", createHttpError(status, err));
       }
@@ -23089,15 +23089,15 @@ var require_send = __commonJS({
       var statusCode = this.res.statusCode;
       return statusCode >= 200 && statusCode < 300 || statusCode === 304;
     };
-    SendStream.prototype.onStatError = function onStatError(error) {
-      switch (error.code) {
+    SendStream.prototype.onStatError = function onStatError(error2) {
+      switch (error2.code) {
         case "ENAMETOOLONG":
         case "ENOENT":
         case "ENOTDIR":
-          this.error(404, error);
+          this.error(404, error2);
           break;
         default:
-          this.error(500, error);
+          this.error(500, error2);
           break;
       }
     };
@@ -23467,9 +23467,9 @@ var require_vary = __commonJS({
       if (!field) {
         throw new TypeError("field argument is required");
       }
-      var fields = !Array.isArray(field) ? parse(String(field)) : field;
-      for (var j = 0; j < fields.length; j++) {
-        if (!FIELD_NAME_REGEXP.test(fields[j])) {
+      var fields2 = !Array.isArray(field) ? parse(String(field)) : field;
+      for (var j = 0; j < fields2.length; j++) {
+        if (!FIELD_NAME_REGEXP.test(fields2[j])) {
           throw new TypeError("field argument contains an invalid header name");
         }
       }
@@ -23478,14 +23478,14 @@ var require_vary = __commonJS({
       }
       var val = header;
       var vals = parse(header.toLowerCase());
-      if (fields.indexOf("*") !== -1 || vals.indexOf("*") !== -1) {
+      if (fields2.indexOf("*") !== -1 || vals.indexOf("*") !== -1) {
         return "*";
       }
-      for (var i = 0; i < fields.length; i++) {
-        var fld = fields[i].toLowerCase();
+      for (var i = 0; i < fields2.length; i++) {
+        var fld = fields2[i].toLowerCase();
         if (vals.indexOf(fld) === -1) {
           vals.push(fld);
-          val = val ? val + ", " + fields[i] : fields[i];
+          val = val ? val + ", " + fields2[i] : fields2[i];
         }
       }
       return val;
@@ -23650,7 +23650,7 @@ var require_response = __commonJS({
       }
       return this;
     };
-    res.json = function json(obj) {
+    res.json = function json2(obj) {
       var app = this.app;
       var escape2 = app.get("json escape");
       var replacer = app.get("json replacer");
@@ -23975,9 +23975,9 @@ var require_response = __commonJS({
       file.pipe(res2);
     }
     function stringify(value, replacer, spaces, escape2) {
-      var json = replacer || spaces ? JSON.stringify(value, replacer, spaces) : JSON.stringify(value);
-      if (escape2 && typeof json === "string") {
-        json = json.replace(/[<>&]/g, function(c) {
+      var json2 = replacer || spaces ? JSON.stringify(value, replacer, spaces) : JSON.stringify(value);
+      if (escape2 && typeof json2 === "string") {
+        json2 = json2.replace(/[<>&]/g, function(c) {
           switch (c.charCodeAt(0)) {
             case 60:
               return "\\u003c";
@@ -23991,7 +23991,7 @@ var require_response = __commonJS({
           }
         });
       }
-      return json;
+      return json2;
     }
   }
 });
@@ -24051,7 +24051,7 @@ var require_serve_static = __commonJS({
             forwardError = true;
           });
         }
-        stream.on("error", function error(err) {
+        stream.on("error", function error2(err) {
           if (forwardError || !(err.statusCode < 500)) {
             next(err);
             return;
@@ -24214,9 +24214,9 @@ var require_local_auth = __commonJS({
     var path18 = require("path");
     var crypto = require("crypto");
     function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
-      const error = new Error(message);
-      Object.assign(error, { code, statusCode, retriable: false });
-      return error;
+      const error2 = new Error(message);
+      Object.assign(error2, { code, statusCode, retriable: false });
+      return error2;
     }
     function resolveAuthFile(dataDir, env = process.env) {
       return path18.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path18.join(".runtime", "http-auth.json"));
@@ -24249,8 +24249,8 @@ var require_local_auth = __commonJS({
         const value = JSON.parse(fs12.readFileSync(filePath, "utf8"));
         if (value.version !== 1 || !/^[a-f0-9]{64}$/.test(value.token)) throw authError("authentication credential file is invalid");
         return value.token;
-      } catch (error) {
-        if (error.code === "LOCAL_AUTH_STORAGE_UNSAFE") throw error;
+      } catch (error2) {
+        if (error2.code === "LOCAL_AUTH_STORAGE_UNSAFE") throw error2;
         throw authError("authentication credential file is missing or invalid");
       }
     }
@@ -24273,8 +24273,8 @@ var require_local_auth = __commonJS({
           protectOrCheck(temporaryPath, false, true);
           try {
             fs12.linkSync(temporaryPath, filePath);
-          } catch (error) {
-            if (error.code !== "EEXIST") throw error;
+          } catch (error2) {
+            if (error2.code !== "EEXIST") throw error2;
           }
         } finally {
           try {
@@ -24283,8 +24283,8 @@ var require_local_auth = __commonJS({
           }
         }
         return readAuthToken(filePath);
-      } catch (error) {
-        if (error.code === "LOCAL_AUTH_STORAGE_UNSAFE") throw error;
+      } catch (error2) {
+        if (error2.code === "LOCAL_AUTH_STORAGE_UNSAFE") throw error2;
         throw authError("could not initialize protected authentication storage");
       }
     }
@@ -25231,26 +25231,26 @@ var require_receiver = __commonJS({
         }
         const buf = this.consume(2);
         if ((buf[0] & 48) !== 0) {
-          const error = this.createError(
+          const error2 = this.createError(
             RangeError,
             "RSV2 and RSV3 must be clear",
             true,
             1002,
             "WS_ERR_UNEXPECTED_RSV_2_3"
           );
-          cb(error);
+          cb(error2);
           return;
         }
         const compressed = (buf[0] & 64) === 64;
         if (compressed && !this._extensions[PerMessageDeflate2.extensionName]) {
-          const error = this.createError(
+          const error2 = this.createError(
             RangeError,
             "RSV1 must be clear",
             true,
             1002,
             "WS_ERR_UNEXPECTED_RSV_1"
           );
-          cb(error);
+          cb(error2);
           return;
         }
         this._fin = (buf[0] & 128) === 128;
@@ -25258,109 +25258,109 @@ var require_receiver = __commonJS({
         this._payloadLength = buf[1] & 127;
         if (this._opcode === 0) {
           if (compressed) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               "RSV1 must be clear",
               true,
               1002,
               "WS_ERR_UNEXPECTED_RSV_1"
             );
-            cb(error);
+            cb(error2);
             return;
           }
           if (!this._fragmented) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               "invalid opcode 0",
               true,
               1002,
               "WS_ERR_INVALID_OPCODE"
             );
-            cb(error);
+            cb(error2);
             return;
           }
           this._opcode = this._fragmented;
         } else if (this._opcode === 1 || this._opcode === 2) {
           if (this._fragmented) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               `invalid opcode ${this._opcode}`,
               true,
               1002,
               "WS_ERR_INVALID_OPCODE"
             );
-            cb(error);
+            cb(error2);
             return;
           }
           this._compressed = compressed;
         } else if (this._opcode > 7 && this._opcode < 11) {
           if (!this._fin) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               "FIN must be set",
               true,
               1002,
               "WS_ERR_EXPECTED_FIN"
             );
-            cb(error);
+            cb(error2);
             return;
           }
           if (compressed) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               "RSV1 must be clear",
               true,
               1002,
               "WS_ERR_UNEXPECTED_RSV_1"
             );
-            cb(error);
+            cb(error2);
             return;
           }
           if (this._payloadLength > 125 || this._opcode === 8 && this._payloadLength === 1) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               `invalid payload length ${this._payloadLength}`,
               true,
               1002,
               "WS_ERR_INVALID_CONTROL_PAYLOAD_LENGTH"
             );
-            cb(error);
+            cb(error2);
             return;
           }
         } else {
-          const error = this.createError(
+          const error2 = this.createError(
             RangeError,
             `invalid opcode ${this._opcode}`,
             true,
             1002,
             "WS_ERR_INVALID_OPCODE"
           );
-          cb(error);
+          cb(error2);
           return;
         }
         if (!this._fin && !this._fragmented) this._fragmented = this._opcode;
         this._masked = (buf[1] & 128) === 128;
         if (this._isServer) {
           if (!this._masked) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               "MASK must be set",
               true,
               1002,
               "WS_ERR_EXPECTED_MASK"
             );
-            cb(error);
+            cb(error2);
             return;
           }
         } else if (this._masked) {
-          const error = this.createError(
+          const error2 = this.createError(
             RangeError,
             "MASK must be clear",
             true,
             1002,
             "WS_ERR_UNEXPECTED_MASK"
           );
-          cb(error);
+          cb(error2);
           return;
         }
         if (this._payloadLength === 126) this._state = GET_PAYLOAD_LENGTH_16;
@@ -25395,14 +25395,14 @@ var require_receiver = __commonJS({
         const buf = this.consume(8);
         const num = buf.readUInt32BE(0);
         if (num > Math.pow(2, 53 - 32) - 1) {
-          const error = this.createError(
+          const error2 = this.createError(
             RangeError,
             "Unsupported WebSocket frame: payload length > 2^53 - 1",
             false,
             1009,
             "WS_ERR_UNSUPPORTED_DATA_PAYLOAD_LENGTH"
           );
-          cb(error);
+          cb(error2);
           return;
         }
         this._payloadLength = num * Math.pow(2, 32) + buf.readUInt32BE(4);
@@ -25418,14 +25418,14 @@ var require_receiver = __commonJS({
         if (this._payloadLength && this._opcode < 8) {
           this._totalPayloadLength += this._payloadLength;
           if (this._totalPayloadLength > this._maxPayload && this._maxPayload > 0) {
-            const error = this.createError(
+            const error2 = this.createError(
               RangeError,
               "Max payload size exceeded",
               false,
               1009,
               "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH"
             );
-            cb(error);
+            cb(error2);
             return;
           }
         }
@@ -25468,14 +25468,14 @@ var require_receiver = __commonJS({
           return;
         }
         if (this._maxFragments > 0 && ++this._numFragments > this._maxFragments) {
-          const error = this.createError(
+          const error2 = this.createError(
             RangeError,
             "Too many message fragments",
             false,
             1008,
             "WS_ERR_TOO_MANY_BUFFERED_PARTS"
           );
-          cb(error);
+          cb(error2);
           return;
         }
         if (this._compressed) {
@@ -25503,14 +25503,14 @@ var require_receiver = __commonJS({
           if (buf.length) {
             this._messageLength += buf.length;
             if (this._messageLength > this._maxPayload && this._maxPayload > 0) {
-              const error = this.createError(
+              const error2 = this.createError(
                 RangeError,
                 "Max payload size exceeded",
                 false,
                 1009,
                 "WS_ERR_UNSUPPORTED_MESSAGE_LENGTH"
               );
-              cb(error);
+              cb(error2);
               return;
             }
             this._fragments.push(buf);
@@ -25562,14 +25562,14 @@ var require_receiver = __commonJS({
         } else {
           const buf = concat(fragments, messageLength);
           if (!this._skipUTF8Validation && !isValidUTF8(buf)) {
-            const error = this.createError(
+            const error2 = this.createError(
               Error,
               "invalid UTF-8 sequence",
               true,
               1007,
               "WS_ERR_INVALID_UTF8"
             );
-            cb(error);
+            cb(error2);
             return;
           }
           if (this._state === INFLATING || this._allowSynchronousEvents) {
@@ -25601,14 +25601,14 @@ var require_receiver = __commonJS({
           } else {
             const code = data.readUInt16BE(0);
             if (!isValidStatusCode(code)) {
-              const error = this.createError(
+              const error2 = this.createError(
                 RangeError,
                 `invalid status code ${code}`,
                 true,
                 1002,
                 "WS_ERR_INVALID_CLOSE_CODE"
               );
-              cb(error);
+              cb(error2);
               return;
             }
             const buf = new FastBuffer(
@@ -25617,14 +25617,14 @@ var require_receiver = __commonJS({
               data.length - 2
             );
             if (!this._skipUTF8Validation && !isValidUTF8(buf)) {
-              const error = this.createError(
+              const error2 = this.createError(
                 Error,
                 "invalid UTF-8 sequence",
                 true,
                 1007,
                 "WS_ERR_INVALID_UTF8"
               );
-              cb(error);
+              cb(error2);
               return;
             }
             this._loop = false;
@@ -26338,10 +26338,10 @@ var require_event_target = __commonJS({
             callListener(handler, this, event2);
           };
         } else if (type === "error") {
-          wrapper = function onError(error) {
+          wrapper = function onError(error2) {
             const event2 = new ErrorEvent("error", {
-              error,
-              message: error.message
+              error: error2,
+              message: error2.message
             });
             event2[kTarget] = this;
             callListener(handler, this, event2);
@@ -26558,7 +26558,7 @@ var require_websocket = __commonJS({
     var http2 = require("http");
     var net2 = require("net");
     var tls = require("tls");
-    var { randomBytes: randomBytes5, createHash: createHash12 } = require("crypto");
+    var { randomBytes: randomBytes5, createHash: createHash13 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -27239,7 +27239,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest2 = createHash12("sha1").update(key + GUID).digest("base64");
+        const digest2 = createHash13("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest2) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -27492,7 +27492,7 @@ var require_stream = __commonJS({
         const data = !isBinary && duplex._readableState.objectMode ? msg.toString() : msg;
         if (!duplex.push(data)) ws.pause();
       });
-      ws.once("error", function error(err) {
+      ws.once("error", function error2(err) {
         if (duplex.destroyed) return;
         terminateOnDestroy = false;
         duplex.destroy(err);
@@ -27508,7 +27508,7 @@ var require_stream = __commonJS({
           return;
         }
         let called = false;
-        ws.once("error", function error(err2) {
+        ws.once("error", function error2(err2) {
           called = true;
           callback(err2);
         });
@@ -27608,7 +27608,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter4 = require("events");
     var http2 = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash12 } = require("crypto");
+    var { createHash: createHash13 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -27915,7 +27915,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest2 = createHash12("sha1").update(key + GUID).digest("base64");
+        const digest2 = createHash13("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -34441,7 +34441,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv,
       createECDH,
-      createHash: createHash12,
+      createHash: createHash13,
       createHmac,
       createSign,
       createVerify,
@@ -35129,11 +35129,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash12("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash13("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash12("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash13("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -35298,8 +35298,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash12("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash12("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash13("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash13("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -35339,7 +35339,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash12("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash13("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -35859,20 +35859,20 @@ var require_agent = __commonJS({
           if (this.buffer.length > 4 + len)
             return cb(new Error("Unexpected multiple agent requests"));
           this.buffer = null;
-          let error;
+          let error2;
           const proc = this.proc = spawn(EXEPATH, [data.length]);
           proc.stdout.on("data", (data2) => {
             this.push(data2);
           });
           proc.on("error", (err) => {
-            error = err;
-            cb(error);
+            error2 = err;
+            cb(error2);
           });
           proc.on("close", (code) => {
             this.proc = void 0;
-            if (!error) {
-              if (error = ERROR[code])
-                return cb(error);
+            if (!error2) {
+              if (error2 = ERROR[code])
+                return cb(error2);
               cb();
             }
           });
@@ -36330,19 +36330,19 @@ var require_agent = __commonJS({
           let totalKeysLen = 4;
           const newKeys = [];
           for (let i = 0; i < keys.length; ++i) {
-            const entry = keys[i];
-            if (typeof entry !== "object" || entry === null)
-              throw new Error(`Invalid key entry: ${entry}`);
+            const entry2 = keys[i];
+            if (typeof entry2 !== "object" || entry2 === null)
+              throw new Error(`Invalid key entry: ${entry2}`);
             let pubKey;
             let comment;
-            if (isParsedKey(entry)) {
-              pubKey = entry;
-            } else if (isParsedKey(entry.pubKey)) {
-              pubKey = entry.pubKey;
+            if (isParsedKey(entry2)) {
+              pubKey = entry2;
+            } else if (isParsedKey(entry2.pubKey)) {
+              pubKey = entry2.pubKey;
             } else {
-              if (typeof entry.pubKey !== "object" || entry.pubKey === null)
+              if (typeof entry2.pubKey !== "object" || entry2.pubKey === null)
                 continue;
-              ({ pubKey, comment } = entry.pubKey);
+              ({ pubKey, comment } = entry2.pubKey);
               pubKey = parseKey(pubKey);
               if (pubKey instanceof Error)
                 continue;
@@ -36527,10 +36527,10 @@ var require_zlib = __commonJS({
     }
     function zlibOnError(message, errno, code) {
       const self2 = this._owner;
-      const error = new Error(message);
-      error.errno = errno;
-      error.code = code;
-      self2._err = error;
+      const error2 = new Error(message);
+      error2.errno = errno;
+      error2.code = code;
+      self2._err = error2;
     }
     function _close(engine) {
       if (!engine._handle)
@@ -37661,7 +37661,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash12,
+      createHash: createHash13,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -37708,8 +37708,8 @@ var require_kex = __commonJS({
     function kexinit(self2) {
       let payload;
       if (self2._compatFlags & COMPAT.BAD_DHGEX) {
-        const entry = self2._offer.lists.kex;
-        let kex = entry.array;
+        const entry2 = self2._offer.lists.kex;
+        let kex = entry2.array;
         let found = false;
         for (let i = 0; i < kex.length; ++i) {
           if (kex[i].includes("group-exchange")) {
@@ -37723,12 +37723,12 @@ var require_kex = __commonJS({
         if (found) {
           let len = 1 + 16 + self2._offer.totalSize + 1 + 4;
           const newKexBuf = Buffer.from(kex.join(","));
-          len -= entry.buffer.length - newKexBuf.length;
+          len -= entry2.buffer.length - newKexBuf.length;
           const all = self2._offer.lists.all;
           const rest = new Uint8Array(
             all.buffer,
-            all.byteOffset + 4 + entry.buffer.length,
-            all.length - (4 + entry.buffer.length)
+            all.byteOffset + 4 + entry2.buffer.length,
+            all.length - (4 + entry2.buffer.length)
           );
           payload = Buffer.allocUnsafe(len);
           writeUInt32BE(payload, newKexBuf.length, 17);
@@ -38087,7 +38087,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash12(this.hashName);
+          const hash = createHash13(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -39039,23 +39039,23 @@ var require_kex = __commonJS({
               val = obj[parent][key];
               desc = `${parent}.${key}`;
             }
-            const entry = { array: void 0, buffer: void 0 };
+            const entry2 = { array: void 0, buffer: void 0 };
             if (Buffer.isBuffer(val)) {
-              entry.array = ("" + val).split(",");
-              entry.buffer = val;
+              entry2.array = ("" + val).split(",");
+              entry2.buffer = val;
               totalSize += 4 + val.length;
             } else {
               if (typeof val === "string")
                 val = val.split(",");
               if (Array.isArray(val)) {
-                entry.array = val;
-                entry.buffer = Buffer.from(val.join(","));
+                entry2.array = val;
+                entry2.buffer = Buffer.from(val.join(","));
               } else {
                 throw new TypeError(`Invalid \`${desc}\` type: ${typeof val}`);
               }
-              totalSize += 4 + entry.buffer.length;
+              totalSize += 4 + entry2.buffer.length;
             }
-            base[key] = entry;
+            base[key] = entry2;
           }
           const all = Buffer.allocUnsafe(totalSize);
           lists.all = all;
@@ -39095,9 +39095,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest2 = createHash12(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest2 = createHash13(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest2.length < len) {
-          const chunk = createHash12(hashName).update(secret).update(exchangeHash).update(digest2).digest();
+          const chunk = createHash13(hashName).update(secret).update(exchangeHash).update(digest2).digest();
           const extended = Buffer.allocUnsafe(digest2.length + chunk.length);
           extended.set(digest2, 0);
           extended.set(chunk, digest2.length);
@@ -44532,7 +44532,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash12,
+      createHash: createHash13,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -44754,7 +44754,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash12(hashAlgo).update(key).digest("hex");
+              key = createHash13(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -45005,9 +45005,9 @@ var require_client = __commonJS({
                   state: "open"
                 }
               };
-              const instance = isSFTP ? new SFTP(this, chanInfo, { debug }) : new Channel(this, chanInfo);
-              this._chanMgr.update(info.recipient, instance);
-              channel(void 0, instance);
+              const instance2 = isSFTP ? new SFTP(this, chanInfo, { debug }) : new Channel(this, chanInfo);
+              this._chanMgr.update(info.recipient, instance2);
+              channel(void 0, instance2);
             },
             CHANNEL_OPEN_FAILURE: (p, recipient, reason, description) => {
               const channel = this._chanMgr.get(recipient);
@@ -45524,12 +45524,12 @@ var require_client = __commonJS({
             dnsLookup(host, forceIPv4 ? 4 : 6, (err, address, family) => {
               if (err) {
                 const type = forceIPv4 ? "IPv4" : "IPv6";
-                const error = new Error(
+                const error2 = new Error(
                   `Error while looking up ${type} address for '${host}': ${err}`
                 );
                 clearTimeout(this._readyTimeout);
-                error.level = "client-dns";
-                this.emit("error", error);
+                error2.level = "client-dns";
+                this.emit("error", error2);
                 this.emit("close");
                 return;
               }
@@ -46885,15 +46885,15 @@ var require_server = __commonJS({
                       if (replied)
                         return;
                       replied = true;
-                      const instance = new Session(this, info, localChan);
-                      this._chanMgr.update(localChan, instance);
+                      const instance2 = new Session(this, info, localChan);
+                      this._chanMgr.update(localChan, instance2);
                       proto.channelOpenConfirm(
                         info.sender,
                         localChan,
                         MAX_WINDOW,
                         PACKET_SIZE
                       );
-                      return instance;
+                      return instance2;
                     };
                     this.emit("session", accept, reject);
                     return;
@@ -47002,9 +47002,9 @@ var require_server = __commonJS({
                   state: "open"
                 }
               };
-              const instance = new Channel(this, chanInfo, { server: true });
-              this._chanMgr.update(info.recipient, instance);
-              channel(void 0, instance);
+              const instance2 = new Channel(this, chanInfo, { server: true });
+              this._chanMgr.update(info.recipient, instance2);
+              channel(void 0, instance2);
             },
             CHANNEL_OPEN_FAILURE: (p, recipient, reason, description) => {
               const channel = this._chanMgr.get(recipient);
@@ -47216,22 +47216,22 @@ var require_server = __commonJS({
                     replied = true;
                     if (wantReply)
                       proto.channelSuccess(session._chanInfo.outgoing.id);
-                    let instance;
+                    let instance2;
                     if (useSFTP) {
-                      instance = new SFTP(this, session._chanInfo, {
+                      instance2 = new SFTP(this, session._chanInfo, {
                         server: true,
                         debug
                       });
                     } else {
-                      instance = new Channel(
+                      instance2 = new Channel(
                         this,
                         session._chanInfo,
                         { server: true }
                       );
-                      instance.subtype = session.subtype = `${type}:${data}`;
+                      instance2.subtype = session.subtype = `${type}:${data}`;
                     }
-                    session._channel = instance;
-                    return instance;
+                    session._channel = instance2;
+                    return instance2;
                   };
                   if (data === "sftp") {
                     if (listenerCount(session, "sftp")) {
@@ -47522,15 +47522,15 @@ var require_server = __commonJS({
         return this;
       }
       rekey(cb) {
-        let error;
+        let error2;
         try {
           this._protocol.rekey();
         } catch (ex) {
-          error = ex;
+          error2 = ex;
         }
         if (typeof cb === "function") {
-          if (error)
-            process.nextTick(cb, error);
+          if (error2)
+            process.nextTick(cb, error2);
           else
             this.once("rekey", cb);
         }
@@ -48123,8 +48123,8 @@ var require_environment_report = __commonJS({
             effective[match[1]] = value;
           });
         }
-      } catch (error) {
-        configError = error.code || "CONFIG_UNREADABLE";
+      } catch (error2) {
+        configError = error2.code || "CONFIG_UNREADABLE";
       }
       return { env: effective, configPath, configError };
     }
@@ -48258,11 +48258,11 @@ var require_environment_report = __commonJS({
             "pass",
             ""
           );
-        } catch (error) {
+        } catch (error2) {
           check(
             "private-storage",
             "本地认证存储权限",
-            storageBackend + "：" + (error.code || "PERMISSION_CHECK_FAILED"),
+            storageBackend + "：" + (error2.code || "PERMISSION_CHECK_FAILED"),
             "可设置并验证仅当前用户可访问的目录和文件",
             "fail",
             process.platform === "win32" ? "检查 Windows PowerShell 是否可用，以及当前用户对数据目录的所有权和 ACL 修改权限。" : "检查数据目录是否属于当前用户，以及文件系统是否支持 0700/0600 权限。"
@@ -48440,21 +48440,448 @@ function stable(value) {
 function encoded(value) {
   return JSON.stringify(stable(value));
 }
-function businessTargetScope(endpoint, instance, database) {
-  if (!instance?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+function businessTargetScope(endpoint, instance2, database) {
+  if (!instance2?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
   return encoded({
     endpoint,
-    id: instance.id,
-    host: instance.host,
-    port: instance.port,
-    username: instance.username,
-    createdAt: instance.createdAt,
-    configPath: instance.mongodb?.configPath,
-    driverPath: instance.mongodb?.driverPath,
-    configProfile: instance.mongodb?.configProfile,
-    uriKey: instance.mongodb?.uriKey,
+    id: instance2.id,
+    host: instance2.host,
+    port: instance2.port,
+    username: instance2.username,
+    createdAt: instance2.createdAt,
+    configPath: instance2.mongodb?.configPath,
+    driverPath: instance2.mongodb?.driverPath,
+    configProfile: instance2.mongodb?.configProfile,
+    uriKey: instance2.mongodb?.uriKey,
     database
   });
+}
+
+// ../plugins/remote-debug-agent/prepare-protocol.js
+var import_node_crypto = require("node:crypto");
+function prepareRequestDigest(input) {
+  const { operationId, deadlineAt, timeoutMs, _businessPrepare, ...request } = input;
+  return (0, import_node_crypto.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
+}
+function isPrepareTicket(value) {
+  return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
+}
+
+// ../plugins/remote-debug-agent/output-contracts.js
+var scalar = "scalar";
+var json = "json";
+var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
+var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
+var warning = fields("code message path source phase");
+var error = { ...fields("operationId code message layer phase retriable cause intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
+var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
+var instance = {
+  ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
+  sourceRoots: json,
+  logProjects: json,
+  serviceProfiles: json,
+  approvedCommands: json,
+  commandReview: json,
+  mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
+  runtime,
+  memory,
+  hasPassphrase: "boolean"
+};
+instance.mongodb.hasSandboxManagementPassword = "boolean";
+var common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
+var entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
+var mutation = {
+  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
+  collections: [scalar],
+  changedFields: [scalar],
+  affectedIds: json,
+  storageStatus: json,
+  rollbackRestoresDocuments: scalar,
+  atomicity: scalar,
+  failedBatch: fields("batchIndex mutationId code"),
+  preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
+};
+var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
+mutation.batches = [batch];
+var receiptStorage = fields("database collection legacy scope schemaVersion");
+var bulk = {
+  ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
+  receiptStorage,
+  activeBatchIndexes: [scalar],
+  committed: fields("matched modified inserted unchanged"),
+  differences: json,
+  changedFields: [scalar],
+  planPreview: [batch],
+  batches: [batch]
+};
+var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
+var execution = {
+  ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
+  results: [{ ...fields("commandIndex command commandPreview cmd ok stdout stderr exitCode durationMs timedOut"), timing }],
+  stopped: fields("commandIndex reason exitCode")
+};
+var violation = fields("commandIndex code severity rule reason message");
+var model = { ...fields("status errorCode attempts durationMs decision isReadOnly riskLevel summary"), violations: [violation] };
+var review = { ...fields("reason reviewedAt"), staticViolations: [violation], violations: [violation], model };
+var sandbox = {
+  ...fields("sandboxDatabase storageRoot jobCount bytes initialized activeFilesRetained jobId scannedBytes truncated cleanupHash fileCount retainedUntil removedFiles removedBytes removedReceipts"),
+  receiptStorage,
+  files: [fields("name bytes modified")],
+  records: json,
+  jobs: [{ ...fields("jobId status rollbackExpiresAt"), receiptStorage }],
+  hasMore: scalar
+};
+var access = {
+  ...fields("setupId planHash status expiresAt instanceId sandboxDatabase collection managerUser managerRole executorRole managementProfile configPath configModeAfter backupMode collectionsInitialized passwordReset requiresConfirmation confirmation rollbackMode"),
+  executionUser: fields("user db"),
+  environment: json,
+  managerPrivileges: json,
+  executorPrivileges: json,
+  existing: { ...fields("manager profile executorGranted"), roles: json }
+};
+var logResources = {
+  ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
+  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason")
+};
+var fileReceipt = {
+  ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
+  source: fields("size modifyTime changeTime inode device"),
+  error,
+  warnings: [fields("code message memberPath lineNumber")]
+};
+var logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
+var logJob = {
+  ...logProgress,
+  ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
+  resourceTaskId: scalar,
+  evidenceLimits: fields("count bytes"),
+  fileResults: [fileReceipt],
+  scopeControls: fields("dateFrom dateTo stopAfterFile"),
+  progress: logProgress,
+  resources: logResources,
+  error,
+  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
+  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
+  groups: [fields("level route method code message count")],
+  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
+};
+var contracts = {
+  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
+    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
+    target: fields("host port username"),
+    envFiles: [scalar],
+    processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }]
+  } }] }] },
+  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
+  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map((name2) => [name2, {
+    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
+    started: [scalar],
+    attempted: [scalar],
+    missing: [scalar],
+    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }],
+    error
+  }])),
+  remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
+  remote_debug_get_capabilities: { capabilities: json },
+  remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk } },
+  remote_debug_mongodb_prepare_write: mutation,
+  remote_debug_mongodb_prepare_index: mutation,
+  remote_debug_mongodb_prepare_transaction: mutation,
+  remote_debug_mongodb_prepare_import: mutation,
+  remote_debug_mongodb_prepare_bulk_storage: mutation,
+  remote_debug_mongodb_execute_mutation: mutation,
+  remote_debug_mongodb_rollback_mutation: mutation,
+  remote_debug_mongodb_list_mutations: { entries: [mutation] },
+  remote_debug_mongodb_prepare_bulk: bulk,
+  remote_debug_mongodb_execute_bulk: bulk,
+  remote_debug_mongodb_get_bulk_job: bulk,
+  remote_debug_mongodb_control_bulk_job: bulk,
+  remote_debug_mongodb_rollback_bulk_job: bulk,
+  remote_debug_mongodb_list_bulk_jobs: { ...fields("offset limit total hasMore"), jobs: [bulk] },
+  remote_debug_prepare_sandbox_access: access,
+  remote_debug_configure_sandbox_access: access,
+  remote_debug_get_sandbox: sandbox,
+  remote_debug_export_sandbox_log: sandbox,
+  remote_debug_prepare_sandbox_cleanup: sandbox,
+  remote_debug_cleanup_sandbox: sandbox,
+  remote_debug_restart_instance: { ...fields("restarted action previousStatus"), instance, runtime },
+  remote_debug_update_memory: { note: { ...fields("topic summary updatedAt"), facts: [scalar] } },
+  remote_debug_run_command: fields("stdout stderr exitCode timedOut"),
+  remote_debug_read_file: fields("path content truncated"),
+  remote_debug_list_dir: { path: scalar, entries: [entry] },
+  remote_debug_list_logs: { ...fields("category nextCursor hasMore truncated scannedEntries sourceCount"), entries: [entry], warnings: [warning] },
+  remote_debug_list_log_archive_members: { ...fields("path compression nextCursor hasMore truncated scannedBytes"), members: [entry] },
+  remote_debug_read_log: fields("path memberPath compression content truncated scannedTruncated scannedBytes archiveScannedBytes totalLines matchedLines"),
+  remote_debug_query_logs: {
+    ...fields("mode projectId content returnedLines matchedLines scannedLines scannedBytes expandedBytes outputBytes outputTruncated scanTruncated complete coverage countsAreComplete hasMoreFiles nextFileOffset hasMoreMembers nextMemberOffset memberBytes directoryListingTruncated warningsTruncated"),
+    files: [entry],
+    scannedFiles: [fields("path scannedBytes startByte endByte")],
+    records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
+    members: [entry],
+    warnings: [warning]
+  },
+  remote_debug_start_log_query: logJob,
+  remote_debug_get_log_query: logJob,
+  remote_debug_control_log_query: logJob,
+  remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
+  remote_debug_set_log_project: { projects: json },
+  remote_debug_prepare_command_draft: draft,
+  remote_debug_get_command_draft: draft,
+  remote_debug_execute_command_draft: execution,
+  remote_debug_review_command_draft: { ...draft, draft, decision: scalar, review, execution }
+};
+var OUTPUT_CONTRACTS = Object.freeze(Object.fromEntries(
+  Object.entries(contracts).map(([name2, shape]) => [name2, { ...common, ...shape }])
+));
+var ERROR_CONTRACT = {
+  ...common,
+  error,
+  details: { ...fields("ok operationId code layer phase retriable cause agentUrl port manifestPath"), error }
+};
+
+// ../plugins/remote-debug-agent/output-guard.js
+var REDACTED = "[REDACTED]";
+var GUARD_BLOCKED = Object.freeze({
+  ok: false,
+  error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
+});
+var MAX_BYTES = 8 * 1024 * 1024;
+var MAX_NODES = 1e5;
+var MAX_DEPTH = 40;
+var MAX_SECRETS = 2048;
+var SECRET_NAME = /(?:password|passwd|passphrase|pwd|secret|token|apikey|privatekey|authorization|cookie|credentials?|connectionstring|dsn|accesskey(?:id)?|signingkey|encryptionkey)(?:s|hash|digest)?$/i;
+var ASSIGNMENT_NAME = String.raw`[\w.-]*(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key(?:[_-]?id)?|connection[_-]?string|dsn)`;
+var ASSIGNMENT = new RegExp(String.raw`(\b${ASSIGNMENT_NAME}["']?\s*[=:]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}&]+)`, "gi");
+var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pass|token|secret|api[-_]?key|client[-_]?secret)(?:=|\s+))("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s;]+)`, "gi");
+function isSensitiveKey(key) {
+  const normalized = key.replace(/[^a-z0-9]/gi, "");
+  return SECRET_NAME.test(normalized) || /^(?:auth|authentication)$/i.test(normalized);
+}
+function blocked() {
+  throw new Error("OUTPUT_GUARD_BLOCKED");
+}
+function decodeEscapes(value) {
+  return value.replace(
+    /\\u([0-9a-f]{4})|\\x([0-9a-f]{2})|\\([\\"'/=:])/gi,
+    (_, unicode, hex, literal) => literal || String.fromCharCode(parseInt(unicode || hex, 16))
+  );
+}
+function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1e3, businessPrivacy } = {}) {
+  const secrets = /* @__PURE__ */ new Set();
+  let unavailable = false;
+  function remember(value) {
+    if (typeof value !== "string" || !value || value === REDACTED) return;
+    if (value.length > maxBytes || secrets.size >= MAX_SECRETS && !secrets.has(value)) {
+      unavailable = true;
+      return;
+    }
+    secrets.add(value);
+  }
+  function context() {
+    if (unavailable) blocked();
+    const deadline = performance.now() + budgetMs;
+    let nodes = 0, bytes = 0;
+    const localSecrets = new Set(secrets);
+    return { secrets: localSecrets, replacements: 0, omittedFields: 0, remember(value) {
+      if (typeof value !== "string" || !value || value === REDACTED) return;
+      if (value.length > maxBytes || localSecrets.size >= MAX_SECRETS && !localSecrets.has(value)) blocked();
+      localSecrets.add(value);
+    }, check(value, depth) {
+      if (++nodes > maxNodes || depth > maxDepth || performance.now() > deadline) blocked();
+      if (typeof value === "string") bytes += Buffer.byteLength(value);
+      if (bytes > maxBytes * 8) blocked();
+    } };
+  }
+  function learn(value, ctx, depth = 0) {
+    ctx.check(value, depth);
+    if (typeof value === "string") {
+      const decoded = decodeEscapes(value);
+      if (decoded !== value) learn(decoded, ctx, depth + 1);
+      if (/^[\[{"]/.test(value.trim())) {
+        let parsed;
+        try {
+          parsed = JSON.parse(value);
+        } catch {
+        }
+        if (parsed !== void 0 && parsed !== value) learn(parsed, ctx, depth + 1);
+      }
+      for (const pattern of [ASSIGNMENT, CLI_SECRET]) {
+        for (const match of value.matchAll(pattern)) {
+          const secret = match[2].replace(/^["']|["']$/g, "");
+          ctx.remember(secret);
+        }
+      }
+      for (const match of value.matchAll(/\b(?:Bearer|Basic)\s+([a-z0-9._~+/=-]+)/gi)) ctx.remember(match[1]);
+    } else if (Array.isArray(value)) {
+      for (const item of value) learn(item, ctx, depth + 1);
+    } else if (value && typeof value === "object") {
+      if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) blocked();
+      for (const [key, child] of Object.entries(value)) {
+        learn(key, ctx, depth + 1);
+        if (isSensitiveKey(key)) learnSecret(child, ctx, depth + 1);
+        else learn(child, ctx, depth + 1);
+      }
+    } else if (!["string", "number", "boolean", "undefined"].includes(typeof value) && value !== null) blocked();
+  }
+  function learnSecret(value, ctx, depth) {
+    if (typeof value === "string") {
+      ctx.check(value, depth);
+      ctx.remember(value);
+    } else if (typeof value === "number") {
+      ctx.check(value, depth);
+      ctx.remember(String(value));
+    } else if (Array.isArray(value)) {
+      for (const item of value) learnSecret(item, ctx, depth + 1);
+    } else if (value && typeof value === "object") {
+      ctx.check(value, depth);
+      for (const child of Object.values(value)) learnSecret(child, ctx, depth + 1);
+    } else ctx.check(value, depth);
+  }
+  function replacePatterns(text3, ctx) {
+    let result = text3.replace(/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----|$)/g, REDACTED).replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s"'<>]*@/gi, `$1${REDACTED}@`).replace(/\b(?:Bearer|Basic)\s+[a-z0-9._~+/=-]+/gi, REDACTED).replace(/\b(?:authorization|proxy-authorization|cookie|set-cookie)\s*:\s*[^\r\n]+/gi, REDACTED).replace(CLI_SECRET, `$1${REDACTED}`).replace(ASSIGNMENT, `$1${REDACTED}`).replace(/\b(?:sk-(?:proj-|svcacct-)?[a-z0-9_-]{16,}|gh[pousr]_[a-z0-9]{20,}|github_pat_[a-z0-9_]{20,}|xox[baprs]-[a-z0-9-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16})\b/gi, REDACTED).replace(/\beyJ[a-z0-9_-]{5,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\b/gi, REDACTED);
+    for (const secret of [...ctx.secrets].sort((left, right) => right.length - left.length)) {
+      ctx.check?.(void 0, 0);
+      const variants = [.../* @__PURE__ */ new Set([secret, encodeURIComponent(secret), JSON.stringify(secret).slice(1, -1)])].sort((left, right) => right.length - left.length);
+      for (const variant of variants) {
+        result = variant.includes(REDACTED) ? result.split(variant).join(REDACTED) : result.split(REDACTED).map((part) => part.split(variant).join(REDACTED)).join(REDACTED);
+      }
+    }
+    return result;
+  }
+  function text2(value, ctx, depth) {
+    const trimmed = value.trim();
+    if (/^[\[{"]/.test(trimmed)) {
+      let parsed;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+      }
+      if (parsed !== void 0 && parsed !== value) {
+        learn(parsed, ctx, depth + 1);
+        const safe = walk(parsed, "json", ctx, depth + 1);
+        if (JSON.stringify(parsed) !== JSON.stringify(safe)) return JSON.stringify(safe);
+        return value;
+      }
+    }
+    let result = replacePatterns(value, ctx);
+    let decoded = value;
+    for (let round = 0; round < 3 && decoded.includes("\\"); round++) {
+      decoded = decodeEscapes(decoded);
+      if (replacePatterns(decoded, ctx) !== decoded) {
+        result = REDACTED;
+        break;
+      }
+    }
+    if (result !== value) ctx.replacements++;
+    ctx.check(void 0, depth);
+    return result;
+  }
+  function walk(value, shape, ctx, depth = 0) {
+    ctx.check(value, depth);
+    if (value === void 0 || value === null) return value;
+    if (shape === "boolean") {
+      if (typeof value !== "boolean") blocked();
+      return value;
+    }
+    if (shape === "scalar" && typeof value === "object") blocked();
+    if (shape !== "scalar" && shape !== "json" && typeof value !== "object") blocked();
+    if (typeof value === "string") return text2(value, ctx, depth);
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) blocked();
+      if (ctx.secrets.has(String(value))) {
+        ctx.replacements++;
+        return REDACTED;
+      }
+      return value;
+    }
+    if (Array.isArray(value)) {
+      if (shape !== "json" && !Array.isArray(shape)) blocked();
+      return value.map((item) => walk(item, shape === "json" ? "json" : shape[0], ctx, depth + 1));
+    }
+    if (!value || typeof value !== "object" || Array.isArray(shape) || shape === "scalar") blocked();
+    const output = /* @__PURE__ */ Object.create(null);
+    for (const [key, child] of Object.entries(value)) {
+      ctx.check(key, depth);
+      if (shape !== "json" && !Object.hasOwn(shape, key)) {
+        ctx.omittedFields++;
+        continue;
+      }
+      const safeKey = text2(key, ctx, depth + 1);
+      if (Object.hasOwn(output, safeKey)) blocked();
+      if (shape !== "json" && shape[key] === "boolean" || typeof child === "boolean" && /^has[A-Z]/.test(key)) output[safeKey] = walk(child, "boolean", ctx, depth + 1);
+      else if (isSensitiveKey(key)) {
+        output[safeKey] = REDACTED;
+        if (child !== REDACTED) ctx.replacements++;
+      } else output[safeKey] = walk(child, shape === "json" ? "json" : shape[key], ctx, depth + 1);
+    }
+    return output;
+  }
+  function sanitize(value, shape = "json") {
+    const ctx = context();
+    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
+    learn(value, ctx);
+    if (unavailable) blocked();
+    const safe = walk(value, shape, ctx);
+    const checked = walk(safe, shape, ctx);
+    return { value: checked, stats: { policyVersion: 1, replacements: ctx.replacements, omittedFields: ctx.omittedFields } };
+  }
+  function toolResult(name2, payload, isError = false, privacyContext) {
+    try {
+      const shape = isError ? ERROR_CONTRACT : Object.hasOwn(OUTPUT_CONTRACTS, name2) ? OUTPUT_CONTRACTS[name2] : void 0;
+      if (!shape || !payload || typeof payload !== "object" || Array.isArray(payload)) blocked();
+      const safe = sanitize(payload, shape);
+      if (businessPrivacy) {
+        const protectedBusiness = businessPrivacy.protect(name2, safe.value, privacyContext);
+        safe.value = protectedBusiness.value;
+        safe.stats.replacements += protectedBusiness.replacements;
+        safe.value = businessPrivacy.scrubKnown(safe.value, shape);
+        safe.stats.businessPrivacy = businessPrivacy.metadata();
+      }
+      safe.value.outputGuard = safe.stats;
+      return { ...isError ? { isError: true } : {}, content: [{ type: "text", text: JSON.stringify(safe.value, null, 2) }] };
+    } catch {
+      return { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] };
+    }
+  }
+  function serialize(message, { staticResult = false } = {}) {
+    try {
+      const safeId = businessPrivacy ? businessPrivacy.scrubKnown(sanitize(message.id).value) : sanitize(message.id).value;
+      if (safeId !== message.id) blocked();
+      const result = message.result;
+      if (result && (Object.hasOwn(result, "content") || Object.hasOwn(result, "structuredContent"))) {
+        if (Object.keys(message.result).some((key) => !["content", "isError"].includes(key))) blocked();
+        if (!Array.isArray(message.result.content) || message.result.content.length !== 1) blocked();
+        const content = message.result.content[0];
+        if (content.type !== "text" || typeof content.text !== "string" || Object.keys(content).some((key) => !["type", "text"].includes(key))) blocked();
+        const payload = JSON.parse(content.text);
+        if (payload?.outputGuard?.policyVersion !== 1 && payload?.error?.code !== "OUTPUT_GUARD_BLOCKED") blocked();
+      } else if (result !== void 0 && !staticResult) {
+        if (!result || typeof result !== "object" || Array.isArray(result)) blocked();
+        const keys = Object.keys(result);
+        const initialized = keys.length === 3 && keys.every((key) => ["protocolVersion", "capabilities", "serverInfo"].includes(key));
+        const resources = keys.length === 1 && Array.isArray(result.resources) && result.resources.length === 0;
+        if (keys.length && !initialized && !resources) blocked();
+      }
+      if (staticResult && (!Array.isArray(message.result?.tools) || Object.keys(message.result).length !== 1)) blocked();
+      let safe = staticResult ? message : sanitize(message).value;
+      if (businessPrivacy && !staticResult && !result?.content) safe = businessPrivacy.scrubKnown(safe);
+      const body = JSON.stringify(safe);
+      if (Buffer.byteLength(body) > maxBytes) blocked();
+      return Buffer.from(body, "utf8");
+    } catch {
+      let id = typeof message.id === "number" && Number.isSafeInteger(message.id) ? message.id : null;
+      if (secrets.has(String(id))) id = null;
+      if (typeof message.id === "string" && message.id.length <= 128) {
+        const ctx = { secrets };
+        if (replacePatterns(message.id, ctx) === message.id) id = message.id;
+      }
+      return Buffer.from(JSON.stringify({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] } }));
+    }
+  }
+  return { remember, sanitize, toolResult, serialize };
 }
 
 // privacy-service.js
@@ -48524,8 +48951,8 @@ var PrivacyService = class {
     await this.worker?.terminate();
   }
 };
-async function privacyRequest(service, input, { instance, origin } = {}) {
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "reconcile", "delivered", "cleanup"];
+async function privacyRequest(service, input, { instance: instance2, origin, dispatch } = {}) {
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "reconcile", "delivered", "cleanup", "dispatch_prepare", "recover_operation"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate2 = (scope) => {
     if (typeof scope !== "string" || scope.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
@@ -48535,26 +48962,116 @@ async function privacyRequest(service, input, { instance, origin } = {}) {
     } catch {
       throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
     }
-    const current = instance(target2.id);
+    const current = instance2(target2.id);
     if (!current || current.enabled === false || target2.endpoint !== origin || scope !== businessTargetScope(origin, current, target2.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate2(input.scope);
+  if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
+    const record = await service.call("inspect_operation", input);
+    const target2 = JSON.parse(input.scope);
+    const view = (value, reason) => ({
+      ok: true,
+      intentId: input.id,
+      state: value.state,
+      route: value.route,
+      attempt: value.prepare?.attempt,
+      mutationId: value.prepare?.mutationId,
+      legacy: !value.prepare && value.route === "/mongodb/mutations/prepare",
+      reason,
+      recoveryCode: value.reconciliation?.code,
+      ...value.result ? { result: value.result } : {}
+    });
+    if (input.action === "recover_operation") {
+      if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (!record.prepare) {
+        const identity = record.identity || {};
+        if (dispatch && /^[a-f0-9]{64}$/.test(identity.planHash || "") && (identity.mutationId || identity.jobId)) {
+          try {
+            const receipt = await dispatch(
+              target2.id,
+              identity.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
+              {
+                ...identity.mutationId ? { mutationId: identity.mutationId } : { jobId: identity.jobId },
+                planHash: identity.planHash,
+                operationId: input.operationId,
+                timeoutMs: input.timeoutMs,
+                deadlineAt: input.deadlineAt
+              }
+            );
+            const evidence = identity.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
+            const saved2 = await service.call("reconcile", { ...input, result: createOutputGuard().sanitize(evidence).value });
+            return view({ ...record, ...saved2 }, saved2.state === "uncertain" ? "remote_evidence_unavailable" : void 0);
+          } catch {
+            return view(record, "remote_evidence_unavailable");
+          }
+        }
+        return view(record, "legacy_evidence_required");
+      }
+    }
+    if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+    if (input.action === "dispatch_prepare") {
+      const digest2 = prepareRequestDigest(input.request || {});
+      if (input.request?.instanceId !== target2.id || input.request?.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      await service.call("claim_prepare", { ...input, dispatchDigest: digest2 });
+    }
+    const recovering = input.action === "recover_operation";
+    let result, notDispatched = false, fenced = false;
+    try {
+      const { instanceId, ...request } = input.request || {};
+      result = await dispatch(
+        target2.id,
+        recovering ? "/mongodb/mutations/recover-prepare" : record.route,
+        {
+          ...recovering ? { database: target2.database } : request,
+          _businessPrepare: record.prepare,
+          operationId: input.operationId,
+          timeoutMs: input.timeoutMs,
+          deadlineAt: input.deadlineAt
+        }
+      );
+      if (result?.ok !== true) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      if (recovering) {
+        if (JSON.stringify(result.prepare) !== JSON.stringify(record.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
+        fenced = result.recovery === "fenced";
+        if (fenced) result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+        else {
+          const { prepare, recovery, ...receipt } = result;
+          result = receipt;
+        }
+      }
+      if (!fenced && (result.mutationId !== record.prepare.mutationId || !/^[a-f0-9]{64}$/.test(result.planHash || ""))) throw privacyError("BUSINESS_OPERATION_DENIED");
+      result = createOutputGuard().sanitize(result).value;
+    } catch (error2) {
+      notDispatched = !recovering && error2.dispatchState === "not_dispatched";
+      result = { ok: false, error: {
+        code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_OPERATION_FAILED",
+        message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
+        operationId: input.operationId,
+        layer: error2.layer,
+        phase: error2.phase,
+        retriable: error2.retriable
+      } };
+    }
+    const saved = await service.call("prepare_result", { ...input, prepare: record.prepare, result, notDispatched, fenced });
+    return recovering ? view(saved, saved.state === "uncertain" ? "remote_evidence_unavailable" : fenced ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
+  }
   if (input.action === "commit") {
     for (const record of input.records || []) validate2(record.scope);
-    const current = instance(JSON.parse(input.scope).id);
+    const current = instance2(JSON.parse(input.scope).id);
     input.retentionMs = Math.max(30 * 864e5, current.mongodb?.rollbackTtlMs || 0, current.mongodb?.bulkRollbackTtlMs || 0);
   }
   return service.call(input.action, input);
 }
-function installPrivacyRoutes(app, { directory, registry, service } = {}) {
+function installPrivacyRoutes(app, { directory, registry, service, dispatch } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
     try {
-      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin });
+      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch });
       response.json({ ok: true, result });
-    } catch (error) {
-      response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
+    } catch (error2) {
+      response.status(409).json({ ok: false, error: { code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
     }
   });
 }
@@ -48606,8 +49123,8 @@ async function serviceStartRuntime(request, profile, dependencies) {
       timeout: Math.min(1e4, remaining()),
       maxBuffer: 1024 * 1024,
       encoding: "utf8"
-    }, (error, stdout) => {
-      if (error) reject(Object.assign(new Error("SERVICE_PM2_COMMAND_FAILED"), { serviceCode: "SERVICE_PM2_COMMAND_FAILED" }));
+    }, (error2, stdout) => {
+      if (error2) reject(Object.assign(new Error("SERVICE_PM2_COMMAND_FAILED"), { serviceCode: "SERVICE_PM2_COMMAND_FAILED" }));
       else resolve(String(stdout));
     });
   });
@@ -48637,13 +49154,13 @@ async function serviceStartRuntime(request, profile, dependencies) {
     return resolved;
   };
   const find = (entries, proc) => {
-    const matches = entries.filter((entry) => entry.name === proc.name || entry.pm2_env?.name === proc.name);
+    const matches = entries.filter((entry2) => entry2.name === proc.name || entry2.pm2_env?.name === proc.name);
     if (matches.length > 1) fail3("SERVICE_DUPLICATE_PROCESS");
     return matches[0];
   };
   const nodeArgs = profile.envFiles.map((file) => `--env-file=${file}`);
-  const checkIdentity = (entry, proc) => {
-    const e = entry.pm2_env || {};
+  const checkIdentity = (entry2, proc) => {
+    const e = entry2.pm2_env || {};
     if (e.exec_mode !== "fork_mode") fail3("SERVICE_MODE_MISMATCH");
     if (real(e.pm_cwd) !== cwd || real(e.pm_exec_path) !== script || real(e.exec_interpreter) !== interpreter) fail3("SERVICE_PROCESS_PATH_CONFLICT");
     const args = Array.isArray(e.node_args) ? e.node_args : typeof e.node_args === "string" ? e.node_args.split(/\s+/).filter(Boolean) : [];
@@ -48652,15 +49169,15 @@ async function serviceStartRuntime(request, profile, dependencies) {
     for (const [key, value] of Object.entries(proc.env)) {
       if (String(e[key] ?? e.env?.[key]) !== value) fail3("SERVICE_ENV_MISMATCH");
     }
-    if (!Number.isSafeInteger(entry.pid) || entry.pid < 1) fail3("SERVICE_PROCESS_NOT_RUNNING");
+    if (!Number.isSafeInteger(entry2.pid) || entry2.pid < 1) fail3("SERVICE_PROCESS_NOT_RUNNING");
     if (!Number.isSafeInteger(e.restart_time) || e.restart_time < 0 || !Number.isSafeInteger(e.pm_uptime) || e.pm_uptime < 1) fail3("SERVICE_PROCESS_METADATA_INVALID");
-    if (real(`/proc/${entry.pid}/exe`) !== interpreter || real(`/proc/${entry.pid}/cwd`) !== cwd) fail3("SERVICE_ACTUAL_PROCESS_MISMATCH");
-    const actualArgs = bounded2(`/proc/${entry.pid}/cmdline`).split("\0").filter(Boolean);
+    if (real(`/proc/${entry2.pid}/exe`) !== interpreter || real(`/proc/${entry2.pid}/cwd`) !== cwd) fail3("SERVICE_ACTUAL_PROCESS_MISMATCH");
+    const actualArgs = bounded2(`/proc/${entry2.pid}/cmdline`).split("\0").filter(Boolean);
     if (nodeArgs.some((arg) => !actualArgs.includes(arg))) fail3("SERVICE_NODE_ARGS_MISMATCH");
-    const actualEnv = bounded2(`/proc/${entry.pid}/environ`).split("\0");
+    const actualEnv = bounded2(`/proc/${entry2.pid}/environ`).split("\0");
     for (const [key, value] of Object.entries(proc.env)) if (!actualEnv.includes(`${key}=${value}`)) fail3("SERVICE_ACTUAL_ENV_MISMATCH");
     if (actualEnv.some((item) => item.startsWith("NODE_OPTIONS=") && item !== "NODE_OPTIONS=")) fail3("SERVICE_UNEXPECTED_NODE_OPTIONS");
-    return { pid: entry.pid, restarts: e.restart_time, uptime: e.pm_uptime };
+    return { pid: entry2.pid, restarts: e.restart_time, uptime: e.pm_uptime };
   };
   const sockets = () => {
     const result = [];
@@ -48668,9 +49185,9 @@ async function serviceStartRuntime(request, profile, dependencies) {
       let text2;
       try {
         text2 = bounded2(file, 1024 * 1024);
-      } catch (error) {
-        if (file.endsWith("tcp6") && error.code === "ENOENT") continue;
-        throw error;
+      } catch (error2) {
+        if (file.endsWith("tcp6") && error2.code === "ENOENT") continue;
+        throw error2;
       }
       for (const line of text2.trim().split("\n").slice(1)) {
         const columns = line.trim().split(/\s+/);
@@ -48688,8 +49205,8 @@ async function serviceStartRuntime(request, profile, dependencies) {
         try {
           const match = /^socket:\[(\d+)\]$/.exec(fs12.readlinkSync(`/proc/${pid}/fd/${file}`));
           if (match) owned.add(match[1]);
-        } catch (error) {
-          if (error.code !== "ENOENT") throw error;
+        } catch (error2) {
+          if (error2.code !== "ENOENT") throw error2;
         }
       }
     }
@@ -48698,15 +49215,15 @@ async function serviceStartRuntime(request, profile, dependencies) {
       return { port, listening: matches.length > 0, owned: matches.length > 0 && matches.every((listener) => owned.has(listener.inode)) };
     });
   };
-  const logPosition = (entry) => {
-    const logPath = entry.pm2_env?.pm_out_log_path;
+  const logPosition = (entry2) => {
+    const logPath = entry2.pm2_env?.pm_out_log_path;
     if (typeof logPath !== "string") return null;
     let file;
     try {
       file = real(logPath);
-    } catch (error) {
-      if (error.code === "ENOENT") return null;
-      throw error;
+    } catch (error2) {
+      if (error2.code === "ENOENT") return null;
+      throw error2;
     }
     const root = real(path18.join(profile.pm2Home, "logs"));
     if (!inside(file, root)) fail3("SERVICE_LOG_PATH_CONFLICT");
@@ -48714,8 +49231,8 @@ async function serviceStartRuntime(request, profile, dependencies) {
     if (!stat.isFile()) fail3("SERVICE_LOG_PATH_CONFLICT");
     return { file, size: stat.size, ino: stat.ino };
   };
-  const markerSeen = (entry, offset) => {
-    const log = logPosition(entry);
+  const markerSeen = (entry2, offset) => {
+    const log = logPosition(entry2);
     if (!log) return false;
     if (offset && (log.ino !== offset.ino || log.size < offset.size)) return false;
     const start = Math.max(offset ? offset.size : 0, log.size - 65536);
@@ -48769,9 +49286,9 @@ async function serviceStartRuntime(request, profile, dependencies) {
       try {
         fs12.mkdirSync(lock, { mode: 448 });
         locked = true;
-      } catch (error) {
-        if (error.code === "EEXIST") fail3("SERVICE_START_BUSY");
-        throw error;
+      } catch (error2) {
+        if (error2.code === "EEXIST") fail3("SERVICE_START_BUSY");
+        throw error2;
       }
     }
     phase = "process-preflight";
@@ -48779,11 +49296,11 @@ async function serviceStartRuntime(request, profile, dependencies) {
     const missing = [], initial = /* @__PURE__ */ new Map(), offsets = /* @__PURE__ */ new Map();
     const listeners = sockets();
     for (const proc of profile.processes) {
-      const entry = find(entries, proc);
-      if (entry) {
-        const identity = checkIdentity(entry, proc);
-        if (entry.pm2_env.status !== "online") fail3("SERVICE_EXISTING_PROCESS_UNHEALTHY");
-        const evidence = portEvidence(proc, entry.pid, listeners);
+      const entry2 = find(entries, proc);
+      if (entry2) {
+        const identity = checkIdentity(entry2, proc);
+        if (entry2.pm2_env.status !== "online") fail3("SERVICE_EXISTING_PROCESS_UNHEALTHY");
+        const evidence = portEvidence(proc, entry2.pid, listeners);
         if (evidence.some((item) => !item.owned)) fail3("SERVICE_PORT_OWNER_MISMATCH");
         initial.set(proc.name, identity);
       } else {
@@ -48841,34 +49358,34 @@ async function serviceStartRuntime(request, profile, dependencies) {
       let ready = true;
       verified.length = 0;
       for (const proc of profile.processes) {
-        const entry = find(entries, proc);
-        if (!entry) fail3("SERVICE_PROCESS_DISAPPEARED");
-        if (["errored", "stopped", "stopping"].includes(entry.pm2_env?.status)) fail3("SERVICE_PROCESS_EXITED");
-        if (entry.pm2_env?.status !== "online") {
+        const entry2 = find(entries, proc);
+        if (!entry2) fail3("SERVICE_PROCESS_DISAPPEARED");
+        if (["errored", "stopped", "stopping"].includes(entry2.pm2_env?.status)) fail3("SERVICE_PROCESS_EXITED");
+        if (entry2.pm2_env?.status !== "online") {
           ready = false;
           continue;
         }
-        if (!entry.pm2_env.node_version && started.includes(proc.name)) {
+        if (!entry2.pm2_env.node_version && started.includes(proc.name)) {
           ready = false;
           continue;
         }
-        const identity = checkIdentity(entry, proc);
+        const identity = checkIdentity(entry2, proc);
         const previous = identities.get(proc.name);
         if (previous && (previous.pid !== identity.pid || previous.restarts !== identity.restarts || previous.uptime !== identity.uptime)) fail3("SERVICE_PROCESS_UNSTABLE");
         identities.set(proc.name, identity);
         if (!previous && identity.restarts !== 0) fail3("SERVICE_PROCESS_UNSTABLE");
-        const ports = portEvidence(proc, entry.pid, listenersNow);
+        const ports = portEvidence(proc, entry2.pid, listenersNow);
         if (ports.some((item) => item.listening && !item.owned)) fail3("SERVICE_PORT_OWNER_MISMATCH");
         const offset = offsets.get(proc.name);
         if (offset && offset.ino === void 0) {
-          const log = logPosition(entry);
+          const log = logPosition(entry2);
           if (log) offset.ino = log.ino;
         }
-        const marker = markerSeen(entry, offset);
+        const marker = markerSeen(entry2, offset);
         const healthy = ports.every((item) => item.owned) && marker;
         if (healthy) verified.push({
           name: proc.name,
-          pid: entry.pid,
+          pid: entry2.pid,
           status: "online",
           restarts: identity.restarts,
           ports: ports.map((item) => item.port),
@@ -48886,15 +49403,15 @@ async function serviceStartRuntime(request, profile, dependencies) {
     }
     phase = "complete";
     if (request.action === "start" && started.length && profile.persist) {
-      if (entries.some((entry) => entry.pm2_env?.status !== "online")) return output("healthy", { persistenceWarning: "SERVICE_PM2_SAVE_SKIPPED_UNHEALTHY_NAMESPACE" });
+      if (entries.some((entry2) => entry2.pm2_env?.status !== "online")) return output("healthy", { persistenceWarning: "SERVICE_PM2_SAVE_SKIPPED_UNHEALTHY_NAMESPACE" });
       phase = "persist";
       await pm2(["save"]);
       phase = "complete";
       return output("healthy", { persisted: true });
     }
     return output("healthy", { unchanged: started.length === 0 });
-  } catch (error) {
-    const code = error.serviceCode || (["ENOENT", "EACCES", "EPERM", "ENOTDIR", "ELOOP"].includes(error.code) ? `SERVICE_FILESYSTEM_${error.code}` : "SERVICE_START_FAILED");
+  } catch (error2) {
+    const code = error2.serviceCode || (["ENOENT", "EACCES", "EPERM", "ENOTDIR", "ELOOP"].includes(error2.code) ? `SERVICE_FILESYSTEM_${error2.code}` : "SERVICE_START_FAILED");
     return output(started.length ? "partial" : attempted.length ? "unknown" : "blocked", { error: { code }, recovery: "Inspect this exact instance before retrying. No processes were deleted or restarted; recovery requires separate authorization." });
   } finally {
     if (locked) {
@@ -48908,7 +49425,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
 
 // service-profiles.js
 var import_posix = __toESM(require("node:path/posix"), 1);
-var import_node_crypto = require("node:crypto");
+var import_node_crypto2 = require("node:crypto");
 var SERVICE_START_CONFIRMATION = "启动服务";
 var SERVICE_ENV_KEYS = ["NODE_ENV", "PORT", "WS_PORT", "CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED", "ORDER_AI_ALLOWED_RESTAURANTS"];
 var SERVICE_CAPABILITIES = Object.freeze({
@@ -48935,8 +49452,8 @@ function invalid(message) {
 function assertServiceId(id) {
   if (typeof id !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(id)) invalid("invalid serviceId");
 }
-function object(value, fields, field) {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields.includes(key))) invalid(`invalid ${field} fields`);
+function object(value, fields2, field) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields2.includes(key))) invalid(`invalid ${field} fields`);
 }
 function integer(value, min, max, field) {
   if (!Number.isSafeInteger(value) || value < min || value > max) invalid(`invalid ${field}`);
@@ -49033,10 +49550,10 @@ function normalizeServiceProfiles(value, context) {
   return result;
 }
 function serviceProfileHash(profile) {
-  return (0, import_node_crypto.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
+  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
 }
 function serviceTargetHash(target2, allowedPaths) {
-  return (0, import_node_crypto.createHash)("sha256").update(JSON.stringify({
+  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify({
     host: target2.host,
     port: target2.port,
     username: target2.username,
@@ -49234,7 +49751,7 @@ var import_node_http = __toESM(require("node:http"), 1);
 var import_node_fs5 = __toESM(require("node:fs"), 1);
 var import_node_path8 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
-var import_node_crypto13 = require("node:crypto");
+var import_node_crypto14 = require("node:crypto");
 
 // node_modules/ws/wrapper.mjs
 var import_stream = __toESM(require_stream(), 1);
@@ -49252,10 +49769,10 @@ var import_local_auth4 = __toESM(require_local_auth(), 1);
 // manual-auth.js
 var import_node_fs = __toESM(require("node:fs"), 1);
 var import_node_path3 = __toESM(require("node:path"), 1);
-var import_node_crypto2 = require("node:crypto");
+var import_node_crypto3 = require("node:crypto");
 var import_node_util = require("node:util");
 var import_local_auth2 = __toESM(require_local_auth(), 1);
-var scrypt = (0, import_node_util.promisify)(import_node_crypto2.scrypt);
+var scrypt = (0, import_node_util.promisify)(import_node_crypto3.scrypt);
 var USERNAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$/;
 var HEX64 = /^[a-f0-9]{64}$/;
 var HASH_OPTIONS = { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
@@ -49297,11 +49814,11 @@ var ManualAdminStore = class {
     const account = this.read().find((item) => item.username === username);
     const actual = await scrypt(password, account?.salt || "0".repeat(64), 64, HASH_OPTIONS);
     const expected = Buffer.from(account?.hash || "0".repeat(128), "hex");
-    return (0, import_node_crypto2.timingSafeEqual)(actual, expected) && Boolean(account);
+    return (0, import_node_crypto3.timingSafeEqual)(actual, expected) && Boolean(account);
   }
   async register(username, password) {
     validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto2.randomBytes)(32).toString("hex");
+    const salt = (0, import_node_crypto3.randomBytes)(32).toString("hex");
     const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
     const accounts = this.read();
     if (accounts.some((account) => account.username === username)) throw manualError("ADMIN_EXISTS", "管理员账号已存在。", 409);
@@ -49310,7 +49827,7 @@ var ManualAdminStore = class {
   }
   async reset(username, password) {
     validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto2.randomBytes)(32).toString("hex");
+    const salt = (0, import_node_crypto3.randomBytes)(32).toString("hex");
     const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
     const accounts = this.read();
     if (!accounts.some((account) => account.username === username)) throw manualError("ADMIN_NOT_FOUND", "管理员账号不存在。", 404);
@@ -49318,7 +49835,7 @@ var ManualAdminStore = class {
   }
   save(accounts) {
     this.protectDirectory();
-    const temporaryPath = import_node_path3.default.join(this.directory, `.accounts-${(0, import_node_crypto2.randomBytes)(16).toString("hex")}.tmp`);
+    const temporaryPath = import_node_path3.default.join(this.directory, `.accounts-${(0, import_node_crypto3.randomBytes)(16).toString("hex")}.tmp`);
     try {
       import_node_fs.default.writeFileSync(temporaryPath, JSON.stringify({ version: 1, accounts }) + "\n", { flag: "wx", mode: 384 });
       import_local_auth2.default.protectOrCheck(temporaryPath, false, true);
@@ -49356,7 +49873,7 @@ var ManualLoginLimiter = class {
 var import_node_fs2 = __toESM(require("node:fs"), 1);
 var import_node_path5 = __toESM(require("node:path"), 1);
 var import_node_url2 = require("node:url");
-var import_node_crypto3 = require("node:crypto");
+var import_node_crypto4 = require("node:crypto");
 var import_node_child_process = require("node:child_process");
 var import_node_util2 = require("node:util");
 var import_local_auth3 = __toESM(require_local_auth(), 1);
@@ -49411,10 +49928,10 @@ async function verifyWindowsOwner(execute2, nativeDirectory, nonce, signal) {
   let result;
   try {
     result = await invoke(execute2, nativeDirectory, ["-Nonce", nonce], signal, 12e4);
-  } catch (error) {
-    if (error.name === "AbortError") throw manualError("OWNER_VERIFICATION_CANCELLED", "已取消 Windows 身份验证，请重试。", 403);
-    if (error.killed) throw manualError("OWNER_VERIFICATION_TIMEOUT", "Windows 身份验证超时，请重试。", 403);
-    const proof2 = proofFrom(error.stdout || "", nonce);
+  } catch (error2) {
+    if (error2.name === "AbortError") throw manualError("OWNER_VERIFICATION_CANCELLED", "已取消 Windows 身份验证，请重试。", 403);
+    if (error2.killed) throw manualError("OWNER_VERIFICATION_TIMEOUT", "Windows 身份验证超时，请重试。", 403);
+    const proof2 = proofFrom(error2.stdout || "", nonce);
     if (proof2?.verified === false) throw verificationError(proof2);
     throw manualError("OWNER_WINDOWS_HELPER_FAILED", "Windows 身份验证组件执行失败，请关闭注册窗口后重试。", 503);
   }
@@ -49450,8 +49967,8 @@ var ManualOwnerVerification = class {
     try {
       const result = await this.execute("/usr/sbin/sysctl", ["-n", "hw.optional.arm64"], { timeout: 5e3, maxBuffer: 4096, signal: this.controller?.signal });
       this.nativeArchitecture = result.stdout.trim() === "1" ? "arm64" : "x86_64";
-    } catch (error) {
-      if (error.name === "AbortError") throw error;
+    } catch (error2) {
+      if (error2.name === "AbortError") throw error2;
       this.nativeArchitecture = "x86_64";
     }
     return this.nativeArchitecture;
@@ -49464,12 +49981,12 @@ var ManualOwnerVerification = class {
   }
   async macHelper() {
     const source = import_node_path5.default.join(this.nativeDirectory, "verify-owner.swift");
-    const hash = (0, import_node_crypto3.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
+    const hash = (0, import_node_crypto4.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
     import_node_fs2.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
     import_local_auth3.default.protectOrCheck(this.directory, true, true);
     const helper = import_node_path5.default.join(this.directory, `verify-owner-${hash}`);
     if (!import_node_fs2.default.existsSync(helper)) {
-      const temporary = `${helper}-${(0, import_node_crypto3.randomBytes)(8).toString("hex")}`;
+      const temporary = `${helper}-${(0, import_node_crypto4.randomBytes)(8).toString("hex")}`;
       let stage = "compiler";
       try {
         await this.executeMac("/usr/bin/xcrun", ["--find", "swiftc"], { timeout: 1e4, maxBuffer: 4096, signal: this.controller?.signal });
@@ -49478,16 +49995,16 @@ var ManualOwnerVerification = class {
         stage = "install";
         import_node_fs2.default.chmodSync(temporary, 448);
         import_node_fs2.default.renameSync(temporary, helper);
-      } catch (error) {
-        if (error.name === "AbortError") throw manualError("OWNER_HELPER_CANCELLED", "系统认证组件准备已取消，请重试。", 503);
+      } catch (error2) {
+        if (error2.name === "AbortError") throw manualError("OWNER_HELPER_CANCELLED", "系统认证组件准备已取消，请重试。", 503);
         if (stage === "compiler") {
-          const code = Number.isInteger(error.code) || typeof error.code === "string" && /^[A-Z_]{1,64}$/.test(error.code) ? String(error.code) : "UNKNOWN";
+          const code = Number.isInteger(error2.code) || typeof error2.code === "string" && /^[A-Z_]{1,64}$/.test(error2.code) ? String(error2.code) : "UNKNOWN";
           throw manualError("OWNER_COMPILER_UNAVAILABLE", `无法启动 Swift 编译器检查（${code}）。请检查 Xcode Command Line Tools、xcode-select 配置和插件进程权限。`, 503);
         }
         if (stage === "install") throw manualError("OWNER_HELPER_INSTALL_FAILED", "认证组件已编译，但无法写入缓存。请检查本地认证目录的所有权与权限。", 503);
-        if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") throw manualError("OWNER_HELPER_COMPILE_FAILED", "Swift 编译器返回过多诊断信息，认证组件未生成。", 503);
-        if (error.killed) throw manualError("OWNER_HELPER_COMPILE_TIMEOUT", "Swift 编译认证组件超时，请稍后重试。", 503);
-        const exit = Number.isInteger(error.code) ? `（退出码 ${error.code}）` : "";
+        if (error2.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") throw manualError("OWNER_HELPER_COMPILE_FAILED", "Swift 编译器返回过多诊断信息，认证组件未生成。", 503);
+        if (error2.killed) throw manualError("OWNER_HELPER_COMPILE_TIMEOUT", "Swift 编译认证组件超时，请稍后重试。", 503);
+        const exit = Number.isInteger(error2.code) ? `（退出码 ${error2.code}）` : "";
         throw manualError("OWNER_HELPER_COMPILE_FAILED", `Swift 编译认证组件失败${exit}。编译器已找到，请检查系统 SDK 与命令行工具是否匹配。`, 503);
       } finally {
         import_node_fs2.default.rmSync(temporary, { force: true });
@@ -49537,7 +50054,7 @@ var ManualOwnerVerification = class {
   }
   async verify() {
     if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
-    const nonce = (0, import_node_crypto3.randomBytes)(32).toString("hex");
+    const nonce = (0, import_node_crypto4.randomBytes)(32).toString("hex");
     const controller = new AbortController();
     if (this.preparing) await this.preparing;
     this.controller = controller;
@@ -49548,9 +50065,9 @@ var ManualOwnerVerification = class {
       } else {
         result = await verifyWindowsOwner(this.execute, this.nativeDirectory, nonce, controller.signal);
       }
-    } catch (error) {
-      if (this.platform === "win32") throw error;
-      if (/^OWNER_(HELPER_|COMPILER_)/.test(error.code || "")) throw error;
+    } catch (error2) {
+      if (this.platform === "win32") throw error2;
+      if (/^OWNER_(HELPER_|COMPILER_)/.test(error2.code || "")) throw error2;
       throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过或已取消。", 403);
     } finally {
       if (this.controller === controller) this.controller = null;
@@ -49571,16 +50088,16 @@ var ManualOwnerVerification = class {
 
 // manual-mongodb.js
 var import_ssh22 = __toESM(require_lib4(), 1);
-var import_node_crypto12 = require("node:crypto");
+var import_node_crypto13 = require("node:crypto");
 
 // ssh-connection-supervisor.js
 var import_node_events = require("node:events");
 var import_promises = __toESM(require("node:fs/promises"), 1);
-var import_node_crypto11 = require("node:crypto");
+var import_node_crypto12 = require("node:crypto");
 var import_ssh2 = __toESM(require_lib4(), 1);
 
 // operation.js
-var import_node_crypto4 = require("node:crypto");
+var import_node_crypto5 = require("node:crypto");
 var API_VERSION = 2;
 var OPERATION_TIMEOUTS = Object.freeze({
   run: Object.freeze({ defaultMs: 3e4, maxMs: 12e4 }),
@@ -49687,7 +50204,7 @@ function normalizeOperationEnvelope(payload = {}, policy, options = {}) {
   const maximumDeadline = nowMs + policy.maxMs;
   const deadlineAt = Number.isInteger(suppliedDeadline) ? Math.min(suppliedDeadline, maximumDeadline) : nowMs + timeoutMs;
   const suppliedOperationId = typeof payload.operationId === "string" ? payload.operationId.trim() : "";
-  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto4.randomUUID)();
+  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto5.randomUUID)();
   return {
     operationId,
     timeoutMs,
@@ -49769,15 +50286,15 @@ function createOperationController(operation, parentSignal, options = {}) {
     }
   };
 }
-function operationErrorPayload(error, fallback = {}) {
+function operationErrorPayload(error2, fallback = {}) {
   return {
-    code: error?.code || fallback.code || "REMOTE_DEBUG_ERROR",
-    message: error?.message || fallback.message || "remote debug operation failed",
-    operationId: error?.operationId || fallback.operationId,
-    layer: error?.layer || fallback.layer,
-    phase: error?.phase || fallback.phase,
-    retriable: Boolean(error?.retriable),
-    cause: error?.cause
+    code: error2?.code || fallback.code || "REMOTE_DEBUG_ERROR",
+    message: error2?.message || fallback.message || "remote debug operation failed",
+    operationId: error2?.operationId || fallback.operationId,
+    layer: error2?.layer || fallback.layer,
+    phase: error2?.phase || fallback.phase,
+    retriable: Boolean(error2?.retriable),
+    cause: error2?.cause
   };
 }
 
@@ -49935,7 +50452,7 @@ var ChannelScheduler = class {
   startItem(item) {
     item.started = true;
     const background = item.priority === "background";
-    const bulk = item.priority === "bulk";
+    const bulk2 = item.priority === "bulk";
     if (item.priority === "control") {
       this.activeControl += 1;
     } else {
@@ -49943,7 +50460,7 @@ var ChannelScheduler = class {
       if (background) {
         this.activeBackground += 1;
       }
-      if (bulk) this.activeBulk += 1;
+      if (bulk2) this.activeBulk += 1;
     }
     const queueMs = Math.max(0, this.now() - item.enqueuedAt);
     this.activeOperations.set(item.operation.operationId, {
@@ -49966,7 +50483,7 @@ var ChannelScheduler = class {
         if (background) {
           this.activeBackground -= 1;
         }
-        if (bulk) this.activeBulk -= 1;
+        if (bulk2) this.activeBulk -= 1;
       }
       this.pump();
     });
@@ -50006,7 +50523,7 @@ var ChannelScheduler = class {
 
 // config.js
 var import_node_fs4 = __toESM(require("node:fs"), 1);
-var import_node_crypto10 = require("node:crypto");
+var import_node_crypto11 = require("node:crypto");
 var import_node_path7 = __toESM(require("node:path"), 1);
 var import_posix8 = __toESM(require("node:path/posix"), 1);
 
@@ -50045,9 +50562,9 @@ function normalizeLogProjects(value, allowedRoots, sourceRoots = {}) {
   return result;
 }
 function invalid2(message) {
-  const error = new Error(message);
-  Object.assign(error, { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
-  return error;
+  const error2 = new Error(message);
+  Object.assign(error2, { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
+  return error2;
 }
 
 // log-policy.js
@@ -50146,13 +50663,13 @@ var LOG_CAPABILITIES = Object.freeze({
   pagination: "cursor"
 });
 function logInputError(message, code = "INVALID_LOG_REQUEST") {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = 400;
-  error.layer = "worker";
-  error.phase = "validation";
-  error.retriable = false;
-  return error;
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = 400;
+  error2.layer = "worker";
+  error2.phase = "validation";
+  error2.retriable = false;
+  return error2;
 }
 function normalizeLogJobLimits(value) {
   if (value === void 0 || value === "") return {};
@@ -50349,7 +50866,7 @@ function normalizeResourcePolicy(value) {
 }
 
 // approved-commands.js
-var import_node_crypto5 = require("node:crypto");
+var import_node_crypto6 = require("node:crypto");
 var APPROVED_COMMAND_CONFIRMATION = "使用命令";
 var DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1e3;
 var DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 3e5;
@@ -50380,7 +50897,7 @@ var ApprovedCommandError = class extends Error {
   }
 };
 function hashCommands(commands) {
-  return (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
+  return (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
 }
 function redactCommand(command, maxChars = 512) {
   if (typeof command !== "string" || command.length === 0) {
@@ -50468,18 +50985,18 @@ function normalizeCommands(value, settings) {
 function nowIso(nowMs) {
   return new Date(nowMs).toISOString();
 }
-function publicDraft(draft) {
+function publicDraft(draft2) {
   return {
-    draftId: draft.draftId,
-    purpose: draft.purpose,
-    commands: draft.commands.slice(),
-    commandHash: draft.commandHash,
-    commandCount: draft.commands.length,
-    commandBlock: draft.commands.join("\n\n"),
-    status: draft.status,
-    createdAt: draft.createdAt,
-    expiresAt: draft.expiresAt,
-    executedAt: draft.executedAt,
+    draftId: draft2.draftId,
+    purpose: draft2.purpose,
+    commands: draft2.commands.slice(),
+    commandHash: draft2.commandHash,
+    commandCount: draft2.commands.length,
+    commandBlock: draft2.commands.join("\n\n"),
+    status: draft2.status,
+    createdAt: draft2.createdAt,
+    expiresAt: draft2.expiresAt,
+    executedAt: draft2.executedAt,
     instructions: [
       "选择“只生成命令，不执行”：不要调用执行工具，直接把命令交给人工执行。",
       "选择“使用命令”：调用 remote_debug_execute_command_draft，并传入 draftId、commandHash 和确认短语“使用命令”。"
@@ -50490,8 +51007,8 @@ function createCommandDraftStore(options = {}) {
   const now = options.now || (() => Date.now());
   const drafts = /* @__PURE__ */ new Map();
   function cleanup(nowMs = now()) {
-    for (const [draftId, draft] of drafts.entries()) {
-      if (draft.expiresAtMs <= nowMs && draft.status === "pending") {
+    for (const [draftId, draft2] of drafts.entries()) {
+      if (draft2.expiresAtMs <= nowMs && draft2.status === "pending") {
         drafts.delete(draftId);
       }
     }
@@ -50501,8 +51018,8 @@ function createCommandDraftStore(options = {}) {
     cleanup(nowMs);
     const normalizedCommands = normalizeCommands(commands, settings);
     const ttlMs = settings.ttlMs || DEFAULT_APPROVED_COMMAND_TTL_MS;
-    const draft = {
-      draftId: (0, import_node_crypto5.randomUUID)(),
+    const draft2 = {
+      draftId: (0, import_node_crypto6.randomUUID)(),
       purpose: normalizePurpose(purpose),
       commands: normalizedCommands,
       commandHash: hashCommands(normalizedCommands),
@@ -50512,31 +51029,31 @@ function createCommandDraftStore(options = {}) {
       executedAt: void 0,
       status: "pending"
     };
-    drafts.set(draft.draftId, draft);
-    return publicDraft(draft);
+    drafts.set(draft2.draftId, draft2);
+    return publicDraft(draft2);
   }
   function getDraft(draftId) {
     cleanup();
-    const draft = drafts.get(draftId);
-    if (!draft) {
+    const draft2 = drafts.get(draftId);
+    if (!draft2) {
       throw new ApprovedCommandError(
         "approved command draft was not found",
         "APPROVED_COMMAND_DRAFT_NOT_FOUND",
         404
       );
     }
-    return publicDraft(draft);
+    return publicDraft(draft2);
   }
   function claimDraft({ draftId, commandHash, confirmation }) {
-    const draft = drafts.get(draftId);
-    if (!draft) {
+    const draft2 = drafts.get(draftId);
+    if (!draft2) {
       throw new ApprovedCommandError(
         "approved command draft was not found",
         "APPROVED_COMMAND_DRAFT_NOT_FOUND",
         404
       );
     }
-    if (draft.expiresAtMs <= now()) {
+    if (draft2.expiresAtMs <= now()) {
       drafts.delete(draftId);
       throw new ApprovedCommandError(
         "approved command draft has expired",
@@ -50544,14 +51061,14 @@ function createCommandDraftStore(options = {}) {
         409
       );
     }
-    if (draft.status !== "pending") {
+    if (draft2.status !== "pending") {
       throw new ApprovedCommandError(
         "approved command draft has already been used",
         "APPROVED_COMMAND_DRAFT_ALREADY_USED",
         409
       );
     }
-    if (commandHash !== draft.commandHash) {
+    if (commandHash !== draft2.commandHash) {
       throw new ApprovedCommandError(
         "approved command hash does not match the draft",
         "APPROVED_COMMAND_HASH_MISMATCH"
@@ -50563,17 +51080,17 @@ function createCommandDraftStore(options = {}) {
         "APPROVED_COMMAND_CONFIRMATION_REQUIRED"
       );
     }
-    draft.status = "executing";
-    return publicDraft(draft);
+    draft2.status = "executing";
+    return publicDraft(draft2);
   }
   function finishDraft(draftId, status = "executed") {
-    const draft = drafts.get(draftId);
-    if (!draft) {
+    const draft2 = drafts.get(draftId);
+    if (!draft2) {
       return void 0;
     }
-    draft.status = status;
-    draft.executedAt = nowIso(now());
-    return publicDraft(draft);
+    draft2.status = status;
+    draft2.executedAt = nowIso(now());
+    return publicDraft(draft2);
   }
   return {
     claimDraft,
@@ -50585,14 +51102,14 @@ function createCommandDraftStore(options = {}) {
 
 // command-review.js
 var import_node_child_process2 = require("node:child_process");
-var import_node_crypto9 = require("node:crypto");
+var import_node_crypto10 = require("node:crypto");
 var import_node_fs3 = __toESM(require("node:fs"), 1);
 var import_node_os = __toESM(require("node:os"), 1);
 var import_node_path6 = __toESM(require("node:path"), 1);
 
 // security.js
 var import_posix7 = __toESM(require("node:path/posix"), 1);
-var import_node_crypto8 = require("node:crypto");
+var import_node_crypto9 = require("node:crypto");
 
 // mongodb-codec.js
 var MONGODB_CODEC_SCRIPT = String.raw`
@@ -50834,14 +51351,14 @@ function byteLength(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
 function mongoError(message, code, statusCode = 400, details = {}) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode;
-  error.layer = "mongodb";
-  error.phase = "validation";
-  error.retriable = false;
-  Object.assign(error, details);
-  return error;
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = statusCode;
+  error2.layer = "mongodb";
+  error2.phase = "validation";
+  error2.retriable = false;
+  Object.assign(error2, details);
+  return error2;
 }
 function normalizeString(value, fieldName, options = {}) {
   if (typeof value !== "string") {
@@ -51207,7 +51724,7 @@ function redactMongoSecrets(value, maxLength = MAX_MONGODB_ERROR_BYTES) {
 ...[truncated ${redacted.length - maxLength} chars]`;
 }
 function runtimeMongoError(message, options = {}) {
-  const error = operationError(message, {
+  const error2 = operationError(message, {
     code: options.code || "MONGODB_QUERY_FAILED",
     statusCode: options.statusCode || 502,
     operationId: options.operation?.operationId,
@@ -51216,8 +51733,8 @@ function runtimeMongoError(message, options = {}) {
     retriable: options.retriable === true,
     cause: options.cause ? redactMongoSecrets(options.cause.message || options.cause) : void 0
   });
-  error.details = options.details;
-  return error;
+  error2.details = options.details;
+  return error2;
 }
 function resultCount(data) {
   if (data === null || data === void 0) return 0;
@@ -51261,7 +51778,7 @@ async function runMongoQuery(query, options = {}) {
       stdin,
       taskType: "mongo_read"
     });
-  } catch (error) {
+  } catch (error2) {
     if (options.operation?.signal?.aborted) {
       throw operationErrorForSignal(options.operation.signal, options.operation, {
         layer: "mongodb",
@@ -51269,13 +51786,13 @@ async function runMongoQuery(query, options = {}) {
       });
     }
     throw runtimeMongoError("MongoDB remote helper could not be executed", {
-      code: error.code || "MONGODB_QUERY_FAILED",
-      statusCode: error.statusCode || 502,
-      phase: error.phase || "remote-exec",
-      retriable: error.retriable === true,
-      cause: error,
+      code: error2.code || "MONGODB_QUERY_FAILED",
+      statusCode: error2.statusCode || 502,
+      phase: error2.phase || "remote-exec",
+      retriable: error2.retriable === true,
+      cause: error2,
       operation: options.operation,
-      details: { cause: redactMongoSecrets(error.message) }
+      details: { cause: redactMongoSecrets(error2.message) }
     });
   }
   if (remoteResult?.stdoutTruncated || byteLength(remoteResult?.stdout || "") > MAX_MONGODB_RESULT_BYTES) {
@@ -51387,7 +51904,7 @@ async function __ttlInitializeReceiptCollection(client, database, name) {
 `;
 
 // mongodb-bulk.js
-var import_node_crypto6 = require("node:crypto");
+var import_node_crypto7 = require("node:crypto");
 var import_posix5 = __toESM(require("node:path/posix"), 1);
 
 // mongodb-bulk-runtime.js
@@ -52968,22 +53485,22 @@ var EJSON_KEYS = /* @__PURE__ */ new Set([
 var BLOCKED_KEYS = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor", "$where", "$function", "$accumulator", "$out", "$merge", "$currentOp"]);
 var MAX_BULK_RESULT_BYTES = 512 * 1024;
 function bulkError(message, code, statusCode = 400, details = {}) {
-  const error = operationError(message, {
+  const error2 = operationError(message, {
     code,
     statusCode,
     layer: "mongodb-bulk",
     phase: "validation",
     retriable: false
   });
-  error.details = details;
-  return error;
+  error2.details = details;
+  return error2;
 }
 function byteLength2(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
-function assertKnownFields(value, fields, label) {
+function assertKnownFields(value, fields2, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError(`${label} must be an object`, "MONGODB_BULK_INPUT_INVALID");
-  if (Object.keys(value).some((key) => !fields.includes(key))) throw bulkError(`${label} contains unsupported fields`, "MONGODB_BULK_UNKNOWN_FIELD");
+  if (Object.keys(value).some((key) => !fields2.includes(key))) throw bulkError(`${label} contains unsupported fields`, "MONGODB_BULK_UNKNOWN_FIELD");
 }
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
@@ -53120,12 +53637,12 @@ function normalizeUpdate(value) {
   }
   const output = {};
   const paths = [];
-  for (const [operator, fields] of Object.entries(value)) {
-    if (!UPDATE_OPERATORS.has(operator) || !fields || typeof fields !== "object" || Array.isArray(fields) || Object.keys(fields).length === 0) {
+  for (const [operator, fields2] of Object.entries(value)) {
+    if (!UPDATE_OPERATORS.has(operator) || !fields2 || typeof fields2 !== "object" || Array.isArray(fields2) || Object.keys(fields2).length === 0) {
       throw bulkError("update may use only $set, $unset, and $inc with non-empty objects", "MONGODB_BULK_UPDATE_INVALID");
     }
     output[operator] = {};
-    for (const [field, fieldValue] of Object.entries(fields)) {
+    for (const [field, fieldValue] of Object.entries(fields2)) {
       if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
@@ -53232,7 +53749,7 @@ function normalizeMongoBulkChunk(input = {}, config = {}) {
   if (operationCount > MAX_MONGODB_BULK_CHUNK_OPERATIONS || inputBytes > MAX_MONGODB_BULK_CHUNK_BYTES) {
     throw bulkError("one upload chunk is limited to 10000 operations and 4 MiB", "MONGODB_BULK_CHUNK_SIZE_LIMIT", 413);
   }
-  const chunkHash = (0, import_node_crypto6.createHash)("sha256").update(stableStringify(body)).digest("hex");
+  const chunkHash = (0, import_node_crypto7.createHash)("sha256").update(stableStringify(body)).digest("hex");
   if (input.chunkHash !== void 0 && input.chunkHash !== chunkHash) {
     throw bulkError("chunkHash does not match the normalized chunk contents", "MONGODB_BULK_CHUNK_HASH_MISMATCH");
   }
@@ -53246,7 +53763,7 @@ function normalizeMongoBulkStorage(input = {}, config = {}, options = {}) {
   return {
     kind: "bulk_storage",
     operation: "initializeBulkStorage",
-    operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto6.randomUUID)(),
+    operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto7.randomUUID)(),
     purpose: typeof input.purpose === "string" ? input.purpose.trim().slice(0, 500) : "Initialize MongoDB bulk job storage",
     database: policy.database,
     receiptsDatabase: policy.sandboxDatabase,
@@ -53297,7 +53814,7 @@ function parseMarker(stdout) {
 }
 function normalizeActionRequest(input, config) {
   const action = input.action;
-  const fields = {
+  const fields2 = {
     sandboxStatus: ["offset", "limit"],
     sandboxExport: ["jobId", "limit"],
     sandboxPrepareCleanup: ["jobId"],
@@ -53318,7 +53835,7 @@ function normalizeActionRequest(input, config) {
     rollbackStart: ["jobId", "planHash", "leaseId", "confirmation"],
     executeStart: ["jobId", "planHash", "leaseId", "confirmation"]
   };
-  if (fields[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields[action]], "bulk action");
+  if (fields2[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields2[action]], "bulk action");
   if (action === "get" && input.query) assertKnownFields(input.query, ["includeDifferences", "offset", "limit"], "bulk query");
   if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
     const jobId = input.jobId;
@@ -53384,7 +53901,7 @@ function normalizeActionRequest(input, config) {
     const jobId = String(input.jobId || "").trim();
     if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || ""))) throw bulkError("bulk execution identity is invalid", "MONGODB_BULK_PLAN_HASH_INVALID");
     if (input.confirmation !== MONGODB_BULK_CONFIRMATION) throw bulkError(`confirmation must exactly equal ${MONGODB_BULK_CONFIRMATION}`, "MONGODB_BULK_CONFIRMATION_REQUIRED");
-    return { ...input, action: "executeStart", jobId, leaseId: input.leaseId || (0, import_node_crypto6.createHash)("sha256").update((0, import_node_crypto6.randomUUID)()).digest("hex") };
+    return { ...input, action: "executeStart", jobId, leaseId: input.leaseId || (0, import_node_crypto7.createHash)("sha256").update((0, import_node_crypto7.randomUUID)()).digest("hex") };
   }
   throw bulkError("unsupported MongoDB bulk action", "MONGODB_BULK_ACTION_INVALID");
 }
@@ -53407,15 +53924,15 @@ async function runMongoBulk(input = {}, options = {}) {
       taskType: options.priority === "control" ? "control" : "mongo_read",
       stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management })
     });
-  } catch (error) {
-    throw operationError(redactMongoSecrets(error.message || "MongoDB bulk helper could not be executed"), {
-      code: error.code || "MONGODB_BULK_FAILED",
-      statusCode: error.statusCode || 502,
+  } catch (error2) {
+    throw operationError(redactMongoSecrets(error2.message || "MongoDB bulk helper could not be executed"), {
+      code: error2.code || "MONGODB_BULK_FAILED",
+      statusCode: error2.statusCode || 502,
       operationId: options.operation && options.operation.operationId,
       layer: "mongodb-bulk",
       phase: request.action,
-      retriable: error.retriable === true,
-      cause: error
+      retriable: error2.retriable === true,
+      cause: error2
     });
   }
   if (remoteResult && remoteResult.stdoutTruncated || byteLength2(remoteResult && remoteResult.stdout || "") > MAX_BULK_RESULT_BYTES) {
@@ -53424,7 +53941,7 @@ async function runMongoBulk(input = {}, options = {}) {
   const payload = parseMarker(remoteResult && remoteResult.stdout);
   if (!payload) throw bulkError("MongoDB bulk helper returned no structured response", "MONGODB_BULK_INVALID_RESPONSE", 502);
   if (payload.ok !== true || remoteResult && remoteResult.exitCode !== 0 || remoteResult && remoteResult.timedOut) {
-    const error = operationError(redactMongoSecrets(payload.error && payload.error.message || remoteResult && remoteResult.stderr || "MongoDB bulk request failed"), {
+    const error2 = operationError(redactMongoSecrets(payload.error && payload.error.message || remoteResult && remoteResult.stderr || "MongoDB bulk request failed"), {
       code: remoteResult && remoteResult.timedOut ? "MONGODB_BULK_TIMEOUT" : payload.error && payload.error.code || "MONGODB_BULK_FAILED",
       statusCode: remoteResult && remoteResult.timedOut ? 408 : 409,
       operationId: options.operation && options.operation.operationId,
@@ -53432,8 +53949,8 @@ async function runMongoBulk(input = {}, options = {}) {
       phase: request.action,
       retriable: remoteResult && remoteResult.timedOut === true
     });
-    error.details = payload.error && payload.error.details;
-    throw error;
+    error2.details = payload.error && payload.error.details;
+    throw error2;
   }
   return { ...payload.data || {}, timing: remoteResult && remoteResult.timing };
 }
@@ -53452,7 +53969,7 @@ var MongoBulkJobRunner = class {
     }
     if (this.active) throw bulkError("another bulk job is already running for this instance", "MONGODB_BULK_INSTANCE_BUSY", 409, { jobId: this.active.jobId });
     const action = mode === "rollback" ? "rollbackStart" : "executeStart";
-    const leaseId = (0, import_node_crypto6.createHash)("sha256").update((0, import_node_crypto6.randomUUID)()).digest("hex");
+    const leaseId = (0, import_node_crypto7.createHash)("sha256").update((0, import_node_crypto7.randomUUID)()).digest("hex");
     const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 6e4 });
     this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source };
     this.attachResourceTask(this.active);
@@ -53478,7 +53995,7 @@ var MongoBulkJobRunner = class {
       this.active.resourceWaitController.abort(Object.assign(new Error("pause_requested"), { code: "pause_requested" }));
     }
     if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
-      const leaseId = (0, import_node_crypto6.createHash)("sha256").update((0, import_node_crypto6.randomUUID)()).digest("hex");
+      const leaseId = (0, import_node_crypto7.createHash)("sha256").update((0, import_node_crypto7.randomUUID)()).digest("hex");
       const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 6e4 });
       this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
       this.attachResourceTask(this.active);
@@ -53582,8 +54099,8 @@ var MongoBulkJobRunner = class {
       }
       await this.run({ action: "finish", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, mode: job.mode }, { priority: "control", timeoutMs: 6e4 });
       if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "completed", phase: "finished", inFlight: false });
-    } catch (error) {
-      const reason = job.resourceWaitController?.signal.aborted && ["pause_requested", "MONGODB_BULK_LEASE_LOST"].includes(error.code) ? "pause_requested" : error.code || "MONGODB_BULK_FAILED";
+    } catch (error2) {
+      const reason = job.resourceWaitController?.signal.aborted && ["pause_requested", "MONGODB_BULK_LEASE_LOST"].includes(error2.code) ? "pause_requested" : error2.code || "MONGODB_BULK_FAILED";
       try {
         await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason }, { priority: "control", timeoutMs: 3e4 });
       } catch {
@@ -53632,16 +54149,16 @@ var MongoBulkJobRunner = class {
         const rejected = results.find((result) => result.status === "rejected");
         if (rejected) throw rejected.reason;
       });
-    } catch (error) {
-      failure = error;
+    } catch (error2) {
+      failure = error2;
     }
     try {
       await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: [] }, {
         priority: "control",
         timeoutMs: 3e4
       });
-    } catch (error) {
-      if (!failure) failure = error;
+    } catch (error2) {
+      if (!failure) failure = error2;
     }
     job.waveInFlight = false;
     for (const resolve of job.budgetWaiters || []) resolve();
@@ -53660,7 +54177,7 @@ var MongoBulkJobRunner = class {
 };
 
 // mongodb-mutations.js
-var import_node_crypto7 = require("node:crypto");
+var import_node_crypto8 = require("node:crypto");
 var import_posix6 = __toESM(require("node:path/posix"), 1);
 var MONGODB_MUTATION_SCHEMA_VERSION = 1;
 var MONGODB_MUTATION_OPERATIONS = Object.freeze([
@@ -53734,15 +54251,15 @@ function clampText(value, maxChars = 2e3) {
   return text2.length <= maxChars ? text2 : `${text2.slice(0, maxChars)}...`;
 }
 function mutationError(message, code, statusCode = 400, details = {}) {
-  const error = operationError(message, {
+  const error2 = operationError(message, {
     code,
     statusCode,
     layer: "mongodb-mutation",
     phase: "validation",
     retriable: false
   });
-  error.details = details;
-  return error;
+  error2.details = details;
+  return error2;
 }
 function assertPlainObject2(value, fieldName) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -54010,8 +54527,8 @@ function isSafeMutationPath(field) {
   return SAFE_MUTATION_PATH_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS2.has(part));
 }
 function assertIndexedMutationGuards(filter, update) {
-  for (const fields of Object.values(update)) {
-    for (const field of Object.keys(fields)) {
+  for (const fields2 of Object.values(update)) {
+    for (const field of Object.keys(fields2)) {
       const parts = field.split(".");
       for (let index = 0; index < parts.length; index += 1) {
         if (!/^[0-9]+$/.test(parts[index])) continue;
@@ -54034,9 +54551,9 @@ function assertIndexedMutationDocument(request, document2) {
           const index = Number(part);
           const append = Array.isArray(value) && index === value.length && position === parts.length - 1 && operator === "$set";
           if (!Array.isArray(value) || index > value.length || index === value.length && !append) {
-            const error = new Error("indexed mutation must target an existing array element or set its immediate tail");
-            error.code = "MONGODB_ARRAY_INDEX_INVALID";
-            throw error;
+            const error2 = new Error("indexed mutation must target an existing array element or set its immediate tail");
+            error2.code = "MONGODB_ARRAY_INDEX_INVALID";
+            throw error2;
           }
         }
         value = value == null ? void 0 : value[part];
@@ -54064,7 +54581,7 @@ function normalizeCommonMutation(input, config, operationId, kind = "document") 
   );
   return {
     kind,
-    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto7.randomUUID)(),
+    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto8.randomUUID)(),
     purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
     database,
     collection,
@@ -54080,7 +54597,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
       "INVALID_MONGODB_MUTATION_OPERATION"
     );
   }
-  const common = normalizeCommonMutation(input, normalizedConfig, options.operationId);
+  const common2 = normalizeCommonMutation(input, normalizedConfig, options.operationId);
   const maxAffected = normalizePositiveInt(
     input.maxAffected,
     "maxAffected",
@@ -54089,7 +54606,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
   );
   if (operation === "insertOne") {
     return {
-      ...common,
+      ...common2,
       operation,
       document: normalizeDocument2(input.document),
       maxAffected: 1,
@@ -54112,7 +54629,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
   assertIndexedMutationGuards(filter, update);
   const expectedCount = input.expectedCount === void 0 ? void 0 : normalizePositiveInt(input.expectedCount, "expectedCount", 1, maxAffected);
   return {
-    ...common,
+    ...common2,
     operation,
     filter,
     update,
@@ -54123,7 +54640,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
 }
 function normalizeMongoImport(input = {}, config = {}, options = {}) {
   const policy = normalizeMongoMutationConfig(config);
-  const common = normalizeCommonMutation(input, policy, options.operationId, "import");
+  const common2 = normalizeCommonMutation(input, policy, options.operationId, "import");
   const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
   if (!Array.isArray(input.documents) || !input.documents.length || input.documents.length > MAX_MONGODB_IMPORT_DOCUMENTS) {
     throw mutationError("documents must contain between 1 and 10000 documents", "MONGODB_IMPORT_COUNT_LIMIT");
@@ -54138,8 +54655,8 @@ function normalizeMongoImport(input = {}, config = {}, options = {}) {
   let bytes = 2;
   const flush = () => {
     if (!documents.length) return;
-    const batch = {
-      ...common,
+    const batch2 = {
+      ...common2,
       operation: "insertMany",
       importId,
       batchIndex: batches.length,
@@ -54148,9 +54665,9 @@ function normalizeMongoImport(input = {}, config = {}, options = {}) {
       maxAffected: documents.length,
       riskLevel: "high"
     };
-    const { operationId: _operationId, ...identity } = batch;
-    batch.mutationId = "import-" + (0, import_node_crypto7.createHash)("sha256").update(JSON.stringify(identity)).digest("hex");
-    batches.push(batch);
+    const { operationId: _operationId, ...identity } = batch2;
+    batch2.mutationId = "import-" + (0, import_node_crypto8.createHash)("sha256").update(JSON.stringify(identity)).digest("hex");
+    batches.push(batch2);
     documents = [];
     bytes = 2;
   };
@@ -54175,9 +54692,9 @@ function normalizeMongoImport(input = {}, config = {}, options = {}) {
   return {
     kind: "import_plan",
     importId,
-    database: common.database,
-    collection: common.collection,
-    operationId: common.operationId,
+    database: common2.database,
+    collection: common2.collection,
+    operationId: common2.operationId,
     affectedCount: input.documents.length,
     batches
   };
@@ -54196,7 +54713,7 @@ function normalizeMongoTransaction(input = {}, config = {}, options = {}) {
       "MONGODB_TRANSACTION_TOO_LARGE"
     );
   }
-  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto7.randomUUID)();
+  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto8.randomUUID)();
   const database = input.database || input.operations[0]?.database || normalizedConfig.database;
   const operations = input.operations.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item) || item.kind === "index") {
@@ -54286,13 +54803,13 @@ function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
       "INVALID_MONGODB_INDEX_OPERATION"
     );
   }
-  const common = normalizeCommonMutation(input, normalizedConfig, options.operationId, "index");
+  const common2 = normalizeCommonMutation(input, normalizedConfig, options.operationId, "index");
   const name2 = normalizeName(input.name, "name", SAFE_INDEX_NAME_PATTERN);
   if (name2 === "_id_") {
     throw mutationError("the _id_ index cannot be changed", "MONGODB_INDEX_IMMUTABLE");
   }
   return {
-    ...common,
+    ...common2,
     operation: input.operation,
     name: name2,
     ...input.operation === "createIndex" ? {
@@ -54432,6 +54949,8 @@ function __writeJsonAtomic(fileName, value) {
   }
   __fs.renameSync(temporaryPath, filePath);
   try { __fs.chmodSync(filePath, 0o600); } catch (_error) {}
+  const parentFd = __fs.openSync(directory, "r");
+  try { __fs.fsyncSync(parentFd); } finally { __fs.closeSync(parentFd); }
 }
 
 function __appendJournal(event, details = {}) {
@@ -54472,7 +54991,7 @@ function __loadManifest() {
   return manifest;
 }
 
-function __acquireMutationLock() {
+function __acquireMutationLock(reclaimStale = true) {
   const directory = __ensureJournalDir();
   const lockPath = __path.join(directory, ".lock");
   let fd;
@@ -54486,9 +55005,9 @@ function __acquireMutationLock() {
     if (error.code === "EEXIST") {
       try {
         const lockStat = __fs.statSync(lockPath);
-        if (Date.now() - lockStat.mtimeMs > ${MAX_MONGODB_MUTATION_LOCK_AGE_MS}) {
+        if (reclaimStale && Date.now() - lockStat.mtimeMs > ${MAX_MONGODB_MUTATION_LOCK_AGE_MS}) {
           __fs.unlinkSync(lockPath);
-          return __acquireMutationLock();
+          return __acquireMutationLock(reclaimStale);
         }
       } catch (_lockError) {}
       __fail("MONGODB_MUTATION_BUSY", "another mutation operation is using this journal");
@@ -54538,6 +55057,9 @@ function __summary(manifest) {
 }
 
 function __assertManifestScope(manifest) {
+  if (manifest.prepare && __hash(manifest.prepareSource) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey })) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "preparation belongs to a different connection profile");
+  }
   if (manifest.kind === "import" && manifest.request.documents.length > __importBatchLimit) {
     __fail("MONGODB_MUTATION_POLICY_CHANGED", "import batch exceeds the current instance limit");
   }
@@ -54660,6 +55182,7 @@ function __planHash(manifest) {
     before: manifest.before,
     beforeIndex: manifest.beforeIndex,
     beforeOperations: manifest.beforeOperations,
+    ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
   });
 }
 
@@ -54706,6 +55229,7 @@ async function __prepare() {
     const manifest = {
       schemaVersion: __schemaVersion,
       mutationId: __request.mutationId,
+      ...(__request.prepare ? { prepare: __request.prepare, prepareSource: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } } : {}),
       operationId: __request.operationId,
       kind: __request.kind,
       request,
@@ -54803,6 +55327,13 @@ async function __prepare() {
     }
 
     manifest.planHash = __planHash(manifest);
+    if (__request.prepare) {
+      const control = JSON.parse(__fs.readFileSync(__path.join(__journalDir(), "prepare.json"), "utf8"));
+      // Reserve the plan durably before its manifest can be observed/executed.
+      // A subsequently missing manifest is loss of recovery state, not absence.
+      control.stage = "plan_reserved";
+      __writeJsonAtomic("prepare.json", control);
+    }
     __writeJsonAtomic("manifest.json", manifest);
     __appendJournal("planned", {
       operationId: manifest.operationId,
@@ -55271,14 +55802,68 @@ function __list() {
   return { entries: entries.slice(0, ${MAX_MONGODB_MUTATION_LIST_ITEMS}) };
 }
 
+// A recovery fence and preparation share the same lock. Never age out this lock:
+// elapsed time cannot prove that a remote process has stopped using the journal.
+async function __guardedPrepare(recover) {
+  const release = __acquireMutationLock(false);
+  try {
+    const ticket = __request.prepare;
+    const controlPath = __path.join(__journalDir(), "prepare.json");
+    const manifestPath = __path.join(__journalDir(), "manifest.json");
+    const source = { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey };
+    let control;
+    if (__fs.existsSync(controlPath)) {
+      if (__fs.lstatSync(controlPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "prepare receipt cannot be a symbolic link");
+      try { control = JSON.parse(__fs.readFileSync(controlPath, "utf8")); }
+      catch (_error) { __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is invalid"); }
+      if (control.schemaVersion !== 1 || control.binding !== ticket.binding || control.requestDigest !== ticket.requestDigest ||
+          control.database !== __request.database || __hash(control.source) !== __hash(source) ||
+          !Number.isSafeInteger(control.fencedThrough) || control.fencedThrough < 0 || !["preparing", "plan_reserved"].includes(control.stage)) {
+        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "prepare identity or target does not match");
+      }
+    } else {
+      // Missing remote state may have been deleted or lost. It cannot prove that
+      // an earlier helper never ran, even when a mutation listing is empty.
+      if (recover || __fs.existsSync(manifestPath)) __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is missing");
+      control = { schemaVersion: 1, binding: ticket.binding, requestDigest: ticket.requestDigest, database: __request.database, source, fencedThrough: 0, stage: "preparing" };
+      __writeJsonAtomic("prepare.json", control);
+    }
+    if (__fs.existsSync(manifestPath)) {
+      if (__fs.lstatSync(manifestPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
+      let manifest;
+      try { manifest = JSON.parse(__fs.readFileSync(manifestPath, "utf8")); }
+      catch (_error) { __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest is invalid"); }
+      if (manifest.mutationId !== ticket.mutationId || __hash(manifest.prepare) !== __hash(ticket) ||
+          manifest.schemaVersion !== __schemaVersion || __planHash(manifest) !== manifest.planHash) {
+        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "manifest does not match this preparation attempt");
+      }
+      __assertManifestScope(manifest);
+      return { ...__summary(manifest), prepare: ticket, recovery: "prepared" };
+    }
+    if (recover) {
+      if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
+      control.fencedThrough = Math.max(control.fencedThrough, ticket.attempt);
+      __writeJsonAtomic("prepare.json", control);
+      return { prepare: ticket, recovery: "fenced" };
+    }
+    if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
+    if (ticket.attempt <= control.fencedThrough) __fail("MONGODB_PREPARE_FENCED", "this preparation attempt was fenced by recovery");
+    return await __prepare();
+  } finally { release(); }
+}
+
 (async () => {
   let client;
   try {
     let data;
     if (__request.mode === "list") {
       data = __list();
+    } else if (__request.mode === "get") {
+      data = __summary(__loadManifest());
+    } else if (__request.mode === "recover_prepare") {
+      data = await __guardedPrepare(true);
     } else if (__request.mode === "prepare") {
-      data = __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
+      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
     } else if (__request.mode === "commit") {
       data = await __commit();
     } else if (__request.mode === "rollback") {
@@ -55327,70 +55912,85 @@ function normalizePlanHash(value) {
 }
 async function runMongoMutation(input = {}, options = {}) {
   const rawConfig = options.config?.mongodb || options.config || {};
-  const config = normalizeMongoMutationConfig(rawConfig);
   const mode = input.mode || "prepare";
-  let request;
-  if (mode === "prepare") {
-    const kind = input.kind === "import_plan" ? "import_plan" : input.kind === "bulk_storage" ? "bulk_storage" : input.kind === "index" ? "index" : input.kind === "transaction" ? "transaction" : "document";
-    const mutation = kind === "import_plan" ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId }) : kind === "bulk_storage" ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId }) : kind === "index" ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId }) : kind === "transaction" ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId }) : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
-    request = {
-      mode: "prepare",
-      kind,
-      operationId: options.operation?.operationId || mutation.operationId,
-      mutationId: (0, import_node_crypto7.randomUUID)(),
-      mutation
-    };
-  } else if (mode === "commit" || mode === "rollback") {
-    request = {
-      mode,
-      mutationId: normalizeMutationId(input.mutationId),
-      planHash: normalizePlanHash(input.planHash),
-      operationId: options.operation?.operationId || (0, import_node_crypto7.randomUUID)()
-    };
-    const expectedConfirmation = mode === "commit" ? MONGODB_MUTATION_CONFIRMATION : MONGODB_ROLLBACK_CONFIRMATION;
-    if (input.confirmation !== expectedConfirmation) {
-      throw mutationError(
-        `confirmation must exactly equal ${expectedConfirmation}`,
-        mode === "commit" ? "MONGODB_MUTATION_CONFIRMATION_REQUIRED" : "MONGODB_ROLLBACK_CONFIRMATION_REQUIRED",
-        400
-      );
+  let request, config, script;
+  try {
+    config = normalizeMongoMutationConfig(rawConfig);
+    const ticket = input._businessPrepare;
+    if (ticket !== void 0 && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
+    if (mode === "prepare") {
+      const kind = input.kind === "import_plan" ? "import_plan" : input.kind === "bulk_storage" ? "bulk_storage" : input.kind === "index" ? "index" : input.kind === "transaction" ? "transaction" : "document";
+      const mutation2 = kind === "import_plan" ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId }) : kind === "bulk_storage" ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId }) : kind === "index" ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId }) : kind === "transaction" ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId }) : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
+      request = {
+        mode: "prepare",
+        kind,
+        operationId: options.operation?.operationId || mutation2.operationId,
+        mutationId: ticket?.mutationId || (0, import_node_crypto8.randomUUID)(),
+        ...ticket ? { prepare: ticket, database: mutation2.database } : {},
+        mutation: mutation2
+      };
+      if (ticket && ["import_plan", "bulk_storage"].includes(kind)) throw mutationError("unsupported prepare identity kind", "MONGODB_PREPARE_IDENTITY_INVALID");
+    } else if (mode === "recover_prepare") {
+      if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
+      request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };
+    } else if (mode === "get") {
+      request = { mode, mutationId: normalizeMutationId(input.mutationId), planHash: normalizePlanHash(input.planHash) };
+    } else if (mode === "commit" || mode === "rollback") {
+      request = {
+        mode,
+        mutationId: normalizeMutationId(input.mutationId),
+        planHash: normalizePlanHash(input.planHash),
+        operationId: options.operation?.operationId || (0, import_node_crypto8.randomUUID)()
+      };
+      const expectedConfirmation = mode === "commit" ? MONGODB_MUTATION_CONFIRMATION : MONGODB_ROLLBACK_CONFIRMATION;
+      if (input.confirmation !== expectedConfirmation) {
+        throw mutationError(
+          `confirmation must exactly equal ${expectedConfirmation}`,
+          mode === "commit" ? "MONGODB_MUTATION_CONFIRMATION_REQUIRED" : "MONGODB_ROLLBACK_CONFIRMATION_REQUIRED",
+          400
+        );
+      }
+    } else if (mode === "list") {
+      request = {
+        mode: "list",
+        status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : void 0,
+        mutationId: (0, import_node_crypto8.randomUUID)(),
+        operationId: options.operation?.operationId || (0, import_node_crypto8.randomUUID)()
+      };
+    } else {
+      throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
     }
-  } else if (mode === "list") {
-    request = {
-      mode: "list",
-      status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : void 0,
-      mutationId: (0, import_node_crypto7.randomUUID)(),
-      operationId: options.operation?.operationId || (0, import_node_crypto7.randomUUID)()
-    };
-  } else {
-    throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
-  }
-  if (typeof options.runSSH !== "function") {
-    throw mutationError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    if (typeof options.runSSH !== "function") {
+      throw mutationError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    }
+    script = buildMongoMutationScript(request, config);
+  } catch (error2) {
+    if (mode === "prepare") error2.dispatchState = "not_dispatched";
+    throw error2;
   }
   let remoteResult;
   try {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
       config: options.config,
       operation: options.operation,
-      stdin: buildMongoMutationScript(request, config),
+      stdin: script,
       taskType: "mongo_write"
     });
-  } catch (error) {
+  } catch (error2) {
     if (options.operation?.signal?.aborted) {
       throw operationErrorForSignal(options.operation.signal, options.operation, {
         layer: "mongodb-mutation",
         phase: mode
       });
     }
-    throw operationError(redactMongoSecrets(error.message || "MongoDB mutation helper could not be executed"), {
-      code: error.code || "MONGODB_MUTATION_FAILED",
-      statusCode: error.statusCode || 502,
+    throw operationError(redactMongoSecrets(error2.message || "MongoDB mutation helper could not be executed"), {
+      code: error2.code || "MONGODB_MUTATION_FAILED",
+      statusCode: error2.statusCode || 502,
       operationId: options.operation?.operationId,
       layer: "mongodb-mutation",
       phase: mode,
-      retriable: error.retriable === true,
-      cause: error
+      retriable: error2.retriable === true,
+      cause: error2
     });
   }
   if (remoteResult?.stdoutTruncated || byteLength3(remoteResult?.stdout || "") > MAX_MONGODB_MUTATION_RESULT_BYTES) {
@@ -55575,7 +56175,7 @@ var SECURITY_POLICY = {
     "mongosh --version"
   ]
 };
-var SECURITY_POLICY_VERSION = (0, import_node_crypto8.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
+var SECURITY_POLICY_VERSION = (0, import_node_crypto9.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
 var ALLOWED_COMMANDS = new Set(SECURITY_POLICY.allowedExecutables);
 var DENIED_COMMANDS = new Set(SECURITY_POLICY.deniedExecutables);
 var SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
@@ -56309,9 +56909,9 @@ function readCodexConnection(configPath, options = {}) {
   let parsed;
   try {
     parsed = parseCodexToml(fsImpl.readFileSync(configPath, "utf8"));
-  } catch (error) {
+  } catch (error2) {
     throw new CommandReviewError(
-      `Codex config could not be read: ${error.message}`,
+      `Codex config could not be read: ${error2.message}`,
       "CODEX_CONFIG_READ_FAILED",
       503
     );
@@ -56352,7 +56952,7 @@ function normalizeSnapshot(value, options = {}) {
     );
   }
   const provider = assertSafeProvider(codex.provider);
-  const model = assertSafeModel(codex.model);
+  const model2 = assertSafeModel(codex.model);
   const baseUrl = normalizeBaseUrl(codex.baseUrl);
   const codexHome = import_node_path6.default.resolve(String(codex.codexHome || options.codexHome || defaultCodexHome()));
   return {
@@ -56362,7 +56962,7 @@ function normalizeSnapshot(value, options = {}) {
       command: defaultCodexCommand(),
       provider,
       name: typeof codex.name === "string" && codex.name.trim() ? codex.name.trim() : provider,
-      model,
+      model: model2,
       reasoningEffort: typeof codex.reasoningEffort === "string" && codex.reasoningEffort.trim() ? codex.reasoningEffort.trim() : void 0,
       wireApi: typeof codex.wireApi === "string" && codex.wireApi.trim() ? codex.wireApi.trim() : void 0,
       requiresOpenAIAuth: codex.requiresOpenAIAuth !== false,
@@ -56373,7 +56973,7 @@ function normalizeSnapshot(value, options = {}) {
 function writeJsonAtomically(filePath, value, fsImpl = import_node_fs3.default) {
   const directory = import_node_path6.default.dirname(filePath);
   fsImpl.mkdirSync(directory, { recursive: true });
-  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto9.randomUUID)()}.tmp`;
+  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto10.randomUUID)()}.tmp`;
   try {
     fsImpl.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}
 `, "utf8");
@@ -56434,9 +57034,9 @@ function resolveCommandReviewConfig(options = {}) {
       let storedConfig;
       try {
         storedConfig = JSON.parse(fsImpl.readFileSync(configPath, "utf8"));
-      } catch (error) {
+      } catch (error2) {
         throw new CommandReviewError(
-          `command review config is not valid JSON: ${error.message}`,
+          `command review config is not valid JSON: ${error2.message}`,
           "COMMAND_REVIEW_CONFIG_INVALID",
           503
         );
@@ -56465,7 +57065,7 @@ function resolveCommandReviewConfig(options = {}) {
       maxRetries: DEFAULT_COMMAND_REVIEW_MAX_RETRIES,
       ...snapshot
     };
-  } catch (error) {
+  } catch (error2) {
     return {
       status: "unavailable",
       configPath,
@@ -56476,8 +57076,8 @@ function resolveCommandReviewConfig(options = {}) {
       reviewTimeoutMs: DEFAULT_COMMAND_REVIEW_TIMEOUT_MS,
       maxRetries: DEFAULT_COMMAND_REVIEW_MAX_RETRIES,
       error: {
-        code: error.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE",
-        message: clampText2(error.message || "command review config is unavailable", 512)
+        code: error2.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE",
+        message: clampText2(error2.message || "command review config is unavailable", 512)
       }
     };
   }
@@ -56548,15 +57148,15 @@ function inspectCommandDraft(commands, security = {}) {
     } catch (readOnlyError) {
       try {
         validation = validateCommand(command, { ...security, mode: "approved" });
-      } catch (error) {
-        const code = error.code || readOnlyError.code || "INVALID_COMMAND";
+      } catch (error2) {
+        const code = error2.code || readOnlyError.code || "INVALID_COMMAND";
         violations.push(
           violationFor(
             index,
             code,
             severityForSecurityCode(code),
             ruleForSecurityCode(code),
-            error.message || readOnlyError.message
+            error2.message || readOnlyError.message
           )
         );
       }
@@ -56744,25 +57344,25 @@ function runCodexProcess({ command, args, prompt, cwd, env, timeoutMs, spawnImpl
     let stdout = "";
     let stderr = "";
     let timeout;
-    const finish = (error, value) => {
+    const finish = (error2, value) => {
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
       if (signal) signal.removeEventListener("abort", abort);
-      if (error) reject(error);
+      if (error2) reject(error2);
       else resolve(value);
     };
     const abort = () => {
-      const error = new CodexReviewProcessError(
+      const error2 = new CodexReviewProcessError(
         "Codex review process was cancelled",
         "COMMAND_REVIEW_CANCELLED"
       );
-      error.retriable = false;
+      error2.retriable = false;
       try {
         child?.kill();
       } catch {
       }
-      finish(error);
+      finish(error2);
     };
     try {
       child = spawnImpl(command, args, {
@@ -56772,15 +57372,15 @@ function runCodexProcess({ command, args, prompt, cwd, env, timeoutMs, spawnImpl
         windowsHide: true,
         stdio: ["pipe", "pipe", "pipe"]
       });
-    } catch (error) {
+    } catch (error2) {
       finish(new CodexReviewProcessError(
-        `Codex review process could not be started: ${error.message}`,
+        `Codex review process could not be started: ${error2.message}`,
         "COMMAND_REVIEW_MODEL_UNAVAILABLE"
       ));
       return;
     }
     timeout = setTimeout(() => {
-      const error = new CodexReviewProcessError(
+      const error2 = new CodexReviewProcessError(
         "Codex review process timed out",
         "COMMAND_REVIEW_MODEL_TIMEOUT"
       );
@@ -56788,7 +57388,7 @@ function runCodexProcess({ command, args, prompt, cwd, env, timeoutMs, spawnImpl
         child.kill();
       } catch {
       }
-      finish(error);
+      finish(error2);
     }, Math.max(1, timeoutMs));
     timeout.unref?.();
     signal?.addEventListener("abort", abort, { once: true });
@@ -56799,30 +57399,30 @@ function runCodexProcess({ command, args, prompt, cwd, env, timeoutMs, spawnImpl
     child.stdout?.on("data", (chunk) => {
       try {
         stdout = appendOutput(stdout, chunk, MAX_COMMAND_REVIEW_OUTPUT_BYTES);
-      } catch (error) {
+      } catch (error2) {
         try {
           child.kill();
         } catch {
         }
-        finish(error);
+        finish(error2);
       }
     });
     child.stderr?.on("data", (chunk) => {
       try {
         stderr = appendOutput(stderr, chunk, MAX_COMMAND_REVIEW_OUTPUT_BYTES);
-      } catch (error) {
+      } catch (error2) {
         try {
           child.kill();
         } catch {
         }
-        finish(error);
+        finish(error2);
       }
     });
-    child.once("error", (error) => {
+    child.once("error", (error2) => {
       finish(new CodexReviewProcessError(
-        `Codex review process failed: ${error.message}`,
+        `Codex review process failed: ${error2.message}`,
         "COMMAND_REVIEW_MODEL_UNAVAILABLE",
-        { cause: error.message }
+        { cause: error2.message }
       ));
     });
     child.once("close", (code, processSignal) => {
@@ -56838,9 +57438,9 @@ function runCodexProcess({ command, args, prompt, cwd, env, timeoutMs, spawnImpl
     });
     try {
       child.stdin?.end(prompt);
-    } catch (error) {
+    } catch (error2) {
       finish(new CodexReviewProcessError(
-        `Codex review prompt could not be sent: ${error.message}`,
+        `Codex review prompt could not be sent: ${error2.message}`,
         "COMMAND_REVIEW_MODEL_UNAVAILABLE"
       ));
     }
@@ -56858,9 +57458,9 @@ function readModelOutput(outputPath, stdout, fsImpl = import_node_fs3.default) {
       );
     }
     outputAvailable = true;
-  } catch (error) {
-    if (error instanceof CodexReviewProcessError) {
-      throw error;
+  } catch (error2) {
+    if (error2 instanceof CodexReviewProcessError) {
+      throw error2;
     }
   }
   if (outputAvailable) {
@@ -56894,7 +57494,7 @@ function readModelOutput(outputPath, stdout, fsImpl = import_node_fs3.default) {
     );
   }
 }
-async function runCodexReviewOnce({ draft, config, prompt, timeoutMs, signal, options = {} }) {
+async function runCodexReviewOnce({ draft: draft2, config, prompt, timeoutMs, signal, options = {} }) {
   const fsImpl = options.fs || import_node_fs3.default;
   const tempRoot = options.tempRoot || fsImpl.mkdtempSync(import_node_path6.default.join(import_node_os.default.tmpdir(), "remote-debug-command-review-"));
   const ownsTempRoot = !options.tempRoot;
@@ -56914,7 +57514,7 @@ async function runCodexReviewOnce({ draft, config, prompt, timeoutMs, signal, op
       signal
     });
     const rawReview = readModelOutput(outputPath, processResult.stdout, fsImpl);
-    return normalizeModelReview(rawReview, draft.commands.length);
+    return normalizeModelReview(rawReview, draft2.commands.length);
   } finally {
     if (ownsTempRoot) {
       try {
@@ -56924,18 +57524,18 @@ async function runCodexReviewOnce({ draft, config, prompt, timeoutMs, signal, op
     }
   }
 }
-async function runCodexReview({ draft, config, staticReview, signal, options = {} }) {
+async function runCodexReview({ draft: draft2, config, staticReview, signal, options = {} }) {
   if (!config || config.status !== "ready" || !config.codex) {
-    const error = new CodexReviewProcessError(
+    const error2 = new CodexReviewProcessError(
       config?.error?.message || "Codex review configuration is unavailable",
       config?.error?.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE"
     );
-    error.retriable = false;
-    throw error;
+    error2.retriable = false;
+    throw error2;
   }
   const prompt = buildCommandReviewPrompt({
-    purpose: draft.purpose,
-    commands: draft.commands,
+    purpose: draft2.purpose,
+    commands: draft2.commands,
     staticReview
   });
   const startedAt = Date.now();
@@ -56950,8 +57550,8 @@ async function runCodexReview({ draft, config, staticReview, signal, options = {
     attempts += 1;
     const remainingMs = Math.max(1, deadlineAt - Date.now());
     try {
-      const review = await runCodexReviewOnce({
-        draft,
+      const review2 = await runCodexReviewOnce({
+        draft: draft2,
         config,
         prompt,
         timeoutMs: remainingMs,
@@ -56959,13 +57559,13 @@ async function runCodexReview({ draft, config, staticReview, signal, options = {
         options
       });
       return {
-        review,
+        review: review2,
         attempts,
         durationMs: Date.now() - startedAt
       };
-    } catch (error) {
-      lastError = error;
-      if (error.code === "COMMAND_REVIEW_CANCELLED" || error.retriable === false || Date.now() >= deadlineAt) {
+    } catch (error2) {
+      lastError = error2;
+      if (error2.code === "COMMAND_REVIEW_CANCELLED" || error2.retriable === false || Date.now() >= deadlineAt) {
         break;
       }
     }
@@ -56981,9 +57581,9 @@ async function runCodexReview({ draft, config, staticReview, signal, options = {
   };
   throw lastError;
 }
-function isModelAutoApproval(review) {
+function isModelAutoApproval(review2) {
   return Boolean(
-    review && review.decision === "approve" && review.isReadOnly === true && review.riskLevel === "low" && Array.isArray(review.violations) && review.violations.length === 0
+    review2 && review2.decision === "approve" && review2.isReadOnly === true && review2.riskLevel === "low" && Array.isArray(review2.violations) && review2.violations.length === 0
   );
 }
 function manualReviewViolation(code, reason, options = {}) {
@@ -57026,9 +57626,9 @@ function normalizeHostKeyFingerprints(value) {
     if (typeof item !== "string" || !/^SHA256:[A-Za-z0-9+/]{43}$/.test(item)) return true;
     return Buffer.from(item.slice(7), "base64").toString("base64").replace(/=+$/, "") !== item.slice(7);
   })) {
-    const error = new Error("hostKeyFingerprints must contain at most four canonical SHA256 fingerprints");
-    Object.assign(error, { code: "SSH_HOST_KEY_INVALID", statusCode: 400, retriable: false });
-    throw error;
+    const error2 = new Error("hostKeyFingerprints must contain at most four canonical SHA256 fingerprints");
+    Object.assign(error2, { code: "SSH_HOST_KEY_INVALID", statusCode: 400, retriable: false });
+    throw error2;
   }
   return [...new Set(parsed)];
 }
@@ -57116,13 +57716,13 @@ function parseAgentLifetime(value) {
   throw new Error("REMOTE_DEBUG_AGENT_LIFETIME must be manual or desktop");
 }
 function sourceRootsError(message, cause) {
-  const error = new Error(message);
-  error.code = "INVALID_SOURCE_ROOTS";
-  error.statusCode = 400;
+  const error2 = new Error(message);
+  error2.code = "INVALID_SOURCE_ROOTS";
+  error2.statusCode = 400;
   if (cause) {
-    error.cause = cause;
+    error2.cause = cause;
   }
-  return error;
+  return error2;
 }
 function normalizeSourceRoots(value) {
   if (value === void 0 || value === null || value === "") {
@@ -57132,8 +57732,8 @@ function normalizeSourceRoots(value) {
   if (typeof value === "string") {
     try {
       parsed = JSON.parse(value);
-    } catch (error) {
-      throw sourceRootsError(`REMOTE_DEBUG_SOURCE_ROOTS is not valid JSON: ${error.message}`, error);
+    } catch (error2) {
+      throw sourceRootsError(`REMOTE_DEBUG_SOURCE_ROOTS is not valid JSON: ${error2.message}`, error2);
     }
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -57176,15 +57776,15 @@ function parseMongoConfig(value) {
   let parsed;
   try {
     parsed = typeof value === "string" ? JSON.parse(value) : value;
-  } catch (error) {
-    const wrapped = new Error(`REMOTE_DEBUG_MONGODB_CONFIG is not valid JSON: ${error.message}`);
+  } catch (error2) {
+    const wrapped = new Error(`REMOTE_DEBUG_MONGODB_CONFIG is not valid JSON: ${error2.message}`);
     wrapped.code = "INVALID_MONGODB_CONFIG";
     throw wrapped;
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    const error = new Error("REMOTE_DEBUG_MONGODB_CONFIG must be a JSON object");
-    error.code = "INVALID_MONGODB_CONFIG";
-    throw error;
+    const error2 = new Error("REMOTE_DEBUG_MONGODB_CONFIG must be a JSON object");
+    error2.code = "INVALID_MONGODB_CONFIG";
+    throw error2;
   }
   const config = {
     enabled: parsed.enabled !== false,
@@ -57434,7 +58034,7 @@ function fingerprintConfig(config) {
   };
 }
 function configFingerprint(config) {
-  return (0, import_node_crypto10.createHash)("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
+  return (0, import_node_crypto11.createHash)("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
 }
 function assertSshConfig(config) {
   const missing = [];
@@ -57442,10 +58042,10 @@ function assertSshConfig(config) {
   if (!config.ssh.username) missing.push("REMOTE_DEBUG_USER");
   if (!config.ssh.privateKeyPath) missing.push("REMOTE_DEBUG_PRIVATE_KEY_PATH");
   if (missing.length > 0) {
-    const error = new Error(`Missing SSH configuration: ${missing.join(", ")}`);
-    error.statusCode = 503;
-    error.code = "SSH_CONFIG_MISSING";
-    throw error;
+    const error2 = new Error(`Missing SSH configuration: ${missing.join(", ")}`);
+    error2.statusCode = 503;
+    error2.code = "SSH_CONFIG_MISSING";
+    throw error2;
   }
 }
 
@@ -57453,8 +58053,8 @@ function assertSshConfig(config) {
 function nowIso2(nowMs) {
   return new Date(nowMs).toISOString();
 }
-function authenticationFailure(error) {
-  return error?.level === "client-authentication" || /authentication methods failed|authentication failure|permission denied/i.test(error?.message || "");
+function authenticationFailure(error2) {
+  return error2?.level === "client-authentication" || /authentication methods failed|authentication failure|permission denied/i.test(error2?.message || "");
 }
 var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
   constructor(config, options = {}) {
@@ -57538,7 +58138,7 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
       keepaliveInterval: this.keepaliveIntervalMs,
       keepaliveCountMax: this.keepaliveCountMax,
       hostVerifier: (key) => {
-        const fingerprint = `SHA256:${(0, import_node_crypto11.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
+        const fingerprint = `SHA256:${(0, import_node_crypto12.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
         const matched = fingerprints.includes(fingerprint);
         this.hostVerification = { status: matched ? "verified" : "mismatch", observedFingerprint: fingerprint };
         if (!matched) this.hostVerificationError = operationError(`server host key does not match trusted fingerprints; observed ${fingerprint}`, {
@@ -57587,19 +58187,19 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     let connectionOptions;
     try {
       connectionOptions = await this.connectionOptions();
-    } catch (error) {
-      this.recordConnectionFailure(error, options.initial);
-      throw this.wrapConnectionError(error);
+    } catch (error2) {
+      this.recordConnectionFailure(error2, options.initial);
+      throw this.wrapConnectionError(error2);
     }
     const client = new this.ClientClass();
     try {
       await new Promise((resolve, reject) => {
         let settled = false;
-        const fail3 = (error) => {
+        const fail3 = (error2) => {
           if (settled) return;
           settled = true;
           client.removeListener("ready", ready);
-          reject(error);
+          reject(error2);
         };
         const ready = () => {
           if (settled) return;
@@ -57611,15 +58211,15 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
         client.once("close", () => fail3(new Error("SSH transport closed before authentication")));
         client.connect(connectionOptions);
       });
-    } catch (error) {
+    } catch (error2) {
       client.end?.();
-      error = this.hostVerificationError || error;
-      this.recordConnectionFailure(error, options.initial);
-      throw this.wrapConnectionError(error);
+      error2 = this.hostVerificationError || error2;
+      this.recordConnectionFailure(error2, options.initial);
+      throw this.wrapConnectionError(error2);
     }
     client.removeAllListeners("error");
     client.removeAllListeners("close");
-    client.on("error", (error) => this.handleTransportFailure(client, error));
+    client.on("error", (error2) => this.handleTransportFailure(client, error2));
     client.on("close", () => this.handleTransportFailure(client, new Error("SSH transport closed")));
     client.on("end", () => this.handleTransportFailure(client, new Error("SSH transport ended")));
     this.client = client;
@@ -57638,40 +58238,40 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     this.setState("ready");
     return client;
   }
-  wrapConnectionError(error, operationId) {
-    if (error?.code?.startsWith("SSH_HOST_KEY_")) return operationError(error.message, {
-      code: error.code,
-      statusCode: error.statusCode || 502,
+  wrapConnectionError(error2, operationId) {
+    if (error2?.code?.startsWith("SSH_HOST_KEY_")) return operationError(error2.message, {
+      code: error2.code,
+      statusCode: error2.statusCode || 502,
       layer: "ssh",
       phase: "host-verification",
       retriable: false,
       operationId
     });
-    const authFailed = authenticationFailure(error);
-    return operationError(error?.message || "SSH connection failed", {
+    const authFailed = authenticationFailure(error2);
+    return operationError(error2?.message || "SSH connection failed", {
       code: authFailed ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
       statusCode: authFailed ? 401 : 504,
       operationId,
       layer: "ssh",
       phase: authFailed ? "authentication" : "connect",
       retriable: !authFailed,
-      cause: error
+      cause: error2
     });
   }
-  recordConnectionFailure(error, initial) {
-    if (error?.code?.startsWith("SSH_HOST_KEY_")) {
-      this.lastError = { code: error.code, message: error.message, at: nowIso2(this.now()) };
-      this.hostVerification.status = error.code === "SSH_HOST_KEY_REQUIRED" ? "required" : "mismatch";
+  recordConnectionFailure(error2, initial) {
+    if (error2?.code?.startsWith("SSH_HOST_KEY_")) {
+      this.lastError = { code: error2.code, message: error2.message, at: nowIso2(this.now()) };
+      this.hostVerification.status = error2.code === "SSH_HOST_KEY_REQUIRED" ? "required" : "mismatch";
       this.nextRetryAt = null;
-      this.setState("blocked", { error });
+      this.setState("blocked", { error: error2 });
       return;
     }
     this.lastError = {
-      code: authenticationFailure(error) ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
-      message: error?.message || "SSH connection failed",
+      code: authenticationFailure(error2) ? "SSH_AUTH_FAILED" : "SSH_CONNECT_TIMEOUT",
+      message: error2?.message || "SSH connection failed",
       at: nowIso2(this.now())
     };
-    if (authenticationFailure(error)) {
+    if (authenticationFailure(error2)) {
       this.authentication = {
         ...this.authentication,
         status: "failed",
@@ -57681,10 +58281,10 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     if (!initial && this.hasConnected && !this.stopping) {
       this.scheduleReconnect();
     } else {
-      this.setState("disconnected", { error });
+      this.setState("disconnected", { error: error2 });
     }
   }
-  handleTransportFailure(client, error) {
+  handleTransportFailure(client, error2) {
     if (this.stopping || this.client !== client) {
       return;
     }
@@ -57692,7 +58292,7 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     this.connectedAt = null;
     this.lastError = {
       code: "SSH_TRANSPORT_LOST",
-      message: error?.message || "SSH transport lost",
+      message: error2?.message || "SSH transport lost",
       at: nowIso2(this.now())
     };
     this.setState("reconnecting", { error: this.lastError });
@@ -57735,11 +58335,11 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
       this.scheduleReconnect();
     }
     return new Promise((resolve, reject) => {
-      const finish = (error, client) => {
+      const finish = (error2, client) => {
         clearTimeout(timer);
         this.off("state", onState);
         operation.signal?.removeEventListener("abort", onAbort);
-        if (error) reject(error);
+        if (error2) reject(error2);
         else resolve(client);
       };
       const onState = () => {
@@ -57860,13 +58460,13 @@ var import_posix9 = __toESM(require("node:path/posix"), 1);
 function normalizeManualMongo(value, existing) {
   if (value === void 0) return existing;
   if (value === null) return void 0;
-  const fields = ["enabled", "configPath", "driverPath", "configProfile", "uriKey", "database", "mongoshPath", "nodePath"];
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields.includes(key))) {
+  const fields2 = ["enabled", "configPath", "driverPath", "configProfile", "uriKey", "database", "mongoshPath", "nodePath"];
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields2.includes(key))) {
     throw manualError("MANUAL_DB_CONFIG_INVALID", "人工数据库配置包含不支持的字段。");
   }
   const config = { enabled: false, configPath: "", driverPath: "", configProfile: "", uriKey: "url", database: "", mongoshPath: "mongosh", nodePath: "node", ...existing, ...value };
   if (typeof config.enabled !== "boolean") throw manualError("MANUAL_DB_CONFIG_INVALID", "启用状态无效。");
-  for (const key of fields.slice(1)) {
+  for (const key of fields2.slice(1)) {
     if (typeof config[key] !== "string" || config[key].length > (key.endsWith("Path") ? 4096 : 128) || /[\0\r\n]/.test(config[key])) {
       throw manualError("MANUAL_DB_CONFIG_INVALID", "人工数据库配置字段无效。");
     }
@@ -57892,9 +58492,9 @@ function normalizeManualMongo(value, existing) {
 function manualMongoRemote(config, shellFingerprint) {
   const fs12 = require("fs"), crypto = require("crypto");
   const fail3 = (code) => {
-    const error = new Error(code);
-    error.code = code;
-    throw error;
+    const error2 = new Error(code);
+    error2.code = code;
+    throw error2;
   };
   function connection() {
     let file;
@@ -57937,7 +58537,7 @@ function manualMongoRemote(config, shellFingerprint) {
   let connected = false, closing = false;
   const encode = (value) => JSON.parse(EJSON.stringify(value, { relaxed: false }));
   const decode = (value) => EJSON.parse(JSON.stringify(value), { relaxed: false });
-  const MAX_BYTES = 384 * 1024;
+  const MAX_BYTES2 = 384 * 1024;
   const emit = (value) => {
     const line = JSON.stringify(value);
     if (Buffer.byteLength(line) > 512 * 1024) fail3("MANUAL_DB_RESULT_LIMIT");
@@ -57975,11 +58575,11 @@ function manualMongoRemote(config, shellFingerprint) {
       pendingDocument = void 0;
       if (document2 === null) break;
       const value = encode(document2), size = Buffer.byteLength(JSON.stringify(value));
-      if (size > MAX_BYTES) {
+      if (size > MAX_BYTES2) {
         await closeCursor();
         fail3("MANUAL_DB_DOCUMENT_LIMIT");
       }
-      if (bytes + size > MAX_BYTES) {
+      if (bytes + size > MAX_BYTES2) {
         pendingDocument = document2;
         break;
       }
@@ -58073,7 +58673,7 @@ function manualMongoRemote(config, shellFingerprint) {
       for (const item of names) {
         if (data.length >= limit) break;
         bytes += Buffer.byteLength(JSON.stringify(item));
-        if (bytes > MAX_BYTES) break;
+        if (bytes > MAX_BYTES2) break;
         data.push({ name: item.name });
       }
       return { data, hasMore: names.length > data.length, after: data.length ? data[data.length - 1].name : null };
@@ -58108,9 +58708,9 @@ function manualMongoRemote(config, shellFingerprint) {
         touch();
         const result = await run(request);
         emit({ id: request.id, ok: true, result });
-      } catch (error) {
-        const code = error && /^MANUAL_DB_/.test(error.code) ? error.code : error && Number(error.code) === 13 ? "MANUAL_DB_PERMISSION_DENIED" : error && Number(error.code) === 18 ? "MANUAL_DB_AUTH_FAILED" : error && /BSON|EJSON/.test(error.name) ? "MANUAL_DB_BSON_INVALID" : "MANUAL_DB_REMOTE_FAILED";
-        emit({ id: request && request.id, ok: false, error: { code, serverCode: Number.isInteger(Number(error.code)) ? Number(error.code) : void 0 } });
+      } catch (error2) {
+        const code = error2 && /^MANUAL_DB_/.test(error2.code) ? error2.code : error2 && Number(error2.code) === 13 ? "MANUAL_DB_PERMISSION_DENIED" : error2 && Number(error2.code) === 18 ? "MANUAL_DB_AUTH_FAILED" : error2 && /BSON|EJSON/.test(error2.name) ? "MANUAL_DB_BSON_INVALID" : "MANUAL_DB_REMOTE_FAILED";
+        emit({ id: request && request.id, ok: false, error: { code, serverCode: Number.isInteger(Number(error2.code)) ? Number(error2.code) : void 0 } });
         if (!connected || code === "MANUAL_DB_TARGET_CHANGED") {
           await close();
           process.exitCode = 1;
@@ -58195,17 +58795,17 @@ function validateReplacement(body) {
   return { database, collection, original: body.original, replacement: body.replacement };
 }
 var quote = (value) => "'" + String(value).replace(/'/g, "'\\''") + "'";
-function manualMongoCommand(instance, fingerprint) {
-  const config = normalizeManualMongo(instance.manualMongo);
+function manualMongoCommand(instance2, fingerprint) {
+  const config = normalizeManualMongo(instance2.manualMongo);
   if (!config?.enabled) throw databaseError("MANUAL_DB_NOT_CONFIGURED", 409);
   const script = `(${manualMongoRemote.toString()})(${JSON.stringify(config)},${JSON.stringify(fingerprint || null)})`;
   return `${quote(config.nodePath)} -e ${quote(script)}`;
 }
-function openManualDatabase(instance, { ClientClass = import_ssh22.Client } = {}) {
+function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {}) {
   const client = new ClientClass();
-  const supervisor = new SshConnectionSupervisor({ ssh: { ...instance, readyTimeout: 15e3 } });
+  const supervisor = new SshConnectionSupervisor({ ssh: { ...instance2, readyTimeout: 15e3 } });
   let stream, closed = false, buffer = Buffer.alloc(0), pending;
-  const id = (0, import_node_crypto12.randomUUID)();
+  const id = (0, import_node_crypto13.randomUUID)();
   let resolveReady, rejectReady;
   const ready = new Promise((resolve, reject) => {
     resolveReady = resolve;
@@ -58213,12 +58813,12 @@ function openManualDatabase(instance, { ClientClass = import_ssh22.Client } = {}
   });
   ready.catch(() => {
   });
-  const fail3 = (error = databaseError("MANUAL_DB_REMOTE_FAILED", 502)) => {
+  const fail3 = (error2 = databaseError("MANUAL_DB_REMOTE_FAILED", 502)) => {
     if (closed) return;
     closed = true;
     clearTimeout(openTimer);
-    rejectReady(error);
-    pending?.reject(error);
+    rejectReady(error2);
+    pending?.reject(error2);
     pending = null;
     stream?.destroy();
     client.destroy();
@@ -58228,12 +58828,12 @@ function openManualDatabase(instance, { ClientClass = import_ssh22.Client } = {}
   client.on("close", () => fail3());
   client.on("ready", () => {
     if (closed) return;
-    client.exec(manualMongoCommand(instance), (error, channel) => {
+    client.exec(manualMongoCommand(instance2), (error2, channel) => {
       if (closed) {
         channel?.destroy();
         return;
       }
-      if (error) {
+      if (error2) {
         fail3();
         return;
       }
@@ -58272,9 +58872,9 @@ function openManualDatabase(instance, { ClientClass = import_ssh22.Client } = {}
     });
   });
   try {
-    manualMongoCommand(instance);
-  } catch (error) {
-    fail3(error);
+    manualMongoCommand(instance2);
+  } catch (error2) {
+    fail3(error2);
   }
   if (!closed) supervisor.connectionOptions().then((settings) => {
     if (!closed) client.connect(settings);
@@ -58290,7 +58890,7 @@ function openManualDatabase(instance, { ClientClass = import_ssh22.Client } = {}
       if (closed) throw databaseError("MANUAL_DB_CLOSED", 409);
       if (pending) throw databaseError("MANUAL_DB_BUSY", 409);
       return new Promise((resolve, reject) => {
-        const requestId = (0, import_node_crypto12.randomUUID)();
+        const requestId = (0, import_node_crypto13.randomUUID)();
         const timer = setTimeout(() => fail3(databaseError("MANUAL_DB_TIMEOUT", 504)), 25e3);
         const done = (callback) => (value) => {
           clearTimeout(timer);
@@ -58311,9 +58911,9 @@ function terminalSize(cols = 100, rows = 30) {
   }
   return { cols, rows };
 }
-function openManualTerminal(instance, options) {
+function openManualTerminal(instance2, options) {
   const client = new (options.ClientClass || import_ssh23.Client)();
-  const verifier = new SshConnectionSupervisor({ ssh: { ...instance, readyTimeout: 15e3 } });
+  const verifier = new SshConnectionSupervisor({ ssh: { ...instance2, readyTimeout: 15e3 } });
   let stream;
   let closed = false;
   let size = terminalSize(options.cols, options.rows);
@@ -58338,12 +58938,12 @@ function openManualTerminal(instance, options) {
     if (closed) return;
     const pty = { term: "xterm-256color", cols: size.cols, rows: size.rows };
     const open = options.command ? (callback) => client.exec(options.command, { pty }, callback) : (callback) => client.shell(pty, callback);
-    open((error, channel) => {
+    open((error2, channel) => {
       if (closed) {
         channel?.destroy();
         return;
       }
-      if (error) {
+      if (error2) {
         fail3("MANUAL_SHELL_FAILED");
         return;
       }
@@ -58358,7 +58958,7 @@ function openManualTerminal(instance, options) {
   });
   verifier.connectionOptions().then((settings) => {
     if (!closed) client.connect(settings);
-  }).catch((error) => fail3(["SSH_HOST_KEY_REQUIRED", "SSH_HOST_KEY_MISMATCH"].includes(error.code) ? error.code : "MANUAL_SSH_CONFIG_INVALID"));
+  }).catch((error2) => fail3(["SSH_HOST_KEY_REQUIRED", "SSH_HOST_KEY_MISMATCH"].includes(error2.code) ? error2.code : "MANUAL_SSH_CONFIG_INVALID"));
   return {
     close,
     write(data) {
@@ -58397,11 +58997,11 @@ var SSH_MESSAGES = {
   MANUAL_SSH_FAILED: "SSH 连接失败或已断开，请检查网络、SSH 账户与私钥。",
   MANUAL_SHELL_FAILED: "远端交互式 Shell 无法启动或已断开。"
 };
-function digest(instance) {
-  return (0, import_node_crypto13.createHash)("sha256").update(JSON.stringify(instance)).digest("hex");
+function digest(instance2) {
+  return (0, import_node_crypto14.createHash)("sha256").update(JSON.stringify(instance2)).digest("hex");
 }
-function target(instance) {
-  return { id: instance.id, name: instance.name, host: instance.host, port: instance.port, username: instance.username };
+function target(instance2) {
+  return { id: instance2.id, name: instance2.name, host: instance2.host, port: instance2.port, username: instance2.username };
 }
 function assertFields(body, allowed) {
   if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => !allowed.includes(key))) {
@@ -58411,13 +59011,13 @@ function assertFields(body, allowed) {
 function route(action) {
   return (request, response, next) => Promise.resolve().then(() => action(request, response)).catch(next);
 }
-function sendError(error, _request, response, _next) {
-  if (error.type === "entity.too.large") error = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
-  else if (error.type === "entity.parse.failed") error = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
-  const known = typeof error.code === "string" && /^(ADMIN_|OWNER_|MANUAL_|INSTANCE_)/.test(error.code);
-  response.status(known ? error.statusCode || 400 : 503).json({ ok: false, error: {
-    code: known ? error.code : "MANUAL_UNAVAILABLE",
-    message: known ? error.message : "手动工作台暂不可用，请检查本地配置和文件权限。"
+function sendError(error2, _request, response, _next) {
+  if (error2.type === "entity.too.large") error2 = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
+  else if (error2.type === "entity.parse.failed") error2 = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
+  const known = typeof error2.code === "string" && /^(ADMIN_|OWNER_|MANUAL_|INSTANCE_)/.test(error2.code);
+  response.status(known ? error2.statusCode || 400 : 503).json({ ok: false, error: {
+    code: known ? error2.code : "MANUAL_UNAVAILABLE",
+    message: known ? error2.message : "手动工作台暂不可用，请检查本地配置和文件权限。"
   } });
 }
 var ManualWorkbench = class {
@@ -58445,7 +59045,7 @@ var ManualWorkbench = class {
     return { ok: true, adminCount: this.store.read().length, ownerVerification: this.ownerVerification.status() };
   }
   audit(event2, session = {}, metadata = {}) {
-    const entry = { time: new Date(this.now()).toISOString(), event: event2, sessionId: session.id, instanceId: session.instanceId, username: session.username, ...metadata };
+    const entry2 = { time: new Date(this.now()).toISOString(), event: event2, sessionId: session.id, instanceId: session.instanceId, username: session.username, ...metadata };
     this.store.protectDirectory();
     const logPath = import_node_path8.default.join(this.directory, "sessions.jsonl");
     if (import_node_fs5.default.existsSync(logPath)) {
@@ -58455,7 +59055,7 @@ var ManualWorkbench = class {
     const fd = import_node_fs5.default.openSync(logPath, import_node_fs5.default.constants.O_WRONLY | import_node_fs5.default.constants.O_APPEND | import_node_fs5.default.constants.O_CREAT | (import_node_fs5.default.constants.O_NOFOLLOW || 0), 384);
     try {
       if (import_node_fs5.default.fstatSync(fd).nlink !== 1) throw manualError("ADMIN_STORAGE_INVALID", "审计文件无效。", 503);
-      import_node_fs5.default.writeSync(fd, JSON.stringify(entry) + "\n");
+      import_node_fs5.default.writeSync(fd, JSON.stringify(entry2) + "\n");
     } finally {
       import_node_fs5.default.closeSync(fd);
     }
@@ -58498,9 +59098,9 @@ var ManualWorkbench = class {
     }
   }
   instance(id) {
-    const instance = typeof id === "string" && this.registry.getInternal(id);
-    if (!instance || !instance.enabled) throw manualError("INSTANCE_UNAVAILABLE", "实例不存在或已禁用。", 404);
-    return instance;
+    const instance2 = typeof id === "string" && this.registry.getInternal(id);
+    if (!instance2 || !instance2.enabled) throw manualError("INSTANCE_UNAVAILABLE", "实例不存在或已禁用。", 404);
+    return instance2;
   }
   async login(body) {
     assertFields(body, ["username", "password", "instanceId"]);
@@ -58510,15 +59110,15 @@ var ManualWorkbench = class {
       throw manualError("ADMIN_LOGIN_FAILED", "管理员账号或密码不正确。", 401);
     }
     if (this.closing) throw manualError("MANUAL_STOPPING", "工作台正在关闭。", 503);
-    const instance = this.instance(body.instanceId);
+    const instance2 = this.instance(body.instanceId);
     this.prune();
     if (this.sessions.size >= 8) throw manualError("MANUAL_SESSION_LIMIT", "最多同时打开 8 个人工会话。", 409);
-    const token = (0, import_node_crypto13.randomBytes)(32).toString("hex");
-    const session = { id: (0, import_node_crypto13.randomUUID)(), username: body.username, instanceId: instance.id, fingerprint: digest(instance), createdAt: this.now(), lastInputAt: this.now(), socket: null };
+    const token = (0, import_node_crypto14.randomBytes)(32).toString("hex");
+    const session = { id: (0, import_node_crypto14.randomUUID)(), username: body.username, instanceId: instance2.id, fingerprint: digest(instance2), createdAt: this.now(), lastInputAt: this.now(), socket: null };
     this.audit("login", session);
     this.sessions.set(token, session);
     this.keepAlive(session);
-    return { ok: true, token, target: target(instance), idleTimeoutMs: this.idleMs, maxSessionMs: this.maxSessionMs };
+    return { ok: true, token, target: target(instance2), idleTimeoutMs: this.idleMs, maxSessionMs: this.maxSessionMs };
   }
   keepAlive(session) {
     this.lifecycle?.registerLease({ clientId: `manual:${session.id}`, source: "manual-workbench", ttlMs: 45e3 });
@@ -58526,8 +59126,8 @@ var ManualWorkbench = class {
   getSession(token) {
     const session = TOKEN.test(token || "") && this.sessions.get(token);
     if (!session) throw manualError("MANUAL_AUTH_REQUIRED", "请重新登录管理员账号。", 401);
-    const instance = this.registry.getInternal(session.instanceId);
-    if (this.now() - session.lastInputAt >= this.idleMs || this.now() - session.createdAt >= this.maxSessionMs || !instance?.enabled || digest(instance) !== session.fingerprint) {
+    const instance2 = this.registry.getInternal(session.instanceId);
+    if (this.now() - session.lastInputAt >= this.idleMs || this.now() - session.createdAt >= this.maxSessionMs || !instance2?.enabled || digest(instance2) !== session.fingerprint) {
       this.revoke(token, "session-expired");
       throw manualError("MANUAL_SESSION_EXPIRED", "会话已过期或实例配置已变化，请重新登录。", 401);
     }
@@ -58564,7 +59164,7 @@ var ManualWorkbench = class {
     if (session[kind === "database" ? "databaseSocket" : "socket"]) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端，请先断开。", 409);
     if (kind === "database" && !session.databaseTarget) throw databaseError("MANUAL_DB_NOT_CONNECTED", 409);
     for (const [ticket2, value] of this.tickets) if (value.token === token && value.kind === kind) this.tickets.delete(ticket2);
-    const ticket = (0, import_node_crypto13.randomBytes)(32).toString("hex");
+    const ticket = (0, import_node_crypto14.randomBytes)(32).toString("hex");
     this.tickets.set(ticket, { token, kind, connectionId: session.database?.id, expiresAt: this.now() + 1e4 });
     return { ok: true, ticket };
   }
@@ -58606,17 +59206,17 @@ var ManualWorkbench = class {
       this.getSession(token);
       if (session.database !== database) throw databaseError("MANUAL_DB_TARGET_CHANGED", 409);
       return result;
-    } catch (error) {
-      if (session.database === database && (database.closed || error.code === "MANUAL_DB_TARGET_CHANGED")) this.closeDatabase(session);
-      throw error;
+    } catch (error2) {
+      if (session.database === database && (database.closed || error2.code === "MANUAL_DB_TARGET_CHANGED")) this.closeDatabase(session);
+      throw error2;
     }
   }
   async start() {
     if (this.closing) throw manualError("MANUAL_STOPPING", "工作台正在关闭。", 503);
     if (this.starting) return this.starting;
-    this.starting = this.listen().catch((error) => {
+    this.starting = this.listen().catch((error2) => {
       this.starting = null;
-      throw error;
+      throw error2;
     });
     return this.starting;
   }
@@ -58652,8 +59252,8 @@ var ManualWorkbench = class {
       try {
         authorize(request);
         next();
-      } catch (error) {
-        next(error);
+      } catch (error2) {
+        next(error2);
       }
     });
     app.get("/api/session", route((request, response) => {
@@ -58667,8 +59267,8 @@ var ManualWorkbench = class {
     }));
     app.post("/api/terminal-ticket", route((request, response) => response.json(this.issueTicket(this.bearer(request)))));
     app.get("/api/database/config", route((request, response) => {
-      const session = authorize(request), instance = this.instance(session.instanceId);
-      response.json({ ok: true, config: instance.manualMongo || { enabled: false } });
+      const session = authorize(request), instance2 = this.instance(session.instanceId);
+      response.json({ ok: true, config: instance2.manualMongo || { enabled: false } });
     }));
     app.post("/api/database/connect", route(async (request, response) => {
       assertFields(request.body, []);
@@ -58689,8 +59289,8 @@ var ManualWorkbench = class {
           try {
             this.getSession(token);
             await database.request({ operation: "check" });
-          } catch (error) {
-            if (error.code !== "MANUAL_DB_BUSY" && session.database === database) this.closeDatabase(session);
+          } catch (error2) {
+            if (error2.code !== "MANUAL_DB_BUSY" && session.database === database) this.closeDatabase(session);
           } finally {
             session.databaseChecking = false;
           }
@@ -58698,10 +59298,10 @@ var ManualWorkbench = class {
         session.databaseCheckTimer.unref();
         this.audit("database-connected", session);
         response.json({ ok: true, connectionId: database.id, target: this.databaseTarget(session) });
-      } catch (error) {
+      } catch (error2) {
         database.close();
         if (session.database === database) this.closeDatabase(session);
-        throw error;
+        throw error2;
       }
     }));
     app.post("/api/database/activity", route((request, response) => {
@@ -58727,7 +59327,7 @@ var ManualWorkbench = class {
       const input = validateReplacement(request.body);
       const token = this.bearer(request), session = this.getSession(token);
       await this.databaseRequest(token, request.body.connectionId, { operation: "check" });
-      const planId = (0, import_node_crypto13.randomBytes)(32).toString("hex");
+      const planId = (0, import_node_crypto14.randomBytes)(32).toString("hex");
       session.databasePlan = { ...input, planId, connectionId: session.database.id, expiresAt: this.now() + 6e4 };
       this.audit("database-write-prepared", session, { database: input.database, collection: input.collection, connectionId: session.database.id, action: "replaceOne" });
       response.json({ ok: true, planId, target: this.databaseTarget(session), database: input.database, collection: input.collection, action: "replaceOne", confirmation: "确认替换此文档", expiresInMs: 6e4 });
@@ -58744,9 +59344,9 @@ var ManualWorkbench = class {
         const result = await this.databaseRequest(token, request.body.connectionId, { operation: "replaceOne", database: plan.database, collection: plan.collection, original: plan.original, replacement: plan.replacement });
         this.audit("database-write-completed", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
         response.json({ ok: true, ...result });
-      } catch (error) {
+      } catch (error2) {
         this.audit("database-write-failed-or-unknown", session, { database: plan.database, collection: plan.collection, connectionId: plan.connectionId, action: "replaceOne" });
-        throw error;
+        throw error2;
       }
     }));
     app.post("/api/database/shell-ticket", route(async (request, response) => {
@@ -58892,8 +59492,8 @@ var ManualWorkbench = class {
           const size = terminalSize(message.cols, message.rows);
           terminal2.resize(size.cols, size.rows);
         } else throw manualError("MANUAL_REQUEST_INVALID", "终端协议无效。");
-      } catch (error) {
-        send({ type: "error", code: "MANUAL_TERMINAL_REJECTED", message: error.code?.startsWith("MANUAL_") ? error.message : "终端请求无效。" });
+      } catch (error2) {
+        send({ type: "error", code: "MANUAL_TERMINAL_REJECTED", message: error2.code?.startsWith("MANUAL_") ? error2.message : "终端请求无效。" });
         ws.close(4003, "request rejected");
       }
     });
@@ -58960,9 +59560,9 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
     try {
       const stat = await import_promises2.default.lstat(item);
       if (stat.isSymbolicLink() || !stat.isDirectory()) throw sandboxError("local sandbox is not a regular directory");
-    } catch (error) {
-      if (error.code === "ENOENT") return { instanceId, initialized: false, files: [], bytes: 0, records: [] };
-      throw error;
+    } catch (error2) {
+      if (error2.code === "ENOENT") return { instanceId, initialized: false, files: [], bytes: 0, records: [] };
+      throw error2;
     }
   }
   const relativeRoot = import_node_path9.default.relative(await import_promises2.default.realpath(dataDir), await import_promises2.default.realpath(root));
@@ -58975,8 +59575,8 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
       const stat = await import_promises2.default.lstat(file);
       if (stat.isSymbolicLink() || !stat.isFile()) throw sandboxError("sandbox file is not a regular file");
       files.push({ name: name2, bytes: stat.size });
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
+    } catch (error2) {
+      if (error2.code !== "ENOENT") throw error2;
     }
   }
   if (input.action === "status") return { instanceId, initialized: true, files, bytes: files.reduce((sum, file) => sum + file.bytes, 0), activeFilesRetained: true };
@@ -59004,7 +59604,7 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
 }
 
 // output-preview.js
-var import_node_crypto14 = require("node:crypto");
+var import_node_crypto15 = require("node:crypto");
 var MAX_WIRE_BYTES = 8 * 1024 * 1024;
 var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 var INSTANCE = /^[a-zA-Z0-9._-]{1,128}$/;
@@ -59029,13 +59629,13 @@ function validate(input) {
   return { message, payload };
 }
 function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxBytes = 50 * 1024 * 1024, maxInstanceEvents = 100, maxEvents = 500 } = {}) {
-  const epoch = (0, import_node_crypto14.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
+  const epoch = (0, import_node_crypto15.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
   let sequence = 0, bytes = 0, lastEvicted = 0;
   function evict(id) {
-    const entry = records.get(id);
-    if (!entry) return;
+    const entry2 = records.get(id);
+    if (!entry2) return;
     records.delete(id);
-    bytes -= entry.bytes;
+    bytes -= entry2.bytes;
     lastEvicted = sequence;
   }
   function snapshot(cursor) {
@@ -59047,7 +59647,7 @@ function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxByte
       cursor: `${epoch}:${sequence}`,
       reset: !valid || gap,
       gap,
-      records: [...records.values()].filter((entry) => !valid || gap || entry.summary.sequence > after).map((entry) => entry.summary)
+      records: [...records.values()].filter((entry2) => !valid || gap || entry2.summary.sequence > after).map((entry2) => entry2.summary)
     };
   }
   function publish(input) {
@@ -59078,12 +59678,12 @@ function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxByte
     const size = summary.bytes + Buffer.byteLength(JSON.stringify(summary));
     records.set(id, { summary, wireMessage: input.wireMessage, bytes: size });
     bytes += size;
-    const instanceEntries = [...records.values()].filter((entry) => entry.summary.instanceId === input.instanceId);
-    let instanceBytes = instanceEntries.reduce((total, entry) => total + entry.bytes, 0);
+    const instanceEntries = [...records.values()].filter((entry2) => entry2.summary.instanceId === input.instanceId);
+    let instanceBytes = instanceEntries.reduce((total, entry2) => total + entry2.bytes, 0);
     while (instanceEntries.length > maxInstanceEvents || instanceBytes > maxInstanceBytes) {
-      const entry = instanceEntries.shift();
-      instanceBytes -= entry.bytes;
-      evict(entry.summary.id);
+      const entry2 = instanceEntries.shift();
+      instanceBytes -= entry2.bytes;
+      evict(entry2.summary.id);
     }
     while (records.size > maxEvents || bytes > maxBytes) evict(records.keys().next().value);
     const event2 = {
@@ -59097,12 +59697,12 @@ function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxByte
     return summary;
   }
   function get(id) {
-    const entry = records.get(id);
-    return entry ? { ...entry.summary, wireMessage: entry.wireMessage } : null;
+    const entry2 = records.get(id);
+    return entry2 ? { ...entry2.summary, wireMessage: entry2.wireMessage } : null;
   }
   function removeInstance(instanceId) {
     sequence++;
-    for (const [id, entry] of records) if (entry.summary.instanceId === instanceId) evict(id);
+    for (const [id, entry2] of records) if (entry2.summary.instanceId === instanceId) evict(id);
     for (const listener of listeners) listener(snapshot());
   }
   function stream(request, response) {
@@ -59149,7 +59749,7 @@ function installOutputPreviewRoutes(app, store, registry) {
 }
 
 // server.js
-var import_node_crypto21 = require("node:crypto");
+var import_node_crypto22 = require("node:crypto");
 var import_promises6 = __toESM(require("node:fs/promises"), 1);
 var import_node_path14 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
@@ -59157,7 +59757,7 @@ var import_node_url5 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
 
 // activity.js
-var import_node_crypto15 = require("node:crypto");
+var import_node_crypto16 = require("node:crypto");
 var import_node_events2 = require("node:events");
 var DEFAULT_MAX_EVENTS = 200;
 var DEFAULT_PREVIEW_CHARS = 4e3;
@@ -59187,17 +59787,17 @@ function createActivityLog(options = {}) {
   const emitter = new import_node_events2.EventEmitter();
   const events = [];
   function publish(event2) {
-    const entry = {
-      id: (0, import_node_crypto15.randomUUID)(),
+    const entry2 = {
+      id: (0, import_node_crypto16.randomUUID)(),
       time: (/* @__PURE__ */ new Date()).toISOString(),
       ...event2
     };
-    events.push(entry);
+    events.push(entry2);
     if (events.length > maxEvents) {
       events.splice(0, events.length - maxEvents);
     }
-    emitter.emit("activity", entry);
-    return entry;
+    emitter.emit("activity", entry2);
+    return entry2;
   }
   function list() {
     return events.slice();
@@ -59238,7 +59838,7 @@ function safeLength(value) {
   return typeof value === "string" ? Buffer.byteLength(value, "utf8") : 0;
 }
 function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
-  const entry = {
+  const entry2 = {
     time: now().toISOString(),
     tool: event2.tool,
     cmd: event2.cmd,
@@ -59302,21 +59902,21 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
     "execution"
   ]) {
     if (event2[key] !== void 0) {
-      entry[key] = event2[key];
+      entry2[key] = event2[key];
     }
   }
-  return entry;
+  return entry2;
 }
 async function writeAuditLog(logPath, event2, now) {
-  const entry = buildAuditEntry(event2, now);
+  const entry2 = buildAuditEntry(event2, now);
   await import_promises3.default.mkdir(import_node_path10.default.dirname(logPath), { recursive: true });
-  await import_promises3.default.appendFile(logPath, `${JSON.stringify(entry)}
+  await import_promises3.default.appendFile(logPath, `${JSON.stringify(entry2)}
 `, "utf8");
-  return entry;
+  return entry2;
 }
 
 // mongodb-sandbox-access.js
-var import_node_crypto16 = require("node:crypto");
+var import_node_crypto17 = require("node:crypto");
 
 // mongodb-sandbox-access-runtime.js
 async function sandboxAccessRuntime(request, config, marker) {
@@ -59327,9 +59927,9 @@ async function sandboxAccessRuntime(request, config, marker) {
   let phase = "storage";
   const primary = { readPreference: "primary" };
   function fail3(code) {
-    const error = new Error(code);
-    error.safeCode = code;
-    throw error;
+    const error2 = new Error(code);
+    error2.safeCode = code;
+    throw error2;
   }
   function stable2(value) {
     if (Array.isArray(value)) return value.map(stable2);
@@ -59356,15 +59956,15 @@ async function sandboxAccessRuntime(request, config, marker) {
     { resource: { db: config.sandboxDatabase, collection: "" }, actions: ["listCollections", "createCollection"] }
   ];
   function shape(privileges) {
-    return privileges.map(function(entry) {
-      return { resource: stable2(entry.resource), actions: entry.actions.slice().sort() };
+    return privileges.map(function(entry2) {
+      return { resource: stable2(entry2.resource), actions: entry2.actions.slice().sort() };
     }).sort(function(a, b) {
       return JSON.stringify(a).localeCompare(JSON.stringify(b));
     });
   }
   function can(privileges, action, database) {
-    return privileges.some(function(entry) {
-      return entry.actions.includes(action) && (entry.resource.anyResource === true || !entry.resource.cluster && entry.resource.collection === "" && ["", database].includes(entry.resource.db));
+    return privileges.some(function(entry2) {
+      return entry2.actions.includes(action) && (entry2.resource.anyResource === true || !entry2.resource.cluster && entry2.resource.collection === "" && ["", database].includes(entry2.resource.db));
     });
   }
   function regular(file, privateFile) {
@@ -59435,12 +60035,12 @@ async function sandboxAccessRuntime(request, config, marker) {
     try {
       await connection.connect();
       return connection;
-    } catch (error) {
+    } catch (error2) {
       try {
         await connection.close();
       } catch (_) {
       }
-      throw error;
+      throw error2;
     }
   }
   async function preflight() {
@@ -59596,18 +60196,18 @@ async function sandboxAccessRuntime(request, config, marker) {
         atomic(planFile, plan);
         const password = config.managementPassword;
         const uri = desiredUri(state.parts);
-        const sandbox = client.db(config.sandboxDatabase);
+        const sandbox2 = client.db(config.sandboxDatabase);
         for (const item of [[managerRole, managerPrivileges], [executorRole, executorPrivileges]]) {
           phase = item[0] === managerRole ? "create-manager-role" : "create-executor-role";
           if (!plan.snapshot.roles.find(function(role) {
             return role.role === item[0];
-          }).exists) await sandbox.command({ createRole: item[0], privileges: item[1], roles: [] }, primary);
+          }).exists) await sandbox2.command({ createRole: item[0], privileges: item[1], roles: [] }, primary);
         }
         phase = "create-manager-user";
-        if (!plan.snapshot.managerExists) await sandbox.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope } }, primary);
+        if (!plan.snapshot.managerExists) await sandbox2.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope } }, primary);
         else if (state.snapshot.passwordChanged) {
           phase = "reset-manager-password";
-          await sandbox.command({ updateUser: managerUser, pwd: password }, primary);
+          await sandbox2.command({ updateUser: managerUser, pwd: password }, primary);
         }
         phase = "grant-executor-role";
         if (!plan.snapshot.executorGranted) await client.db(plan.snapshot.executionUser.db).command({ grantRolesToUser: plan.snapshot.executionUser.user, roles: [{ role: executorRole, db: config.sandboxDatabase }] }, primary);
@@ -59633,10 +60233,10 @@ async function sandboxAccessRuntime(request, config, marker) {
       }
     }
     process.stdout.write(marker + JSON.stringify({ ok: true, data: summary(plan) }) + "\n");
-  } catch (error) {
+  } catch (error2) {
     const diagnostic = { phase };
-    if (Number.isSafeInteger(error.code)) diagnostic.databaseCode = error.code;
-    if (["EACCES", "EPERM", "EIO", "EEXIST", "EROFS", "ENOSPC", "ELOOP", "EINVAL", "EMFILE", "ENFILE", "ENOTDIR"].includes(error.code)) diagnostic.filesystemCode = error.code;
+    if (Number.isSafeInteger(error2.code)) diagnostic.databaseCode = error2.code;
+    if (["EACCES", "EPERM", "EIO", "EEXIST", "EROFS", "ENOSPC", "ELOOP", "EINVAL", "EMFILE", "ENFILE", "ENOTDIR"].includes(error2.code)) diagnostic.filesystemCode = error2.code;
     if (plan && plan.status === "started") {
       plan.status = "partial";
       plan.errorDiagnostic = diagnostic;
@@ -59645,7 +60245,7 @@ async function sandboxAccessRuntime(request, config, marker) {
       } catch (_) {
       }
     }
-    process.stdout.write(marker + JSON.stringify({ ok: false, error: { code: error.safeCode || "SANDBOX_SETUP_FAILED", diagnostic } }) + "\n");
+    process.stdout.write(marker + JSON.stringify({ ok: false, error: { code: error2.safeCode || "SANDBOX_SETUP_FAILED", diagnostic } }) + "\n");
     process.exitCode = 1;
   } finally {
     if (temporary) try {
@@ -59700,7 +60300,7 @@ function accessSettings(rawConfig, instanceId) {
   return config;
 }
 function sandboxSettingsHash(rawConfig, instanceId) {
-  return (0, import_node_crypto16.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
+  return (0, import_node_crypto17.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
 }
 function buildSandboxAccessScript(request, rawConfig, instanceId) {
   return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
@@ -59716,14 +60316,14 @@ async function runSandboxAccess(input = {}, options = {}) {
   if (action === "execute" && (!/^[a-f0-9-]{36}$/.test(input.setupId || "") || !/^[a-f0-9]{64}$/.test(input.planHash || "") || input.confirmation !== "确认配置沙盒")) {
     throw fail2("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
   }
-  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto16.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
+  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto17.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
   const script = buildSandboxAccessScript(request, rawConfig, instanceId);
   if (typeof options.runSSH !== "function") throw fail2("MONGODB_RUNNER_UNAVAILABLE");
   let remote;
   try {
     remote = await options.runSSH(MONGODB_REMOTE_COMMAND, { config: options.config, operation: options.operation, stdin: script });
-  } catch (error) {
-    throw operationError("Sandbox setup transport failed; inspect the plan before retrying", { code: error.code || "SANDBOX_SETUP_TRANSPORT_FAILED", statusCode: 502, layer: "sandbox-access", phase: action, retriable: false });
+  } catch (error2) {
+    throw operationError("Sandbox setup transport failed; inspect the plan before retrying", { code: error2.code || "SANDBOX_SETUP_TRANSPORT_FAILED", statusCode: 502, layer: "sandbox-access", phase: action, retriable: false });
   }
   if (remote.stdoutTruncated || Buffer.byteLength(remote.stdout || "") > 65536) throw fail2("SANDBOX_SETUP_RESPONSE_TOO_LARGE");
   const line = String(remote.stdout || "").split(/\r?\n/).filter((item) => item.startsWith(MONGODB_RESULT_MARKER)).pop();
@@ -59914,12 +60514,12 @@ async function closeRemoteReadStreams(sftp, operation) {
   destroyRemoteReadStreams(sftp);
   await new Promise((resolve, reject) => {
     let settled = false;
-    const finish = (error) => {
+    const finish = (error2) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       operation.signal?.removeEventListener("abort", onAbort);
-      if (error) reject(error);
+      if (error2) reject(error2);
       else resolve();
     };
     const onAbort = () => finish(operationErrorForSignal(operation.signal, operation, context));
@@ -60005,14 +60605,14 @@ function openSftp(client, operation) {
       phase: "sftp-open"
     });
     let settled = false;
-    const finish = (error, sftp) => {
+    const finish = (error2, sftp) => {
       if (settled) {
         sftp?.end?.();
         return;
       }
       settled = true;
       operation.signal?.removeEventListener("abort", onAbort);
-      if (error) reject(error);
+      if (error2) reject(error2);
       else resolve(sftp);
     };
     const onAbort = () => finish(operationErrorForSignal(operation.signal, operation, {
@@ -60020,22 +60620,22 @@ function openSftp(client, operation) {
       phase: "sftp-open"
     }));
     operation.signal?.addEventListener("abort", onAbort, { once: true });
-    client.sftp((error, sftp) => {
+    client.sftp((error2, sftp) => {
       if (operation.signal?.aborted) {
         sftp?.end?.();
         finish(operationErrorForSignal(operation.signal, operation, {
           layer: "ssh",
           phase: "sftp-open"
         }));
-      } else if (error) {
-        finish(operationError(error.message || "failed to open SFTP channel", {
+      } else if (error2) {
+        finish(operationError(error2.message || "failed to open SFTP channel", {
           code: "SSH_CHANNEL_OPEN_FAILED",
           statusCode: 502,
           operationId: operation.operationId,
           layer: "ssh",
           phase: "sftp-open",
           retriable: true,
-          cause: error
+          cause: error2
         }));
       } else {
         finish(null, sftp);
@@ -60047,11 +60647,11 @@ function sftpCall(sftp, method, args, operation, phase, options = {}) {
   return new Promise((resolve, reject) => {
     assertOperationActive(operation, operation.signal, { layer: "ssh", phase });
     let settled = false;
-    const finish = (error, result) => {
+    const finish = (error2, result) => {
       if (settled) return;
       settled = true;
       operation.signal?.removeEventListener("abort", onAbort);
-      if (error) reject(error);
+      if (error2) reject(error2);
       else resolve(result);
     };
     const onAbort = () => finish(operationErrorForSignal(operation.signal, operation, {
@@ -60059,20 +60659,20 @@ function sftpCall(sftp, method, args, operation, phase, options = {}) {
       phase
     }));
     operation.signal?.addEventListener("abort", onAbort, { once: true });
-    sftp[method](...args, (error, result) => {
+    sftp[method](...args, (error2, result) => {
       if (operation.signal?.aborted) {
         finish(operationErrorForSignal(operation.signal, operation, { layer: "ssh", phase }));
-      } else if (error && options.eof && (error.code === 1 || error.code === "EOF")) {
+      } else if (error2 && options.eof && (error2.code === 1 || error2.code === "EOF")) {
         finish(null, false);
-      } else if (error) {
-        finish(operationError(error.message || `SFTP ${method} failed`, {
+      } else if (error2) {
+        finish(operationError(error2.message || `SFTP ${method} failed`, {
           code: "SSH_CHANNEL_OPEN_FAILED",
           statusCode: 502,
           operationId: operation.operationId,
           layer: "ssh",
           phase,
           retriable: true,
-          cause: error
+          cause: error2
         }));
       } else {
         finish(null, result);
@@ -60109,11 +60709,11 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
     let total = 0;
     let settled = false;
     let paced = Promise.resolve();
-    const finish = (error) => {
+    const finish = (error2) => {
       if (settled) return;
       settled = true;
       operation.signal?.removeEventListener("abort", onAbort);
-      if (error) reject(error);
+      if (error2) reject(error2);
       else paced.then(() => resolve(Buffer.concat(chunks).subarray(0, maxBytes)), reject);
     };
     const onAbort = () => {
@@ -60138,31 +60738,31 @@ function readStreamToBuffer(stream, maxBytes, operation, markProgress) {
       }
       if (total >= maxBytes) stream.destroy();
     });
-    stream.on("error", (error) => finish(operationError(error.message || "SFTP read failed", {
+    stream.on("error", (error2) => finish(operationError(error2.message || "SFTP read failed", {
       code: "SSH_TRANSPORT_LOST",
       statusCode: 502,
       operationId: operation.operationId,
       layer: "ssh",
       phase: "sftp-read",
       retriable: true,
-      cause: error
+      cause: error2
     })));
     stream.on("close", () => finish());
     stream.on("end", () => finish());
   });
 }
 async function withSftp(supervisor, operation, callback, options = {}) {
-  return supervisor.schedule(operation, async (timing) => {
+  return supervisor.schedule(operation, async (timing2) => {
     let lastError;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       let progressed = false;
       let sftp;
       try {
-        const client = attempt === 0 ? timing.client : await supervisor.waitUntilReady(operation);
+        const client = attempt === 0 ? timing2.client : await supervisor.waitUntilReady(operation);
         sftp = await openSftp(client, operation);
-        if (timing.resourceContext?.taskId && supervisor.resourceClient) sftpResourceContexts.set(
+        if (timing2.resourceContext?.taskId && supervisor.resourceClient) sftpResourceContexts.set(
           sftp,
-          (bytes) => supervisor.resourceClient.receiveBytes(timing.resourceContext.taskId, bytes, operation.signal)
+          (bytes) => supervisor.resourceClient.receiveBytes(timing2.resourceContext.taskId, bytes, operation.signal)
         );
         const unregister = supervisor.registerChannel(sftp, operation);
         const closeOnAbort = () => {
@@ -60178,8 +60778,8 @@ async function withSftp(supervisor, operation, callback, options = {}) {
           return {
             ...result,
             timing: {
-              queueMs: timing.queueMs,
-              connectMs: timing.connectMs,
+              queueMs: timing2.queueMs,
+              connectMs: timing2.connectMs,
               connectionGeneration: supervisor.generation
             }
           };
@@ -60190,10 +60790,10 @@ async function withSftp(supervisor, operation, callback, options = {}) {
           sftp.end?.();
           remoteReadStreams.delete(sftp);
         }
-      } catch (error) {
-        lastError = error;
-        if (attempt > 0 || progressed || operation.signal?.aborted || !error?.retriable) {
-          throw error;
+      } catch (error2) {
+        lastError = error2;
+        if (attempt > 0 || progressed || operation.signal?.aborted || !error2?.retriable) {
+          throw error2;
         }
       }
     }
@@ -60239,13 +60839,13 @@ function executeChannel(client, command, operation, options, supervisor) {
     let abortError;
     let forceCloseTimer;
     let outputPacing = Promise.resolve();
-    const finish = (error, result) => {
+    const finish = (error2, result) => {
       if (settled) return;
       settled = true;
       clearTimeout(forceCloseTimer);
       operation.signal?.removeEventListener("abort", onAbort);
       unregister();
-      if (error) reject(error);
+      if (error2) reject(error2);
       else resolve({
         ...result,
         executionMs: Math.max(0, Date.now() - startedAt)
@@ -60273,8 +60873,8 @@ function executeChannel(client, command, operation, options, supervisor) {
       }, 500);
       forceCloseTimer.unref?.();
     };
-    const closeForError = (error) => {
-      finish(error);
+    const closeForError = (error2) => {
+      finish(error2);
       try {
         streamRef?.signal?.("TERM");
       } catch {
@@ -60293,20 +60893,20 @@ function executeChannel(client, command, operation, options, supervisor) {
       outputPacing.catch(closeForError);
     };
     operation.signal?.addEventListener("abort", onAbort, { once: true });
-    client.exec(command, (error, stream) => {
+    client.exec(command, (error2, stream) => {
       if (settled) {
         stream?.close?.();
         return;
       }
-      if (error) {
-        finish(operationError(error.message || "failed to open SSH exec channel", {
+      if (error2) {
+        finish(operationError(error2.message || "failed to open SSH exec channel", {
           code: "SSH_CHANNEL_OPEN_FAILED",
           statusCode: 502,
           operationId: operation.operationId,
           layer: "ssh",
           phase: "exec-open",
           retriable: true,
-          cause: error
+          cause: error2
         }));
         return;
       }
@@ -60321,8 +60921,8 @@ function executeChannel(client, command, operation, options, supervisor) {
         try {
           options.onStdoutChunk?.(chunk);
           options.onStdout?.(chunk.toString("utf8"));
-        } catch (error2) {
-          finish(error2);
+        } catch (error3) {
+          finish(error3);
           try {
             stream.signal?.("TERM");
           } catch {
@@ -60374,7 +60974,7 @@ function executeChannel(client, command, operation, options, supervisor) {
           timedOut: false,
           stdoutTruncated: stdout.isTruncated(),
           stderrTruncated: stderr.isTruncated()
-        }), (error2) => finish(error2));
+        }), (error3) => finish(error3));
       });
       if (options.stdin !== void 0 && options.stdin !== null) {
         try {
@@ -60403,30 +61003,30 @@ async function runSSH(command, options) {
   const supervisor = requireSupervisor(options);
   const prepared = prepareOperation(options, OPERATION_TIMEOUTS.run);
   try {
-    return await supervisor.schedule(prepared.operation, async (timing) => {
+    return await supervisor.schedule(prepared.operation, async (timing2) => {
       const validationStartedAt = Date.now();
       const canonicalPaths = await validateRemotePathsWithClient(
-        timing.client,
+        timing2.client,
         options.remotePaths || [],
         options.config,
         prepared.operation,
         supervisor
       );
       const result = await executeChannel(
-        timing.client,
+        timing2.client,
         options.commandValidation ? canonicalCommand(options.commandValidation, canonicalPaths) : command,
         prepared.operation,
-        { ...options, resourceContext: timing.resourceContext },
+        { ...options, resourceContext: timing2.resourceContext },
         supervisor
       );
       return {
         ...result,
         timing: {
-          queueMs: timing.queueMs,
-          connectMs: timing.connectMs,
+          queueMs: timing2.queueMs,
+          connectMs: timing2.connectMs,
           validationMs: Math.max(0, Date.now() - validationStartedAt - result.executionMs),
           executionMs: result.executionMs,
-          connectionGeneration: timing.connectionGeneration
+          connectionGeneration: timing2.connectionGeneration
         }
       };
     }, {
@@ -60509,12 +61109,12 @@ async function listRemoteDir(remotePath, options) {
       const entries = await sftpReaddir(sftp, canonicalPath, prepared.operation);
       return {
         path: canonicalPath,
-        entries: entries.map((entry) => ({
-          name: entry.filename,
-          longname: entry.longname,
-          size: entry.attrs?.size,
-          modifyTime: entry.attrs?.mtime,
-          permissions: entry.attrs?.mode
+        entries: entries.map((entry2) => ({
+          name: entry2.filename,
+          longname: entry2.longname,
+          size: entry2.attrs?.size,
+          modifyTime: entry2.attrs?.mtime,
+          permissions: entry2.attrs?.mode
         }))
       };
     }, options);
@@ -60534,8 +61134,8 @@ function createRemoteReadStream(sftp, remotePath, options = {}) {
     })
   };
   stream.once("close", onClosed);
-  stream.on("error", (error) => {
-    if (stream.destroyed) record.closeError ||= error;
+  stream.on("error", (error2) => {
+    if (stream.destroyed) record.closeError ||= error2;
     onClosed();
   });
   if (!remoteReadStreams.has(sftp)) remoteReadStreams.set(sftp, /* @__PURE__ */ new Set());
@@ -60625,8 +61225,8 @@ function logRuntimeError(message, code, operation, phase = "log-read", details) 
     details
   });
 }
-function isTerminalOperationError(error) {
-  return error?.code === "OPERATION_DEADLINE_EXCEEDED" || error?.code === "OPERATION_CANCELLED";
+function isTerminalOperationError(error2) {
+  return error2?.code === "OPERATION_DEADLINE_EXCEEDED" || error2?.code === "OPERATION_CANCELLED";
 }
 function isDirectoryMode(mode) {
   return ((Number(mode) || 0) & 61440) === DIRECTORY_TYPE;
@@ -60635,20 +61235,20 @@ function isRegularMode(mode) {
   const type = (Number(mode) || 0) & 61440;
   return type === 0 || type === REGULAR_TYPE;
 }
-function mapDirectoryEntry(entry) {
+function mapDirectoryEntry(entry2) {
   return {
-    name: entry.filename,
-    longname: entry.longname,
-    size: entry.attrs?.size,
-    modifyTime: entry.attrs?.mtime,
-    permissions: entry.attrs?.mode
+    name: entry2.filename,
+    longname: entry2.longname,
+    size: entry2.attrs?.size,
+    modifyTime: entry2.attrs?.mtime,
+    permissions: entry2.attrs?.mode
   };
 }
 function joinRemotePath(parent, child) {
   return `${String(parent || "").replace(/\/+$/, "")}/${String(child || "").replace(/^\/+/, "")}`;
 }
-function directoryEntryIsUsable(entry) {
-  return entry && entry.filename !== "." && entry.filename !== "..";
+function directoryEntryIsUsable(entry2) {
+  return entry2 && entry2.filename !== "." && entry2.filename !== "..";
 }
 async function readDirectoryPage(sftp, requestedPath, operation, allowedPaths, offset, limit, markProgress) {
   const canonicalPath = await resolveCanonicalRemotePath(
@@ -60667,13 +61267,13 @@ async function readDirectoryPage(sftp, requestedPath, operation, allowedPaths, o
         layer: "ssh",
         phase: "sftp-readdir-handle"
       });
-      const batch = await sftpReaddirHandle(sftp, handle, operation);
-      if (batch === false) {
+      const batch2 = await sftpReaddirHandle(sftp, handle, operation);
+      if (batch2 === false) {
         break;
       }
-      for (const entry of Array.isArray(batch) ? batch : []) {
+      for (const entry2 of Array.isArray(batch2) ? batch2 : []) {
         markProgress?.();
-        if (!directoryEntryIsUsable(entry)) {
+        if (!directoryEntryIsUsable(entry2)) {
           continue;
         }
         if (seen < offset) {
@@ -60684,7 +61284,7 @@ async function readDirectoryPage(sftp, requestedPath, operation, allowedPaths, o
           hasMore = true;
           break;
         }
-        entries.push(mapDirectoryEntry(entry));
+        entries.push(mapDirectoryEntry(entry2));
         seen += 1;
       }
       if (hasMore) {
@@ -60712,8 +61312,8 @@ async function readDirectorySample(sftp, requestedPath, operation, allowedPaths,
       limit,
       markProgress
     );
-  } catch (error) {
-    if (isTerminalOperationError(error)) throw error;
+  } catch (error2) {
+    if (isTerminalOperationError(error2)) throw error2;
     return null;
   }
 }
@@ -60744,7 +61344,7 @@ async function readStreamPrefix(stream, maxBytes, operation, markProgress) {
         break;
       }
     }
-  } catch (error) {
+  } catch (error2) {
     if (operation.signal?.aborted) {
       throw operationErrorForSignal(operation.signal, operation, {
         layer: "ssh",
@@ -60753,7 +61353,7 @@ async function readStreamPrefix(stream, maxBytes, operation, markProgress) {
     }
     if (!stopped) {
       throw logRuntimeError(
-        error.message || "failed to inspect log format",
+        error2.message || "failed to inspect log format",
         "LOG_PREFIX_READ_FAILED",
         operation,
         "sftp-prefix-read"
@@ -60786,9 +61386,9 @@ async function readSmallTextFile(sftp, requestedPath, operation, allowedPaths, m
   const prefix = await readStreamPrefix(stream, maxBytes, operation, markProgress);
   return { path: canonicalPath, content: prefix.toString("utf8") };
 }
-function errorIsMissing(error) {
-  const code = error?.cause?.code || error?.code;
-  return code === 2 || code === "ENOENT" || /no such file/i.test(error?.message || "");
+function errorIsMissing(error2) {
+  const code = error2?.cause?.code || error2?.code;
+  return code === 2 || code === "ENOENT" || /no such file/i.test(error2?.message || "");
 }
 function compressionForName(name2) {
   const value = String(name2 || "").toLowerCase();
@@ -60962,8 +61562,8 @@ var TarReader = class {
         let header;
         try {
           header = parseTarHeader(block);
-        } catch (error) {
-          throw new Error(`invalid tar header: ${error.message}`);
+        } catch (error2) {
+          throw new Error(`invalid tar header: ${error2.message}`);
         }
         this.remaining = header.size;
         this.paddingRemaining = (TAR_BLOCK_SIZE - header.size % TAR_BLOCK_SIZE) % TAR_BLOCK_SIZE;
@@ -61005,7 +61605,7 @@ var TarReader = class {
           this.longLink = "";
           if (pax.path) rawName = pax.path;
           const named = archiveEntryName(rawName);
-          const entry = {
+          const entry2 = {
             name: named.name,
             safeName: named.safe,
             size: entrySize,
@@ -61016,8 +61616,8 @@ var TarReader = class {
             index: this.visibleIndex
           };
           this.visibleIndex += 1;
-          this.current = { header, entry, special: false };
-          this.onEntry?.(entry, this);
+          this.current = { header, entry: entry2, special: false };
+          this.onEntry?.(entry2, this);
         }
         this.state = this.remaining > 0 ? "body" : "padding";
         if (this.remaining === 0 && this.paddingRemaining === 0) {
@@ -61225,18 +61825,18 @@ var LineCollector = class {
     };
   }
 };
-function streamFailure(error, operation, phase, code = "LOG_STREAM_READ_FAILED") {
-  if (error?.code === "OPERATION_DEADLINE_EXCEEDED" || error?.code === "OPERATION_CANCELLED") {
-    return error;
+function streamFailure(error2, operation, phase, code = "LOG_STREAM_READ_FAILED") {
+  if (error2?.code === "OPERATION_DEADLINE_EXCEEDED" || error2?.code === "OPERATION_CANCELLED") {
+    return error2;
   }
-  return operationError(error?.message || "remote log stream failed", {
+  return operationError(error2?.message || "remote log stream failed", {
     code,
     statusCode: 502,
     operationId: operation?.operationId,
     layer: "ssh",
     phase,
     retriable: true,
-    cause: error
+    cause: error2
   });
 }
 async function consumePlainStream(stream, collector, operation, maxScanBytes, markProgress) {
@@ -61265,11 +61865,11 @@ async function consumePlainStream(stream, collector, operation, maxScanBytes, ma
         break;
       }
     }
-  } catch (error) {
+  } catch (error2) {
     if (operation.signal?.aborted) {
       throw operationErrorForSignal(operation.signal, operation, { layer: "ssh", phase: "log-read" });
     }
-    if (!stopped) throw streamFailure(error, operation, "log-read");
+    if (!stopped) throw streamFailure(error2, operation, "log-read");
   }
   return { scannedBytes, scanTruncated, final: collector.finish() };
 }
@@ -61287,9 +61887,9 @@ async function consumeGunzip(source, operation, markProgress, onChunk) {
     sourceBytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk));
     markProgress?.();
   };
-  const onSourceError = (error) => {
-    sourceFailure = error;
-    if (!gunzip.destroyed) gunzip.destroy(error);
+  const onSourceError = (error2) => {
+    sourceFailure = error2;
+    if (!gunzip.destroyed) gunzip.destroy(error2);
   };
   operation.signal?.addEventListener("abort", onAbort, { once: true });
   source.on("data", onSourceData);
@@ -61306,15 +61906,15 @@ async function consumeGunzip(source, operation, markProgress, onChunk) {
         break;
       }
     }
-  } catch (error) {
+  } catch (error2) {
     if (operation.signal?.aborted) {
       throw operationErrorForSignal(operation.signal, operation, { layer: "ssh", phase: "log-decompress" });
     }
     if (!stopRequested) {
-      if (error?.code?.startsWith?.("LOG_")) throw error;
+      if (error2?.code?.startsWith?.("LOG_")) throw error2;
       if (sourceFailure) throw streamFailure(sourceFailure, operation, "sftp-read");
       throw logRuntimeError(
-        error.message || "gzip decompression failed",
+        error2.message || "gzip decompression failed",
         "LOG_DECOMPRESSION_FAILED",
         operation,
         "log-decompress"
@@ -61410,13 +62010,13 @@ async function addDirectorySource(sftp, sources, seen, warnings, requestedPath, 
     seen.set(key, item);
     sources.push(item);
     return true;
-  } catch (error) {
-    if (isTerminalOperationError(error)) throw error;
+  } catch (error2) {
+    if (isTerminalOperationError(error2)) throw error2;
     if (required) {
       warnings.push({
         path: requestedPath,
-        code: error.code || "LOG_SOURCE_UNAVAILABLE",
-        message: error.message || "log source is unavailable"
+        code: error2.code || "LOG_SOURCE_UNAVAILABLE",
+        message: error2.message || "log source is unavailable"
       });
     }
     return false;
@@ -61445,8 +62045,8 @@ async function addFileSource(sftp, sources, seen, requestedPath, category, sourc
     seen.set(key, item);
     sources.push(item);
     return true;
-  } catch (error) {
-    if (isTerminalOperationError(error)) throw error;
+  } catch (error2) {
+    if (isTerminalOperationError(error2)) throw error2;
     return false;
   }
 }
@@ -61492,9 +62092,9 @@ async function discoverNginxFiles(sftp, sources, seen, warnings, config, operati
       256,
       markProgress
     );
-    for (const entry of sample?.entries || []) {
-      if (!isDirectoryMode(entry.permissions)) {
-        files.add(joinRemotePath(sample.path, entry.name));
+    for (const entry2 of sample?.entries || []) {
+      if (!isDirectoryMode(entry2.permissions)) {
+        files.add(joinRemotePath(sample.path, entry2.name));
       }
     }
   }
@@ -61519,13 +62119,13 @@ async function discoverNginxFiles(sftp, sources, seen, warnings, config, operati
           operation
         );
       }
-    } catch (error) {
-      if (isTerminalOperationError(error)) throw error;
-      if (!errorIsMissing(error)) {
+    } catch (error2) {
+      if (isTerminalOperationError(error2)) throw error2;
+      if (!errorIsMissing(error2)) {
         warnings.push({
           path: configPath,
-          code: error.code || "NGINX_CONFIG_READ_FAILED",
-          message: error.message || "failed to inspect nginx configuration"
+          code: error2.code || "NGINX_CONFIG_READ_FAILED",
+          message: error2.message || "failed to inspect nginx configuration"
         });
       }
     }
@@ -61541,9 +62141,9 @@ async function discoverHomeGithubSources(sftp, sources, seen, config, operation,
     markProgress
   );
   if (!top) return;
-  for (const entry of top.entries) {
-    if (!isDirectoryMode(entry.permissions)) continue;
-    const childPath = joinRemotePath(top.path, entry.name);
+  for (const entry2 of top.entries) {
+    if (!isDirectoryMode(entry2.permissions)) continue;
+    const childPath = joinRemotePath(top.path, entry2.name);
     await addDirectorySource(
       sftp,
       sources,
@@ -61625,16 +62225,16 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
       true
     );
     varLogSample = await readDirectorySample(sftp, "/var/log", operation, allowedPaths, 256, markProgress);
-    for (const entry of varLogSample?.entries || []) {
-      if (!isDirectoryMode(entry.permissions)) continue;
+    for (const entry2 of varLogSample?.entries || []) {
+      if (!isDirectoryMode(entry2.permissions)) continue;
       await addDirectorySource(
         sftp,
         sources,
         seen,
         warnings,
-        joinRemotePath(varLogSample.path, entry.name),
+        joinRemotePath(varLogSample.path, entry2.name),
         "system",
-        `system:${entry.name}`,
+        `system:${entry2.name}`,
         config,
         operation
       );
@@ -61691,8 +62291,8 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
         512 * 1024
       );
       pm2Apps = parsePm2Dump(dump.content);
-    } catch (error) {
-      if (isTerminalOperationError(error)) throw error;
+    } catch (error2) {
+      if (isTerminalOperationError(error2)) throw error2;
       pm2Apps = [];
     }
     for (const app of pm2Apps) {
@@ -61831,8 +62431,8 @@ async function listLogs(options = {}) {
         const source = discovery.sources[sourceIndex];
         if (source.kind === "file") {
           if (offset === 0) {
-            const entry = listFileSourceEntry(source);
-            if (entry) entries.push(entry);
+            const entry2 = listFileSourceEntry(source);
+            if (entry2) entries.push(entry2);
           }
           sourceIndex += 1;
           offset = 0;
@@ -61850,12 +62450,12 @@ async function listLogs(options = {}) {
             pageLimit,
             markProgress
           );
-        } catch (error) {
-          if (isTerminalOperationError(error)) throw error;
+        } catch (error2) {
+          if (isTerminalOperationError(error2)) throw error2;
           warnings.push({
             path: source.path,
-            code: error.code || "LOG_DIRECTORY_READ_FAILED",
-            message: error.message || "failed to read log directory"
+            code: error2.code || "LOG_DIRECTORY_READ_FAILED",
+            message: error2.message || "failed to read log directory"
           });
           sourceIndex += 1;
           offset = 0;
@@ -61868,13 +62468,13 @@ async function listLogs(options = {}) {
           const rawOffset = offset + index;
           nextOffset = rawOffset + 1;
           scannedEntries += 1;
-          const entry = logEntryFromRaw(source, rawEntry);
-          if (entry) {
+          const entry2 = logEntryFromRaw(source, rawEntry);
+          if (entry2) {
             if (entries.length >= normalized.limit) {
               pageExhausted = false;
               break;
             }
-            entries.push(entry);
+            entries.push(entry2);
             if (entries.length >= normalized.limit) {
               const hasUnconsumed = index + 1 < page.entries.length || page.hasMore;
               if (hasUnconsumed) {
@@ -61945,15 +62545,15 @@ async function listLogs(options = {}) {
     prepared.cleanup();
   }
 }
-function archiveMemberResult(entry) {
+function archiveMemberResult(entry2) {
   return {
-    name: entry.name,
-    size: entry.size,
-    modifyTime: entry.modifyTime,
-    type: entry.type,
-    linkName: entry.linkName || void 0,
-    readable: entry.readable,
-    readReason: entry.readable ? void 0 : entry.safeName ? "only regular files can be read" : "member path is unsafe"
+    name: entry2.name,
+    size: entry2.size,
+    modifyTime: entry2.modifyTime,
+    type: entry2.type,
+    linkName: entry2.linkName || void 0,
+    readable: entry2.readable,
+    readReason: entry2.readable ? void 0 : entry2.safeName ? "only regular files can be read" : "member path is unsafe"
   };
 }
 async function readArchiveMembersFromSftp(sftp, requestedPath, options, operation, allowedPaths, markProgress) {
@@ -61983,12 +62583,12 @@ async function readArchiveMembersFromSftp(sftp, requestedPath, options, operatio
   let nextOffset = cursor.offset;
   let selectedStop = false;
   const reader = new TarReader({
-    onEntry: (entry, parser) => {
-      const matches = !options.prefix || entry.safeName && entry.name.startsWith(options.prefix);
-      const visibleIndex = entry.index;
+    onEntry: (entry2, parser) => {
+      const matches = !options.prefix || entry2.safeName && entry2.name.startsWith(options.prefix);
+      const visibleIndex = entry2.index;
       nextOffset = visibleIndex + 1;
       if (matches && members.length < options.limit && visibleIndex >= cursor.offset) {
-        members.push(archiveMemberResult(entry));
+        members.push(archiveMemberResult(entry2));
         if (members.length >= options.limit) {
           parser.stopAfterCurrent = true;
           selectedStop = true;
@@ -62018,9 +62618,9 @@ async function readArchiveMembersFromSftp(sftp, requestedPath, options, operatio
   });
   try {
     reader.finish();
-  } catch (error) {
+  } catch (error2) {
     if (!selectedStop && !scanTruncated) {
-      throw logRuntimeError(error.message, "LOG_ARCHIVE_INVALID", operation, "log-archive-parse");
+      throw logRuntimeError(error2.message, "LOG_ARCHIVE_INVALID", operation, "log-archive-parse");
     }
   }
   const hasMore = selectedStop || scanTruncated;
@@ -62191,17 +62791,17 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
   }
   const collector = new LineCollector(normalized);
   const reader = new TarReader({
-    onEntry: (entry) => {
-      if (!entry.safeName || entry.name !== normalized.memberPath) return;
+    onEntry: (entry2) => {
+      if (!entry2.safeName || entry2.name !== normalized.memberPath) return;
       matchedMember = true;
-      if (entry.type === "file" && entry.readable) {
+      if (entry2.type === "file" && entry2.readable) {
         memberReadable = true;
       } else {
         memberNonRegular = true;
       }
     },
-    onData: (entry, chunk) => {
-      if (!matchedMember || !memberReadable || entry.name !== normalized.memberPath) return false;
+    onData: (entry2, chunk) => {
+      if (!matchedMember || !memberReadable || entry2.name !== normalized.memberPath) return false;
       const remaining = LOG_MAX_MEMBER_BYTES - scannedBytes;
       if (remaining <= 0) {
         scanTruncated = true;
@@ -62216,8 +62816,8 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
       }
       return false;
     },
-    onEntryEnd: (entry, parser) => {
-      if (matchedMember && entry.name === normalized.memberPath) {
+    onEntryEnd: (entry2, parser) => {
+      if (matchedMember && entry2.name === normalized.memberPath) {
         parser.stopAfterCurrent = true;
       }
     }
@@ -62244,9 +62844,9 @@ async function readLogFromSftp(sftp, normalized, config, operation, markProgress
   });
   try {
     reader.finish();
-  } catch (error) {
+  } catch (error2) {
     if (!archiveScanTruncated && !reader.stopped) {
-      throw logRuntimeError(error.message, "LOG_ARCHIVE_INVALID", operation, "log-archive-parse");
+      throw logRuntimeError(error2.message, "LOG_ARCHIVE_INVALID", operation, "log-archive-parse");
     }
   }
   if (!matchedMember) {
@@ -62340,7 +62940,7 @@ async function readLog(options = {}) {
 // instance-registry.js
 var import_node_fs6 = __toESM(require("node:fs"), 1);
 var import_node_path11 = __toESM(require("node:path"), 1);
-var import_node_crypto17 = require("node:crypto");
+var import_node_crypto18 = require("node:crypto");
 var import_local_auth5 = __toESM(require_local_auth(), 1);
 var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -62353,10 +62953,10 @@ function parsePort(value, fallback, fieldName) {
   }
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
-    const error = new Error(`${fieldName} must be a valid TCP port`);
-    error.code = "INVALID_INSTANCE_FIELD";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error(`${fieldName} must be a valid TCP port`);
+    error2.code = "INVALID_INSTANCE_FIELD";
+    error2.statusCode = 400;
+    throw error2;
   }
   return parsed;
 }
@@ -62369,10 +62969,10 @@ function parsePositiveInt2(value, fallback, fieldName) {
   }
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    const error = new Error(`${fieldName} must be a positive integer`);
-    error.code = "INVALID_INSTANCE_FIELD";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error(`${fieldName} must be a positive integer`);
+    error2.code = "INVALID_INSTANCE_FIELD";
+    error2.statusCode = 400;
+    throw error2;
   }
   return parsed;
 }
@@ -62391,10 +62991,10 @@ function slugify(value, fallback = "instance") {
 }
 function assertInstanceId(value) {
   if (typeof value !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(value)) {
-    const error = new Error("instance id must use 1-64 letters, numbers, dashes, or underscores");
-    error.code = "INVALID_INSTANCE_ID";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error("instance id must use 1-64 letters, numbers, dashes, or underscores");
+    error2.code = "INVALID_INSTANCE_ID";
+    error2.statusCode = 400;
+    throw error2;
   }
 }
 function managerDefaults(rawManager = {}) {
@@ -62403,10 +63003,10 @@ function managerDefaults(rawManager = {}) {
   const start = parsePort(range.start, DEFAULT_WORKER_PORT_RANGE.start, "workerPortRange.start");
   const end = parsePort(range.end, DEFAULT_WORKER_PORT_RANGE.end, "workerPortRange.end");
   if (end < start) {
-    const error = new Error("workerPortRange.end must be greater than or equal to workerPortRange.start");
-    error.code = "INVALID_MANAGER_CONFIG";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error("workerPortRange.end must be greater than or equal to workerPortRange.start");
+    error2.code = "INVALID_MANAGER_CONFIG";
+    error2.statusCode = 400;
+    throw error2;
   }
   return {
     host: rawManager.host || "127.0.0.1",
@@ -62485,10 +63085,10 @@ function normalizeMongoSettings(input, existing) {
     return void 0;
   }
   if (input !== void 0 && (!input || typeof input !== "object" || Array.isArray(input))) {
-    const error = new Error("mongodb must be an object or null");
-    error.code = "INVALID_INSTANCE_FIELD";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error("mongodb must be an object or null");
+    error2.code = "INVALID_INSTANCE_FIELD";
+    error2.statusCode = 400;
+    throw error2;
   }
   const raw = { ...existing || {}, ...input || {} };
   const enabled = parseBooleanFlag3(raw.enabled, existing?.enabled ?? true);
@@ -62498,12 +63098,12 @@ function normalizeMongoSettings(input, existing) {
   const uriKey = String(raw.uriKey ?? "url").trim();
   const database = String(raw.database ?? raw.databaseName ?? "").trim();
   if (enabled && (!configPath || !driverPath || !configProfile || !uriKey)) {
-    const error = new Error(
+    const error2 = new Error(
       "enabled MongoDB settings require configPath, driverPath, configProfile, and uriKey"
     );
-    error.code = "INVALID_INSTANCE_FIELD";
-    error.statusCode = 400;
-    throw error;
+    error2.code = "INVALID_INSTANCE_FIELD";
+    error2.statusCode = 400;
+    throw error2;
   }
   for (const [fieldName, value, maxLength] of [
     ["mongodb.configPath", configPath, 4096],
@@ -62513,10 +63113,10 @@ function normalizeMongoSettings(input, existing) {
     ["mongodb.database", database, 128]
   ]) {
     if (value.length > maxLength) {
-      const error = new Error(`${fieldName} is too long`);
-      error.code = "INVALID_INSTANCE_FIELD";
-      error.statusCode = 400;
-      throw error;
+      const error2 = new Error(`${fieldName} is too long`);
+      error2.code = "INVALID_INSTANCE_FIELD";
+      error2.statusCode = 400;
+      throw error2;
     }
   }
   const normalized = {
@@ -62538,10 +63138,10 @@ function normalizeMongoSettings(input, existing) {
   }
   if (raw.sandboxManagementPassword !== void 0) {
     if (typeof raw.sandboxManagementPassword !== "string" || raw.sandboxManagementPassword.length > 256 || raw.sandboxManagementPassword && (raw.sandboxManagementPassword.length < 16 || /[\r\n\0]/.test(raw.sandboxManagementPassword))) {
-      const error = new Error("sandbox management password must contain 16–256 characters");
-      error.code = "INVALID_INSTANCE_FIELD";
-      error.statusCode = 400;
-      throw error;
+      const error2 = new Error("sandbox management password must contain 16–256 characters");
+      error2.code = "INVALID_INSTANCE_FIELD";
+      error2.statusCode = 400;
+      throw error2;
     }
     normalized.sandboxManagementPassword = raw.sandboxManagementPassword;
   }
@@ -62554,10 +63154,10 @@ function normalizeMongoSettings(input, existing) {
   if (raw.bulkReceiptsCollection !== void 0 && raw.bulkReceiptsCollection !== "") {
     const collection = String(raw.bulkReceiptsCollection).trim();
     if (!/^[A-Za-z0-9_.$-]{1,128}$/.test(collection)) {
-      const error = new Error("mongodb.bulkReceiptsCollection has an invalid format");
-      error.code = "INVALID_INSTANCE_FIELD";
-      error.statusCode = 400;
-      throw error;
+      const error2 = new Error("mongodb.bulkReceiptsCollection has an invalid format");
+      error2.code = "INVALID_INSTANCE_FIELD";
+      error2.statusCode = 400;
+      throw error2;
     }
     normalized.bulkReceiptsCollection = collection;
   }
@@ -62565,10 +63165,10 @@ function normalizeMongoSettings(input, existing) {
     if (raw[field] !== void 0) {
       const value = String(raw[field]).trim();
       if (value && !/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/.test(value)) {
-        const error = new Error(`mongodb.${field} has an invalid format`);
-        error.code = "INVALID_INSTANCE_FIELD";
-        error.statusCode = 400;
-        throw error;
+        const error2 = new Error(`mongodb.${field} has an invalid format`);
+        error2.code = "INVALID_INSTANCE_FIELD";
+        error2.statusCode = 400;
+        throw error2;
       }
       normalized[field] = value;
     }
@@ -62585,10 +63185,10 @@ function normalizeMongoSettings(input, existing) {
       const parsed = parsePositiveInt2(fieldValue, void 0, `mongodb.${fieldName}`);
       const maximum = fieldName === "bulkBatchDocuments" ? 2e3 : fieldName === "bulkConcurrency" ? 4 : fieldName === "bulkRollbackTtlMs" ? 7 * 24 * 60 * 60 * 1e3 : void 0;
       if (maximum && parsed > maximum) {
-        const error = new Error(`mongodb.${fieldName} must not exceed ${maximum}`);
-        error.code = "INVALID_INSTANCE_FIELD";
-        error.statusCode = 400;
-        throw error;
+        const error2 = new Error(`mongodb.${fieldName} must not exceed ${maximum}`);
+        error2.code = "INVALID_INSTANCE_FIELD";
+        error2.statusCode = 400;
+        throw error2;
       }
       normalized[fieldName] = parsed;
     }
@@ -62596,10 +63196,10 @@ function normalizeMongoSettings(input, existing) {
   for (const fieldName of ["allowedDatabases", "allowedCollections"]) {
     if (raw[fieldName] !== void 0) {
       if (!Array.isArray(raw[fieldName]) || raw[fieldName].length === 0) {
-        const error = new Error(`mongodb.${fieldName} must be a non-empty array`);
-        error.code = "INVALID_INSTANCE_FIELD";
-        error.statusCode = 400;
-        throw error;
+        const error2 = new Error(`mongodb.${fieldName} must be a non-empty array`);
+        error2.code = "INVALID_INSTANCE_FIELD";
+        error2.statusCode = 400;
+        throw error2;
       }
       normalized[fieldName] = raw[fieldName].map((value) => String(value).trim());
     }
@@ -62607,23 +63207,23 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto17.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto18.randomUUID)());
   assertInstanceId(id);
   const name2 = String(input.name ?? existing.name ?? id).trim();
   if (!name2) {
-    const error = new Error("instance name is required");
-    error.code = "INVALID_INSTANCE_FIELD";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error("instance name is required");
+    error2.code = "INVALID_INSTANCE_FIELD";
+    error2.statusCode = 400;
+    throw error2;
   }
   const host = String(input.host ?? existing.host ?? "").trim();
   const username = String(input.username ?? existing.username ?? "").trim();
   const privateKeyPath = String(input.privateKeyPath ?? existing.privateKeyPath ?? "").trim();
   if (!host || !username || !privateKeyPath) {
-    const error = new Error("host, username, and privateKeyPath are required");
-    error.code = "INVALID_INSTANCE_FIELD";
-    error.statusCode = 400;
-    throw error;
+    const error2 = new Error("host, username, and privateKeyPath are required");
+    error2.code = "INVALID_INSTANCE_FIELD";
+    error2.statusCode = 400;
+    throw error2;
   }
   const passphrase = input.passphrase === "" || input.passphrase === void 0 ? existing.passphrase : input.passphrase;
   const targetChanged = existing.host && host !== existing.host || existing.port && parsePort(input.port, existing.port, "port") !== existing.port;
@@ -62667,12 +63267,12 @@ function normalizeInstance(input, existing = {}) {
     updatedAt: input.updatedAt || (/* @__PURE__ */ new Date()).toISOString()
   };
 }
-function sanitizeInstanceForManager(instance, manager, managerPort) {
-  if (instance.preferredWorkerPort !== void 0 && (!isPortInRange(instance.preferredWorkerPort, manager.workerPortRange) || instance.preferredWorkerPort === managerPort)) {
-    const { preferredWorkerPort, ...sanitized } = instance;
+function sanitizeInstanceForManager(instance2, manager, managerPort) {
+  if (instance2.preferredWorkerPort !== void 0 && (!isPortInRange(instance2.preferredWorkerPort, manager.workerPortRange) || instance2.preferredWorkerPort === managerPort)) {
+    const { preferredWorkerPort, ...sanitized } = instance2;
     return sanitized;
   }
-  return instance;
+  return instance2;
 }
 function rawPreferredWorkerPort(input = {}) {
   return input.preferredWorkerPort ?? input.workerPort ?? input.agentPort;
@@ -62681,8 +63281,8 @@ function hasUnavailablePreferredWorkerPort(rawInstances, manager, managerPort) {
   if (!Array.isArray(rawInstances)) {
     return false;
   }
-  return rawInstances.some((instance) => {
-    const value = rawPreferredWorkerPort(instance);
+  return rawInstances.some((instance2) => {
+    const value = rawPreferredWorkerPort(instance2);
     if (value === void 0 || value === null || value === "") {
       return false;
     }
@@ -62753,16 +63353,16 @@ function emptyRegistry(cwd, env) {
 }
 function normalizeRegistry(raw, cwd, env, managerPort) {
   const manager = managerDefaults(raw.manager);
-  const instances = Array.isArray(raw.instances) ? raw.instances.map((instance) => sanitizeInstanceForManager(normalizeInstance(instance), manager, managerPort)) : [];
+  const instances = Array.isArray(raw.instances) ? raw.instances.map((instance2) => sanitizeInstanceForManager(normalizeInstance(instance2), manager, managerPort)) : [];
   const ids = /* @__PURE__ */ new Set();
-  for (const instance of instances) {
-    if (ids.has(instance.id)) {
-      const error = new Error(`duplicate instance id: ${instance.id}`);
-      error.code = "DUPLICATE_INSTANCE_ID";
-      error.statusCode = 400;
-      throw error;
+  for (const instance2 of instances) {
+    if (ids.has(instance2.id)) {
+      const error2 = new Error(`duplicate instance id: ${instance2.id}`);
+      error2.code = "DUPLICATE_INSTANCE_ID";
+      error2.statusCode = 400;
+      throw error2;
     }
-    ids.add(instance.id);
+    ids.add(instance2.id);
   }
   const fallback = emptyRegistry(cwd, env);
   const defaultInstanceId = raw.defaultInstanceId && ids.has(raw.defaultInstanceId) ? raw.defaultInstanceId : instances[0]?.id || fallback.defaultInstanceId || "";
@@ -62773,8 +63373,8 @@ function normalizeRegistry(raw, cwd, env, managerPort) {
     instances: instances.length > 0 ? instances : fallback.instances
   };
 }
-function publicInstance(instance) {
-  const { passphrase, mongodb, ...rest } = instance;
+function publicInstance(instance2) {
+  const { passphrase, mongodb, ...rest } = instance2;
   return {
     ...rest,
     hasPassphrase: Boolean(passphrase),
@@ -62833,7 +63433,7 @@ var InstanceRegistry = class {
   }
   save(nextRegistry = this.registry) {
     import_node_fs6.default.mkdirSync(import_node_path11.default.dirname(this.registryPath), { recursive: true, mode: 448 });
-    const containsSandboxSecret = nextRegistry.instances.some((instance) => Boolean(instance.mongodb?.sandboxManagementPassword));
+    const containsSandboxSecret = nextRegistry.instances.some((instance2) => Boolean(instance2.mongodb?.sandboxManagementPassword));
     if (containsSandboxSecret) import_local_auth5.default.protectOrCheck(import_node_path11.default.dirname(this.registryPath), true, true);
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
     try {
@@ -62853,42 +63453,42 @@ var InstanceRegistry = class {
     return this.registry.instances.map(publicInstance);
   }
   listInternal() {
-    return this.registry.instances.map((instance) => ({ ...instance }));
+    return this.registry.instances.map((instance2) => ({ ...instance2 }));
   }
   get(id) {
-    const instance = this.registry.instances.find((candidate) => candidate.id === id);
-    return instance ? publicInstance(instance) : null;
+    const instance2 = this.registry.instances.find((candidate) => candidate.id === id);
+    return instance2 ? publicInstance(instance2) : null;
   }
   getInternal(id) {
-    const instance = this.registry.instances.find((candidate) => candidate.id === id);
-    return instance ? { ...instance } : null;
+    const instance2 = this.registry.instances.find((candidate) => candidate.id === id);
+    return instance2 ? { ...instance2 } : null;
   }
   create(input) {
-    const instance = sanitizeInstanceForManager(
+    const instance2 = sanitizeInstanceForManager(
       normalizeInstance(input),
       this.managerConfig(),
       this.managerPort
     );
-    if (this.registry.instances.some((candidate) => candidate.id === instance.id)) {
-      const error = new Error(`instance already exists: ${instance.id}`);
-      error.code = "INSTANCE_ALREADY_EXISTS";
-      error.statusCode = 409;
-      throw error;
+    if (this.registry.instances.some((candidate) => candidate.id === instance2.id)) {
+      const error2 = new Error(`instance already exists: ${instance2.id}`);
+      error2.code = "INSTANCE_ALREADY_EXISTS";
+      error2.statusCode = 409;
+      throw error2;
     }
-    this.registry.instances.push(instance);
+    this.registry.instances.push(instance2);
     if (!this.registry.defaultInstanceId) {
-      this.registry.defaultInstanceId = instance.id;
+      this.registry.defaultInstanceId = instance2.id;
     }
     this.save();
-    return publicInstance(instance);
+    return publicInstance(instance2);
   }
   update(id, input) {
-    const index = this.registry.instances.findIndex((instance) => instance.id === id);
+    const index = this.registry.instances.findIndex((instance2) => instance2.id === id);
     if (index === -1) {
-      const error = new Error(`instance not found: ${id}`);
-      error.code = "INSTANCE_NOT_FOUND";
-      error.statusCode = 404;
-      throw error;
+      const error2 = new Error(`instance not found: ${id}`);
+      error2.code = "INSTANCE_NOT_FOUND";
+      error2.statusCode = 404;
+      throw error2;
     }
     const updated = sanitizeInstanceForManager(
       normalizeInstance(
@@ -62907,12 +63507,12 @@ var InstanceRegistry = class {
     return publicInstance(updated);
   }
   delete(id) {
-    const index = this.registry.instances.findIndex((instance) => instance.id === id);
+    const index = this.registry.instances.findIndex((instance2) => instance2.id === id);
     if (index === -1) {
-      const error = new Error(`instance not found: ${id}`);
-      error.code = "INSTANCE_NOT_FOUND";
-      error.statusCode = 404;
-      throw error;
+      const error2 = new Error(`instance not found: ${id}`);
+      error2.code = "INSTANCE_NOT_FOUND";
+      error2.statusCode = 404;
+      throw error2;
     }
     const [removed] = this.registry.instances.splice(index, 1);
     if (this.registry.defaultInstanceId === id) {
@@ -62923,30 +63523,30 @@ var InstanceRegistry = class {
   }
   resolveId(instanceId) {
     if (instanceId) {
-      const instance = this.getInternal(instanceId);
-      if (!instance) {
-        const error2 = new Error(`instance not found: ${instanceId}`);
-        error2.code = "INSTANCE_NOT_FOUND";
-        error2.statusCode = 404;
-        error2.instances = this.list();
-        throw error2;
+      const instance2 = this.getInternal(instanceId);
+      if (!instance2) {
+        const error3 = new Error(`instance not found: ${instanceId}`);
+        error3.code = "INSTANCE_NOT_FOUND";
+        error3.statusCode = 404;
+        error3.instances = this.list();
+        throw error3;
       }
-      return instance.id;
+      return instance2.id;
     }
     const instances = this.listInternal();
     if (instances.length === 1) {
       return instances[0].id;
     }
-    const error = new Error("instanceId is required when multiple instances are configured");
-    error.code = instances.length === 0 ? "INSTANCE_NOT_FOUND" : "INSTANCE_ID_REQUIRED";
-    error.statusCode = instances.length === 0 ? 404 : 400;
-    error.instances = this.list();
-    throw error;
+    const error2 = new Error("instanceId is required when multiple instances are configured");
+    error2.code = instances.length === 0 ? "INSTANCE_NOT_FOUND" : "INSTANCE_ID_REQUIRED";
+    error2.statusCode = instances.length === 0 ? 404 : 400;
+    error2.instances = this.list();
+    throw error2;
   }
 };
 
 // log-jobs.js
-var import_node_crypto18 = require("node:crypto");
+var import_node_crypto19 = require("node:crypto");
 var import_node_string_decoder2 = require("node:string_decoder");
 var import_posix11 = __toESM(require("node:path/posix"), 1);
 
@@ -63070,7 +63670,7 @@ var LogJobRunner = class {
       }
     }
     const job = {
-      jobId: (0, import_node_crypto18.randomUUID)(),
+      jobId: (0, import_node_crypto19.randomUUID)(),
       status: "queued",
       createdAt: this.now(),
       query,
@@ -63219,7 +63819,7 @@ var LogJobRunner = class {
   }
   async sendControl(job, input) {
     if (!job.channel || job.status === "cancelling") throw fault("log task control channel is not ready", "LOG_JOB_NOT_READY", 409);
-    const requestId = (0, import_node_crypto18.randomUUID)();
+    const requestId = (0, import_node_crypto19.randomUUID)();
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         job.controls.delete(requestId);
@@ -63228,9 +63828,9 @@ var LogJobRunner = class {
       job.controls.set(requestId, { resolve: () => {
         clearTimeout(timer);
         resolve();
-      }, reject: (error) => {
+      }, reject: (error2) => {
         clearTimeout(timer);
-        reject(error);
+        reject(error2);
       } });
       job.channel.write(JSON.stringify({ type: input.action, requestId, stopAfterFile: input.stopAfterFile, dateFrom: input.dateFrom, dateTo: input.dateTo }) + "\n");
     });
@@ -63399,9 +63999,9 @@ var LogJobRunner = class {
         job.progress = { ...job.result, records: void 0, groups: void 0, warnings: void 0 };
         job.evidence = [];
       }
-    } catch (error) {
+    } catch (error2) {
       job.result = void 0;
-      job.error = { code: error.code || "LOG_JOB_FAILED", message: error.message };
+      job.error = { code: error2.code || "LOG_JOB_FAILED", message: error2.message };
       job.status = this.errorStatus(job.error.code);
     } finally {
       clearInterval(heartbeat);
@@ -63416,10 +64016,10 @@ var LogJobRunner = class {
         for (const receipt of job.fileResults.values()) {
           if (receipt.status === "running") this.storeReceipt(job, { ...receipt, status: job.status, scanComplete: false, countsAreComplete: false, evidenceComplete: false, finishedAt: this.now(), error: job.error });
         }
-      } catch (error) {
+      } catch (error2) {
         job.status = "failed";
         job.result = void 0;
-        job.error = { code: error.code || "LOG_JOB_PROTOCOL", message: error.message };
+        job.error = { code: error2.code || "LOG_JOB_PROTOCOL", message: error2.message };
       }
       job.progress = { ...job.progress, status: job.status, countsAreComplete: job.status === "completed" && job.result?.countsAreComplete === true };
       this.retain(job);
@@ -63448,10 +64048,10 @@ var fault2 = (message, code, statusCode = 400) => Object.assign(new Error(messag
 var equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 var numeric = (value) => Number.isFinite(value) && value >= 0;
 var RemoteResourceManager = class extends import_node_events3.EventEmitter {
-  constructor({ policy, instance = () => null, now = Date.now } = {}) {
+  constructor({ policy, instance: instance2 = () => null, now = Date.now } = {}) {
     super();
     this.policy = normalizeResourcePolicy(policy);
-    this.instance = instance;
+    this.instance = instance2;
     this.now = now;
     this.workers = /* @__PURE__ */ new Map();
     this.tasks = /* @__PURE__ */ new Map();
@@ -63461,8 +64061,8 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     this.timer.unref?.();
   }
   domainFor(instanceId) {
-    const instance = this.instance(instanceId);
-    return this.policy.domains[instanceId] || (instance?.host ? `${instance.host}:${instance.port || 22}` : instanceId);
+    const instance2 = this.instance(instanceId);
+    return this.policy.domains[instanceId] || (instance2?.host ? `${instance2.host}:${instance2.port || 22}` : instanceId);
   }
   domain(instanceId) {
     const id = this.domainFor(instanceId);
@@ -63492,12 +64092,12 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
   detach(instanceId, epoch) {
     if (this.workers.get(instanceId)?.epoch !== epoch) return;
     this.workers.delete(instanceId);
-    for (const entry of this.tasks.values()) if (entry.instanceId === instanceId && entry.epoch === epoch && !RESOURCE_TERMINAL.has(entry.status)) {
-      entry.status = "interrupted";
-      entry.finishedAt = this.now();
-      entry.resourceMode = "auto";
-      entry.reason = "连接已失效，等待远端执行器回收";
-      entry.orphanUntil = this.now() + 6e4;
+    for (const entry2 of this.tasks.values()) if (entry2.instanceId === instanceId && entry2.epoch === epoch && !RESOURCE_TERMINAL.has(entry2.status)) {
+      entry2.status = "interrupted";
+      entry2.finishedAt = this.now();
+      entry2.resourceMode = "auto";
+      entry2.reason = "连接已失效，等待远端执行器回收";
+      entry2.orphanUntil = this.now() + 6e4;
     }
     this.electSamplers();
     this.rebalance();
@@ -63516,7 +64116,7 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     for (const key of ["cpuMilliCores", "readBytesPerSecond", "processBytesPerSecond", "rssLimitBytes", "parallelism", "maxCpuMilliCores", "maxReadBytesPerSecond", "maxProcessBytesPerSecond"]) if (numeric(task.requested?.[key])) request[key] = task.requested[key];
     const statuses = ["queued", "starting", "running", "paused", "cancelling", "stopping", ...RESOURCE_TERMINAL];
     if (!statuses.includes(task.status)) return;
-    const entry = {
+    const entry2 = {
       ...previous,
       taskId: task.taskId,
       instanceId,
@@ -63541,14 +64141,14 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
       modeRevision: previous?.modeRevision || 1
     };
     if (previous?.usage?.elapsedMs < usage.elapsedMs && previous.usage.cpuMs <= usage.cpuMs) {
-      entry.cpuMilliCoresUsed = Math.min(64e3, (usage.cpuMs - previous.usage.cpuMs) / (usage.elapsedMs - previous.usage.elapsedMs) * 1e3);
+      entry2.cpuMilliCoresUsed = Math.min(64e3, (usage.cpuMs - previous.usage.cpuMs) / (usage.elapsedMs - previous.usage.elapsedMs) * 1e3);
     }
-    if (RESOURCE_TERMINAL.has(entry.status)) {
-      entry.handoverManual = previous?.resourceMode === "manual_max" && task.phase === "resumed_as_new_execution";
-      entry.finishedAt ||= this.now();
-      entry.resourceMode = "auto";
+    if (RESOURCE_TERMINAL.has(entry2.status)) {
+      entry2.handoverManual = previous?.resourceMode === "manual_max" && task.phase === "resumed_as_new_execution";
+      entry2.finishedAt ||= this.now();
+      entry2.resourceMode = "auto";
     }
-    this.tasks.set(entry.taskId, entry);
+    this.tasks.set(entry2.taskId, entry2);
     this.rebalance();
   }
   sample(instanceId, epoch, sample) {
@@ -63580,23 +64180,23 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     this.rebalance();
     return this.publicTask(task);
   }
-  budget(entry, cpu, factor = 1, reason = "") {
-    const p = this.policy, profile = RESOURCE_PROFILES[entry.type], manual = entry.resourceMode === "manual_max";
-    const normalCpu = entry.requested.cpuMilliCores || profile.cpuMilliCores;
+  budget(entry2, cpu, factor = 1, reason = "") {
+    const p = this.policy, profile = RESOURCE_PROFILES[entry2.type], manual = entry2.resourceMode === "manual_max";
+    const normalCpu = entry2.requested.cpuMilliCores || profile.cpuMilliCores;
     const bulkReadCap = (p.readBytesPerSecond - p.protectedReadBytesPerSecond) * cpu / (p.cpuMilliCores - p.protectedCpuMilliCores - p.controlCpuMilliCores);
     const bulkProcessCap = (p.processBytesPerSecond - p.protectedProcessBytesPerSecond) * cpu / (p.cpuMilliCores - p.protectedCpuMilliCores - p.controlCpuMilliCores);
-    const activeBulk = [...this.tasks.values()].filter((t) => t.domain === entry.domain && t.bulk && !RESOURCE_TERMINAL.has(t.status) && t.status !== "queued").length;
-    const transferFloor = entry.status === "queued" ? 0 : 16384;
+    const activeBulk = [...this.tasks.values()].filter((t) => t.domain === entry2.domain && t.bulk && !RESOURCE_TERMINAL.has(t.status) && t.status !== "queued").length;
+    const transferFloor = entry2.status === "queued" ? 0 : 16384;
     const bulkTransferCap = transferFloor + Math.max(0, p.transferBytesPerSecond - p.protectedTransferBytesPerSecond - activeBulk * 16384) * cpu / (p.cpuMilliCores - p.protectedCpuMilliCores - p.controlCpuMilliCores);
     return {
       cpuMilliCores: Math.max(0, Math.floor(cpu)),
-      readBytesPerSecond: cpu ? Math.max(1, Math.floor(profile.bulk ? Math.min(bulkReadCap, entry.requested.maxReadBytesPerSecond || Infinity, manual ? Infinity : entry.requested.readBytesPerSecond || 2 * 1048576) : p.protectedReadBytesPerSecond)) : 0,
-      processBytesPerSecond: cpu ? Math.max(1, Math.floor(profile.bulk ? Math.min(bulkProcessCap, entry.requested.maxProcessBytesPerSecond || Infinity, manual ? Infinity : entry.requested.processBytesPerSecond || 4 * 1048576) : p.protectedProcessBytesPerSecond)) : 0,
-      transferBytesPerSecond: Math.floor(profile.bulk ? bulkTransferCap : entry.type === "control" ? cpu ? p.controlTransferBytesPerSecond : 0 : (p.protectedTransferBytesPerSecond - p.controlTransferBytesPerSecond) * cpu / p.protectedCpuMilliCores),
-      rssLimitBytes: Math.min(entry.requested.rssLimitBytes || profile.memoryBytes, profile.memoryBytes),
-      parallelism: cpu ? Math.max(1, Math.min(entry.requested.parallelism || 1, Math.ceil(cpu / 200))) : 0,
+      readBytesPerSecond: cpu ? Math.max(1, Math.floor(profile.bulk ? Math.min(bulkReadCap, entry2.requested.maxReadBytesPerSecond || Infinity, manual ? Infinity : entry2.requested.readBytesPerSecond || 2 * 1048576) : p.protectedReadBytesPerSecond)) : 0,
+      processBytesPerSecond: cpu ? Math.max(1, Math.floor(profile.bulk ? Math.min(bulkProcessCap, entry2.requested.maxProcessBytesPerSecond || Infinity, manual ? Infinity : entry2.requested.processBytesPerSecond || 4 * 1048576) : p.protectedProcessBytesPerSecond)) : 0,
+      transferBytesPerSecond: Math.floor(profile.bulk ? bulkTransferCap : entry2.type === "control" ? cpu ? p.controlTransferBytesPerSecond : 0 : (p.protectedTransferBytesPerSecond - p.controlTransferBytesPerSecond) * cpu / p.protectedCpuMilliCores),
+      rssLimitBytes: Math.min(entry2.requested.rssLimitBytes || profile.memoryBytes, profile.memoryBytes),
+      parallelism: cpu ? Math.max(1, Math.min(entry2.requested.parallelism || 1, Math.ceil(cpu / 200))) : 0,
       dispatchDelayMs: cpu ? Math.max(0, Math.ceil(200 / cpu * 50) - 50) : 100,
-      mode: entry.resourceMode,
+      mode: entry2.resourceMode,
       reason
     };
   }
@@ -63628,21 +64228,21 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
       const orphan = all.filter((t) => t.orphanUntil > now);
       let cpu = Math.max(0, p.cpuMilliCores * domain.factor - p.protectedCpuMilliCores - p.controlCpuMilliCores - orphan.reduce((n, t) => n + (t.budget?.cpuMilliCores || 0), 0));
       const availableMemory = fresh ? Math.max(0, domain.sample.memoryAvailableBytes - Math.max(128 * 1048576, domain.sample.totalMemoryBytes * p.memoryHeadroomRatio) + live.reduce((n, t) => n + (t.usage.rssBytes || 0), 0)) : 0;
-      let memory = Math.min(p.memoryBytes - p.protectedMemoryBytes, availableMemory) - orphan.reduce((n, t) => n + (t.budget?.rssLimitBytes || 0), 0) - live.filter((t) => t.bulk && t.status === "paused").reduce((n, t) => n + (t.usage.rssBytes || 0), 0);
-      const bulk = live.filter((t) => t.bulk && !["paused", "queued"].includes(t.status)).sort((a, b) => Number(b.resourceMode === "manual_max") - Number(a.resourceMode === "manual_max") || a.createdAt - b.createdAt);
-      const pinned = bulk.filter((t) => t.type === "mongo_bulk" && t.inFlight);
+      let memory2 = Math.min(p.memoryBytes - p.protectedMemoryBytes, availableMemory) - orphan.reduce((n, t) => n + (t.budget?.rssLimitBytes || 0), 0) - live.filter((t) => t.bulk && t.status === "paused").reduce((n, t) => n + (t.usage.rssBytes || 0), 0);
+      const bulk2 = live.filter((t) => t.bulk && !["paused", "queued"].includes(t.status)).sort((a, b) => Number(b.resourceMode === "manual_max") - Number(a.resourceMode === "manual_max") || a.createdAt - b.createdAt);
+      const pinned = bulk2.filter((t) => t.type === "mongo_bulk" && t.inFlight);
       for (const task of pinned) {
         const grant = { ...task.budget || this.budget(task, 0), mode: task.resourceMode, reason: "等待当前数据库批次结束后调整资源" };
         desired.set(task.taskId, grant);
         cpu -= grant.cpuMilliCores;
-        memory -= grant.rssLimitBytes;
+        memory2 -= grant.rssLimitBytes;
       }
-      const eligible = bulk.filter((t) => !pinned.includes(t));
+      const eligible = bulk2.filter((t) => !pinned.includes(t));
       for (const task of eligible) {
         const rss = Math.min(task.requested.rssLimitBytes || RESOURCE_PROFILES[task.type].memoryBytes, RESOURCE_PROFILES[task.type].memoryBytes);
         let grant = 0, reason = "";
         if (!fresh) reason = "远端资源采样失效";
-        else if (memory < rss) reason = "可用内存不足";
+        else if (memory2 < rss) reason = "可用内存不足";
         else if (cpu < 10) reason = "为其他任务保留资源";
         else {
           const manual = task.resourceMode === "manual_max";
@@ -63654,7 +64254,7 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
           else if (grant < (task.requested.cpuMilliCores || RESOURCE_PROFILES[task.type].cpuMilliCores)) reason = "按共享资源池分配";
           cpu -= grant;
         }
-        memory -= Math.max(task.usage.rssBytes || 0, grant ? rss : 0);
+        memory2 -= Math.max(task.usage.rssBytes || 0, grant ? rss : 0);
         desired.set(task.taskId, this.budget(task, grant, domain.factor, reason));
       }
       let protectedCpu = p.protectedCpuMilliCores, protectedMemory = p.protectedMemoryBytes - 32 * 1048576, controlAvailable = true;
@@ -63719,14 +64319,14 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
 
 // worker-manager.js
 var import_node_child_process3 = require("node:child_process");
-var import_node_crypto20 = require("node:crypto");
+var import_node_crypto21 = require("node:crypto");
 var import_promises5 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
 var import_node_path13 = __toESM(require("node:path"), 1);
 var import_node_url4 = require("node:url");
 
 // memory-store.js
-var import_node_crypto19 = require("node:crypto");
+var import_node_crypto20 = require("node:crypto");
 var import_node_fs7 = __toESM(require("node:fs"), 1);
 var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_path12 = __toESM(require("node:path"), 1);
@@ -63742,12 +64342,12 @@ var MEMORY_STATUSES = /* @__PURE__ */ new Set([
 var MAX_CHANGES = 50;
 var MAX_STRING_LENGTH = 2048;
 var MAX_ARRAY_LENGTH = 200;
-var MAX_DEPTH = 8;
+var MAX_DEPTH2 = 8;
 var MAX_MEMORY_NOTES = 20;
 var MAX_NOTE_FACTS = 20;
 var MAX_NOTE_FACT_LENGTH = 512;
 var NOTE_TOPIC_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
-var REDACTED = "[redacted]";
+var REDACTED2 = "[redacted]";
 var SENSITIVE_KEY_PATTERN = /pass(word|phrase)?|secret|token|credential|auth|private.?key|connection.?string|dsn/i;
 var SENSITIVE_VALUE_PATTERN = /(mongodb(?:\+srv)?:\/\/|mysql:\/\/|postgres(?:ql)?:\/\/|redis:\/\/|:\/\/[^/\s:@]+:[^@\s]+@|access[_-]?token=|password=|passwd=|pwd=|secret=|token=)/i;
 function nowIso3() {
@@ -63771,7 +64371,7 @@ function deepEqual(left, right) {
 }
 function sanitizeString(value) {
   if (SENSITIVE_VALUE_PATTERN.test(value)) {
-    return REDACTED;
+    return REDACTED2;
   }
   return value.length > MAX_STRING_LENGTH ? `${value.slice(0, MAX_STRING_LENGTH)}...[truncated]` : value;
 }
@@ -63783,9 +64383,9 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
     return value;
   }
   if (typeof value === "string") {
-    return SENSITIVE_KEY_PATTERN.test(key) ? REDACTED : sanitizeString(value);
+    return SENSITIVE_KEY_PATTERN.test(key) ? REDACTED2 : sanitizeString(value);
   }
-  if (depth >= MAX_DEPTH) {
+  if (depth >= MAX_DEPTH2) {
     return "[max-depth]";
   }
   if (Array.isArray(value)) {
@@ -63803,18 +64403,18 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   }
   return String(value);
 }
-function targetFingerprint(instance = {}) {
-  return (0, import_node_crypto19.createHash)("sha256").update(stableJson({
-    host: instance.host || "",
-    port: instance.port || 22,
-    username: instance.username || ""
+function targetFingerprint(instance2 = {}) {
+  return (0, import_node_crypto20.createHash)("sha256").update(stableJson({
+    host: instance2.host || "",
+    port: instance2.port || 22,
+    username: instance2.username || ""
   })).digest("hex");
 }
-function targetSummary(instance = {}) {
+function targetSummary(instance2 = {}) {
   return {
-    host: instance.host || "",
-    port: instance.port || 22,
-    username: instance.username || ""
+    host: instance2.host || "",
+    port: instance2.port || 22,
+    username: instance2.username || ""
   };
 }
 function memoryRootFromOptions(options) {
@@ -63852,10 +64452,10 @@ function publicPathList(values) {
   return Array.isArray(values) ? values.slice(0, 20) : [];
 }
 function memoryNoteError(message, code = "INVALID_MEMORY_NOTE") {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = 400;
-  return error;
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = 400;
+  return error2;
 }
 function normalizeMemoryNote(input = {}, updatedAt = nowIso3()) {
   const topic = String(input.topic || "").trim().toLowerCase();
@@ -63910,8 +64510,8 @@ function publicMemoryNotes(notes = {}) {
     updatedAt: note?.updatedAt || null
   })).sort((left, right) => String(right.updatedAt || "").localeCompare(String(left.updatedAt || ""))).slice(0, MAX_MEMORY_NOTES);
 }
-function buildSummary(memory) {
-  const sections = memory?.sections || {};
+function buildSummary(memory2) {
+  const sections = memory2?.sections || {};
   const target2 = sections.target || {};
   const services = sections.services || {};
   const database = sections.database || {};
@@ -63939,28 +64539,28 @@ function buildSummary(memory) {
     directories: publicDirectorySummary(filesystem)
   });
 }
-function publicMemory(memory, instance) {
-  if (!memory) {
+function publicMemory(memory2, instance2) {
+  if (!memory2) {
     return {
       status: "missing",
       updatedAt: null,
       initializedAt: null,
       summary: {
-        target: targetSummary(instance)
+        target: targetSummary(instance2)
       },
       changedSections: []
     };
   }
-  const fingerprint = targetFingerprint(instance);
-  const stale = memory.targetFingerprint && memory.targetFingerprint !== fingerprint;
-  const status = stale ? "stale" : normalizeStatus(memory.status, "ready");
-  const latestChange = Array.isArray(memory.changes) ? memory.changes[memory.changes.length - 1] : null;
+  const fingerprint = targetFingerprint(instance2);
+  const stale = memory2.targetFingerprint && memory2.targetFingerprint !== fingerprint;
+  const status = stale ? "stale" : normalizeStatus(memory2.status, "ready");
+  const latestChange = Array.isArray(memory2.changes) ? memory2.changes[memory2.changes.length - 1] : null;
   return {
     status,
-    updatedAt: memory.updatedAt || null,
-    initializedAt: memory.initializedAt || null,
-    lastCheckedAt: memory.lastCheckedAt || null,
-    summary: buildSummary(memory),
+    updatedAt: memory2.updatedAt || null,
+    initializedAt: memory2.initializedAt || null,
+    lastCheckedAt: memory2.lastCheckedAt || null,
+    summary: buildSummary(memory2),
     changedSections: latestChange?.sections || []
   };
 }
@@ -63989,8 +64589,8 @@ function observationPatch(pathName, payload = {}, result = {}, observedAt = nowI
     const entries = Array.isArray(result.entries) ? result.entries : [];
     let configPaths = [];
     let logPaths = [];
-    for (const entry of entries) {
-      const name2 = entry?.name || "";
+    for (const entry2 of entries) {
+      const name2 = entry2?.name || "";
       if (result.path.startsWith("/etc/nginx") && name2.endsWith(".conf")) {
         configPaths = addUniquePath(configPaths, joinRemotePath2(result.path, name2));
       }
@@ -64003,11 +64603,11 @@ function observationPatch(pathName, payload = {}, result = {}, observedAt = nowI
         directories: {
           [result.path]: {
             entryCount: entries.length,
-            entries: entries.slice(0, 50).map((entry) => ({
-              name: entry.name,
-              size: entry.size,
-              modifyTime: entry.modifyTime,
-              permissions: entry.permissions
+            entries: entries.slice(0, 50).map((entry2) => ({
+              name: entry2.name,
+              size: entry2.size,
+              modifyTime: entry2.modifyTime,
+              permissions: entry2.permissions
             })),
             updatedAt: observedAt
           }
@@ -64035,7 +64635,7 @@ function observationPatch(pathName, payload = {}, result = {}, observedAt = nowI
     return { filesystem };
   }
   if (pathName === "/logs/list") {
-    const logPaths = (Array.isArray(result.entries) ? result.entries : []).map((entry) => entry?.path).filter((value) => typeof value === "string");
+    const logPaths = (Array.isArray(result.entries) ? result.entries : []).map((entry2) => entry2?.path).filter((value) => typeof value === "string");
     return {
       filesystem: {
         logPaths
@@ -64154,42 +64754,42 @@ var MemoryStore = class {
       return null;
     }
   }
-  summary(instance) {
-    return publicMemory(this.ensureLoaded(instance.id), instance);
+  summary(instance2) {
+    return publicMemory(this.ensureLoaded(instance2.id), instance2);
   }
-  shouldInitialize(instance) {
-    const memory = this.ensureLoaded(instance.id);
-    if (!memory) {
+  shouldInitialize(instance2) {
+    const memory2 = this.ensureLoaded(instance2.id);
+    if (!memory2) {
       return true;
     }
-    if (memory.targetFingerprint !== targetFingerprint(instance)) {
+    if (memory2.targetFingerprint !== targetFingerprint(instance2)) {
       return true;
     }
-    return !["ready", "partial"].includes(memory.status);
+    return !["ready", "partial"].includes(memory2.status);
   }
-  async write(instanceId, memory) {
+  async write(instanceId, memory2) {
     const filePath = this.memoryPath(instanceId);
     await import_promises4.default.mkdir(import_node_path12.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto19.randomUUID)()}.tmp`;
-    await import_promises4.default.writeFile(tempPath, `${JSON.stringify(memory, null, 2)}
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto20.randomUUID)()}.tmp`;
+    await import_promises4.default.writeFile(tempPath, `${JSON.stringify(memory2, null, 2)}
 `, "utf8");
     await import_promises4.default.rename(tempPath, filePath);
-    this.records.set(instanceId, memory);
+    this.records.set(instanceId, memory2);
   }
-  async markInitializing(instance, source = "worker-start") {
-    const previous = this.ensureLoaded(instance.id);
+  async markInitializing(instance2, source = "worker-start") {
+    const previous = this.ensureLoaded(instance2.id);
     const timestamp2 = this.now();
     const next = sanitizeMemoryValue({
       version: MEMORY_VERSION,
-      instanceId: instance.id,
-      targetFingerprint: targetFingerprint(instance),
+      instanceId: instance2.id,
+      targetFingerprint: targetFingerprint(instance2),
       status: "initializing",
       initializedAt: previous?.initializedAt || null,
       updatedAt: timestamp2,
       lastCheckedAt: timestamp2,
       sections: {
         ...previous?.sections || {},
-        target: targetSummary(instance)
+        target: targetSummary(instance2)
       },
       changes: [
         ...(previous?.changes || []).slice(-(MAX_CHANGES - 1)),
@@ -64200,27 +64800,27 @@ var MemoryStore = class {
         }
       ]
     });
-    await this.write(instance.id, next);
-    return this.summary(instance);
+    await this.write(instance2.id, next);
+    return this.summary(instance2);
   }
-  async markFailed(instance, error, source = "worker-start") {
-    const previous = this.ensureLoaded(instance.id);
+  async markFailed(instance2, error2, source = "worker-start") {
+    const previous = this.ensureLoaded(instance2.id);
     const timestamp2 = this.now();
     const next = sanitizeMemoryValue({
       version: MEMORY_VERSION,
-      instanceId: instance.id,
-      targetFingerprint: targetFingerprint(instance),
+      instanceId: instance2.id,
+      targetFingerprint: targetFingerprint(instance2),
       status: "failed",
       initializedAt: previous?.initializedAt || null,
       updatedAt: timestamp2,
       lastCheckedAt: timestamp2,
       sections: {
         ...previous?.sections || {},
-        target: targetSummary(instance)
+        target: targetSummary(instance2)
       },
       lastError: {
-        code: error?.code || "MEMORY_INIT_FAILED",
-        message: error?.message || "memory init failed"
+        code: error2?.code || "MEMORY_INIT_FAILED",
+        message: error2?.message || "memory init failed"
       },
       changes: [
         ...(previous?.changes || []).slice(-(MAX_CHANGES - 1)),
@@ -64231,16 +64831,16 @@ var MemoryStore = class {
         }
       ]
     });
-    await this.write(instance.id, next);
-    return this.summary(instance);
+    await this.write(instance2.id, next);
+    return this.summary(instance2);
   }
-  async merge(instance, update = {}, source = "worker") {
-    const previous = this.ensureLoaded(instance.id);
+  async merge(instance2, update = {}, source = "worker") {
+    const previous = this.ensureLoaded(instance2.id);
     const timestamp2 = this.now();
     const incomingSections = sanitizeMemoryValue(update.sections || {});
     const baseSections = {
       ...previous?.sections || {},
-      target: targetSummary(instance)
+      target: targetSummary(instance2)
     };
     const nextSections = mergeObjects(baseSections, incomingSections);
     if (incomingSections.filesystem?.configPaths) {
@@ -64274,8 +64874,8 @@ var MemoryStore = class {
     const status = normalizeStatus(update.status, changedSections.length > 0 ? "ready" : previous?.status || "ready");
     const next = sanitizeMemoryValue({
       version: MEMORY_VERSION,
-      instanceId: instance.id,
-      targetFingerprint: targetFingerprint(instance),
+      instanceId: instance2.id,
+      targetFingerprint: targetFingerprint(instance2),
       status,
       initializedAt: previous?.initializedAt || update.initializedAt || timestamp2,
       updatedAt: changedSections.length > 0 || previous?.status !== status ? timestamp2 : previous?.updatedAt || timestamp2,
@@ -64293,17 +64893,17 @@ var MemoryStore = class {
         ] : []
       ]
     });
-    await this.write(instance.id, next);
-    return this.summary(instance);
+    await this.write(instance2.id, next);
+    return this.summary(instance2);
   }
-  async recordToolObservation(instance, pathName, payload, result) {
+  async recordToolObservation(instance2, pathName, payload, result) {
     const patch = observationPatch(pathName, payload, result, this.now());
     if (!patch) {
-      return this.summary(instance);
+      return this.summary(instance2);
     }
-    const currentStatus = this.summary(instance).status;
+    const currentStatus = this.summary(instance2).status;
     return this.merge(
-      instance,
+      instance2,
       {
         status: ["missing", "partial"].includes(currentStatus) ? "partial" : void 0,
         sections: patch
@@ -64311,11 +64911,11 @@ var MemoryStore = class {
       `tool:${pathName}`
     );
   }
-  async upsertNote(instance, input, source = "mcp:memory-update") {
+  async upsertNote(instance2, input, source = "mcp:memory-update") {
     const note = normalizeMemoryNote(input, this.now());
-    const currentStatus = this.summary(instance).status;
-    const memory = await this.merge(
-      instance,
+    const currentStatus = this.summary(instance2).status;
+    const memory2 = await this.merge(
+      instance2,
       {
         status: ["missing", "partial"].includes(currentStatus) ? "partial" : void 0,
         sections: {
@@ -64331,8 +64931,8 @@ var MemoryStore = class {
       source
     );
     return {
-      note: memory.summary.notes.find((candidate) => candidate.topic === note.topic),
-      memory
+      note: memory2.summary.notes.find((candidate) => candidate.topic === note.topic),
+      memory: memory2
     };
   }
   async deleteInstance(instanceId) {
@@ -64357,14 +64957,14 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 function managerError(message, code, statusCode = 500, details = {}) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode;
-  Object.assign(error, details);
-  return error;
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = statusCode;
+  Object.assign(error2, details);
+  return error2;
 }
-function publicRuntime(runtime) {
-  if (!runtime) {
+function publicRuntime(runtime2) {
+  if (!runtime2) {
     return {
       status: "stopped",
       pid: null,
@@ -64380,27 +64980,27 @@ function publicRuntime(runtime) {
     };
   }
   return {
-    status: runtime.status,
-    pid: runtime.pid || null,
-    workerPort: runtime.workerPort || null,
-    startedAt: runtime.startedAt || null,
-    lastHeartbeatAt: runtime.lastHeartbeatAt || null,
-    lastError: runtime.lastError || null,
-    health: runtime.health || null,
-    events: runtime.events.slice(-20)
+    status: runtime2.status,
+    pid: runtime2.pid || null,
+    workerPort: runtime2.workerPort || null,
+    startedAt: runtime2.startedAt || null,
+    lastHeartbeatAt: runtime2.lastHeartbeatAt || null,
+    lastError: runtime2.lastError || null,
+    health: runtime2.health || null,
+    events: runtime2.events.slice(-20)
   };
 }
-function event(runtime, type, payload = {}) {
-  const entry = {
+function event(runtime2, type, payload = {}) {
+  const entry2 = {
     time: nowIso4(),
     type,
     ...payload
   };
-  runtime.events.push(entry);
-  if (runtime.events.length > 50) {
-    runtime.events.splice(0, runtime.events.length - 50);
+  runtime2.events.push(entry2);
+  if (runtime2.events.length > 50) {
+    runtime2.events.splice(0, runtime2.events.length - 50);
   }
-  return entry;
+  return entry2;
 }
 function appendOutputTail(current, chunk, maxLength = WORKER_STDERR_TAIL_MAX_LENGTH) {
   const next = `${current || ""}${Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk)}`;
@@ -64444,27 +65044,27 @@ function defaultRestoreSnapshotPath(cwd) {
 function defaultRestoreSnapshotDiagnosticPath(cwd) {
   return import_node_path13.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
 }
-function configEnv(instance, port, manager, cwd, memoryInit) {
-  const instanceDir = import_node_path13.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance.id);
+function configEnv(instance2, port, manager, cwd, memoryInit) {
+  const instanceDir = import_node_path13.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance2.id);
   return {
     REMOTE_DEBUG_WORKER: "1",
-    REMOTE_DEBUG_INSTANCE_ID: instance.id,
-    REMOTE_DEBUG_INSTANCE_NAME: instance.name,
+    REMOTE_DEBUG_INSTANCE_ID: instance2.id,
+    REMOTE_DEBUG_INSTANCE_NAME: instance2.name,
     REMOTE_DEBUG_AGENT_PORT: String(port),
-    REMOTE_DEBUG_HOST: instance.host,
-    REMOTE_DEBUG_PORT: String(instance.port || 22),
-    REMOTE_DEBUG_USER: instance.username,
-    REMOTE_DEBUG_PRIVATE_KEY_PATH: instance.privateKeyPath,
-    REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance.passphrase || "",
-    REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance.hostKeyFingerprints || []),
-    REMOTE_DEBUG_AUDIT_LOG: instance.auditLog || import_node_path13.default.resolve(instanceDir, "audit.jsonl"),
-    REMOTE_DEBUG_APPROVED_COMMANDS: instance.approvedCommands?.enabled ? "1" : "0",
-    REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.executionTimeoutMs),
-    REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance.approvedCommands.maxExecutionTimeoutMs),
-    REMOTE_DEBUG_MONGODB_CONFIG: instance.mongodb ? JSON.stringify(instance.mongodb) : "",
-    REMOTE_DEBUG_SOURCE_ROOTS: instance.sourceRoots ? JSON.stringify(instance.sourceRoots) : "",
-    REMOTE_DEBUG_SERVICE_PROFILES: JSON.stringify(instance.serviceProfiles || {}),
-    REMOTE_DEBUG_LOG_PROJECTS: instance.logProjects ? JSON.stringify(instance.logProjects) : "",
+    REMOTE_DEBUG_HOST: instance2.host,
+    REMOTE_DEBUG_PORT: String(instance2.port || 22),
+    REMOTE_DEBUG_USER: instance2.username,
+    REMOTE_DEBUG_PRIVATE_KEY_PATH: instance2.privateKeyPath,
+    REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance2.passphrase || "",
+    REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance2.hostKeyFingerprints || []),
+    REMOTE_DEBUG_AUDIT_LOG: instance2.auditLog || import_node_path13.default.resolve(instanceDir, "audit.jsonl"),
+    REMOTE_DEBUG_APPROVED_COMMANDS: instance2.approvedCommands?.enabled ? "1" : "0",
+    REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance2.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance2.approvedCommands.executionTimeoutMs),
+    REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance2.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance2.approvedCommands.maxExecutionTimeoutMs),
+    REMOTE_DEBUG_MONGODB_CONFIG: instance2.mongodb ? JSON.stringify(instance2.mongodb) : "",
+    REMOTE_DEBUG_SOURCE_ROOTS: instance2.sourceRoots ? JSON.stringify(instance2.sourceRoots) : "",
+    REMOTE_DEBUG_SERVICE_PROFILES: JSON.stringify(instance2.serviceProfiles || {}),
+    REMOTE_DEBUG_LOG_PROJECTS: instance2.logProjects ? JSON.stringify(instance2.logProjects) : "",
     REMOTE_DEBUG_SSH_KEEPALIVE_INTERVAL_MS: String(manager.sshNetwork.keepaliveIntervalMs),
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
@@ -64497,8 +65097,8 @@ var WorkerManager = class {
     this.portOwners = /* @__PURE__ */ new Map();
     const monitorEveryMs = Math.max(1e3, Math.floor(this.managerConfig().healthIntervalMs || 15e3));
     this.monitorTimer = setInterval(() => {
-      this.checkStaleWorkers().catch((error) => {
-        console.error("failed to monitor worker health", error);
+      this.checkStaleWorkers().catch((error2) => {
+        console.error("failed to monitor worker health", error2);
       });
     }, monitorEveryMs);
     this.monitorTimer.unref?.();
@@ -64507,17 +65107,17 @@ var WorkerManager = class {
     return this.registry.managerConfig();
   }
   publicInstance(id) {
-    const instance = this.registry.get(id);
-    return instance ? {
-      ...instance,
-      memory: this.memoryStore.summary(instance)
+    const instance2 = this.registry.get(id);
+    return instance2 ? {
+      ...instance2,
+      memory: this.memoryStore.summary(instance2)
     } : null;
   }
   publicInstances() {
-    return this.registry.list().map((instance) => ({
-      ...instance,
-      runtime: publicRuntime(this.runtime.get(instance.id)),
-      memory: this.memoryStore.summary(instance)
+    return this.registry.list().map((instance2) => ({
+      ...instance2,
+      runtime: publicRuntime(this.runtime.get(instance2.id)),
+      memory: this.memoryStore.summary(instance2)
     }));
   }
   runtimeFor(id) {
@@ -64525,17 +65125,17 @@ var WorkerManager = class {
   }
   restoreCandidates() {
     const instances = [];
-    for (const [id, runtime] of this.runtime.entries()) {
-      if (!RESTORE_RUNTIME_STATUSES.has(runtime?.status)) {
+    for (const [id, runtime2] of this.runtime.entries()) {
+      if (!RESTORE_RUNTIME_STATUSES.has(runtime2?.status)) {
         continue;
       }
-      const instance = this.registry.get(id);
-      if (!instance) {
+      const instance2 = this.registry.get(id);
+      if (!instance2) {
         continue;
       }
       instances.push({
         id,
-        runtime: publicRuntime(runtime)
+        runtime: publicRuntime(runtime2)
       });
     }
     return instances;
@@ -64558,9 +65158,9 @@ var WorkerManager = class {
   async readRestoreSnapshotDiagnostic() {
     try {
       return JSON.parse(await import_promises5.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
-        console.error("failed to read manager restore snapshot diagnostic", error);
+    } catch (error2) {
+      if (error2?.code !== "ENOENT") {
+        console.error("failed to read manager restore snapshot diagnostic", error2);
       }
       return null;
     }
@@ -64572,8 +65172,8 @@ var WorkerManager = class {
       await import_promises5.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
 `, "utf8");
       await import_promises5.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
-    } catch (error) {
-      console.error("failed to write manager restore snapshot diagnostic", error);
+    } catch (error2) {
+      console.error("failed to write manager restore snapshot diagnostic", error2);
     }
   }
   async diagnosticFromLastSnapshot(baseDiagnostic) {
@@ -64600,11 +65200,11 @@ var WorkerManager = class {
     let previousSnapshotReadError = null;
     try {
       previousSnapshot = JSON.parse(await import_promises5.default.readFile(this.restoreSnapshotPath, "utf8"));
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
+    } catch (error2) {
+      if (error2?.code !== "ENOENT") {
         previousSnapshotReadError = {
-          code: error.code || "RESTORE_SNAPSHOT_READ_ERROR",
-          message: error.message
+          code: error2.code || "RESTORE_SNAPSHOT_READ_ERROR",
+          message: error2.message
         };
       }
     }
@@ -64624,8 +65224,8 @@ var WorkerManager = class {
     }
     try {
       await import_promises5.default.rm(this.restoreSnapshotPath, { force: true });
-    } catch (error) {
-      console.error("failed to clear manager restore snapshot", error);
+    } catch (error2) {
+      console.error("failed to clear manager restore snapshot", error2);
     }
   }
   async writeRestoreSnapshot(reason = "active-runtime", action = "maintain") {
@@ -64654,7 +65254,7 @@ var WorkerManager = class {
     return {
       written: true,
       reason,
-      instances: instances.map((instance) => instance.id)
+      instances: instances.map((instance2) => instance2.id)
     };
   }
   queueRestoreSnapshotTask(task) {
@@ -64666,9 +65266,9 @@ var WorkerManager = class {
   async maintainRestoreSnapshot(reason = "active-runtime", action = "maintain") {
     try {
       return await this.queueRestoreSnapshotTask(() => this.writeRestoreSnapshot(reason, action));
-    } catch (error) {
-      console.error("failed to update manager restore snapshot", error);
-      return { written: false, reason: "error", error };
+    } catch (error2) {
+      console.error("failed to update manager restore snapshot", error2);
+      return { written: false, reason: "error", error: error2 };
     }
   }
   async discardRestoreSnapshot(reason = "cleared", action = "discard") {
@@ -64677,9 +65277,9 @@ var WorkerManager = class {
         await this.clearRestoreSnapshot({ reason, action });
         return { written: false, reason, instances: [] };
       });
-    } catch (error) {
-      console.error("failed to clear manager restore snapshot", error);
-      return { written: false, reason: "error", error };
+    } catch (error2) {
+      console.error("failed to clear manager restore snapshot", error2);
+      return { written: false, reason: "error", error: error2 };
     }
   }
   async saveRestoreSnapshotForShutdown(reason) {
@@ -64693,17 +65293,17 @@ var WorkerManager = class {
     let parsed;
     try {
       parsed = JSON.parse(await import_promises5.default.readFile(this.restoreSnapshotPath, "utf8"));
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
-        console.error("failed to read manager restore snapshot", error);
+    } catch (error2) {
+      if (error2?.code !== "ENOENT") {
+        console.error("failed to read manager restore snapshot", error2);
         return {
           snapshot: null,
           diagnostic: {
             status: "read-error",
             path: this.restoreSnapshotPath,
             error: {
-              code: error.code || "RESTORE_SNAPSHOT_READ_ERROR",
-              message: error.message
+              code: error2.code || "RESTORE_SNAPSHOT_READ_ERROR",
+              message: error2.message
             }
           }
         };
@@ -64755,12 +65355,12 @@ var WorkerManager = class {
       }
     };
   }
-  recordRestoreFailure(id, error) {
-    const instance = this.registry.get(id);
-    if (!instance) {
+  recordRestoreFailure(id, error2) {
+    const instance2 = this.registry.get(id);
+    if (!instance2) {
       return;
     }
-    const runtime = this.runtime.get(id) || {
+    const runtime2 = this.runtime.get(id) || {
       status: "stopped",
       child: null,
       pid: null,
@@ -64772,13 +65372,13 @@ var WorkerManager = class {
       preserveRestoreSnapshot: false,
       events: []
     };
-    runtime.status = "stopped";
-    runtime.lastError = {
-      code: error.code || "RESTORE_FAILED",
-      message: error.message || "worker restore failed"
+    runtime2.status = "stopped";
+    runtime2.lastError = {
+      code: error2.code || "RESTORE_FAILED",
+      message: error2.message || "worker restore failed"
     };
-    event(runtime, "restore-failed", { error: runtime.lastError });
-    this.runtime.set(id, runtime);
+    event(runtime2, "restore-failed", { error: runtime2.lastError });
+    this.runtime.set(id, runtime2);
   }
   async restoreInstancesFromSnapshot() {
     if (!this.restorePromise) {
@@ -64797,12 +65397,12 @@ var WorkerManager = class {
           )
         ];
         for (const id of ids) {
-          const instance = this.registry.getInternal(id);
-          if (!instance) {
+          const instance2 = this.registry.getInternal(id);
+          if (!instance2) {
             skipped.push({ id, reason: "missing" });
             continue;
           }
-          if (!instance.enabled) {
+          if (!instance2.enabled) {
             skipped.push({ id, reason: "disabled" });
             this.recordRestoreFailure(id, managerError(`instance is disabled: ${id}`, "INSTANCE_DISABLED", 409));
             continue;
@@ -64810,15 +65410,15 @@ var WorkerManager = class {
           try {
             await this.startInstance(id);
             restored.push(id);
-          } catch (error) {
+          } catch (error2) {
             failed.push({
               id,
               error: {
-                code: error.code || "RESTORE_FAILED",
-                message: error.message || "worker restore failed"
+                code: error2.code || "RESTORE_FAILED",
+                message: error2.message || "worker restore failed"
               }
             });
-            this.recordRestoreFailure(id, error);
+            this.recordRestoreFailure(id, error2);
           }
         }
         const result = {
@@ -64840,11 +65440,11 @@ var WorkerManager = class {
     }
     return this.restorePromise;
   }
-  async allocatePort(instance) {
+  async allocatePort(instance2) {
     const manager = this.managerConfig();
     const candidates = [];
-    if (instance.preferredWorkerPort && isPortInRange(instance.preferredWorkerPort, manager.workerPortRange)) {
-      candidates.push(instance.preferredWorkerPort);
+    if (instance2.preferredWorkerPort && isPortInRange(instance2.preferredWorkerPort, manager.workerPortRange)) {
+      candidates.push(instance2.preferredWorkerPort);
     }
     for (let port = manager.workerPortRange.start; port <= manager.workerPortRange.end; port += 1) {
       candidates.push(port);
@@ -64854,7 +65454,7 @@ var WorkerManager = class {
         continue;
       }
       if (await this.canBindPort(port, manager.host)) {
-        this.portOwners.set(port, instance.id);
+        this.portOwners.set(port, instance2.id);
         return port;
       }
     }
@@ -64873,17 +65473,17 @@ var WorkerManager = class {
       this.portOwners.delete(port);
     }
   }
-  ensureRunnable(instance) {
-    if (!instance.enabled) {
-      throw managerError(`instance is disabled: ${instance.id}`, "INSTANCE_DISABLED", 409);
+  ensureRunnable(instance2) {
+    if (!instance2.enabled) {
+      throw managerError(`instance is disabled: ${instance2.id}`, "INSTANCE_DISABLED", 409);
     }
   }
   async startInstance(id) {
-    const instance = this.registry.getInternal(id);
-    if (!instance) {
+    const instance2 = this.registry.getInternal(id);
+    if (!instance2) {
       throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
     }
-    this.ensureRunnable(instance);
+    this.ensureRunnable(instance2);
     const current = this.runtime.get(id);
     if (current?.status === "running" || current?.status === "starting") {
       await this.maintainRestoreSnapshot("active-runtime", "start-reused");
@@ -64893,11 +65493,11 @@ var WorkerManager = class {
       };
     }
     const manager = this.managerConfig();
-    const workerPort = await this.allocatePort(instance);
-    let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
-    const runtime = {
+    const workerPort = await this.allocatePort(instance2);
+    let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance2);
+    const runtime2 = {
       status: "starting",
-      authToken: (0, import_node_crypto20.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto21.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -64913,22 +65513,22 @@ var WorkerManager = class {
       preserveRestoreSnapshot: false,
       events: []
     };
-    this.runtime.set(id, runtime);
-    event(runtime, "starting", { workerPort });
+    this.runtime.set(id, runtime2);
+    event(runtime2, "starting", { workerPort });
     await this.maintainRestoreSnapshot("active-runtime", "starting");
     if (shouldInitializeMemory) {
       try {
-        await this.memoryStore.markInitializing(instance);
-        event(runtime, "memory-initializing");
-      } catch (error) {
+        await this.memoryStore.markInitializing(instance2);
+        event(runtime2, "memory-initializing");
+      } catch (error2) {
         shouldInitializeMemory = false;
-        event(runtime, "memory-init-skipped", {
+        event(runtime2, "memory-init-skipped", {
           error: {
-            code: error.code || "MEMORY_INIT_STATE_FAILED",
-            message: error.message
+            code: error2.code || "MEMORY_INIT_STATE_FAILED",
+            message: error2.message
           }
         });
-        console.error("failed to prepare instance memory", error);
+        console.error("failed to prepare instance memory", error2);
       }
     }
     let child;
@@ -64937,85 +65537,85 @@ var WorkerManager = class {
         cwd: this.cwd,
         env: {
           ...process.env,
-          ...configEnv(instance, workerPort, manager, this.cwd, shouldInitializeMemory)
+          ...configEnv(instance2, workerPort, manager, this.cwd, shouldInitializeMemory)
         },
         execPath: this.nodePath,
         silent: true,
         windowsHide: true
       });
-    } catch (error) {
+    } catch (error2) {
       this.releasePort(workerPort);
       this.runtime.delete(id);
       await this.maintainRestoreSnapshot("active-runtime", "start-failed");
       const wrapped = managerError(
-        `worker process could not be spawned: ${error.message}`,
+        `worker process could not be spawned: ${error2.message}`,
         "WORKER_SPAWN_FAILED",
         500
       );
       if (shouldInitializeMemory) {
-        await this.memoryStore.markFailed(instance, wrapped, "worker-spawn-failed").catch((memoryError) => {
+        await this.memoryStore.markFailed(instance2, wrapped, "worker-spawn-failed").catch((memoryError) => {
           console.error("failed to mark instance memory failed", memoryError);
         });
       }
       throw wrapped;
     }
-    runtime.child = child;
-    runtime.pid = child.pid;
-    event(runtime, "spawned", { pid: child.pid });
+    runtime2.child = child;
+    runtime2.pid = child.pid;
+    event(runtime2, "spawned", { pid: child.pid });
     child.stdout?.resume();
     child.stderr?.on?.("data", (chunk) => {
-      runtime.stderrTail = appendOutputTail(runtime.stderrTail, chunk);
+      runtime2.stderrTail = appendOutputTail(runtime2.stderrTail, chunk);
     });
     child.stderr?.resume();
     child.on("message", (message) => {
-      if (runtime.child !== child) return;
-      this.handleWorkerMessage(id, message).catch((error) => {
-        this.markUnhealthy(id, error);
+      if (runtime2.child !== child) return;
+      this.handleWorkerMessage(id, message).catch((error2) => {
+        this.markUnhealthy(id, error2);
       });
     });
     child.once("exit", (code, signal) => {
-      if (runtime.child !== child) return;
+      if (runtime2.child !== child) return;
       this.handleWorkerExit(id, code, signal);
     });
     try {
       const ready = this.waitForReady(id, child, manager.startTimeoutMs);
-      child.send({ type: "initialize-auth", token: runtime.authToken });
+      child.send({ type: "initialize-auth", token: runtime2.authToken });
       await ready;
-      runtime.status = "running";
-      runtime.lastHeartbeatAt = nowIso4();
-      runtime.lastError = null;
-      event(runtime, "running", { pid: child.pid, workerPort });
+      runtime2.status = "running";
+      runtime2.lastHeartbeatAt = nowIso4();
+      runtime2.lastError = null;
+      event(runtime2, "running", { pid: child.pid, workerPort });
       await this.maintainRestoreSnapshot("active-runtime", "running");
       return {
         instance: this.publicInstance(id),
-        runtime: publicRuntime(runtime)
+        runtime: publicRuntime(runtime2)
       };
-    } catch (error) {
-      runtime.lastError = {
-        code: error.code || "WORKER_START_FAILED",
-        message: error.message
+    } catch (error2) {
+      runtime2.lastError = {
+        code: error2.code || "WORKER_START_FAILED",
+        message: error2.message
       };
-      event(runtime, "start-failed", { error: runtime.lastError });
+      event(runtime2, "start-failed", { error: runtime2.lastError });
       if (shouldInitializeMemory) {
-        await this.memoryStore.markFailed(instance, error, "worker-start-failed").catch((memoryError) => {
+        await this.memoryStore.markFailed(instance2, error2, "worker-start-failed").catch((memoryError) => {
           console.error("failed to mark instance memory failed", memoryError);
         });
       }
       await this.stopInstance(id, "start-failed");
-      throw error;
+      throw error2;
     }
   }
   waitForReady(id, child, timeoutMs) {
     return new Promise((resolve, reject) => {
       let settled = false;
-      const runtime = this.runtime.get(id);
-      const finish = (error) => {
+      const runtime2 = this.runtime.get(id);
+      const finish = (error2) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
         child.off("message", onMessage);
         child.off("exit", onExit);
-        if (error) reject(error);
+        if (error2) reject(error2);
         else resolve();
       };
       const onMessage = (message) => {
@@ -65032,8 +65632,8 @@ var WorkerManager = class {
               )
             );
           } else {
-            if (runtime && message.health) {
-              runtime.health = message.health;
+            if (runtime2 && message.health) {
+              runtime2.health = message.health;
             }
             finish();
           }
@@ -65062,57 +65662,57 @@ var WorkerManager = class {
       timer.unref?.();
       child.on("message", onMessage);
       child.once("exit", onExit);
-      if (runtime) {
-        event(runtime, "waiting-ready", { timeoutMs });
+      if (runtime2) {
+        event(runtime2, "waiting-ready", { timeoutMs });
       }
     });
   }
   async handleWorkerMessage(id, message) {
-    const runtime = this.runtime.get(id);
-    if (!runtime || !message) {
+    const runtime2 = this.runtime.get(id);
+    if (!runtime2 || !message) {
       return;
     }
     if (typeof message.type === "string" && message.type.startsWith("resource_")) {
       if (!this.resourceManager) return;
       if (message.type === "resource_hello") {
-        if (runtime.resourceEpoch && runtime.resourceEpoch !== message.epoch) return;
-        runtime.resourceEpoch = message.epoch;
+        if (runtime2.resourceEpoch && runtime2.resourceEpoch !== message.epoch) return;
+        runtime2.resourceEpoch = message.epoch;
         this.resourceManager.attach(id, message.epoch, (frame) => {
-          if (runtime.child?.connected !== false) runtime.child?.send(frame, () => {
+          if (runtime2.child?.connected !== false) runtime2.child?.send(frame, () => {
           });
         });
-      } else if (runtime.resourceEpoch === message.epoch && message.type === "resource_task") this.resourceManager.report(id, message.epoch, message.task);
-      else if (runtime.resourceEpoch === message.epoch && message.type === "resource_sample") this.resourceManager.sample(id, message.epoch, message.sample);
-      else if (runtime.resourceEpoch === message.epoch && message.type === "resource_sync") {
+      } else if (runtime2.resourceEpoch === message.epoch && message.type === "resource_task") this.resourceManager.report(id, message.epoch, message.task);
+      else if (runtime2.resourceEpoch === message.epoch && message.type === "resource_sample") this.resourceManager.sample(id, message.epoch, message.sample);
+      else if (runtime2.resourceEpoch === message.epoch && message.type === "resource_sync") {
         this.resourceManager.rebalance();
-        runtime.child?.send({ type: "resource_sync_ack", epoch: message.epoch, requestId: message.requestId }, () => {
+        runtime2.child?.send({ type: "resource_sync_ack", epoch: message.epoch, requestId: message.requestId }, () => {
         });
       }
       return;
     }
     if (message.type === "health") {
-      runtime.lastHeartbeatAt = nowIso4();
+      runtime2.lastHeartbeatAt = nowIso4();
       if (message.health) {
-        runtime.health = {
+        runtime2.health = {
           ...message.health,
           worker: {
             ...message.health.worker || {},
             status: "healthy",
-            lastHeartbeatAt: runtime.lastHeartbeatAt
+            lastHeartbeatAt: runtime2.lastHeartbeatAt
           }
         };
       }
       if (message.status === "healthy") {
-        runtime.lastError = message.health?.transport?.lastError || null;
+        runtime2.lastError = message.health?.transport?.lastError || null;
         let statusChanged = false;
-        if (runtime.status !== "starting") {
-          runtime.status = "running";
+        if (runtime2.status !== "starting") {
+          runtime2.status = "running";
           statusChanged = true;
         }
-        event(runtime, "health", {
+        event(runtime2, "health", {
           status: "healthy",
-          overall: runtime.health?.overall || "healthy",
-          transport: runtime.health?.transport?.status
+          overall: runtime2.health?.overall || "healthy",
+          transport: runtime2.health?.transport?.status
         });
         if (statusChanged) {
           await this.maintainRestoreSnapshot("active-runtime", "health-running");
@@ -65120,148 +65720,148 @@ var WorkerManager = class {
         return;
       }
       if (message.status === "stopped") {
-        runtime.intentionalStop = true;
-        runtime.status = "stopped";
-        runtime.lastError = null;
-        event(runtime, "health", { status: "stopped", reason: message.reason });
-        if (!runtime.preserveRestoreSnapshot) {
+        runtime2.intentionalStop = true;
+        runtime2.status = "stopped";
+        runtime2.lastError = null;
+        event(runtime2, "health", { status: "stopped", reason: message.reason });
+        if (!runtime2.preserveRestoreSnapshot) {
           await this.maintainRestoreSnapshot("active-runtime", "health-stopped");
         }
         return;
       }
-      runtime.lastError = message.error || {
+      runtime2.lastError = message.error || {
         code: "WORKER_UNHEALTHY",
         message: "worker reported unhealthy status"
       };
-      runtime.status = "unhealthy";
-      runtime.health = {
-        ...runtime.health || {},
+      runtime2.status = "unhealthy";
+      runtime2.health = {
+        ...runtime2.health || {},
         overall: "unhealthy",
         worker: {
           status: "unhealthy",
-          lastHeartbeatAt: runtime.lastHeartbeatAt
+          lastHeartbeatAt: runtime2.lastHeartbeatAt
         }
       };
-      event(runtime, "health", { status: "unhealthy", error: runtime.lastError });
+      event(runtime2, "health", { status: "unhealthy", error: runtime2.lastError });
       await this.stopInstance(id, "unhealthy");
       return;
     }
     if (message.type === "memory:update") {
-      const instance = this.registry.getInternal(id);
-      if (!instance) {
+      const instance2 = this.registry.getInternal(id);
+      if (!instance2) {
         return;
       }
       try {
         if (message.ok === false) {
-          await this.memoryStore.markFailed(instance, message.error, "worker-init");
-          event(runtime, "memory-failed", { error: message.error });
+          await this.memoryStore.markFailed(instance2, message.error, "worker-init");
+          event(runtime2, "memory-failed", { error: message.error });
           return;
         }
-        const memory = await this.memoryStore.merge(instance, message.memory || {}, "worker-init");
-        event(runtime, "memory-updated", {
-          status: memory.status,
-          changedSections: memory.changedSections
+        const memory2 = await this.memoryStore.merge(instance2, message.memory || {}, "worker-init");
+        event(runtime2, "memory-updated", {
+          status: memory2.status,
+          changedSections: memory2.changedSections
         });
-      } catch (error) {
-        event(runtime, "memory-update-failed", {
+      } catch (error2) {
+        event(runtime2, "memory-update-failed", {
           error: {
-            code: error.code || "MEMORY_UPDATE_FAILED",
-            message: error.message
+            code: error2.code || "MEMORY_UPDATE_FAILED",
+            message: error2.message
           }
         });
-        console.error("failed to update instance memory", error);
+        console.error("failed to update instance memory", error2);
       }
     }
   }
   handleWorkerExit(id, code, signal) {
-    const runtime = this.runtime.get(id);
-    if (!runtime) {
+    const runtime2 = this.runtime.get(id);
+    if (!runtime2) {
       return;
     }
-    this.resourceManager?.detach(id, runtime.resourceEpoch);
-    const lastPort = runtime.workerPort;
+    this.resourceManager?.detach(id, runtime2.resourceEpoch);
+    const lastPort = runtime2.workerPort;
     this.releasePort(lastPort);
-    const stopped = runtime.intentionalStop;
-    const stderrTail = runtime.stderrTail.trim();
-    runtime.child = null;
-    runtime.pid = null;
-    runtime.workerPort = null;
-    runtime.status = stopped ? "stopped" : "unhealthy";
-    runtime.lastError = stopped ? null : {
+    const stopped = runtime2.intentionalStop;
+    const stderrTail = runtime2.stderrTail.trim();
+    runtime2.child = null;
+    runtime2.pid = null;
+    runtime2.workerPort = null;
+    runtime2.status = stopped ? "stopped" : "unhealthy";
+    runtime2.lastError = stopped ? null : {
       code: "WORKER_EXITED",
       message: `worker exited (code ${code ?? "null"}, signal ${signal ?? "null"})`,
       ...stderrTail ? { stderrTail } : {}
     };
-    event(runtime, "exit", {
+    event(runtime2, "exit", {
       code,
       signal,
       stopped,
       ...stderrTail ? { stderrTail } : {}
     });
-    if (!runtime.preserveRestoreSnapshot) {
+    if (!runtime2.preserveRestoreSnapshot) {
       void this.maintainRestoreSnapshot("active-runtime", "worker-exit");
     }
   }
-  markUnhealthy(id, error) {
-    const runtime = this.runtime.get(id);
-    if (!runtime) {
+  markUnhealthy(id, error2) {
+    const runtime2 = this.runtime.get(id);
+    if (!runtime2) {
       return;
     }
-    runtime.status = "unhealthy";
-    runtime.lastError = {
-      code: error.code || "WORKER_UNHEALTHY",
-      message: error.message || "worker became unhealthy"
+    runtime2.status = "unhealthy";
+    runtime2.lastError = {
+      code: error2.code || "WORKER_UNHEALTHY",
+      message: error2.message || "worker became unhealthy"
     };
-    event(runtime, "unhealthy", { error: runtime.lastError });
+    event(runtime2, "unhealthy", { error: runtime2.lastError });
     void this.maintainRestoreSnapshot("active-runtime", "worker-unhealthy");
   }
   async checkStaleWorkers() {
     const maxAgeMs = (this.managerConfig().healthIntervalMs || 15e3) * 3;
     const now = Date.now();
-    for (const [id, runtime] of this.runtime.entries()) {
-      if (runtime.status !== "running" || !runtime.lastHeartbeatAt) {
+    for (const [id, runtime2] of this.runtime.entries()) {
+      if (runtime2.status !== "running" || !runtime2.lastHeartbeatAt) {
         continue;
       }
-      const lastHeartbeatMs = Date.parse(runtime.lastHeartbeatAt);
+      const lastHeartbeatMs = Date.parse(runtime2.lastHeartbeatAt);
       if (Number.isNaN(lastHeartbeatMs) || now - lastHeartbeatMs <= maxAgeMs) {
         continue;
       }
-      runtime.status = "unhealthy";
-      runtime.lastError = {
+      runtime2.status = "unhealthy";
+      runtime2.lastError = {
         code: "WORKER_HEARTBEAT_TIMEOUT",
         message: "worker heartbeat timed out"
       };
-      runtime.health = {
-        ...runtime.health || {},
+      runtime2.health = {
+        ...runtime2.health || {},
         overall: "unhealthy",
         worker: {
           status: "unhealthy",
-          lastHeartbeatAt: runtime.lastHeartbeatAt,
-          lastError: runtime.lastError
+          lastHeartbeatAt: runtime2.lastHeartbeatAt,
+          lastError: runtime2.lastError
         }
       };
-      event(runtime, "heartbeat-timeout", { error: runtime.lastError });
+      event(runtime2, "heartbeat-timeout", { error: runtime2.lastError });
       await this.stopInstance(id, "unhealthy");
     }
   }
   async stopInstance(id, reason = "stopped") {
-    const instance = this.registry.get(id);
-    if (!instance) {
+    const instance2 = this.registry.get(id);
+    if (!instance2) {
       throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
     }
-    const runtime = this.runtime.get(id);
-    if (!runtime) {
+    const runtime2 = this.runtime.get(id);
+    if (!runtime2) {
       return {
         instance: this.publicInstance(id),
         runtime: publicRuntime(null)
       };
     }
     const manager = this.managerConfig();
-    const child = runtime.child;
-    runtime.intentionalStop = true;
-    runtime.preserveRestoreSnapshot = RESTORE_PRESERVING_STOP_REASONS.has(reason);
-    runtime.status = reason === "unhealthy" ? "unhealthy" : "stopping";
-    event(runtime, "stopping", { reason });
+    const child = runtime2.child;
+    runtime2.intentionalStop = true;
+    runtime2.preserveRestoreSnapshot = RESTORE_PRESERVING_STOP_REASONS.has(reason);
+    runtime2.status = reason === "unhealthy" ? "unhealthy" : "stopping";
+    event(runtime2, "stopping", { reason });
     if (child && child.connected) {
       child.send({ type: "shutdown", reason });
     }
@@ -65270,29 +65870,29 @@ var WorkerManager = class {
       child.kill();
       await sleep(100);
     }
-    this.releasePort(runtime.workerPort);
-    runtime.child = null;
-    runtime.pid = null;
-    runtime.workerPort = null;
-    runtime.status = reason === "unhealthy" ? "unhealthy" : "stopped";
-    runtime.health = {
-      ...runtime.health || {},
+    this.releasePort(runtime2.workerPort);
+    runtime2.child = null;
+    runtime2.pid = null;
+    runtime2.workerPort = null;
+    runtime2.status = reason === "unhealthy" ? "unhealthy" : "stopped";
+    runtime2.health = {
+      ...runtime2.health || {},
       overall: reason === "unhealthy" ? "unhealthy" : "stopped",
       worker: {
         status: reason === "unhealthy" ? "unhealthy" : "stopped",
-        lastHeartbeatAt: runtime.lastHeartbeatAt
+        lastHeartbeatAt: runtime2.lastHeartbeatAt
       }
     };
     if (!["unhealthy", "start-failed"].includes(reason)) {
-      runtime.lastError = null;
+      runtime2.lastError = null;
     }
-    event(runtime, runtime.status, { reason });
+    event(runtime2, runtime2.status, { reason });
     if (!RESTORE_PRESERVING_STOP_REASONS.has(reason)) {
       await this.maintainRestoreSnapshot("active-runtime", `stop:${reason}`);
     }
     return {
       instance: this.publicInstance(id),
-      runtime: publicRuntime(runtime)
+      runtime: publicRuntime(runtime2)
     };
   }
   async refreshInstance(id) {
@@ -65300,11 +65900,11 @@ var WorkerManager = class {
     return this.startInstance(id);
   }
   async restartInstance(id) {
-    const instance = this.registry.getInternal(id);
-    if (!instance) {
+    const instance2 = this.registry.getInternal(id);
+    if (!instance2) {
       throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
     }
-    this.ensureRunnable(instance);
+    this.ensureRunnable(instance2);
     const previousStatus = this.runtime.get(id)?.status || "stopped";
     if (previousStatus === "running") {
       return {
@@ -65353,8 +65953,8 @@ var WorkerManager = class {
   }
   async callInstance(instanceId, pathName, payload, headers = {}, options = {}) {
     const resolvedId = this.resolveInstanceId(instanceId);
-    const runtime = this.runtime.get(resolvedId);
-    if (!runtime || runtime.status !== "running" || !runtime.workerPort) {
+    const runtime2 = this.runtime.get(resolvedId);
+    if (!runtime2 || runtime2.status !== "running" || !runtime2.workerPort) {
       throw managerError(
         `instance is not running: ${resolvedId}`,
         "INSTANCE_NOT_RUNNING",
@@ -65364,10 +65964,10 @@ var WorkerManager = class {
         }
       );
     }
-    if (!/^[a-f0-9]{64}$/.test(runtime.authToken || "")) {
+    if (!/^[a-f0-9]{64}$/.test(runtime2.authToken || "")) {
       throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401);
     }
-    const url = `http://${this.managerConfig().host}:${runtime.workerPort}${pathName}`;
+    const url = `http://${this.managerConfig().host}:${runtime2.workerPort}${pathName}`;
     const operation = {
       operationId: payload?.operationId || `manager-${Date.now()}`,
       deadlineAt: Number.isInteger(payload?.deadlineAt) ? payload.deadlineAt : Date.now() + (payload?.timeoutMs || 3e4)
@@ -65402,7 +66002,7 @@ var WorkerManager = class {
         method: "POST",
         redirect: "error",
         headers: {
-          Authorization: `Bearer ${runtime.authToken}`,
+          Authorization: `Bearer ${runtime2.authToken}`,
           "Content-Type": "application/json",
           "X-Remote-Debug-Source": headers["x-remote-debug-source"] || headers["X-Remote-Debug-Source"] || "http-api",
           "X-Remote-Debug-Operation-Id": operation.operationId
@@ -65416,7 +66016,7 @@ var WorkerManager = class {
       } catch {
         parsed = { ok: false, raw: text2 };
       }
-    } catch (error) {
+    } catch (error2) {
       if (options.signal?.aborted) {
         throw operationErrorForSignal(options.signal, operation, {
           layer: "manager",
@@ -65426,21 +66026,21 @@ var WorkerManager = class {
       if (deadlineExpired || controller.signal.reason?.code === "OPERATION_DEADLINE_EXCEEDED") {
         throw controller.signal.reason;
       }
-      throw operationError(`worker is unavailable for instance ${resolvedId}: ${error.message}`, {
+      throw operationError(`worker is unavailable for instance ${resolvedId}: ${error2.message}`, {
         code: "WORKER_UNAVAILABLE",
         statusCode: 502,
         operationId: operation.operationId,
         layer: "manager",
         phase: "worker-request",
         retriable: true,
-        cause: error
+        cause: error2
       });
     } finally {
       clearTimeout(timer);
       options.signal?.removeEventListener("abort", abortFromUpstream);
     }
     if (!response.ok || parsed.ok === false) {
-      const error = operationError(
+      const error2 = operationError(
         parsed.error?.message || `worker request failed with HTTP ${response.status}`,
         {
           code: parsed.error?.code || "WORKER_REQUEST_FAILED",
@@ -65453,8 +66053,9 @@ var WorkerManager = class {
           details: parsed.details
         }
       );
-      error.payload = parsed;
-      throw error;
+      error2.payload = parsed;
+      if (parsed.error?.dispatchState === "not_dispatched") error2.dispatchState = "not_dispatched";
+      throw error2;
     }
     return {
       ...parsed,
@@ -65464,8 +66065,8 @@ var WorkerManager = class {
   async shutdownAll(reason = "manager-shutdown") {
     try {
       await this.saveRestoreSnapshotForShutdown(reason);
-    } catch (error) {
-      console.error("failed to save manager restore snapshot", error);
+    } catch (error2) {
+      console.error("failed to save manager restore snapshot", error2);
     }
     clearInterval(this.monitorTimer);
     await Promise.all([...this.runtime.keys()].map((id) => this.stopInstance(id, reason)));
@@ -65493,25 +66094,26 @@ function registerEnvironmentReport(app, config) {
 function durationSince(startedAt) {
   return Math.round(import_node_perf_hooks.performance.now() - startedAt);
 }
-function errorStatus(error) {
-  return Number.isInteger(error.statusCode) ? error.statusCode : 502;
+function errorStatus(error2) {
+  return Number.isInteger(error2.statusCode) ? error2.statusCode : 502;
 }
-function errorPayload(error) {
+function errorPayload(error2) {
   return {
     ok: false,
-    error: operationErrorPayload(error),
-    details: error.details
+    error: operationErrorPayload(error2),
+    details: error2.details
   };
 }
-function businessErrorPayload(error) {
-  const payload = operationErrorPayload(error);
+function businessErrorPayload(error2) {
+  const payload = operationErrorPayload(error2);
   return { ok: false, error: {
     operationId: payload.operationId,
     code: /^[A-Z][A-Z0-9_]{1,80}$/.test(payload.code || "") ? payload.code : "MONGODB_OPERATION_FAILED",
     message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
     layer: payload.layer,
     phase: payload.phase,
-    retriable: payload.retriable
+    retriable: payload.retriable,
+    ...error2.dispatchState === "not_dispatched" ? { dispatchState: "not_dispatched" } : {}
   } };
 }
 function publicAgent(config) {
@@ -65540,7 +66142,7 @@ async function writeRuntimeState(config, event2) {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   await import_promises6.default.mkdir(import_node_path14.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto21.randomUUID)()}.tmp`;
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto22.randomUUID)()}.tmp`;
   await import_promises6.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
   await import_promises6.default.rename(tempPath, statePath);
@@ -65560,7 +66162,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto21.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto22.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -65754,10 +66356,10 @@ function approvedExecutionSummary(payload) {
   };
 }
 function commandReviewViolationSummary(violations = []) {
-  return violations.map((violation) => ({
-    commandIndex: violation.commandIndex,
-    code: violation.code,
-    severity: violation.severity
+  return violations.map((violation2) => ({
+    commandIndex: violation2.commandIndex,
+    code: violation2.code,
+    severity: violation2.severity
   }));
 }
 function commandReviewSummary(payload) {
@@ -65779,8 +66381,8 @@ function commandAuditPreview(commands) {
 async function audit(config, event2) {
   try {
     await writeAuditLog(config.audit.logPath, event2);
-  } catch (error) {
-    console.error("failed to write audit log", error);
+  } catch (error2) {
+    console.error("failed to write audit log", error2);
   }
 }
 function createApp(options = {}) {
@@ -65806,7 +66408,7 @@ function createApp(options = {}) {
     config,
     runSSH: runSSH2
   });
-  const runMongoMutation2 = (mutation, operationOptions) => runMongoMutationImpl(mutation, {
+  const runMongoMutation2 = (mutation2, operationOptions) => runMongoMutationImpl(mutation2, {
     ...operationOptions,
     config,
     runSSH: runSSH2
@@ -65860,8 +66462,8 @@ function createApp(options = {}) {
       if (!options.resourceClient) throw Object.assign(new Error("task controller unavailable"), { code: "TASK_CONTROL_UNAVAILABLE", statusCode: 409 });
       await options.resourceClient.control(taskId, action);
       response.json({ ok: true });
-    } catch (error) {
-      response.status(errorStatus(error)).json(errorPayload(error));
+    } catch (error2) {
+      response.status(errorStatus(error2)).json(errorPayload(error2));
     }
   });
   app.get("/", (_request, response) => {
@@ -65913,9 +66515,9 @@ function createApp(options = {}) {
           errorCode: result.error?.code
         });
         response.json({ ok: true, instanceId: config.instanceId, ...result, operationId: operation.operationId });
-      } catch (error) {
-        await audit(config, { tool: `service-${action}`, instanceId: config.instanceId, ...serviceAuditFields(input), ok: false, errorCode: error.code });
-        response.status(errorStatus(error)).json(errorPayload(error));
+      } catch (error2) {
+        await audit(config, { tool: `service-${action}`, instanceId: config.instanceId, ...serviceAuditFields(input), ok: false, errorCode: error2.code });
+        response.status(errorStatus(error2)).json(errorPayload(error2));
       }
     });
   }
@@ -65986,9 +66588,9 @@ function createApp(options = {}) {
         result: outputSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "run",
@@ -66007,7 +66609,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/approved-command-drafts", async (request, response) => {
@@ -66021,22 +66623,22 @@ function createApp(options = {}) {
     publishStage(activity, operation, "started");
     try {
       assertApprovedCommandsEnabled(config);
-      const draft = commandDraftStore.createDraft({
+      const draft2 = commandDraftStore.createDraft({
         purpose: rawPurpose,
         commands: rawCommands,
         settings: config.approvedCommands
       });
       const payload = {
         ok: true,
-        ...draft,
+        ...draft2,
         durationMs: durationSince(startedAt)
       };
       await audit(config, {
         tool: "approved-command-draft",
-        draftId: draft.draftId,
-        commandHash: draft.commandHash,
-        commandCount: draft.commandCount,
-        commandPreview: commandAuditPreview(draft.commands),
+        draftId: draft2.draftId,
+        commandHash: draft2.commandHash,
+        commandCount: draft2.commandCount,
+        commandPreview: commandAuditPreview(draft2.commands),
         ok: true,
         durationMs: payload.durationMs
       });
@@ -66045,8 +66647,8 @@ function createApp(options = {}) {
         result: approvedDraftSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      const payload = errorPayload(error);
+    } catch (error2) {
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "approved-command-draft",
@@ -66059,7 +66661,7 @@ function createApp(options = {}) {
         durationMs,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/approved-command-drafts/get", async (request, response) => {
@@ -66071,10 +66673,10 @@ function createApp(options = {}) {
     publishStage(activity, operation, "started");
     try {
       assertApprovedCommandsEnabled(config);
-      const draft = commandDraftStore.getDraft(rawDraftId);
+      const draft2 = commandDraftStore.getDraft(rawDraftId);
       const payload = {
         ok: true,
-        ...draft,
+        ...draft2,
         durationMs: durationSince(startedAt)
       };
       publishStage(activity, operation, "completed", {
@@ -66082,15 +66684,15 @@ function createApp(options = {}) {
         result: approvedDraftSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      const payload = errorPayload(error);
+    } catch (error2) {
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/approved-command-drafts/execute", async (request, response) => {
@@ -66232,16 +66834,16 @@ function createApp(options = {}) {
         result: approvedExecutionSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      error.details = {
-        ...error.details || {},
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      error2.details = {
+        ...error2.details || {},
         partialResults: results
       };
       if (claimedDraft) {
         commandDraftStore.finishDraft(claimedDraft.draftId, "failed");
       }
-      const payload = errorPayload(error);
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "approved-command-execute",
@@ -66261,7 +66863,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/read-file", async (request, response) => {
@@ -66314,9 +66916,9 @@ function createApp(options = {}) {
         result: fileSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "read-file",
@@ -66335,7 +66937,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/list-dir", async (request, response) => {
@@ -66383,9 +66985,9 @@ function createApp(options = {}) {
         result: directorySummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "list-dir",
@@ -66404,7 +67006,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/logs/list", async (request, response) => {
@@ -66458,9 +67060,9 @@ function createApp(options = {}) {
         result: logListSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "logs-list",
@@ -66479,7 +67081,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/logs/archive-members", async (request, response) => {
@@ -66537,9 +67139,9 @@ function createApp(options = {}) {
         result: logArchiveSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "logs-archive-members",
@@ -66558,7 +67160,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   for (const action of ["start", "get", "control"]) {
@@ -66574,9 +67176,9 @@ function createApp(options = {}) {
           action: input.action
         });
         response.status(action === "start" ? 202 : 200).json({ ok: true, ...result });
-      } catch (error) {
-        await audit(config, { tool: `logs-job-${action}`, ok: false, errorCode: error.code });
-        response.status(errorStatus(error)).json(errorPayload(error));
+      } catch (error2) {
+        await audit(config, { tool: `logs-job-${action}`, ok: false, errorCode: error2.code });
+        response.status(errorStatus(error2)).json(errorPayload(error2));
       }
     });
   }
@@ -66603,9 +67205,9 @@ function createApp(options = {}) {
         ...result.timing
       });
       response.json({ ok: true, ...result, durationMs, operationId: operation.operationId });
-    } catch (error) {
-      error.operationId ||= operation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= operation.operationId;
+      const payload = errorPayload(error2);
       await audit(config, {
         tool: "logs-query",
         ok: false,
@@ -66613,7 +67215,7 @@ function createApp(options = {}) {
         durationMs: durationSince(startedAt),
         errorCode: payload.error.code
       });
-      response.status(errorStatus(error)).json(payload);
+      response.status(errorStatus(error2)).json(payload);
     }
   });
   app.post("/logs/read", async (request, response) => {
@@ -66672,9 +67274,9 @@ function createApp(options = {}) {
         result: logReadSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "logs-read",
@@ -66694,7 +67296,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   app.post("/mongodb/query", async (request, response) => {
@@ -66746,9 +67348,9 @@ function createApp(options = {}) {
         result: mongoSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = businessErrorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = businessErrorPayload(error2);
       const durationMs = durationSince(startedAt);
       const summary = summarizeMongoQuery(rawQuery);
       await audit(config, {
@@ -66770,7 +67372,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   });
   async function handleMongoMutation(request, response, mode, pathName) {
@@ -66815,9 +67417,9 @@ function createApp(options = {}) {
         result: mongoMutationSummary(payload)
       });
       response.json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = businessErrorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = businessErrorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: `mongodb-mutation-${mode}`,
@@ -66836,7 +67438,7 @@ function createApp(options = {}) {
         durationMs,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   }
   async function handleMongoBulk(request, response, action, pathName) {
@@ -66898,9 +67500,9 @@ function createApp(options = {}) {
       });
       publishStage(activity, operation, "completed", { ok: true, result: summary });
       response.status(payload.background ? 202 : 200).json(payload);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = businessErrorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = businessErrorPayload(error2);
       const durationMs = durationSince(startedAt);
       const summary = {
         jobId: requestText(raw.jobId),
@@ -66918,7 +67520,7 @@ function createApp(options = {}) {
         errorPhase: payload.error.phase
       });
       publishStage(activity, operation, "failed", { ok: false, durationMs, error: payload.error });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     }
   }
   app.post("/mongodb/bulk/storage/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/bulk/storage/prepare"));
@@ -66931,9 +67533,9 @@ function createApp(options = {}) {
         const result = await runSandboxAccessImpl(input, { action, config, runSSH: runSSH2, operation, expectedSettingsHash: _sandboxSettingsHash });
         await audit(config, { tool: `sandbox-access-${action}`, setupId: result.setupId, planHash: result.planHash, sandboxDatabase: result.sandboxDatabase, status: result.status, ok: true });
         response.json({ ok: true, ...result, operationId: operation.operationId });
-      } catch (error) {
-        await audit(config, { tool: `sandbox-access-${action}`, ok: false, errorCode: error.code });
-        response.status(errorStatus(error)).json(errorPayload(error));
+      } catch (error2) {
+        await audit(config, { tool: `sandbox-access-${action}`, ok: false, errorCode: error2.code });
+        response.status(errorStatus(error2)).json(errorPayload(error2));
       }
     });
   }
@@ -66945,6 +67547,8 @@ function createApp(options = {}) {
   app.post("/mongodb/mutations/execute", (request, response) => handleMongoMutation(request, response, "commit", "/mongodb/mutations/execute"));
   app.post("/mongodb/mutations/rollback", (request, response) => handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
   app.post("/mongodb/mutations/list", (request, response) => handleMongoMutation(request, response, "list", "/mongodb/mutations/list"));
+  app.post("/mongodb/mutations/recover-prepare", (request, response) => handleMongoMutation(request, response, "recover_prepare", "/mongodb/mutations/recover-prepare"));
+  app.post("/mongodb/mutations/get", (request, response) => handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
   app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
@@ -66957,27 +67561,27 @@ function createApp(options = {}) {
   app.locals.closeLogJobs = () => logJobRunner.close();
   return app;
 }
-function managerErrorPayload(error) {
+function managerErrorPayload(error2) {
   return {
     ok: false,
-    error: operationErrorPayload(error, {
+    error: operationErrorPayload(error2, {
       code: "REMOTE_DEBUG_MANAGER_ERROR",
       message: "remote debug manager operation failed",
       layer: "manager"
     }),
-    instances: error.instances,
-    details: error.payload || error.details
+    instances: error2.instances,
+    details: error2.payload || error2.details
   };
 }
-function respondManagerError(response, error) {
-  response.status(error.statusCode || error.status || 500).json(managerErrorPayload(error));
+function respondManagerError(response, error2) {
+  response.status(error2.statusCode || error2.status || 500).json(managerErrorPayload(error2));
 }
 function managerRouteError(message, code, statusCode = 500, details = {}) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode;
-  error.details = details;
-  return error;
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = statusCode;
+  error2.details = details;
+  return error2;
 }
 function normalizeAgentLifetime(value) {
   return value === DESKTOP_AGENT_LIFETIME ? DESKTOP_AGENT_LIFETIME : DEFAULT_AGENT_LIFETIME2;
@@ -67069,8 +67673,8 @@ function createManagerLifecycle(options = {}) {
       return;
     }
     timer = setIntervalFn(() => {
-      checkLeases().catch((error) => {
-        console.error("failed to check manager leases", error);
+      checkLeases().catch((error2) => {
+        console.error("failed to check manager leases", error2);
       });
     }, checkIntervalMs);
     timer.unref?.();
@@ -67146,14 +67750,14 @@ function managerPublicStatus(config, workerManager, registry, lifecycle) {
 }
 function managerPathCapabilities(config, registry) {
   const capabilities = securityCapabilities(config);
-  capabilities.logs.projectsByInstance = Object.fromEntries(registry.listInternal().map((instance) => [
-    instance.id,
-    normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots)
+  capabilities.logs.projectsByInstance = Object.fromEntries(registry.listInternal().map((instance2) => [
+    instance2.id,
+    normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots)
   ]));
   capabilities.paths.byInstance = Object.fromEntries(
-    registry.listInternal().map((instance) => {
-      const sourceRoots = { ...instance.sourceRoots || {} };
-      return [instance.id, {
+    registry.listInternal().map((instance2) => {
+      const sourceRoots = { ...instance2.sourceRoots || {} };
+      return [instance2.id, {
         sourceRoots,
         allowedRoots: allowedPathsForSourceRoots(sourceRoots)
       }];
@@ -67163,8 +67767,8 @@ function managerPathCapabilities(config, registry) {
 }
 function managerAsync(handler) {
   return (request, response) => {
-    Promise.resolve(handler(request, response)).catch((error) => {
-      respondManagerError(response, error);
+    Promise.resolve(handler(request, response)).catch((error2) => {
+      respondManagerError(response, error2);
     });
   };
 }
@@ -67213,8 +67817,8 @@ function createManagerApp(options = {}) {
   app.locals.lifecycle = lifecycle;
   installHttpAuth(app, config, { ...options, initializeAuth: true });
   app.use("/api/output-preview/records", import_express2.default.json({ limit: "17mb" }));
-  app.use("/api/output-preview", (error, _request, response, _next) => {
-    const tooLarge = error.type === "entity.too.large";
+  app.use("/api/output-preview", (error2, _request, response, _next) => {
+    const tooLarge = error2.type === "entity.too.large";
     response.status(tooLarge ? 413 : 400).json({ ok: false, error: {
       code: tooLarge ? "OUTPUT_PREVIEW_TOO_LARGE" : "OUTPUT_PREVIEW_INVALID",
       message: tooLarge ? "Output preview exceeds the request limit" : "Invalid output preview request"
@@ -67234,6 +67838,7 @@ function createManagerApp(options = {}) {
   installPrivacyRoutes(app, {
     registry,
     service: options.privacyService,
+    dispatch: (id, route2, payload) => workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
     directory: import_node_path14.default.join(import_node_path14.default.dirname(import_node_path14.default.dirname(config.runtime?.statePath || import_node_path14.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
   });
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
@@ -67326,15 +67931,15 @@ function createManagerApp(options = {}) {
           failed,
           diagnostic
         });
-      }).catch((error) => {
-        console.error("failed to restore manager instances", error);
+      }).catch((error2) => {
+        console.error("failed to restore manager instances", error2);
         activity.publish({
           type: "lifecycle",
           stage: "restore-failed",
           clientId: lease.clientId,
           error: {
-            code: error.code || "INSTANCE_RESTORE_FAILED",
-            message: error.message || "failed to restore manager instances"
+            code: error2.code || "INSTANCE_RESTORE_FAILED",
+            message: error2.message || "failed to restore manager instances"
           }
         });
       });
@@ -67373,34 +67978,34 @@ function createManagerApp(options = {}) {
     }
     response.status(202).json({ ok: true, status: "shutting-down" });
     setImmediate(() => {
-      shutdownController.request?.("manual-api")?.catch((error) => {
-        console.error("failed to shut down manager", error);
+      shutdownController.request?.("manual-api")?.catch((error2) => {
+        console.error("failed to shut down manager", error2);
       });
     });
   }));
   app.post("/api/instances", managerAsync(async (request, response) => {
-    const instance = registry.create(request.body || {});
-    activity.publish({ type: "instance", stage: "created", instanceId: instance.id });
+    const instance2 = registry.create(request.body || {});
+    activity.publish({ type: "instance", stage: "created", instanceId: instance2.id });
     response.status(201).json({
       ok: true,
-      instance,
-      runtime: workerManager.runtimeFor(instance.id)
+      instance: instance2,
+      runtime: workerManager.runtimeFor(instance2.id)
     });
   }));
   app.put("/api/instances/:id", managerAsync(async (request, response) => {
-    const instance = registry.update(request.params.id, request.body || {});
-    manualWorkbench.invalidateInstance(instance.id);
-    activity.publish({ type: "instance", stage: "updated", instanceId: instance.id });
+    const instance2 = registry.update(request.params.id, request.body || {});
+    manualWorkbench.invalidateInstance(instance2.id);
+    activity.publish({ type: "instance", stage: "updated", instanceId: instance2.id });
     response.json({
       ok: true,
-      instance,
-      runtime: workerManager.runtimeFor(instance.id)
+      instance: instance2,
+      runtime: workerManager.runtimeFor(instance2.id)
     });
   }));
   app.get("/api/service-profiles", managerAsync(async (_request, response) => {
-    response.json({ ok: true, instances: registry.list().map((instance) => ({
-      instanceId: instance.id,
-      profiles: Object.entries(instance.serviceProfiles || {}).map(([serviceId, profile]) => ({
+    response.json({ ok: true, instances: registry.list().map((instance2) => ({
+      instanceId: instance2.id,
+      profiles: Object.entries(instance2.serviceProfiles || {}).map(([serviceId, profile]) => ({
         serviceId,
         profileHash: serviceProfileHash(profile),
         profile
@@ -67426,24 +68031,24 @@ function createManagerApp(options = {}) {
         profileHash: updated.serviceProfiles[input.serviceId] ? serviceProfileHash(updated.serviceProfiles[input.serviceId]) : null,
         workerRefreshRequired: true
       });
-    } catch (error) {
-      await audit(config, { tool: "service-profile-set", ...serviceAuditFields(input), ok: false, errorCode: error.code });
-      throw error;
+    } catch (error2) {
+      await audit(config, { tool: "service-profile-set", ...serviceAuditFields(input), ok: false, errorCode: error2.code });
+      throw error2;
     }
   }));
   app.get("/api/log-projects", managerAsync(async (_request, response) => {
-    response.json({ ok: true, instances: registry.list().map((instance) => ({
-      instanceId: instance.id,
-      projects: normalizeLogProjects(instance.logProjects, allowedPathsForSourceRoots(instance.sourceRoots), instance.sourceRoots)
+    response.json({ ok: true, instances: registry.list().map((instance2) => ({
+      instanceId: instance2.id,
+      projects: normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots)
     })) });
   }));
   app.post("/api/log-projects", managerAsync(async (request, response) => {
     const id = registry.resolveId(request.body?.instanceId);
     response.set("X-Remote-Debug-Instance-Id", id);
-    const instance = registry.getInternal(id);
+    const instance2 = registry.getInternal(id);
     const projectId = request.body?.projectId;
     if (typeof projectId !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(projectId)) throw operationError("invalid projectId", { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
-    const projects = { ...instance.logProjects || {} };
+    const projects = { ...instance2.logProjects || {} };
     if (request.body.remove === true) delete projects[projectId];
     else projects[projectId] = { root: request.body.root, directories: request.body.directories };
     const updated = registry.update(id, { logProjects: projects });
@@ -67451,11 +68056,11 @@ function createManagerApp(options = {}) {
     response.json({ ok: true, instanceId: id, projects: updated.logProjects || {} });
   }));
   app.delete("/api/instances/:id", managerAsync(async (request, response) => {
-    const instance = await workerManager.deleteInstance(request.params.id);
-    manualWorkbench.invalidateInstance(instance.id);
-    outputPreview.removeInstance(instance.id);
-    activity.publish({ type: "instance", stage: "deleted", instanceId: instance.id });
-    response.json({ ok: true, instance });
+    const instance2 = await workerManager.deleteInstance(request.params.id);
+    manualWorkbench.invalidateInstance(instance2.id);
+    outputPreview.removeInstance(instance2.id);
+    activity.publish({ type: "instance", stage: "deleted", instanceId: instance2.id });
+    response.json({ ok: true, instance: instance2 });
   }));
   app.post("/api/instances/:id/start", managerAsync(async (request, response) => {
     const result = await workerManager.startInstance(request.params.id);
@@ -67513,7 +68118,7 @@ function createManagerApp(options = {}) {
     });
     publishStage(activity, operation, "started");
     let instanceId;
-    let draft;
+    let draft2;
     let staticReview;
     let modelResult;
     let reviewClaimed = false;
@@ -67521,26 +68126,26 @@ function createManagerApp(options = {}) {
       decision,
       reason,
       violations = [],
-      model,
-      execution
+      model: model2,
+      execution: execution2
     }) => ({
       ok: true,
       instanceId,
       decision,
-      draftId: draft?.draftId,
-      purpose: draft?.purpose,
-      commands: draft?.commands,
-      commandBlock: draft?.commandBlock,
-      commandHash: draft?.commandHash,
-      expiresAt: draft?.expiresAt,
-      draft,
+      draftId: draft2?.draftId,
+      purpose: draft2?.purpose,
+      commands: draft2?.commands,
+      commandBlock: draft2?.commandBlock,
+      commandHash: draft2?.commandHash,
+      expiresAt: draft2?.expiresAt,
+      draft: draft2,
       review: {
         reason,
         staticViolations: staticReview?.violations || [],
         violations,
-        model
+        model: model2
       },
-      execution,
+      execution: execution2,
       durationMs: durationSince(startedAt),
       operationId: requestOperation.operationId
     });
@@ -67572,8 +68177,8 @@ function createManagerApp(options = {}) {
     try {
       instanceId = registry.resolveId(rawInstanceId);
       response.set("X-Remote-Debug-Instance-Id", instanceId);
-      const instance = registry.getInternal(instanceId);
-      assertApprovedCommandsEnabled({ approvedCommands: instance?.approvedCommands });
+      const instance2 = registry.getInternal(instanceId);
+      assertApprovedCommandsEnabled({ approvedCommands: instance2?.approvedCommands });
       if (commandReviewInFlight) {
         throw managerRouteError(
           "another command draft review is already in progress",
@@ -67583,7 +68188,7 @@ function createManagerApp(options = {}) {
       }
       commandReviewInFlight = true;
       reviewClaimed = true;
-      draft = await workerManager.callInstance(
+      draft2 = await workerManager.callInstance(
         instanceId,
         "/approved-command-drafts/get",
         {
@@ -67595,13 +68200,13 @@ function createManagerApp(options = {}) {
         request.headers,
         { signal: requestOperation.signal }
       );
-      staticReview = inspectCommandDraft(draft.commands, config.security);
+      staticReview = inspectCommandDraft(draft2.commands, config.security);
       operation.request = {
         operationId: requestOperation.operationId,
         instanceId,
-        draftId: draft.draftId,
-        commandHash: draft.commandHash,
-        commandCount: draft.commandCount,
+        draftId: draft2.draftId,
+        commandHash: draft2.commandHash,
+        commandCount: draft2.commandCount,
         timeoutMs: requestOperation.timeoutMs,
         deadlineAt: requestOperation.deadlineAt
       };
@@ -67618,7 +68223,7 @@ function createManagerApp(options = {}) {
         return;
       }
       if (!commandReviewConfig.autoExecuteEnabled) {
-        const violation = manualReviewViolation(
+        const violation2 = manualReviewViolation(
           "COMMAND_REVIEW_AUTO_EXECUTION_DISABLED",
           "自动审核开关未启用，必须由人工确认后执行。",
           {
@@ -67629,12 +68234,12 @@ function createManagerApp(options = {}) {
         await completeReview(responseForReview({
           decision: "manual_review",
           reason: "auto_execution_disabled",
-          violations: [violation]
+          violations: [violation2]
         }));
         return;
       }
       if (commandReviewConfig.status !== "ready") {
-        const violation = manualReviewViolation(
+        const violation2 = manualReviewViolation(
           commandReviewConfig.error?.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE",
           commandReviewConfig.error?.message || "Codex 审核配置不可用。",
           {
@@ -67645,7 +68250,7 @@ function createManagerApp(options = {}) {
         await completeReview(responseForReview({
           decision: "manual_review",
           reason: "review_config_unavailable",
-          violations: [violation],
+          violations: [violation2],
           model: {
             status: "unavailable",
             errorCode: commandReviewConfig.error?.code || "COMMAND_REVIEW_CONFIG_UNAVAILABLE"
@@ -67655,19 +68260,19 @@ function createManagerApp(options = {}) {
       }
       try {
         modelResult = await runCodexReview2({
-          draft,
+          draft: draft2,
           config: commandReviewConfig,
           staticReview,
           signal: requestOperation.signal,
           options: options.commandReviewOptions
         });
-      } catch (error) {
-        if (["OPERATION_CANCELLED", "OPERATION_DEADLINE_EXCEEDED", "COMMAND_REVIEW_CANCELLED"].includes(error.code)) {
-          throw error;
+      } catch (error2) {
+        if (["OPERATION_CANCELLED", "OPERATION_DEADLINE_EXCEEDED", "COMMAND_REVIEW_CANCELLED"].includes(error2.code)) {
+          throw error2;
         }
-        const violation = manualReviewViolation(
-          error.code || "COMMAND_REVIEW_MODEL_UNAVAILABLE",
-          error.message || "Codex 审核没有返回可用结果。",
+        const violation2 = manualReviewViolation(
+          error2.code || "COMMAND_REVIEW_MODEL_UNAVAILABLE",
+          error2.message || "Codex 审核没有返回可用结果。",
           {
             severity: "high",
             rule: "模型审核失败或结果不可用时必须转人工"
@@ -67676,12 +68281,12 @@ function createManagerApp(options = {}) {
         await completeReview(responseForReview({
           decision: "manual_review",
           reason: "model_review_unavailable",
-          violations: [violation],
+          violations: [violation2],
           model: {
             status: "error",
-            errorCode: error.code || "COMMAND_REVIEW_MODEL_UNAVAILABLE",
-            attempts: error.details?.attempts,
-            durationMs: error.details?.durationMs
+            errorCode: error2.code || "COMMAND_REVIEW_MODEL_UNAVAILABLE",
+            attempts: error2.details?.attempts,
+            durationMs: error2.details?.durationMs
           }
         }));
         return;
@@ -67694,7 +68299,7 @@ function createManagerApp(options = {}) {
       };
       const modelSemanticallyApproved = modelResult.review.decision === "approve" && Array.isArray(modelResult.review.violations) && modelResult.review.violations.length === 0;
       if (staticReview.manualOnly && modelSemanticallyApproved) {
-        const violation = manualReviewViolation(
+        const violation2 = manualReviewViolation(
           "COMMAND_REVIEW_HUMAN_CONFIRMATION_REQUIRED",
           "命令属于已识别的维护操作，语义审核通过，但状态变更仍必须由用户明确确认。",
           {
@@ -67705,7 +68310,7 @@ function createManagerApp(options = {}) {
         await completeReview(responseForReview({
           decision: "manual_review",
           reason: "manual_confirmation_required",
-          violations: [violation],
+          violations: [violation2],
           model: modelReview
         }));
         return;
@@ -67739,14 +68344,14 @@ function createManagerApp(options = {}) {
         attempts: modelResult.attempts,
         durationMs: modelResult.durationMs
       });
-      let execution;
+      let execution2;
       try {
-        execution = await workerManager.callInstance(
+        execution2 = await workerManager.callInstance(
           instanceId,
           "/approved-command-drafts/execute",
           {
-            draftId: draft.draftId,
-            commandHash: draft.commandHash,
+            draftId: draft2.draftId,
+            commandHash: draft2.commandHash,
             confirmation: APPROVED_COMMAND_CONFIRMATION,
             automatic: true,
             operationId: requestOperation.operationId,
@@ -67756,33 +68361,33 @@ function createManagerApp(options = {}) {
           request.headers,
           { signal: requestOperation.signal }
         );
-      } catch (error) {
-        error.operationId ||= requestOperation.operationId;
-        error.details = {
-          ...error.details || {},
+      } catch (error2) {
+        error2.operationId ||= requestOperation.operationId;
+        error2.details = {
+          ...error2.details || {},
           instanceId,
-          draft,
+          draft: draft2,
           review: modelReview,
           autoExecutionStarted: true
         };
-        throw error;
+        throw error2;
       }
       await completeReview(responseForReview({
         decision: "auto_executed",
         reason: "static_and_model_approved",
         violations: [],
         model: modelReview,
-        execution
+        execution: execution2
       }));
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
-      const payload = errorPayload(error);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
+      const payload = errorPayload(error2);
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "approved-command-review",
         instanceId,
-        draftId: draft?.draftId || (typeof rawDraftId === "string" ? rawDraftId : void 0),
-        commandHash: draft?.commandHash,
+        draftId: draft2?.draftId || (typeof rawDraftId === "string" ? rawDraftId : void 0),
+        commandHash: draft2?.commandHash,
         ok: false,
         durationMs,
         errorCode: payload.error.code,
@@ -67795,7 +68400,7 @@ function createManagerApp(options = {}) {
         durationMs,
         error: payload.error
       });
-      response.status(errorStatus(error)).json({ ...payload, durationMs });
+      response.status(errorStatus(error2)).json({ ...payload, durationMs });
     } finally {
       if (reviewClaimed) {
         commandReviewInFlight = false;
@@ -67805,7 +68410,7 @@ function createManagerApp(options = {}) {
   app.post("/api/memory", managerAsync(async (request, response) => {
     const instanceId = registry.resolveId(request.body?.instanceId);
     response.set("X-Remote-Debug-Instance-Id", instanceId);
-    const instance = registry.getInternal(instanceId);
+    const instance2 = registry.getInternal(instanceId);
     if (!workerManager.memoryStore?.upsertNote) {
       throw managerRouteError(
         "instance memory updates are unavailable",
@@ -67814,7 +68419,7 @@ function createManagerApp(options = {}) {
       );
     }
     const result = await workerManager.memoryStore.upsertNote(
-      instance,
+      instance2,
       request.body || {},
       `mcp:${sourceFrom(request)}`
     );
@@ -67870,15 +68475,15 @@ function createManagerApp(options = {}) {
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
       if (pathName.startsWith("/services/")) {
         if (!instanceId) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
-        const instance2 = registry.getInternal(resolvedId);
-        if (!instance2.enabled) throw serviceError("INSTANCE_DISABLED");
+        const instance3 = registry.getInternal(resolvedId);
+        if (!instance3.enabled) throw serviceError("INSTANCE_DISABLED");
         validateServiceRequest(bodyWithoutInstanceId(request.body), pathName.split("/").pop());
-        selectServiceProfile(instance2.serviceProfiles, payload);
-        payload._serviceTargetHash = serviceTargetHash(instance2, allowedPathsForSourceRoots(instance2.sourceRoots));
+        selectServiceProfile(instance3.serviceProfiles, payload);
+        payload._serviceTargetHash = serviceTargetHash(instance3, allowedPathsForSourceRoots(instance3.sourceRoots));
       }
       if (pathName === "/logs/query" || pathName === "/logs/jobs/start") {
-        const instance2 = registry.getInternal(resolvedId);
-        payload._logProjects = normalizeLogProjects(instance2.logProjects, allowedPathsForSourceRoots(instance2.sourceRoots), instance2.sourceRoots);
+        const instance3 = registry.getInternal(resolvedId);
+        payload._logProjects = normalizeLogProjects(instance3.logProjects, allowedPathsForSourceRoots(instance3.sourceRoots), instance3.sourceRoots);
       }
       if (pathName.startsWith("/mongodb/sandbox/access/")) {
         payload._sandboxSettingsHash = sandboxSettingsHash(registry.getInternal(resolvedId).mongodb || {}, resolvedId);
@@ -67890,14 +68495,14 @@ function createManagerApp(options = {}) {
         request.headers,
         { signal: requestOperation.signal }
       );
-      let memory = null;
-      const instance = registry.getInternal(result.instanceId);
-      if (instance && workerManager.memoryStore) {
+      let memory2 = null;
+      const instance2 = registry.getInternal(result.instanceId);
+      if (instance2 && workerManager.memoryStore) {
         try {
-          memory = await workerManager.memoryStore.recordToolObservation(instance, pathName, payload, result);
-        } catch (error) {
-          console.error("failed to update instance memory", error);
-          memory = workerManager.memoryStore.summary(instance);
+          memory2 = await workerManager.memoryStore.recordToolObservation(instance2, pathName, payload, result);
+        } catch (error2) {
+          console.error("failed to update instance memory", error2);
+          memory2 = workerManager.memoryStore.summary(instance2);
         }
       }
       publishStage(activity, operation, "completed", {
@@ -67906,12 +68511,12 @@ function createManagerApp(options = {}) {
         durationMs: durationSince(startedAt),
         ...result.timing
       });
-      response.json(memory ? { ...result, memory } : result);
-    } catch (error) {
-      error.operationId ||= requestOperation.operationId;
+      response.json(memory2 ? { ...result, memory: memory2 } : result);
+    } catch (error2) {
+      error2.operationId ||= requestOperation.operationId;
       if (pathName.startsWith("/mongodb/")) {
-        const safe = businessErrorPayload(error).error;
-        error = Object.assign(new Error(safe.message), safe, { statusCode: error.statusCode || error.status || 502 });
+        const safe = businessErrorPayload(error2).error;
+        error2 = Object.assign(new Error(safe.message), safe, { statusCode: error2.statusCode || error2.status || 502 });
       }
       if (pathName.startsWith("/services/")) await audit(config, {
         tool: pathName.slice(1).replace("/", "-"),
@@ -67919,19 +68524,19 @@ function createManagerApp(options = {}) {
         ...serviceAuditFields(request.body),
         operationId: requestOperation.operationId,
         ok: false,
-        errorCode: error.code
+        errorCode: error2.code
       });
       publishStage(activity, operation, "failed", {
         ok: false,
         durationMs: durationSince(startedAt),
-        errorLayer: error.layer,
-        errorPhase: error.phase,
-        error: operationErrorPayload(error, {
+        errorLayer: error2.layer,
+        errorPhase: error2.phase,
+        error: operationErrorPayload(error2, {
           code: "INSTANCE_PROXY_FAILED",
           layer: "manager"
         })
       });
-      respondManagerError(response, error);
+      respondManagerError(response, error2);
     }
   }
   for (const action of ["inspect", "start"]) app.post(`/services/${action}`, (request, response) => proxyToInstance(`/services/${action}`, request, response));
@@ -68005,8 +68610,8 @@ function listenHttpServer(app, config, eventFactory) {
       if (failedToListen) {
         return;
       }
-      writeRuntimeState(config, event2).catch((error) => {
-        console.error("failed to write runtime state", error);
+      writeRuntimeState(config, event2).catch((error2) => {
+        console.error("failed to write runtime state", error2);
       });
       console.log(JSON.stringify({
         name: "remote-debug-agent",
@@ -68020,7 +68625,7 @@ function listenHttpServer(app, config, eventFactory) {
     }, 25);
     listeningStateTimer.unref?.();
   });
-  server.on("error", (error) => {
+  server.on("error", (error2) => {
     failedToListen = true;
     if (listeningStateTimer) {
       clearTimeout(listeningStateTimer);
@@ -68030,14 +68635,14 @@ function listenHttpServer(app, config, eventFactory) {
       role: "manager",
       startedAt,
       lastError: {
-        code: error.code || "AGENT_LISTEN_ERROR",
-        message: error.message
+        code: error2.code || "AGENT_LISTEN_ERROR",
+        message: error2.message
       }
     };
     writeRuntimeState(config, payload).catch((stateError) => {
       console.error("failed to write runtime state", stateError);
     });
-    console.error(error);
+    console.error(error2);
     if (isServerEntrypointProcess()) {
       process.exitCode = 1;
     }
@@ -68061,9 +68666,9 @@ function startServer(config = loadConfig(), options = {}) {
       resolve();
       return;
     }
-    server.close((error) => {
-      if (error) {
-        console.error("failed to close manager server", error);
+    server.close((error2) => {
+      if (error2) {
+        console.error("failed to close manager server", error2);
       }
       resolve();
     });
@@ -68075,8 +68680,8 @@ function startServer(config = loadConfig(), options = {}) {
       shutdownPromise = (async () => {
         lifecycle.stop();
         await app.locals.manualWorkbench.close();
-        await workerManager.shutdownAll(reason).catch((error) => {
-          console.error("failed to stop worker processes", error);
+        await workerManager.shutdownAll(reason).catch((error2) => {
+          console.error("failed to stop worker processes", error2);
         });
         app.locals.resourceManager.close();
         await app.locals.privacyService.close();
@@ -68095,16 +68700,16 @@ function startServer(config = loadConfig(), options = {}) {
   server.gracefulShutdown = gracefulShutdown;
   server.managerLifecycle = lifecycle;
   server.once("close", () => {
-    gracefulShutdown("server-close", { closeServer: false }).catch((error) => {
-      console.error("failed to stop worker processes", error);
+    gracefulShutdown("server-close", { closeServer: false }).catch((error2) => {
+      console.error("failed to stop worker processes", error2);
     });
   });
   const signalProcess = options.signalProcess || process;
   const installSignalHandlers = options.installSignalHandlers ?? isServerEntrypointProcess();
   if (installSignalHandlers) {
     const handleSignal = (signal) => {
-      gracefulShutdown(signal, { exitCode: 0 }).catch((error) => {
-        console.error("failed to gracefully shut down manager", error);
+      gracefulShutdown(signal, { exitCode: 0 }).catch((error2) => {
+        console.error("failed to gracefully shut down manager", error2);
         exit(1);
       });
     };
@@ -68116,8 +68721,8 @@ function startServer(config = loadConfig(), options = {}) {
 if (isServerEntrypointProcess()) {
   try {
     startServer();
-  } catch (error) {
-    console.error(error);
+  } catch (error2) {
+    console.error(error2);
     process.exitCode = 1;
   }
 }

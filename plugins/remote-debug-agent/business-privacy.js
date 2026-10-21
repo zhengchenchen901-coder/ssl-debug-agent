@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 const PREFIX = "rda_ref_v1_";
 const REFERENCE = /^rda_ref_v1_[a-f0-9]{48}$/;
 const REDACTED = "[REDACTED]";
-const CONTROL_FIELD = /(?:Id|Hash)$|^(?:id|database|collection|collections|name|operation|kind|status|mode|command|confirmation|changedFields|atomicity|rollbackMode|riskLevel|storageRoot|journalPath|receiptsDatabase|receiptStorage|code|layer|phase)$/;
+const CONTROL_FIELD = /(?:Id|Hash)$|^(?:id|database|collection|collections|name|operation|kind|status|state|intentState|recoveryCode|mode|command|confirmation|changedFields|atomicity|rollbackMode|riskLevel|storageRoot|journalPath|receiptsDatabase|receiptStorage|code|layer|phase)$/;
 const INPUTS = {
   remote_debug_mongodb_query: ["filter", "pipeline"],
   remote_debug_mongodb_prepare_write: ["filter", "document", "update", "deletedValue"],

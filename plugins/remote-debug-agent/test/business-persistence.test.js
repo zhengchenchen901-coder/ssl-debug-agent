@@ -14,12 +14,18 @@ for (const bundled of [false, true]) test(`persistent references across MCP + ac
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rda-privacy-restart-")), key = randomBytes(32);
   const contextFile = path.join(root, "context.json"), wire = [], diagnostics = [], requests = [];
   localAuth.ensureAuthToken(localAuth.resolveAuthFile(root));
-  const raw = "PRIVATE_RESTART_ORDER_73001"; let executed = 0, crash = true;
+  const raw = "PRIVATE_RESTART_ORDER_73001"; let executed = 0, crash = true, crashPrepare = true, prepareCalls = 0;
+  let preparedIndex;
   const backend = http.createServer(async (req, res) => {
     const chunks = []; for await (const chunk of req) chunks.push(chunk); const input = JSON.parse(Buffer.concat(chunks));
     requests.push({ route: req.url, input });
     let result;
     if (req.url === "/mongodb/query") result = { database: "business", operation: "find", data: [{ _id: raw, apiKey: "PRIVATE_CREDENTIAL" }], resultCount: 1 };
+    else if (req.url === "/mongodb/mutations/prepare") {
+      prepareCalls++; preparedIndex = { status: "planned", mutationId: input._businessPrepare.mutationId, planHash: "d".repeat(64) };
+      result = { ...preparedIndex, __crashAfterRemote: crashPrepare }; crashPrepare = false;
+    }
+    else if (req.url === "/mongodb/mutations/recover-prepare") result = { ...preparedIndex, prepare: input._businessPrepare, recovery: "prepared" };
     else if (req.url === "/mongodb/mutations/execute") { executed++; result = { status: "committed", mutationId: input.mutationId, planHash: input.planHash, __crashAfterRemote: crash }; crash = false; }
     else if (req.url === "/mongodb/mutations/list") result = { mutations: [{ mutationId: "mutation-uncertain", status: "committed" }] };
     else result = { database: "business", mutationId: "mutation-1", planHash: "a".repeat(64), affectedIds: [raw], affectedCount: 1 };
@@ -64,6 +70,13 @@ for (const bundled of [false, true]) test(`persistent references across MCP + ac
   const normal = { mutationId: "mutation-known", planHash: "b".repeat(64), confirmation: "确认执行" };
   const committed = await d.call("remote_debug_mongodb_execute_mutation", normal); assert.notEqual(committed.isError, true); assert.equal(executed, 2);
   const repeated = await d.call("remote_debug_mongodb_execute_mutation", normal); assert.notEqual(repeated.isError, true); assert.equal(executed, 2);
+  const prepare = { kind: "index", operation: "createIndex", collection: "orders", name: "idx_restart", key: { customerId: 1 } };
+  const lostPrepare = await d.call("remote_debug_mongodb_prepare_index", prepare);
+  assert.equal(lostPrepare.isError, true); assert.equal(prepareCalls, 1);
+  await d.stop("SIGKILL"); await start(); const e = await peer();
+  const recoveredPrepare = await e.call("remote_debug_mongodb_prepare_index", prepare);
+  assert.equal(recoveredPrepare.payload.status, "planned"); assert.equal(recoveredPrepare.payload.mutationId, preparedIndex.mutationId);
+  assert.equal(prepareCalls, 1, "Manager SIGKILL must not create a replacement plan");
   // Authenticated local protocol rejects knowing a context ID without its capability.
   const saved = JSON.parse(await fs.readFile(contextFile));
   const bad = await fetch(`http://127.0.0.1:${port}/api/private/business-storage`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${localAuth.readAuthToken(localAuth.resolveAuthFile(root))}` },
@@ -72,7 +85,7 @@ for (const bundled of [false, true]) test(`persistent references across MCP + ac
   const malformed = await fetch(`http://127.0.0.1:${port}/api/private/business-storage`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${localAuth.readAuthToken(localAuth.resolveAuthFile(root))}` }, body: '{"PRIVATE_MALFORMED_BUSINESS":invalid}' });
   assert.equal(malformed.status, 400); assert.doesNotMatch(await malformed.text(), /PRIVATE_MALFORMED_BUSINESS/);
   const unauth = await fetch(`http://127.0.0.1:${port}/api/private/business-storage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: '{"action":"create"}' }); assert.equal(unauth.status, 401);
-  await d.stop(); await killManager();
+  await e.stop(); await killManager();
   for (const filename of await fs.readdir(path.join(root, ".private", "business"))) {
     const data = await fs.readFile(path.join(root, ".private", "business", filename));
     for (const secret of [raw, "PRIVATE_CREDENTIAL", key.toString("hex"), saved.auth.capability]) assert.equal(data.includes(Buffer.from(secret)), false);

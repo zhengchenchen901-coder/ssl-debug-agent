@@ -125,6 +125,61 @@ test("reconciliation accepts only the same remote job, immutable plan and matchi
   f.reopen(); assert.equal(f.call("intent", { route: "/mongodb/bulk/execute", request: identity, identity }).result.committedBatchCount, 1);
 });
 
+test("prepare attempts survive restart, reject stale responses and retain the same mutation identity", (t) => {
+  const f = fixture(t), request = { instanceId: "local", database: "business", kind: "index", name: "idx" };
+  const args = { route: "/mongodb/mutations/prepare", request, identity: { instanceId: "local" }, dispatchDigest: "c".repeat(64) };
+  const first = f.call("intent", args);
+  assert.equal(first.prepare.attempt, 1); f.reopen();
+  const claim = { id: first.id, attempt: 1, dispatchDigest: args.dispatchDigest };
+  f.call("claim_prepare", claim);
+  assert.throws(() => f.call("claim_prepare", claim), { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED" });
+  f.call("prepare_result", { id: first.id, prepare: first.prepare, notDispatched: true, result: { ok: false, error: { code: "MONGODB_COLLECTION_NOT_ALLOWED" } } });
+  f.reopen();
+  const second = f.call("intent", args);
+  assert.equal(second.id, first.id); assert.equal(second.prepare.mutationId, first.prepare.mutationId); assert.equal(second.prepare.attempt, 2);
+  assert.throws(() => f.call("prepare_result", { id: first.id, prepare: first.prepare, fenced: true }), { code: "BUSINESS_OPERATION_DENIED" });
+  const failed = f.call("prepare_result", { id: first.id, prepare: second.prepare, result: { ok: false } });
+  assert.equal(failed.state, "uncertain");
+  assert.equal(f.call("intent", args).state, "uncertain");
+});
+
+test("execute response loss accepts only the same mutation and terminal plan without replay", (t) => {
+  const f = fixture(t), identity = { mutationId: "lost-commit", planHash: "a".repeat(64) };
+  const args = { route: "/mongodb/mutations/execute", request: identity, identity };
+  const intent = f.call("intent", args); f.reopen();
+  for (const entry of [{ ...identity, status: "commit_started" }, { ...identity, status: "commit_failed" },
+    { ...identity, planHash: "b".repeat(64), status: "committed" }, { ...identity, mutationId: "another", status: "committed" }]) {
+    assert.equal(f.call("reconcile", { id: intent.id, result: { ok: true, entries: [entry] } }).state, "uncertain");
+  }
+  assert.equal(f.call("reconcile", { id: intent.id, result: { ok: true, entries: [{ ...identity, status: "committed" }] } }).state, "complete");
+  f.reopen(); assert.equal(f.call("intent", args).result.status, "committed");
+});
+
+test("formal recovery inspects legacy intents without accepting caller supplied proof", async (t) => {
+  const f = fixture(t), instance = { id: "local", host: "fixture.invalid", mongodb: { database: "business" } }, origin = "http://127.0.0.1:4343";
+  const scope = businessTargetScope(origin, instance, "business"), request = { instanceId: "local", database: "business", kind: "index" };
+  const intent = f.store.execute("intent", { auth: f.auth, scope, route: "/mongodb/mutations/prepare", request, identity: { instanceId: "local" } });
+  const recovered = await privacyRequest({ call: (action, input) => f.store.execute(action, input) },
+    { action: "recover_operation", auth: f.auth, scope, id: intent.id, mode: "reconcile", result: { ok: true }, notDispatched: true },
+    { instance: () => instance, origin, dispatch: () => assert.fail("Legacy recovery must not dispatch") });
+  assert.equal(recovered.state, "uncertain"); assert.equal(recovered.reason, "legacy_evidence_required");
+  await assert.rejects(privacyRequest({}, { action: "prepare_result", auth: f.auth, scope, id: intent.id, fenced: true }, { instance: () => instance, origin }), { code: "BUSINESS_STORAGE_ACTION_DENIED" });
+});
+
+test("failed local prepare outcome commit leaves a recoverable uncertain intent", (t) => {
+  let fail = false;
+  const f = fixture(t, { fault: (boundary) => { if (fail && boundary === "beforeCommit") throw Error("Simulated storage failure"); } });
+  const args = { route: "/mongodb/mutations/prepare", request: { kind: "index" }, dispatchDigest: "e".repeat(64) };
+  const intent = f.call("intent", args);
+  fail = true;
+  assert.throws(() => f.call("prepare_result", { id: intent.id, prepare: intent.prepare,
+    result: { ok: true, mutationId: intent.prepare.mutationId, planHash: "f".repeat(64) } }));
+  fail = false; f.reopen();
+  assert.equal(f.call("intent", args).state, "uncertain");
+  assert.equal(f.call("prepare_result", { id: intent.id, prepare: intent.prepare,
+    result: { ok: true, mutationId: intent.prepare.mutationId, planHash: "f".repeat(64) } }).state, "prepared");
+});
+
 test("active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded", (t) => {
   const f = fixture(t), active = f.commit("PRIVATE_ACTIVE", { tasks: [{ id: "job-active", status: "running" }] });
   const stale = Array.from({ length: 6 }, (_, i) => f.commit(`PRIVATE_EXPIRED_${i}`));

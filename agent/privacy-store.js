@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, ra
 import fs from "node:fs";
 import path from "node:path";
 import { loadPrivacyKey, privacyError } from "./privacy-key.js";
+import { isPrepareTicket } from "../plugins/remote-debug-agent/prepare-protocol.js";
 
 const REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 const DAY = 86400000;
@@ -143,8 +144,12 @@ export class PrivacyStore {
     if (action === "intent") return this.transaction(() => {
       const id = this.hash("operation", ctx, input.scope, input.route, input.request);
       const previous = this.get("operation", id, ctx, scope);
-      if (previous && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
-      const record = { state: "uncertain", route: input.route, identity: input.identity, started: this.now() };
+      const retryPrepare = previous?.state === "rejected_before_dispatch" && previous.prepare && input.dispatchDigest === previous.prepare.requestDigest;
+      if (previous && !retryPrepare && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
+      const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "")
+        ? { mutationId: previous?.prepare?.mutationId || randomUUID(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : undefined;
+      const record = { state: "uncertain", route: input.route, identity: input.identity, started: this.now(),
+        ...(prepare ? { prepare, previousRejection: previous?.rejection } : {}) };
       this.put("operation", id, ctx, scope, record, Number.MAX_SAFE_INTEGER, true);
       const task = this.hash("task", ctx, input.scope, "operation:" + id);
       const retention = this.now() + 90 * DAY;
@@ -155,7 +160,46 @@ export class PrivacyStore {
         this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, task, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND id=?").run(ref);
       }
-      return { id, state: "new" };
+      return { id, state: "new", ...(prepare ? { prepare } : {}) };
+    });
+    // Internal Manager actions. They are deliberately absent from privacyRequest's
+    // public action allowlist: callers cannot submit their own recovery proof.
+    if (action === "inspect_operation") {
+      if (!/^[a-f0-9]{64}$/.test(input.id || "")) throw privacyError("BUSINESS_OPERATION_DENIED");
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record) throw privacyError("BUSINESS_OPERATION_DENIED");
+      return { id: input.id, ...record };
+    }
+    if (action === "claim_prepare") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record?.prepare || record.state !== "uncertain" || record.dispatched ||
+          record.prepare.requestDigest !== input.dispatchDigest || record.prepare.attempt !== input.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      this.put("operation", input.id, ctx, scope, { ...record, dispatched: true, operationId: input.operationId }, Number.MAX_SAFE_INTEGER, true);
+      return { ...record, dispatched: true };
+    });
+    if (action === "prepare_result") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record?.prepare || !isPrepareTicket(input.prepare) || JSON.stringify(record.prepare) !== JSON.stringify(input.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
+      if (record.state !== "uncertain") return { id: input.id, ...record }; // Stale reply after recovery.
+      let value;
+      if (input.result?.ok === true && input.result.mutationId === record.prepare.mutationId && /^[a-f0-9]{64}$/.test(input.result.planHash || "")) {
+        value = { ...record, state: "prepared", result: input.result };
+      } else if (input.notDispatched === true || input.fenced === true) {
+        value = { ...record, state: "rejected_before_dispatch", rejection: {
+          attempt: record.prepare.attempt, code: input.result?.error?.code || "MONGODB_PREPARE_FENCED", at: this.now(),
+          evidence: input.fenced ? "remote_fence" : "worker_validation",
+        } };
+      } else value = { ...record, reconciliation: { state: "unavailable", code: input.result?.error?.code } };
+      const resolved = value.state !== "uncertain";
+      this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY : Number.MAX_SAFE_INTEGER, !resolved);
+      this.put("event", randomUUID(), ctx, scope, { type: "prepare_state", operation: input.id, state: value.state, attempt: record.prepare.attempt,
+        code: value.rejection?.code, evidence: value.rejection?.evidence, operationId: record.operationId }, this.now() + 90 * DAY);
+      if (resolved) {
+        const taskId = this.hash("task", ctx, input.scope, "operation:" + input.id);
+        const task = this.get("task", taskId, ctx, scope);
+        if (task) this.put("task", taskId, ctx, scope, { ...task, active: false }, task.expires, false);
+      }
+      return { id: input.id, ...value };
     });
     if (action === "outcome" || action === "reconcile") return this.transaction(() => {
       const previous = this.get("operation", input.id, ctx, scope);

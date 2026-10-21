@@ -28,7 +28,15 @@ export async function localMcp(t, { instance, handler, framing = "json-line" }) 
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
     const input = JSON.parse(Buffer.concat(chunks).toString() || "{}");
     if (req.url === "/api/private/business-storage") {
-      try { return res.end(JSON.stringify({ ok: true, result: await privacyRequest(privacyService, input, { instance: (id) => id === instance.id ? instance : undefined, origin: `http://${req.headers.host}` }) })); }
+      try {
+        const result = await privacyRequest(privacyService, input, { instance: (id) => id === instance.id ? instance : undefined, origin: `http://${req.headers.host}`,
+          dispatch: async (id, route, request) => {
+            requests.push({ path: route, input: { ...request, instanceId: id } });
+            return { ok: true, instanceId: id, ...await handler(route, request) };
+          } });
+        if (input.action === "dispatch_prepare" && dropReply === "/mongodb/mutations/prepare") { dropReply = undefined; req.socket.destroy(); return; }
+        return res.end(JSON.stringify({ ok: true, result }));
+      }
       catch (error) { res.statusCode = 409; return res.end(JSON.stringify({ ok: false, error: { code: error.code, message: "Protected fixture state unavailable" } })); }
     }
     if (req.url === "/api/output-preview/records") { previews.push(input); return res.end('{"ok":true}'); }

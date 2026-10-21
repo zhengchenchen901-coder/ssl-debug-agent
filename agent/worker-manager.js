@@ -1247,6 +1247,7 @@ export class WorkerManager {
         },
       );
       error.payload = parsed;
+      if (parsed.error?.dispatchState === "not_dispatched") error.dispatchState = "not_dispatched";
       throw error;
     }
 

@@ -128,6 +128,7 @@ function businessErrorPayload(error) {
     code: /^[A-Z][A-Z0-9_]{1,80}$/.test(payload.code || "") ? payload.code : "MONGODB_OPERATION_FAILED",
     message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
     layer: payload.layer, phase: payload.phase, retriable: payload.retriable,
+    ...(error.dispatchState === "not_dispatched" ? { dispatchState: "not_dispatched" } : {}),
   } };
 }
 
@@ -1650,6 +1651,10 @@ export function createApp(options = {}) {
     handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
   app.post("/mongodb/mutations/list", (request, response) =>
     handleMongoMutation(request, response, "list", "/mongodb/mutations/list"));
+  app.post("/mongodb/mutations/recover-prepare", (request, response) =>
+    handleMongoMutation(request, response, "recover_prepare", "/mongodb/mutations/recover-prepare"));
+  app.post("/mongodb/mutations/get", (request, response) =>
+    handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
   app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
@@ -1973,6 +1978,7 @@ export function createManagerApp(options = {}) {
   let restoreCheckScheduled = false;
 
   installPrivacyRoutes(app, { registry, service: options.privacyService,
+    dispatch: (id, route, payload) => workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
     directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });
 
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({

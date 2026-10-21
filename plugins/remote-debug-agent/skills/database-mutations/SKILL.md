@@ -23,6 +23,18 @@ The local store can recognize an exact matching remote terminal result without
 replaying the write. For an interrupted bulk job, inspect its lease/recovery
 state before using the existing resume flow within the original approval.
 
+Use `remote_debug_mongodb_recover_operation` with the same explicit instance,
+database and the error's `intentId`. Its default `mode=inspect` reads local state;
+`mode=reconcile` lets the Manager fetch exact remote evidence. For ordinary
+document/index/transaction prepare, reconciliation can return the existing plan
+or fence a provably unprepared attempt in the technical journal. Only after it
+reports `rejected_before_dispatch` may the identical prepare be retried within
+the same intent; do not change its parameters or create a replacement plan.
+`prepared` returns the existing plan and still requires the normal commit
+confirmation. Legacy intents without a verifiable identity remain protected
+with `legacy_evidence_required`; missing lists/indexes and elapsed lock age are
+not recovery proof. Never clear a journal, local record or lock to bypass this.
+
 Use the structured MongoDB mutation tools for database changes. Do not use
 `remote_debug_run_command`, `mongosh --eval`, arbitrary JavaScript, or a raw
 MongoDB URI for writes.

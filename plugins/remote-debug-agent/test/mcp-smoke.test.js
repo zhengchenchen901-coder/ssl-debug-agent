@@ -208,7 +208,12 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
       if (request.url === "/api/private/business-storage") {
         try {
           const result = await privacyRequest(privacyService, parsed, { origin: `http://${request.headers.host}`,
-            instance: () => ({ id: "default", host: "prod.example.com", mongodb: { database: "yennefer" } }) });
+            instance: () => ({ id: "default", host: "prod.example.com", mongodb: { database: "yennefer" } }),
+            dispatch: async (id, route, payload) => {
+              const forwarded = await fetch(`http://127.0.0.1:${server.address().port}${route}`, { method: "POST",
+                headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, instanceId: id }) });
+              return forwarded.json();
+            } });
           response.writeHead(200, { "Content-Type": "application/json" }); response.end(JSON.stringify({ ok: true, result }));
         } catch (error) { response.writeHead(409, { "Content-Type": "application/json" }); response.end(JSON.stringify({ ok: false, error: { code: error.code, message: "Fixture storage unavailable" } })); }
         return;
@@ -359,7 +364,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
         response.end(JSON.stringify({
           ok: true,
           instanceId: parsed.instanceId || "default",
-          mutationId: "mutation-1",
+          mutationId: parsed._businessPrepare?.mutationId || "mutation-1",
           planHash: "b".repeat(64),
           kind: parsed.kind,
           operation: parsed.operation,
@@ -1084,6 +1089,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_get_capabilities",
         "remote_debug_mongodb_query",
         "remote_debug_mongodb_prepare_write",
+        "remote_debug_mongodb_recover_operation",
         "remote_debug_mongodb_prepare_index",
         "remote_debug_mongodb_prepare_transaction",
         "remote_debug_mongodb_prepare_import",
@@ -1247,7 +1253,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
       },
     }));
     const preparedMutation = JSON.parse((await readMessage()).result.content[0].text);
-    assert.equal(preparedMutation.mutationId, "mutation-1");
+    assert.match(preparedMutation.mutationId, /^[a-f0-9-]{36}$/);
     assert.equal(preparedMutation.status, "planned");
 
     child.stdin.write(encodeMessage({
@@ -1258,7 +1264,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         name: "remote_debug_mongodb_execute_mutation",
         arguments: {
           instanceId: "default",
-          mutationId: "mutation-1",
+          mutationId: preparedMutation.mutationId,
           planHash: "b".repeat(64),
           confirmation: "确认执行",
         },
@@ -1275,7 +1281,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         name: "remote_debug_mongodb_rollback_mutation",
         arguments: {
           instanceId: "default",
-          mutationId: "mutation-1",
+          mutationId: preparedMutation.mutationId,
           planHash: "b".repeat(64),
           confirmation: "确认回滚",
         },
@@ -2158,7 +2164,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js", "prepare-protocol.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2210,7 +2216,7 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js", "prepare-protocol.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(

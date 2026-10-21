@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { privacyError } from "./privacy-key.js";
 import { businessTargetScope } from "../plugins/remote-debug-agent/business-privacy.js";
+import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { createOutputGuard } from "../plugins/remote-debug-agent/output-guard.js";
 
 const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 export class PrivacyService {
@@ -46,10 +48,10 @@ export class PrivacyService {
   async close() { this.failed = true; await this.worker?.terminate(); }
 }
 
-// This authenticated private protocol has no MCP tool or dashboard route. It
-// accepts exact aliases only, never SQL, scans, key export, or a value-search API.
-export async function privacyRequest(service, input, { instance, origin } = {}) {
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "reconcile", "delivered", "cleanup"];
+// This authenticated protocol exposes only bounded operations. The recovery MCP
+// tool delegates here; it never receives capabilities or supplies remote proof.
+export async function privacyRequest(service, input, { instance, origin, dispatch } = {}) {
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "reconcile", "delivered", "cleanup", "dispatch_prepare", "recover_operation"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate = (scope) => {
     if (typeof scope !== "string" || scope.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
@@ -58,6 +60,64 @@ export async function privacyRequest(service, input, { instance, origin } = {}) 
     if (!current || current.enabled === false || target.endpoint !== origin || scope !== businessTargetScope(origin, current, target.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate(input.scope);
+  if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
+    const record = await service.call("inspect_operation", input);
+    const target = JSON.parse(input.scope);
+    const view = (value, reason) => ({ ok: true, intentId: input.id, state: value.state, route: value.route,
+      attempt: value.prepare?.attempt, mutationId: value.prepare?.mutationId, legacy: !value.prepare && value.route === "/mongodb/mutations/prepare",
+      reason, recoveryCode: value.reconciliation?.code, ...(value.result ? { result: value.result } : {}) });
+    if (input.action === "recover_operation") {
+      if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      // Old envelopes have no prepare identity. No absence query or caller-supplied
+      // error text can turn those records into permission to dispatch again.
+      if (!record.prepare) {
+        const identity = record.identity || {};
+        if (dispatch && /^[a-f0-9]{64}$/.test(identity.planHash || "") && (identity.mutationId || identity.jobId)) {
+          try {
+            const receipt = await dispatch(target.id, identity.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
+              { ...(identity.mutationId ? { mutationId: identity.mutationId } : { jobId: identity.jobId }), planHash: identity.planHash,
+                operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+            const evidence = identity.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
+            const saved = await service.call("reconcile", { ...input, result: createOutputGuard().sanitize(evidence).value });
+            return view({ ...record, ...saved }, saved.state === "uncertain" ? "remote_evidence_unavailable" : undefined);
+          } catch { return view(record, "remote_evidence_unavailable"); }
+        }
+        return view(record, "legacy_evidence_required");
+      }
+    }
+    if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+    if (input.action === "dispatch_prepare") {
+      const digest = prepareRequestDigest(input.request || {});
+      if (input.request?.instanceId !== target.id || input.request?.database !== target.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      await service.call("claim_prepare", { ...input, dispatchDigest: digest });
+    }
+    const recovering = input.action === "recover_operation";
+    let result, notDispatched = false, fenced = false;
+    try {
+      const { instanceId, ...request } = input.request || {};
+      result = await dispatch(target.id, recovering ? "/mongodb/mutations/recover-prepare" : record.route,
+        { ...(recovering ? { database: target.database } : request), _businessPrepare: record.prepare,
+          operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+      if (result?.ok !== true) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      if (recovering) {
+        if (JSON.stringify(result.prepare) !== JSON.stringify(record.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
+        fenced = result.recovery === "fenced";
+        if (fenced) result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+        else { const { prepare, recovery, ...receipt } = result; result = receipt; }
+      }
+      if (!fenced && (result.mutationId !== record.prepare.mutationId || !/^[a-f0-9]{64}$/.test(result.planHash || ""))) throw privacyError("BUSINESS_OPERATION_DENIED");
+      result = createOutputGuard().sanitize(result).value;
+    } catch (error) {
+      notDispatched = !recovering && error.dispatchState === "not_dispatched";
+      result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_OPERATION_FAILED",
+        message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
+        operationId: input.operationId, layer: error.layer, phase: error.phase, retriable: error.retriable } };
+    }
+    const saved = await service.call("prepare_result", { ...input, prepare: record.prepare, result, notDispatched, fenced });
+    return recovering ? view(saved, saved.state === "uncertain" ? "remote_evidence_unavailable" : fenced ? "old_attempt_fenced" : undefined)
+      : { ...result, intentId: input.id, intentState: saved.state };
+  }
   if (input.action === "commit") {
     for (const record of input.records || []) validate(record.scope);
     // Retention cannot be shortened by the client. Use the configured windows.
@@ -67,12 +127,12 @@ export async function privacyRequest(service, input, { instance, origin } = {}) 
   return service.call(input.action, input);
 }
 
-export function installPrivacyRoutes(app, { directory, registry, service } = {}) {
+export function installPrivacyRoutes(app, { directory, registry, service, dispatch } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
     try {
-      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin });
+      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch });
       response.json({ ok: true, result });
     } catch (error) {
       response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });

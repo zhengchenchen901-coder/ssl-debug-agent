@@ -7,7 +7,7 @@ for (const framing of ["json-line", "content-length"]) test(`real MCP ${framing}
   const instance = { id: "isolated", host: "127.0.0.1", mongodb: { database: "business", configProfile: "fixture" } };
   const f = await localMcp(t, { instance, framing, handler: async (route, input) => {
     if (route === "/mongodb/query") return { database: input.database, operation: input.operation, data: [original], resultCount: 1 };
-    return { database: input.database, mutationId: "mutation-1", planHash: "a".repeat(64), affectedIds: [original._id], affectedCount: 1 };
+    return { database: input.database, mutationId: input._businessPrepare?.mutationId || "mutation-1", planHash: "a".repeat(64), affectedIds: [original._id], affectedCount: 1 };
   } });
   const find = await f.call("remote_debug_mongodb_query", { operation: "find", collection: "orders" });
   const row = find.payload.data[0]; assert.match(row._id, /^rda_ref_v1_/); assert.equal(row.apiKey, "[REDACTED]");

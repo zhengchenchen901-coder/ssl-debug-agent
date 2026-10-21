@@ -1,5 +1,6 @@
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
 import { MONGODB_TECHNICAL_RECEIPTS_COLLECTION, MONGODB_TTL_POLICY_SCRIPT } from "./mongodb-ttl-policy.js";
+import { isPrepareTicket } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { normalizeMongoBulkStorage, DEFAULT_SANDBOX_DATABASE } from "./mongodb-bulk.js";
 import { createHash, randomUUID } from "node:crypto";
 import posixPath from "node:path/posix";
@@ -854,6 +855,8 @@ function __writeJsonAtomic(fileName, value) {
   }
   __fs.renameSync(temporaryPath, filePath);
   try { __fs.chmodSync(filePath, 0o600); } catch (_error) {}
+  const parentFd = __fs.openSync(directory, "r");
+  try { __fs.fsyncSync(parentFd); } finally { __fs.closeSync(parentFd); }
 }
 
 function __appendJournal(event, details = {}) {
@@ -894,7 +897,7 @@ function __loadManifest() {
   return manifest;
 }
 
-function __acquireMutationLock() {
+function __acquireMutationLock(reclaimStale = true) {
   const directory = __ensureJournalDir();
   const lockPath = __path.join(directory, ".lock");
   let fd;
@@ -908,9 +911,9 @@ function __acquireMutationLock() {
     if (error.code === "EEXIST") {
       try {
         const lockStat = __fs.statSync(lockPath);
-        if (Date.now() - lockStat.mtimeMs > ${MAX_MONGODB_MUTATION_LOCK_AGE_MS}) {
+        if (reclaimStale && Date.now() - lockStat.mtimeMs > ${MAX_MONGODB_MUTATION_LOCK_AGE_MS}) {
           __fs.unlinkSync(lockPath);
-          return __acquireMutationLock();
+          return __acquireMutationLock(reclaimStale);
         }
       } catch (_lockError) {}
       __fail("MONGODB_MUTATION_BUSY", "another mutation operation is using this journal");
@@ -960,6 +963,9 @@ function __summary(manifest) {
 }
 
 function __assertManifestScope(manifest) {
+  if (manifest.prepare && __hash(manifest.prepareSource) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey })) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "preparation belongs to a different connection profile");
+  }
   if (manifest.kind === "import" && manifest.request.documents.length > __importBatchLimit) {
     __fail("MONGODB_MUTATION_POLICY_CHANGED", "import batch exceeds the current instance limit");
   }
@@ -1082,6 +1088,7 @@ function __planHash(manifest) {
     before: manifest.before,
     beforeIndex: manifest.beforeIndex,
     beforeOperations: manifest.beforeOperations,
+    ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
   });
 }
 
@@ -1128,6 +1135,7 @@ async function __prepare() {
     const manifest = {
       schemaVersion: __schemaVersion,
       mutationId: __request.mutationId,
+      ...(__request.prepare ? { prepare: __request.prepare, prepareSource: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } } : {}),
       operationId: __request.operationId,
       kind: __request.kind,
       request,
@@ -1225,6 +1233,13 @@ async function __prepare() {
     }
 
     manifest.planHash = __planHash(manifest);
+    if (__request.prepare) {
+      const control = JSON.parse(__fs.readFileSync(__path.join(__journalDir(), "prepare.json"), "utf8"));
+      // Reserve the plan durably before its manifest can be observed/executed.
+      // A subsequently missing manifest is loss of recovery state, not absence.
+      control.stage = "plan_reserved";
+      __writeJsonAtomic("prepare.json", control);
+    }
     __writeJsonAtomic("manifest.json", manifest);
     __appendJournal("planned", {
       operationId: manifest.operationId,
@@ -1693,14 +1708,68 @@ function __list() {
   return { entries: entries.slice(0, ${MAX_MONGODB_MUTATION_LIST_ITEMS}) };
 }
 
+// A recovery fence and preparation share the same lock. Never age out this lock:
+// elapsed time cannot prove that a remote process has stopped using the journal.
+async function __guardedPrepare(recover) {
+  const release = __acquireMutationLock(false);
+  try {
+    const ticket = __request.prepare;
+    const controlPath = __path.join(__journalDir(), "prepare.json");
+    const manifestPath = __path.join(__journalDir(), "manifest.json");
+    const source = { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey };
+    let control;
+    if (__fs.existsSync(controlPath)) {
+      if (__fs.lstatSync(controlPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "prepare receipt cannot be a symbolic link");
+      try { control = JSON.parse(__fs.readFileSync(controlPath, "utf8")); }
+      catch (_error) { __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is invalid"); }
+      if (control.schemaVersion !== 1 || control.binding !== ticket.binding || control.requestDigest !== ticket.requestDigest ||
+          control.database !== __request.database || __hash(control.source) !== __hash(source) ||
+          !Number.isSafeInteger(control.fencedThrough) || control.fencedThrough < 0 || !["preparing", "plan_reserved"].includes(control.stage)) {
+        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "prepare identity or target does not match");
+      }
+    } else {
+      // Missing remote state may have been deleted or lost. It cannot prove that
+      // an earlier helper never ran, even when a mutation listing is empty.
+      if (recover || __fs.existsSync(manifestPath)) __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is missing");
+      control = { schemaVersion: 1, binding: ticket.binding, requestDigest: ticket.requestDigest, database: __request.database, source, fencedThrough: 0, stage: "preparing" };
+      __writeJsonAtomic("prepare.json", control);
+    }
+    if (__fs.existsSync(manifestPath)) {
+      if (__fs.lstatSync(manifestPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
+      let manifest;
+      try { manifest = JSON.parse(__fs.readFileSync(manifestPath, "utf8")); }
+      catch (_error) { __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest is invalid"); }
+      if (manifest.mutationId !== ticket.mutationId || __hash(manifest.prepare) !== __hash(ticket) ||
+          manifest.schemaVersion !== __schemaVersion || __planHash(manifest) !== manifest.planHash) {
+        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "manifest does not match this preparation attempt");
+      }
+      __assertManifestScope(manifest);
+      return { ...__summary(manifest), prepare: ticket, recovery: "prepared" };
+    }
+    if (recover) {
+      if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
+      control.fencedThrough = Math.max(control.fencedThrough, ticket.attempt);
+      __writeJsonAtomic("prepare.json", control);
+      return { prepare: ticket, recovery: "fenced" };
+    }
+    if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
+    if (ticket.attempt <= control.fencedThrough) __fail("MONGODB_PREPARE_FENCED", "this preparation attempt was fenced by recovery");
+    return await __prepare();
+  } finally { release(); }
+}
+
 (async () => {
   let client;
   try {
     let data;
     if (__request.mode === "list") {
       data = __list();
+    } else if (__request.mode === "get") {
+      data = __summary(__loadManifest());
+    } else if (__request.mode === "recover_prepare") {
+      data = await __guardedPrepare(true);
     } else if (__request.mode === "prepare") {
-      data = __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
+      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
     } else if (__request.mode === "commit") {
       data = await __commit();
     } else if (__request.mode === "rollback") {
@@ -1754,66 +1823,82 @@ function normalizePlanHash(value) {
 
 export async function runMongoMutation(input = {}, options = {}) {
   const rawConfig = options.config?.mongodb || options.config || {};
-  const config = normalizeMongoMutationConfig(rawConfig);
   const mode = input.mode || "prepare";
-  let request;
+  let request, config, script;
+  try {
+    config = normalizeMongoMutationConfig(rawConfig);
+    const ticket = input._businessPrepare;
+    if (ticket !== undefined && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
 
-  if (mode === "prepare") {
-    const kind = input.kind === "import_plan"
-      ? "import_plan"
-      : input.kind === "bulk_storage"
-        ? "bulk_storage"
-      : input.kind === "index"
-      ? "index"
-      : input.kind === "transaction"
-        ? "transaction"
-        : "document";
-    const mutation = kind === "import_plan"
-      ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId })
-      : kind === "bulk_storage"
-        ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId })
-      : kind === "index"
-      ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId })
-      : kind === "transaction"
-        ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId })
-      : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
-    request = {
-      mode: "prepare",
-      kind,
-      operationId: options.operation?.operationId || mutation.operationId,
-      mutationId: randomUUID(),
-      mutation,
-    };
-  } else if (mode === "commit" || mode === "rollback") {
-    request = {
-      mode,
-      mutationId: normalizeMutationId(input.mutationId),
-      planHash: normalizePlanHash(input.planHash),
-      operationId: options.operation?.operationId || randomUUID(),
-    };
-    const expectedConfirmation = mode === "commit"
-      ? MONGODB_MUTATION_CONFIRMATION
-      : MONGODB_ROLLBACK_CONFIRMATION;
-    if (input.confirmation !== expectedConfirmation) {
-      throw mutationError(
-        `confirmation must exactly equal ${expectedConfirmation}`,
-        mode === "commit" ? "MONGODB_MUTATION_CONFIRMATION_REQUIRED" : "MONGODB_ROLLBACK_CONFIRMATION_REQUIRED",
-        400,
-      );
+    if (mode === "prepare") {
+      const kind = input.kind === "import_plan"
+        ? "import_plan"
+        : input.kind === "bulk_storage"
+          ? "bulk_storage"
+        : input.kind === "index"
+        ? "index"
+        : input.kind === "transaction"
+          ? "transaction"
+          : "document";
+      const mutation = kind === "import_plan"
+        ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId })
+        : kind === "bulk_storage"
+          ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId })
+        : kind === "index"
+        ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId })
+        : kind === "transaction"
+          ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId })
+        : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
+      request = {
+        mode: "prepare",
+        kind,
+        operationId: options.operation?.operationId || mutation.operationId,
+        mutationId: ticket?.mutationId || randomUUID(),
+        ...(ticket ? { prepare: ticket, database: mutation.database } : {}),
+        mutation,
+      };
+      if (ticket && ["import_plan", "bulk_storage"].includes(kind)) throw mutationError("unsupported prepare identity kind", "MONGODB_PREPARE_IDENTITY_INVALID");
+    } else if (mode === "recover_prepare") {
+      if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
+      request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };
+    } else if (mode === "get") {
+      request = { mode, mutationId: normalizeMutationId(input.mutationId), planHash: normalizePlanHash(input.planHash) };
+    } else if (mode === "commit" || mode === "rollback") {
+      request = {
+        mode,
+        mutationId: normalizeMutationId(input.mutationId),
+        planHash: normalizePlanHash(input.planHash),
+        operationId: options.operation?.operationId || randomUUID(),
+      };
+      const expectedConfirmation = mode === "commit"
+        ? MONGODB_MUTATION_CONFIRMATION
+        : MONGODB_ROLLBACK_CONFIRMATION;
+      if (input.confirmation !== expectedConfirmation) {
+        throw mutationError(
+          `confirmation must exactly equal ${expectedConfirmation}`,
+          mode === "commit" ? "MONGODB_MUTATION_CONFIRMATION_REQUIRED" : "MONGODB_ROLLBACK_CONFIRMATION_REQUIRED",
+          400,
+        );
+      }
+    } else if (mode === "list") {
+      request = {
+        mode: "list",
+        status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : undefined,
+        mutationId: randomUUID(),
+        operationId: options.operation?.operationId || randomUUID(),
+      };
+    } else {
+      throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
     }
-  } else if (mode === "list") {
-    request = {
-      mode: "list",
-      status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : undefined,
-      mutationId: randomUUID(),
-      operationId: options.operation?.operationId || randomUUID(),
-    };
-  } else {
-    throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
-  }
 
-  if (typeof options.runSSH !== "function") {
-    throw mutationError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    if (typeof options.runSSH !== "function") {
+      throw mutationError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    }
+    script = buildMongoMutationScript(request, config);
+  } catch (error) {
+    // Only this synchronous preflight can attest that no SSH helper was started.
+    if (mode === "prepare") error.dispatchState = "not_dispatched";
+    throw error;
   }
 
   let remoteResult;
@@ -1821,7 +1906,7 @@ export async function runMongoMutation(input = {}, options = {}) {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
       config: options.config,
       operation: options.operation,
-      stdin: buildMongoMutationScript(request, config),
+      stdin: script,
       taskType: "mongo_write",
     });
   } catch (error) {
