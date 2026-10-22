@@ -11,6 +11,7 @@ import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard
 import { createBusinessPrivacy } from "./business-privacy.js";
 import { createBusinessStorage } from "./business-storage.js";
 import { createOutputPreviewPublisher, outputPreviewMetadata } from "./output-preview.js";
+import { FINAL_RESULT_TOOLS, callFinalResultTool } from "./final-results.js";
 import {
   migrateLegacyData,
   normalizeWindowsExtendedPath,
@@ -361,6 +362,7 @@ const serviceProfileProperty = {
 };
 
 const tools = [
+  ...FINAL_RESULT_TOOLS,
   { name: "remote_debug_list_service_profiles", description: "List saved instance-bound backend service startup profiles and their current profileHash. Local configuration only; never contacts remote hosts or infers defaults.", inputSchema: { type: "object", additionalProperties: false, properties: {} } },
   { name: "remote_debug_set_service_profile", description: "Save or remove one verified local service startup profile for an explicit instance. Use only when the user authorizes configuring service startup. Never copy another instance profile or save secret values. Does not start a remote process. Refresh the selected agent worker after configuration changes.",
     inputSchema: { type: "object", additionalProperties: false, required: ["instanceId", "serviceId"], properties: { instanceId: instanceIdProperty, serviceId: serviceIdProperty, profile: serviceProfileProperty, remove: { type: "boolean" } } } },
@@ -1548,7 +1550,7 @@ function agentSettings() {
   const target = publicTargetFromEnv(env);
   const configFingerprint = configFingerprintFromEnv(env, dataDir, port);
   const managerFingerprint = createHash("sha256")
-    .update(JSON.stringify({ runtimeId, agentUrl, port, explicitUrl }))
+    .update(JSON.stringify({ runtimeId, agentUrl, port, explicitUrl, ...(env.REMOTE_DEBUG_OUTPUT_DIR ? { outputDirectory: env.REMOTE_DEBUG_OUTPUT_DIR } : {}) }))
     .digest("hex");
 
   return {
@@ -2487,6 +2489,10 @@ async function startAgent(settings, reason, startupAttemptId = randomUUID()) {
         REMOTE_DEBUG_AUTH_FILE: settings.authFile,
         REMOTE_DEBUG_AGENT_LIFETIME: "desktop",
         REMOTE_DEBUG_PROJECT_ROOT: settings.dataDir,
+        REMOTE_DEBUG_OUTPUT_DIR: settings.env.REMOTE_DEBUG_OUTPUT_DIR || path.resolve(
+          fs.existsSync(path.join(projectRoot, "agent", "package.json")) && fs.existsSync(path.join(projectRoot, "plugins", "remote-debug-agent", "package.json")) ? projectRoot : settings.dataDir,
+          "output",
+        ),
         REMOTE_DEBUG_RUNTIME_ID: settings.runtimeId,
         REMOTE_DEBUG_WORKER_ENTRY_PATH: settings.workerEntryPath,
         REMOTE_DEBUG_AUDIT_LOG:
@@ -3102,6 +3108,15 @@ async function getAgent(pathName, operation) {
 }
 
 async function callTool(name, args, operation) {
+  if (FINAL_RESULT_TOOLS.some((tool) => tool.name === name)) {
+    // A final report may contain opaque business references. Preserve them as
+    // opaque output, never restore their underlying values for file publication.
+    return callFinalResultTool(name, args, {
+      post: (route, input) => callAgent(route, input, operation),
+      get: (route) => getAgent(route, operation),
+      sanitize: (input) => businessPrivacy.scrubKnown(outputGuard.sanitize(input).value),
+    });
+  }
   if (name === "remote_debug_mongodb_recover_operation") {
     return callAgent("/mongodb/operations/recover", { instanceId: args?.instanceId, database: args?.database,
       intentId: args?.intentId, mode: args?.mode || "inspect", timeoutMs: args?.timeoutMs }, operation);

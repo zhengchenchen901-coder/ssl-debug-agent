@@ -67,7 +67,14 @@ const logJob = {
   groups: [fields("level route method code message count")],
   warnings: [{ ...warning, ...fields("file memberPath lineNumber") }],
 };
+const finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
+const finalResult = { ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"), final: "boolean",
+  privacy: fields("credentials binary policyVersion"), references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") }, files: [finalFile] };
 const contracts = {
+  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
+  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
+  remote_debug_get_final_result: { result: finalResult },
+  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
   remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
     ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
     target: fields("host port username"), envFiles: [scalar], processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }],

@@ -54,3 +54,9 @@ problem and suggest reloading the plugin or opening a new chat.
 Do not change the user's default Node version, install software, or bypass MCP
 through direct database/HTTP operations merely to diagnose visibility. Re-run
 the relevant business skill only once its required tools are callable.
+
+## Final task deliverables
+
+When this user task concludes, follow [final-result publication](../final-results.md)
+to save its final summary and requested files through the unified local module.
+Do not archive intermediate responses, polling, checkpoints, or pending plans.

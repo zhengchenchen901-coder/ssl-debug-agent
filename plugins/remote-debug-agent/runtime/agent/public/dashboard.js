@@ -1,4 +1,10 @@
 let instanceTasksPanel;
+let instanceFinalResultsPanel, managerFinalResultsPanel;
+function showManagerFinalResults() {
+  managerFinalResultsPanel?.destroy();
+  managerFinalResultsPanel = authToken ? window.remoteDebugFinalResults?.create({ instanceId: null, api, notify: showToast }) : null;
+  document.querySelector("#managerFinalResults").replaceChildren(...(managerFinalResultsPanel ? [managerFinalResultsPanel.element] : []));
+}
 const connectionDot = document.querySelector("#connectionDot");
 const connectionText = document.querySelector("#connectionText");
 const totalCount = document.querySelector("#totalCount");
@@ -37,6 +43,7 @@ function lockPanel() {
   state.instances = [];
   state.online = false;
   closeDrawer();
+  showManagerFinalResults();
   closeModal();
   document.querySelector("#environmentPanel").hidden = true;
   updateAuthVisibility();
@@ -784,6 +791,7 @@ function compactPathList(values) {
 
 function openDrawer(instance) {
   instanceTasksPanel?.destroy();
+  instanceFinalResultsPanel?.destroy();
   const runtime = runtimeOf(instance);
   const health = healthOf(runtime);
   const transportHealth = health.transport || {};
@@ -847,6 +855,8 @@ function openDrawer(instance) {
   drawerBody.replaceChildren(details, createElement("h2", "", "最近事件"), eventList);
   instanceTasksPanel = window.remoteDebugInstanceTasks?.create({ instanceId: instance.id, api, notify: showToast });
   if (instanceTasksPanel) drawerBody.prepend(instanceTasksPanel.element);
+  instanceFinalResultsPanel = window.remoteDebugFinalResults?.create({ instanceId: instance.id, api, notify: showToast });
+  if (instanceFinalResultsPanel) drawerBody.prepend(instanceFinalResultsPanel.element);
   const servicePanel = createElement("section", "detail-list");
   servicePanel.append(createElement("h2", "", "后端服务启动"));
   const serviceSelect = createElement("select");
@@ -926,6 +936,7 @@ function openDrawer(instance) {
 
 function closeDrawer() {
   instanceTasksPanel?.destroy(); instanceTasksPanel = null;
+  instanceFinalResultsPanel?.destroy(); instanceFinalResultsPanel?.element.remove(); instanceFinalResultsPanel = null;
   drawer.hidden = true;
   drawerMask.hidden = true;
 }
@@ -1060,6 +1071,7 @@ authForm.addEventListener("submit", async (event) => {
     sessionStorage.setItem("remote-debug-auth", authToken);
     authMessage.textContent = "";
     updateAuthVisibility();
+    showManagerFinalResults();
     window.dispatchEvent(new Event("remote-debug-unlocked"));
     await loadInstances();
   } catch (error) { lockPanel(); authMessage.textContent = error.message; }
@@ -1070,6 +1082,7 @@ for (const field of ["host", "port"]) {
   instanceForm.elements[field].addEventListener("input", () => { instanceForm.elements.hostKeyFingerprints.value = ""; });
 }
 updateAuthVisibility();
+showManagerFinalResults();
 window.remoteDebugOutputPreview?.unlock();
 loadInstances();
 setInterval(loadInstances, 5000);

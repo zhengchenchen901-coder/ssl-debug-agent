@@ -58,3 +58,9 @@ not permission to submit a secret.
   reference, and write the corrected note.
 - If live evidence conflicts with existing memory, update the same topic with the verified facts
   and state that the previous note was replaced.
+
+## Final task deliverables
+
+When this user task concludes, follow [final-result publication](../final-results.md)
+to save its final summary and requested files through the unified local module.
+Do not archive intermediate responses, polling, checkpoints, or pending plans.

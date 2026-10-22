@@ -6,6 +6,7 @@ import { installHttpAuth, publicHealth } from "./http-auth.js";
 import { ManualWorkbench, installManualManagerRoutes } from "./manual-workbench.js";
 import { inspectLocalSandbox } from "./local-sandbox.js";
 import { createOutputPreviewStore, installOutputPreviewRoutes } from "./output-preview.js";
+import { installFinalResultRoutes } from "./final-result-routes.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1968,6 +1969,15 @@ export function createManagerApp(options = {}) {
   const outputPreview = options.outputPreview || createOutputPreviewStore();
   app.locals.outputPreview = outputPreview;
   installOutputPreviewRoutes(app, outputPreview, registry);
+  // Final deliverables have a dedicated bounded parser; ordinary calls and
+  // output-preview events do not enter the persistent final-result store.
+  app.use("/api/final-results", express.json({ limit: "17mb" }));
+  app.use("/api/final-results", (error, _request, response, _next) => {
+    response.status(error.type === "entity.too.large" ? 413 : 400).json({ ok: false, error: {
+      code: error.type === "entity.too.large" ? "FINAL_RESULT_TOO_LARGE" : "FINAL_RESULT_INVALID", message: "Invalid final result request", retriable: false,
+    } });
+  });
+  installFinalResultRoutes(app, { registry, root: config.output?.directory || path.resolve(options.cwd || process.cwd(), "output"), store: options.finalResults });
   app.use("/mongodb/imports/prepare", express.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", express.json({ limit: "5mb" }));
   app.use("/api/private/business-storage", express.json({ limit: "17mb" }));

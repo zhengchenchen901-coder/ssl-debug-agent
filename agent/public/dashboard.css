@@ -57,6 +57,13 @@
 .task-message { color: var(--red); font-size: 13px; }
 .task-detail { margin-top: 12px; font-size: 12px; }
 .task-detail pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
+.final-results { margin-bottom: 24px; }
+#managerFinalResults { padding: 20px; }
+.final-result-location { font-size: 12px; overflow-wrap: anywhere; }
+.final-result-group { border-top: 1px solid var(--line-soft); margin-top: 12px; padding: 12px 0; font-size: 13px; }
+.final-result-file { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.final-result-file span { flex: 1; min-width: 140px; overflow-wrap: anywhere; }
+.final-result-preview { padding: 12px; background: var(--bg); }
 
 .output-preview-row > td { padding: 0 16px 16px; background: #f8faff; white-space: normal; }
 .output-preview { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: left; overflow: hidden; }

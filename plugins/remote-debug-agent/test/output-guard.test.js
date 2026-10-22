@@ -147,7 +147,7 @@ test("final transport sanitizes protocol errors and serializes UTF-8 bytes", () 
 
 test("each registered tool must have an output contract", async () => {
   const fs = await import("node:fs/promises");
-  const source = await fs.readFile(new URL("../mcp-server.js", import.meta.url), "utf8");
+  const source = (await Promise.all(["../mcp-server.js", "../final-results.js"].map((file) => fs.readFile(new URL(file, import.meta.url), "utf8")))).join("\n");
   const names = [...source.matchAll(/(?:name:\s*|\[)"(remote_debug_[a-z_]+)"/g)].map((match) => match[1]);
   for (const name of new Set(names)) assert.ok(Object.hasOwn(OUTPUT_CONTRACTS, name), name);
 });

@@ -1051,7 +1051,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
       "memberPrefix", "memberOffset", "area", "jobId",
       "jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "batchScanBytes",
-      "stopAfterFile", "fileLimit", "profile",
+      "stopAfterFile", "fileLimit", "profile", "type", "references",
     ].includes(propertyName)) {
       continue;
     }
@@ -1075,6 +1075,10 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.deepEqual(
       list.result.tools.map((tool) => tool.name),
       [
+        "remote_debug_publish_final_result",
+        "remote_debug_list_final_results",
+        "remote_debug_get_final_result",
+        "remote_debug_read_final_artifact",
         "remote_debug_list_service_profiles",
         "remote_debug_set_service_profile",
         "remote_debug_inspect_service",
@@ -2164,7 +2168,7 @@ test("MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source", as
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js", "prepare-protocol.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "final-results.js", "business-privacy.js", "business-storage.js", "prepare-protocol.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(
@@ -2216,7 +2220,7 @@ test("external V2 agent URLs remain usable without a bundled runtime", async () 
 
   await fs.mkdir(path.join(cacheDir, ".codex-plugin"), { recursive: true });
   await fs.copyFile(serverPath, installedServerPath);
-  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "business-privacy.js", "business-storage.js", "prepare-protocol.js"]) {
+  for (const helper of ["environment-report.cjs", "diagnostic-dashboard.cjs", "local-auth.cjs", "windows-storage.cjs", "output-guard.js", "output-contracts.js", "output-preview.js", "final-results.js", "business-privacy.js", "business-storage.js", "prepare-protocol.js"]) {
     await fs.copyFile(path.resolve(here, "..", helper), path.join(cacheDir, helper));
   }
   await fs.copyFile(

@@ -149,7 +149,7 @@ function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
     "closeDrawerButton",
     "drawerTitle",
     "drawerBody",
-    "toast", "authPanel", "authForm", "authLogout", "authMessage", "authToken", "environmentPanel",
+    "toast", "authPanel", "authForm", "authLogout", "authMessage", "authToken", "environmentPanel", "managerFinalResults",
   ];
 
   for (const id of ids) {

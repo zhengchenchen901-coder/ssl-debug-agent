@@ -177,3 +177,9 @@ For the known request "查昨天 `/v3/order_payment` 报错", check
 `2026-05-22-error.log`; expected categories include `ORDER_1044`,
 `ORDER_1008`, `Cannot read property 'orders' of null`, and `Customer not found`
 if the same remote logs are still present.
+
+## Final task deliverables
+
+When this user task concludes, follow [final-result publication](../final-results.md)
+to save its final summary and requested files through the unified local module.
+Do not archive intermediate responses, polling, checkpoints, or pending plans.

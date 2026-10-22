@@ -40,3 +40,9 @@ embedded in it.
 - A known maintenance command may be semantically approved while still being
   returned as `manual_review` because it has side effects. The local static
   profile determines whether it can ever be auto-executed.
+
+## Final task deliverables
+
+When this user task concludes, follow [final-result publication](../final-results.md)
+to save its final summary and requested files through the unified local module.
+Do not archive intermediate responses, polling, checkpoints, or pending plans.

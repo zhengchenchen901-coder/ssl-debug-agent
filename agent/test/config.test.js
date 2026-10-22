@@ -5,6 +5,14 @@ import path from "node:path";
 import test from "node:test";
 import { configFingerprint, loadConfig, loadDotEnv } from "../config.js";
 
+test("final output defaults to the source root from agent/ and respects explicit configuration", () => {
+  const agentDirectory = path.resolve(import.meta.dirname, "..");
+  const base = loadConfig({ REMOTE_DEBUG_WORKER: "1", REMOTE_DEBUG_OUTPUT_DIR: "" }, agentDirectory);
+  assert.equal(base.output.directory, path.resolve(agentDirectory, "..", "output"));
+  const explicit = loadConfig({ REMOTE_DEBUG_WORKER: "1", REMOTE_DEBUG_OUTPUT_DIR: "/tmp/final-output-fixture" }, "/nonexistent-final-config");
+  assert.equal(explicit.output.directory, "/tmp/final-output-fixture");
+});
+
 test("log job ceilings are validated and participate in config identity", () => {
   const base = loadConfig({ REMOTE_DEBUG_WORKER: "1" }, "/nonexistent-log-job-config");
   const restricted = loadConfig({ REMOTE_DEBUG_WORKER: "1", REMOTE_DEBUG_LOG_JOB_LIMITS: '{"cpuPercent":10,"maxJobTimeoutMs":600000}' }, "/nonexistent-log-job-config");

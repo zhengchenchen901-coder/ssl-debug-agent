@@ -313,6 +313,11 @@ export function loadConfig(env = process.env, cwd = process.cwd()) {
   const sourceRoots = normalizeSourceRoots(mergedEnv.REMOTE_DEBUG_SOURCE_ROOTS);
 
   return {
+    output: {
+      directory: path.resolve(cwd, mergedEnv.REMOTE_DEBUG_OUTPUT_DIR || (
+        path.basename(cwd) === "agent" && fs.existsSync(path.resolve(cwd, "..", "plugins", "remote-debug-agent", "package.json")) ? "../output" : "output"
+      )),
+    },
     agent: {
       host: "127.0.0.1",
       port: agentPort,

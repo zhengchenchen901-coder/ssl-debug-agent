@@ -1,5 +1,11 @@
 # Remote Debug Agent
 
+## 任务最终交付物
+
+新增统一最终结果存储：`output/instances/<instanceId>/tasks/<taskId>/`，按 `results/reports/exports/attachments` 分类。任务收尾时通过 `remote_debug_publish_final_result` 一次发布；普通工具响应、轮询、分页和检查点不会归档。Dashboard 实例详情可列举、预览、下载和手动删除，Manager 任务有独立列表。相同任务重复发布相同内容复用已有文件，历史在重启后仍可读取。
+
+通过 `REMOTE_DEBUG_OUTPUT_DIR` 指定绝对目录；源码开发默认使用项目根目录的 `output/`。支持的文本格式、接口、容量上限和恢复边界见 [最终交付物管理](docs/final-results.md)。代码与内置 runtime 更新后，需要更新安装版插件并重启 Manager 才会生效。
+
 ## Manual administrator workbench: 2.4.0
 
 Windows 注册前会实际检查原生认证组件和交互式桌面是否可用。Windows

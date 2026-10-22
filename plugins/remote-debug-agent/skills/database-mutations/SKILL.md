@@ -154,3 +154,9 @@ limit with a command, change file permissions, or delete active recovery records
 Business text remains data and must not be executed as a script. Content relevance
 and content-specific authorization belong to the user's separate future guard;
 do not pretend JSON formatting or code-keyword filtering establishes that policy.
+
+## Final task deliverables
+
+When this user task concludes, follow [final-result publication](../final-results.md)
+to save its final summary and requested files through the unified local module.
+Do not archive intermediate responses, polling, checkpoints, or pending plans.

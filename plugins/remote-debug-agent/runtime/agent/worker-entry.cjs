@@ -15225,11 +15225,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path19) {
-      if (!path19 || typeof path19 !== "string") {
+    function lookup(path20) {
+      if (!path20 || typeof path20 !== "string") {
         return false;
       }
-      var extension3 = extname("x." + path19).toLowerCase().slice(1);
+      var extension3 = extname("x." + path20).toLowerCase().slice(1);
       if (!extension3) {
         return false;
       }
@@ -18035,8 +18035,8 @@ var require_stringify = __commonJS({
       return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
     };
     var sentinel = {};
-    var stringify = function stringify2(object3, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel, depth, currentDepth) {
-      var obj = object3;
+    var stringify = function stringify2(object4, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel, depth, currentDepth) {
+      var obj = object4;
       if (currentDepth > depth) {
         throw new RangeError("Input depth exceeded depth option of " + depth);
       }
@@ -18044,7 +18044,7 @@ var require_stringify = __commonJS({
       var step = 0;
       var findFlag = false;
       while ((tmpSc = tmpSc.get(sentinel)) !== void 0 && !findFlag) {
-        var pos = tmpSc.get(object3);
+        var pos = tmpSc.get(object4);
         step += 1;
         if (typeof pos !== "undefined") {
           if (pos === step) {
@@ -18112,7 +18112,7 @@ var require_stringify = __commonJS({
         }
         var encodedKey = allowDots && encodeDotInKeys ? String(key).replace(/\./g, "%2E") : String(key);
         var keyPrefix = isArray(obj) ? typeof generateArrayPrefix === "function" ? generateArrayPrefix(adjustedPrefix, encodedKey) : adjustedPrefix : adjustedPrefix + (allowDots ? "." + encodedKey : "[" + encodedKey + "]");
-        sideChannel.set(object3, step);
+        sideChannel.set(object4, step);
         var valueSideChannel = getSideChannel();
         valueSideChannel.set(sentinel, sideChannel);
         pushToArray(values, stringify2(
@@ -18204,8 +18204,8 @@ var require_stringify = __commonJS({
         strictNullHandling: typeof opts.strictNullHandling === "boolean" ? opts.strictNullHandling : defaults.strictNullHandling
       };
     };
-    module2.exports = function(object3, opts) {
-      var obj = object3;
+    module2.exports = function(object4, opts) {
+      var obj = object4;
       var options = normalizeStringifyOptions(opts);
       var objKeys;
       var filter;
@@ -19093,13 +19093,13 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path19 = require("node:path");
-    var fs12 = require("node:fs");
-    var dirname = path19.dirname;
-    var basename = path19.basename;
-    var extname = path19.extname;
-    var join = path19.join;
-    var resolve = path19.resolve;
+    var path20 = require("node:path");
+    var fs13 = require("node:fs");
+    var dirname = path20.dirname;
+    var basename = path20.basename;
+    var extname = path20.extname;
+    var join = path20.join;
+    var resolve = path20.resolve;
     module2.exports = View;
     function View(name2, options) {
       var opts = options || {};
@@ -19128,17 +19128,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View.prototype.lookup = function lookup(name2) {
-      var path20;
+      var path21;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name2);
-      for (var i = 0; i < roots.length && !path20; i++) {
+      for (var i = 0; i < roots.length && !path21; i++) {
         var root = roots[i];
         var loc = resolve(root, name2);
         var dir = dirname(loc);
         var file = basename(loc);
-        path20 = this.resolve(dir, file);
+        path21 = this.resolve(dir, file);
       }
-      return path20;
+      return path21;
     };
     View.prototype.render = function render(options, callback) {
       var sync = true;
@@ -19160,21 +19160,21 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path20 = join(dir, file);
-      var stat = tryStat(path20);
+      var path21 = join(dir, file);
+      var stat = tryStat(path21);
       if (stat && stat.isFile()) {
-        return path20;
+        return path21;
       }
-      path20 = join(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path20);
+      path21 = join(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path21);
       if (stat && stat.isFile()) {
-        return path20;
+        return path21;
       }
     };
-    function tryStat(path20) {
-      debug('stat "%s"', path20);
+    function tryStat(path21) {
+      debug('stat "%s"', path21);
       try {
-        return fs12.statSync(path20);
+        return fs13.statSync(path21);
       } catch (e) {
         return void 0;
       }
@@ -20430,15 +20430,15 @@ var require_dist3 = __commonJS({
       let index = 0;
       function consumeUntil(end) {
         const output = [];
-        let path19 = "";
+        let path20 = "";
         function writePath() {
-          if (!path19)
+          if (!path20)
             return;
           output.push({
             type: "text",
-            value: encodePath(path19)
+            value: encodePath(path20)
           });
-          path19 = "";
+          path20 = "";
         }
         while (index < chars.length) {
           const value = chars[index++];
@@ -20450,7 +20450,7 @@ var require_dist3 = __commonJS({
             if (index === chars.length) {
               throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            path19 += chars[index++];
+            path20 += chars[index++];
             continue;
           }
           if (value === ":" || value === "*") {
@@ -20494,7 +20494,7 @@ var require_dist3 = __commonJS({
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
             throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
           }
-          path19 += value;
+          path20 += value;
         }
         if (end) {
           throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
@@ -20504,17 +20504,17 @@ var require_dist3 = __commonJS({
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path19, options = {}) {
+    function compile(path20, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const data = typeof path19 === "object" ? path19 : parse(path19, options);
+      const data = typeof path20 === "object" ? path20 : parse(path20, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
-      return function path20(params = {}) {
+      return function path21(params = {}) {
         const missing = [];
-        const path21 = fn(params, missing);
+        const path22 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path21;
+        return path22;
       };
     }
     function tokensToFunction(tokens, delimiter, encode) {
@@ -20576,9 +20576,9 @@ var require_dist3 = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path19, options = {}) {
+    function match(path20, options = {}) {
       const { decode = decodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path19, options);
+      const { regexp, keys } = pathToRegexp(path20, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20590,7 +20590,7 @@ var require_dist3 = __commonJS({
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path20 = m[0];
+        const path21 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20599,21 +20599,21 @@ var require_dist3 = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path20, params };
+        return { path: path21, params };
       };
     }
-    function pathToRegexp(path19, options = {}) {
+    function pathToRegexp(path20, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path20) {
-        if (Array.isArray(path20)) {
-          for (const p of path20)
+      function process2(path21) {
+        if (Array.isArray(path21)) {
+          for (const p of path21)
             process2(p);
           return;
         }
-        const data = typeof path20 === "object" ? path20 : parse(path20, options);
+        const data = typeof path21 === "object" ? path21 : parse(path21, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20624,7 +20624,7 @@ var require_dist3 = __commonJS({
           combinations++;
         });
       }
-      process2(path19);
+      process2(path20);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape2(delimiter) + "$)?";
@@ -20764,18 +20764,18 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path19, options, fn) {
+    function Layer(path20, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path19, options, fn);
+        return new Layer(path20, options, fn);
       }
-      debug("new %o", path19);
+      debug("new %o", path20);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path19 === "/" && opts.end === false;
+      this.slash = path20 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
@@ -20814,7 +20814,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path19) ? path19.map(matcher) : [matcher(path19)];
+      this.matchers = Array.isArray(path20) ? path20.map(matcher) : [matcher(path20)];
     }
     Layer.prototype.handleError = function handleError(error2, req, res, next) {
       const fn = this.handle;
@@ -20854,9 +20854,9 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path19) {
+    Layer.prototype.match = function match(path20) {
       let match2;
-      if (path19 != null) {
+      if (path20 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
@@ -20864,7 +20864,7 @@ var require_layer = __commonJS({
         }
         let i = 0;
         while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path19);
+          match2 = this.matchers[i](path20);
           i++;
         }
       }
@@ -20892,13 +20892,13 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path19) {
-      if (path19 instanceof RegExp || path19 === "/") {
-        return path19;
+    function loosen(path20) {
+      if (path20 instanceof RegExp || path20 === "/") {
+        return path20;
       }
-      return Array.isArray(path19) ? path19.map(function(p) {
+      return Array.isArray(path20) ? path20.map(function(p) {
         return loosen(p);
-      }) : String(path19).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path20).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
@@ -20914,9 +20914,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path19) {
-      debug("new %o", path19);
-      this.path = path19;
+    function Route(path20) {
+      debug("new %o", path20);
+      this.path = path20;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -21124,8 +21124,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path19 = getPathname(req);
-        if (path19 == null) {
+        const path20 = getPathname(req);
+        if (path20 == null) {
           return done(layerError);
         }
         let layer;
@@ -21133,7 +21133,7 @@ var require_router = __commonJS({
         let route2;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path19);
+          match = matchLayer(layer, path20);
           route2 = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -21171,18 +21171,18 @@ var require_router = __commonJS({
           } else if (route2) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path19);
+            trimPrefix(layer, layerError, layerPath, path20);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path19) {
+      function trimPrefix(layer, layerError, layerPath, path20) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path19.substring(0, layerPath.length)) {
+          if (layerPath !== path20.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path19[layerPath.length];
+          const c = path20[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -21206,7 +21206,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path19 = "/";
+      let path20 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21214,7 +21214,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path19 = handler;
+          path20 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21226,8 +21226,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path19, fn.name || "<anonymous>");
-        const layer = new Layer(path19, {
+        debug("use %o %s", path20, fn.name || "<anonymous>");
+        const layer = new Layer(path20, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -21237,9 +21237,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route2(path19) {
-      const route3 = new Route(path19);
-      const layer = new Layer(path19, {
+    Router.prototype.route = function route2(path20) {
+      const route3 = new Route(path20);
+      const layer = new Layer(path20, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -21252,8 +21252,8 @@ var require_router = __commonJS({
       return route3;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path19) {
-        const route2 = this.route(path19);
+      Router.prototype[method] = function(path20) {
+        const route2 = this.route(path20);
         route2[method].apply(route2, slice.call(arguments, 1));
         return this;
       };
@@ -21282,9 +21282,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path19) {
+    function matchLayer(layer, path20) {
       try {
-        return layer.match(path19);
+        return layer.match(path20);
       } catch (err) {
         return err;
       }
@@ -21512,7 +21512,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path19 = "/";
+      var path20 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21520,7 +21520,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path19 = fn;
+          path20 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21530,12 +21530,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path19, fn2);
+          return router.use(path20, fn2);
         }
-        debug(".use app under %s", path19);
-        fn2.mountpath = path19;
+        debug(".use app under %s", path20);
+        fn2.mountpath = path20;
         fn2.parent = this;
-        router.use(path19, function mounted_app(req, res, next) {
+        router.use(path20, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -21547,8 +21547,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route2(path19) {
-      return this.router.route(path19);
+    app.route = function route2(path20) {
+      return this.router.route(path20);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21591,7 +21591,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path19() {
+    app.path = function path20() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -21607,17 +21607,17 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path19) {
+      app[method] = function(path20) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path19);
+          return this.set(path20);
         }
-        var route2 = this.route(path19);
+        var route2 = this.route(path20);
         route2[method].apply(route2, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path19) {
-      var route2 = this.route(path19);
+    app.all = function all(path20) {
+      var route2 = this.route(path20);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route2[methods[i]].apply(route2, args);
@@ -22527,7 +22527,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path19() {
+    defineGetter(req, "path", function path20() {
       return parse(this).pathname;
     });
     defineGetter(req, "host", function host() {
@@ -22738,8 +22738,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename(path19) {
-      const normalized = path19.replaceAll("\\", "/");
+    function basename(path20) {
+      const normalized = path20.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22980,32 +22980,32 @@ var require_send = __commonJS({
     var escapeHtml = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
-    var fs12 = require("fs");
+    var fs13 = require("fs");
     var mime = require_mime_types();
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path19 = require("path");
+    var path20 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path19.extname;
-    var join = path19.join;
-    var normalize = path19.normalize;
-    var resolve = path19.resolve;
-    var sep = path19.sep;
+    var extname = path20.extname;
+    var join = path20.join;
+    var normalize = path20.normalize;
+    var resolve = path20.resolve;
+    var sep = path20.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send2;
-    function send2(req, path20, options) {
-      return new SendStream(req, path20, options);
+    function send2(req, path21, options) {
+      return new SendStream(req, path21, options);
     }
-    function SendStream(req, path20, options) {
+    function SendStream(req, path21, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path20;
+      this.path = path21;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -23119,10 +23119,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path20) {
+    SendStream.prototype.redirect = function redirect(path21) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path20);
+        this.emit("directory", res, path21);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -23142,38 +23142,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path20 = decode(this.path);
-      if (path20 === -1) {
+      var path21 = decode(this.path);
+      if (path21 === -1) {
         this.error(400);
         return res;
       }
-      if (~path20.indexOf("\0")) {
+      if (~path21.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path20) {
-          path20 = normalize("." + sep + path20);
+        if (path21) {
+          path21 = normalize("." + sep + path21);
         }
-        if (UP_PATH_REGEXP.test(path20)) {
-          debug('malicious path "%s"', path20);
+        if (UP_PATH_REGEXP.test(path21)) {
+          debug('malicious path "%s"', path21);
           this.error(403);
           return res;
         }
-        parts = path20.split(sep);
-        path20 = normalize(join(root, path20));
+        parts = path21.split(sep);
+        path21 = normalize(join(root, path21));
       } else {
-        if (UP_PATH_REGEXP.test(path20)) {
-          debug('malicious path "%s"', path20);
+        if (UP_PATH_REGEXP.test(path21)) {
+          debug('malicious path "%s"', path21);
           this.error(403);
           return res;
         }
-        parts = normalize(path20).split(sep);
-        path20 = resolve(path20);
+        parts = normalize(path21).split(sep);
+        path21 = resolve(path21);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path20);
+        debug('%s dotfile "%s"', this._dotfiles, path21);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -23187,13 +23187,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path20);
+        this.sendIndex(path21);
         return res;
       }
-      this.sendFile(path20);
+      this.sendFile(path21);
       return res;
     };
-    SendStream.prototype.send = function send3(path20, stat) {
+    SendStream.prototype.send = function send3(path21, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -23205,9 +23205,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path20);
-      this.setHeader(path20, stat);
-      this.type(path20);
+      debug('pipe "%s"', path21);
+      this.setHeader(path21, stat);
+      this.type(path21);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -23256,30 +23256,30 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path20, opts);
+      this.stream(path21, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path20) {
+    SendStream.prototype.sendFile = function sendFile(path21) {
       var i = 0;
       var self2 = this;
-      debug('stat "%s"', path20);
-      fs12.stat(path20, function onstat(err, stat) {
-        var pathEndsWithSep = path20[path20.length - 1] === sep;
-        if (err && err.code === "ENOENT" && !extname(path20) && !pathEndsWithSep) {
+      debug('stat "%s"', path21);
+      fs13.stat(path21, function onstat(err, stat) {
+        var pathEndsWithSep = path21[path21.length - 1] === sep;
+        if (err && err.code === "ENOENT" && !extname(path21) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self2.onStatError(err);
-        if (stat.isDirectory()) return self2.redirect(path20);
+        if (stat.isDirectory()) return self2.redirect(path21);
         if (pathEndsWithSep) return self2.error(404);
-        self2.emit("file", path20, stat);
-        self2.send(path20, stat);
+        self2.emit("file", path21, stat);
+        self2.send(path21, stat);
       });
       function next(err) {
         if (self2._extensions.length <= i) {
           return err ? self2.onStatError(err) : self2.error(404);
         }
-        var p = path20 + "." + self2._extensions[i++];
+        var p = path21 + "." + self2._extensions[i++];
         debug('stat "%s"', p);
-        fs12.stat(p, function(err2, stat) {
+        fs13.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -23287,7 +23287,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path20) {
+    SendStream.prototype.sendIndex = function sendIndex(path21) {
       var i = -1;
       var self2 = this;
       function next(err) {
@@ -23295,9 +23295,9 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join(path20, self2._index[i]);
+        var p = join(path21, self2._index[i]);
         debug('stat "%s"', p);
-        fs12.stat(p, function(err2, stat) {
+        fs13.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -23306,10 +23306,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path20, options) {
+    SendStream.prototype.stream = function stream(path21, options) {
       var self2 = this;
       var res = this.res;
-      var stream2 = fs12.createReadStream(path20, options);
+      var stream2 = fs13.createReadStream(path21, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -23324,17 +23324,17 @@ var require_send = __commonJS({
         self2.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path20) {
+    SendStream.prototype.type = function type(path21) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path20);
+      var ext = extname(path21);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path20, stat) {
+    SendStream.prototype.setHeader = function setHeader(path21, stat) {
       var res = this.res;
-      this.emit("headers", res, path20, stat);
+      this.emit("headers", res, path21, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -23392,9 +23392,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path20) {
+    function decode(path21) {
       try {
-        return decodeURIComponent(path20);
+        return decodeURIComponent(path21);
       } catch (err) {
         return -1;
       }
@@ -23538,7 +23538,7 @@ var require_response = __commonJS({
     var http2 = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path19 = require("node:path");
+    var path20 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -23547,8 +23547,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send2 = require_send();
-    var extname = path19.extname;
-    var resolve = path19.resolve;
+    var extname = path20.extname;
+    var resolve = path20.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http2.ServerResponse.prototype);
@@ -23694,26 +23694,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path20, options, callback) {
+    res.sendFile = function sendFile(path21, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path20) {
+      if (!path21) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path20 !== "string") {
+      if (typeof path21 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path20)) {
+      if (!opts.root && !pathIsAbsolute(path21)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path20);
+      var pathname = encodeURI(path21);
       opts.etag = this.app.enabled("etag");
       var file = send2(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23724,7 +23724,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path20, filename, options, callback) {
+    res.download = function download(path21, filename, options, callback) {
       var done = callback;
       var name2 = filename;
       var opts = options || null;
@@ -23741,7 +23741,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name2 || path20)
+        "Content-Disposition": contentDisposition(name2 || path21)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23754,7 +23754,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path20) : path20;
+      var fullPath = !opts.root ? resolve(path21) : path21;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -24037,11 +24037,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path19 = parseUrl(req).pathname;
-        if (path19 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path19 = "";
+        var path20 = parseUrl(req).pathname;
+        if (path20 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path20 = "";
         }
-        var stream = send2(req, path19, opts);
+        var stream = send2(req, path20, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -24152,7 +24152,7 @@ var require_express2 = __commonJS({
 var require_windows_storage = __commonJS({
   "../plugins/remote-debug-agent/windows-storage.cjs"(exports2, module2) {
     "use strict";
-    var path19 = require("path");
+    var path20 = require("path");
     var { execFileSync } = require("child_process");
     var aclScript = `
 $ErrorActionPreference = 'Stop'
@@ -24193,8 +24193,8 @@ if (-not $full) { throw 'Owner lacks access' }
 `;
     function protectOrCheckWindows(target2, protect) {
       const root = process.env.SystemRoot || process.env.WINDIR;
-      if (!root || !path19.isAbsolute(root)) throw new Error("Windows system directory is unavailable");
-      const executable = path19.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+      if (!root || !path20.isAbsolute(root)) throw new Error("Windows system directory is unavailable");
+      const executable = path20.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
       execFileSync(executable, ["-NoProfile", "-NonInteractive", "-Command", aclScript], {
         env: { ...process.env, RDA_AUTH_ACL_TARGET: target2, RDA_AUTH_ACL_ACTION: protect ? "protect" : "check" },
         stdio: "pipe",
@@ -24210,8 +24210,8 @@ if (-not $full) { throw 'Owner lacks access' }
 var require_local_auth = __commonJS({
   "../plugins/remote-debug-agent/local-auth.cjs"(exports2, module2) {
     "use strict";
-    var fs12 = require("fs");
-    var path19 = require("path");
+    var fs13 = require("fs");
+    var path20 = require("path");
     var crypto = require("crypto");
     function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
       const error2 = new Error(message);
@@ -24219,10 +24219,10 @@ var require_local_auth = __commonJS({
       return error2;
     }
     function resolveAuthFile(dataDir, env = process.env) {
-      return path19.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path19.join(".runtime", "http-auth.json"));
+      return path20.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path20.join(".runtime", "http-auth.json"));
     }
     function protectOrCheck(target2, directory, protect) {
-      const stat = fs12.lstatSync(target2);
+      const stat = fs13.lstatSync(target2);
       if (stat.isSymbolicLink() || (directory ? !stat.isDirectory() : !stat.isFile())) {
         throw authError("authentication storage must be a regular file in a protected directory");
       }
@@ -24234,19 +24234,19 @@ var require_local_auth = __commonJS({
         }
       } else {
         if (stat.uid !== process.getuid()) throw authError("authentication storage is owned by another user");
-        if (protect) fs12.chmodSync(target2, directory ? 448 : 384);
-        if ((fs12.statSync(target2).mode & 511) !== (directory ? 448 : 384)) {
+        if (protect) fs13.chmodSync(target2, directory ? 448 : 384);
+        if ((fs13.statSync(target2).mode & 511) !== (directory ? 448 : 384)) {
           throw authError("authentication storage requires owner-only permissions");
         }
       }
     }
     function readAuthToken(filePath) {
       try {
-        protectOrCheck(path19.dirname(filePath), true, false);
+        protectOrCheck(path20.dirname(filePath), true, false);
         protectOrCheck(filePath, false, false);
-        const stat = fs12.statSync(filePath);
+        const stat = fs13.statSync(filePath);
         if (stat.size > 1024) throw authError("authentication credential file is invalid");
-        const value = JSON.parse(fs12.readFileSync(filePath, "utf8"));
+        const value = JSON.parse(fs13.readFileSync(filePath, "utf8"));
         if (value.version !== 1 || !/^[a-f0-9]{64}$/.test(value.token)) throw authError("authentication credential file is invalid");
         return value.token;
       } catch (error2) {
@@ -24255,30 +24255,30 @@ var require_local_auth = __commonJS({
       }
     }
     function ensureAuthToken(filePath) {
-      const directory = path19.dirname(filePath);
+      const directory = path20.dirname(filePath);
       try {
-        fs12.mkdirSync(directory, { recursive: true, mode: 448 });
+        fs13.mkdirSync(directory, { recursive: true, mode: 448 });
         protectOrCheck(directory, true, true);
-        if (fs12.existsSync(filePath)) return readAuthToken(filePath);
+        if (fs13.existsSync(filePath)) return readAuthToken(filePath);
         const token = crypto.randomBytes(32).toString("hex");
-        const temporaryPath = path19.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
+        const temporaryPath = path20.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
         try {
-          const fd = fs12.openSync(temporaryPath, "wx", 384);
+          const fd = fs13.openSync(temporaryPath, "wx", 384);
           try {
-            fs12.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
-            fs12.fsyncSync(fd);
+            fs13.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
+            fs13.fsyncSync(fd);
           } finally {
-            fs12.closeSync(fd);
+            fs13.closeSync(fd);
           }
           protectOrCheck(temporaryPath, false, true);
           try {
-            fs12.linkSync(temporaryPath, filePath);
+            fs13.linkSync(temporaryPath, filePath);
           } catch (error2) {
             if (error2.code !== "EEXIST") throw error2;
           }
         } finally {
           try {
-            fs12.unlinkSync(temporaryPath);
+            fs13.unlinkSync(temporaryPath);
           } catch {
           }
         }
@@ -26558,7 +26558,7 @@ var require_websocket = __commonJS({
     var http2 = require("http");
     var net2 = require("net");
     var tls = require("tls");
-    var { randomBytes: randomBytes5, createHash: createHash13 } = require("crypto");
+    var { randomBytes: randomBytes5, createHash: createHash14 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -27239,8 +27239,8 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest2 = createHash13("sha1").update(key + GUID).digest("base64");
-        if (res.headers["sec-websocket-accept"] !== digest2) {
+        const digest3 = createHash14("sha1").update(key + GUID).digest("base64");
+        if (res.headers["sec-websocket-accept"] !== digest3) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
         }
@@ -27608,7 +27608,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter5 = require("events");
     var http2 = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash13 } = require("crypto");
+    var { createHash: createHash14 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -27915,12 +27915,12 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest2 = createHash13("sha1").update(key + GUID).digest("base64");
+        const digest3 = createHash14("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
           "Connection: Upgrade",
-          `Sec-WebSocket-Accept: ${digest2}`
+          `Sec-WebSocket-Accept: ${digest3}`
         ];
         const ws = new this.options.WebSocket(null, void 0, this.options);
         if (protocols.size) {
@@ -33495,10 +33495,10 @@ var require_crypto = __commonJS({
           mac.update(BUF_INT);
           mac.update(packet);
         }
-        let digest2 = mac.digest();
-        if (digest2.length > this._macActualLen)
-          digest2 = digest2.slice(0, this._macActualLen);
-        this._onWrite(digest2);
+        let digest3 = mac.digest();
+        if (digest3.length > this._macActualLen)
+          digest3 = digest3.slice(0, this._macActualLen);
+        this._onWrite(digest3);
         this.outSeqno = this.outSeqno + 1 >>> 0;
       }
     };
@@ -34441,7 +34441,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv,
       createECDH,
-      createHash: createHash13,
+      createHash: createHash14,
       createHmac,
       createSign,
       createVerify,
@@ -35129,11 +35129,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash13("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash14("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash13("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash14("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -35298,8 +35298,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash13("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash13("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash14("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash14("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -35339,7 +35339,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash13("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash14("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -35983,11 +35983,11 @@ var require_agent = __commonJS({
       };
     })();
     var WINDOWS_PIPE_REGEX = /^[/\\][/\\]\.[/\\]pipe[/\\].+/;
-    function createAgent(path19) {
-      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path19)) {
-        return path19 === "pageant" ? new PageantAgent() : new CygwinAgent(path19);
+    function createAgent(path20) {
+      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path20)) {
+        return path20 === "pageant" ? new PageantAgent() : new CygwinAgent(path20);
       }
-      return new OpenSSHAgent(path19);
+      return new OpenSSHAgent(path20);
     }
     var AgentProtocol = (() => {
       const SSH_AGENTC_REQUEST_IDENTITIES = 11;
@@ -37661,7 +37661,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash13,
+      createHash: createHash14,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -38087,7 +38087,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash13(this.hashName);
+          const hash = createHash14(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -39095,18 +39095,18 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest2 = createHash13(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
-        while (digest2.length < len) {
-          const chunk = createHash13(hashName).update(secret).update(exchangeHash).update(digest2).digest();
-          const extended = Buffer.allocUnsafe(digest2.length + chunk.length);
-          extended.set(digest2, 0);
-          extended.set(chunk, digest2.length);
-          digest2 = extended;
+        let digest3 = createHash14(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        while (digest3.length < len) {
+          const chunk = createHash14(hashName).update(secret).update(exchangeHash).update(digest3).digest();
+          const extended = Buffer.allocUnsafe(digest3.length + chunk.length);
+          extended.set(digest3, 0);
+          extended.set(chunk, digest3.length);
+          digest3 = extended;
         }
-        if (digest2.length === len)
-          ret = digest2;
+        if (digest3.length === len)
+          ret = digest3;
         else
-          ret = new FastBuffer(digest2.buffer, digest2.byteOffset, len);
+          ret = new FastBuffer(digest3.buffer, digest3.byteOffset, len);
       } else {
         ret = EMPTY_BUFFER;
       }
@@ -40962,8 +40962,8 @@ var require_SFTP = __commonJS({
   "node_modules/ssh2/lib/protocol/SFTP.js"(exports2, module2) {
     "use strict";
     var EventEmitter5 = require("events");
-    var fs12 = require("fs");
-    var { constants } = fs12;
+    var fs13 = require("fs");
+    var { constants: constants2 } = fs13;
     var {
       Readable: ReadableStream,
       Writable: WritableStream
@@ -41231,17 +41231,17 @@ var require_SFTP = __commonJS({
       // ===========================================================================
       // Client-specific ===========================================================
       // ===========================================================================
-      createReadStream(path19, options) {
+      createReadStream(path20, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new ReadStream(this, path19, options);
+        return new ReadStream(this, path20, options);
       }
-      createWriteStream(path19, options) {
+      createWriteStream(path20, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new WriteStream(this, path19, options);
+        return new WriteStream(this, path20, options);
       }
-      open(path19, flags_, attrs, cb) {
+      open(path20, flags_, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         if (typeof attrs === "function") {
@@ -41260,7 +41260,7 @@ var require_SFTP = __commonJS({
           attrsFlags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41268,7 +41268,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         writeUInt32BE(buf, attrsFlags, p += 4);
         if (attrsLen) {
@@ -41392,14 +41392,14 @@ var require_SFTP = __commonJS({
       fastGet(remotePath, localPath, opts, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        fastXfer(this, fs12, remotePath, localPath, opts, cb);
+        fastXfer(this, fs13, remotePath, localPath, opts, cb);
       }
       fastPut(localPath, remotePath, opts, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        fastXfer(fs12, this, localPath, remotePath, opts, cb);
+        fastXfer(fs13, this, localPath, remotePath, opts, cb);
       }
-      readFile(path19, options, callback_) {
+      readFile(path20, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41472,13 +41472,13 @@ var require_SFTP = __commonJS({
             return callback && callback(er, buffer);
           });
         };
-        this.open(path19, flag, 438, (er, handle_) => {
+        this.open(path20, flag, 438, (er, handle_) => {
           if (er)
             return callback && callback(er);
           handle = handle_;
           const tryStat = (er2, st) => {
             if (er2) {
-              this.stat(path19, (er_, st_) => {
+              this.stat(path20, (er_, st_) => {
                 if (er_) {
                   return this.close(handle, () => {
                     callback && callback(er2);
@@ -41499,7 +41499,7 @@ var require_SFTP = __commonJS({
           this.fstat(handle, tryStat);
         });
       }
-      writeFile(path19, data, options, callback_) {
+      writeFile(path20, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41518,7 +41518,7 @@ var require_SFTP = __commonJS({
         if (options.encoding && !Buffer.isEncoding(options.encoding))
           throw new Error(`Unknown encoding: ${options.encoding}`);
         const flag = options.flag || "w";
-        this.open(path19, flag, options.mode, (openErr, handle) => {
+        this.open(path20, flag, options.mode, (openErr, handle) => {
           if (openErr) {
             callback && callback(openErr);
           } else {
@@ -41527,7 +41527,7 @@ var require_SFTP = __commonJS({
             if (position === null) {
               const tryStat = (er, st) => {
                 if (er) {
-                  this.stat(path19, (er_, st_) => {
+                  this.stat(path20, (er_, st_) => {
                     if (er_) {
                       return this.close(handle, () => {
                         callback && callback(er);
@@ -41546,7 +41546,7 @@ var require_SFTP = __commonJS({
           }
         });
       }
-      appendFile(path19, data, options, callback_) {
+      appendFile(path20, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41564,12 +41564,12 @@ var require_SFTP = __commonJS({
           throw new TypeError("Bad arguments");
         if (!options.flag)
           options = Object.assign({ flag: "a" }, options);
-        this.writeFile(path19, data, options, callback);
+        this.writeFile(path20, data, options, callback);
       }
-      exists(path19, cb) {
+      exists(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        this.stat(path19, (err) => {
+        this.stat(path20, (err) => {
           cb && cb(err ? false : true);
         });
       }
@@ -41612,7 +41612,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} RENAME`
         );
       }
-      mkdir(path19, attrs, cb) {
+      mkdir(path20, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -41626,7 +41626,7 @@ var require_SFTP = __commonJS({
           flags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41634,7 +41634,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -41650,10 +41650,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} MKDIR`
         );
       }
-      rmdir(path19, cb) {
+      rmdir(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41661,7 +41661,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
@@ -41751,10 +41751,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} FSTAT`
         );
       }
-      stat(path19, cb) {
+      stat(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41762,17 +41762,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} STAT`
         );
       }
-      lstat(path19, cb) {
+      lstat(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41780,17 +41780,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} LSTAT`
         );
       }
-      opendir(path19, cb) {
+      opendir(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41798,14 +41798,14 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} OPENDIR`
         );
       }
-      setstat(path19, attrs, cb) {
+      setstat(path20, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -41817,7 +41817,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41825,7 +41825,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -41885,8 +41885,8 @@ var require_SFTP = __commonJS({
           mtime: toUnixTimestamp(mtime)
         }, cb);
       }
-      utimes(path19, atime, mtime, cb) {
-        return this.setstat(path19, {
+      utimes(path20, atime, mtime, cb) {
+        return this.setstat(path20, {
           atime: toUnixTimestamp(atime),
           mtime: toUnixTimestamp(mtime)
         }, cb);
@@ -41897,8 +41897,8 @@ var require_SFTP = __commonJS({
           gid
         }, cb);
       }
-      chown(path19, uid, gid, cb) {
-        return this.setstat(path19, {
+      chown(path20, uid, gid, cb) {
+        return this.setstat(path20, {
           uid,
           gid
         }, cb);
@@ -41908,15 +41908,15 @@ var require_SFTP = __commonJS({
           mode
         }, cb);
       }
-      chmod(path19, mode, cb) {
-        return this.setstat(path19, {
+      chmod(path20, mode, cb) {
+        return this.setstat(path20, {
           mode
         }, cb);
       }
-      readlink(path19, cb) {
+      readlink(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41924,7 +41924,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -41969,10 +41969,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} SYMLINK`
         );
       }
-      realpath(path19, cb) {
+      realpath(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41980,7 +41980,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42025,13 +42025,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${which} posix-rename@openssh.com`);
         }
       }
-      ext_openssh_statvfs(path19, cb) {
+      ext_openssh_statvfs(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["statvfs@openssh.com"];
         if (!ext || ext !== "2")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 19 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42041,7 +42041,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 19, p);
         buf.utf8Write("statvfs@openssh.com", p += 4, 19);
         writeUInt32BE(buf, pathLen, p += 19);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = { extended: "statvfs@openssh.com", cb };
         const isBuffered = sendOrBuffer(this, buf);
         if (this._debug) {
@@ -42127,7 +42127,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} fsync@openssh.com`
         );
       }
-      ext_openssh_lsetstat(path19, attrs, cb) {
+      ext_openssh_lsetstat(path20, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["lsetstat@openssh.com"];
@@ -42142,7 +42142,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 20 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42152,7 +42152,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 20, p);
         buf.utf8Write("lsetstat@openssh.com", p += 4, 20);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -42169,13 +42169,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${status} lsetstat@openssh.com`);
         }
       }
-      ext_openssh_expandPath(path19, cb) {
+      ext_openssh_expandPath(path20, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["expand-path@openssh.com"];
         if (ext !== "1")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path19);
+        const pathLen = Buffer.byteLength(path20);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 23 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42185,7 +42185,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 23, p);
         buf.utf8Write("expand-path@openssh.com", p += 4, 23);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path19, p += 4, pathLen);
+        buf.utf8Write(path20, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42658,13 +42658,13 @@ var require_SFTP = __commonJS({
             if (--left === 0)
               cb(err);
           };
-          if (srcHandle && (src === fs12 || src.outgoing.state === "open"))
+          if (srcHandle && (src === fs13 || src.outgoing.state === "open"))
             ++left;
-          if (dstHandle && (dst === fs12 || dst.outgoing.state === "open"))
+          if (dstHandle && (dst === fs13 || dst.outgoing.state === "open"))
             ++left;
-          if (srcHandle && (src === fs12 || src.outgoing.state === "open"))
+          if (srcHandle && (src === fs13 || src.outgoing.state === "open"))
             src.close(srcHandle, cbfinal);
-          if (dstHandle && (dst === fs12 || dst.outgoing.state === "open"))
+          if (dstHandle && (dst === fs13 || dst.outgoing.state === "open"))
             dst.close(dstHandle, cbfinal);
         } else {
           cb(err);
@@ -42680,7 +42680,7 @@ var require_SFTP = __commonJS({
           tryStat(null, { size: fileSize });
         function tryStat(err2, attrs) {
           if (err2) {
-            if (src !== fs12) {
+            if (src !== fs13) {
               src.stat(srcPath, (err_, attrs_) => {
                 if (err_)
                   return onerror(err2);
@@ -42818,25 +42818,25 @@ var require_SFTP = __commonJS({
         this.extended = initial && initial.extended;
       }
       isDirectory() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFDIR;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFDIR;
       }
       isFile() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFREG;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFREG;
       }
       isBlockDevice() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFBLK;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFBLK;
       }
       isCharacterDevice() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFCHR;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFCHR;
       }
       isSymbolicLink() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFLNK;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFLNK;
       }
       isFIFO() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFIFO;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFIFO;
       }
       isSocket() {
-        return (this.mode & constants.S_IFMT) === constants.S_IFSOCK;
+        return (this.mode & constants2.S_IFMT) === constants2.S_IFSOCK;
       }
     };
     function attrsToBytes(attrs) {
@@ -43463,12 +43463,12 @@ var require_SFTP = __commonJS({
       [REQUEST.LSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed LSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received LSTAT (id:${reqID})`);
-        if (!sftp.emit("LSTAT", reqID, path19)) {
+        if (!sftp.emit("LSTAT", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43487,13 +43487,13 @@ var require_SFTP = __commonJS({
       [REQUEST.SETSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed SETSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received SETSTAT (id:${reqID})`);
-        if (!sftp.emit("SETSTAT", reqID, path19, attrs)) {
+        if (!sftp.emit("SETSTAT", reqID, path20, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43515,12 +43515,12 @@ var require_SFTP = __commonJS({
       [REQUEST.OPENDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed OPENDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received OPENDIR (id:${reqID})`);
-        if (!sftp.emit("OPENDIR", reqID, path19)) {
+        if (!sftp.emit("OPENDIR", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43539,63 +43539,63 @@ var require_SFTP = __commonJS({
       [REQUEST.REMOVE]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed REMOVE packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received REMOVE (id:${reqID})`);
-        if (!sftp.emit("REMOVE", reqID, path19)) {
+        if (!sftp.emit("REMOVE", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.MKDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed MKDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received MKDIR (id:${reqID})`);
-        if (!sftp.emit("MKDIR", reqID, path19, attrs)) {
+        if (!sftp.emit("MKDIR", reqID, path20, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.RMDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed RMDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received RMDIR (id:${reqID})`);
-        if (!sftp.emit("RMDIR", reqID, path19)) {
+        if (!sftp.emit("RMDIR", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.REALPATH]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed REALPATH packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received REALPATH (id:${reqID})`
         );
-        if (!sftp.emit("REALPATH", reqID, path19)) {
+        if (!sftp.emit("REALPATH", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.STAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed STAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received STAT (id:${reqID})`);
-        if (!sftp.emit("STAT", reqID, path19)) {
+        if (!sftp.emit("STAT", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43615,14 +43615,14 @@ var require_SFTP = __commonJS({
       [REQUEST.READLINK]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path19 = bufferParser.readString(true);
+        const path20 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path19 === void 0)
+        if (path20 === void 0)
           return doFatalSFTPError(sftp, "Malformed READLINK packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received READLINK (id:${reqID})`
         );
-        if (!sftp.emit("READLINK", reqID, path19)) {
+        if (!sftp.emit("READLINK", reqID, path20)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43693,7 +43693,7 @@ var require_SFTP = __commonJS({
     function roundUpToMultipleOf8(n) {
       return n + 7 & ~7;
     }
-    function ReadStream(sftp, path19, options) {
+    function ReadStream(sftp, path20, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -43707,7 +43707,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       ReadableStream.call(this, options);
-      this.path = path19;
+      this.path = path20;
       this.flags = options.flags === void 0 ? "r" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -43838,7 +43838,7 @@ var require_SFTP = __commonJS({
       },
       configurable: true
     });
-    function WriteStream(sftp, path19, options) {
+    function WriteStream(sftp, path20, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -43850,7 +43850,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       WritableStream.call(this, options);
-      this.path = path19;
+      this.path = path20;
       this.flags = options.flags === void 0 ? "w" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -44532,7 +44532,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash13,
+      createHash: createHash14,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -44754,7 +44754,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash13(hashAlgo).update(key).digest("hex");
+              key = createHash14(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -48058,20 +48058,20 @@ var require_lib4 = __commonJS({
 var require_environment_report = __commonJS({
   "../plugins/remote-debug-agent/environment-report.cjs"(exports2, module2) {
     "use strict";
-    var fs12 = require("fs");
+    var fs13 = require("fs");
     var os2 = require("os");
-    var path19 = require("path");
+    var path20 = require("path");
     var crypto = require("crypto");
-    var localAuth6 = require_local_auth();
+    var localAuth7 = require_local_auth();
     function dataDirectory(env) {
-      return path19.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path19.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path19.join(os2.homedir(), ".remote-debug-agent")));
+      return path20.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path20.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path20.join(os2.homedir(), ".remote-debug-agent")));
     }
     function reportPath(dataDir) {
-      return path19.join(dataDir, ".runtime", "environment-report.json");
+      return path20.join(dataDir, ".runtime", "environment-report.json");
     }
     function readJson(file) {
       try {
-        return JSON.parse(fs12.readFileSync(file, "utf8"));
+        return JSON.parse(fs13.readFileSync(file, "utf8"));
       } catch (_) {
         return null;
       }
@@ -48080,14 +48080,14 @@ var require_environment_report = __commonJS({
       return readJson(reportPath(dataDir));
     }
     function writeJson(file, value) {
-      fs12.mkdirSync(path19.dirname(file), { recursive: true, mode: 448 });
+      fs13.mkdirSync(path20.dirname(file), { recursive: true, mode: 448 });
       const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
       try {
-        fs12.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
-        fs12.renameSync(temporary, file);
+        fs13.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
+        fs13.renameSync(temporary, file);
       } finally {
         try {
-          fs12.unlinkSync(temporary);
+          fs13.unlinkSync(temporary);
         } catch (_) {
         }
       }
@@ -48109,12 +48109,12 @@ var require_environment_report = __commonJS({
       return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
     }
     function effectiveEnvironment(env, dataDir) {
-      const configPath = path19.resolve(env.REMOTE_DEBUG_ENV_PATH || path19.join(dataDir, "config.env"));
+      const configPath = path20.resolve(env.REMOTE_DEBUG_ENV_PATH || path20.join(dataDir, "config.env"));
       const effective = Object.assign({}, env);
       let configError = null;
       try {
-        if (fs12.existsSync(configPath)) {
-          fs12.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
+        if (fs13.existsSync(configPath)) {
+          fs13.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
             const match = /^\s*(REMOTE_DEBUG_[A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
             if (!match) return;
             let value = match[2];
@@ -48132,16 +48132,16 @@ var require_environment_report = __commonJS({
       options = options || {};
       const dataDir = dataDirectory(env);
       const settings = effectiveEnvironment(env, dataDir);
-      const runtimeRoot = path19.join(pluginRoot, "runtime", "agent");
-      const manifest = readJson(path19.join(runtimeRoot, "runtime-manifest.json"));
-      const pkg = readJson(path19.join(pluginRoot, "package.json"));
+      const runtimeRoot = path20.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path20.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path20.join(pluginRoot, "package.json"));
       const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
       const version = options.nodeVersion || process.versions.node;
       const checks = [];
-      function check(id, label, actual, required, status, remedy) {
+      function check(id, label2, actual, required, status, remedy) {
         checks.push({
           id,
-          label,
+          label: label2,
           actual,
           required,
           status,
@@ -48200,11 +48200,11 @@ var require_environment_report = __commonJS({
             "public/dashboard.js",
             "public/environment-report.js"
           ].concat(Object.keys(manifest.hashes))));
-          const invalid4 = requiredFiles.filter(function(file) {
-            const resolved = path19.resolve(runtimeRoot, file);
-            if (!resolved.startsWith(runtimeRoot + path19.sep) || !fs12.existsSync(resolved)) return true;
+          const invalid5 = requiredFiles.filter(function(file) {
+            const resolved = path20.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path20.sep) || !fs13.existsSync(resolved)) return true;
             try {
-              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs12.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
+              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs13.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
             } catch (_) {
               return true;
             }
@@ -48212,9 +48212,9 @@ var require_environment_report = __commonJS({
           check(
             "artifacts",
             "运行文件完整性",
-            invalid4.length ? "缺失或校验不匹配：" + invalid4.join("、") : "完整",
+            invalid5.length ? "缺失或校验不匹配：" + invalid5.join("、") : "完整",
             "运行文件存在且 SHA-256 与清单一致",
-            invalid4.length ? "fail" : "pass",
+            invalid5.length ? "fail" : "pass",
             "重新安装或重新构建插件，避免混用不同版本的文件。"
           );
         }
@@ -48224,16 +48224,16 @@ var require_environment_report = __commonJS({
       check(
         "config",
         "本地配置文件",
-        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs12.existsSync(settings.configPath) ? settings.configPath : "未创建",
+        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs13.existsSync(settings.configPath) ? settings.configPath : "未创建",
         "可选；文件存在时需可读，连接信息也可来自实例配置或环境变量",
-        settings.configError ? "fail" : fs12.existsSync(settings.configPath) ? "pass" : "warn",
+        settings.configError ? "fail" : fs13.existsSync(settings.configPath) ? "pass" : "warn",
         settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
       );
       try {
-        fs12.mkdirSync(path19.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
-        const probe = path19.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
-        fs12.writeFileSync(probe, "", { mode: 384 });
-        fs12.unlinkSync(probe);
+        fs13.mkdirSync(path20.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path20.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs13.writeFileSync(probe, "", { mode: 384 });
+        fs13.unlinkSync(probe);
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
       } catch (_) {
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "fail", "为当前用户提供目录写入权限，或设置 REMOTE_DEBUG_DATA_DIR 到可写目录。");
@@ -48243,13 +48243,13 @@ var require_environment_report = __commonJS({
       })) {
         let probeDir;
         try {
-          probeDir = fs12.mkdtempSync(path19.join(dataDir, ".runtime", ".permissions-probe-"));
-          const file = path19.join(probeDir, "probe");
-          fs12.writeFileSync(file, "", { mode: 384 });
-          localAuth6.protectOrCheck(probeDir, true, true);
-          localAuth6.protectOrCheck(file, false, true);
-          localAuth6.protectOrCheck(probeDir, true, false);
-          localAuth6.protectOrCheck(file, false, false);
+          probeDir = fs13.mkdtempSync(path20.join(dataDir, ".runtime", ".permissions-probe-"));
+          const file = path20.join(probeDir, "probe");
+          fs13.writeFileSync(file, "", { mode: 384 });
+          localAuth7.protectOrCheck(probeDir, true, true);
+          localAuth7.protectOrCheck(file, false, true);
+          localAuth7.protectOrCheck(probeDir, true, false);
+          localAuth7.protectOrCheck(file, false, false);
           check(
             "private-storage",
             "本地认证存储权限",
@@ -48270,7 +48270,7 @@ var require_environment_report = __commonJS({
         } finally {
           if (probeDir) {
             try {
-              fs12.rmSync(probeDir, { recursive: true, force: true });
+              fs13.rmSync(probeDir, { recursive: true, force: true });
             } catch (_) {
             }
           }
@@ -48304,15 +48304,15 @@ var require_environment_report = __commonJS({
         stage: "environment",
         checks,
         failures: history.slice(-10),
-        offlineDashboard: path19.join(dataDir, ".runtime", "environment-dashboard.html"),
+        offlineDashboard: path20.join(dataDir, ".runtime", "environment-dashboard.html"),
         dashboardUrl: null
       };
     }
     function writeOfflineDashboard(dataDir, report) {
-      const publicDir = path19.join(report.pluginRoot, "runtime", "agent", "public");
-      const file = path19.join(dataDir, ".runtime", "environment-dashboard.html");
+      const publicDir = path20.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path20.join(dataDir, ".runtime", "environment-dashboard.html");
       if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name2) {
-        return fs12.existsSync(path19.join(publicDir, name2));
+        return fs13.existsSync(path20.join(publicDir, name2));
       })) {
         let escape2 = function(value) {
           return String(value || "").replace(/[&<>"']/g, function(char) {
@@ -48324,12 +48324,12 @@ var require_environment_report = __commonJS({
             return "<td>" + escape2(value) + "</td>";
           }).join("") + "</tr>";
         }).join("");
-        fs12.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
+        fs13.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
         return;
       }
-      let html = fs12.readFileSync(path19.join(publicDir, "dashboard.html"), "utf8");
-      const css = fs12.readFileSync(path19.join(publicDir, "dashboard.css"), "utf8");
-      const script = fs12.readFileSync(path19.join(publicDir, "environment-report.js"), "utf8");
+      let html = fs13.readFileSync(path20.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs13.readFileSync(path20.join(publicDir, "dashboard.css"), "utf8");
+      const script = fs13.readFileSync(path20.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
       html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
         return "<style>" + css + "</style>";
@@ -48339,7 +48339,7 @@ var require_environment_report = __commonJS({
           return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>";
         }
       ).replace('<script src="/dashboard.js" type="module"></script>', "").replace('<script src="/admin-registration.js" type="module"></script>', "");
-      fs12.writeFileSync(file, html, { mode: 384 });
+      fs13.writeFileSync(file, html, { mode: 384 });
     }
     function recordRuntimeEvent(dataDir, event2, attemptId) {
       if (!attemptId) return;
@@ -48773,8 +48773,8 @@ function normalizeLogListOptions(input = {}) {
   return { category, limit, cursor };
 }
 function normalizeArchiveMemberListOptions(input = {}) {
-  const path19 = input.path;
-  if (typeof path19 !== "string" || path19.trim() === "") {
+  const path20 = input.path;
+  if (typeof path20 !== "string" || path20.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
@@ -48786,15 +48786,15 @@ function normalizeArchiveMemberListOptions(input = {}) {
     throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
   }
   return {
-    path: path19,
+    path: path20,
     prefix: normalizeArchiveMemberPrefix(prefix),
     limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
     cursor
   };
 }
 function normalizeLogReadOptions(input = {}) {
-  const path19 = input.path;
-  if (typeof path19 !== "string" || path19.trim() === "") {
+  const path20 = input.path;
+  if (typeof path20 !== "string" || path20.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
@@ -48809,7 +48809,7 @@ function normalizeLogReadOptions(input = {}) {
     );
   }
   return {
-    path: path19,
+    path: path20,
     memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
     tailLines: positiveInteger(
       input.tailLines,
@@ -51761,9 +51761,9 @@ function bulkError(message, code, statusCode = 400, details = {}) {
 function byteLength2(value) {
   return Buffer.byteLength(String(value), "utf8");
 }
-function assertKnownFields(value, fields2, label) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError(`${label} must be an object`, "MONGODB_BULK_INPUT_INVALID");
-  if (Object.keys(value).some((key) => !fields2.includes(key))) throw bulkError(`${label} contains unsupported fields`, "MONGODB_BULK_UNKNOWN_FIELD");
+function assertKnownFields(value, fields2, label2) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw bulkError(`${label2} must be an object`, "MONGODB_BULK_INPUT_INVALID");
+  if (Object.keys(value).some((key) => !fields2.includes(key))) throw bulkError(`${label2} contains unsupported fields`, "MONGODB_BULK_UNKNOWN_FIELD");
 }
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
@@ -51909,7 +51909,7 @@ function normalizeUpdate(value) {
       if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
-      if (paths.some((path19) => path19 === field || path19.startsWith(`${field}.`) || field.startsWith(`${path19}.`))) {
+      if (paths.some((path20) => path20 === field || path20.startsWith(`${field}.`) || field.startsWith(`${path20}.`))) {
         throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
       }
       if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
@@ -52928,8 +52928,8 @@ function normalizeMongoImport(input = {}, config = {}, options = {}) {
       maxAffected: documents.length,
       riskLevel: "high"
     };
-    const { operationId: _operationId, ...identity } = batch2;
-    batch2.mutationId = "import-" + (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify(identity)).digest("hex");
+    const { operationId: _operationId, ...identity2 } = batch2;
+    batch2.mutationId = "import-" + (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify(identity2)).digest("hex");
     batches.push(batch2);
     documents = [];
     bytes = 2;
@@ -54670,12 +54670,12 @@ function validatePathArguments(command, tokens, allowedPaths) {
   const flags = readPolicy.shortFlags[command];
   let optionsEnded = false;
   let hasPattern = false;
-  const invalid4 = (token) => {
+  const invalid5 = (token) => {
     throw new SecurityError(`unsupported ${command} argument: ${token}`, "UNSUPPORTED_COMMAND_ARGUMENTS");
   };
   const number = (value, option) => {
     const max = command === "tail" ? ["c", "bytes"].includes(option) ? readPolicy.tailMaxBytes : readPolicy.tailMaxLines : readPolicy.grepMaxContext;
-    if (!/^[1-9][0-9]*$/.test(value || "") || Number(value) > max) invalid4(`${option} ${value || ""}`);
+    if (!/^[1-9][0-9]*$/.test(value || "") || Number(value) > max) invalid5(`${option} ${value || ""}`);
   };
   for (let index = 1; index < tokens.length; index += 1) {
     const token = tokens[index];
@@ -54686,7 +54686,7 @@ function validatePathArguments(command, tokens, allowedPaths) {
     if (!optionsEnded && token.startsWith("-")) {
       if (command === "tail") {
         const match = /^(?:-([nc])([0-9]*)|--(lines|bytes)(?:=([0-9]+))?)$/.exec(token);
-        if (!match) invalid4(token);
+        if (!match) invalid5(token);
         number(match[2] || match[4] || tokens[++index], match[1] || match[3]);
       } else if (command === "grep") {
         for (let offset = 1; offset < token.length; offset += 1) {
@@ -54695,15 +54695,15 @@ function validatePathArguments(command, tokens, allowedPaths) {
           if (option === "e" || "mABC".includes(option)) {
             const value = token.slice(offset + 1) || tokens[++index];
             if (option === "e") {
-              if (hasPattern || value === void 0) invalid4(token);
+              if (hasPattern || value === void 0) invalid5(token);
               hasPattern = true;
             } else number(value, option);
             break;
           }
-          invalid4(token);
+          invalid5(token);
         }
-        if (token === "-") invalid4(token);
-      } else if (!new RegExp(`^-[${flags}]+$`).test(token)) invalid4(token);
+        if (token === "-") invalid5(token);
+      } else if (!new RegExp(`^-[${flags}]+$`).test(token)) invalid5(token);
       continue;
     }
     if (command === "grep" && !hasPattern) {
@@ -56118,6 +56118,9 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
   const lifetimeValue = env.REMOTE_DEBUG_AGENT_LIFETIME === void 0 || env.REMOTE_DEBUG_AGENT_LIFETIME === "" ? mergedEnv.REMOTE_DEBUG_AGENT_LIFETIME : env.REMOTE_DEBUG_AGENT_LIFETIME;
   const sourceRoots = normalizeSourceRoots(mergedEnv.REMOTE_DEBUG_SOURCE_ROOTS);
   return {
+    output: {
+      directory: import_node_path2.default.resolve(cwd, mergedEnv.REMOTE_DEBUG_OUTPUT_DIR || (import_node_path2.default.basename(cwd) === "agent" && import_node_fs2.default.existsSync(import_node_path2.default.resolve(cwd, "..", "plugins", "remote-debug-agent", "package.json")) ? "../output" : "output"))
+    },
     agent: {
       host: "127.0.0.1",
       port: agentPort
@@ -56453,7 +56456,19 @@ var logJob = {
   groups: [fields("level route method code message count")],
   warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
 };
+var finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
+var finalResult = {
+  ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"),
+  final: "boolean",
+  privacy: fields("credentials binary policyVersion"),
+  references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") },
+  files: [finalFile]
+};
 var contracts = {
+  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
+  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
+  remote_debug_get_final_result: { result: finalResult },
+  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
   remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
     ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
     target: fields("host port username"),
@@ -56785,15 +56800,15 @@ var PrivacyService = class {
     if (this.ready) return this.ready;
     this.ready = new Promise((resolve, reject) => {
       this.worker = new import_node_worker_threads.Worker(this.workerPath, { workerData: this.options, execArgv: process.execArgv.filter((arg) => !arg.startsWith("--input-type")) });
-      const fail3 = () => {
+      const fail4 = () => {
         this.failed = true;
         reject(privacyError());
         for (const item of this.pending.values()) item.reject(privacyError());
         this.pending.clear();
         this.worker?.unref();
       };
-      this.worker.on("error", fail3);
-      this.worker.on("exit", fail3);
+      this.worker.on("error", fail4);
+      this.worker.on("exit", fail4);
       this.worker.on("message", (message) => {
         if (message.ready) {
           if (!this.pending.size) this.worker.unref();
@@ -56841,16 +56856,16 @@ var PrivacyService = class {
 async function privacyRequest(service, input, { instance: instance2, origin, dispatch } = {}) {
   const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "reconcile", "delivered", "cleanup", "dispatch_prepare", "recover_operation"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
-  const validate2 = (scope) => {
-    if (typeof scope !== "string" || scope.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+  const validate2 = (scope2) => {
+    if (typeof scope2 !== "string" || scope2.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
     let target2;
     try {
-      target2 = JSON.parse(scope);
+      target2 = JSON.parse(scope2);
     } catch {
       throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
     }
     const current = instance2(target2.id);
-    if (!current || current.enabled === false || target2.endpoint !== origin || scope !== businessTargetScope(origin, current, target2.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
+    if (!current || current.enabled === false || target2.endpoint !== origin || scope2 !== businessTargetScope(origin, current, target2.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate2(input.scope);
   if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
@@ -56872,21 +56887,21 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
       if (!record.prepare) {
-        const identity = record.identity || {};
-        if (dispatch && /^[a-f0-9]{64}$/.test(identity.planHash || "") && (identity.mutationId || identity.jobId)) {
+        const identity2 = record.identity || {};
+        if (dispatch && /^[a-f0-9]{64}$/.test(identity2.planHash || "") && (identity2.mutationId || identity2.jobId)) {
           try {
             const receipt = await dispatch(
               target2.id,
-              identity.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
+              identity2.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
               {
-                ...identity.mutationId ? { mutationId: identity.mutationId } : { jobId: identity.jobId },
-                planHash: identity.planHash,
+                ...identity2.mutationId ? { mutationId: identity2.mutationId } : { jobId: identity2.jobId },
+                planHash: identity2.planHash,
                 operationId: input.operationId,
                 timeoutMs: input.timeoutMs,
                 deadlineAt: input.deadlineAt
               }
             );
-            const evidence = identity.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
+            const evidence = identity2.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
             const saved2 = await service.call("reconcile", { ...input, result: createOutputGuard().sanitize(evidence).value });
             return view({ ...record, ...saved2 }, saved2.state === "uncertain" ? "remote_evidence_unavailable" : void 0);
           } catch {
@@ -56898,14 +56913,14 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
     }
     if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
     if (input.action === "dispatch_prepare") {
-      const digest2 = prepareRequestDigest(input.request || {});
+      const digest3 = prepareRequestDigest(input.request || {});
       if (input.request?.instanceId !== target2.id || input.request?.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
-      await service.call("claim_prepare", { ...input, dispatchDigest: digest2 });
+      await service.call("claim_prepare", { ...input, dispatchDigest: digest3 });
     }
     const recovering = input.action === "recover_operation";
     let result, notDispatched = false, fenced = false;
     try {
-      const { instanceId, ...request } = input.request || {};
+      const { instanceId: instanceId2, ...request } = input.request || {};
       result = await dispatch(
         target2.id,
         recovering ? "/mongodb/mutations/recover-prepare" : record.route,
@@ -56965,8 +56980,8 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch } = 
 
 // service-start-runtime.js
 async function serviceStartRuntime(request, profile, dependencies) {
-  const fs12 = dependencies?.fs || require("fs");
-  const path19 = require("path").posix;
+  const fs13 = dependencies?.fs || require("fs");
+  const path20 = require("path").posix;
   const execFile2 = dependencies?.execFile || require("child_process").execFile;
   const now = dependencies?.now || Date.now;
   const sleep3 = dependencies?.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
@@ -56975,31 +56990,31 @@ async function serviceStartRuntime(request, profile, dependencies) {
   delete baseEnv.NODE_PATH;
   const started = [], attempted = [], verified = [];
   let phase = "preflight", locked = false, cwd, script, interpreter;
-  const lock = path19.join(profile.pm2Home, ".remote-debug-service-start.lock");
+  const lock = path20.join(profile.pm2Home, ".remote-debug-service-start.lock");
   const deadline = Math.min(request.deadlineAt, now() + profile.startupTimeoutMs);
-  const fail3 = (code) => {
+  const fail4 = (code) => {
     throw Object.assign(new Error(code), { serviceCode: code });
   };
   const remaining = () => {
     const ms = deadline - now();
-    if (ms < 50) fail3("SERVICE_START_TIMEOUT");
+    if (ms < 50) fail4("SERVICE_START_TIMEOUT");
     return ms;
   };
-  const real = (file) => fs12.realpathSync(file);
+  const real = (file) => fs13.realpathSync(file);
   const inside = (file, root) => file.startsWith(`${root}/`);
   const bounded2 = (file, max = 262144) => {
-    const fd = fs12.openSync(file, "r");
+    const fd = fs13.openSync(file, "r");
     try {
       const buffer = Buffer.alloc(max + 1);
       let n = 0, read;
       do {
-        read = fs12.readSync(fd, buffer, n, buffer.length - n, n);
+        read = fs13.readSync(fd, buffer, n, buffer.length - n, n);
         n += read;
       } while (read && n < buffer.length);
-      if (n > max) fail3("SERVICE_EVIDENCE_TOO_LARGE");
+      if (n > max) fail4("SERVICE_EVIDENCE_TOO_LARGE");
       return buffer.subarray(0, n).toString("utf8");
     } finally {
-      fs12.closeSync(fd);
+      fs13.closeSync(fd);
     }
   };
   const run = (file, args, env = baseEnv) => new Promise((resolve, reject) => {
@@ -57022,48 +57037,48 @@ async function serviceStartRuntime(request, profile, dependencies) {
     try {
       entries = JSON.parse(output2);
     } catch {
-      fail3("SERVICE_PM2_RESPONSE_INVALID");
+      fail4("SERVICE_PM2_RESPONSE_INVALID");
     }
-    if (!Array.isArray(entries) || entries.length > 512) fail3("SERVICE_PM2_RESPONSE_INVALID");
+    if (!Array.isArray(entries) || entries.length > 512) fail4("SERVICE_PM2_RESPONSE_INVALID");
     return entries;
   };
   const resolveRelease = () => {
     const current = real(profile.cwd);
     if (profile.releaseRoot) {
       const root = real(profile.releaseRoot);
-      if (root !== profile.releaseRoot || !inside(current, `${root}/releases`) || !/^\/[A-Za-z0-9_.+-]+$/.test(current.slice(`${root}/releases`.length))) fail3("SERVICE_RELEASE_PATH_INVALID");
-    } else if (current !== profile.cwd) fail3("SERVICE_CWD_SYMLINK_REQUIRES_RELEASE_ROOT");
+      if (root !== profile.releaseRoot || !inside(current, `${root}/releases`) || !/^\/[A-Za-z0-9_.+-]+$/.test(current.slice(`${root}/releases`.length))) fail4("SERVICE_RELEASE_PATH_INVALID");
+    } else if (current !== profile.cwd) fail4("SERVICE_CWD_SYMLINK_REQUIRES_RELEASE_ROOT");
     return current;
   };
   const approved = (file) => {
     const resolved = real(file);
-    if (!request.allowedRoots.some((root) => resolved === root || inside(resolved, root))) fail3("SERVICE_CANONICAL_PATH_DENIED");
+    if (!request.allowedRoots.some((root) => resolved === root || inside(resolved, root))) fail4("SERVICE_CANONICAL_PATH_DENIED");
     return resolved;
   };
   const find = (entries, proc) => {
     const matches = entries.filter((entry2) => entry2.name === proc.name || entry2.pm2_env?.name === proc.name);
-    if (matches.length > 1) fail3("SERVICE_DUPLICATE_PROCESS");
+    if (matches.length > 1) fail4("SERVICE_DUPLICATE_PROCESS");
     return matches[0];
   };
   const nodeArgs = profile.envFiles.map((file) => `--env-file=${file}`);
   const checkIdentity = (entry2, proc) => {
     const e = entry2.pm2_env || {};
-    if (e.exec_mode !== "fork_mode") fail3("SERVICE_MODE_MISMATCH");
-    if (real(e.pm_cwd) !== cwd || real(e.pm_exec_path) !== script || real(e.exec_interpreter) !== interpreter) fail3("SERVICE_PROCESS_PATH_CONFLICT");
+    if (e.exec_mode !== "fork_mode") fail4("SERVICE_MODE_MISMATCH");
+    if (real(e.pm_cwd) !== cwd || real(e.pm_exec_path) !== script || real(e.exec_interpreter) !== interpreter) fail4("SERVICE_PROCESS_PATH_CONFLICT");
     const args = Array.isArray(e.node_args) ? e.node_args : typeof e.node_args === "string" ? e.node_args.split(/\s+/).filter(Boolean) : [];
-    if (JSON.stringify(args) !== JSON.stringify(nodeArgs)) fail3("SERVICE_NODE_ARGS_MISMATCH");
-    if (e.node_version !== profile.nodeVersion) fail3("SERVICE_NODE_VERSION_MISMATCH");
+    if (JSON.stringify(args) !== JSON.stringify(nodeArgs)) fail4("SERVICE_NODE_ARGS_MISMATCH");
+    if (e.node_version !== profile.nodeVersion) fail4("SERVICE_NODE_VERSION_MISMATCH");
     for (const [key, value] of Object.entries(proc.env)) {
-      if (String(e[key] ?? e.env?.[key]) !== value) fail3("SERVICE_ENV_MISMATCH");
+      if (String(e[key] ?? e.env?.[key]) !== value) fail4("SERVICE_ENV_MISMATCH");
     }
-    if (!Number.isSafeInteger(entry2.pid) || entry2.pid < 1) fail3("SERVICE_PROCESS_NOT_RUNNING");
-    if (!Number.isSafeInteger(e.restart_time) || e.restart_time < 0 || !Number.isSafeInteger(e.pm_uptime) || e.pm_uptime < 1) fail3("SERVICE_PROCESS_METADATA_INVALID");
-    if (real(`/proc/${entry2.pid}/exe`) !== interpreter || real(`/proc/${entry2.pid}/cwd`) !== cwd) fail3("SERVICE_ACTUAL_PROCESS_MISMATCH");
+    if (!Number.isSafeInteger(entry2.pid) || entry2.pid < 1) fail4("SERVICE_PROCESS_NOT_RUNNING");
+    if (!Number.isSafeInteger(e.restart_time) || e.restart_time < 0 || !Number.isSafeInteger(e.pm_uptime) || e.pm_uptime < 1) fail4("SERVICE_PROCESS_METADATA_INVALID");
+    if (real(`/proc/${entry2.pid}/exe`) !== interpreter || real(`/proc/${entry2.pid}/cwd`) !== cwd) fail4("SERVICE_ACTUAL_PROCESS_MISMATCH");
     const actualArgs = bounded2(`/proc/${entry2.pid}/cmdline`).split("\0").filter(Boolean);
-    if (nodeArgs.some((arg) => !actualArgs.includes(arg))) fail3("SERVICE_NODE_ARGS_MISMATCH");
+    if (nodeArgs.some((arg) => !actualArgs.includes(arg))) fail4("SERVICE_NODE_ARGS_MISMATCH");
     const actualEnv = bounded2(`/proc/${entry2.pid}/environ`).split("\0");
-    for (const [key, value] of Object.entries(proc.env)) if (!actualEnv.includes(`${key}=${value}`)) fail3("SERVICE_ACTUAL_ENV_MISMATCH");
-    if (actualEnv.some((item) => item.startsWith("NODE_OPTIONS=") && item !== "NODE_OPTIONS=")) fail3("SERVICE_UNEXPECTED_NODE_OPTIONS");
+    for (const [key, value] of Object.entries(proc.env)) if (!actualEnv.includes(`${key}=${value}`)) fail4("SERVICE_ACTUAL_ENV_MISMATCH");
+    if (actualEnv.some((item) => item.startsWith("NODE_OPTIONS=") && item !== "NODE_OPTIONS=")) fail4("SERVICE_UNEXPECTED_NODE_OPTIONS");
     return { pid: entry2.pid, restarts: e.restart_time, uptime: e.pm_uptime };
   };
   const sockets = () => {
@@ -57086,11 +57101,11 @@ async function serviceStartRuntime(request, profile, dependencies) {
   const portEvidence = (proc, pid, listeners) => {
     const owned = /* @__PURE__ */ new Set();
     if (pid) {
-      const files = fs12.readdirSync(`/proc/${pid}/fd`);
-      if (files.length > 16384) fail3("SERVICE_EVIDENCE_TOO_LARGE");
+      const files = fs13.readdirSync(`/proc/${pid}/fd`);
+      if (files.length > 16384) fail4("SERVICE_EVIDENCE_TOO_LARGE");
       for (const file of files) {
         try {
-          const match = /^socket:\[(\d+)\]$/.exec(fs12.readlinkSync(`/proc/${pid}/fd/${file}`));
+          const match = /^socket:\[(\d+)\]$/.exec(fs13.readlinkSync(`/proc/${pid}/fd/${file}`));
           if (match) owned.add(match[1]);
         } catch (error2) {
           if (error2.code !== "ENOENT") throw error2;
@@ -57112,10 +57127,10 @@ async function serviceStartRuntime(request, profile, dependencies) {
       if (error2.code === "ENOENT") return null;
       throw error2;
     }
-    const root = real(path19.join(profile.pm2Home, "logs"));
-    if (!inside(file, root)) fail3("SERVICE_LOG_PATH_CONFLICT");
-    const stat = fs12.statSync(file);
-    if (!stat.isFile()) fail3("SERVICE_LOG_PATH_CONFLICT");
+    const root = real(path20.join(profile.pm2Home, "logs"));
+    if (!inside(file, root)) fail4("SERVICE_LOG_PATH_CONFLICT");
+    const stat = fs13.statSync(file);
+    if (!stat.isFile()) fail4("SERVICE_LOG_PATH_CONFLICT");
     return { file, size: stat.size, ino: stat.ino };
   };
   const markerSeen = (entry2, offset) => {
@@ -57123,13 +57138,13 @@ async function serviceStartRuntime(request, profile, dependencies) {
     if (!log) return false;
     if (offset && (log.ino !== offset.ino || log.size < offset.size)) return false;
     const start = Math.max(offset ? offset.size : 0, log.size - 65536);
-    const fd = fs12.openSync(log.file, "r");
+    const fd = fs13.openSync(log.file, "r");
     try {
       const buffer = Buffer.alloc(Math.min(65536, Math.max(0, log.size - start)));
-      const count = fs12.readSync(fd, buffer, 0, buffer.length, start);
+      const count = fs13.readSync(fd, buffer, 0, buffer.length, start);
       return buffer.subarray(0, count).toString("utf8").includes(profile.startupMarker);
     } finally {
-      fs12.closeSync(fd);
+      fs13.closeSync(fd);
     }
   };
   const output = (status, extra = {}) => ({
@@ -57148,33 +57163,33 @@ async function serviceStartRuntime(request, profile, dependencies) {
     remaining();
     phase = "paths";
     cwd = resolveRelease();
-    if (!fs12.statSync(cwd).isDirectory()) fail3("SERVICE_CWD_INVALID");
-    script = real(path19.join(cwd, profile.entry));
-    if (!inside(script, cwd) || !fs12.statSync(script).isFile()) fail3("SERVICE_ENTRY_PATH_INVALID");
-    if (!/\.m?js$/.test(script) || /\.config\.m?js$/i.test(script) || /^ecosystem(?:\.|$)/i.test(path19.basename(script))) fail3("SERVICE_ENTRY_PATH_INVALID");
+    if (!fs13.statSync(cwd).isDirectory()) fail4("SERVICE_CWD_INVALID");
+    script = real(path20.join(cwd, profile.entry));
+    if (!inside(script, cwd) || !fs13.statSync(script).isFile()) fail4("SERVICE_ENTRY_PATH_INVALID");
+    if (!/\.m?js$/.test(script) || /\.config\.m?js$/i.test(script) || /^ecosystem(?:\.|$)/i.test(path20.basename(script))) fail4("SERVICE_ENTRY_PATH_INVALID");
     interpreter = approved(profile.interpreter);
-    if (real(profile.pm2Home) !== profile.pm2Home) fail3("SERVICE_PM2_HOME_SYMLINK");
-    fs12.accessSync(interpreter, fs12.constants.X_OK);
-    fs12.accessSync(profile.pm2Path, fs12.constants.X_OK);
+    if (real(profile.pm2Home) !== profile.pm2Home) fail4("SERVICE_PM2_HOME_SYMLINK");
+    fs13.accessSync(interpreter, fs13.constants.X_OK);
+    fs13.accessSync(profile.pm2Path, fs13.constants.X_OK);
     phase = "runtime";
     const version = (await run(interpreter, ["--version"])).trim();
-    if (version !== `v${profile.nodeVersion}`) fail3("SERVICE_NODE_VERSION_MISMATCH");
+    if (version !== `v${profile.nodeVersion}`) fail4("SERVICE_NODE_VERSION_MISMATCH");
     phase = "env-files";
     for (const file of profile.envFiles) {
       approved(file);
-      if (!fs12.statSync(file).isFile()) fail3("SERVICE_ENV_FILE_INVALID");
-      fs12.accessSync(file, fs12.constants.R_OK);
+      if (!fs13.statSync(file).isFile()) fail4("SERVICE_ENV_FILE_INVALID");
+      fs13.accessSync(file, fs13.constants.R_OK);
     }
     phase = "pm2-daemon";
-    const daemon = Number(bounded2(path19.join(profile.pm2Home, "pm2.pid"), 32).trim());
-    if (!Number.isSafeInteger(daemon) || daemon < 1 || !bounded2(`/proc/${daemon}/cmdline`).includes("PM2")) fail3("SERVICE_PM2_DAEMON_UNAVAILABLE");
+    const daemon = Number(bounded2(path20.join(profile.pm2Home, "pm2.pid"), 32).trim());
+    if (!Number.isSafeInteger(daemon) || daemon < 1 || !bounded2(`/proc/${daemon}/cmdline`).includes("PM2")) fail4("SERVICE_PM2_DAEMON_UNAVAILABLE");
     if (request.action === "start") {
       phase = "lock";
       try {
-        fs12.mkdirSync(lock, { mode: 448 });
+        fs13.mkdirSync(lock, { mode: 448 });
         locked = true;
       } catch (error2) {
-        if (error2.code === "EEXIST") fail3("SERVICE_START_BUSY");
+        if (error2.code === "EEXIST") fail4("SERVICE_START_BUSY");
         throw error2;
       }
     }
@@ -57185,13 +57200,13 @@ async function serviceStartRuntime(request, profile, dependencies) {
     for (const proc of profile.processes) {
       const entry2 = find(entries, proc);
       if (entry2) {
-        const identity = checkIdentity(entry2, proc);
-        if (entry2.pm2_env.status !== "online") fail3("SERVICE_EXISTING_PROCESS_UNHEALTHY");
+        const identity2 = checkIdentity(entry2, proc);
+        if (entry2.pm2_env.status !== "online") fail4("SERVICE_EXISTING_PROCESS_UNHEALTHY");
         const evidence = portEvidence(proc, entry2.pid, listeners);
-        if (evidence.some((item) => !item.owned)) fail3("SERVICE_PORT_OWNER_MISMATCH");
-        initial.set(proc.name, identity);
+        if (evidence.some((item) => !item.owned)) fail4("SERVICE_PORT_OWNER_MISMATCH");
+        initial.set(proc.name, identity2);
       } else {
-        if (portEvidence(proc, null, listeners).some((item) => item.listening)) fail3("SERVICE_PORT_CONFLICT");
+        if (portEvidence(proc, null, listeners).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
         if (entries.some((item) => {
           if (profile.processes.some((p) => p.name === item.name)) return false;
           try {
@@ -57199,7 +57214,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
           } catch {
             return false;
           }
-        })) fail3("SERVICE_UNEXPECTED_REGISTRATION");
+        })) fail4("SERVICE_UNEXPECTED_REGISTRATION");
         missing.push(proc);
       }
     }
@@ -57207,13 +57222,13 @@ async function serviceStartRuntime(request, profile, dependencies) {
     phase = "start";
     for (const proc of missing) {
       remaining();
-      if (resolveRelease() !== cwd) fail3("SERVICE_RELEASE_CHANGED");
+      if (resolveRelease() !== cwd) fail4("SERVICE_RELEASE_CHANGED");
       entries = await list();
-      if (find(entries, proc)) fail3("SERVICE_CONCURRENT_PROCESS_CHANGE");
-      if (portEvidence(proc, null, sockets()).some((item) => item.listening)) fail3("SERVICE_PORT_CONFLICT");
+      if (find(entries, proc)) fail4("SERVICE_CONCURRENT_PROCESS_CHANGE");
+      if (portEvidence(proc, null, sockets()).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
       const logName = proc.name.replace(/_/g, "-");
-      const guessedLog = path19.join(profile.pm2Home, "logs", `${logName}-out.log`);
-      if (fs12.existsSync(guessedLog)) offsets.set(proc.name, { size: fs12.statSync(guessedLog).size, ino: fs12.statSync(guessedLog).ino });
+      const guessedLog = path20.join(profile.pm2Home, "logs", `${logName}-out.log`);
+      if (fs13.existsSync(guessedLog)) offsets.set(proc.name, { size: fs13.statSync(guessedLog).size, ino: fs13.statSync(guessedLog).ino });
       else offsets.set(proc.name, { size: 0 });
       attempted.push(proc.name);
       await pm2([
@@ -57239,15 +57254,15 @@ async function serviceStartRuntime(request, profile, dependencies) {
     const identities = new Map(initial);
     while (true) {
       remaining();
-      if (resolveRelease() !== cwd) fail3("SERVICE_RELEASE_CHANGED");
+      if (resolveRelease() !== cwd) fail4("SERVICE_RELEASE_CHANGED");
       entries = await list();
       const listenersNow = sockets();
       let ready = true;
       verified.length = 0;
       for (const proc of profile.processes) {
         const entry2 = find(entries, proc);
-        if (!entry2) fail3("SERVICE_PROCESS_DISAPPEARED");
-        if (["errored", "stopped", "stopping"].includes(entry2.pm2_env?.status)) fail3("SERVICE_PROCESS_EXITED");
+        if (!entry2) fail4("SERVICE_PROCESS_DISAPPEARED");
+        if (["errored", "stopped", "stopping"].includes(entry2.pm2_env?.status)) fail4("SERVICE_PROCESS_EXITED");
         if (entry2.pm2_env?.status !== "online") {
           ready = false;
           continue;
@@ -57256,13 +57271,13 @@ async function serviceStartRuntime(request, profile, dependencies) {
           ready = false;
           continue;
         }
-        const identity = checkIdentity(entry2, proc);
+        const identity2 = checkIdentity(entry2, proc);
         const previous = identities.get(proc.name);
-        if (previous && (previous.pid !== identity.pid || previous.restarts !== identity.restarts || previous.uptime !== identity.uptime)) fail3("SERVICE_PROCESS_UNSTABLE");
-        identities.set(proc.name, identity);
-        if (!previous && identity.restarts !== 0) fail3("SERVICE_PROCESS_UNSTABLE");
+        if (previous && (previous.pid !== identity2.pid || previous.restarts !== identity2.restarts || previous.uptime !== identity2.uptime)) fail4("SERVICE_PROCESS_UNSTABLE");
+        identities.set(proc.name, identity2);
+        if (!previous && identity2.restarts !== 0) fail4("SERVICE_PROCESS_UNSTABLE");
         const ports = portEvidence(proc, entry2.pid, listenersNow);
-        if (ports.some((item) => item.listening && !item.owned)) fail3("SERVICE_PORT_OWNER_MISMATCH");
+        if (ports.some((item) => item.listening && !item.owned)) fail4("SERVICE_PORT_OWNER_MISMATCH");
         const offset = offsets.get(proc.name);
         if (offset && offset.ino === void 0) {
           const log = logPosition(entry2);
@@ -57274,7 +57289,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
           name: proc.name,
           pid: entry2.pid,
           status: "online",
-          restarts: identity.restarts,
+          restarts: identity2.restarts,
           ports: ports.map((item) => item.port),
           startupMarkerSeen: true,
           interpreterVerified: true,
@@ -57303,7 +57318,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
   } finally {
     if (locked) {
       try {
-        fs12.rmdirSync(lock);
+        fs13.rmdirSync(lock);
       } catch {
       }
     }
@@ -57351,19 +57366,19 @@ var RESULT_CODES = /* @__PURE__ */ new Set([
   "SERVICE_START_FAILED"
 ]);
 function safeReceipt(payload, profile) {
-  const invalid4 = () => {
+  const invalid5 = () => {
     throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Invalid service evidence; inspect this instance before retrying");
   };
   const names = new Set(profile.processes.map((p) => p.name));
   const nameList = (value) => {
     if (value === void 0) return [];
-    if (!Array.isArray(value) || value.length > names.size || value.some((name2) => !names.has(name2)) || new Set(value).size !== value.length) invalid4();
+    if (!Array.isArray(value) || value.length > names.size || value.some((name2) => !names.has(name2)) || new Set(value).size !== value.length) invalid5();
     return value;
   };
-  if (!["healthy", "missing", "blocked", "partial", "unknown"].includes(payload.status)) invalid4();
+  if (!["healthy", "missing", "blocked", "partial", "unknown"].includes(payload.status)) invalid5();
   const verified = (payload.verified || []).map((item) => {
     const proc = profile.processes.find((p) => p.name === item.name);
-    if (!proc || !Number.isSafeInteger(item.pid) || item.pid < 1 || item.status !== "online" || !Number.isSafeInteger(item.restarts) || item.restarts < 0 || JSON.stringify(proc.ports) !== JSON.stringify(item.ports) || item.startupMarkerSeen !== true || item.interpreterVerified !== true || item.environmentVerified !== true) invalid4();
+    if (!proc || !Number.isSafeInteger(item.pid) || item.pid < 1 || item.status !== "online" || !Number.isSafeInteger(item.restarts) || item.restarts < 0 || JSON.stringify(proc.ports) !== JSON.stringify(item.ports) || item.startupMarkerSeen !== true || item.interpreterVerified !== true || item.environmentVerified !== true) invalid5();
     return {
       name: item.name,
       pid: item.pid,
@@ -57375,8 +57390,8 @@ function safeReceipt(payload, profile) {
       environmentVerified: true
     };
   });
-  if (new Set(verified.map((item) => item.name)).size !== verified.length) invalid4();
-  if (payload.status === "healthy" && verified.length !== profile.processes.length) invalid4();
+  if (new Set(verified.map((item) => item.name)).size !== verified.length) invalid5();
+  if (payload.status === "healthy" && verified.length !== profile.processes.length) invalid5();
   const result = {
     status: payload.status,
     phase: ["preflight", "paths", "runtime", "env-files", "pm2-daemon", "lock", "process-preflight", "start", "verify", "persist", "complete"].includes(payload.phase) ? payload.phase : "unknown",
@@ -57389,7 +57404,7 @@ function safeReceipt(payload, profile) {
   };
   if (payload.resolvedCwd) {
     const prefix = `${profile.releaseRoot}/releases/`;
-    if (typeof payload.resolvedCwd !== "string" || (profile.releaseRoot ? !payload.resolvedCwd.startsWith(prefix) || !/^[A-Za-z0-9_.+-]+$/.test(payload.resolvedCwd.slice(prefix.length)) : payload.resolvedCwd !== profile.cwd)) invalid4();
+    if (typeof payload.resolvedCwd !== "string" || (profile.releaseRoot ? !payload.resolvedCwd.startsWith(prefix) || !/^[A-Za-z0-9_.+-]+$/.test(payload.resolvedCwd.slice(prefix.length)) : payload.resolvedCwd !== profile.cwd)) invalid5();
     result.resolvedCwd = payload.resolvedCwd;
   }
   if (payload.missing) result.missing = nameList(payload.missing);
@@ -57438,11 +57453,11 @@ async function runService(input, { action, config, operation, runSSH: runSSH2 })
 // http-auth.js
 var import_node_path4 = __toESM(require("node:path"), 1);
 var import_local_auth = __toESM(require_local_auth(), 1);
-var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/instance-tasks.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
-function publicHealth(request, token, identity) {
+var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/instance-tasks.js", "/final-results.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
+function publicHealth(request, token, identity2) {
   const nonce = request.headers["x-remote-debug-challenge"];
   return {
-    ...identity,
+    ...identity2,
     .../^[a-f0-9]{64}$/.test(nonce || "") ? { authProof: import_local_auth.default.healthProof(token, nonce, new URL(`http://${request.headers.host}`).origin) } : {}
   };
 }
@@ -57456,24 +57471,24 @@ function installHttpAuth(app, config, options = {}) {
     response.set("Cache-Control", "no-store");
     response.set("X-Content-Type-Options", "nosniff");
     response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
-    const fail3 = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
+    const fail4 = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
     const port = request.socket.localPort;
     const host = request.headers.host;
     const listener = config.agent.host || "127.0.0.1";
     const allowedHosts = [`${listener.includes(":") ? `[${listener}]` : listener}:${port}`, `127.0.0.1:${port}`, `localhost:${port}`];
     if (port === 80) allowedHosts.push(listener.includes(":") ? `[${listener}]` : listener, "127.0.0.1", "localhost");
     if (!allowedHosts.includes(host)) {
-      return fail3(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
+      return fail4(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
     }
     const origin = request.headers.origin;
     if (origin !== void 0 && origin !== new URL(`http://${host}`).origin) {
-      return fail3(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
+      return fail4(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
     }
     if ((request.method === "GET" || request.method === "HEAD") && (request.path === "/health" || PUBLIC_ASSETS.has(request.path))) return next();
     const header = request.headers.authorization;
-    if (!header) return fail3(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
+    if (!header) return fail4(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
     if (!import_local_auth.default.tokenMatches(header.startsWith("Bearer ") ? header.slice(7) : "", token)) {
-      return fail3(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
+      return fail4(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
     }
     next();
   });
@@ -58199,7 +58214,7 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     try {
       await new Promise((resolve, reject) => {
         let settled = false;
-        const fail3 = (error2) => {
+        const fail4 = (error2) => {
           if (settled) return;
           settled = true;
           client.removeListener("ready", ready);
@@ -58211,8 +58226,8 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
           resolve();
         };
         client.once("ready", ready);
-        client.once("error", fail3);
-        client.once("close", () => fail3(new Error("SSH transport closed before authentication")));
+        client.once("error", fail4);
+        client.once("close", () => fail4(new Error("SSH transport closed before authentication")));
         client.connect(connectionOptions);
       });
     } catch (error2) {
@@ -58494,8 +58509,8 @@ function normalizeManualMongo(value, existing) {
 
 // manual-mongodb-runtime.js
 function manualMongoRemote(config, shellFingerprint) {
-  const fs12 = require("fs"), crypto = require("crypto");
-  const fail3 = (code) => {
+  const fs13 = require("fs"), crypto = require("crypto");
+  const fail4 = (code) => {
     const error2 = new Error(code);
     error2.code = code;
     throw error2;
@@ -58503,13 +58518,13 @@ function manualMongoRemote(config, shellFingerprint) {
   function connection() {
     let file;
     try {
-      file = JSON.parse(fs12.readFileSync(config.configPath, "utf8"));
+      file = JSON.parse(fs13.readFileSync(config.configPath, "utf8"));
     } catch (_) {
-      fail3("MANUAL_DB_PROFILE_REQUIRED");
+      fail4("MANUAL_DB_PROFILE_REQUIRED");
     }
     const profile = file[config.configProfile];
     const uri = config.uriKey.split(".").reduce((current, key) => current && Object.prototype.hasOwnProperty.call(current, key) ? current[key] : void 0, profile);
-    if (typeof uri !== "string" || !/^mongodb(?:\+srv)?:\/\//.test(uri)) fail3("MANUAL_DB_PROFILE_REQUIRED");
+    if (typeof uri !== "string" || !/^mongodb(?:\+srv)?:\/\//.test(uri)) fail4("MANUAL_DB_PROFILE_REQUIRED");
     const database = config.database || profile.database || profile.databaseName || "";
     const fingerprint = crypto.createHash("sha256").update(JSON.stringify([uri, database])).digest("hex");
     return { uri, database, fingerprint };
@@ -58517,7 +58532,7 @@ function manualMongoRemote(config, shellFingerprint) {
   if (shellFingerprint) {
     try {
       const target3 = connection();
-      if (target3.fingerprint !== shellFingerprint) fail3("MANUAL_DB_TARGET_CHANGED");
+      if (target3.fingerprint !== shellFingerprint) fail4("MANUAL_DB_TARGET_CHANGED");
       const startup = "db = connect(process.env.RDA_MANUAL_MONGO_URI); delete process.env.RDA_MANUAL_MONGO_URI; if (process.env.RDA_MANUAL_MONGO_DATABASE) db = db.getSiblingDB(process.env.RDA_MANUAL_MONGO_DATABASE); delete process.env.RDA_MANUAL_MONGO_DATABASE;";
       const child = require("child_process").spawn(config.mongoshPath, ["--nodb", "--norc", "--quiet", "--shell", "--eval", startup], {
         stdio: "inherit",
@@ -58544,7 +58559,7 @@ function manualMongoRemote(config, shellFingerprint) {
   const MAX_BYTES2 = 384 * 1024;
   const emit = (value) => {
     const line = JSON.stringify(value);
-    if (Buffer.byteLength(line) > 512 * 1024) fail3("MANUAL_DB_RESULT_LIMIT");
+    if (Buffer.byteLength(line) > 512 * 1024) fail4("MANUAL_DB_RESULT_LIMIT");
     process.stdout.write(line + "\n");
   };
   async function closeCursor() {
@@ -58571,7 +58586,7 @@ function manualMongoRemote(config, shellFingerprint) {
       close().finally(() => process.exit(0));
     }, 9e4);
   }
-  async function page() {
+  async function page2() {
     const data = [];
     let bytes = 0;
     while (data.length < cursorPageSize) {
@@ -58581,7 +58596,7 @@ function manualMongoRemote(config, shellFingerprint) {
       const value = encode(document2), size = Buffer.byteLength(JSON.stringify(value));
       if (size > MAX_BYTES2) {
         await closeCursor();
-        fail3("MANUAL_DB_DOCUMENT_LIMIT");
+        fail4("MANUAL_DB_DOCUMENT_LIMIT");
       }
       if (bytes + size > MAX_BYTES2) {
         pendingDocument = document2;
@@ -58598,13 +58613,13 @@ function manualMongoRemote(config, shellFingerprint) {
   }
   async function run(request) {
     if (request.operation === "connect") {
-      if (connected) fail3("MANUAL_DB_ALREADY_CONNECTED");
+      if (connected) fail4("MANUAL_DB_ALREADY_CONNECTED");
       target2 = connection();
       let driver;
       try {
         driver = require(config.driverPath);
       } catch (_) {
-        fail3("MANUAL_DB_DRIVER_REQUIRED");
+        fail4("MANUAL_DB_DRIVER_REQUIRED");
       }
       let bson = driver.BSON || driver;
       if (!bson.EJSON) {
@@ -58614,7 +58629,7 @@ function manualMongoRemote(config, shellFingerprint) {
         }
       }
       EJSON = bson.EJSON;
-      if (!EJSON || typeof EJSON.parse !== "function") fail3("MANUAL_DB_DRIVER_REQUIRED");
+      if (!EJSON || typeof EJSON.parse !== "function") fail4("MANUAL_DB_DRIVER_REQUIRED");
       client = new driver.MongoClient(target2.uri, {
         serverSelectionTimeoutMS: 1e4,
         connectTimeoutMS: 1e4,
@@ -58630,7 +58645,7 @@ function manualMongoRemote(config, shellFingerprint) {
       try {
         users = (await client.db("admin").command({ connectionStatus: 1, showPrivileges: false })).authInfo.authenticatedUsers;
       } catch (_) {
-        fail3("MANUAL_DB_IDENTITY_REQUIRED");
+        fail4("MANUAL_DB_IDENTITY_REQUIRED");
       }
       const authority = target2.uri.replace(/^mongodb(?:\+srv)?:\/\//, "").split(/[/?]/)[0];
       const hosts = authority.slice(authority.lastIndexOf("@") + 1);
@@ -58644,23 +58659,23 @@ function manualMongoRemote(config, shellFingerprint) {
         configPath: config.configPath
       };
     }
-    if (!connected) fail3("MANUAL_DB_NOT_CONNECTED");
-    if (connection().fingerprint !== target2.fingerprint) fail3("MANUAL_DB_TARGET_CHANGED");
+    if (!connected) fail4("MANUAL_DB_NOT_CONNECTED");
+    if (connection().fingerprint !== target2.fingerprint) fail4("MANUAL_DB_TARGET_CHANGED");
     if (request.operation === "check") return {};
     if (request.operation === "next") {
-      if (!cursor || request.cursor !== cursorKey) fail3("MANUAL_DB_CURSOR_EXPIRED");
-      return page();
+      if (!cursor || request.cursor !== cursorKey) fail4("MANUAL_DB_CURSOR_EXPIRED");
+      return page2();
     }
     if (request.operation === "replaceOne") {
       await closeCursor();
       const original = decode(request.original), replacement = decode(request.replacement);
-      if (!original || !replacement || !Object.prototype.hasOwnProperty.call(original, "_id") || EJSON.stringify(original._id, { relaxed: false }) !== EJSON.stringify(replacement._id, { relaxed: false })) fail3("MANUAL_DB_ID_IMMUTABLE");
+      if (!original || !replacement || !Object.prototype.hasOwnProperty.call(original, "_id") || EJSON.stringify(original._id, { relaxed: false }) !== EJSON.stringify(replacement._id, { relaxed: false })) fail4("MANUAL_DB_ID_IMMUTABLE");
       const result = await client.db(request.database).collection(request.collection).replaceOne({
         _id: original._id,
         $expr: { $eq: [{ $objectToArray: "$$ROOT" }, { $literal: Object.keys(original).map((key) => ({ k: key, v: original[key] })) }] }
       }, replacement, { upsert: false, maxTimeMS: 1e4 });
-      if (!result.acknowledged) fail3("MANUAL_DB_WRITE_UNKNOWN");
-      if (Number(result.matchedCount) !== 1) fail3("MANUAL_DB_WRITE_CONFLICT");
+      if (!result.acknowledged) fail4("MANUAL_DB_WRITE_UNKNOWN");
+      if (Number(result.matchedCount) !== 1) fail4("MANUAL_DB_WRITE_CONFLICT");
       return { matchedCount: Number(result.matchedCount), modifiedCount: Number(result.modifiedCount) };
     }
     await closeCursor();
@@ -58695,8 +58710,8 @@ function manualMongoRemote(config, shellFingerprint) {
         maxTimeMS: 1e4,
         allowDiskUse: false
       });
-    } else fail3("MANUAL_DB_OPERATION_INVALID");
-    return page();
+    } else fail4("MANUAL_DB_OPERATION_INVALID");
+    return page2();
   }
   const lines = require("readline").createInterface({ input: process.stdin, crlfDelay: Infinity });
   let sequence = Promise.resolve(), queued = 0;
@@ -58817,7 +58832,7 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
   });
   ready.catch(() => {
   });
-  const fail3 = (error2 = databaseError("MANUAL_DB_REMOTE_FAILED", 502)) => {
+  const fail4 = (error2 = databaseError("MANUAL_DB_REMOTE_FAILED", 502)) => {
     if (closed) return;
     closed = true;
     clearTimeout(openTimer);
@@ -58827,9 +58842,9 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
     stream?.destroy();
     client.destroy();
   };
-  const openTimer = setTimeout(() => fail3(databaseError("MANUAL_DB_TIMEOUT", 504)), 2e4);
-  client.on("error", () => fail3(databaseError(supervisor.hostVerificationError?.code === "SSH_HOST_KEY_MISMATCH" ? "MANUAL_DB_HOST_KEY_MISMATCH" : "MANUAL_DB_REMOTE_FAILED", 502)));
-  client.on("close", () => fail3());
+  const openTimer = setTimeout(() => fail4(databaseError("MANUAL_DB_TIMEOUT", 504)), 2e4);
+  client.on("error", () => fail4(databaseError(supervisor.hostVerificationError?.code === "SSH_HOST_KEY_MISMATCH" ? "MANUAL_DB_HOST_KEY_MISMATCH" : "MANUAL_DB_REMOTE_FAILED", 502)));
+  client.on("close", () => fail4());
   client.on("ready", () => {
     if (closed) return;
     client.exec(manualMongoCommand(instance2), (error2, channel) => {
@@ -58838,18 +58853,18 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
         return;
       }
       if (error2) {
-        fail3();
+        fail4();
         return;
       }
       stream = channel;
       channel.stderr.on("data", () => {
       });
-      channel.on("error", () => fail3());
-      channel.on("close", () => fail3());
+      channel.on("error", () => fail4());
+      channel.on("close", () => fail4());
       channel.on("data", (chunk) => {
         buffer = Buffer.concat([buffer, chunk]);
         if (buffer.length > 600 * 1024) {
-          fail3();
+          fail4();
           return;
         }
         let index;
@@ -58859,7 +58874,7 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
           try {
             const message = JSON.parse(line.toString("utf8"));
             if (!pending || message.id !== pending.id) {
-              fail3();
+              fail4();
               return;
             }
             const waiter = pending;
@@ -58867,7 +58882,7 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
             if (message.ok === true) waiter.resolve(message.result);
             else waiter.reject(Object.assign(databaseError(Object.hasOwn(MESSAGES, message.error?.code || "") ? message.error.code : "MANUAL_DB_REMOTE_FAILED", 502), { serverCode: message.error?.serverCode }));
           } catch {
-            fail3();
+            fail4();
           }
         }
       });
@@ -58878,14 +58893,14 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
   try {
     manualMongoCommand(instance2);
   } catch (error2) {
-    fail3(error2);
+    fail4(error2);
   }
   if (!closed) supervisor.connectionOptions().then((settings) => {
     if (!closed) client.connect(settings);
-  }).catch(() => fail3(databaseError("MANUAL_DB_SSH_CONFIG_INVALID", 503)));
+  }).catch(() => fail4(databaseError("MANUAL_DB_SSH_CONFIG_INVALID", 503)));
   return {
     id,
-    close: () => fail3(databaseError("MANUAL_DB_CLOSED", 409)),
+    close: () => fail4(databaseError("MANUAL_DB_CLOSED", 409)),
     get closed() {
       return closed;
     },
@@ -58895,7 +58910,7 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
       if (pending) throw databaseError("MANUAL_DB_BUSY", 409);
       return new Promise((resolve, reject) => {
         const requestId = (0, import_node_crypto13.randomUUID)();
-        const timer = setTimeout(() => fail3(databaseError("MANUAL_DB_TIMEOUT", 504)), 25e3);
+        const timer = setTimeout(() => fail4(databaseError("MANUAL_DB_TIMEOUT", 504)), 25e3);
         const done = (callback) => (value) => {
           clearTimeout(timer);
           callback(value);
@@ -58929,14 +58944,14 @@ function openManualTerminal(instance2, options) {
     client.destroy();
     options.onClose?.();
   };
-  const fail3 = (code = "MANUAL_SSH_FAILED") => {
+  const fail4 = (code = "MANUAL_SSH_FAILED") => {
     if (closed) return;
     options.onError?.(code);
     close();
   };
-  const openTimer = setTimeout(() => fail3("MANUAL_SSH_TIMEOUT"), 3e4);
+  const openTimer = setTimeout(() => fail4("MANUAL_SSH_TIMEOUT"), 3e4);
   openTimer.unref?.();
-  client.on("error", () => fail3(verifier.hostVerificationError?.code || "MANUAL_SSH_FAILED"));
+  client.on("error", () => fail4(verifier.hostVerificationError?.code || "MANUAL_SSH_FAILED"));
   client.on("close", close);
   client.on("ready", () => {
     if (closed) return;
@@ -58948,21 +58963,21 @@ function openManualTerminal(instance2, options) {
         return;
       }
       if (error2) {
-        fail3("MANUAL_SHELL_FAILED");
+        fail4("MANUAL_SHELL_FAILED");
         return;
       }
       clearTimeout(openTimer);
       stream = channel;
       stream.on("data", (data) => options.onData(data));
       stream.stderr?.on("data", (data) => options.onData(data));
-      stream.on("error", () => fail3("MANUAL_SHELL_FAILED"));
+      stream.on("error", () => fail4("MANUAL_SHELL_FAILED"));
       stream.on("close", close);
       options.onReady();
     });
   });
   verifier.connectionOptions().then((settings) => {
     if (!closed) client.connect(settings);
-  }).catch((error2) => fail3(["SSH_HOST_KEY_REQUIRED", "SSH_HOST_KEY_MISMATCH"].includes(error2.code) ? error2.code : "MANUAL_SSH_CONFIG_INVALID"));
+  }).catch((error2) => fail4(["SSH_HOST_KEY_REQUIRED", "SSH_HOST_KEY_MISMATCH"].includes(error2.code) ? error2.code : "MANUAL_SSH_CONFIG_INVALID"));
   return {
     close,
     write(data) {
@@ -59151,8 +59166,8 @@ var ManualWorkbench = class {
     } catch {
     }
   }
-  invalidateInstance(instanceId) {
-    for (const [token, session] of this.sessions) if (session.instanceId === instanceId) this.revoke(token, "instance-changed");
+  invalidateInstance(instanceId2) {
+    for (const [token, session] of this.sessions) if (session.instanceId === instanceId2) this.revoke(token, "instance-changed");
   }
   prune() {
     for (const [token] of this.sessions) {
@@ -59502,10 +59517,10 @@ var ManualWorkbench = class {
       }
     });
   }
-  async open(instanceId) {
-    this.instance(instanceId);
+  async open(instanceId2) {
+    this.instance(instanceId2);
     const origin = await this.start();
-    return { ok: true, url: `${origin}/?instanceId=${encodeURIComponent(instanceId)}` };
+    return { ok: true, url: `${origin}/?instanceId=${encodeURIComponent(instanceId2)}` };
   }
   async close() {
     this.closing = true;
@@ -59555,17 +59570,17 @@ function redactSandboxLog(value, depth = 0) {
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).slice(0, 100).map(([key, item]) => [key, /password|passphrase|secret|token|credential|private.?key|before|document/i.test(key) ? "[redacted]" : redactSandboxLog(item, depth + 1)]));
   return value;
 }
-async function inspectLocalSandbox(dataDir, instanceId, input) {
+async function inspectLocalSandbox(dataDir, instanceId2, input) {
   if (!["status", "export"].includes(input.action)) throw sandboxError("local sandbox supports status and bounded audit export only", "SANDBOX_ACTION_INVALID");
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(instanceId)) throw sandboxError("invalid instance id");
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(instanceId2)) throw sandboxError("invalid instance id");
   const root = import_node_path9.default.resolve(dataDir, ".remote-debug", "instances");
-  const directory = import_node_path9.default.join(root, instanceId);
+  const directory = import_node_path9.default.join(root, instanceId2);
   for (const item of [root, directory]) {
     try {
       const stat = await import_promises2.default.lstat(item);
       if (stat.isSymbolicLink() || !stat.isDirectory()) throw sandboxError("local sandbox is not a regular directory");
     } catch (error2) {
-      if (error2.code === "ENOENT") return { instanceId, initialized: false, files: [], bytes: 0, records: [] };
+      if (error2.code === "ENOENT") return { instanceId: instanceId2, initialized: false, files: [], bytes: 0, records: [] };
       throw error2;
     }
   }
@@ -59583,10 +59598,10 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
       if (error2.code !== "ENOENT") throw error2;
     }
   }
-  if (input.action === "status") return { instanceId, initialized: true, files, bytes: files.reduce((sum, file) => sum + file.bytes, 0), activeFilesRetained: true };
+  if (input.action === "status") return { instanceId: instanceId2, initialized: true, files, bytes: files.reduce((sum, file) => sum + file.bytes, 0), activeFilesRetained: true };
   if (input.action !== "export") throw sandboxError("local sandbox supports status and bounded audit export only", "SANDBOX_ACTION_INVALID");
   const metadata = files.find((file) => file.name === "audit.jsonl");
-  if (!metadata) return { instanceId, records: [], scannedBytes: 0 };
+  if (!metadata) return { instanceId: instanceId2, records: [], scannedBytes: 0 };
   const start = Math.max(0, metadata.bytes - 65536);
   const handle = await import_promises2.default.open(import_node_path9.default.join(directory, metadata.name), "r");
   const buffer = Buffer.alloc(Math.min(metadata.bytes, 65536));
@@ -59598,7 +59613,7 @@ async function inspectLocalSandbox(dataDir, instanceId, input) {
   const lines = buffer.toString("utf8").split(/\r?\n/);
   if (start) lines.shift();
   const limit = Math.max(1, Math.min(100, Number.isInteger(input.limit) ? input.limit : 20));
-  return { instanceId, scannedBytes: buffer.length, truncated: start > 0, records: lines.filter(Boolean).slice(-limit).map((line) => {
+  return { instanceId: instanceId2, scannedBytes: buffer.length, truncated: start > 0, records: lines.filter(Boolean).slice(-limit).map((line) => {
     try {
       return redactSandboxLog(JSON.parse(line));
     } catch {
@@ -59704,9 +59719,9 @@ function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxByte
     const entry2 = records.get(id);
     return entry2 ? { ...entry2.summary, wireMessage: entry2.wireMessage } : null;
   }
-  function removeInstance(instanceId) {
+  function removeInstance(instanceId2) {
     sequence++;
-    for (const [id, entry2] of records) if (entry2.summary.instanceId === instanceId) evict(id);
+    for (const [id, entry2] of records) if (entry2.summary.instanceId === instanceId2) evict(id);
     for (const listener of listeners) listener(snapshot());
   }
   function stream(request, response) {
@@ -59752,16 +59767,483 @@ function installOutputPreviewRoutes(app, store, registry) {
   });
 }
 
+// final-results.js
+var import_promises3 = __toESM(require("node:fs/promises"), 1);
+var import_node_fs6 = require("node:fs");
+var import_node_path10 = __toESM(require("node:path"), 1);
+var import_node_crypto16 = require("node:crypto");
+var import_local_auth5 = __toESM(require_local_auth(), 1);
+
+// ../plugins/remote-debug-agent/final-results.js
+var uuid = { type: "string", pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$" };
+var instanceId = { type: ["string", "null"], description: "Explicit instance ID, or null for a Manager-only task. Never infer from a chat ID." };
+var artifact = { type: "object", additionalProperties: false, required: ["category", "format", "name", "content"], properties: {
+  category: { type: "string", enum: ["results", "reports", "exports", "attachments"] },
+  format: { type: "string", enum: ["json", "markdown", "text", "csv", "jsonl", "html", "binary"] },
+  encoding: { type: "string", enum: ["utf8", "base64"], description: "Use base64 only with format=binary; name must contain the desired download filename, such as report.pdf. Binary bytes are preserved verbatim, so generate attachments from already sanitized final data." },
+  name: { type: "string", minLength: 1, maxLength: 120, description: "Display name without a directory. The store generates the physical file name." },
+  content: { description: "Final UTF-8 text, a JSON value when format=json, or canonical base64 for format=binary. No raw credentials, preimages, reference maps or intermediate data." }
+} };
+var schema = (properties, required) => ({ type: "object", additionalProperties: false, properties, required });
+var FINAL_RESULT_TOOLS = [
+  {
+    name: "remote_debug_publish_final_result",
+    description: "Publish the assembled FINAL deliverables of one concluded user task to local output/, isolated by instance and task. Call once after investigation/execution and final synthesis, never for progress, polling, query pages, plans awaiting approval, or each tool response. Use one stable UUID taskId for retries; identical publication is idempotent, different contents conflict. Does not execute or retry business operations. Final partial/failed/cancelled summaries must accurately describe missing evidence. Preserve opaque business references; never decode them.",
+    inputSchema: schema({
+      instanceId,
+      taskId: uuid,
+      title: { type: "string", minLength: 1, maxLength: 160 },
+      type: { type: "string", pattern: "^[a-z][a-z0-9_-]{0,63}$" },
+      status: { type: "string", enum: ["completed", "partial", "failed", "cancelled"] },
+      final: { type: "boolean", const: true },
+      references: schema({ operationIds: { type: "array", maxItems: 64, items: uuid }, jobId: { type: "string" }, mutationId: { type: "string" }, resourceTaskId: uuid }, []),
+      artifacts: { type: "array", minItems: 1, maxItems: 32, items: artifact }
+    }, ["instanceId", "taskId", "title", "status", "final", "artifacts"])
+  },
+  {
+    name: "remote_debug_list_final_results",
+    description: "List persistent final task deliverables for an explicit instance (including deleted instances), or null for Manager tasks. Excludes all intermediate tool responses and progress.",
+    inputSchema: schema({ instanceId, offset: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1, maximum: 100 } }, ["instanceId"])
+  },
+  { name: "remote_debug_get_final_result", description: "Read a final task manifest and its categorized artifact IDs. No remote operations.", inputSchema: schema({ instanceId, taskId: uuid }, ["instanceId", "taskId"]) },
+  {
+    name: "remote_debug_read_final_artifact",
+    description: "Read a bounded UTF-8 preview of a final artifact by exact instance, task and artifact IDs. Use the authenticated Dashboard for a complete file download.",
+    inputSchema: schema({ instanceId, taskId: uuid, artifactId: uuid, maxBytes: { type: "integer", minimum: 1, maximum: 262144 } }, ["instanceId", "taskId", "artifactId"])
+  }
+];
+function sanitizeFinalPublication(input, sanitize) {
+  if (!input || !Array.isArray(input.artifacts)) return sanitize(input);
+  const binaries = /* @__PURE__ */ new Map();
+  let encodedBytes = 0;
+  const artifacts = input.artifacts.map((item, index) => {
+    if (!item || item.encoding !== "base64") return item;
+    if (typeof item.content !== "string" || (encodedBytes += item.content.length) > 12 * 1024 * 1024) throw Object.assign(new Error("Final attachment exceeds limit"), { code: "FINAL_RESULT_TOO_LARGE", statusCode: 413 });
+    binaries.set(index, item.content);
+    return { ...item, content: "[BINARY_ATTACHMENT]" };
+  });
+  const safe = sanitize({ ...input, artifacts });
+  for (const [index, content] of binaries) safe.artifacts[index].content = content;
+  return safe;
+}
+
+// final-results.js
+var UUID2 = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+var INSTANCE2 = /^[A-Za-z0-9_-]{1,64}$/;
+var CATEGORIES = /* @__PURE__ */ new Set(["results", "reports", "exports", "attachments"]);
+var STATUSES = /* @__PURE__ */ new Set(["completed", "partial", "failed", "cancelled"]);
+var FORMATS = { json: "json", markdown: "md", text: "txt", csv: "csv", jsonl: "jsonl", html: "html", binary: "bin" };
+var MAX_FILE = 4 * 1024 * 1024;
+var MAX_TASK = 8 * 1024 * 1024;
+var MAX_FILES = 32;
+var MAX_TASKS = 1e4;
+var digest2 = (data) => (0, import_node_crypto16.createHash)("sha256").update(data).digest("hex");
+var fail2 = (code, statusCode = 400) => Object.assign(new Error(code), { code, statusCode, retriable: false });
+function object3(value, keys) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key))) throw fail2("FINAL_RESULT_INVALID");
+}
+function identity(instanceId2, taskId) {
+  if (instanceId2 !== null && (typeof instanceId2 !== "string" || !INSTANCE2.test(instanceId2)) || taskId !== void 0 && (typeof taskId !== "string" || !UUID2.test(taskId))) throw fail2("FINAL_RESULT_INVALID");
+}
+function label(value, max) {
+  if (typeof value !== "string" || !value.trim() || value.length > max || /[\x00-\x1f\x7f]/.test(value)) throw fail2("FINAL_RESULT_INVALID");
+  return value;
+}
+function page(offset = 0, limit = 20) {
+  if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw fail2("FINAL_RESULT_PAGE_INVALID");
+}
+function validateReferences(references) {
+  object3(references, ["operationIds", "jobId", "mutationId", "resourceTaskId"]);
+  for (const [key, value] of Object.entries(references)) {
+    if (key === "operationIds") {
+      if (!Array.isArray(value) || value.length > 64 || value.some((id) => typeof id !== "string" || !UUID2.test(id))) throw fail2("FINAL_RESULT_INVALID");
+    } else if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(value)) throw fail2("FINAL_RESULT_INVALID");
+  }
+}
+var FinalResultStore = class {
+  constructor({ root, sanitize, now = () => /* @__PURE__ */ new Date(), maxFileBytes = MAX_FILE, maxTaskBytes = MAX_TASK } = {}) {
+    if (!root || !import_node_path10.default.isAbsolute(root) || import_node_path10.default.resolve(root) === import_node_path10.default.parse(import_node_path10.default.resolve(root)).root) throw fail2("FINAL_RESULT_ROOT_INVALID");
+    this.root = import_node_path10.default.resolve(root);
+    this.stageRoot = import_node_path10.default.join(import_node_path10.default.dirname(this.root), `.${import_node_path10.default.basename(this.root)}-final-staging`);
+    this.sanitize = sanitize || ((value) => createOutputGuard().sanitize(value).value);
+    this.now = now;
+    this.maxFileBytes = maxFileBytes;
+    this.maxTaskBytes = maxTaskBytes;
+    this.queue = Promise.resolve();
+  }
+  async directory(directory, create = false) {
+    let created = false;
+    if (create) {
+      try {
+        await import_promises3.default.mkdir(directory, { mode: 448 });
+        created = true;
+      } catch (error2) {
+        if (error2.code !== "EEXIST") throw error2;
+      }
+    }
+    const stat = await import_promises3.default.lstat(directory);
+    if (stat.isSymbolicLink() || !stat.isDirectory() || typeof process.getuid === "function" && stat.uid !== process.getuid()) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
+    if (create && process.platform !== "win32") await import_promises3.default.chmod(directory, 448);
+    if (create && process.platform === "win32") import_local_auth5.default.protectOrCheck(directory, true, true);
+    if (created) await this.syncDirectory(import_node_path10.default.dirname(directory));
+    return directory;
+  }
+  async base(create = false) {
+    if (create) await import_promises3.default.mkdir(import_node_path10.default.dirname(this.root), { recursive: true, mode: 448 });
+    const parent = await import_promises3.default.realpath(import_node_path10.default.dirname(this.root));
+    if (this.parent && parent !== this.parent) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
+    this.parent = parent;
+    return this.directory(this.root, create);
+  }
+  async tasksDirectory(instanceId2, create = false) {
+    identity(instanceId2);
+    let directory = await this.base(create);
+    for (const segment of instanceId2 === null ? ["manager", "tasks"] : ["instances", instanceId2, "tasks"]) {
+      directory = await this.directory(import_node_path10.default.join(directory, segment), create);
+    }
+    return directory;
+  }
+  async readFile(file, maxBytes) {
+    const stat = await import_promises3.default.lstat(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > maxBytes) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
+    const handle = await import_promises3.default.open(file, import_node_fs6.constants.O_RDONLY | (import_node_fs6.constants.O_NOFOLLOW || 0));
+    try {
+      const opened = await handle.stat();
+      if (!opened.isFile() || opened.nlink !== 1 || opened.ino !== stat.ino || opened.dev !== stat.dev || opened.size > maxBytes) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
+      const buffer = Buffer.alloc(maxBytes + 1);
+      let length = 0;
+      while (length < buffer.length) {
+        const result = await handle.read(buffer, length, buffer.length - length, length);
+        if (!result.bytesRead) break;
+        length += result.bytesRead;
+      }
+      if (length > maxBytes) throw fail2("FINAL_RESULT_TOO_LARGE", 413);
+      return buffer.subarray(0, length);
+    } finally {
+      await handle.close();
+    }
+  }
+  normalize(input) {
+    object3(input, ["instanceId", "taskId", "title", "type", "status", "final", "references", "artifacts"]);
+    identity(input.instanceId, input.taskId);
+    if (!UUID2.test(input.taskId) || input.final !== true || !STATUSES.has(input.status)) throw fail2("FINAL_RESULT_NOT_FINAL");
+    label(input.title, 160);
+    if (input.type !== void 0 && !/^[a-z][a-z0-9_-]{0,63}$/.test(input.type)) throw fail2("FINAL_RESULT_INVALID");
+    const references = input.references || {};
+    validateReferences(references);
+    if (!Array.isArray(input.artifacts) || !input.artifacts.length || input.artifacts.length > MAX_FILES) throw fail2("FINAL_RESULT_INVALID");
+    let totalBytes = 0;
+    const artifacts = input.artifacts.map((item) => {
+      object3(item, ["category", "format", "name", "content", "encoding"]);
+      if (!CATEGORIES.has(item.category) || !Object.hasOwn(FORMATS, item.format)) throw fail2("FINAL_RESULT_INVALID");
+      label(item.name, 120);
+      if (/[\\/]/.test(item.name) || /^\.+$/.test(item.name)) throw fail2("FINAL_RESULT_INVALID");
+      let content, bytes, sha256;
+      if (item.format === "binary") {
+        if (item.encoding !== "base64" || typeof item.content !== "string") throw fail2("FINAL_RESULT_INVALID");
+        if (item.content.length > Math.ceil(this.maxFileBytes / 3) * 4) throw fail2("FINAL_RESULT_TOO_LARGE", 413);
+        if (/[^A-Za-z0-9+/=]/.test(item.content)) throw fail2("FINAL_RESULT_INVALID");
+        const decoded = Buffer.from(item.content, "base64");
+        if (decoded.toString("base64") !== item.content) throw fail2("FINAL_RESULT_INVALID");
+        content = item.content;
+        bytes = decoded.length;
+        sha256 = digest2(decoded);
+      } else if (item.encoding !== void 0 && item.encoding !== "utf8") throw fail2("FINAL_RESULT_INVALID");
+      else if (item.format === "json") {
+        if (!Object.hasOwn(item, "content")) throw fail2("FINAL_RESULT_INVALID");
+        content = JSON.stringify(item.content, null, 2) + "\n";
+      } else {
+        if (typeof item.content !== "string") throw fail2("FINAL_RESULT_INVALID");
+        content = item.content;
+        if (item.format === "jsonl") for (const line of content.split(/\r?\n/).filter(Boolean)) {
+          try {
+            JSON.parse(line);
+          } catch {
+            throw fail2("FINAL_RESULT_INVALID");
+          }
+        }
+      }
+      bytes ??= Buffer.byteLength(content);
+      if (bytes > this.maxFileBytes || (totalBytes += bytes) > this.maxTaskBytes) throw fail2("FINAL_RESULT_TOO_LARGE", 413);
+      return { category: item.category, format: item.format, name: item.name, content, encoding: item.format === "binary" ? "binary" : "utf8", bytes, sha256: sha256 || digest2(content) };
+    });
+    return { instanceId: input.instanceId, taskId: input.taskId, title: input.title, type: input.type || "task", status: input.status, references: { ...references }, artifacts, totalBytes };
+  }
+  publishFinalResult(input) {
+    const result = this.queue.then(() => this.publish(input));
+    this.queue = result.catch(() => {
+    });
+    return result;
+  }
+  async publish(input) {
+    let safe;
+    try {
+      safe = sanitizeFinalPublication(input, this.sanitize);
+    } catch (error2) {
+      if (error2.code === "FINAL_RESULT_TOO_LARGE") throw error2;
+      throw fail2("FINAL_RESULT_REDACTION_FAILED", 400);
+    }
+    const normalized = this.normalize(safe);
+    const fingerprint = digest2(JSON.stringify(normalized));
+    const { instanceId: instanceId2, taskId } = normalized;
+    const existing = await this.find(instanceId2, taskId);
+    if (existing) {
+      if (existing.fingerprint !== fingerprint) throw fail2("FINAL_RESULT_CONFLICT", 409);
+      for (const file of existing.files) await this.openArtifact(instanceId2, taskId, file.artifactId);
+      return { result: existing, duplicate: true };
+    }
+    const tasks = await this.tasksDirectory(instanceId2, true);
+    if ((await import_promises3.default.readdir(tasks)).length >= MAX_TASKS) throw fail2("FINAL_RESULT_CAPACITY", 507);
+    await this.directory(this.stageRoot, true);
+    const stage = await import_promises3.default.mkdtemp(import_node_path10.default.join(this.stageRoot, "publish-"));
+    try {
+      const files = [];
+      for (const item of normalized.artifacts) {
+        await this.directory(import_node_path10.default.join(stage, item.category), true);
+        const artifactId = (0, import_node_crypto16.randomUUID)();
+        const relativePath = `${item.category}/${artifactId}.${FORMATS[item.format]}`;
+        await this.writeFile(import_node_path10.default.join(stage, relativePath), item.encoding === "binary" ? Buffer.from(item.content, "base64") : item.content);
+        files.push({ artifactId, category: item.category, format: item.format, encoding: item.encoding, name: item.name, relativePath, bytes: item.bytes, sha256: item.sha256 });
+      }
+      for (const category of new Set(files.map((file) => file.category))) await this.syncDirectory(import_node_path10.default.join(stage, category));
+      const manifest = {
+        version: 1,
+        taskId,
+        instanceId: instanceId2,
+        title: normalized.title,
+        type: normalized.type,
+        status: normalized.status,
+        final: true,
+        publishedAt: this.now().toISOString(),
+        fingerprint,
+        privacy: { credentials: "text_redacted", binary: "verbatim", policyVersion: 1 },
+        references: normalized.references,
+        totalBytes: normalized.totalBytes,
+        files
+      };
+      await this.writeFile(import_node_path10.default.join(stage, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+      await this.syncDirectory(stage);
+      try {
+        await import_promises3.default.rename(stage, import_node_path10.default.join(tasks, taskId));
+      } catch (error2) {
+        if (!["EEXIST", "ENOTEMPTY"].includes(error2.code)) throw error2;
+        const winner = await this.getFinalResult(instanceId2, taskId);
+        if (winner.fingerprint !== fingerprint) throw fail2("FINAL_RESULT_CONFLICT", 409);
+        for (const file of winner.files) await this.openArtifact(instanceId2, taskId, file.artifactId);
+        return { result: winner, duplicate: true };
+      }
+      await this.syncDirectory(tasks);
+      return { result: manifest, duplicate: false };
+    } finally {
+      await import_promises3.default.rm(stage, { recursive: true, force: true });
+    }
+  }
+  async writeFile(file, content) {
+    const handle = await import_promises3.default.open(file, "wx", 384);
+    try {
+      await handle.writeFile(content, "utf8");
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    if (process.platform === "win32") import_local_auth5.default.protectOrCheck(file, false, true);
+  }
+  async syncDirectory(directory) {
+    if (process.platform === "win32") return;
+    const handle = await import_promises3.default.open(directory, "r");
+    try {
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+  }
+  async find(instanceId2, taskId) {
+    try {
+      return await this.getFinalResult(instanceId2, taskId);
+    } catch (error2) {
+      if (error2.code === "FINAL_RESULT_NOT_FOUND") return null;
+      throw error2;
+    }
+  }
+  async getFinalResult(instanceId2, taskId) {
+    identity(instanceId2, taskId);
+    if (!UUID2.test(taskId)) throw fail2("FINAL_RESULT_INVALID");
+    try {
+      const tasks = await this.tasksDirectory(instanceId2);
+      const directory = await this.directory(import_node_path10.default.join(tasks, taskId));
+      const bytes = await this.readFile(import_node_path10.default.join(directory, "manifest.json"), 128 * 1024);
+      let manifest;
+      try {
+        manifest = JSON.parse(bytes.toString("utf8"));
+      } catch {
+        throw fail2("FINAL_RESULT_CORRUPT", 409);
+      }
+      try {
+        object3(manifest, ["version", "taskId", "instanceId", "title", "type", "status", "final", "publishedAt", "fingerprint", "privacy", "references", "totalBytes", "files"]);
+        label(manifest.title, 160);
+        if (!/^[a-z][a-z0-9_-]{0,63}$/.test(manifest.type) || new Date(manifest.publishedAt).toISOString() !== manifest.publishedAt) throw fail2("FINAL_RESULT_CORRUPT", 409);
+        validateReferences(manifest.references);
+        object3(manifest.privacy, ["credentials", "binary", "policyVersion"]);
+        if (manifest.privacy.credentials !== "text_redacted" || manifest.privacy.binary !== "verbatim" || manifest.privacy.policyVersion !== 1) throw fail2("FINAL_RESULT_CORRUPT", 409);
+      } catch {
+        throw fail2("FINAL_RESULT_CORRUPT", 409);
+      }
+      if (manifest.version !== 1 || manifest.taskId !== taskId || manifest.instanceId !== instanceId2 || manifest.final !== true || !STATUSES.has(manifest.status) || !/^[a-f0-9]{64}$/.test(manifest.fingerprint || "") || !Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > MAX_FILES) throw fail2("FINAL_RESULT_CORRUPT", 409);
+      for (const file of manifest.files) {
+        try {
+          object3(file, ["artifactId", "category", "format", "encoding", "name", "relativePath", "bytes", "sha256"]);
+          label(file.name, 120);
+        } catch {
+          throw fail2("FINAL_RESULT_CORRUPT", 409);
+        }
+        if (!UUID2.test(file.artifactId) || !CATEGORIES.has(file.category) || !Object.hasOwn(FORMATS, file.format) || file.encoding !== (file.format === "binary" ? "binary" : "utf8") || /[\\/]/.test(file.name) || file.relativePath !== `${file.category}/${file.artifactId}.${FORMATS[file.format]}` || !Number.isSafeInteger(file.bytes) || file.bytes < 0 || file.bytes > this.maxFileBytes || !/^[a-f0-9]{64}$/.test(file.sha256 || "")) throw fail2("FINAL_RESULT_CORRUPT", 409);
+      }
+      if (new Set(manifest.files.map((file) => file.artifactId)).size !== manifest.files.length || manifest.totalBytes !== manifest.files.reduce((total, file) => total + file.bytes, 0) || manifest.totalBytes > this.maxTaskBytes) throw fail2("FINAL_RESULT_CORRUPT", 409);
+      return manifest;
+    } catch (error2) {
+      if (error2.code === "ENOENT") throw fail2("FINAL_RESULT_NOT_FOUND", 404);
+      throw error2;
+    }
+  }
+  async listFinalResults({ instanceId: instanceId2, offset = 0, limit = 20 } = {}) {
+    identity(instanceId2);
+    page(offset, limit);
+    let entries;
+    try {
+      entries = await import_promises3.default.readdir(await this.tasksDirectory(instanceId2), { withFileTypes: true });
+    } catch (error2) {
+      if (error2.code === "ENOENT") return { results: [], total: 0, totalBytes: 0, unavailable: 0, nextOffset: null, outputDirectory: this.root };
+      throw error2;
+    }
+    if (entries.length > MAX_TASKS) throw fail2("FINAL_RESULT_CAPACITY", 507);
+    const results = [];
+    let unavailable = 0;
+    for (const entry2 of entries) {
+      if (!UUID2.test(entry2.name)) continue;
+      if (!entry2.isDirectory() || entry2.isSymbolicLink()) {
+        unavailable++;
+        continue;
+      }
+      try {
+        results.push(await this.getFinalResult(instanceId2, entry2.name));
+      } catch (error2) {
+        if (["FINAL_RESULT_CORRUPT", "FINAL_RESULT_PATH_REJECTED", "FINAL_RESULT_NOT_FOUND"].includes(error2.code)) unavailable++;
+        else throw error2;
+      }
+    }
+    results.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt) || a.taskId.localeCompare(b.taskId));
+    return {
+      results: results.slice(offset, offset + limit),
+      total: results.length,
+      totalBytes: results.reduce((total, item) => total + item.totalBytes, 0),
+      unavailable,
+      nextOffset: offset + limit < results.length ? offset + limit : null,
+      outputDirectory: this.root
+    };
+  }
+  async openArtifact(instanceId2, taskId, artifactId) {
+    if (!UUID2.test(artifactId)) throw fail2("FINAL_RESULT_INVALID");
+    const manifest = await this.getFinalResult(instanceId2, taskId);
+    const file = manifest.files.find((item) => item.artifactId === artifactId);
+    if (!file) throw fail2("FINAL_RESULT_NOT_FOUND", 404);
+    const tasks = await this.tasksDirectory(instanceId2);
+    const task = await this.directory(import_node_path10.default.join(tasks, taskId));
+    await this.directory(import_node_path10.default.join(task, file.category));
+    let content;
+    try {
+      content = await this.readFile(import_node_path10.default.join(task, file.relativePath), this.maxFileBytes);
+    } catch (error2) {
+      if (error2.code === "ENOENT") throw fail2("FINAL_RESULT_CORRUPT", 409);
+      throw error2;
+    }
+    if (content.length !== file.bytes || digest2(content) !== file.sha256) throw fail2("FINAL_RESULT_CORRUPT", 409);
+    return { file, content };
+  }
+  cleanupFinalResult(instanceId2, taskId) {
+    const result = this.queue.then(async () => {
+      await this.getFinalResult(instanceId2, taskId);
+      const tasks = await this.tasksDirectory(instanceId2);
+      await this.directory(this.stageRoot, true);
+      const trash = import_node_path10.default.join(this.stageRoot, `delete-${(0, import_node_crypto16.randomUUID)()}`);
+      await import_promises3.default.rename(import_node_path10.default.join(tasks, taskId), trash);
+      await this.syncDirectory(tasks);
+      await import_promises3.default.rm(trash, { recursive: true, force: true });
+      return { taskId, removed: true };
+    });
+    this.queue = result.catch(() => {
+    });
+    return result;
+  }
+};
+
+// final-result-routes.js
+var invalid4 = () => Object.assign(new Error("FINAL_RESULT_INVALID"), { code: "FINAL_RESULT_INVALID", statusCode: 400 });
+function scope(request) {
+  if (request.query.scope === "manager" && request.query.instanceId === void 0) return null;
+  if (request.query.scope !== void 0 || typeof request.query.instanceId !== "string") throw invalid4();
+  return request.query.instanceId;
+}
+function asyncRoute(handler) {
+  return (request, response) => Promise.resolve().then(() => handler(request, response)).catch((error2) => {
+    const code = /^FINAL_RESULT_[A-Z_]+$/.test(error2.code || "") ? error2.code : error2.code === "ENOSPC" ? "FINAL_RESULT_DISK_FULL" : "FINAL_RESULT_STORAGE_FAILED";
+    response.status(error2.statusCode || (code === "FINAL_RESULT_DISK_FULL" ? 507 : 500)).json({ ok: false, error: { code, message: code, retriable: false } });
+  });
+}
+function installFinalResultRoutes(app, { root, registry, store } = {}) {
+  const guard = createOutputGuard();
+  function sanitize(input) {
+    guard.remember(app.locals.authToken);
+    for (const instance2 of registry.listInternal()) {
+      guard.remember(instance2.passphrase);
+      guard.remember(instance2.mongodb?.sandboxManagementPassword);
+    }
+    return guard.sanitize(input).value;
+  }
+  const results = store || new FinalResultStore({ root, sanitize });
+  app.locals.finalResults = results;
+  app.post("/api/final-results", asyncRoute(async (request, response) => {
+    const { operationId: _operationId, deadlineAt: _deadlineAt, ...input } = request.body || {};
+    if (input.instanceId !== null && !registry.getInternal(input.instanceId)) throw Object.assign(invalid4(), { code: "FINAL_RESULT_INSTANCE_NOT_FOUND", statusCode: 404 });
+    const published = await results.publishFinalResult(input);
+    response.status(published.duplicate ? 200 : 201).json({ ok: true, ...published });
+  }));
+  app.get("/api/final-results", asyncRoute(async (request, response) => {
+    response.json({ ok: true, ...await results.listFinalResults({ instanceId: scope(request), offset: Number(request.query.offset || 0), limit: Number(request.query.limit || 20) }) });
+  }));
+  app.get("/api/final-results/:taskId", asyncRoute(async (request, response) => {
+    response.json({ ok: true, result: await results.getFinalResult(scope(request), request.params.taskId) });
+  }));
+  app.delete("/api/final-results/:taskId", asyncRoute(async (request, response) => {
+    response.json({ ok: true, ...await results.cleanupFinalResult(scope(request), request.params.taskId) });
+  }));
+  app.get("/api/final-results/:taskId/artifacts/:artifactId", asyncRoute(async (request, response) => {
+    const { file, content } = await results.openArtifact(scope(request), request.params.taskId, request.params.artifactId);
+    if (request.query.download === "1") {
+      response.attachment(file.format === "binary" ? file.name : `${file.name}.${{ markdown: "md", text: "txt" }[file.format] || file.format}`);
+      response.type("application/octet-stream").send(content);
+      return;
+    }
+    if (file.encoding === "binary") {
+      response.json({ ok: true, file, content: "该附件请下载后查看。", truncated: false, previewAvailable: false });
+      return;
+    }
+    const maxBytes = request.query.maxBytes === void 0 ? 65536 : Number(request.query.maxBytes);
+    if (!Number.isInteger(maxBytes) || maxBytes < 1 || maxBytes > 262144) throw invalid4();
+    response.json({ ok: true, file, content: content.subarray(0, maxBytes).toString("utf8"), truncated: content.length > maxBytes });
+  }));
+  return results;
+}
+
 // server.js
-var import_node_crypto22 = require("node:crypto");
-var import_promises6 = __toESM(require("node:fs/promises"), 1);
-var import_node_path14 = __toESM(require("node:path"), 1);
+var import_node_crypto23 = require("node:crypto");
+var import_promises7 = __toESM(require("node:fs/promises"), 1);
+var import_node_path15 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
 var import_node_url5 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
 
 // activity.js
-var import_node_crypto16 = require("node:crypto");
+var import_node_crypto17 = require("node:crypto");
 var import_node_events2 = require("node:events");
 var DEFAULT_MAX_EVENTS = 200;
 var DEFAULT_PREVIEW_CHARS = 4e3;
@@ -59792,7 +60274,7 @@ function createActivityLog(options = {}) {
   const events = [];
   function publish(event2) {
     const entry2 = {
-      id: (0, import_node_crypto16.randomUUID)(),
+      id: (0, import_node_crypto17.randomUUID)(),
       time: (/* @__PURE__ */ new Date()).toISOString(),
       ...event2
     };
@@ -59836,8 +60318,8 @@ function createActivityLog(options = {}) {
 }
 
 // audit.js
-var import_promises3 = __toESM(require("node:fs/promises"), 1);
-var import_node_path10 = __toESM(require("node:path"), 1);
+var import_promises4 = __toESM(require("node:fs/promises"), 1);
+var import_node_path11 = __toESM(require("node:path"), 1);
 function safeLength(value) {
   return typeof value === "string" ? Buffer.byteLength(value, "utf8") : 0;
 }
@@ -59913,24 +60395,24 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
 }
 async function writeAuditLog(logPath, event2, now) {
   const entry2 = buildAuditEntry(event2, now);
-  await import_promises3.default.mkdir(import_node_path10.default.dirname(logPath), { recursive: true });
-  await import_promises3.default.appendFile(logPath, `${JSON.stringify(entry2)}
+  await import_promises4.default.mkdir(import_node_path11.default.dirname(logPath), { recursive: true });
+  await import_promises4.default.appendFile(logPath, `${JSON.stringify(entry2)}
 `, "utf8");
   return entry2;
 }
 
 // mongodb-sandbox-access.js
-var import_node_crypto17 = require("node:crypto");
+var import_node_crypto18 = require("node:crypto");
 
 // mongodb-sandbox-access-runtime.js
 async function sandboxAccessRuntime(request, config, marker) {
-  const fs12 = require("fs"), path19 = require("path"), crypto = require("crypto");
+  const fs13 = require("fs"), path20 = require("path"), crypto = require("crypto");
   const URLSearchParams = require("url").URLSearchParams;
   const collection = "__remote_debug_bulk_receipts";
   let client, managerClient, plan, lockFd, lockPath, temporary;
   let phase = "storage";
   const primary = { readPreference: "primary" };
-  function fail3(code) {
+  function fail4(code) {
     const error2 = new Error(code);
     error2.safeCode = code;
     throw error2;
@@ -59951,8 +60433,8 @@ async function sandboxAccessRuntime(request, config, marker) {
   }
   const publicConfig = Object.assign({}, config);
   delete publicConfig.managementPassword;
-  const scope = hash(publicConfig);
-  const managerUser = "rda_sandbox_manager_" + scope.slice(0, 16);
+  const scope2 = hash(publicConfig);
+  const managerUser = "rda_sandbox_manager_" + scope2.slice(0, 16);
   const managerRole = "rda_sandbox_manager", executorRole = "rda_sandbox_executor";
   const managerPrivileges = [{ resource: { db: config.sandboxDatabase, collection }, actions: ["find", "remove"] }];
   const executorPrivileges = [
@@ -59972,45 +60454,45 @@ async function sandboxAccessRuntime(request, config, marker) {
     });
   }
   function regular(file, privateFile) {
-    const stat = fs12.lstatSync(file);
-    if (!stat.isFile() || stat.isSymbolicLink() || fs12.realpathSync(file) !== file || stat.size > (privateFile ? 65536 : 4 * 1024 * 1024) || privateFile && (stat.mode & 63 || stat.uid !== process.getuid())) fail3("SANDBOX_SETUP_FILE_UNSAFE");
+    const stat = fs13.lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || fs13.realpathSync(file) !== file || stat.size > (privateFile ? 65536 : 4 * 1024 * 1024) || privateFile && (stat.mode & 63 || stat.uid !== process.getuid())) fail4("SANDBOX_SETUP_FILE_UNSAFE");
     return stat;
   }
   function directory(dir) {
-    if (!fs12.existsSync(dir)) fs12.mkdirSync(dir, { mode: 448 });
-    const stat = fs12.lstatSync(dir);
-    if (!stat.isDirectory() || stat.isSymbolicLink() || fs12.realpathSync(dir) !== dir || stat.mode & 63 || stat.uid !== process.getuid()) fail3("SANDBOX_SETUP_STORAGE_UNSAFE");
+    if (!fs13.existsSync(dir)) fs13.mkdirSync(dir, { mode: 448 });
+    const stat = fs13.lstatSync(dir);
+    if (!stat.isDirectory() || stat.isSymbolicLink() || fs13.realpathSync(dir) !== dir || stat.mode & 63 || stat.uid !== process.getuid()) fail4("SANDBOX_SETUP_STORAGE_UNSAFE");
   }
   function atomic(file, value, owner) {
     const suffix = crypto.randomBytes(8).toString("hex");
     temporary = file + "." + suffix + ".tmp";
-    const fd = fs12.openSync(temporary, "wx", 384);
+    const fd = fs13.openSync(temporary, "wx", 384);
     try {
-      fs12.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n", "utf8");
-      if (owner) fs12.fchownSync(fd, owner.uid, owner.gid);
-      fs12.fchmodSync(fd, 384);
-      fs12.fsyncSync(fd);
+      fs13.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n", "utf8");
+      if (owner) fs13.fchownSync(fd, owner.uid, owner.gid);
+      fs13.fchmodSync(fd, 384);
+      fs13.fsyncSync(fd);
     } finally {
-      fs12.closeSync(fd);
+      fs13.closeSync(fd);
     }
-    fs12.renameSync(temporary, file);
+    fs13.renameSync(temporary, file);
     temporary = null;
-    const directoryFd = fs12.openSync(path19.dirname(file), "r");
+    const directoryFd = fs13.openSync(path20.dirname(file), "r");
     try {
-      fs12.fsyncSync(directoryFd);
+      fs13.fsyncSync(directoryFd);
     } finally {
-      fs12.closeSync(directoryFd);
+      fs13.closeSync(directoryFd);
     }
   }
   function uriParts(uri) {
     const match = /^(mongodb(?:\+srv)?:\/\/)([^/?#]+)(\/[^?#]*)?(\?[^#]*)?$/i.exec(uri || "");
-    if (!match) fail3("SANDBOX_SETUP_URI_INVALID");
+    if (!match) fail4("SANDBOX_SETUP_URI_INVALID");
     const query = new URLSearchParams((match[4] || "").slice(1));
     const mechanism = query.get("authMechanism");
-    if (mechanism && !["SCRAM-SHA-1", "SCRAM-SHA-256"].includes(mechanism) || query.has("authMechanismProperties")) fail3("SANDBOX_SETUP_AUTH_MECHANISM_UNSUPPORTED");
+    if (mechanism && !["SCRAM-SHA-1", "SCRAM-SHA-256"].includes(mechanism) || query.has("authMechanismProperties")) fail4("SANDBOX_SETUP_AUTH_MECHANISM_UNSUPPORTED");
     if (["authSource", "replicaSet", "authMechanism"].some(function(key) {
       return query.getAll(key).length > 1;
-    })) fail3("SANDBOX_SETUP_URI_INVALID");
+    })) fail4("SANDBOX_SETUP_URI_INVALID");
     return { prefix: match[1].toLowerCase(), hosts: match[2].slice(match[2].lastIndexOf("@") + 1).toLowerCase(), authority: match[2], query };
   }
   function cluster(parts) {
@@ -60019,7 +60501,7 @@ async function sandboxAccessRuntime(request, config, marker) {
   function credential(parts) {
     const authority = parts.authority.slice(0, parts.authority.lastIndexOf("@"));
     const colon = authority.indexOf(":");
-    if (colon < 1) fail3("SANDBOX_SETUP_URI_INVALID");
+    if (colon < 1) fail4("SANDBOX_SETUP_URI_INVALID");
     return { user: decodeURIComponent(authority.slice(0, colon)), password: decodeURIComponent(authority.slice(colon + 1)) };
   }
   function desiredUri(parts) {
@@ -60051,16 +60533,16 @@ async function sandboxAccessRuntime(request, config, marker) {
     phase = "preflight";
     if (!["/home/app/", "/home/github/"].some(function(root) {
       return config.configPath.startsWith(root);
-    }) || config.receiptsCollection !== collection) fail3("SANDBOX_SETUP_SCOPE_INVALID");
+    }) || config.receiptsCollection !== collection) fail4("SANDBOX_SETUP_SCOPE_INVALID");
     const stat = regular(config.configPath, false);
-    const original = fs12.readFileSync(config.configPath, "utf8"), fileConfig = JSON.parse(original);
+    const original = fs13.readFileSync(config.configPath, "utf8"), fileConfig = JSON.parse(original);
     const source = getKey(fileConfig[config.configProfile], config.uriKey), parts = uriParts(source);
     if (!client) client = await connect(source);
     const build = await client.db("admin").command({ buildInfo: 1 }, primary);
     const topology = await client.db("admin").command({ isMaster: 1 }, primary);
-    if (topology.ismaster === false || topology.isWritablePrimary === false) fail3("SANDBOX_SETUP_PRIMARY_REQUIRED");
+    if (topology.ismaster === false || topology.isWritablePrimary === false) fail4("SANDBOX_SETUP_PRIMARY_REQUIRED");
     const version = String(build.version || ""), major = Number(version.split(".")[0]);
-    if (!Number.isInteger(major) || major < 4 || Number(topology.maxWireVersion) < 7) fail3("SANDBOX_SETUP_SERVER_UNSUPPORTED");
+    if (!Number.isInteger(major) || major < 4 || Number(topology.maxWireVersion) < 7) fail4("SANDBOX_SETUP_SERVER_UNSUPPORTED");
     const environment = {
       serverVersion: version,
       maxWireVersion: topology.maxWireVersion,
@@ -60071,27 +60553,27 @@ async function sandboxAccessRuntime(request, config, marker) {
     };
     const authentication = await client.db("admin").command({ connectionStatus: 1, showPrivileges: true }, primary);
     const users = authentication.authInfo.authenticatedUsers;
-    if (!users || users.length !== 1 || users[0].user === managerUser) fail3("SANDBOX_SETUP_EXECUTION_USER_INVALID");
+    if (!users || users.length !== 1 || users[0].user === managerUser) fail4("SANDBOX_SETUP_EXECUTION_USER_INVALID");
     const executionUser = users[0], privileges = authentication.authInfo.authenticatedUserPrivileges || [];
     for (const item of [["createRole", config.sandboxDatabase], ["createUser", config.sandboxDatabase], ["grantRole", config.sandboxDatabase], ["grantRole", executionUser.db]]) {
-      if (!can(privileges, item[0], item[1])) fail3("SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED");
+      if (!can(privileges, item[0], item[1])) fail4("SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED");
     }
     const db = client.db(config.sandboxDatabase), roles = [];
     for (const item of [[managerRole, managerPrivileges], [executorRole, executorPrivileges]]) {
       const result2 = await db.command({ rolesInfo: { role: item[0], db: config.sandboxDatabase }, showPrivileges: true }, primary);
       const actual = result2.roles[0] || null;
-      if (actual && (actual.roles.length || hash(shape(actual.privileges)) !== hash(shape(item[1])))) fail3("SANDBOX_SETUP_ROLE_CONFLICT");
+      if (actual && (actual.roles.length || hash(shape(actual.privileges)) !== hash(shape(item[1])))) fail4("SANDBOX_SETUP_ROLE_CONFLICT");
       roles.push({ role: item[0], exists: !!actual });
     }
     const result = await db.command({ usersInfo: { user: managerUser, db: config.sandboxDatabase }, showCredentials: false }, primary);
     const user = result.users[0];
-    if (user && (user.roles.length !== 1 || user.roles[0].db !== config.sandboxDatabase || user.roles[0].role !== managerRole)) fail3("SANDBOX_SETUP_USER_CONFLICT");
-    const ownership = { plugin: "remote-debug-agent", version: 1, scope };
-    if (user && hash(user.customData || null) !== hash(ownership)) fail3("SANDBOX_SETUP_ACCOUNT_NOT_OWNED");
+    if (user && (user.roles.length !== 1 || user.roles[0].db !== config.sandboxDatabase || user.roles[0].role !== managerRole)) fail4("SANDBOX_SETUP_USER_CONFLICT");
+    const ownership = { plugin: "remote-debug-agent", version: 1, scope: scope2 };
+    if (user && hash(user.customData || null) !== hash(ownership)) fail4("SANDBOX_SETUP_ACCOUNT_NOT_OWNED");
     const saved = fileConfig[config.managementProfile];
     if (saved) {
       const candidate = uriParts(saved.url);
-      if (cluster(candidate) !== cluster(parts) || candidate.query.get("authSource") !== config.sandboxDatabase || credential(candidate).user !== managerUser) fail3("SANDBOX_SETUP_PROFILE_CONFLICT");
+      if (cluster(candidate) !== cluster(parts) || candidate.query.get("authSource") !== config.sandboxDatabase || credential(candidate).user !== managerUser) fail4("SANDBOX_SETUP_PROFILE_CONFLICT");
     }
     let credentialAlreadyCurrent = false;
     if (user) {
@@ -60099,7 +60581,7 @@ async function sandboxAccessRuntime(request, config, marker) {
         managerClient = await connect(saved ? saved.url : desiredUri(parts));
         credentialAlreadyCurrent = !saved || credential(uriParts(saved.url)).password === config.managementPassword;
       } catch (_) {
-        if (!saved) fail3("SANDBOX_SETUP_EXISTING_PASSWORD_UNKNOWN");
+        if (!saved) fail4("SANDBOX_SETUP_EXISTING_PASSWORD_UNKNOWN");
         managerClient = await connect(desiredUri(parts));
         credentialAlreadyCurrent = true;
       }
@@ -60108,12 +60590,12 @@ async function sandboxAccessRuntime(request, config, marker) {
       managerClient = null;
     }
     const current = await client.db(executionUser.db).command({ usersInfo: executionUser, showCredentials: false }, primary);
-    if (!current.users[0]) fail3("SANDBOX_SETUP_EXECUTION_USER_INVALID");
+    if (!current.users[0]) fail4("SANDBOX_SETUP_EXECUTION_USER_INVALID");
     const grants = current.users[0].roles;
     const passwordChanged = !!user && !credentialAlreadyCurrent;
-    if (passwordChanged && user && !can(privileges, "changePassword", config.sandboxDatabase)) fail3("SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED");
+    if (passwordChanged && user && !can(privileges, "changePassword", config.sandboxDatabase)) fail4("SANDBOX_SETUP_ADMIN_AUTHORITY_REQUIRED");
     const snapshot = {
-      scope,
+      scope: scope2,
       configHash: textHash(original),
       configMode: stat.mode & 511,
       configOwner: { uid: stat.uid, gid: stat.gid },
@@ -60136,7 +60618,7 @@ async function sandboxAccessRuntime(request, config, marker) {
   async function verifyManager() {
     const result = await managerClient.db("admin").command({ connectionStatus: 1, showPrivileges: true }, primary);
     const users = result.authInfo.authenticatedUsers || [], privileges = result.authInfo.authenticatedUserPrivileges || [];
-    if (users.length !== 1 || users[0].user !== managerUser || users[0].db !== config.sandboxDatabase || hash(shape(privileges)) !== hash(shape(managerPrivileges))) fail3("SANDBOX_SETUP_MANAGER_PRIVILEGES_UNSAFE");
+    if (users.length !== 1 || users[0].user !== managerUser || users[0].db !== config.sandboxDatabase || hash(shape(privileges)) !== hash(shape(managerPrivileges))) fail4("SANDBOX_SETUP_MANAGER_PRIVILEGES_UNSAFE");
   }
   function summary(value) {
     return {
@@ -60167,34 +60649,34 @@ async function sandboxAccessRuntime(request, config, marker) {
     };
   }
   try {
-    directory(path19.dirname(config.journalRoot));
+    directory(path20.dirname(config.journalRoot));
     directory(config.journalRoot);
-    const planFile = path19.join(config.journalRoot, request.setupId + ".json");
+    const planFile = path20.join(config.journalRoot, request.setupId + ".json");
     if (request.action === "prepare") {
       const state = await preflight();
       plan = { version: 1, setupId: request.setupId, expiresAt: new Date(Date.now() + 30 * 60 * 1e3).toISOString(), snapshot: state.snapshot };
       plan.planHash = hash(plan);
       plan.status = "prepared";
-      if (fs12.existsSync(planFile)) fail3("SANDBOX_SETUP_PLAN_EXISTS");
-      fs12.writeFileSync(planFile, JSON.stringify(plan), { flag: "wx", mode: 384 });
+      if (fs13.existsSync(planFile)) fail4("SANDBOX_SETUP_PLAN_EXISTS");
+      fs13.writeFileSync(planFile, JSON.stringify(plan), { flag: "wx", mode: 384 });
     } else {
-      if (request.confirmation !== "确认配置沙盒") fail3("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
+      if (request.confirmation !== "确认配置沙盒") fail4("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
       regular(planFile, true);
-      plan = JSON.parse(fs12.readFileSync(planFile, "utf8"));
+      plan = JSON.parse(fs13.readFileSync(planFile, "utf8"));
       const body = { version: plan.version, setupId: plan.setupId, expiresAt: plan.expiresAt, snapshot: plan.snapshot };
-      if (plan.version !== 1 || plan.setupId !== request.setupId || plan.planHash !== request.planHash || hash(body) !== request.planHash || plan.snapshot.scope !== scope || plan.snapshot.passwordConfigHash !== textHash(request.setupId + ":" + config.managementPassword)) fail3("SANDBOX_SETUP_PLAN_CONFLICT");
+      if (plan.version !== 1 || plan.setupId !== request.setupId || plan.planHash !== request.planHash || hash(body) !== request.planHash || plan.snapshot.scope !== scope2 || plan.snapshot.passwordConfigHash !== textHash(request.setupId + ":" + config.managementPassword)) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
       if (plan.status !== "completed") {
-        if (plan.status !== "prepared") fail3("SANDBOX_SETUP_INSPECT_PARTIAL_CHANGES");
-        if (!(Date.parse(plan.expiresAt) > Date.now())) fail3("SANDBOX_SETUP_PLAN_EXPIRED");
+        if (plan.status !== "prepared") fail4("SANDBOX_SETUP_INSPECT_PARTIAL_CHANGES");
+        if (!(Date.parse(plan.expiresAt) > Date.now())) fail4("SANDBOX_SETUP_PLAN_EXPIRED");
         lockPath = config.configPath + ".rda-sandbox-access.lock";
         phase = "lock";
         try {
-          lockFd = fs12.openSync(lockPath, "wx", 384);
+          lockFd = fs13.openSync(lockPath, "wx", 384);
         } catch (_) {
-          fail3("SANDBOX_SETUP_BUSY");
+          fail4("SANDBOX_SETUP_BUSY");
         }
         const state = await preflight();
-        if (hash(state.snapshot) !== hash(plan.snapshot)) fail3("SANDBOX_SETUP_PLAN_CONFLICT");
+        if (hash(state.snapshot) !== hash(plan.snapshot)) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
         phase = "journal-start";
         plan.status = "started";
         atomic(planFile, plan);
@@ -60208,7 +60690,7 @@ async function sandboxAccessRuntime(request, config, marker) {
           }).exists) await sandbox2.command({ createRole: item[0], privileges: item[1], roles: [] }, primary);
         }
         phase = "create-manager-user";
-        if (!plan.snapshot.managerExists) await sandbox2.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope } }, primary);
+        if (!plan.snapshot.managerExists) await sandbox2.command({ createUser: managerUser, pwd: password, roles: [{ role: managerRole, db: config.sandboxDatabase }], customData: { plugin: "remote-debug-agent", version: 1, scope: scope2 } }, primary);
         else if (state.snapshot.passwordChanged) {
           phase = "reset-manager-password";
           await sandbox2.command({ updateUser: managerUser, pwd: password }, primary);
@@ -60220,20 +60702,20 @@ async function sandboxAccessRuntime(request, config, marker) {
         await verifyManager();
         if (state.snapshot.profileNeedsUpdate) {
           phase = "write-config";
-          if (textHash(fs12.readFileSync(config.configPath, "utf8")) !== plan.snapshot.configHash) fail3("SANDBOX_SETUP_PLAN_CONFLICT");
+          if (textHash(fs13.readFileSync(config.configPath, "utf8")) !== plan.snapshot.configHash) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
           const backup = config.configPath + ".before-rda-sandbox-" + request.setupId;
-          fs12.writeFileSync(backup, state.original, { flag: "wx", mode: 384 });
+          fs13.writeFileSync(backup, state.original, { flag: "wx", mode: 384 });
           state.fileConfig[config.managementProfile] = { url: uri };
           atomic(config.configPath, state.fileConfig, state.stat);
         } else if (state.stat.mode & 63) {
-          fs12.chmodSync(config.configPath, 384);
+          fs13.chmodSync(config.configPath, 384);
         }
         phase = "journal-complete";
         plan.status = "completed";
         atomic(planFile, plan);
       } else {
         const current = await preflight();
-        if (!current.snapshot.managerExists || !current.snapshot.profileExists || !current.snapshot.executorGranted || current.snapshot.passwordChanged || current.snapshot.clusterHash !== plan.snapshot.clusterHash || hash(current.snapshot.executionUser) !== hash(plan.snapshot.executionUser)) fail3("SANDBOX_SETUP_PLAN_CONFLICT");
+        if (!current.snapshot.managerExists || !current.snapshot.profileExists || !current.snapshot.executorGranted || current.snapshot.passwordChanged || current.snapshot.clusterHash !== plan.snapshot.clusterHash || hash(current.snapshot.executionUser) !== hash(plan.snapshot.executionUser)) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
       }
     }
     process.stdout.write(marker + JSON.stringify({ ok: true, data: summary(plan) }) + "\n");
@@ -60245,7 +60727,7 @@ async function sandboxAccessRuntime(request, config, marker) {
       plan.status = "partial";
       plan.errorDiagnostic = diagnostic;
       try {
-        atomic(path19.join(config.journalRoot, request.setupId + ".json"), plan);
+        atomic(path20.join(config.journalRoot, request.setupId + ".json"), plan);
       } catch (_) {
       }
     }
@@ -60253,16 +60735,16 @@ async function sandboxAccessRuntime(request, config, marker) {
     process.exitCode = 1;
   } finally {
     if (temporary) try {
-      fs12.unlinkSync(temporary);
+      fs13.unlinkSync(temporary);
     } catch (_) {
     }
     if (lockFd !== void 0) {
       try {
-        fs12.closeSync(lockFd);
+        fs13.closeSync(lockFd);
       } catch (_) {
       }
       try {
-        fs12.unlinkSync(lockPath);
+        fs13.unlinkSync(lockPath);
       } catch (_) {
       }
     }
@@ -60278,22 +60760,22 @@ async function sandboxAccessRuntime(request, config, marker) {
 }
 
 // mongodb-sandbox-access.js
-function fail2(code, message = code) {
+function fail3(code, message = code) {
   return operationError(message, { code, statusCode: 400, layer: "sandbox-access", phase: "validation", retriable: false });
 }
-function accessSettings(rawConfig, instanceId) {
+function accessSettings(rawConfig, instanceId2) {
   const base = normalizeMongoConfig(rawConfig);
   const policy = normalizeMongoBulkConfig(rawConfig, { requireBulkEnabled: false });
   const managementProfile = rawConfig.sandboxManagementProfile || "remote_debug_manager";
   const managementUriKey = rawConfig.sandboxManagementUriKey || "url";
   const password = rawConfig.sandboxManagementPassword;
-  if (typeof password !== "string" || password.length < 16 || password.length > 256 || /[\r\n\0]/.test(password)) throw fail2("SANDBOX_MANAGEMENT_PASSWORD_REQUIRED", "Configure this instance's sandbox management password (16–256 characters) before preparing setup");
+  if (typeof password !== "string" || password.length < 16 || password.length > 256 || /[\r\n\0]/.test(password)) throw fail3("SANDBOX_MANAGEMENT_PASSWORD_REQUIRED", "Configure this instance's sandbox management password (16–256 characters) before preparing setup");
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(managementProfile) || managementProfile === base.configProfile || managementUriKey !== "url") {
-    throw fail2("SANDBOX_MANAGEMENT_PROFILE_INVALID");
+    throw fail3("SANDBOX_MANAGEMENT_PROFILE_INVALID");
   }
   const config = {
     ...base,
-    instanceId,
+    instanceId: instanceId2,
     sandboxDatabase: policy.sandboxDatabase,
     managementProfile,
     managementUriKey,
@@ -60303,39 +60785,39 @@ function accessSettings(rawConfig, instanceId) {
   };
   return config;
 }
-function sandboxSettingsHash(rawConfig, instanceId) {
-  return (0, import_node_crypto17.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId))).digest("hex");
+function sandboxSettingsHash(rawConfig, instanceId2) {
+  return (0, import_node_crypto18.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId2))).digest("hex");
 }
-function buildSandboxAccessScript(request, rawConfig, instanceId) {
-  return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
+function buildSandboxAccessScript(request, rawConfig, instanceId2) {
+  return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId2))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
 }
 async function runSandboxAccess(input = {}, options = {}) {
   const action = options.action;
   const rawConfig = options.config?.mongodb || options.config || {};
-  const instanceId = options.instanceId || process.env.REMOTE_DEBUG_INSTANCE_ID || "standalone";
-  if (options.expectedSettingsHash && options.expectedSettingsHash !== sandboxSettingsHash(rawConfig, instanceId)) throw fail2("SANDBOX_SETUP_CONFIG_STALE", "Reload this instance's configuration before preparing or applying sandbox setup");
+  const instanceId2 = options.instanceId || process.env.REMOTE_DEBUG_INSTANCE_ID || "standalone";
+  if (options.expectedSettingsHash && options.expectedSettingsHash !== sandboxSettingsHash(rawConfig, instanceId2)) throw fail3("SANDBOX_SETUP_CONFIG_STALE", "Reload this instance's configuration before preparing or applying sandbox setup");
   const allowed = action === "prepare" ? ["purpose", "operationId", "timeoutMs", "deadlineAt"] : ["setupId", "planHash", "confirmation", "operationId", "timeoutMs", "deadlineAt"];
-  if (Object.keys(input).some((key) => !allowed.includes(key))) throw fail2("SANDBOX_SETUP_INPUT_INVALID");
-  if (!["prepare", "execute"].includes(action)) throw fail2("SANDBOX_SETUP_ACTION_INVALID");
+  if (Object.keys(input).some((key) => !allowed.includes(key))) throw fail3("SANDBOX_SETUP_INPUT_INVALID");
+  if (!["prepare", "execute"].includes(action)) throw fail3("SANDBOX_SETUP_ACTION_INVALID");
   if (action === "execute" && (!/^[a-f0-9-]{36}$/.test(input.setupId || "") || !/^[a-f0-9]{64}$/.test(input.planHash || "") || input.confirmation !== "确认配置沙盒")) {
-    throw fail2("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
+    throw fail3("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
   }
-  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto17.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
-  const script = buildSandboxAccessScript(request, rawConfig, instanceId);
-  if (typeof options.runSSH !== "function") throw fail2("MONGODB_RUNNER_UNAVAILABLE");
+  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto18.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
+  const script = buildSandboxAccessScript(request, rawConfig, instanceId2);
+  if (typeof options.runSSH !== "function") throw fail3("MONGODB_RUNNER_UNAVAILABLE");
   let remote;
   try {
     remote = await options.runSSH(MONGODB_REMOTE_COMMAND, { config: options.config, operation: options.operation, stdin: script });
   } catch (error2) {
     throw operationError("Sandbox setup transport failed; inspect the plan before retrying", { code: error2.code || "SANDBOX_SETUP_TRANSPORT_FAILED", statusCode: 502, layer: "sandbox-access", phase: action, retriable: false });
   }
-  if (remote.stdoutTruncated || Buffer.byteLength(remote.stdout || "") > 65536) throw fail2("SANDBOX_SETUP_RESPONSE_TOO_LARGE");
+  if (remote.stdoutTruncated || Buffer.byteLength(remote.stdout || "") > 65536) throw fail3("SANDBOX_SETUP_RESPONSE_TOO_LARGE");
   const line = String(remote.stdout || "").split(/\r?\n/).filter((item) => item.startsWith(MONGODB_RESULT_MARKER)).pop();
   let payload;
   try {
     payload = JSON.parse(line.slice(MONGODB_RESULT_MARKER.length));
   } catch {
-    throw fail2("SANDBOX_SETUP_INVALID_RESPONSE");
+    throw fail3("SANDBOX_SETUP_INVALID_RESPONSE");
   }
   if (!payload.ok || remote.exitCode !== 0 || remote.timedOut) {
     const phases = ["storage", "preflight", "lock", "journal-start", "create-manager-role", "create-executor-role", "create-manager-user", "reset-manager-password", "grant-executor-role", "verify-manager", "write-config", "journal-complete"];
@@ -60343,7 +60825,7 @@ async function runSandboxAccess(input = {}, options = {}) {
     const stage = phases.includes(diagnostic.phase) ? diagnostic.phase : "unknown";
     const code = Number.isSafeInteger(diagnostic.databaseCode) ? `; database code ${diagnostic.databaseCode}` : "";
     const filesystem = ["EACCES", "EPERM", "EIO", "EEXIST", "EROFS", "ENOSPC", "ELOOP", "EINVAL", "EMFILE", "ENFILE", "ENOTDIR"].includes(diagnostic.filesystemCode) ? `; filesystem code ${diagnostic.filesystemCode}` : "";
-    throw fail2(payload.error?.code || "SANDBOX_SETUP_FAILED", `Sandbox setup failed at ${stage}${code}${filesystem}; prepare again to inspect partial configuration safely`);
+    throw fail3(payload.error?.code || "SANDBOX_SETUP_FAILED", `Sandbox setup failed at ${stage}${code}${filesystem}; prepare again to inspect partial configuration safely`);
   }
   return payload.data;
 }
@@ -60383,10 +60865,10 @@ function timestamp(value, field) {
 function normalizeLogQuery(input, config) {
   const projects = normalizeLogProjects(config.logs?.projects, config.security.allowedPaths, config.security.sourceRoots);
   const projectId = text(input.projectId, "projectId", 32);
-  const path19 = text(input.path, "path", 4096);
-  if (Boolean(projectId) === Boolean(path19)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
+  const path20 = text(input.path, "path", 4096);
+  if (Boolean(projectId) === Boolean(path20)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
   if (projectId && !Object.hasOwn(projects, projectId)) throw logInputError(`unknown log project: ${projectId}`, "LOG_PROJECT_NOT_FOUND");
-  if (path19) assertPathAllowed(path19, config.security.allowedPaths);
+  if (path20) assertPathAllowed(path20, config.security.allowedPaths);
   const contains = text(input.contains, "contains");
   const route2 = text(input.route, "route");
   if (route2 && !route2.startsWith("/")) throw logInputError("route must be an exact absolute route", "INVALID_LOG_QUERY");
@@ -60396,7 +60878,7 @@ function normalizeLogQuery(input, config) {
   const toTime = timestamp(input.toTime, "toTime");
   const mode = input.mode || (contains || route2 || level || method || fromTime || toTime ? "search" : "latest");
   if (!LOG_QUERY_CAPABILITIES.modes.includes(mode)) throw logInputError("mode must be latest, search, files, or members", "INVALID_LOG_QUERY");
-  if (mode === "members" && (!path19 || !/\.(?:tar\.gz|tgz)$/i.test(path19))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
+  if (mode === "members" && (!path20 || !/\.(?:tar\.gz|tgz)$/i.test(path20))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
   if (mode === "latest" && (contains || route2 || level || method || fromTime || toTime)) throw logInputError("use search mode for record filters", "INVALID_LOG_QUERY");
   if (["files", "members"].includes(mode) && (contains || route2 || level || method || fromTime || toTime)) throw logInputError("record filters require search mode", "INVALID_LOG_QUERY");
   const dateFrom = date(input.date || input.dateFrom, "dateFrom");
@@ -60407,10 +60889,10 @@ function normalizeLogQuery(input, config) {
   const memberPath = text(input.memberPath, "memberPath", 4096);
   const memberOffset = input.memberOffset ?? 0;
   if (!Number.isInteger(memberOffset) || memberOffset < 0 || memberOffset > 5e3) throw logInputError("invalid memberOffset", "INVALID_LOG_QUERY");
-  if (memberPath && path19 && !/\.(?:tar\.gz|tgz)$/i.test(path19)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
+  if (memberPath && path20 && !/\.(?:tar\.gz|tgz)$/i.test(path20)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
   return {
     projectId,
-    path: path19,
+    path: path20,
     directories: projectId ? projects[projectId].directories : [],
     allowedRoots: config.security.allowedPaths,
     mode,
@@ -62426,7 +62908,7 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
       false,
       true
     );
-    for (const [label, root] of Object.entries(config.security.sourceRoots || {})) {
+    for (const [label2, root] of Object.entries(config.security.sourceRoots || {})) {
       await addDirectorySource(
         sftp,
         sources,
@@ -62434,7 +62916,7 @@ async function discoverLogSources(sftp, config, operation, category, markProgres
         warnings,
         `${root}/logs`,
         "application",
-        `application:${label}`,
+        `application:${label2}`,
         config,
         operation,
         false,
@@ -62534,9 +63016,9 @@ async function listLogs(options = {}) {
           continue;
         }
         const pageLimit = Math.min(LOG_MAX_LIMIT, Math.max(100, normalized.limit * 2));
-        let page;
+        let page2;
         try {
-          page = await readDirectoryPage(
+          page2 = await readDirectoryPage(
             sftp,
             source.path,
             prepared.operation,
@@ -62558,8 +63040,8 @@ async function listLogs(options = {}) {
         }
         let nextOffset = offset;
         let pageExhausted = true;
-        for (let index = 0; index < page.entries.length; index += 1) {
-          const rawEntry = page.entries[index];
+        for (let index = 0; index < page2.entries.length; index += 1) {
+          const rawEntry = page2.entries[index];
           const rawOffset = offset + index;
           nextOffset = rawOffset + 1;
           scannedEntries += 1;
@@ -62571,7 +63053,7 @@ async function listLogs(options = {}) {
             }
             entries.push(entry2);
             if (entries.length >= normalized.limit) {
-              const hasUnconsumed = index + 1 < page.entries.length || page.hasMore;
+              const hasUnconsumed = index + 1 < page2.entries.length || page2.hasMore;
               if (hasUnconsumed) {
                 const nextCursor2 = encodeLogCursor({
                   kind: "logs",
@@ -62615,11 +63097,11 @@ async function listLogs(options = {}) {
           );
         }
         if (sourceIndex >= discovery.sources.length || entries.length >= normalized.limit) break;
-        if (pageExhausted && page.hasMore) {
-          offset = offset + page.entries.length;
+        if (pageExhausted && page2.hasMore) {
+          offset = offset + page2.entries.length;
           continue;
         }
-        if (page.hasMore && !pageExhausted) {
+        if (page2.hasMore && !pageExhausted) {
           offset = nextOffset;
           continue;
         }
@@ -63033,10 +63515,10 @@ async function readLog(options = {}) {
 }
 
 // instance-registry.js
-var import_node_fs6 = __toESM(require("node:fs"), 1);
-var import_node_path11 = __toESM(require("node:path"), 1);
-var import_node_crypto18 = require("node:crypto");
-var import_local_auth5 = __toESM(require_local_auth(), 1);
+var import_node_fs7 = __toESM(require("node:fs"), 1);
+var import_node_path12 = __toESM(require("node:path"), 1);
+var import_node_crypto19 = require("node:crypto");
+var import_local_auth6 = __toESM(require_local_auth(), 1);
 var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
 var DEFAULT_HEALTH_INTERVAL_MS = 15e3;
@@ -63302,7 +63784,7 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto18.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto19.randomUUID)());
   assertInstanceId(id);
   const name2 = String(input.name ?? existing.name ?? id).trim();
   if (!name2) {
@@ -63386,18 +63868,18 @@ function hasUnavailablePreferredWorkerPort(rawInstances, manager, managerPort) {
   });
 }
 function registryRootFrom(cwd) {
-  const normalized = import_node_path11.default.resolve(cwd);
-  if (import_node_path11.default.basename(normalized).toLowerCase() === "agent") {
-    return import_node_path11.default.dirname(normalized);
+  const normalized = import_node_path12.default.resolve(cwd);
+  if (import_node_path12.default.basename(normalized).toLowerCase() === "agent") {
+    return import_node_path12.default.dirname(normalized);
   }
   return normalized;
 }
 function defaultRegistryPath(cwd = process.cwd(), env = process.env) {
   if (env.REMOTE_DEBUG_INSTANCE_REGISTRY) {
-    return import_node_path11.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
+    return import_node_path12.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
   }
-  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path11.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
-  return import_node_path11.default.resolve(root, ".remote-debug", "instances.json");
+  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path12.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
+  return import_node_path12.default.resolve(root, ".remote-debug", "instances.json");
 }
 function envDefaultInstance(env, cwd) {
   const dotEnv = loadDotEnv(cwd);
@@ -63512,8 +63994,8 @@ var InstanceRegistry = class {
   load() {
     let registry;
     let shouldWrite = false;
-    if (import_node_fs6.default.existsSync(this.registryPath)) {
-      const raw = JSON.parse(import_node_fs6.default.readFileSync(this.registryPath, "utf8").replace(/^\uFEFF/, ""));
+    if (import_node_fs7.default.existsSync(this.registryPath)) {
+      const raw = JSON.parse(import_node_fs7.default.readFileSync(this.registryPath, "utf8").replace(/^\uFEFF/, ""));
       const rawInstanceCount = Array.isArray(raw.instances) ? raw.instances.length : 0;
       registry = normalizeRegistry(raw, this.cwd, this.env, this.managerPort);
       shouldWrite = raw.version !== REGISTRY_VERSION || !raw.manager || hasUnavailablePreferredWorkerPort(raw.instances, registry.manager, this.managerPort) || rawInstanceCount === 0 && registry.instances.length > 0;
@@ -63527,18 +64009,18 @@ var InstanceRegistry = class {
     return registry;
   }
   save(nextRegistry = this.registry) {
-    import_node_fs6.default.mkdirSync(import_node_path11.default.dirname(this.registryPath), { recursive: true, mode: 448 });
+    import_node_fs7.default.mkdirSync(import_node_path12.default.dirname(this.registryPath), { recursive: true, mode: 448 });
     const containsSandboxSecret = nextRegistry.instances.some((instance2) => Boolean(instance2.mongodb?.sandboxManagementPassword));
-    if (containsSandboxSecret) import_local_auth5.default.protectOrCheck(import_node_path11.default.dirname(this.registryPath), true, true);
+    if (containsSandboxSecret) import_local_auth6.default.protectOrCheck(import_node_path12.default.dirname(this.registryPath), true, true);
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
     try {
-      import_node_fs6.default.writeFileSync(tempPath, `${JSON.stringify(nextRegistry, null, 2)}
+      import_node_fs7.default.writeFileSync(tempPath, `${JSON.stringify(nextRegistry, null, 2)}
 `, { flag: "wx", mode: 384 });
-      if (containsSandboxSecret) import_local_auth5.default.protectOrCheck(tempPath, false, true);
-      import_node_fs6.default.renameSync(tempPath, this.registryPath);
+      if (containsSandboxSecret) import_local_auth6.default.protectOrCheck(tempPath, false, true);
+      import_node_fs7.default.renameSync(tempPath, this.registryPath);
       this.registry = nextRegistry;
     } finally {
-      if (import_node_fs6.default.existsSync(tempPath)) import_node_fs6.default.unlinkSync(tempPath);
+      if (import_node_fs7.default.existsSync(tempPath)) import_node_fs7.default.unlinkSync(tempPath);
     }
   }
   managerConfig() {
@@ -63616,11 +64098,11 @@ var InstanceRegistry = class {
     this.save();
     return publicInstance(removed);
   }
-  resolveId(instanceId) {
-    if (instanceId) {
-      const instance2 = this.getInternal(instanceId);
+  resolveId(instanceId2) {
+    if (instanceId2) {
+      const instance2 = this.getInternal(instanceId2);
       if (!instance2) {
-        const error3 = new Error(`instance not found: ${instanceId}`);
+        const error3 = new Error(`instance not found: ${instanceId2}`);
         error3.code = "INSTANCE_NOT_FOUND";
         error3.statusCode = 404;
         error3.instances = this.list();
@@ -63641,7 +64123,7 @@ var InstanceRegistry = class {
 };
 
 // log-jobs.js
-var import_node_crypto19 = require("node:crypto");
+var import_node_crypto20 = require("node:crypto");
 var import_node_string_decoder2 = require("node:string_decoder");
 var import_posix11 = __toESM(require("node:path/posix"), 1);
 
@@ -63766,7 +64248,7 @@ var LogJobRunner = class {
       }
     }
     const job = {
-      jobId: (0, import_node_crypto19.randomUUID)(),
+      jobId: (0, import_node_crypto20.randomUUID)(),
       status: "queued",
       createdAt: this.now(),
       query,
@@ -63915,7 +64397,7 @@ var LogJobRunner = class {
   }
   async sendControl(job, input) {
     if (!job.channel || job.status === "cancelling") throw fault("log task control channel is not ready", "LOG_JOB_NOT_READY", 409);
-    const requestId = (0, import_node_crypto19.randomUUID)();
+    const requestId = (0, import_node_crypto20.randomUUID)();
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         job.controls.delete(requestId);
@@ -64156,24 +64638,24 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     this.timer = setInterval(() => this.rebalance(), 1e3);
     this.timer.unref?.();
   }
-  domainFor(instanceId) {
-    const instance2 = this.instance(instanceId);
-    return this.policy.domains[instanceId] || (instance2?.host ? `${instance2.host}:${instance2.port || 22}` : instanceId);
+  domainFor(instanceId2) {
+    const instance2 = this.instance(instanceId2);
+    return this.policy.domains[instanceId2] || (instance2?.host ? `${instance2.host}:${instance2.port || 22}` : instanceId2);
   }
-  domain(instanceId) {
-    const id = this.domainFor(instanceId);
+  domain(instanceId2) {
+    const id = this.domainFor(instanceId2);
     if (!this.domains.has(id)) this.domains.set(id, { id, sample: null, factor: 1, recoveryAt: this.now() });
     return this.domains.get(id);
   }
-  attach(instanceId, epoch, send2) {
-    const previous = this.workers.get(instanceId);
+  attach(instanceId2, epoch, send2) {
+    const previous = this.workers.get(instanceId2);
     if (previous?.epoch === epoch) {
-      for (const task of this.tasks.values()) if (task.instanceId === instanceId && task.epoch === epoch && task.budget && !RESOURCE_TERMINAL.has(task.status)) send2({ type: "resource_budget", epoch, taskId: task.taskId, revision: task.budgetRevision, budget: task.budget });
+      for (const task of this.tasks.values()) if (task.instanceId === instanceId2 && task.epoch === epoch && task.budget && !RESOURCE_TERMINAL.has(task.status)) send2({ type: "resource_budget", epoch, taskId: task.taskId, revision: task.budgetRevision, budget: task.budget });
       return;
     }
-    if (previous && previous.epoch !== epoch) this.detach(instanceId, previous.epoch);
-    this.workers.set(instanceId, { epoch, send: send2, domain: this.domainFor(instanceId) });
-    this.domain(instanceId);
+    if (previous && previous.epoch !== epoch) this.detach(instanceId2, previous.epoch);
+    this.workers.set(instanceId2, { epoch, send: send2, domain: this.domainFor(instanceId2) });
+    this.domain(instanceId2);
     this.electSamplers();
     this.rebalance();
   }
@@ -64185,10 +64667,10 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
       worker.send({ type: "resource_config", epoch: worker.epoch, policy: this.policy, sampler });
     }
   }
-  detach(instanceId, epoch) {
-    if (this.workers.get(instanceId)?.epoch !== epoch) return;
-    this.workers.delete(instanceId);
-    for (const entry2 of this.tasks.values()) if (entry2.instanceId === instanceId && entry2.epoch === epoch && !RESOURCE_TERMINAL.has(entry2.status)) {
+  detach(instanceId2, epoch) {
+    if (this.workers.get(instanceId2)?.epoch !== epoch) return;
+    this.workers.delete(instanceId2);
+    for (const entry2 of this.tasks.values()) if (entry2.instanceId === instanceId2 && entry2.epoch === epoch && !RESOURCE_TERMINAL.has(entry2.status)) {
       entry2.status = "interrupted";
       entry2.finishedAt = this.now();
       entry2.resourceMode = "auto";
@@ -64198,12 +64680,12 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     this.electSamplers();
     this.rebalance();
   }
-  report(instanceId, epoch, task) {
-    if (this.workers.get(instanceId)?.epoch !== epoch || !/^[a-f0-9-]{36}$/.test(task?.taskId || "") || !Object.hasOwn(RESOURCE_PROFILES, task.type)) return;
+  report(instanceId2, epoch, task) {
+    if (this.workers.get(instanceId2)?.epoch !== epoch || !/^[a-f0-9-]{36}$/.test(task?.taskId || "") || !Object.hasOwn(RESOURCE_PROFILES, task.type)) return;
     const previous = this.tasks.get(task.taskId);
-    if (previous && (previous.epoch !== epoch || previous.instanceId !== instanceId)) return;
+    if (previous && (previous.epoch !== epoch || previous.instanceId !== instanceId2)) return;
     const profile = RESOURCE_PROFILES[task.type];
-    const resumed = !previous && task.type === "mongo_bulk" && task.referenceId ? [...this.tasks.values()].find((t) => t.instanceId === instanceId && t.type === task.type && t.referenceId === task.referenceId && t.handoverManual) : null;
+    const resumed = !previous && task.type === "mongo_bulk" && task.referenceId ? [...this.tasks.values()].find((t) => t.instanceId === instanceId2 && t.type === task.type && t.referenceId === task.referenceId && t.handoverManual) : null;
     const inheritedMaximum = resumed && ![...this.tasks.values()].some((t) => t.domain === resumed.domain && t.resourceMode === "manual_max");
     if (resumed) resumed.handoverManual = false;
     const usage = Object.fromEntries(Object.entries(task.usage || {}).filter(([key, v]) => ["rssBytes", "peakRssBytes", "cpuMs", "elapsedMs", "readBytes", "processedBytes", "transferBytes"].includes(key) && numeric(v)));
@@ -64215,9 +64697,9 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     const entry2 = {
       ...previous,
       taskId: task.taskId,
-      instanceId,
+      instanceId: instanceId2,
       epoch,
-      domain: this.domainFor(instanceId),
+      domain: this.domainFor(instanceId2),
       type: task.type,
       bulk: profile.bulk,
       referenceId: String(task.referenceId || "").slice(0, 64),
@@ -64247,9 +64729,9 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     this.tasks.set(entry2.taskId, entry2);
     this.rebalance();
   }
-  sample(instanceId, epoch, sample) {
-    if (this.workers.get(instanceId)?.epoch !== epoch) return;
-    const domain = this.domain(instanceId);
+  sample(instanceId2, epoch, sample) {
+    if (this.workers.get(instanceId2)?.epoch !== epoch) return;
+    const domain = this.domain(instanceId2);
     const keys = ["cpuCores", "cpuBusyRatio", "memoryAvailableBytes", "totalMemoryBytes", "load1", "ioWaitRatio"];
     if (!sample || keys.some((key) => !numeric(sample[key])) || sample.cpuCores < 0.01 || sample.cpuCores > 4096 || sample.cpuBusyRatio > 1 || sample.ioWaitRatio > 1) return;
     if (!domain.sample) domain.factor = 1;
@@ -64258,9 +64740,9 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
     domain.sample.sampledAt = this.now();
     this.rebalance();
   }
-  setMode(instanceId, taskId, mode, expectedRevision) {
+  setMode(instanceId2, taskId, mode, expectedRevision) {
     const task = this.tasks.get(taskId);
-    if (!task || task.instanceId !== instanceId) throw fault2("任务不存在或已过期", "TASK_NOT_FOUND", 404);
+    if (!task || task.instanceId !== instanceId2) throw fault2("任务不存在或已过期", "TASK_NOT_FOUND", 404);
     if (!task.bulk || RESOURCE_TERMINAL.has(task.status)) throw fault2("只有未结束的批量任务可提档", "TASK_MODE_INVALID", 409);
     if (task.status === "cancelling") throw fault2("任务正在取消，无法调整资源模式", "TASK_MODE_INVALID", 409);
     if (!["auto", "manual_max"].includes(mode)) throw fault2("无效资源模式", "TASK_MODE_INVALID");
@@ -64396,9 +64878,9 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
       elapsedMs: Math.max(0, (task.finishedAt || this.now()) - task.createdAt)
     };
   }
-  list(instanceId, { offset = 0, limit = 50 } = {}) {
-    const tasks = [...this.tasks.values()].filter((t) => t.instanceId === instanceId).sort((a, b) => Number(RESOURCE_TERMINAL.has(a.status)) - Number(RESOURCE_TERMINAL.has(b.status)) || Number(b.resourceMode === "manual_max") - Number(a.resourceMode === "manual_max") || b.createdAt - a.createdAt);
-    const domain = this.domain(instanceId);
+  list(instanceId2, { offset = 0, limit = 50 } = {}) {
+    const tasks = [...this.tasks.values()].filter((t) => t.instanceId === instanceId2).sort((a, b) => Number(RESOURCE_TERMINAL.has(a.status)) - Number(RESOURCE_TERMINAL.has(b.status)) || Number(b.resourceMode === "manual_max") - Number(a.resourceMode === "manual_max") || b.createdAt - a.createdAt);
+    const domain = this.domain(instanceId2);
     return {
       tasks: tasks.slice(offset, offset + limit).map((t) => this.publicTask(t)),
       total: tasks.length,
@@ -64415,17 +64897,17 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
 
 // worker-manager.js
 var import_node_child_process3 = require("node:child_process");
-var import_node_crypto21 = require("node:crypto");
-var import_promises5 = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto22 = require("node:crypto");
+var import_promises6 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
-var import_node_path13 = __toESM(require("node:path"), 1);
+var import_node_path14 = __toESM(require("node:path"), 1);
 var import_node_url4 = require("node:url");
 
 // memory-store.js
-var import_node_crypto20 = require("node:crypto");
-var import_node_fs7 = __toESM(require("node:fs"), 1);
-var import_promises4 = __toESM(require("node:fs/promises"), 1);
-var import_node_path12 = __toESM(require("node:path"), 1);
+var import_node_crypto21 = require("node:crypto");
+var import_node_fs8 = __toESM(require("node:fs"), 1);
+var import_promises5 = __toESM(require("node:fs/promises"), 1);
+var import_node_path13 = __toESM(require("node:path"), 1);
 var MEMORY_VERSION = 1;
 var MEMORY_STATUSES = /* @__PURE__ */ new Set([
   "missing",
@@ -64450,8 +64932,8 @@ function nowIso3() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function projectRootFrom(cwd) {
-  const normalized = import_node_path12.default.resolve(cwd);
-  return import_node_path12.default.basename(normalized).toLowerCase() === "agent" ? import_node_path12.default.dirname(normalized) : normalized;
+  const normalized = import_node_path13.default.resolve(cwd);
+  return import_node_path13.default.basename(normalized).toLowerCase() === "agent" ? import_node_path13.default.dirname(normalized) : normalized;
 }
 function stableJson(value) {
   if (Array.isArray(value)) {
@@ -64500,7 +64982,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance2 = {}) {
-  return (0, import_node_crypto20.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto21.createHash)("sha256").update(stableJson({
     host: instance2.host || "",
     port: instance2.port || 22,
     username: instance2.username || ""
@@ -64515,9 +64997,9 @@ function targetSummary(instance2 = {}) {
 }
 function memoryRootFromOptions(options) {
   if (options.memoryRoot) {
-    return import_node_path12.default.resolve(options.memoryRoot);
+    return import_node_path13.default.resolve(options.memoryRoot);
   }
-  return import_node_path12.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
+  return import_node_path13.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
 }
 function isObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -64824,29 +65306,29 @@ var MemoryStore = class {
     this.now = options.now || nowIso3;
     this.records = /* @__PURE__ */ new Map();
   }
-  memoryPath(instanceId) {
-    return import_node_path12.default.resolve(this.root, instanceId, "memory.json");
+  memoryPath(instanceId2) {
+    return import_node_path13.default.resolve(this.root, instanceId2, "memory.json");
   }
-  ensureLoaded(instanceId) {
-    if (this.records.has(instanceId)) {
-      return this.records.get(instanceId);
+  ensureLoaded(instanceId2) {
+    if (this.records.has(instanceId2)) {
+      return this.records.get(instanceId2);
     }
-    const filePath = this.memoryPath(instanceId);
-    if (!import_node_fs7.default.existsSync(filePath)) {
-      this.records.set(instanceId, null);
+    const filePath = this.memoryPath(instanceId2);
+    if (!import_node_fs8.default.existsSync(filePath)) {
+      this.records.set(instanceId2, null);
       return null;
     }
     try {
-      const parsed = JSON.parse(import_node_fs7.default.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
-      if (parsed?.version !== MEMORY_VERSION || parsed.instanceId !== instanceId) {
-        this.records.set(instanceId, null);
+      const parsed = JSON.parse(import_node_fs8.default.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
+      if (parsed?.version !== MEMORY_VERSION || parsed.instanceId !== instanceId2) {
+        this.records.set(instanceId2, null);
         return null;
       }
       const sanitized = sanitizeMemoryValue(parsed);
-      this.records.set(instanceId, sanitized);
+      this.records.set(instanceId2, sanitized);
       return sanitized;
     } catch {
-      this.records.set(instanceId, null);
+      this.records.set(instanceId2, null);
       return null;
     }
   }
@@ -64863,14 +65345,14 @@ var MemoryStore = class {
     }
     return !["ready", "partial"].includes(memory2.status);
   }
-  async write(instanceId, memory2) {
-    const filePath = this.memoryPath(instanceId);
-    await import_promises4.default.mkdir(import_node_path12.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto20.randomUUID)()}.tmp`;
-    await import_promises4.default.writeFile(tempPath, `${JSON.stringify(memory2, null, 2)}
+  async write(instanceId2, memory2) {
+    const filePath = this.memoryPath(instanceId2);
+    await import_promises5.default.mkdir(import_node_path13.default.dirname(filePath), { recursive: true });
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto21.randomUUID)()}.tmp`;
+    await import_promises5.default.writeFile(tempPath, `${JSON.stringify(memory2, null, 2)}
 `, "utf8");
-    await import_promises4.default.rename(tempPath, filePath);
-    this.records.set(instanceId, memory2);
+    await import_promises5.default.rename(tempPath, filePath);
+    this.records.set(instanceId2, memory2);
   }
   async markInitializing(instance2, source = "worker-start") {
     const previous = this.ensureLoaded(instance2.id);
@@ -65031,15 +65513,15 @@ var MemoryStore = class {
       memory: memory2
     };
   }
-  async deleteInstance(instanceId) {
-    this.records.delete(instanceId);
-    await import_promises4.default.rm(this.memoryPath(instanceId), { force: true });
+  async deleteInstance(instanceId2) {
+    this.records.delete(instanceId2);
+    await import_promises5.default.rm(this.memoryPath(instanceId2), { force: true });
   }
 };
 
 // worker-manager.js
 var moduleFilePath = typeof __filename === "string" ? __filename : (0, import_node_url4.fileURLToPath)(void 0);
-var moduleDirectory3 = typeof __dirname === "string" ? __dirname : import_node_path13.default.dirname(moduleFilePath);
+var moduleDirectory3 = typeof __dirname === "string" ? __dirname : import_node_path14.default.dirname(moduleFilePath);
 var RESTORE_SNAPSHOT_VERSION = 1;
 var RESTORE_SHUTDOWN_REASONS = /* @__PURE__ */ new Set(["lease-expired"]);
 var RESTORE_SNAPSHOT_REASONS = /* @__PURE__ */ new Set(["active-runtime", ...RESTORE_SHUTDOWN_REASONS]);
@@ -65131,17 +65613,17 @@ async function waitForExit(child, timeoutMs) {
   });
 }
 function projectRootFrom2(cwd) {
-  const normalized = import_node_path13.default.resolve(cwd);
-  return import_node_path13.default.basename(normalized).toLowerCase() === "agent" ? import_node_path13.default.dirname(normalized) : normalized;
+  const normalized = import_node_path14.default.resolve(cwd);
+  return import_node_path14.default.basename(normalized).toLowerCase() === "agent" ? import_node_path14.default.dirname(normalized) : normalized;
 }
 function defaultRestoreSnapshotPath(cwd) {
-  return import_node_path13.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
+  return import_node_path14.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
 }
 function defaultRestoreSnapshotDiagnosticPath(cwd) {
-  return import_node_path13.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
+  return import_node_path14.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
 }
 function configEnv(instance2, port, manager, cwd, memoryInit) {
-  const instanceDir = import_node_path13.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance2.id);
+  const instanceDir = import_node_path14.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance2.id);
   return {
     REMOTE_DEBUG_WORKER: "1",
     REMOTE_DEBUG_INSTANCE_ID: instance2.id,
@@ -65153,7 +65635,7 @@ function configEnv(instance2, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_PRIVATE_KEY_PATH: instance2.privateKeyPath,
     REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance2.passphrase || "",
     REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance2.hostKeyFingerprints || []),
-    REMOTE_DEBUG_AUDIT_LOG: instance2.auditLog || import_node_path13.default.resolve(instanceDir, "audit.jsonl"),
+    REMOTE_DEBUG_AUDIT_LOG: instance2.auditLog || import_node_path14.default.resolve(instanceDir, "audit.jsonl"),
     REMOTE_DEBUG_APPROVED_COMMANDS: instance2.approvedCommands?.enabled ? "1" : "0",
     REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance2.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance2.approvedCommands.executionTimeoutMs),
     REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance2.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance2.approvedCommands.maxExecutionTimeoutMs),
@@ -65165,7 +65647,7 @@ function configEnv(instance2, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
-    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path13.default.resolve(instanceDir, ".runtime", "agent-state.json"),
+    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path14.default.resolve(instanceDir, ".runtime", "agent-state.json"),
     REMOTE_DEBUG_RUNTIME_ID: process.env.REMOTE_DEBUG_RUNTIME_ID || "development",
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0"
   };
@@ -65176,7 +65658,7 @@ var WorkerManager = class {
     this.managerPort = options.managerPort;
     this.cwd = options.cwd || process.cwd();
     this.nodePath = options.nodePath || process.execPath;
-    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path13.default.resolve(moduleDirectory3, "worker-entry.js");
+    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path14.default.resolve(moduleDirectory3, "worker-entry.js");
     this.forkWorker = options.forkWorker || ((entryPath, forkOptions) => (0, import_node_child_process3.fork)(entryPath, [], forkOptions));
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
@@ -65253,7 +65735,7 @@ var WorkerManager = class {
   }
   async readRestoreSnapshotDiagnostic() {
     try {
-      return JSON.parse(await import_promises5.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
+      return JSON.parse(await import_promises6.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
     } catch (error2) {
       if (error2?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot diagnostic", error2);
@@ -65263,11 +65745,11 @@ var WorkerManager = class {
   }
   async writeRestoreSnapshotDiagnostic(diagnostic) {
     try {
-      await import_promises5.default.mkdir(import_node_path13.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
+      await import_promises6.default.mkdir(import_node_path14.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
       const tempPath = `${this.restoreSnapshotDiagnosticPath}.${process.pid}.${Date.now()}.tmp`;
-      await import_promises5.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
+      await import_promises6.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
 `, "utf8");
-      await import_promises5.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
+      await import_promises6.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
     } catch (error2) {
       console.error("failed to write manager restore snapshot diagnostic", error2);
     }
@@ -65295,7 +65777,7 @@ var WorkerManager = class {
     let previousSnapshot = null;
     let previousSnapshotReadError = null;
     try {
-      previousSnapshot = JSON.parse(await import_promises5.default.readFile(this.restoreSnapshotPath, "utf8"));
+      previousSnapshot = JSON.parse(await import_promises6.default.readFile(this.restoreSnapshotPath, "utf8"));
     } catch (error2) {
       if (error2?.code !== "ENOENT") {
         previousSnapshotReadError = {
@@ -65319,7 +65801,7 @@ var WorkerManager = class {
       });
     }
     try {
-      await import_promises5.default.rm(this.restoreSnapshotPath, { force: true });
+      await import_promises6.default.rm(this.restoreSnapshotPath, { force: true });
     } catch (error2) {
       console.error("failed to clear manager restore snapshot", error2);
     }
@@ -65342,11 +65824,11 @@ var WorkerManager = class {
       lastReason: reason,
       instances
     };
-    await import_promises5.default.mkdir(import_node_path13.default.dirname(this.restoreSnapshotPath), { recursive: true });
+    await import_promises6.default.mkdir(import_node_path14.default.dirname(this.restoreSnapshotPath), { recursive: true });
     const tempPath = `${this.restoreSnapshotPath}.${process.pid}.${Date.now()}.tmp`;
-    await import_promises5.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
+    await import_promises6.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
 `, "utf8");
-    await import_promises5.default.rename(tempPath, this.restoreSnapshotPath);
+    await import_promises6.default.rename(tempPath, this.restoreSnapshotPath);
     return {
       written: true,
       reason,
@@ -65388,7 +65870,7 @@ var WorkerManager = class {
   async readRestoreSnapshot() {
     let parsed;
     try {
-      parsed = JSON.parse(await import_promises5.default.readFile(this.restoreSnapshotPath, "utf8"));
+      parsed = JSON.parse(await import_promises6.default.readFile(this.restoreSnapshotPath, "utf8"));
     } catch (error2) {
       if (error2?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot", error2);
@@ -65593,7 +66075,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance2);
     const runtime2 = {
       status: "starting",
-      authToken: (0, import_node_crypto21.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto22.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -66044,11 +66526,11 @@ var WorkerManager = class {
     await this.memoryStore.deleteInstance(id);
     return removed;
   }
-  resolveInstanceId(instanceId) {
-    return this.registry.resolveId(instanceId);
+  resolveInstanceId(instanceId2) {
+    return this.registry.resolveId(instanceId2);
   }
-  async callInstance(instanceId, pathName, payload, headers = {}, options = {}) {
-    const resolvedId = this.resolveInstanceId(instanceId);
+  async callInstance(instanceId2, pathName, payload, headers = {}, options = {}) {
+    const resolvedId = this.resolveInstanceId(instanceId2);
     const runtime2 = this.runtime.get(resolvedId);
     if (!runtime2 || runtime2.status !== "running" || !runtime2.workerPort) {
       throw managerError(
@@ -66172,7 +66654,7 @@ var WorkerManager = class {
 
 // server.js
 var moduleFilePath2 = typeof __filename === "string" ? __filename : (0, import_node_url5.fileURLToPath)(void 0);
-var moduleDirectory4 = typeof __dirname === "string" ? __dirname : import_node_path14.default.dirname(moduleFilePath2);
+var moduleDirectory4 = typeof __dirname === "string" ? __dirname : import_node_path15.default.dirname(moduleFilePath2);
 var DEFAULT_AGENT_LIFETIME2 = "manual";
 var DESKTOP_AGENT_LIFETIME = "desktop";
 var DEFAULT_MANAGER_LEASE_TTL_MS = 45e3;
@@ -66181,7 +66663,7 @@ var MAX_MANAGER_LEASE_TTL_MS = 12e4;
 var DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5e3;
 var DEFAULT_DESKTOP_STARTUP_GRACE_MS = 6e4;
 function registerEnvironmentReport(app, config) {
-  const dataDir = import_node_path14.default.dirname(import_node_path14.default.dirname(config.runtime?.statePath || import_node_path14.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const dataDir = import_node_path15.default.dirname(import_node_path15.default.dirname(config.runtime?.statePath || import_node_path15.default.join(process.cwd(), ".runtime", "agent-state.json")));
   app.get("/api/environment-report", (_request, response) => {
     response.set("Cache-Control", "no-store");
     response.json({ ok: true, mode: "manager", report: import_environment_report.default.readReport(dataDir) });
@@ -66237,11 +66719,11 @@ async function writeRuntimeState(config, event2) {
     ...event2,
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
-  await import_promises6.default.mkdir(import_node_path14.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto22.randomUUID)()}.tmp`;
-  await import_promises6.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
+  await import_promises7.default.mkdir(import_node_path15.default.dirname(statePath), { recursive: true });
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto23.randomUUID)()}.tmp`;
+  await import_promises7.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
-  await import_promises6.default.rename(tempPath, statePath);
+  await import_promises7.default.rename(tempPath, statePath);
 }
 function requestText(value, maxChars = 256) {
   if (value === void 0 || value === null) {
@@ -66258,7 +66740,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto22.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto23.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -66546,7 +67028,7 @@ function createApp(options = {}) {
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = (0, import_express2.default)();
-  const publicDir = import_node_path14.default.join(moduleDirectory4, "public");
+  const publicDir = import_node_path15.default.join(moduleDirectory4, "public");
   installHttpAuth(app, config, options);
   app.use("/mongodb/imports/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express2.default.json({ limit: "5mb" }));
@@ -67869,7 +68351,7 @@ function managerAsync(handler) {
   };
 }
 function bodyWithoutInstanceId(body = {}) {
-  const { instanceId, ...payload } = body || {};
+  const { instanceId: instanceId2, ...payload } = body || {};
   return payload;
 }
 function createManagerApp(options = {}) {
@@ -67905,7 +68387,7 @@ function createManagerApp(options = {}) {
     ...options.lifecycleOptions
   });
   const app = (0, import_express2.default)();
-  const publicDir = import_node_path14.default.join(moduleDirectory4, "public");
+  const publicDir = import_node_path15.default.join(moduleDirectory4, "public");
   let commandReviewInFlight = false;
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
@@ -67923,6 +68405,15 @@ function createManagerApp(options = {}) {
   const outputPreview2 = options.outputPreview || createOutputPreviewStore();
   app.locals.outputPreview = outputPreview2;
   installOutputPreviewRoutes(app, outputPreview2, registry);
+  app.use("/api/final-results", import_express2.default.json({ limit: "17mb" }));
+  app.use("/api/final-results", (error2, _request, response, _next) => {
+    response.status(error2.type === "entity.too.large" ? 413 : 400).json({ ok: false, error: {
+      code: error2.type === "entity.too.large" ? "FINAL_RESULT_TOO_LARGE" : "FINAL_RESULT_INVALID",
+      message: "Invalid final result request",
+      retriable: false
+    } });
+  });
+  installFinalResultRoutes(app, { registry, root: config.output?.directory || import_node_path15.default.resolve(options.cwd || process.cwd(), "output"), store: options.finalResults });
   app.use("/mongodb/imports/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express2.default.json({ limit: "5mb" }));
   app.use("/api/private/business-storage", import_express2.default.json({ limit: "17mb" }));
@@ -67935,11 +68426,11 @@ function createManagerApp(options = {}) {
     registry,
     service: options.privacyService,
     dispatch: (id, route2, payload) => workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
-    directory: import_node_path14.default.join(import_node_path14.default.dirname(import_node_path14.default.dirname(config.runtime?.statePath || import_node_path14.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
+    directory: import_node_path15.default.join(import_node_path15.default.dirname(import_node_path15.default.dirname(config.runtime?.statePath || import_node_path15.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
   });
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
     registry,
-    dataDirectory: import_node_path14.default.dirname(import_node_path14.default.dirname(config.runtime?.statePath || import_node_path14.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
+    dataDirectory: import_node_path15.default.dirname(import_node_path15.default.dirname(config.runtime?.statePath || import_node_path15.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     lifecycle,
     ...options.manualOptions
   });
@@ -68213,7 +68704,7 @@ function createManagerApp(options = {}) {
       timeoutMs: requestOperation.timeoutMs
     });
     publishStage(activity, operation, "started");
-    let instanceId;
+    let instanceId2;
     let draft2;
     let staticReview;
     let modelResult;
@@ -68226,7 +68717,7 @@ function createManagerApp(options = {}) {
       execution: execution2
     }) => ({
       ok: true,
-      instanceId,
+      instanceId: instanceId2,
       decision,
       draftId: draft2?.draftId,
       purpose: draft2?.purpose,
@@ -68248,7 +68739,7 @@ function createManagerApp(options = {}) {
     const completeReview = async (payload) => {
       await audit(config, {
         tool: "approved-command-review",
-        instanceId,
+        instanceId: instanceId2,
         draftId: payload.draftId,
         commandHash: payload.commandHash,
         commandCount: payload.commands?.length,
@@ -68271,9 +68762,9 @@ function createManagerApp(options = {}) {
       response.json(payload);
     };
     try {
-      instanceId = registry.resolveId(rawInstanceId);
-      response.set("X-Remote-Debug-Instance-Id", instanceId);
-      const instance2 = registry.getInternal(instanceId);
+      instanceId2 = registry.resolveId(rawInstanceId);
+      response.set("X-Remote-Debug-Instance-Id", instanceId2);
+      const instance2 = registry.getInternal(instanceId2);
       assertApprovedCommandsEnabled({ approvedCommands: instance2?.approvedCommands });
       if (commandReviewInFlight) {
         throw managerRouteError(
@@ -68285,7 +68776,7 @@ function createManagerApp(options = {}) {
       commandReviewInFlight = true;
       reviewClaimed = true;
       draft2 = await workerManager.callInstance(
-        instanceId,
+        instanceId2,
         "/approved-command-drafts/get",
         {
           draftId: rawDraftId,
@@ -68299,7 +68790,7 @@ function createManagerApp(options = {}) {
       staticReview = inspectCommandDraft(draft2.commands, config.security);
       operation.request = {
         operationId: requestOperation.operationId,
-        instanceId,
+        instanceId: instanceId2,
         draftId: draft2.draftId,
         commandHash: draft2.commandHash,
         commandCount: draft2.commandCount,
@@ -68443,7 +68934,7 @@ function createManagerApp(options = {}) {
       let execution2;
       try {
         execution2 = await workerManager.callInstance(
-          instanceId,
+          instanceId2,
           "/approved-command-drafts/execute",
           {
             draftId: draft2.draftId,
@@ -68461,7 +68952,7 @@ function createManagerApp(options = {}) {
         error2.operationId ||= requestOperation.operationId;
         error2.details = {
           ...error2.details || {},
-          instanceId,
+          instanceId: instanceId2,
           draft: draft2,
           review: modelReview,
           autoExecutionStarted: true
@@ -68481,7 +68972,7 @@ function createManagerApp(options = {}) {
       const durationMs = durationSince(startedAt);
       await audit(config, {
         tool: "approved-command-review",
-        instanceId,
+        instanceId: instanceId2,
         draftId: draft2?.draftId || (typeof rawDraftId === "string" ? rawDraftId : void 0),
         commandHash: draft2?.commandHash,
         ok: false,
@@ -68504,9 +68995,9 @@ function createManagerApp(options = {}) {
     }
   });
   app.post("/api/memory", managerAsync(async (request, response) => {
-    const instanceId = registry.resolveId(request.body?.instanceId);
-    response.set("X-Remote-Debug-Instance-Id", instanceId);
-    const instance2 = registry.getInternal(instanceId);
+    const instanceId2 = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", instanceId2);
+    const instance2 = registry.getInternal(instanceId2);
     if (!workerManager.memoryStore?.upsertNote) {
       throw managerRouteError(
         "instance memory updates are unavailable",
@@ -68522,25 +69013,25 @@ function createManagerApp(options = {}) {
     activity.publish({
       type: "memory",
       stage: "note-updated",
-      instanceId,
+      instanceId: instanceId2,
       topic: result.note.topic
     });
     response.json({
       ok: true,
-      instanceId,
+      instanceId: instanceId2,
       ...result
     });
   }));
   app.post("/api/sandbox/local", managerAsync(async (request, response) => {
-    const instanceId = registry.resolveId(request.body?.instanceId);
-    response.set("X-Remote-Debug-Instance-Id", instanceId);
-    const dataDir = import_node_path14.default.dirname(import_node_path14.default.dirname(config.runtime?.statePath || import_node_path14.default.join(process.cwd(), ".runtime", "agent-state.json")));
-    const result = await inspectLocalSandbox(dataDir, instanceId, request.body || {});
+    const instanceId2 = registry.resolveId(request.body?.instanceId);
+    response.set("X-Remote-Debug-Instance-Id", instanceId2);
+    const dataDir = import_node_path15.default.dirname(import_node_path15.default.dirname(config.runtime?.statePath || import_node_path15.default.join(process.cwd(), ".runtime", "agent-state.json")));
+    const result = await inspectLocalSandbox(dataDir, instanceId2, request.body || {});
     response.json({ ok: true, ...result });
   }));
   async function proxyToInstance(pathName, request, response) {
     const startedAt = import_node_perf_hooks.performance.now();
-    const instanceId = request.body?.instanceId;
+    const instanceId2 = request.body?.instanceId;
     const requestOperation = createRequestOperation(
       request,
       response,
@@ -68560,17 +69051,17 @@ function createManagerApp(options = {}) {
       tool: pathName.replace(/^\//, ""),
       source: sourceFrom(request),
       request: {
-        instanceId,
+        instanceId: instanceId2,
         timeoutMs: requestOperation.timeoutMs,
         deadlineAt: requestOperation.deadlineAt
       }
     };
     publishStage(activity, operation, "started");
     try {
-      const resolvedId = registry.resolveId(instanceId);
+      const resolvedId = registry.resolveId(instanceId2);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
       if (pathName.startsWith("/services/")) {
-        if (!instanceId) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
+        if (!instanceId2) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
         const instance3 = registry.getInternal(resolvedId);
         if (!instance3.enabled) throw serviceError("INSTANCE_DISABLED");
         validateServiceRequest(bodyWithoutInstanceId(request.body), pathName.split("/").pop());
@@ -68616,7 +69107,7 @@ function createManagerApp(options = {}) {
       }
       if (pathName.startsWith("/services/")) await audit(config, {
         tool: pathName.slice(1).replace("/", "-"),
-        instanceId: typeof instanceId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(instanceId) ? instanceId : void 0,
+        instanceId: typeof instanceId2 === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(instanceId2) ? instanceId2 : void 0,
         ...serviceAuditFields(request.body),
         operationId: requestOperation.operationId,
         ok: false,
@@ -68679,7 +69170,7 @@ function isServerEntrypointProcess(options = {}) {
   const env = options.env || process.env;
   const filePath = options.filePath || moduleFilePath2;
   return Boolean(
-    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path14.default.resolve(filePath) === import_node_path14.default.resolve(argv[1])
+    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path15.default.resolve(filePath) === import_node_path15.default.resolve(argv[1])
   );
 }
 function listenHttpServer(app, config, eventFactory) {
@@ -69040,30 +69531,30 @@ async function discoverMemory(config, options = {}) {
 }
 
 // worker-resource-client.js
-var import_node_crypto24 = require("node:crypto");
+var import_node_crypto25 = require("node:crypto");
 
 // task-registry.js
 var import_node_events4 = require("node:events");
-var import_node_crypto23 = require("node:crypto");
+var import_node_crypto24 = require("node:crypto");
 var TaskRegistry = class extends import_node_events4.EventEmitter {
-  constructor({ instanceId = "local", now = Date.now, maxTasks = 200 } = {}) {
+  constructor({ instanceId: instanceId2 = "local", now = Date.now, maxTasks = 200 } = {}) {
     super();
-    this.instanceId = instanceId;
+    this.instanceId = instanceId2;
     this.now = now;
     this.maxTasks = maxTasks;
     this.tasks = /* @__PURE__ */ new Map();
   }
-  register({ type = "diagnostic", referenceId, label, source = "api", requested = {}, capabilities = [] } = {}) {
+  register({ type = "diagnostic", referenceId, label: label2, source = "api", requested = {}, capabilities = [] } = {}) {
     if (!Object.hasOwn(RESOURCE_PROFILES, type)) throw new Error("unknown task type");
     this.prune();
     if (this.tasks.size >= this.maxTasks) throw Object.assign(new Error("task registry is full"), { code: "TASK_CAPACITY", statusCode: 429 });
     const task = {
-      taskId: (0, import_node_crypto23.randomUUID)(),
+      taskId: (0, import_node_crypto24.randomUUID)(),
       instanceId: this.instanceId,
       referenceId,
       type,
       bulk: RESOURCE_PROFILES[type].bulk,
-      label: String(label || type).slice(0, 160),
+      label: String(label2 || type).slice(0, 160),
       source: String(source).slice(0, 80),
       status: "queued",
       phase: "queued",
@@ -69108,11 +69599,11 @@ var TaskRegistry = class extends import_node_events4.EventEmitter {
 // worker-resource-client.js
 var sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 var WorkerResourceClient = class {
-  constructor({ instanceId, send: send2, processObject = process, now = Date.now }) {
-    this.epoch = (0, import_node_crypto24.randomUUID)();
+  constructor({ instanceId: instanceId2, send: send2, processObject = process, now = Date.now }) {
+    this.epoch = (0, import_node_crypto25.randomUUID)();
     this.send = send2;
     this.now = now;
-    this.registry = new TaskRegistry({ instanceId, now });
+    this.registry = new TaskRegistry({ instanceId: instanceId2, now });
     this.entries = /* @__PURE__ */ new Map();
     this.closed = false;
     this.syncs = /* @__PURE__ */ new Map();
@@ -69194,7 +69685,7 @@ var WorkerResourceClient = class {
     await this.entries.get(id)?.chain;
   }
   async synchronize(taskId) {
-    const requestId = (0, import_node_crypto24.randomUUID)();
+    const requestId = (0, import_node_crypto25.randomUUID)();
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.syncs.delete(requestId);
@@ -69312,7 +69803,7 @@ var RemoteResourceSampler = class {
 };
 
 // worker-entry.js
-var import_node_path15 = __toESM(require("node:path"), 1);
+var import_node_path16 = __toESM(require("node:path"), 1);
 var import_node_url6 = require("node:url");
 var moduleFilePath3 = typeof __filename === "string" ? __filename : (0, import_node_url6.fileURLToPath)(void 0);
 function parsePositiveInt3(value, fallback) {
@@ -69397,7 +69888,7 @@ function scheduleMemoryInit(config, options = {}) {
 }
 function isEntrypointProcess() {
   return Boolean(
-    process.argv[1] && import_node_path15.default.resolve(moduleFilePath3) === import_node_path15.default.resolve(process.argv[1])
+    process.argv[1] && import_node_path16.default.resolve(moduleFilePath3) === import_node_path16.default.resolve(process.argv[1])
   );
 }
 function installWorkerShutdownHandlers(shutdown, processObject = process) {

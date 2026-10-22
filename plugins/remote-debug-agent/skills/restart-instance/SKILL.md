@@ -22,3 +22,9 @@ Use the instance list and authoritative lifecycle policy before attempting recov
 - Do not loop inside the skill. A human or external management service must own a finite, persisted retry budget and cooldown.
 - If recovery fails, preserve and report the structured error. Do not hide or overwrite the original stop reason.
 - Automated callers must have explicit policy authorization and must notify the configured operational or approval conversation about downtime, reason, attempt number, and final result.
+
+## Final task deliverables
+
+When this user task concludes, follow [final-result publication](../final-results.md)
+to save its final summary and requested files through the unified local module.
+Do not archive intermediate responses, polling, checkpoints, or pending plans.

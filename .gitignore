@@ -11,4 +11,5 @@ plugins/remote-debug-agent/.runtime/
 .playwright-cli/
 *.log
 output/
+.*-final-staging/
 .DS_Store
