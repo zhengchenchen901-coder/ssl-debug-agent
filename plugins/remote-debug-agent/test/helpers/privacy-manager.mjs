@@ -22,7 +22,7 @@ process.once("message", async ({ root, port, backend, key, bundled }) => {
     return { instanceId: id, ...result };
   } };
   const runtime = bundled ? createRequire(import.meta.url)(path.resolve(import.meta.dirname, "../../runtime/agent/server.cjs")) : { createManagerApp };
-  const service = new PrivacyService({ directory: path.join(root, ".private", "business"), key: Buffer.from(key, "hex"),
+  const service = new PrivacyService({ directory: path.join(root, ".private", "business"), ...(key ? { key: Buffer.from(key, "hex") } : {}),
     ...(bundled ? { workerPath: path.resolve(import.meta.dirname, "../../runtime/agent/privacy-worker.cjs") } : {}) });
   const app = runtime.createManagerApp({ config, registry, workerManager, privacyService: service,
     authToken: localAuth.readAuthToken(localAuth.resolveAuthFile(root)) });

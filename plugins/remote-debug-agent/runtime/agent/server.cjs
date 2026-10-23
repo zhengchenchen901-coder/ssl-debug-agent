@@ -24148,6 +24148,74 @@ var require_express2 = __commonJS({
   }
 });
 
+// ../plugins/remote-debug-agent/windows-privacy.cjs
+var require_windows_privacy = __commonJS({
+  "../plugins/remote-debug-agent/windows-privacy.cjs"(exports2, module2) {
+    "use strict";
+    var fs13 = require("fs");
+    var path19 = require("path");
+    var { createHash: createHash14 } = require("crypto");
+    var { execFileSync } = require("child_process");
+    function fail4(code = "BUSINESS_STORAGE_UNAVAILABLE") {
+      return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
+    }
+    function native(action, input = {}, run = execFileSync) {
+      if (process.platform !== "win32") throw fail4("BUSINESS_KEYSTORE_UNSUPPORTED");
+      const systemRoot = process.env.SystemRoot || process.env.WINDIR;
+      if (!systemRoot || !path19.isAbsolute(systemRoot)) throw fail4("BUSINESS_KEYSTORE_UNAVAILABLE");
+      try {
+        const helper = path19.join(__dirname, "native/windows-privacy.ps1");
+        const manifestPath = fs13.existsSync(path19.join(__dirname, "runtime-manifest.json")) ? path19.join(__dirname, "runtime-manifest.json") : path19.join(__dirname, "runtime/agent/runtime-manifest.json");
+        const expected = JSON.parse(fs13.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash14("sha256").update(fs13.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        const raw = run(
+          path19.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
+          ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
+          {
+            input: JSON.stringify({ action, ...input }),
+            encoding: "utf8",
+            stdio: ["pipe", "pipe", "pipe"],
+            timeout: 3e4,
+            maxBuffer: 128 * 1024,
+            windowsHide: true
+          }
+        );
+        const result = JSON.parse(raw);
+        if (result.ok !== true) throw fail4(/^BUSINESS_[A-Z_]+$/.test(result.code || "") ? result.code : void 0);
+        return result;
+      } catch (error2) {
+        if (error2.code?.startsWith("BUSINESS_")) throw fail4(error2.code);
+        throw fail4(action === "key" ? "BUSINESS_KEYSTORE_UNAVAILABLE" : action.includes("context") ? "BUSINESS_CONTEXT_DENIED" : "BUSINESS_STORAGE_PATH_INVALID");
+      }
+    }
+    function targetFor(directory) {
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash14("sha256").update(fs13.realpathSync.native(directory)).digest("hex");
+    }
+    function prepareStore(directory) {
+      return native("prepare-store", { directory });
+    }
+    function protectStoreFiles(directory) {
+      native("protect-store", { directory });
+    }
+    function loadKey(directory, { existing = false, run } = {}) {
+      const target2 = targetFor(directory);
+      const result = native("key", { directory, target: target2, existing }, run);
+      if (!/^[a-f0-9]{64}$/.test(result.key || "")) throw fail4("BUSINESS_KEYSTORE_UNAVAILABLE");
+      return Buffer.from(result.key, "hex");
+    }
+    function prepareContext(directory) {
+      native("prepare-context", { directory });
+    }
+    function readContext(filename) {
+      return native("read-context", { filename }).content;
+    }
+    function createContext(filename, content) {
+      return native("create-context", { filename, content }).created;
+    }
+    module2.exports = { prepareStore, protectStoreFiles, loadKey, prepareContext, readContext, createContext, targetFor };
+  }
+});
+
 // ../plugins/remote-debug-agent/windows-storage.cjs
 var require_windows_storage = __commonJS({
   "../plugins/remote-debug-agent/windows-storage.cjs"(exports2, module2) {
@@ -48424,6 +48492,7 @@ var import_node_path = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // privacy-key.js
+var import_windows_privacy = __toESM(require_windows_privacy(), 1);
 function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
   return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
 }

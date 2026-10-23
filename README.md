@@ -165,8 +165,11 @@ a reference is returned. `outputGuard.businessPrivacy` reports the context ID an
 source of truth. No raw-value enumeration, SQL, key export or mapping-export MCP
 tool is available.
 
-The macOS adapter keeps the master key in Keychain; Windows/Linux currently fail
-closed for protected MongoDB operations until a credential adapter is provided.
+The macOS adapter keeps the master key in Keychain. Windows uses current-user,
+local-machine persistent generic credentials in Windows Credential Manager,
+bound to the real storage path. Windows supports local NTFS/ReFS with owner-only
+ACLs, and rejects network, synchronization, plugin-cache and reparse paths and
+unexpected hardlinks. Linux still fails closed for protected MongoDB operations.
 An unavailable/locked keychain, changed target, corrupt record or wrong key never
 falls back to plaintext or process-only references. Configure the MCP-only
 `REMOTE_DEBUG_PRIVACY_CONTEXT_FILE` to reattach the **same owner-only local

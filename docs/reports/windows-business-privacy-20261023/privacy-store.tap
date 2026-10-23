@@ -1,0 +1,132 @@
+TAP version 13
+# (node:19544) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+ok 1 - encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+  ---
+  duration_ms: 3281.496
+  type: 'test'
+  ...
+# Subtest: context capability, target database and AAD stop cross-scope resolution and record swapping
+ok 2 - context capability, target database and AAD stop cross-scope resolution and record swapping
+  ---
+  duration_ms: 1355.9754
+  type: 'test'
+  ...
+# Subtest: tampered ciphertext, wrong key and missing OS credential fail without exporting data
+ok 3 - tampered ciphertext, wrong key and missing OS credential fail without exporting data
+  ---
+  duration_ms: 3956.5229
+  type: 'test'
+  ...
+# Subtest: reverse-index tampering cannot redirect an alias to a different valid ciphertext
+ok 4 - reverse-index tampering cannot redirect an alias to a different valid ciphertext
+  ---
+  duration_ms: 1238.1263
+  type: 'test'
+  ...
+# (node:19544) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent MCP clients get one committed reference through the unique HMAC index
+ok 5 - concurrent MCP clients get one committed reference through the unique HMAC index
+  ---
+  duration_ms: 4108.1961
+  type: 'test'
+  ...
+# Subtest: mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+ok 6 - mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+  ---
+  duration_ms: 6865.9605
+  type: 'test'
+  ...
+# Subtest: intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+ok 7 - intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+  ---
+  duration_ms: 4066.1673
+  type: 'test'
+  ...
+# Subtest: reconciliation accepts only the same remote job, immutable plan and matching terminal state
+ok 8 - reconciliation accepts only the same remote job, immutable plan and matching terminal state
+  ---
+  duration_ms: 2735.7473
+  type: 'test'
+  ...
+# Subtest: prepare attempts survive restart, reject stale responses and retain the same mutation identity
+ok 9 - prepare attempts survive restart, reject stale responses and retain the same mutation identity
+  ---
+  duration_ms: 4043.8213
+  type: 'test'
+  ...
+# Subtest: execute response loss accepts only the same mutation and terminal plan without replay
+ok 10 - execute response loss accepts only the same mutation and terminal plan without replay
+  ---
+  duration_ms: 4231.1918
+  type: 'test'
+  ...
+# Subtest: formal recovery inspects legacy intents without accepting caller supplied proof
+ok 11 - formal recovery inspects legacy intents without accepting caller supplied proof
+  ---
+  duration_ms: 1338.8675
+  type: 'test'
+  ...
+# Subtest: failed local prepare outcome commit leaves a recoverable uncertain intent
+ok 12 - failed local prepare outcome commit leaves a recoverable uncertain intent
+  ---
+  duration_ms: 2733.4803
+  type: 'test'
+  ...
+# Subtest: active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+ok 13 - active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+  ---
+  duration_ms: 1421.7489
+  type: 'test'
+  ...
+# (node:19544) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: private service validates current instance/profile and refuses arbitrary actions
+ok 14 - private service validates current instance/profile and refuses arbitrary actions
+  ---
+  duration_ms: 1416.7633
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL beforeCommit
+ok 15 - SQLite recovers atomically after actual process SIGKILL beforeCommit
+  ---
+  duration_ms: 4215.4295
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL afterCommit
+ok 16 - SQLite recovers atomically after actual process SIGKILL afterCommit
+  ---
+  duration_ms: 4054.2579
+  type: 'test'
+  ...
+# (node:19544) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: worker queue overload is bounded and returns a redacted busy error
+ok 17 - worker queue overload is bounded and returns a redacted busy error
+  ---
+  duration_ms: 2758.4448
+  type: 'test'
+  ...
+# Subtest: claimed executions reconcile only the exact original intent and operation
+ok 18 - claimed executions reconcile only the exact original intent and operation
+  ---
+  duration_ms: 2774.0168
+  type: 'test'
+  ...
+# Subtest: public privacy RPC rejects caller-supplied reconciliation evidence
+ok 19 - public privacy RPC rejects caller-supplied reconciliation evidence
+  ---
+  duration_ms: 1336.1633
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 58060.5609

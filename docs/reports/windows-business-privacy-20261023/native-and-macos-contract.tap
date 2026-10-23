@@ -1,0 +1,62 @@
+TAP version 13
+# (node:28984) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database
+ok 1 - real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database # SKIP
+  ---
+  duration_ms: 0.6076
+  type: 'test'
+  ...
+# Subtest: macOS keeps the existing Keychain lookup, stdin creation, account binding and denial behavior
+ok 2 - macOS keeps the existing Keychain lookup, stdin creation, account binding and denial behavior
+  ---
+  duration_ms: 2.6157
+  type: 'test'
+  ...
+# (node:20484) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Windows native credentials: first creation, reopen and six concurrent processes share one key
+ok 3 - Windows native credentials: first creation, reopen and six concurrent processes share one key
+  ---
+  duration_ms: 7383.1047
+  type: 'test'
+  ...
+# Subtest: Windows initialization lock is released after process death and blocks competing creators
+ok 4 - Windows initialization lock is released after process death and blocks competing creators
+  ---
+  duration_ms: 13920.4605
+  type: 'test'
+  ...
+# Subtest: Windows existing SQLite, WAL or SHM without credential never creates a replacement
+ok 5 - Windows existing SQLite, WAL or SHM without credential never creates a replacement
+  ---
+  duration_ms: 7787.1113
+  type: 'test'
+  ...
+# Subtest: Windows malformed or denied credential never falls back or overwrites
+ok 6 - Windows malformed or denied credential never falls back or overwrites
+  ---
+  duration_ms: 3158.7666
+  type: 'test'
+  ...
+# Subtest: Windows rejects unsafe ACLs, hardlinks, junctions, network, synchronization and plugin cache paths
+ok 7 - Windows rejects unsafe ACLs, hardlinks, junctions, network, synchronization and plugin cache paths
+  ---
+  duration_ms: 5874.5003
+  type: 'test'
+  ...
+# Subtest: Windows context CreateNew concurrency, durable reuse, source mismatch, corruption and ACL protection
+ok 8 - Windows context CreateNew concurrency, durable reuse, source mismatch, corruption and ACL protection
+  ---
+  duration_ms: 9861.8955
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 48133.5503

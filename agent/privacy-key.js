@@ -1,13 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
+import windowsPrivacy from "../plugins/remote-debug-agent/windows-privacy.cjs";
 
 export function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
   return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
 }
 
 // No file/environment fallback. The key never appears in argv, logs, or config.
-// Windows/Linux deliberately fail closed until a native credential adapter exists.
+// Linux deliberately fails closed until a native credential adapter exists.
 export function loadPrivacyKey(directory, { platform = process.platform, run = execFileSync, existing = false } = {}) {
+  if (platform === "win32") return windowsPrivacy.loadKey(directory, { existing, run });
   if (platform !== "darwin") throw privacyError("BUSINESS_KEYSTORE_UNSUPPORTED");
   const service = "com.remote-debug-agent.business-privacy.v1";
   const account = createHash("sha256").update(directory).digest("hex");

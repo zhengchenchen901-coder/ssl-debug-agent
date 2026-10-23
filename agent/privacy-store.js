@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadPrivacyKey, privacyError } from "./privacy-key.js";
 import { isPrepareTicket } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import windowsPrivacy from "../plugins/remote-debug-agent/windows-privacy.cjs";
 
 const REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 const DAY = 86400000;
@@ -11,6 +12,10 @@ export class PrivacyStore {
   constructor({ directory, key, now = Date.now, fault } = {}) {
     this.now = now; this.fault = fault;
     this.directory = path.resolve(directory);
+    let windowsExisting;
+    if (process.platform === "win32") {
+      windowsExisting = windowsPrivacy.prepareStore(this.directory).existing;
+    } else {
     if (/(?:\/|\\)(?:CloudStorage|Mobile Documents|Dropbox|OneDrive|plugins\/cache)(?:\/|\\|$)/i.test(this.directory)) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
     fs.mkdirSync(this.directory, { recursive: true, mode: 0o700 });
     for (let p = this.directory; p !== path.dirname(p); p = path.dirname(p)) if (fs.lstatSync(p).isSymbolicLink() && !(process.platform === "darwin" && ["/tmp", "/var"].includes(p))) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
@@ -22,7 +27,9 @@ export class PrivacyStore {
       const entry = fs.lstatSync(filename + suffix);
       if (!entry.isFile() || entry.isSymbolicLink() || process.getuid && entry.uid !== process.getuid()) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
     }
-    const master = key ? Buffer.from(key) : loadPrivacyKey(this.directory, { existing: fs.existsSync(filename) });
+    }
+    const filename = path.join(this.directory, "privacy.sqlite");
+    const master = key ? Buffer.from(key) : loadPrivacyKey(this.directory, { existing: process.platform === "win32" ? windowsExisting : fs.existsSync(filename) });
     if (master.length !== 32) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
     this.enc = Buffer.from(hkdfSync("sha256", master, "rda-privacy-v1", "encryption", 32));
     this.index = Buffer.from(hkdfSync("sha256", master, "rda-privacy-v1", "reverse-index", 32)); master.fill(0);
@@ -40,7 +47,8 @@ export class PrivacyStore {
         CREATE INDEX link_ref ON links(ctx,ref);
         CREATE INDEX link_task ON links(ctx,task);
         PRAGMA user_version=1; COMMIT;`);
-      for (const suffix of ["", "-wal", "-shm"]) if (fs.existsSync(filename + suffix)) fs.chmodSync(filename + suffix, 0o600);
+      if (process.platform === "win32") windowsPrivacy.protectStoreFiles(this.directory);
+      else for (const suffix of ["", "-wal", "-shm"]) if (fs.existsSync(filename + suffix)) fs.chmodSync(filename + suffix, 0o600);
       const sentinel = this.get("meta", "key-check", "", "");
       if (sentinel && sentinel.version !== 1) throw privacyError();
       if (!sentinel) {

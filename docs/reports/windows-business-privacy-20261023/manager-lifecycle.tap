@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: MCP replaces an outdated source manager when the runtime id differs
+ok 1 - MCP replaces an outdated source manager when the runtime id differs
+  ---
+  duration_ms: 4515.5479
+  type: 'test'
+  ...
+# Subtest: MCP reuses an online manager even when target fields differ
+ok 2 - MCP reuses an online manager even when target fields differ
+  ---
+  duration_ms: 3941.9279
+  type: 'test'
+  ...
+# Subtest: MCP keeps the manager process when .env target config changes
+ok 3 - MCP keeps the manager process when .env target config changes
+  ---
+  duration_ms: 4293.3051
+  type: 'test'
+  ...
+# Subtest: MCP starts a new local agent when .env port changes
+ok 4 - MCP starts a new local agent when .env port changes
+  ---
+  duration_ms: 4673.2416
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent on a fallback port when the configured port is occupied
+ok 5 - MCP starts the local agent on a fallback port when the configured port is occupied
+  ---
+  duration_ms: 3472.9859
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22464.5118

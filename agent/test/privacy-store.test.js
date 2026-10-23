@@ -10,6 +10,7 @@ import { PrivacyStore } from "../privacy-store.js";
 import { PrivacyService, privacyRequest } from "../privacy-service.js";
 import { loadPrivacyKey } from "../privacy-key.js";
 import { businessTargetScope } from "../../plugins/remote-debug-agent/business-privacy.js";
+import windowsPrivacy from "../../plugins/remote-debug-agent/windows-privacy.cjs";
 
 const DAY = 86400000, alias = () => "rda_ref_v1_" + randomBytes(24).toString("hex");
 function fixture(t, options = {}) {
@@ -17,8 +18,10 @@ function fixture(t, options = {}) {
   let time = Date.now(), store = new PrivacyStore({ directory, key, now: () => time, ...options });
   const auth = store.execute("create"), scope = "PRIVATE_SCOPE_DATABASE";
   const call = (action, input = {}) => store.execute(action, { auth, scope, ...input });
-  t.after(() => { store.close(); fs.rmSync(directory, { recursive: true, force: true }); });
+  const cleanups = [];
+  t.after(async () => { for (const cleanup of cleanups) await cleanup(); store.close(); fs.rmSync(directory, { recursive: true, force: true }); });
   return { directory, key, auth, scope, call, get store() { return store; }, advance: (ms) => { time += ms; },
+    beforeCleanup: (fn) => cleanups.push(fn),
     reopen: (extra = {}) => { store.close(); store = new PrivacyStore({ directory, key, now: () => time, ...extra }); return store; },
     commit: (value, extra = {}) => { const ref = alias(); const result = call("commit", { records: [{ ref, scope, value }], ...extra }); return result.aliases[ref]; } };
 }
@@ -40,8 +43,9 @@ test("encrypted persistence restores every BSON/EJSON width and preserves compou
   for (const filename of fs.readdirSync(f.directory)) {
     const bytes = fs.readFileSync(path.join(f.directory, filename));
     for (const raw of ["PRIVATE_USER_001", "PRIVATE_SCOPE_DATABASE", "PRIVATE_TENANT", "9007199254740993", f.key.toString("hex")]) assert.equal(bytes.includes(Buffer.from(raw)), false, filename);
-    assert.equal(fs.statSync(path.join(f.directory, filename)).mode & 0o077, 0);
+    if (process.platform !== "win32") assert.equal(fs.statSync(path.join(f.directory, filename)).mode & 0o077, 0);
   }
+  if (process.platform === "win32") windowsPrivacy.protectStoreFiles(f.directory);
 });
 
 test("context capability, target database and AAD stop cross-scope resolution and record swapping", (t) => {
@@ -209,6 +213,7 @@ test("private service validates current instance/profile and refuses arbitrary a
 for (const boundary of ["beforeCommit", "afterCommit"]) test(`SQLite recovers atomically after actual process SIGKILL ${boundary}`, async (t) => {
   const f = fixture(t), ref = alias(); f.store.close();
   const child = fork(path.resolve(import.meta.dirname, "helpers/privacy-store-crash.mjs"), { stdio: ["ignore", "ignore", "pipe", "ipc"] });
+  if (process.platform === "win32") child.once("message", (message) => { assert.equal(message.boundary, boundary); child.kill("SIGKILL"); });
   const done = once(child, "exit"); child.send({ directory: f.directory, key: f.key.toString("hex"), auth: f.auth, scope: f.scope, ref, boundary });
   const [code, signal] = await done; assert.equal(code, null); assert.equal(signal, "SIGKILL"); f.reopen();
   if (boundary === "beforeCommit") {
@@ -223,7 +228,7 @@ for (const boundary of ["beforeCommit", "afterCommit"]) test(`SQLite recovers at
 
 test("worker queue overload is bounded and returns a redacted busy error", async (t) => {
   const f = fixture(t); f.store.close(); const service = new PrivacyService({ directory: f.directory, key: f.key, maxQueue: 2 });
-  t.after(() => service.close());
+  f.beforeCleanup(() => service.close());
   const results = await Promise.allSettled(Array.from({ length: 20 }, () => service.call("attach", { auth: f.auth })));
   assert.equal(results.filter((r) => r.status === "fulfilled").length, 2);
   for (const r of results.filter((r) => r.status === "rejected")) assert.equal(r.reason.code, "BUSINESS_STORAGE_BUSY");

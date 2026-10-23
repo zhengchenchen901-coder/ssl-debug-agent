@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { prepareRequestDigest } from "./prepare-protocol.js";
+import { attachWindowsContext } from "./windows-business-context.js";
 
 function failure(code = "BUSINESS_STORAGE_UNAVAILABLE", intentId) {
   return Object.assign(new Error("Protected local state requires recovery or reconciliation. No uncertain write was replayed."), { code, retriable: false, intentId });
@@ -47,6 +48,13 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     if (attached) { if (attached.origin !== origin) throw failure("BUSINESS_CONTEXT_DENIED"); return; }
     if (attaching) return attaching;
     attaching = (async () => {
+      if (process.platform === "win32") {
+        const auth = await attachWindowsContext(settings, origin, () => rpc(settings, { action: "create" }));
+        guard.remember(auth.capability);
+        await rpc(settings, { action: "attach", auth });
+        attached = { origin, auth }; privacy.attach(auth.contextId);
+        return;
+      }
       const directory = path.join(settings.dataDir, ".private", "contexts");
       fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
       const configured = settings.env.REMOTE_DEBUG_PRIVACY_CONTEXT_FILE;

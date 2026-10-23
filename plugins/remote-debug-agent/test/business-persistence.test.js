@@ -10,7 +10,7 @@ import test from "node:test";
 import { mcpPeer } from "./helpers/local-mcp.js";
 import localAuth from "../local-auth.cjs";
 
-for (const bundled of [false, true]) test(`persistent references across MCP + actual ${bundled ? "bundled" : "source"} Manager SIGKILL and lost remote acknowledgment`, { timeout: 30000 }, async (t) => {
+for (const bundled of [false, true]) test(`persistent references across MCP + actual ${bundled ? "bundled" : "source"} Manager SIGKILL and lost remote acknowledgment`, { timeout: process.platform === "win32" ? 120000 : 30000 }, async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rda-privacy-restart-")), key = randomBytes(32);
   const contextFile = path.join(root, "context.json"), wire = [], diagnostics = [], requests = [];
   localAuth.ensureAuthToken(localAuth.resolveAuthFile(root));

@@ -101,6 +101,7 @@ await fsp.cp(path.resolve(agentDir, "public"), path.resolve(outputDir, "public")
   recursive: true,
 });
 await fsp.cp(path.resolve(agentDir, "native"), path.resolve(outputDir, "native"), { recursive: true });
+await fsp.cp(path.resolve(pluginRoot, "native"), path.resolve(outputDir, "native"), { recursive: true });
 
 async function listArtifacts(directory, prefix) {
   const result = [];

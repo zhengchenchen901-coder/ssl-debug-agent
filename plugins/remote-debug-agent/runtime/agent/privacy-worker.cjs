@@ -4,6 +4,13 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) => function __require() {
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -21,6 +28,74 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// ../plugins/remote-debug-agent/windows-privacy.cjs
+var require_windows_privacy = __commonJS({
+  "../plugins/remote-debug-agent/windows-privacy.cjs"(exports2, module2) {
+    "use strict";
+    var fs2 = require("fs");
+    var path2 = require("path");
+    var { createHash: createHash2 } = require("crypto");
+    var { execFileSync: execFileSync2 } = require("child_process");
+    function fail(code = "BUSINESS_STORAGE_UNAVAILABLE") {
+      return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
+    }
+    function native(action, input = {}, run = execFileSync2) {
+      if (process.platform !== "win32") throw fail("BUSINESS_KEYSTORE_UNSUPPORTED");
+      const systemRoot = process.env.SystemRoot || process.env.WINDIR;
+      if (!systemRoot || !path2.isAbsolute(systemRoot)) throw fail("BUSINESS_KEYSTORE_UNAVAILABLE");
+      try {
+        const helper = path2.join(__dirname, "native/windows-privacy.ps1");
+        const manifestPath = fs2.existsSync(path2.join(__dirname, "runtime-manifest.json")) ? path2.join(__dirname, "runtime-manifest.json") : path2.join(__dirname, "runtime/agent/runtime-manifest.json");
+        const expected = JSON.parse(fs2.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash2("sha256").update(fs2.readFileSync(helper)).digest("hex") !== expected) throw fail("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        const raw = run(
+          path2.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
+          ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
+          {
+            input: JSON.stringify({ action, ...input }),
+            encoding: "utf8",
+            stdio: ["pipe", "pipe", "pipe"],
+            timeout: 3e4,
+            maxBuffer: 128 * 1024,
+            windowsHide: true
+          }
+        );
+        const result = JSON.parse(raw);
+        if (result.ok !== true) throw fail(/^BUSINESS_[A-Z_]+$/.test(result.code || "") ? result.code : void 0);
+        return result;
+      } catch (error) {
+        if (error.code?.startsWith("BUSINESS_")) throw fail(error.code);
+        throw fail(action === "key" ? "BUSINESS_KEYSTORE_UNAVAILABLE" : action.includes("context") ? "BUSINESS_CONTEXT_DENIED" : "BUSINESS_STORAGE_PATH_INVALID");
+      }
+    }
+    function targetFor(directory) {
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash2("sha256").update(fs2.realpathSync.native(directory)).digest("hex");
+    }
+    function prepareStore(directory) {
+      return native("prepare-store", { directory });
+    }
+    function protectStoreFiles(directory) {
+      native("protect-store", { directory });
+    }
+    function loadKey(directory, { existing = false, run } = {}) {
+      const target = targetFor(directory);
+      const result = native("key", { directory, target, existing }, run);
+      if (!/^[a-f0-9]{64}$/.test(result.key || "")) throw fail("BUSINESS_KEYSTORE_UNAVAILABLE");
+      return Buffer.from(result.key, "hex");
+    }
+    function prepareContext(directory) {
+      native("prepare-context", { directory });
+    }
+    function readContext(filename) {
+      return native("read-context", { filename }).content;
+    }
+    function createContext(filename, content) {
+      return native("create-context", { filename, content }).created;
+    }
+    module2.exports = { prepareStore, protectStoreFiles, loadKey, prepareContext, readContext, createContext, targetFor };
+  }
+});
+
 // privacy-worker.js
 var import_node_worker_threads = require("node:worker_threads");
 
@@ -33,10 +108,12 @@ var import_node_path = __toESM(require("node:path"), 1);
 // privacy-key.js
 var import_node_child_process = require("node:child_process");
 var import_node_crypto = require("node:crypto");
+var import_windows_privacy = __toESM(require_windows_privacy(), 1);
 function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
   return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
 }
 function loadPrivacyKey(directory, { platform = process.platform, run = import_node_child_process.execFileSync, existing = false } = {}) {
+  if (platform === "win32") return import_windows_privacy.default.loadKey(directory, { existing, run });
   if (platform !== "darwin") throw privacyError("BUSINESS_KEYSTORE_UNSUPPORTED");
   const service = "com.remote-debug-agent.business-privacy.v1";
   const account = (0, import_node_crypto.createHash)("sha256").update(directory).digest("hex");
@@ -68,6 +145,7 @@ function isPrepareTicket(value) {
 }
 
 // privacy-store.js
+var import_windows_privacy2 = __toESM(require_windows_privacy(), 1);
 var REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 var DAY = 864e5;
 var PrivacyStore = class {
@@ -75,18 +153,24 @@ var PrivacyStore = class {
     this.now = now;
     this.fault = fault;
     this.directory = import_node_path.default.resolve(directory);
-    if (/(?:\/|\\)(?:CloudStorage|Mobile Documents|Dropbox|OneDrive|plugins\/cache)(?:\/|\\|$)/i.test(this.directory)) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
-    import_node_fs.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
-    for (let p = this.directory; p !== import_node_path.default.dirname(p); p = import_node_path.default.dirname(p)) if (import_node_fs.default.lstatSync(p).isSymbolicLink() && !(process.platform === "darwin" && ["/tmp", "/var"].includes(p))) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
-    const stat = import_node_fs.default.statfsSync(this.directory);
-    if (process.platform === "darwin" ? ![17, 26].includes(stat.type) : [26985, 20859, 4283649346, 1702057286].includes(stat.type)) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
-    import_node_fs.default.chmodSync(this.directory, 448);
-    const filename = import_node_path.default.join(this.directory, "privacy.sqlite");
-    for (const suffix of ["", "-wal", "-shm"]) if (import_node_fs.default.existsSync(filename + suffix)) {
-      const entry = import_node_fs.default.lstatSync(filename + suffix);
-      if (!entry.isFile() || entry.isSymbolicLink() || process.getuid && entry.uid !== process.getuid()) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
+    let windowsExisting;
+    if (process.platform === "win32") {
+      windowsExisting = import_windows_privacy2.default.prepareStore(this.directory).existing;
+    } else {
+      if (/(?:\/|\\)(?:CloudStorage|Mobile Documents|Dropbox|OneDrive|plugins\/cache)(?:\/|\\|$)/i.test(this.directory)) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
+      import_node_fs.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
+      for (let p = this.directory; p !== import_node_path.default.dirname(p); p = import_node_path.default.dirname(p)) if (import_node_fs.default.lstatSync(p).isSymbolicLink() && !(process.platform === "darwin" && ["/tmp", "/var"].includes(p))) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
+      const stat = import_node_fs.default.statfsSync(this.directory);
+      if (process.platform === "darwin" ? ![17, 26].includes(stat.type) : [26985, 20859, 4283649346, 1702057286].includes(stat.type)) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
+      import_node_fs.default.chmodSync(this.directory, 448);
+      const filename2 = import_node_path.default.join(this.directory, "privacy.sqlite");
+      for (const suffix of ["", "-wal", "-shm"]) if (import_node_fs.default.existsSync(filename2 + suffix)) {
+        const entry = import_node_fs.default.lstatSync(filename2 + suffix);
+        if (!entry.isFile() || entry.isSymbolicLink() || process.getuid && entry.uid !== process.getuid()) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
+      }
     }
-    const master = key ? Buffer.from(key) : loadPrivacyKey(this.directory, { existing: import_node_fs.default.existsSync(filename) });
+    const filename = import_node_path.default.join(this.directory, "privacy.sqlite");
+    const master = key ? Buffer.from(key) : loadPrivacyKey(this.directory, { existing: process.platform === "win32" ? windowsExisting : import_node_fs.default.existsSync(filename) });
     if (master.length !== 32) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
     this.enc = Buffer.from((0, import_node_crypto2.hkdfSync)("sha256", master, "rda-privacy-v1", "encryption", 32));
     this.index = Buffer.from((0, import_node_crypto2.hkdfSync)("sha256", master, "rda-privacy-v1", "reverse-index", 32));
@@ -105,7 +189,8 @@ var PrivacyStore = class {
         CREATE INDEX link_ref ON links(ctx,ref);
         CREATE INDEX link_task ON links(ctx,task);
         PRAGMA user_version=1; COMMIT;`);
-      for (const suffix of ["", "-wal", "-shm"]) if (import_node_fs.default.existsSync(filename + suffix)) import_node_fs.default.chmodSync(filename + suffix, 384);
+      if (process.platform === "win32") import_windows_privacy2.default.protectStoreFiles(this.directory);
+      else for (const suffix of ["", "-wal", "-shm"]) if (import_node_fs.default.existsSync(filename + suffix)) import_node_fs.default.chmodSync(filename + suffix, 384);
       const sentinel = this.get("meta", "key-check", "", "");
       if (sentinel && sentinel.version !== 1) throw privacyError();
       if (!sentinel) {

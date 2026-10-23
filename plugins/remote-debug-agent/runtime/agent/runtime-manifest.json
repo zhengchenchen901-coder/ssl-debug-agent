@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "pluginVersion": "2.4.0+codex.20261023",
-  "runtimeId": "2.4.0:26e3b2d2128ffdd0e579921cc384ad35588d68082e555c07be0fb23c91f44214",
+  "pluginVersion": "2.4.0+codex.20261023.1",
+  "runtimeId": "2.4.0:5266f0de7d1eed786e13319f095727aa9b06c33923934811b5753bf4eb331688",
   "node": ">=22.18 <23",
   "server": "server.cjs",
   "worker": "worker-entry.cjs",
   "privacyWorker": "privacy-worker.cjs",
   "hashes": {
-    "server.cjs": "74140f56b1cc881aebd151de0eddd6a112cd45f1b35be9bb5e39b83217b2b57b",
-    "worker-entry.cjs": "44f981c208b968172c7227f018458daca232f931878860828245c7c64d66bdaa",
-    "privacy-worker.cjs": "51a91552ca0a453edba53f341aa3998da9b3de42e1451fbb40ffcd2f4d5ed1c3",
+    "server.cjs": "c54d8a27a4f8c77b0e6051846bd7977613aaf6c6a5322600d5af36a970abd52d",
+    "worker-entry.cjs": "bf528a1842becd9586901b538e42a5f449c3f8c7ced9373715819c926c927de6",
+    "privacy-worker.cjs": "088acec3336869d8543b3dc1e546fffe52fd8ef4d31daada0390e8538b57abd3",
     "public/admin-registration.js": "b24f91e152e7217780070775c1471c805f21d13972a532d9739d41630097d840",
     "public/dashboard.css": "9f2078b149b8b2e1da95b1d2357429f4838ddfb451c2f1c03cea3453710f0713",
     "public/dashboard.html": "3434cdd474cd29f7527e33bda78797af0f08826b44155d9b07a67e84ef634f38",
@@ -28,6 +28,7 @@
     "public/vendor/xterm.css": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
     "public/vendor/xterm.js": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
     "native/verify-owner.ps1": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
-    "native/verify-owner.swift": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab"
+    "native/verify-owner.swift": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab",
+    "native/windows-privacy.ps1": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f"
   }
 }

@@ -10,7 +10,11 @@
 
 上下文、引用原值、任务状态、操作意图、交付输出和脱敏事件都先通过 AES-256-GCM 加密后再写入 SQLite。每条记录使用随机 12 字节 nonce、完整认证标签和 key version；AAD 绑定记录类型、版本、记录 ID、上下文和目标范围。业务值按原 JSON/EJSON 字段顺序序列化，绝不排序。反向索引用独立 HKDF 子密钥的 HMAC-SHA256；数据库不存低熵业务值的普通哈希。元数据索引仅暴露随机引用/上下文、带密钥摘要、时间及 pin 标志。新事件只含计数和不透明关联 ID；业务异常正文不会进入新存储错误。
 
-macOS 主密钥由登录 Keychain 的 `com.remote-debug-agent.business-privacy.v1` generic-password 项保护，account 为持久目录路径摘要。通过 `security -i` 的标准输入创建密钥，不放入 argv、环境变量、配置或日志。已有数据库缺失密钥时不会生成替代密钥。Linux/Windows 目前没有生产凭据适配器，保护数据的 MongoDB 调用安全失败；普通诊断能力仍可使用。测试通过构造器注入临时内存密钥，该入口不属于 HTTP/MCP 协议。不要复制数据库到其他目录后期待原路径绑定的 Keychain 项自动匹配；本阶段不提供密钥导出或轮换工具。
+macOS 主密钥由登录 Keychain 的 `com.remote-debug-agent.business-privacy.v1` generic-password 项保护，account 为持久目录路径摘要。通过 `security -i` 的标准输入创建密钥，不放入 argv、环境变量、配置或日志。已有数据库缺失密钥时不会生成替代密钥。macOS 的调用、权限与恢复实现保持原样。Linux 目前没有生产凭据适配器，保护数据的 MongoDB 调用安全失败；普通诊断能力仍可使用。测试通过构造器注入临时内存密钥，该入口不属于 HTTP/MCP 协议。不要复制数据库到其他目录后期待原路径绑定的系统凭据项自动匹配；本阶段不提供密钥导出或轮换工具。
+
+Windows 从 `2.4.0+codex.20261023.1` 起使用独立适配器：系统 Windows PowerShell 加载随包原生辅助程序，经 `CredReadW` / `CredWriteW` 将 32 字节主密钥保存为当前用户、仅本机持久化的通用凭据；名称为 `RemoteDebugAgent/business-privacy/v1/<真实绝对目录的 SHA-256>`。密钥只通过私有进程管道传递。受保护目录内 `.key-init.lock` 的独占句柄串行化首次创建，等待最多 10 秒，进程退出即释放。已有数据库、WAL 或 SHM 缺少凭据时返回 `BUSINESS_KEYSTORE_MISSING`，不创建替代密钥；凭据损坏、访问被拒绝或系统凭据库不可用返回 `BUSINESS_KEYSTORE_UNAVAILABLE`。
+
+Windows 仅支持本机固定 NTFS/ReFS 卷，不使用 Unix `statfs.type`。目录、SQLite、WAL/SHM 按当前用户 SID 设置并核对所有者专用 ACL，使用与本机认证文件一致的权限策略；已有敏感文件的其他用户授权不会被静默修复。拒绝网络盘、已知同步目录（含系统 OneDrive 环境路径）、插件缓存、重解析点、非预期硬链接及异常所有权，返回 `BUSINESS_STORAGE_PATH_INVALID`。自定义同步软件目录无法完全自动识别，仍须选用本机非同步位置。业务存储失败只影响相关业务调用，普通诊断继续可用，不降级为明文或内存映射。
 
 ## 上下文附着
 
@@ -18,9 +22,17 @@ macOS 主密钥由登录 Keychain 的 `com.remote-debug-agent.business-privacy.v
 
 在宿主的本机 MCP 环境或 `config.env` 设置 `REMOTE_DEBUG_PRIVACY_CONTEXT_FILE` 为该文件的绝对路径，然后重新启动相应 MCP。多个 MCP 明确使用同一个文件才共享上下文。也可预先设置一个尚不存在的本机文件路径，让首次调用创建它，后续进程复用。父目录须已存在。不要将文件正文、capability 或密钥交给模型；不根据 Codex chat ID 猜测上下文。
 
+Windows 上下文使用创建时即生效的当前用户 ACL 和 `CreateNew` 独占创建；写入后刷盘，读者使用独占句柄等待首次写入完成。并发创建复用已完整保存的文件，来源、版本、能力凭据、ACL、链接或内容异常返回 `BUSINESS_CONTEXT_DENIED`，不覆盖损坏文件，不依赖 Unix uid/mode 或目录 fsync。
+
 Manager 必须通过现有回环 HTTP 身份证明和 Bearer 认证。私有存储接口还检查上下文 capability、当前实例配置和 origin。引用绑定实例目标、profile、数据库；换端口/origin、目标或 profile 后旧引用不会被重定向。引用接口不提供任意 SQL、原值枚举、反查搜索或映射/密钥导出；只按调用已经持有的完整引用精确取回所需值。操作恢复工具只按精确意图 ID 返回脱敏状态或已有回执，不暴露上下文能力或密钥。
 
 电脑重启后，先解锁原用户的 Keychain、启动同一配置的 Manager，再重新附着原文件。Keychain 不可用时本阶段安全拒绝请求；解锁后需重新启动该 Manager 的存储服务（重启 Manager 即可）。不删除数据库、重建密钥或绕过范围检查。第一阶段未落盘的内存映射无法补救，原 MCP 退出后必须重新查询。
+
+Windows 重启后登录原 Windows 用户，使用原数据目录和相同 Manager origin，重新附着原上下文文件。系统凭据库不可用时先恢复该用户的凭据访问，再重启 Manager；不复制、重建或导出密钥。两个平台均不支持跨电脑、跨系统迁移。
+
+Windows 原生验收入口为 `node --test agent/test/privacy-windows.test.js`。隔离 MongoDB 验收运行 `node scripts/test-windows-privacy-mongo.mjs`，需在环境中提供专用测试驱动绝对路径 `RDA_PRIVACY_TEST_DRIVER`；可设置本机已有的 `RDA_PRIVACY_TEST_MONGO_IMAGE`、`RDA_PRIVACY_TEST_HELPER_IMAGE`，以及 `RDA_PRIVACY_TEST_COPY_DRIVER=1`。该入口只创建随机名称的容器、独立网络、回环监听副本集及合成数据，不读取已有实例配置；测试结束只移除本次资源。`RDA_PRIVACY_TEST_PLUGIN_ROOT` 可指向已安装插件，以验证真实安装包的 MCP 与存储 Worker。
+
+当前共用 bulk 回执恢复派发仍可能携带严格查询接口不接受的字段；本修复保留原恢复逻辑，无法证明结果时返回 `BUSINESS_OPERATION_RECONCILIATION_REQUIRED` 并保留未决意图，不自动重放。Windows 验收明确检查该保护、独立读取任务状态及经过确认的回滚，不将一次任务读取视为原操作已经对账。
 
 ## 交付与保留
 

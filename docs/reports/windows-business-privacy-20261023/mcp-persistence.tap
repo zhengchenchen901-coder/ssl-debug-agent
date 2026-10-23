@@ -1,0 +1,38 @@
+TAP version 13
+# Subtest: persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+ok 1 - persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 52520.4131
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+ok 2 - persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 70095.2528
+  type: 'test'
+  ...
+# (node:27236) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+ok 3 - real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 13195.6993
+  type: 'test'
+  ...
+# (node:27236) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+ok 4 - real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 8214.5927
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 122762.6149

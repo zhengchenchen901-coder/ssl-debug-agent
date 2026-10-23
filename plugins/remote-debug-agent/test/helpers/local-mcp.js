@@ -8,15 +8,20 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { PrivacyService, privacyRequest } from "../../../../agent/privacy-service.js";
 import localAuth from "../../local-auth.cjs";
+import { nativeFixture } from "../../../../agent/test/helpers/windows-privacy-fixture.js";
 
 // A fresh authenticated loopback Manager stub and real MCP process. The supplied
 // handler owns its isolated database/runtime; this cannot load saved instances.
-export async function localMcp(t, { instance, handler, framing = "json-line" }) {
+export async function localMcp(t, { instance, handler, framing = "json-line", nativeKey = false, pluginRoot, initializeStorage }) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rda-privacy-mcp-"));
   const token = localAuth.ensureAuthToken(localAuth.resolveAuthFile(root));
   const requests = [], previews = [], wire = [], diagnostics = [];
   const key = randomBytes(32);
-  let privacyService = new PrivacyService({ directory: path.join(root, "storage"), key }), dropReply;
+  if (nativeKey && process.platform !== "win32") throw new Error("Windows native fixture required");
+  const directory = nativeKey ? await fs.mkdtemp(path.join(os.tmpdir(), "rda-win-privacy-test-")) : path.join(root, "storage");
+  if (initializeStorage) await initializeStorage(directory);
+  const storageOptions = { directory, ...(nativeKey ? {} : { key }), ...(pluginRoot ? { workerPath: path.join(pluginRoot, "runtime/agent/privacy-worker.cjs") } : {}) };
+  let privacyService = new PrivacyService(storageOptions), dropReply;
   const server = http.createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     if (req.url === "/health") return res.end(JSON.stringify({ name: "remote-debug-agent", apiVersion: 2, localAuthentication: true,
@@ -51,23 +56,24 @@ export async function localMcp(t, { instance, handler, framing = "json-line" }) 
     catch (error) { res.statusCode = 400; res.end(JSON.stringify({ ok: false, error: { code: error.code || "FIXTURE_ERROR", message: error.message } })); }
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const peerOptions = { root, url: `http://127.0.0.1:${server.address().port}`, contextFile: path.join(root, "context.json"), framing, wire, diagnostics };
+  const peerOptions = { root, url: `http://127.0.0.1:${server.address().port}`, contextFile: path.join(root, "context.json"), framing, wire, diagnostics, pluginRoot };
   let peer = await mcpPeer(t, peerOptions);
   t.after(async () => {
     await peer.stop(); await privacyService.close();
     server.closeAllConnections(); await new Promise((resolve) => server.close(resolve)); await fs.rm(root, { recursive: true, force: true });
+    if (nativeKey) { nativeFixture("delete", directory); await fs.rm(directory, { recursive: true, force: true }); }
   });
   return { call: (...args) => peer.call(...args), requests, previews, wire, diagnostics, root,
     dropNextReply: (route) => { dropReply = route; },
     restart: async () => {
       await peer.stop("SIGKILL"); await privacyService.close();
-      privacyService = new PrivacyService({ directory: path.join(root, "storage"), key }); peer = await mcpPeer(t, peerOptions);
+      privacyService = new PrivacyService(storageOptions); peer = await mcpPeer(t, peerOptions);
     },
   };
 }
 
-export async function mcpPeer(t, { root, url, framing = "json-line", contextFile = "", wire = [], diagnostics = [] }) {
-  const child = spawn(process.execPath, [path.resolve(import.meta.dirname, "../../mcp-server.js")], {
+export async function mcpPeer(t, { root, url, framing = "json-line", contextFile = "", wire = [], diagnostics = [], pluginRoot }) {
+  const child = spawn(process.execPath, [pluginRoot ? path.join(pluginRoot, "mcp-server.js") : path.resolve(import.meta.dirname, "../../mcp-server.js")], {
     env: { ...process.env, REMOTE_DEBUG_DATA_DIR: root, REMOTE_DEBUG_PROJECT_ROOT: "", REMOTE_DEBUG_INSTANCE_REGISTRY: "",
       REMOTE_DEBUG_ENV_PATH: path.join(root, "config.env"), REMOTE_DEBUG_AUTH_FILE: localAuth.resolveAuthFile(root),
       REMOTE_DEBUG_PRIVACY_CONTEXT_FILE: contextFile, REMOTE_DEBUG_AGENT_URL: url }, stdio: ["pipe", "pipe", "pipe"],

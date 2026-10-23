@@ -1,0 +1,24 @@
+Dedicated replica set ready; native Windows MCP/credential tests starting.
+TAP version 13
+# (node:42812) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42812) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42812) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real isolated MongoDB: persistent MCP references, restart, write/transaction/import/index/bulk, uncertain receipt recovery and rollback
+ok 1 - real isolated MongoDB: persistent MCP references, restart, write/transaction/import/index/bulk, uncertain receipt recovery and rollback
+  ---
+  duration_ms: 30181.3981
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30304.2371
+Disposed this run's test containers and network.

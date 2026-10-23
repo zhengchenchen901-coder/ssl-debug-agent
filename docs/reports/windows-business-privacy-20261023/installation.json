@@ -1,0 +1,59 @@
+{
+  "version": "2.4.0+codex.20261023.1",
+  "runtimeId": "2.4.0:5266f0de7d1eed786e13319f095727aa9b06c33923934811b5753bf4eb331688",
+  "artifacts": 23,
+  "installedHashesValid": true,
+  "configurationUnchanged": {
+    "config.env": true,
+    ".remote-debug/instances.json": true,
+    ".remote-debug/manual-admin/accounts.json": true,
+    ".runtime/http-auth.json": true
+  },
+  "environment": {
+    "status": "ready",
+    "checks": [
+      {
+        "id": "platform",
+        "status": "pass"
+      },
+      {
+        "id": "node",
+        "status": "pass"
+      },
+      {
+        "id": "manifest",
+        "status": "pass"
+      },
+      {
+        "id": "artifacts",
+        "status": "pass"
+      },
+      {
+        "id": "config",
+        "status": "pass"
+      },
+      {
+        "id": "storage",
+        "status": "pass"
+      },
+      {
+        "id": "private-storage",
+        "status": "pass"
+      },
+      {
+        "id": "initialize",
+        "status": "pass"
+      },
+      {
+        "id": "tools",
+        "status": "pass"
+      },
+      {
+        "id": "manager",
+        "status": "pass"
+      }
+    ]
+  },
+  "runningRuntime": "2.4.0:5266f0de7d1eed786e13319f095727aa9b06c33923934811b5753bf4eb331688",
+  "productionPrivacyDatabaseExists": false
+}
