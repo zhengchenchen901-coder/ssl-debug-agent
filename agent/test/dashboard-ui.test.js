@@ -149,6 +149,7 @@ function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
     "closeDrawerButton",
     "drawerTitle",
     "drawerBody",
+    "transferBackdrop", "transferForm", "transferPassword", "transferConfirm", "transferFile", "transferPreview", "transferMessage", "submitTransferButton", "transferSummary", "transferTitle", "transferHint", "transferFileLabel", "transferConfirmLabel", "transferId", "transferName", "importInstanceButton", "closeTransferButton", "cancelTransferButton",
     "toast", "authPanel", "authForm", "authLogout", "authMessage", "authToken", "environmentPanel", "managerFinalResults",
   ];
 
@@ -156,6 +157,7 @@ function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
     elements.set(id, new FakeElement(id));
   }
 
+  elements.get("transferForm").reset = () => {};
   const form = elements.get("instanceForm");
   form.submitButton = new FakeElement("button");
   form.reset = () => {};
@@ -190,6 +192,7 @@ function createDashboardHarness(fetchImpl, initialToken = "a".repeat(64)) {
   let storedToken = initialToken;
   const context = {
     document: {
+      addEventListener: () => {},
       querySelector: (selector) => elements.get(selector.replace(/^#/, "")),
       querySelectorAll: () => [],
       createElement: (tagName) => new FakeElement(tagName),

@@ -689,3 +689,6 @@ main {
     animation: none;
   }
 }
+
+#transferPreview { display: grid; gap: 12px; }
+#transferSummary { margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); font-family: inherit; font-size: 13px; line-height: 1.8; }

@@ -1,0 +1,70 @@
+{
+  "verifiedAt": "2026-10-23T06:05:50.338Z",
+  "platform": "darwin",
+  "node": "v22.23.3",
+  "testRunner": "node:test and Playwright; no TestFlow",
+  "evidence": [
+    {
+      "id": "instance-transfer-20261023/agent-tests",
+      "command": "cd agent && npm test",
+      "exitCode": 0,
+      "tests": 435,
+      "pass": 428,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 7,
+      "sha256": "86bfc14ca6bcf765c896e11a4c98f4b2efdda2539c04f8d4105446f09ea8a1fe",
+      "localLog": "agent/.runtime/instance-transfer-validation-20261023/agent-tests.log"
+    },
+    {
+      "id": "instance-transfer-20261023/plugin-tests",
+      "command": "cd plugins/remote-debug-agent && npm test",
+      "exitCode": 0,
+      "tests": 103,
+      "pass": 99,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 4,
+      "sha256": "5052173f496d8fa439451cfffb9560ba08c544c99452d7ff964bf83628a27b51",
+      "localLog": "agent/.runtime/instance-transfer-validation-20261023/plugin-tests.log"
+    },
+    {
+      "id": "instance-transfer-20261023/browser-tests",
+      "command": "cd agent && npm run test:transfer-browser",
+      "exitCode": 0,
+      "sha256": "447dd7249ea3f8b9a7df59f7a7b78b72cc994e5af03b91299dd828a5e82e2e55",
+      "localLog": "agent/.runtime/instance-transfer-validation-20261023/browser-tests.log"
+    },
+    {
+      "id": "instance-transfer-20261023/runtime-build",
+      "command": "cd agent && npm run build:runtime",
+      "exitCode": 0,
+      "sha256": "64b24ac8cbb7bf864e3c50d76f9bfe2f3497f8a9a403ebe582245a38ca32a163",
+      "localLog": "agent/.runtime/instance-transfer-validation-20261023/runtime-build.log"
+    }
+  ],
+  "runtime": {
+    "runtimeId": "2.4.0:541d03616d1a2cc3cd8c035fd94cfebb2afd3e227aac3affedf282e9bcdc4f21",
+    "verifiedHashCount": 22
+  },
+  "featureTests": {
+    "nodeCases": 18,
+    "browserScenarios": 9,
+    "bundledManagerCases": 1,
+    "allPassed": true
+  },
+  "interop": {
+    "sourcePlatforms": [
+      "darwin"
+    ],
+    "destinationPlatform": "darwin",
+    "status": "passed; native Windows and Windows/macOS exchange not executed"
+  },
+  "gaps": [
+    "Windows native ACL, paths, browser and file occupancy not executed on this macOS host",
+    "Windows/macOS fixture exchange CI configured but not run",
+    "11 existing regression tests skipped by platform, environment or opt-in gates; includes occupied default port 4343",
+    "No statement or branch coverage instrumentation collected",
+    "No real remote SSH or MongoDB connection attempted"
+  ]
+}

@@ -35,3 +35,42 @@ jobs:
       - name: Test plugin and installer
         working-directory: plugins/remote-debug-agent
         run: npm test
+
+      - name: Test instance transfer in Chrome
+        working-directory: agent
+        run: npm run test:transfer-browser
+
+      - name: Export synthetic instance fixture
+        working-directory: agent
+        run: node test/instance-transfer-interop.mjs export ../interop-fixtures
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instance-transfer-${{ matrix.os }}
+          path: interop-fixtures/*.json
+
+  instance-transfer-interop:
+    needs: platform-node-22
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18.0
+          cache: npm
+          cache-dependency-path: agent/package-lock.json
+      - name: Install development dependencies
+        working-directory: agent
+        run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: instance-transfer-*
+          path: interop-fixtures
+          merge-multiple: true
+      - name: Import fixtures from Windows and macOS
+        working-directory: agent
+        run: node test/instance-transfer-interop.mjs import ../interop-fixtures --require-both
