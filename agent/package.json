@@ -15,6 +15,7 @@
     "test:final-results-browser": "node test/final-results-browser.e2e.mjs",
     "test:tasks-browser": "node test/tasks-browser.e2e.mjs",
     "test": "node --test \"test/*.test.js\"",
+    "test:transfer-browser": "node test/instance-transfer-browser.e2e.mjs",
     "test:services-browser": "node test/services-browser.e2e.mjs"
   },
   "dependencies": {

@@ -303,7 +303,7 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 
-function normalizeInstance(input, existing = {}) {
+export function normalizeInstance(input, existing = {}) {
   const id = input.id || existing.id || slugify(input.name || input.host || randomUUID());
   assertInstanceId(id);
 
@@ -586,12 +586,16 @@ export class InstanceRegistry {
 
   save(nextRegistry = this.registry) {
     fs.mkdirSync(path.dirname(this.registryPath), { recursive: true, mode: 0o700 });
-    const containsSandboxSecret = nextRegistry.instances.some((instance) => Boolean(instance.mongodb?.sandboxManagementPassword));
-    if (containsSandboxSecret) localAuth.protectOrCheck(path.dirname(this.registryPath), true, true);
+    const containsSecret = nextRegistry.instances.some((instance) => Boolean(instance.passphrase || instance.mongodb?.sandboxManagementPassword));
+    if (containsSecret) localAuth.protectOrCheck(path.dirname(this.registryPath), true, true);
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
     try {
-      fs.writeFileSync(tempPath, `${JSON.stringify(nextRegistry, null, 2)}\n`, { flag: "wx", mode: 0o600 });
-      if (containsSandboxSecret) localAuth.protectOrCheck(tempPath, false, true);
+      const fd = fs.openSync(tempPath, "wx", 0o600);
+      try {
+        if (containsSecret) localAuth.protectOrCheck(tempPath, false, true);
+        fs.writeFileSync(fd, `${JSON.stringify(nextRegistry, null, 2)}\n`);
+        fs.fsyncSync(fd);
+      } finally { fs.closeSync(fd); }
       fs.renameSync(tempPath, this.registryPath);
       this.registry = nextRegistry;
     } finally { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); }
@@ -632,11 +636,11 @@ export class InstanceRegistry {
       throw error;
     }
 
-    this.registry.instances.push(instance);
-    if (!this.registry.defaultInstanceId) {
-      this.registry.defaultInstanceId = instance.id;
-    }
-    this.save();
+    // Publish in-memory state only after the atomic file save succeeds.
+    this.save({ ...this.registry,
+      instances: [...this.registry.instances, instance],
+      defaultInstanceId: this.registry.defaultInstanceId || instance.id,
+    });
     return publicInstance(instance);
   }
 

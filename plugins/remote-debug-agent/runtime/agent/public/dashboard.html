@@ -81,6 +81,7 @@
             <button id="shutdownButton" class="button danger" type="button" hidden>关闭 Manager</button>
             <button id="reloadButton" class="button" type="button">刷新列表</button>
             <button id="registerAdminButton" class="button" type="button">注册管理员</button>
+            <button id="importInstanceButton" class="button" type="button">导入实例</button>
             <button id="newButton" class="button primary" type="button">新建实例</button>
           </div>
         </div>
@@ -303,6 +304,25 @@
           <div id="adminMessage" class="wide form-message" role="status"></div>
           <button id="adminResetMode" class="button wide" type="button" hidden>忘记密码？通过本机身份验证重置</button>
           <div class="modal-actions"><button id="cancelAdminButton" class="button" type="button">取消</button><button id="saveAdminButton" class="button primary" type="submit">验证本机身份并注册</button></div>
+        </form>
+      </section>
+    </div>
+
+    <div id="transferBackdrop" class="overlay" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="transferTitle">
+        <div class="modal-header"><h2 id="transferTitle">导出配置</h2><button id="closeTransferButton" class="icon-button" type="button" aria-label="关闭">×</button></div>
+        <form id="transferForm" class="form-grid">
+          <p id="transferHint" class="wide muted"></p>
+          <label id="transferFileLabel" class="wide" hidden><span>实例配置文件</span><input id="transferFile" type="file" accept=".json,.rda-instance.json" /></label>
+          <label class="wide"><span>加密口令（12–256 字符）</span><input id="transferPassword" type="password" autocomplete="off" minlength="12" maxlength="512" required /></label>
+          <label id="transferConfirmLabel" class="wide"><span>确认口令</span><input id="transferConfirm" type="password" autocomplete="off" maxlength="512" /></label>
+          <div id="transferPreview" class="wide" hidden>
+            <pre id="transferSummary" class="sandbox-output"></pre>
+            <label><span>新实例 ID</span><input id="transferId" autocomplete="off" maxlength="64" /></label>
+            <label><span>新实例名称</span><input id="transferName" autocomplete="off" maxlength="256" /></label>
+          </div>
+          <p id="transferMessage" class="wide form-message" role="status" aria-live="polite"></p>
+          <div class="modal-actions"><button id="cancelTransferButton" class="button" type="button">取消</button><button id="submitTransferButton" class="button primary" type="submit">加密并下载</button></div>
         </form>
       </section>
     </div>

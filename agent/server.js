@@ -83,6 +83,8 @@ import {
   canonicalCommand,
 } from "./ssh.js";
 
+import { installInstanceTransferRoutes } from "./instance-transfer.js";
+
 const moduleFilePath =
   typeof __filename === "string" ? __filename : fileURLToPath(import.meta.url);
 const moduleDirectory =
@@ -1958,6 +1960,7 @@ export function createManagerApp(options = {}) {
   app.locals.resourceManager = resourceManager;
   app.locals.lifecycle = lifecycle;
   installHttpAuth(app, config, { ...options, initializeAuth: true });
+  installInstanceTransferRoutes(app, { registry, workerManager, cwd: options.cwd || process.cwd() });
   // The final 8 MiB MCP message is a JSON string here (up to 2x escaping).
   // Keep this limit separate from all business APIs and activity/audit buffers.
   app.use("/api/output-preview/records", express.json({ limit: "17mb" }));

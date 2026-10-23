@@ -1,5 +1,7 @@
 # Remote Debug Agent
 
+实例配置支持口令加密导出与面板导入，包含 SSH 私钥、实例密码及记忆；可在 Windows 10/11 与 macOS 之间迁移，继续连接同一服务器。见 [实例迁移说明](docs/instance-transfer.md)。
+
 ## 任务最终交付物
 
 新增统一最终结果存储：`output/instances/<instanceId>/tasks/<taskId>/`，按 `results/reports/exports/attachments` 分类。任务收尾时通过 `remote_debug_publish_final_result` 一次发布；普通工具响应、轮询、分页和检查点不会归档。Dashboard 实例详情可列举、预览、下载和手动删除，Manager 任务有独立列表。相同任务重复发布相同内容复用已有文件，历史在重启后仍可读取。

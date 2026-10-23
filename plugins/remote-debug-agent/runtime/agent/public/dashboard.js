@@ -45,6 +45,7 @@ function lockPanel() {
   closeDrawer();
   showManagerFinalResults();
   closeModal();
+  closeTransfer();
   document.querySelector("#environmentPanel").hidden = true;
   updateAuthVisibility();
   setConnection("offline", "面板未解锁");
@@ -399,6 +400,7 @@ function renderRow(instance) {
     view,
     tasks,
     edit,
+    button("导出配置", "export", instance),
     start,
     stop,
     deleteButton,
@@ -941,7 +943,7 @@ function closeDrawer() {
   drawerMask.hidden = true;
 }
 
-const managerActions = new Set(["edit", "delete", "start", "stop", "refresh", "manual"]);
+const managerActions = new Set(["edit", "delete", "start", "stop", "refresh", "manual", "export"]);
 
 async function runAction(action, id) {
   const instance = findInstance(id);
@@ -964,6 +966,10 @@ async function runAction(action, id) {
   }
   if (action === "edit") {
     openModal(instance);
+    return;
+  }
+  if (action === "export") {
+    openTransfer(instance);
     return;
   }
   if (action === "manual") {
@@ -1086,3 +1092,113 @@ showManagerFinalResults();
 window.remoteDebugOutputPreview?.unlock();
 loadInstances();
 setInterval(loadInstances, 5000);
+
+
+const transferBackdrop = document.querySelector("#transferBackdrop");
+const transferForm = document.querySelector("#transferForm");
+const transferPassword = document.querySelector("#transferPassword");
+const transferConfirm = document.querySelector("#transferConfirm");
+const transferFile = document.querySelector("#transferFile");
+const transferPreview = document.querySelector("#transferPreview");
+const transferMessage = document.querySelector("#transferMessage");
+const submitTransfer = document.querySelector("#submitTransferButton");
+let transferInstance = null, transferBundle = null, transferReady = false, transferGeneration = 0;
+function closeTransfer() {
+  transferGeneration++;
+  transferInstance = null; transferBundle = null; transferReady = false;
+  transferForm.reset(); transferBackdrop.hidden = true;
+  transferPreview.hidden = true; transferMessage.textContent = "";
+  document.querySelector("#transferSummary").textContent = "";
+  submitTransfer.disabled = false;
+}
+function openTransfer(instance = null) {
+  closeTransfer(); transferInstance = instance;
+  document.querySelector("#transferTitle").textContent = instance ? `导出配置 · ${instance.name}` : "导入实例";
+  document.querySelector("#transferHint").textContent = instance
+    ? "加密文件包含 SSH 私钥、实例密码和记忆。请妥善保管文件与口令；目标电脑导入后连接同一台服务器。"
+    : "选择加密配置文件并输入导出口令。解密预览后可修改 ID 和名称，仅创建新实例，导入后需手动启动。";
+  document.querySelector("#transferFileLabel").hidden = Boolean(instance);
+  document.querySelector("#transferConfirmLabel").hidden = !instance;
+  transferFile.required = !instance; transferConfirm.required = Boolean(instance);
+  submitTransfer.textContent = instance ? "加密并下载" : "解密预览";
+  transferBackdrop.hidden = false; transferPassword.focus();
+}
+function invalidateTransferPreview() {
+  transferGeneration++; transferReady = false; transferBundle = null;
+  transferPreview.hidden = true;
+  document.querySelector("#transferSummary").textContent = "";
+  if (!transferInstance) submitTransfer.textContent = "解密预览";
+  submitTransfer.disabled = false;
+}
+transferPassword.addEventListener("input", invalidateTransferPreview);
+transferFile.addEventListener("change", invalidateTransferPreview);
+document.querySelector("#importInstanceButton").addEventListener("click", () => {
+  if (authToken && state.online) openTransfer();
+});
+document.querySelector("#closeTransferButton").addEventListener("click", closeTransfer);
+document.querySelector("#cancelTransferButton").addEventListener("click", closeTransfer);
+transferBackdrop.addEventListener("click", event => { if (event.target === transferBackdrop) closeTransfer(); });
+document.addEventListener("keydown", event => { if (event.key === "Escape") closeTransfer(); });
+window.addEventListener("pagehide", closeTransfer);
+transferForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const generation = transferGeneration;
+  const active = () => generation === transferGeneration && !transferBackdrop.hidden && Boolean(authToken);
+  submitTransfer.disabled = true; transferMessage.textContent = "正在处理…";
+  try {
+    const password = transferPassword.value;
+    if ([...password].length < 12 || [...password].length > 256) throw new Error("口令需要包含 12–256 个字符。");
+    if (transferInstance) {
+      if (password !== transferConfirm.value) throw new Error("两次输入的口令不一致。");
+      const id = transferInstance.id;
+      // api() also handles authorization expiry; the downloaded JSON contains only ciphertext.
+      const bundle = await api(`/api/instances/${encodeURIComponent(id)}/export`, { method: "POST", body: JSON.stringify({ password }) });
+      if (!active()) return;
+      const url = URL.createObjectURL(new Blob([JSON.stringify(bundle) + "\n"], { type: "application/json" }));
+      const link = document.createElement("a"); link.href = url; link.download = `instance-${id.replace(/[^A-Za-z0-9_-]/g, "_")}.rda-instance.json`;
+      document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      closeTransfer(); showToast("加密配置已下载，请妥善保管口令。");
+    } else if (!transferReady) {
+      const file = transferFile.files[0];
+      if (!file) throw new Error("请选择实例配置文件。");
+      if (file.size > 12 * 1024 * 1024) throw new Error("配置文件超过 12 MiB 限制。");
+      let bundle;
+      try { bundle = JSON.parse(await file.text()); } catch { throw new Error("配置文件不是有效 JSON。"); }
+      if (!active()) return;
+      const { preview } = await api("/api/instances/import/preview", { method: "POST", body: JSON.stringify({ bundle, password }) });
+      if (!active()) return;
+      transferBundle = bundle; transferReady = true;
+      const yes = value => value ? "是" : "否";
+      const mongo = preview.mongodb;
+      document.querySelector("#transferSummary").textContent = [
+        `原实例：${preview.name}（${preview.id}）`,
+        `远端目标：${preview.target.username}@${preview.target.host}:${preview.target.port}`,
+        `启用实例：${yes(preview.enabled)}；包含运维记忆：${yes(preview.hasMemory)}`,
+        `SSH 私钥：已包含；私钥口令：${preview.hasPassphrase ? "已包含" : "未设置"}`,
+        `主机指纹：${preview.hostKeyFingerprints?.join("，") || "未配置（启动前需核验并设置）"}`,
+        `批准命令执行：${yes(preview.approvedCommands?.enabled)}`,
+        `自动 MongoDB：${yes(mongo?.enabled)}；人工数据库连接：${yes(preview.manualMongoEnabled)}`,
+        ...(mongo ? [
+          `数据库权限：写入 ${yes(mongo.writeEnabled)}；变更 ${yes(mongo.mutationsEnabled)}；批量 ${yes(mongo.bulkEnabled)}`,
+          `数据库白名单：${mongo.allowedDatabases.join("，") || "无"}`,
+          `集合白名单：${mongo.allowedCollections.join("，") || "无"}`,
+          `沙盒管理密码：${mongo.hasSandboxManagementPassword ? "已包含" : "未设置"}`,
+        ] : []),
+        `服务配置：${preview.serviceIds.join("，") || "无"}`,
+        preview.managerSettingsDiffer ? "源电脑的 Manager 全局设置与本机不同，将沿用本机设置。" : "Manager 全局设置与本机一致。",
+        ...preview.notices,
+      ].join("\n");
+      document.querySelector("#transferId").value = preview.id;
+      document.querySelector("#transferName").value = preview.name;
+      transferPreview.hidden = false; submitTransfer.textContent = "创建新实例";
+      transferMessage.textContent = preview.idConflict ? "ID 已存在或不兼容，请修改 ID 后新建。" : "请核对目标与权限，确认后创建新实例。";
+    } else {
+      const result = await api("/api/instances/import", { method: "POST", body: JSON.stringify({ bundle: transferBundle, password,
+        id: document.querySelector("#transferId").value, name: document.querySelector("#transferName").value }) });
+      if (!active()) return;
+      closeTransfer(); showToast(`实例 ${result.instance.name} 已导入，请手动启动。`); await loadInstances();
+    }
+  } catch (error) { if (active()) transferMessage.textContent = error.message; }
+  finally { if (active()) submitTransfer.disabled = false; }
+});
