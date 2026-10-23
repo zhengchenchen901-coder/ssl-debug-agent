@@ -177,6 +177,15 @@ export class PrivacyStore {
       this.put("operation", input.id, ctx, scope, { ...record, dispatched: true, operationId: input.operationId }, Number.MAX_SAFE_INTEGER, true);
       return { ...record, dispatched: true };
     });
+    if (action === "claim_execution") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record || record.state !== "uncertain" || record.execution ||
+          !["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(record.route) ||
+          typeof input.operationId !== "string") throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      const execution = { intentId: input.id, operationId: input.operationId };
+      this.put("operation", input.id, ctx, scope, { ...record, execution }, Number.MAX_SAFE_INTEGER, true);
+      return execution;
+    });
     if (action === "prepare_result") return this.transaction(() => {
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.prepare || !isPrepareTicket(input.prepare) || JSON.stringify(record.prepare) !== JSON.stringify(input.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -211,12 +220,19 @@ export class PrivacyStore {
           (previous.route === "/mongodb/bulk/execute" && input.result.status === "completed" || previous.route === "/mongodb/bulk/rollback" && input.result.status === "rolled_back")) proof = input.result;
         if (identity.mutationId) {
           const entry = input.result.entries?.find((item) => item.mutationId === identity.mutationId && item.planHash === identity.planHash);
-          if (entry && (previous.route === "/mongodb/mutations/execute" && entry.status === "committed" || previous.route === "/mongodb/mutations/rollback" && entry.status === "rolled_back")) proof = { ok: true, ...entry };
+          const bound = !previous.execution || JSON.stringify(entry?.execution) === JSON.stringify(previous.execution);
+          if (entry && bound && !["legacy_execution_evidence_required", "execution_acknowledgement_required"].includes(entry.indexRecovery?.reason) &&
+              (previous.route === "/mongodb/mutations/execute" && entry.status === "committed" || previous.route === "/mongodb/mutations/rollback" && entry.status === "rolled_back")) proof = { ok: true, ...entry };
         }
       }
       const complete = action === "outcome" || Boolean(proof);
       const value = complete ? { ...previous, state: "complete", result: proof || input.result } : { ...previous, reconciliation: input.result };
       this.put("operation", input.id, ctx, scope, value, complete ? this.now() + 90 * DAY : Number.MAX_SAFE_INTEGER, !complete);
+      if (complete) {
+        const taskId = this.hash("task", ctx, input.scope, "operation:" + input.id);
+        const task = this.get("task", taskId, ctx, scope);
+        if (task) this.put("task", taskId, ctx, scope, { ...task, active: false }, task.expires, false);
+      }
       return { state: value.state, ...(complete ? { result: value.result } : {}) };
     });
     if (action === "delivered") return this.transaction(() => {

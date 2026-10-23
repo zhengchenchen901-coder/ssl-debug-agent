@@ -56,7 +56,12 @@ function harness({ indexes = [], documents = [], namespaceType = "collection" } 
   class MongoClient {
     async connect() { state.dbCalls++; }
     async close() {}
-    db() { return { collection: () => collection, listCollections: ({ name }) => ({ toArray: async () => state.documents.length || state.indexes.length || namespaceType !== "collection" ? [{ name, type: namespaceType }] : [] }) }; }
+    db() { return { command: async (command) => {
+      const before = state.indexes.length;
+      if (command.createIndexes) { const { key, ...options } = command.indexes[0]; await collection.createIndex(key, options); }
+      else await collection.dropIndex(command.index);
+      return { ok: 1, numIndexesBefore: before, numIndexesAfter: state.indexes.length };
+    }, collection: () => collection, listCollections: ({ name }) => ({ toArray: async () => state.documents.length || state.indexes.length || namespaceType !== "collection" ? [{ name, type: namespaceType }] : [] }) }; }
   }
   const require = (name) => {
     if (name === "fs") return fs;

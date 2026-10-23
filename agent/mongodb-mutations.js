@@ -952,6 +952,8 @@ function __summary(manifest) {
     storageRoot: manifest.request.storageRoot,
     ...(manifest.kind === "bulk_storage" ? { receiptsDatabase: manifest.request.receiptsDatabase || manifest.request.database } : {}),
     storageStatus: manifest.storageStatus,
+    execution: manifest.execution,
+    indexRecovery: manifest.indexRecovery,
     ...(manifest.kind === "index" ? { rollbackRestoresDocuments: false } : {}),
     ...(manifest.kind === "import" ? {
       importId: manifest.request.importId,
@@ -1028,6 +1030,7 @@ async function __loadClient() {
   const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    readPreference: "primary",
     serverSelectionTimeoutMS: __maxTimeMs,
   });
   try {
@@ -1067,7 +1070,12 @@ function __indexComparable(index) {
 }
 
 function __indexHash(index) {
-  return __hash(__encode(__indexComparable(index)));
+  const comparable = __indexComparable(index);
+  comparable.unique = Boolean(comparable.unique);
+  comparable.sparse = Boolean(comparable.sparse);
+  // Compound index field order is semantic; __stable would otherwise sort it.
+  comparable.key = Object.entries(comparable.key || {});
+  return __hash(__encode(comparable));
 }
 
 function __indexMatches(index, expected) {
@@ -1076,6 +1084,26 @@ function __indexMatches(index, expected) {
 
 function __indexByName(indexes, name) {
   return indexes.find((index) => index.name === name);
+}
+
+async function __readIndexes(collection) {
+  return collection.listIndexes({ readPreference: "primary", maxTimeMS: __maxTimeMs }).toArray();
+}
+
+async function __verifyIndex(manifest, collection, dropped, original) {
+  const expected = original || { name: manifest.request.name, key: __decode(manifest.request.key), ...__decode(manifest.request.options) };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const current = __indexByName(await __readIndexes(collection), manifest.request.name);
+      if (dropped ? !current : current && __indexMatches(current, expected)) return current || null;
+      if (!dropped && current) __fail("MONGODB_INDEX_DEFINITION_CONFLICT", "index name exists with a different definition");
+    } catch (error) {
+      if (error.code === "MONGODB_INDEX_DEFINITION_CONFLICT") throw error;
+      if (attempt === 2) throw error;
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+  }
+  __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index command outcome could not be verified on primary");
 }
 
 function __planHash(manifest) {
@@ -1161,7 +1189,7 @@ async function __prepare() {
     };
 
     if (__request.kind === "index") {
-      const indexes = await collection.listIndexes().toArray();
+      const indexes = await __readIndexes(collection);
       const existing = __indexByName(indexes, request.name);
       if (request.operation === "createIndex") {
         __ttlRejectBusinessIndex(request.options);
@@ -1195,7 +1223,7 @@ async function __prepare() {
       const namespaces = await databaseObject.listCollections({ name: request.collection }, { nameOnly: true }).toArray();
       let expiryIndex = null;
       if (namespaces.length) {
-        const indexes = await collection.listIndexes().toArray();
+        const indexes = await __readIndexes(collection);
         expiryIndex = indexes.find((index) => index.name === "remote_debug_bulk_receipt_expiry") || null;
       }
       let rootState = "missing";
@@ -1270,7 +1298,7 @@ async function __prepareImportPlan() {
     __request.mutationId = batch.mutationId;
     __request.mutation = batch;
     __request.kind = "import";
-    const releaseLock = __acquireMutationLock();
+    const releaseLock = __acquireMutationLock(false);
     try {
       const filePath = __path.join(__journalDir(), "manifest.json");
       if (__fs.existsSync(filePath)) {
@@ -1421,31 +1449,99 @@ async function __commitTransaction(manifest, client) {
   __appendJournal("committed", { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
 }
 
-async function __commitIndex(manifest, collection) {
+// DDL is never replayed after dispatch. Keep the command acknowledgement before
+// metadata verification, so reconciliation can finish without issuing DDL again.
+async function __commitIndex(manifest, collection, database) {
   const request = manifest.request;
-  const indexes = await collection.listIndexes().toArray();
-  const current = __indexByName(indexes, request.name);
-  if (request.operation === "createIndex") {
+  const current = __indexByName(await __readIndexes(collection), request.name);
+  const creating = request.operation === "createIndex";
+  if (creating) {
     __ttlRejectBusinessIndex(request.options);
     if (current) __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
-    await collection.createIndex(__decode(request.key), { name: request.name, ...__decode(request.options) });
-    const afterIndexes = await collection.listIndexes().toArray();
-    const after = __indexByName(afterIndexes, request.name);
-    if (!after) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index was created but could not be verified");
-    manifest.afterIndex = __encode(__indexComparable(after));
   } else {
     __ttlRejectBusinessIndex(current);
     if (!current || !manifest.beforeIndex || !__indexMatches(current, __decode(manifest.beforeIndex))) {
       __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
     }
-    await collection.dropIndex(request.name);
-    const remaining = await collection.listIndexes().toArray();
-    if (__indexByName(remaining, request.name)) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index was dropped but could not be verified");
   }
+  manifest.indexReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash,
+    execution: manifest.execution, database: request.database, collection: request.collection,
+    operation: request.operation, stage: "dispatching", owned: false,
+    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } };
+  __writeJsonAtomic("manifest.json", manifest);
+  try {
+    const command = creating
+      ? { createIndexes: request.collection, indexes: [{ key: __decode(request.key), name: request.name, ...__decode(request.options) }] }
+      : { dropIndexes: request.collection, index: request.name };
+    const reply = await database.command({ ...command, maxTimeMS: __maxTimeMs,
+      writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
+    if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index command did not acknowledge durable completion");
+    // createIndex's string return discards the server's no-op evidence. A same
+    // name/spec created concurrently must not become this mutation's rollback.
+    manifest.indexReceipt.stage = "acknowledged";
+    manifest.indexReceipt.numIndexesBefore = Number(reply.numIndexesBefore);
+    manifest.indexReceipt.numIndexesAfter = Number(reply.numIndexesAfter);
+    manifest.indexReceipt.noOp = Boolean(reply.note);
+    manifest.indexReceipt.owned = creating
+      ? Number.isFinite(Number(reply.numIndexesBefore)) && Number(reply.numIndexesAfter) === Number(reply.numIndexesBefore) + 1 && !reply.note
+      : true;
+    manifest.indexReceipt.acknowledgedAt = new Date().toISOString();
+    __writeJsonAtomic("manifest.json", manifest);
+  } catch (error) {
+    // Only definite server rejections prove that DDL did not commit. Network,
+    // timeout, write-concern and journal failures all remain ambiguous.
+    const rejected = error.name === "MongoServerError" || error.name === "MongoError";
+    if (rejected && [2, 13, 67, 72, 85, 86, 11000, 197].includes(Number(error.code)) && !error.writeConcernError) {
+      manifest.indexReceipt.stage = "rejected";
+    }
+    throw error;
+  }
+  if (!manifest.indexReceipt.owned) __fail("MONGODB_INDEX_OWNERSHIP_UNKNOWN", "index acknowledgement does not prove this operation created the index");
+  const after = await __verifyIndex(manifest, collection, !creating);
+  if (creating) manifest.afterIndex = __encode(__indexComparable(after));
   manifest.status = "committed";
-  manifest.committedAt = new Date().toISOString();
+  manifest.committedAt = manifest.indexReceipt.acknowledgedAt;
   __writeJsonAtomic("manifest.json", manifest);
   __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1 });
+}
+
+async function __recoverExecution() {
+  // No lock age reclamation, business writes, or ownership inference from the
+  // live catalog. Historical helpers did not persist acknowledgements.
+  const release = __acquireMutationLock(false);
+  try {
+    const manifest = __loadManifest();
+    const ticket = __request.execution;
+    if (!ticket || !manifest.execution || __hash(ticket) !== __hash(manifest.execution)) {
+      return { ...__summary(manifest), indexRecovery: { reason: "legacy_execution_evidence_required" } };
+    }
+    if (manifest.request.database !== __request.database) __fail("MONGODB_MUTATION_SCOPE_MISMATCH", "recovery database does not match the original plan");
+    if (manifest.status === "committed" || manifest.status === "rolled_back") return __summary(manifest);
+    const rollback = manifest.status.indexOf("rollback_") === 0;
+    const receipt = rollback ? manifest.rollbackReceipt : manifest.indexReceipt;
+    if (manifest.kind !== "index" || !receipt || receipt.version !== 1 || receipt.mutationId !== manifest.mutationId ||
+        receipt.planHash !== manifest.planHash || receipt.database !== manifest.request.database || receipt.collection !== manifest.request.collection ||
+        receipt.operation !== manifest.request.operation ||
+        __hash(receipt.source) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey }) ||
+        __hash(receipt.execution) !== __hash(ticket) || receipt.stage !== "acknowledged" || !receipt.owned ||
+        !(rollback ? ["rollback_started", "rollback_unknown"] : ["commit_started", "commit_unknown"]).includes(manifest.status)) {
+      return { ...__summary(manifest), indexRecovery: { reason: "execution_acknowledgement_required" } };
+    }
+    const { client } = await __loadClient();
+    try {
+      const collection = client.db(manifest.request.database).collection(manifest.request.collection);
+      const after = await __verifyIndex(manifest, collection,
+        rollback ? manifest.request.operation === "createIndex" : manifest.request.operation === "dropIndex",
+        rollback ? __decode(manifest.beforeIndex) : null);
+      if (after && !rollback) manifest.afterIndex = __encode(__indexComparable(after));
+      manifest.status = rollback ? "rolled_back" : "committed";
+      manifest[rollback ? "rolledBackAt" : "committedAt"] = receipt.acknowledgedAt;
+      manifest.indexRecovery = { reason: "acknowledgement_and_primary_catalog_verified" };
+      __writeJsonAtomic("manifest.json", manifest);
+      __appendJournal(rollback ? "rollback_reconciled" : "commit_reconciled", { planHash: manifest.planHash, intentId: ticket.intentId });
+      return __summary(manifest);
+    } finally { await __cleanup(() => client.close()); }
+  } finally { release(); }
 }
 
 async function __commitBulkStorage(manifest, client) {
@@ -1526,7 +1622,7 @@ async function __loadMutationClient(manifest, rollback) {
 }
 
 async function __commit() {
-  const releaseLock = __acquireMutationLock();
+  const releaseLock = __acquireMutationLock(false);
   try {
     const manifest = __loadManifest();
     if (manifest.status === "committed") return __summary(manifest);
@@ -1535,6 +1631,7 @@ async function __commit() {
     __assertNotExpired(manifest);
     __appendJournal("commit_started", { planHash: manifest.planHash });
     manifest.status = "commit_started";
+    manifest.execution = __request.execution;
     __writeJsonAtomic("manifest.json", manifest);
     const { client } = await __loadMutationClient(manifest, false);
     try {
@@ -1542,16 +1639,17 @@ async function __commit() {
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
       if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
-      else if (manifest.kind === "index") await __commitIndex(manifest, collection);
+      else if (manifest.kind === "index") await __commitIndex(manifest, collection, client.db(manifest.request.database));
       else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
       else if (manifest.kind === "transaction") await __commitTransaction(manifest, client);
       else await __commitDocument(manifest, client, collection);
       return __summary(manifest);
     } catch (error) {
       if (manifest.status !== "committed" && manifest.kind !== "import") {
-        manifest.status = manifest.kind === "bulk_storage" ? "commit_retryable" : "commit_failed";
+        manifest.status = manifest.kind === "bulk_storage" ? "commit_retryable"
+          : manifest.kind === "index" && manifest.indexReceipt && manifest.indexReceipt.stage !== "rejected" ? "commit_unknown" : "commit_failed";
         try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-        try { __appendJournal("commit_failed", { code: error.code || "MONGODB_MUTATION_COMMIT_FAILED" }); } catch (_journalError) {}
+        try { __appendJournal(manifest.status, { code: error.code || "MONGODB_MUTATION_COMMIT_FAILED" }); } catch (_journalError) {}
       }
       throw error;
     } finally {
@@ -1619,32 +1717,43 @@ async function __rollbackTransaction(manifest, client) {
   }
 }
 
-async function __rollbackIndex(manifest, collection) {
+async function __rollbackIndex(manifest, collection, database) {
   const request = manifest.request;
-  const indexes = await collection.listIndexes().toArray();
-  const current = __indexByName(indexes, request.name);
-  if (request.operation === "createIndex") {
+  const current = __indexByName(await __readIndexes(collection), request.name);
+  const dropping = request.operation === "createIndex";
+  if (dropping) {
     if (!current || !manifest.afterIndex || !__indexMatches(current, __decode(manifest.afterIndex))) {
       __fail("MONGODB_ROLLBACK_CONFLICT", "created index is missing or has changed");
     }
-    await collection.dropIndex(request.name);
   } else {
     if (current) __fail("MONGODB_ROLLBACK_CONFLICT", "dropped index was recreated by another operation");
     if (!manifest.beforeIndex) __fail("MONGODB_ROLLBACK_MANIFEST_INVALID", "original index definition is missing");
-    const original = __decode(manifest.beforeIndex);
-    __ttlRejectBusinessIndex(original);
-    await collection.createIndex(original.key, {
-      name: original.name,
-      ...(original.unique === undefined ? {} : { unique: original.unique }),
-      ...(original.sparse === undefined ? {} : { sparse: original.sparse }),
-      ...(original.partialFilterExpression === undefined ? {} : { partialFilterExpression: original.partialFilterExpression }),
-      ...(original.collation === undefined ? {} : { collation: original.collation }),
-    });
+    __ttlRejectBusinessIndex(__decode(manifest.beforeIndex));
   }
+  const original = __decode(manifest.beforeIndex);
+  manifest.rollbackReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash,
+    execution: manifest.execution, database: request.database, collection: request.collection,
+    operation: request.operation, stage: "dispatching", owned: false,
+    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } };
+  __writeJsonAtomic("manifest.json", manifest);
+  const command = dropping ? { dropIndexes: request.collection, index: request.name }
+    : { createIndexes: request.collection, indexes: [original] };
+  const reply = await database.command({ ...command, maxTimeMS: __maxTimeMs,
+    writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
+  if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "rollback index command did not acknowledge durable completion");
+  manifest.rollbackReceipt.stage = "acknowledged";
+  manifest.rollbackReceipt.numIndexesBefore = Number(reply.numIndexesBefore);
+  manifest.rollbackReceipt.numIndexesAfter = Number(reply.numIndexesAfter);
+  manifest.rollbackReceipt.noOp = Boolean(reply.note);
+  manifest.rollbackReceipt.owned = dropping || Number.isFinite(Number(reply.numIndexesBefore)) && Number(reply.numIndexesAfter) === Number(reply.numIndexesBefore) + 1 && !reply.note;
+  manifest.rollbackReceipt.acknowledgedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  if (!manifest.rollbackReceipt.owned) __fail("MONGODB_INDEX_OWNERSHIP_UNKNOWN", "rollback command did not prove an index change");
+  await __verifyIndex(manifest, collection, dropping, original);
 }
 
 async function __rollback() {
-  const releaseLock = __acquireMutationLock();
+  const releaseLock = __acquireMutationLock(false);
   try {
     const manifest = __loadManifest();
     if (manifest.status === "rolled_back") return __summary(manifest);
@@ -1653,6 +1762,7 @@ async function __rollback() {
     __assertNotExpired(manifest);
     __appendJournal("rollback_started", { planHash: manifest.planHash });
     manifest.status = "rollback_started";
+    manifest.execution = __request.execution;
     __writeJsonAtomic("manifest.json", manifest);
     const { client } = await __loadMutationClient(manifest, true);
     try {
@@ -1663,7 +1773,7 @@ async function __rollback() {
         await __runImportTransaction(manifest, client, collection, true);
         return __summary(manifest);
       } else if (manifest.kind === "index") {
-        await __rollbackIndex(manifest, collection);
+        await __rollbackIndex(manifest, collection, client.db(manifest.request.database));
       } else if (manifest.kind === "transaction") {
         await __rollbackTransaction(manifest, client);
       } else {
@@ -1675,9 +1785,9 @@ async function __rollback() {
       __appendJournal("rolled_back", { planHash: manifest.planHash });
       return __summary(manifest);
     } catch (error) {
-      if (manifest.kind !== "import") manifest.status = "rollback_failed";
+      if (manifest.kind !== "import") manifest.status = manifest.kind === "index" && manifest.rollbackReceipt ? "rollback_unknown" : "rollback_failed";
       try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-      try { __appendJournal("rollback_failed", { code: error.code || "MONGODB_ROLLBACK_FAILED" }); } catch (_journalError) {}
+      try { __appendJournal(manifest.status, { code: error.code || "MONGODB_ROLLBACK_FAILED" }); } catch (_journalError) {}
       throw error;
     } finally {
       await __cleanup(() => client.close());
@@ -1764,6 +1874,8 @@ async function __guardedPrepare(recover) {
     let data;
     if (__request.mode === "list") {
       data = __list();
+    } else if (__request.mode === "recover_execution") {
+      data = await __recoverExecution();
     } else if (__request.mode === "get") {
       data = __summary(__loadManifest());
     } else if (__request.mode === "recover_prepare") {
@@ -1827,6 +1939,12 @@ export async function runMongoMutation(input = {}, options = {}) {
   let request, config, script;
   try {
     config = normalizeMongoMutationConfig(rawConfig);
+    const execution = input._businessExecution;
+    if (execution !== undefined && (!execution || !/^[a-f0-9]{64}$/.test(execution.intentId || "") ||
+        typeof execution.operationId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(execution.operationId) ||
+        Object.keys(execution).some((key) => !["intentId", "operationId"].includes(key)))) {
+      throw mutationError("invalid execution identity", "MONGODB_EXECUTION_IDENTITY_INVALID");
+    }
     const ticket = input._businessPrepare;
     if (ticket !== undefined && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
 
@@ -1861,11 +1979,15 @@ export async function runMongoMutation(input = {}, options = {}) {
     } else if (mode === "recover_prepare") {
       if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
       request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };
+    } else if (mode === "recover_execution") {
+      request = { mode, mutationId: normalizeMutationId(input.mutationId), planHash: normalizePlanHash(input.planHash),
+        database: assertDatabaseAllowed(input.database, config), execution };
     } else if (mode === "get") {
       request = { mode, mutationId: normalizeMutationId(input.mutationId), planHash: normalizePlanHash(input.planHash) };
     } else if (mode === "commit" || mode === "rollback") {
       request = {
         mode,
+        execution,
         mutationId: normalizeMutationId(input.mutationId),
         planHash: normalizePlanHash(input.planHash),
         operationId: options.operation?.operationId || randomUUID(),
@@ -1922,7 +2044,7 @@ export async function runMongoMutation(input = {}, options = {}) {
       operationId: options.operation?.operationId,
       layer: "mongodb-mutation",
       phase: mode,
-      retriable: error.retriable === true,
+      retriable: !["commit", "rollback"].includes(mode) && error.retriable === true,
       cause: error,
     });
   }
@@ -1956,7 +2078,7 @@ export async function runMongoMutation(input = {}, options = {}) {
       operationId: options.operation?.operationId,
       layer: "mongodb-mutation",
       phase: mode,
-      retriable: remoteResult?.timedOut === true,
+      retriable: !["commit", "rollback"].includes(mode) && remoteResult?.timedOut === true,
       cause: redactMongoSecrets(remoteResult?.stderr),
     });
   }

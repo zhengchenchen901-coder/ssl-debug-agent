@@ -1,0 +1,5 @@
+
+> remote-debug-agent-local-agent@2.4.0 build:runtime
+> node scripts/build-runtime.mjs
+
+Built Remote Debug Agent runtime 2.4.0:26e3b2d2128ffdd0e579921cc384ad35588d68082e555c07be0fb23c91f44214

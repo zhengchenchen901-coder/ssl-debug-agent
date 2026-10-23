@@ -7,7 +7,8 @@ import { runMongoMutation } from "../../mongodb-mutations.js";
 
 // Runs the emitted Node-12 helper against a fake driver and disposable files.
 // The path adapter cannot read a saved connection profile or business database.
-export function mutationPrepareHarness(t) {
+export function mutationPrepareHarness(t, { driver, uri } = {}) {
+  if (driver && (!uri || !/^mongodb:\/\/127\.0\.0\.1:\d+(,127\.0\.0\.1:\d+)*\//.test(uri))) throw Error("Real fixtures require an explicit loopback URI");
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "rda-prepare-fixture-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const config = { enabled: true, writeEnabled: true, database: "business", allowedDatabases: ["business"],
@@ -23,24 +24,37 @@ export function mutationPrepareHarness(t) {
   for (const method of ["existsSync", "lstatSync", "statSync", "mkdirSync", "chmodSync", "openSync", "unlinkSync", "readdirSync"]) {
     adapter[method] = (file, ...args) => fs[method](translate(file), ...args);
   }
-  adapter.readFileSync = (file, ...args) => file === config.configPath ? JSON.stringify({ fixture: { url: "fixture-only" } }) : fs.readFileSync(translate(file), ...args);
+  adapter.readFileSync = (file, ...args) => file === config.configPath ? JSON.stringify({ fixture: { url: uri || "fixture-only" } }) : fs.readFileSync(translate(file), ...args);
   adapter.writeFileSync = (file, ...args) => fs.writeFileSync(translate(file), ...args);
   adapter.renameSync = (from, to) => fs.renameSync(translate(from), translate(to));
   adapter.closeSync = fs.closeSync;
   adapter.fsyncSync = fs.fsyncSync;
   class MongoClient {
+    constructor(uri, options) { state.clientOptions = options; }
     async connect() {}
     async close() {}
-    db() { return { collection: () => ({
-      listIndexes: () => ({ toArray: async () => { state.reads++; if (state.beforeRead) await state.beforeRead(); return structuredClone(state.indexes); } }),
+    db() { return { command: async (command, options) => {
+      state.commandOptions = options;
+      state.writes++;
+      if (state.commandError) throw state.commandError;
+      const before = state.indexes.length;
+      if (state.concurrentIndex) state.indexes.push(structuredClone(command.indexes[0]));
+      const existed = command.indexes && state.indexes.some((i) => i.name === command.indexes[0].name);
+      if (command.createIndexes && !existed) state.indexes.push(structuredClone(command.indexes[0]));
+      if (command.dropIndexes) state.indexes = state.indexes.filter((i) => i.name !== command.index);
+      if (state.afterWrite) await state.afterWrite();
+      return { ok: 1, numIndexesBefore: existed ? state.indexes.length : before, numIndexesAfter: state.indexes.length, ...(existed ? { note: "all indexes already exist" } : {}) };
+    }, collection: () => ({
+      listIndexes: (options) => ({ toArray: async () => { state.readOptions = options; state.reads++; if (state.beforeRead) { const result = await state.beforeRead(); if (result) return result; } return structuredClone(state.indexes); } }),
       createIndex: async (key, options) => { state.writes++; state.indexes.push({ key, ...options }); if (state.afterWrite) await state.afterWrite(); },
+      dropIndex: async (name) => { state.writes++; state.indexes = state.indexes.filter((i) => i.name !== name); },
     }) }; }
   }
   const require = (name) => {
     if (name === "fs") return adapter;
     if (name === "path") return path.posix;
     if (name === "crypto") return crypto;
-    if (name === config.driverPath) return { MongoClient };
+    if (name === config.driverPath) return driver || { MongoClient };
     throw Error("Unexpected fixture module");
   };
   require.resolve = () => { throw Error("No BSON dependency in fixture"); };
@@ -48,7 +62,7 @@ export function mutationPrepareHarness(t) {
     state.sshCalls++;
     let stdout = "";
     const process = { pid: 123, exitCode: 0, stdout: { write: (chunk) => { stdout += chunk; } } };
-    await new vm.Script(stdin).runInNewContext({ require, process, Buffer });
+    await new vm.Script(stdin).runInNewContext({ require, process, Buffer, setTimeout });
     if (state.dropReply) { state.dropReply = false; throw Object.assign(Error("Lost helper reply"), { code: "ECONNRESET" }); }
     return { stdout, stderr: "", exitCode: process.exitCode, timedOut: false };
   } });

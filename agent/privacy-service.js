@@ -51,7 +51,9 @@ export class PrivacyService {
 // This authenticated protocol exposes only bounded operations. The recovery MCP
 // tool delegates here; it never receives capabilities or supplies remote proof.
 export async function privacyRequest(service, input, { instance, origin, dispatch } = {}) {
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "reconcile", "delivered", "cleanup", "dispatch_prepare", "recover_operation"];
+  // Reconciliation proof is fetched below by the Manager, never accepted from
+  // an MCP caller's result object. The store action remains internal.
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate = (scope) => {
     if (typeof scope !== "string" || scope.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
@@ -75,13 +77,15 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         const identity = record.identity || {};
         if (dispatch && /^[a-f0-9]{64}$/.test(identity.planHash || "") && (identity.mutationId || identity.jobId)) {
           try {
-            const receipt = await dispatch(target.id, identity.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
+            const receipt = await dispatch(target.id, identity.mutationId && record.execution ? "/mongodb/mutations/recover-execution" : identity.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
               { ...(identity.mutationId ? { mutationId: identity.mutationId } : { jobId: identity.jobId }), planHash: identity.planHash,
+                database: target.database, ...(record.execution ? { _businessExecution: record.execution } : {}),
                 operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
             const evidence = identity.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
             const saved = await service.call("reconcile", { ...input, result: createOutputGuard().sanitize(evidence).value });
-            return view({ ...record, ...saved }, saved.state === "uncertain" ? "remote_evidence_unavailable" : undefined);
-          } catch { return view(record, "remote_evidence_unavailable"); }
+            return view({ ...record, ...saved }, saved.state === "uncertain"
+              ? receipt.indexRecovery?.reason || (receipt.status === "commit_failed" && !record.execution ? "legacy_execution_evidence_required" : "remote_outcome_unproven") : undefined);
+          } catch (error) { return { ...view(record, "remote_evidence_unavailable"), recoveryCode: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_RECOVERY_UNAVAILABLE" }; }
         }
         return view(record, "legacy_evidence_required");
       }

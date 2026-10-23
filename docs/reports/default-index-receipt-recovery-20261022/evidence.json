@@ -1,0 +1,421 @@
+{
+  "date": "2026-10-22",
+  "instanceId": "default",
+  "database": "yenneferbak",
+  "originalFinalResult": {
+    "taskId": "83a30427-8af0-4e9f-9d62-e5cd919ade56",
+    "artifactId": "cb711933-a61c-4c56-a0ea-8f9a80a74978",
+    "status": "partial",
+    "indexesVerified": 18,
+    "normalReceipts": 2,
+    "unresolvedReceipts": 16
+  },
+  "currentReadOnlyJournalCheck": {
+    "operationId": "40700953-4df3-464f-90c3-f71e49a1a717",
+    "entries": [
+      {
+        "mutationId": "2ef0cc94-1228-474e-8eb1-07afca34367a",
+        "planHash": "4d38b6d8bde7bbcfa291e9a0106104a0d6d988a4dc53aeff1bec66dfb1059ebc",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_XXNFKUPS_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "2bf6e9f6-a0c1-4023-aad0-71b26fd8cb6d",
+        "planHash": "a4a8610a92f928ec1c8d5f7352447cbf82be185225ee888fae995ce333d2c304",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_WUZXXYSB_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "f23d964d-1994-44e1-9182-f4f73922660e",
+        "planHash": "e4c1c5025e9f82950a9387646090047821190b95568afbccaecc217a8cedca20",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_WADCADQG_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "7e27adfe-b9c5-4b70-aad1-f33d6c8e8f23",
+        "planHash": "3d9cf4aea22b36ff481fe7191d920b1fc5b604843262e502dc2df493277b12e8",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_RfSiYWYw_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "bd7d95de-4ac1-41cf-8a53-5ffe52e1d52f",
+        "planHash": "94c5adf67c1564b7ca01b102fc25e896b3b30563d2136c05e624e19bdacf4992",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_QCKDY5RN_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "4411bf08-3c95-4617-aece-a31b3327440c",
+        "planHash": "618fb4cd7bca4b1c32d548b0fb04d5ad13be18d15d428923fa651ff919f1e593",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_MJ318D4X_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "2aacffb2-0fad-4408-8c1d-03814a3c140a",
+        "planHash": "4c0b25a4dc9edf52cb385967e0da2b1c60341c7aed4710ff1fe04f1788fe185b",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_H1RC4DJT_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "020696cc-fd62-424d-b2ca-b3f25ecbb2f2",
+        "planHash": "12f92f9dbed9ab07d8de343210b4325e27716545d4870539f1f7bff5be0c8963",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_EK413LU2_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "610e84ec-e8bd-4f52-8a36-48d99fb05d9b",
+        "planHash": "14882a7aef56bef7178baefee014c1d63fe5fe994deff1332b54263a9535ef76",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_DTFDEDYS_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "c30e392b-571b-4d21-b324-f67418640422",
+        "planHash": "d52a8213e9cd224413f730fb38b8e1fc31a51b65d9e55197196ae0fc6f484287",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_DNHBARXF_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "d1ff13a5-5d35-4a15-8039-8d46c6bd1e94",
+        "planHash": "11b352399628ae8033da48a97a3af9c4ed56e4e123859d2b586cda0c189d861b",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_DCKTASK7_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "b7025b4e-096c-4feb-bdf2-7af499986e0e",
+        "planHash": "1ea968729110b711a8c9123d25242ce8ef0aefc03ca112e1c9ea268703867be0",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_9KXBNTNS_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "4982ff4c-0e81-4f20-bebf-789d144d7e79",
+        "planHash": "f698026aba2f029f376f5cc16ed9f69eac5530f674fa4cce573df124938078da",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_8AXXXXX7_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "daf2c038-9ec3-4dcc-a3cd-fed57732ceb1",
+        "planHash": "039e633b8abd75724bc272aff28072ea3e52668365dca783dc0de33fe9b0bbf5",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_547YF4BU_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "289bb4bf-31cf-4caf-ba87-94b5fc3351a9",
+        "planHash": "0f63b116bfdc4de1b59b728e4e570f64157c6f166531925aebb0ab944895f28c",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "Group_2VWUJEEP_Deleted_Users",
+        "name": "idx_deleted_users_customer"
+      },
+      {
+        "mutationId": "371832b9-efa6-458f-a90d-53d822663da5",
+        "planHash": "878338c9a3c5d62123d097a1e68e03f27f28fc45890d7851387cb56988604de6",
+        "status": "commit_failed",
+        "database": "yenneferbak",
+        "collection": "ConsumeRecord",
+        "name": "idx_consume_group_restaurant_customer"
+      }
+    ]
+  },
+  "currentConfiguration": {
+    "profile": "production",
+    "database": "yenneferbak",
+    "readPreference": "secondary",
+    "driverVersion": "3.3.4",
+    "driverVersionOperationId": "d31f5bb2-fc85-46c3-9511-4563e5c1a96e",
+    "policyVersion": "670dffdbf313eae9a1a60210e73fafcda291a514a3c5021ffd87e832ca0fae60"
+  },
+  "originalIntentInspect": {
+    "mode": "inspect",
+    "intentId": "62282d5d850ba05434794d9c858ab2ebee2ab904e3c7a0e4e9f5d233e38e2ed3",
+    "code": "BUSINESS_OPERATION_DENIED",
+    "operationId": "8ac7bdb7-fa87-478c-a1da-b0e8c4947638",
+    "meaning": "Current protected context cannot inspect the original intent; no context capabilities copied or protected records edited."
+  },
+  "historicalOperations": [
+    {
+      "collection": "ConsumeRecord",
+      "name": "idx_consume_group_restaurant_customer",
+      "key": {
+        "group_string_id": 1,
+        "res_string_id": 1,
+        "belonged_customer": 1
+      },
+      "mutationId": "371832b9-efa6-458f-a90d-53d822663da5",
+      "planHash": "878338c9a3c5d62123d097a1e68e03f27f28fc45890d7851387cb56988604de6",
+      "rollbackExpiresAt": "2026-10-29T14:55:30.409Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "62282d5d850ba05434794d9c858ab2ebee2ab904e3c7a0e4e9f5d233e38e2ed3",
+      "operationId": "40d30a05-f2ef-4626-a746-8a33c0d171f3",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_1GRWHTHR_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "94da6c60-3b01-4a38-bd51-0a7d20470302",
+      "planHash": "f8c6d8a45151a4dd5b29b82eb3045abee5eea4f98191332f0d12c2119e17d971",
+      "rollbackExpiresAt": "2026-10-29T15:06:46.757Z",
+      "status": "committed",
+      "operationId": "86714d7f-906b-4ab5-b014-3a063c278c95",
+      "closure": "original_committed_receipt"
+    },
+    {
+      "collection": "Group_2VWUJEEP_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "289bb4bf-31cf-4caf-ba87-94b5fc3351a9",
+      "planHash": "0f63b116bfdc4de1b59b728e4e570f64157c6f166531925aebb0ab944895f28c",
+      "rollbackExpiresAt": "2026-10-29T15:06:48.456Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "e81b401fea80d87b5a12f340f93049e8134617d8f158fca845a3814357344fc0",
+      "operationId": "b5bff5c8-9660-4352-abea-699f1132fcac",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_547YF4BU_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "daf2c038-9ec3-4dcc-a3cd-fed57732ceb1",
+      "planHash": "039e633b8abd75724bc272aff28072ea3e52668365dca783dc0de33fe9b0bbf5",
+      "rollbackExpiresAt": "2026-10-29T15:06:50.551Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "4f981a17cea382fcbac7798cabce535a7caca1884d5b2d80d5f338449d0114d4",
+      "operationId": "70bccd7e-7b34-48ce-8bed-9dcce918a9bd",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_8AXXXXX7_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "4982ff4c-0e81-4f20-bebf-789d144d7e79",
+      "planHash": "f698026aba2f029f376f5cc16ed9f69eac5530f674fa4cce573df124938078da",
+      "rollbackExpiresAt": "2026-10-29T15:06:52.198Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "e3fa4eb2957fbc1e7167dd0852c32f44da03ec69df17bbddbaf6a74a1c8eb221",
+      "operationId": "ece55cc9-6de1-4d64-9765-98712aba3b7e",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_9KXBNTNS_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "b7025b4e-096c-4feb-bdf2-7af499986e0e",
+      "planHash": "1ea968729110b711a8c9123d25242ce8ef0aefc03ca112e1c9ea268703867be0",
+      "rollbackExpiresAt": "2026-10-29T15:06:54.633Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "7c02c59855cedec4f4efc3189753a22563eed8b3982c484f964f7fadfe0681d8",
+      "operationId": "5dcd3ddb-e6dd-459a-a367-a0eee0640b5d",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_DCKTASK7_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "d1ff13a5-5d35-4a15-8039-8d46c6bd1e94",
+      "planHash": "11b352399628ae8033da48a97a3af9c4ed56e4e123859d2b586cda0c189d861b",
+      "rollbackExpiresAt": "2026-10-29T15:06:56.785Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "290112124e6fac82a12590c15bcf7510fa67ec43ddbc53b8a47cb2cf144dfaa3",
+      "operationId": "f2429da1-b5cb-404c-a0d4-0d9e6b757cbd",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_DNHBARXF_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "c30e392b-571b-4d21-b324-f67418640422",
+      "planHash": "d52a8213e9cd224413f730fb38b8e1fc31a51b65d9e55197196ae0fc6f484287",
+      "rollbackExpiresAt": "2026-10-29T15:06:58.499Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "ab01230b68631e62583af6e11c16000ccf2fd454abf584982b54d995e33d593a",
+      "operationId": "550c6146-e3a9-405a-9827-7eaab86f6e1c",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_DTFDEDYS_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "610e84ec-e8bd-4f52-8a36-48d99fb05d9b",
+      "planHash": "14882a7aef56bef7178baefee014c1d63fe5fe994deff1332b54263a9535ef76",
+      "rollbackExpiresAt": "2026-10-29T15:07:00.144Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "604899d2bbda9777fbafa327e456a2da9e0b39239f6cbdbe96feb6c3114eb16a",
+      "operationId": "6245701e-3f2a-44cd-bd8f-524c9c5c5f7f",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_EK413LU2_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "020696cc-fd62-424d-b2ca-b3f25ecbb2f2",
+      "planHash": "12f92f9dbed9ab07d8de343210b4325e27716545d4870539f1f7bff5be0c8963",
+      "rollbackExpiresAt": "2026-10-29T15:07:01.841Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "ae68e65c098d8dd22de90ef8d1150cc9b237cf58d60f9193b612ebdfbae40cad",
+      "operationId": "35b3e7a8-b6ba-4372-9e48-efd6a2cbda21",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_H1RC4DJT_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "2aacffb2-0fad-4408-8c1d-03814a3c140a",
+      "planHash": "4c0b25a4dc9edf52cb385967e0da2b1c60341c7aed4710ff1fe04f1788fe185b",
+      "rollbackExpiresAt": "2026-10-29T15:07:04.475Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "664ff592dabeb397f8826402b5454074c49d33d8518b131d855737c40ff86eb4",
+      "operationId": "62f089e5-df6b-413d-bb2e-86e7d27ff071",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_MJ318D4X_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "4411bf08-3c95-4617-aece-a31b3327440c",
+      "planHash": "618fb4cd7bca4b1c32d548b0fb04d5ad13be18d15d428923fa651ff919f1e593",
+      "rollbackExpiresAt": "2026-10-29T15:07:05.979Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "71832898f496df4925743c49a2ca65e1d5a4dcf1a9b2193c4c381a8142471430",
+      "operationId": "a055dc52-d573-4c46-b4cf-492b3ea45060",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_QCKDY5RN_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "bd7d95de-4ac1-41cf-8a53-5ffe52e1d52f",
+      "planHash": "94c5adf67c1564b7ca01b102fc25e896b3b30563d2136c05e624e19bdacf4992",
+      "rollbackExpiresAt": "2026-10-29T15:07:08.003Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "ef65b092c9a251c8e0ee92ee0e25657475848209643b84224c1cd4bb83c54071",
+      "operationId": "e29eaa66-b583-47a8-8bc2-2ff25b39f28a",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_RfSiYWYw_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "7e27adfe-b9c5-4b70-aad1-f33d6c8e8f23",
+      "planHash": "3d9cf4aea22b36ff481fe7191d920b1fc5b604843262e502dc2df493277b12e8",
+      "rollbackExpiresAt": "2026-10-29T15:07:10.252Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "782bae5ee845fa8a8cb053816ebfe65a58b0c1ef373c8ebd67d24b335cda8102",
+      "operationId": "5f3cb900-b1de-4eaf-a95e-4234c3ec15b1",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_WADCADQG_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "f23d964d-1994-44e1-9182-f4f73922660e",
+      "planHash": "e4c1c5025e9f82950a9387646090047821190b95568afbccaecc217a8cedca20",
+      "rollbackExpiresAt": "2026-10-29T15:07:13.307Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "fb2cbe272f411c8de3e44461e68520016ca4c762fce3643cafaf3512735624df",
+      "operationId": "5b1bed25-4170-4cba-9d7e-d0c6a2163293",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_WUZXXYSB_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "2bf6e9f6-a0c1-4023-aad0-71b26fd8cb6d",
+      "planHash": "a4a8610a92f928ec1c8d5f7352447cbf82be185225ee888fae995ce333d2c304",
+      "rollbackExpiresAt": "2026-10-29T15:07:15.445Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "be3cdcd7e3c71e05aa99e4101ccc02f57cffbbe4a781603208d06e7a10fe8308",
+      "operationId": "b6e74b70-9adb-4e58-8dd9-0b5a557b3bb8",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_XXNFKUPS_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "2ef0cc94-1228-474e-8eb1-07afca34367a",
+      "planHash": "4d38b6d8bde7bbcfa291e9a0106104a0d6d988a4dc53aeff1bec66dfb1059ebc",
+      "rollbackExpiresAt": "2026-10-29T15:07:17.169Z",
+      "status": "MONGODB_INDEX_COMMIT_UNKNOWN",
+      "intentId": "356f03b927ccf30e5bf2785cd6d371261272c9ff9072e270eb0b97a53a1a0b79",
+      "operationId": "546e5b71-4e36-4b16-a2e8-4a669be1f504",
+      "closure": "uncertain_no_new_execution_acknowledgement"
+    },
+    {
+      "collection": "Group_vcbtQbVi_Deleted_Users",
+      "name": "idx_deleted_users_customer",
+      "key": {
+        "belonged_customer_id": 1
+      },
+      "mutationId": "4936ed5f-0411-4060-b840-c8063579468b",
+      "planHash": "f6a272a7f1b5fb8184c4696548fbd4aedfe1724e64172e61a30c34931c504e43",
+      "rollbackExpiresAt": "2026-10-29T15:07:19.428Z",
+      "status": "committed",
+      "operationId": "cfbdd7dc-e0bd-4238-aaec-9dd0acea86b3",
+      "closure": "original_committed_receipt"
+    }
+  ],
+  "limits": [
+    "No production DDL or business writes; no recovery reconciliation invoked on live historical intents.",
+    "Per-call historical node selection and replication lag were not recorded; the production per-operation cause cannot be uniquely proven.",
+    "Local real-server tests used MongoDB 4.4.30, not production 4.2.25.",
+    "No historical rollback ownership or automatic rollback verification is claimed."
+  ]
+}

@@ -1,0 +1,666 @@
+
+> remote-debug-agent-plugin@2.4.0 test
+> node --test "test/*.test.js"
+
+TAP version 13
+# Subtest: isolated bundle enforces profile/hash authorization and sends a standalone fixed helper
+ok 1 - isolated bundle enforces profile/hash authorization and sends a standalone fixed helper
+  ---
+  duration_ms: 293.49925
+  type: 'test'
+  ...
+# Subtest: installed bundle enforces TTL policy without source checkout or node_modules
+ok 2 - installed bundle enforces TTL policy without source checkout or node_modules
+  ---
+  duration_ms: 391.948875
+  type: 'test'
+  ...
+# Subtest: bundled worker does not start the manager entrypoint
+ok 3 - bundled worker does not start the manager entrypoint
+  ---
+  duration_ms: 180.866791
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+ok 4 - persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 2691.324834
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+ok 5 - persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 1761.203292
+  type: 'test'
+  ...
+# (node:1002) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+ok 6 - real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 734.335625
+  type: 'test'
+  ...
+# (node:1002) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+ok 7 - real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 1045.475334
+  type: 'test'
+  ...
+# Subtest: business field policy distinguishes identifier words from BSON tags, flags and index definitions
+ok 8 - business field policy distinguishes identifier words from BSON tags, flags and index definitions
+  ---
+  duration_ms: 4.219958
+  type: 'test'
+  ...
+# Subtest: typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+ok 9 - typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+  ---
+  duration_ms: 5.121208
+  type: 'test'
+  ...
+# Subtest: aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+ok 10 - aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+  ---
+  duration_ms: 0.830125
+  type: 'test'
+  ...
+# Subtest: references cannot cross processes, instances, endpoints, databases or changed target profiles
+ok 11 - references cannot cross processes, instances, endpoints, databases or changed target profiles
+  ---
+  duration_ms: 0.539791
+  type: 'test'
+  ...
+# Subtest: known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+ok 12 - known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+  ---
+  duration_ms: 0.953209
+  type: 'test'
+  ...
+# Subtest: index definitions, plugin identifiers, plan hashes and counts retain their contracts
+ok 13 - index definitions, plugin identifiers, plan hashes and counts retain their contracts
+  ---
+  duration_ms: 0.250833
+  type: 'test'
+  ...
+# Subtest: privacy capacity fails closed and leaves existing references valid
+ok 14 - privacy capacity fails closed and leaves existing references valid
+  ---
+  duration_ms: 3.309291
+  type: 'test'
+  ...
+# Subtest: business substrings never alter import/job IDs or database metadata
+ok 15 - business substrings never alter import/job IDs or database metadata
+  ---
+  duration_ms: 0.482709
+  type: 'test'
+  ...
+# Subtest: aggregation aliases and derived identifier values remain private while counts remain numeric
+ok 16 - aggregation aliases and derived identifier values remain private while counts remain numeric
+  ---
+  duration_ms: 0.434958
+  type: 'test'
+  ...
+# Subtest: historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+ok 17 - historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+  ---
+  duration_ms: 43.375083
+  type: 'test'
+  ...
+# Subtest: local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+ok 18 - local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+  ---
+  duration_ms: 2457.981875
+  type: 'test'
+  ...
+# Subtest: preflight enforces the packaged range without changing the default runtime
+ok 19 - preflight enforces the packaged range without changing the default runtime
+  ---
+  duration_ms: 56.615416
+  type: 'test'
+  ...
+# Subtest: diagnostic dashboard reuses the original page, has no business endpoints, and safely releases its port
+ok 20 - diagnostic dashboard reuses the original page, has no business endpoints, and safely releases its port
+  ---
+  duration_ms: 112.155834
+  type: 'test'
+  ...
+# Subtest: offline report escapes embedded data and does not require an HTTP server
+ok 21 - offline report escapes embedded data and does not require an HTTP server
+  ---
+  duration_ms: 52.775709
+  type: 'test'
+  ...
+# Subtest: preflight rejects a corrupted runtime before MCP starts
+ok 22 - preflight rejects a corrupted runtime before MCP starts
+  ---
+  duration_ms: 2698.92325
+  type: 'test'
+  ...
+# Subtest: missing dashboard files still leave an escaped offline failure report
+ok 23 - missing dashboard files still leave an escaped offline failure report
+  ---
+  duration_ms: 1075.377584
+  type: 'test'
+  ...
+# Subtest: an unreadable config file reports its condition without leaking values
+ok 24 - an unreadable config file reports its condition without leaking values
+  ---
+  duration_ms: 23.324167
+  type: 'test'
+  ...
+# Subtest: launcher preserves a directory failure and saves its report in a writable fallback
+ok 25 - launcher preserves a directory failure and saves its report in a writable fallback
+  ---
+  duration_ms: 52.546583
+  type: 'test'
+  ...
+# Subtest: runtime events update only their own attempt and do not claim tool availability before discovery
+ok 26 - runtime events update only their own attempt and do not claim tool availability before discovery
+  ---
+  duration_ms: 98.421375
+  type: 'test'
+  ...
+# Subtest: launcher preserves MCP JSON-line handshake and tool registration
+ok 27 - launcher preserves MCP JSON-line handshake and tool registration
+  ---
+  duration_ms: 141.082
+  type: 'test'
+  ...
+# Subtest: a real Node 14 bootstrap relaunches MCP under the selected compatible runtime
+ok 28 - a real Node 14 bootstrap relaunches MCP under the selected compatible runtime
+  ---
+  duration_ms: 213.614292
+  type: 'test'
+  ...
+# Subtest: Python generates the offline dashboard when Node is absent
+ok 29 - Python generates the offline dashboard when Node is absent
+  ---
+  duration_ms: 73.674209
+  type: 'test'
+  ...
+# Subtest: final report publication preserves opaque references and scrubs known business values before POST
+ok 30 - final report publication preserves opaque references and scrubs known business values before POST
+  ---
+  duration_ms: 5.492417
+  type: 'test'
+  ...
+# Subtest: final-result tools reject unknown/unscoped arguments and invalid read bounds before requests
+ok 31 - final-result tools reject unknown/unscoped arguments and invalid read bounds before requests
+  ---
+  duration_ms: 0.748
+  type: 'test'
+  ...
+# Subtest: install.ps1 supports check-only, repeat installs, migration, and safe conflicts
+ok 32 - install.ps1 supports check-only, repeat installs, migration, and safe conflicts # SKIP
+  ---
+  duration_ms: 0.297416
+  type: 'test'
+  ...
+# Subtest: health proofs cannot be replayed for another challenge or listener
+ok 33 - health proofs cannot be replayed for another challenge or listener
+  ---
+  duration_ms: 0.879542
+  type: 'test'
+  ...
+# Subtest: MCP preserves authentication errors and does not restart or fall back
+ok 34 - MCP preserves authentication errors and does not restart or fall back
+  ---
+  duration_ms: 190.872167
+  type: 'test'
+  ...
+# Subtest: MCP refuses legacy unauthenticated Managers before sending credentials
+ok 35 - MCP refuses legacy unauthenticated Managers before sending credentials
+  ---
+  duration_ms: 171.165584
+  type: 'test'
+  ...
+# Subtest: explicit Agent credentials are read-only and never regenerated when absent
+ok 36 - explicit Agent credentials are read-only and never regenerated when absent
+  ---
+  duration_ms: 152.43825
+  type: 'test'
+  ...
+# Subtest: MCP rejects HTTP redirects without forwarding credentials
+ok 37 - MCP rejects HTTP redirects without forwarding credentials
+  ---
+  duration_ms: 179.280083
+  type: 'test'
+  ...
+# Subtest: a process occupying the Agent port cannot obtain the bearer credential by claiming to be an Agent
+ok 38 - a process occupying the Agent port cannot obtain the bearer credential by claiming to be an Agent
+  ---
+  duration_ms: 184.818209
+  type: 'test'
+  ...
+# (node:1013) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP server exposes remote debug tools and forwards calls
+ok 39 - MCP server exposes remote debug tools and forwards calls
+  ---
+  duration_ms: 4655.181709
+  type: 'test'
+  ...
+# Subtest: service tools preserve startup evidence and reject arbitrary arguments before forwarding
+ok 40 - service tools preserve startup evidence and reject arbitrary arguments before forwarding
+  ---
+  duration_ms: 107.510458
+  type: 'test'
+  ...
+# Subtest: sandbox tools forward only scoped identities and keep local audit access on the Manager
+ok 41 - sandbox tools forward only scoped identities and keep local audit access on the Manager
+  ---
+  duration_ms: 105.64975
+  type: 'test'
+  ...
+# Subtest: MCP server supports newline-delimited stdio clients
+ok 42 - MCP server supports newline-delimited stdio clients
+  ---
+  duration_ms: 43.503792
+  type: 'test'
+  ...
+# Subtest: MCP forwards approved command draft tools
+ok 43 - MCP forwards approved command draft tools
+  ---
+  duration_ms: 90.930584
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent from .env port when no service is listening
+ok 44 - MCP starts the local agent from .env port when no service is listening
+  ---
+  duration_ms: 371.3795
+  type: 'test'
+  ...
+# Subtest: MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE
+ok 45 - MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE
+  ---
+  duration_ms: 60.879834
+  type: 'test'
+  ...
+# Subtest: MCP notifications/cancelled aborts an in-flight manager request
+ok 46 - MCP notifications/cancelled aborts an in-flight manager request
+  ---
+  duration_ms: 63.325125
+  type: 'test'
+  ...
+# Subtest: MCP serializes concurrent local agent startup across processes
+ok 47 - MCP serializes concurrent local agent startup across processes
+  ---
+  duration_ms: 1333.5705
+  type: 'test'
+  ...
+# Subtest: MCP clears stale startup locks before starting the local agent
+ok 48 - MCP clears stale startup locks before starting the local agent
+  ---
+  duration_ms: 596.434709
+  type: 'test'
+  ...
+# Subtest: MCP registers and renews a desktop lease for plugin-started local agents
+ok 49 - MCP registers and renews a desktop lease for plugin-started local agents
+  ---
+  duration_ms: 337.973708
+  type: 'test'
+  ...
+# Subtest: MCP heartbeat restarts a missing plugin-started local agent
+ok 50 - MCP heartbeat restarts a missing plugin-started local agent
+  ---
+  duration_ms: 15647.044833
+  type: 'test'
+  ...
+# Subtest: MCP uses 4343 as the default local agent port
+ok 51 - MCP uses 4343 as the default local agent port # SKIP port 4343 is already in use
+  ---
+  duration_ms: 0.768
+  type: 'test'
+  ...
+# Subtest: MCP prewarms the local agent after initialize
+ok 52 - MCP prewarms the local agent after initialize
+  ---
+  duration_ms: 149.002333
+  type: 'test'
+  ...
+# Subtest: bundled MCP runs from an isolated cache after the clone directory is renamed
+ok 53 - bundled MCP runs from an isolated cache after the clone directory is renamed
+  ---
+  duration_ms: 1368.589125
+  type: 'test'
+  ...
+# Subtest: MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source
+ok 54 - MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source
+  ---
+  duration_ms: 78.536916
+  type: 'test'
+  ...
+# Subtest: external V2 agent URLs remain usable without a bundled runtime
+ok 55 - external V2 agent URLs remain usable without a bundled runtime
+  ---
+  duration_ms: 62.121333
+  type: 'test'
+  ...
+# Subtest: MCP replaces an outdated source manager when the runtime id differs
+ok 56 - MCP replaces an outdated source manager when the runtime id differs
+  ---
+  duration_ms: 612.280417
+  type: 'test'
+  ...
+# Subtest: MCP reuses an online manager even when target fields differ
+ok 57 - MCP reuses an online manager even when target fields differ
+  ---
+  duration_ms: 170.041458
+  type: 'test'
+  ...
+# Subtest: MCP keeps the manager process when .env target config changes
+ok 58 - MCP keeps the manager process when .env target config changes
+  ---
+  duration_ms: 336.033916
+  type: 'test'
+  ...
+# Subtest: MCP starts a new local agent when .env port changes
+ok 59 - MCP starts a new local agent when .env port changes
+  ---
+  duration_ms: 834.661792
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent on a fallback port when the configured port is occupied
+ok 60 - MCP starts the local agent on a fallback port when the configured port is occupied
+  ---
+  duration_ms: 347.003125
+  type: 'test'
+  ...
+# Subtest: compatible current Node is kept without probing another runtime
+ok 61 - compatible current Node is kept without probing another runtime
+  ---
+  duration_ms: 26.708917
+  type: 'test'
+  ...
+# Subtest: PATH selection uses the probed version and ignores incompatible runtimes
+ok 62 - PATH selection uses the probed version and ignores incompatible runtimes
+  ---
+  duration_ms: 39.512833
+  type: 'test'
+  ...
+# Subtest: NVM chooses the latest compatible version without changing its default
+ok 63 - NVM chooses the latest compatible version without changing its default
+  ---
+  duration_ms: 13.335417
+  type: 'test'
+  ...
+# Subtest: invalid explicit Node is reported instead of ignored
+ok 64 - invalid explicit Node is reported instead of ignored
+  ---
+  duration_ms: 1.141334
+  type: 'test'
+  ...
+# Subtest: an explicit symlink to the running Node resolves without a relaunch loop
+ok 65 - an explicit symlink to the running Node resolves without a relaunch loop
+  ---
+  duration_ms: 1.764709
+  type: 'test'
+  ...
+# (node:1016) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line output guards success, errors, files, logs and documents
+ok 66 - real MCP json-line output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 713.057042
+  type: 'test'
+  ...
+# (node:1016) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length output guards success, errors, files, logs and documents
+ok 67 - real MCP content-length output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 859.651792
+  type: 'test'
+  ...
+# Subtest: malformed JSON cannot expose parser input through stderr
+ok 68 - malformed JSON cannot expose parser input through stderr
+  ---
+  duration_ms: 113.5685
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 69 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 12.814375
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 70 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 0.464084
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 71 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 0.327417
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 72 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 1.3645
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 73 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 1.27725
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 74 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.468583
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 75 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 0.941083
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 76 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 0.234459
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 77 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 0.478459
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 78 - each registered tool must have an output contract
+  ---
+  duration_ms: 12.459667
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 79 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 0.699167
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 80 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 73.18575
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 81 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.268125
+  type: 'test'
+  ...
+# Subtest: service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+ok 82 - service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+  ---
+  duration_ms: 0.613542
+  type: 'test'
+  ...
+# Subtest: an unavailable output guard still permits fixed block previews without echoing request metadata
+ok 83 - an unavailable output guard still permits fixed block previews without echoing request metadata
+  ---
+  duration_ms: 0.799083
+  type: 'test'
+  ...
+# Subtest: preview publisher stays bounded behind slow requests and reports dropped records
+ok 84 - preview publisher stays bounded behind slow requests and reports dropped records
+  ---
+  duration_ms: 5.516292
+  type: 'test'
+  ...
+# Subtest: darwin preserves owner checks and 0700/0600 without loading Windows code
+ok 85 - darwin preserves owner checks and 0700/0600 without loading Windows code
+  ---
+  duration_ms: 1.491875
+  type: 'test'
+  ...
+# Subtest: linux preserves owner checks and 0700/0600 without loading Windows code
+ok 86 - linux preserves owner checks and 0700/0600 without loading Windows code
+  ---
+  duration_ms: 0.426125
+  type: 'test'
+  ...
+# Subtest: Windows initializes and reuses private storage with an incompatible inherited module path
+ok 87 - Windows initializes and reuses private storage with an incompatible inherited module path # SKIP
+  ---
+  duration_ms: 5.97325
+  type: 'test'
+  ...
+# Subtest: Windows rejects a credential accessible to Everyone
+ok 88 - Windows rejects a credential accessible to Everyone # SKIP
+  ---
+  duration_ms: 0.054459
+  type: 'test'
+  ...
+# Subtest: preflight reports permission failure before MCP startup without touching credentials
+ok 89 - preflight reports permission failure before MCP startup without touching credentials
+  ---
+  duration_ms: 16.695208
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + source Manager
+ok 90 - index allowlist rejection is durable and retryable with source MCP + source Manager
+  ---
+  duration_ms: 1415.000959
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + bundled Manager
+ok 91 - index allowlist rejection is durable and retryable with source MCP + bundled Manager
+  ---
+  duration_ms: 1208.67125
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: prepare success lost on delivery is cached across restart, never dispatched twice
+ok 92 - prepare success lost on delivery is cached across restart, never dispatched twice
+  ---
+  duration_ms: 545.668334
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost remote prepare reply recovers by exact identity without a second prepare
+ok 93 - lost remote prepare reply recovers by exact identity without a second prepare
+  ---
+  duration_ms: 604.56175
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: no-plan recovery fences the old attempt before the same intent can retry
+ok 94 - no-plan recovery fences the old attempt before the same intent can retry
+  ---
+  duration_ms: 495.7715
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: validation rejection lost on delivery stays retryable after restart
+ok 95 - validation rejection lost on delivery stays retryable after restart
+  ---
+  duration_ms: 375.509958
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: committed index with a lost response reconciles without repeating createIndex
+ok 96 - committed index with a lost response reconciles without repeating createIndex
+  ---
+  duration_ms: 446.729042
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+ok 97 - MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+  ---
+  duration_ms: 629.891917
+  type: 'test'
+  ...
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1028) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery reports missing execution evidence and never adopts a same-spec index
+ok 98 - MCP recovery reports missing execution evidence and never adopts a same-spec index
+  ---
+  duration_ms: 290.679917
+  type: 'test'
+  ...
+# Subtest: data and config paths follow compatibility precedence
+ok 99 - data and config paths follow compatibility precedence
+  ---
+  duration_ms: 7.295167
+  type: 'test'
+  ...
+# Subtest: legacy migration copies only persistent data and never overwrites targets
+ok 100 - legacy migration copies only persistent data and never overwrites targets
+  ---
+  duration_ms: 187.227833
+  type: 'test'
+  ...
+# Subtest: legacy project-root mode migrates .env to config.env in place
+ok 101 - legacy project-root mode migrates .env to config.env in place
+  ---
+  duration_ms: 54.02075
+  type: 'test'
+  ...
+# Subtest: bundled runtime manifest is readable from the plugin root
+ok 102 - bundled runtime manifest is readable from the plugin root
+  ---
+  duration_ms: 0.809417
+  type: 'test'
+  ...
+1..102
+# tests 102
+# suites 0
+# pass 98
+# fail 0
+# cancelled 0
+# skipped 4
+# todo 0
+# duration_ms 27518.594833

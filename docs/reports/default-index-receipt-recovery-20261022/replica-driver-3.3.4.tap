@@ -1,0 +1,24 @@
+TAP version 13
+# (node:808) Warning: Accessing non-existent property 'count' of module exports inside circular dependency
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:808) Warning: Accessing non-existent property 'findOne' of module exports inside circular dependency
+# (node:808) Warning: Accessing non-existent property 'remove' of module exports inside circular dependency
+# (node:808) Warning: Accessing non-existent property 'updateOne' of module exports inside circular dependency
+# (node:808) [DEP0170] DeprecationWarning: The URL [LOCAL_FIXTURE_URI] is invalid. Future versions of Node.js will throw an error.
+# Subtest: real secondary lag reproduces legacy verification failure; fixed helper recovers with one DDL
+ok 1 - real secondary lag reproduces legacy verification failure; fixed helper recovers with one DDL
+  ---
+  duration_ms: 699.2385
+  type: 'test'
+  ...
+# Legacy command acknowledged; secondary catalog missing; primary catalog present (replication deliberately paused).
+# New helper: one createIndexes, acknowledged journal, failed metadata observation, exact recovery, idempotent execute, verified compensating rollback.
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 740.209167

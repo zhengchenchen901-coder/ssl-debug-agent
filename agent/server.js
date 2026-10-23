@@ -1656,6 +1656,8 @@ export function createApp(options = {}) {
     handleMongoMutation(request, response, "recover_prepare", "/mongodb/mutations/recover-prepare"));
   app.post("/mongodb/mutations/get", (request, response) =>
     handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
+  app.post("/mongodb/mutations/recover-execution", (request, response) =>
+    handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
   app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));

@@ -28,6 +28,8 @@ for (const bundled of [false, true]) test(`persistent references across MCP + ac
     else if (req.url === "/mongodb/mutations/recover-prepare") result = { ...preparedIndex, prepare: input._businessPrepare, recovery: "prepared" };
     else if (req.url === "/mongodb/mutations/execute") { executed++; result = { status: "committed", mutationId: input.mutationId, planHash: input.planHash, __crashAfterRemote: crash }; crash = false; }
     else if (req.url === "/mongodb/mutations/list") result = { mutations: [{ mutationId: "mutation-uncertain", status: "committed" }] };
+    else if (req.url === "/mongodb/mutations/recover-execution") result = { mutationId: input.mutationId, planHash: input.planHash,
+      status: "commit_unknown", execution: input._businessExecution, indexRecovery: { reason: "execution_acknowledgement_required" } };
     else result = { database: "business", mutationId: "mutation-1", planHash: "a".repeat(64), affectedIds: [raw], affectedCount: 1 };
     res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify({ ok: true, ...result }));
   });
@@ -66,7 +68,9 @@ for (const bundled of [false, true]) test(`persistent references across MCP + ac
   await c.stop("SIGKILL"); await start(); const d = await peer();
   const retry = await d.call("remote_debug_mongodb_execute_mutation", { mutationId: "mutation-uncertain", planHash: "a".repeat(64), confirmation: "确认执行" });
   assert.equal(retry.payload.error.code, "BUSINESS_OPERATION_RECONCILIATION_REQUIRED"); assert.equal(executed, 1);
-  assert.equal(requests.at(-1).route, "/mongodb/mutations/list", "Read the remote journal, never replay the uncertain commit");
+  assert.equal(requests.at(-1).route, "/mongodb/mutations/recover-execution", "Read the exact remote journal, never replay the uncertain commit");
+  assert.equal(requests.at(-1).input.planHash, "a".repeat(64));
+  assert.match(requests.at(-1).input._businessExecution.intentId, /^[a-f0-9]{64}$/);
   const normal = { mutationId: "mutation-known", planHash: "b".repeat(64), confirmation: "确认执行" };
   const committed = await d.call("remote_debug_mongodb_execute_mutation", normal); assert.notEqual(committed.isError, true); assert.equal(executed, 2);
   const repeated = await d.call("remote_debug_mongodb_execute_mutation", normal); assert.notEqual(repeated.isError, true); assert.equal(executed, 2);

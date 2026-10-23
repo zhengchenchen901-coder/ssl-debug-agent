@@ -113,7 +113,7 @@ test("validation rejection lost on delivery stays retryable after restart", asyn
 test("committed index with a lost response reconciles without repeating createIndex", async (t) => {
   const h = mutationPrepareHarness(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: h.config };
   const f = await localMcp(t, { instance, handler: (route, body) => h.run({ ...body,
-    mode: route.endsWith("/execute") ? "commit" : route.endsWith("/list") ? "list" : route.endsWith("/get") ? "get" : "prepare" }) });
+    mode: route.endsWith("/recover-execution") ? "recover_execution" : route.endsWith("/execute") ? "commit" : route.endsWith("/list") ? "list" : route.endsWith("/get") ? "get" : "prepare" }) });
   const prepared = await f.call("remote_debug_mongodb_prepare_index", index), plan = prepared.payload;
   const execute = { instanceId: "isolated", mutationId: plan.mutationId, planHash: plan.planHash, confirmation: "确认执行" };
   h.state.dropReply = true;
@@ -125,4 +125,34 @@ test("committed index with a lost response reconciles without repeating createIn
   const repeated = await f.call("remote_debug_mongodb_execute_mutation", execute);
   assert.equal(repeated.payload.status, "committed"); assert.equal(h.state.writes, 1);
   assert.equal(f.requests.filter((r) => r.path === "/mongodb/mutations/execute").length, 1);
+});
+
+test("MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL", async (t) => {
+  const h = mutationPrepareHarness(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: h.config };
+  const f = await localMcp(t, { instance, handler: (route, body) => h.run({ ...body,
+    mode: route.endsWith("/recover-execution") ? "recover_execution" : route.endsWith("/execute") ? "commit" : "prepare" }) });
+  const plan = (await f.call("remote_debug_mongodb_prepare_index", index)).payload;
+  h.state.afterWrite = () => { h.state.beforeRead = () => [{ name: "_id_", key: { _id: 1 } }]; };
+  const args = { instanceId: "isolated", mutationId: plan.mutationId, planHash: plan.planHash, confirmation: "确认执行" };
+  const lost = await f.call("remote_debug_mongodb_execute_mutation", args);
+  assert.equal(lost.payload.error.code, "MONGODB_INDEX_COMMIT_UNKNOWN"); assert.equal(h.state.writes, 1);
+  await f.restart(); delete h.state.beforeRead; delete h.state.afterWrite;
+  const recovered = await f.call("remote_debug_mongodb_recover_operation", { instanceId: "isolated", database: "business", intentId: lost.payload.error.intentId, mode: "reconcile" });
+  assert.equal(recovered.payload.state, "complete"); assert.equal(recovered.payload.result.status, "committed");
+  assert.equal((await f.call("remote_debug_mongodb_execute_mutation", args)).payload.status, "committed");
+  assert.equal(h.state.writes, 1); assert.equal(f.requests.filter((r) => r.path === "/mongodb/mutations/execute").length, 1);
+});
+
+test("MCP recovery reports missing execution evidence and never adopts a same-spec index", async (t) => {
+  const h = mutationPrepareHarness(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: h.config };
+  const f = await localMcp(t, { instance, handler: (route, body) => h.run({ ...body,
+    mode: route.endsWith("/recover-execution") ? "recover_execution" : route.endsWith("/execute") ? "commit" : "prepare" }) });
+  const plan = (await f.call("remote_debug_mongodb_prepare_index", index)).payload;
+  h.state.afterWrite = () => { throw Object.assign(Error("disconnected"), { code: "ECONNRESET" }); };
+  const args = { instanceId: "isolated", mutationId: plan.mutationId, planHash: plan.planHash, confirmation: "确认执行" };
+  const lost = await f.call("remote_debug_mongodb_execute_mutation", args); await f.restart();
+  const recovered = await f.call("remote_debug_mongodb_recover_operation", { instanceId: "isolated", database: "business", intentId: lost.payload.error.intentId, mode: "reconcile" });
+  assert.equal(recovered.payload.state, "uncertain"); assert.equal(recovered.payload.reason, "execution_acknowledgement_required");
+  assert.equal((await f.call("remote_debug_mongodb_execute_mutation", args)).payload.error.code, "BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+  assert.equal(h.state.writes, 1);
 });

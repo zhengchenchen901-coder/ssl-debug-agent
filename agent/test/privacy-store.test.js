@@ -228,3 +228,23 @@ test("worker queue overload is bounded and returns a redacted busy error", async
   assert.equal(results.filter((r) => r.status === "fulfilled").length, 2);
   for (const r of results.filter((r) => r.status === "rejected")) assert.equal(r.reason.code, "BUSINESS_STORAGE_BUSY");
 });
+
+test("claimed executions reconcile only the exact original intent and operation", async (t) => {
+  const f = fixture(t), identity = { mutationId: "bound-commit", planHash: "a".repeat(64) };
+  const intent = f.call("intent", { route: "/mongodb/mutations/execute", request: identity, identity });
+  const execution = f.call("claim_execution", { id: intent.id, operationId: "commit-operation" });
+  f.reopen();
+  assert.throws(() => f.call("claim_execution", { id: intent.id, operationId: "second-operation" }), { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED" });
+  for (const wrong of [undefined, { ...execution, intentId: "b".repeat(64) }, { ...execution, operationId: "other" }]) {
+    assert.equal(f.call("reconcile", { id: intent.id, result: { ok: true, entries: [{ ...identity, execution: wrong, status: "committed" }] } }).state, "uncertain");
+  }
+  assert.equal(f.call("reconcile", { id: intent.id, result: { ok: true, entries: [{ ...identity, execution, status: "committed" }] } }).state, "complete");
+  assert.ok(f.store.db.prepare("SELECT pinned FROM records WHERE kind='task'").all().every((r) => r.pinned === 0), "Resolved intent no longer pins its synthetic task indefinitely");
+});
+
+test("public privacy RPC rejects caller-supplied reconciliation evidence", async (t) => {
+  const f = fixture(t), instance = { id: "local", mongodb: { database: "business" } }, origin = "http://127.0.0.1:4343";
+  const scope = businessTargetScope(origin, instance, "business");
+  await assert.rejects(privacyRequest({}, { action: "reconcile", auth: f.auth, scope, result: { ok: true } },
+    { instance: () => instance, origin }), { code: "BUSINESS_STORAGE_ACTION_DENIED" });
+});

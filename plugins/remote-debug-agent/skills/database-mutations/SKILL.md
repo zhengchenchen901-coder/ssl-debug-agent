@@ -35,6 +35,20 @@ confirmation. Legacy intents without a verifiable identity remain protected
 with `legacy_evidence_required`; missing lists/indexes and elapsed lock age are
 not recovery proof. Never clear a journal, local record or lock to bypass this.
 
+After index execute/rollback, `commit_unknown` / `rollback_unknown` are never
+permission to repeat DDL. Reconcile the original intent in its original protected
+context. The Manager reads the exact mutation/plan and execution acknowledgement,
+then performs bounded primary catalog verification; only verified ownership can
+complete the receipt and retain compensating rollback evidence. A concurrent
+same-spec no-op or a matching index name is not ownership evidence. Historical
+`commit_failed` journals without an execution acknowledgement remain uncertain
+(`legacy_execution_evidence_required`); do not rewrite them or create replacement
+plans. Missing protected context must be restored through its supported context
+attachment, not by copying capabilities into chat. Without original trusted
+evidence, retain the unresolved receipt and report the independently verified
+database state separately. The rollback TTL is a request window, not automatic
+rollback or proof that historical compensation can run.
+
 Use the structured MongoDB mutation tools for database changes. Do not use
 `remote_debug_run_command`, `mongosh --eval`, arbitrary JavaScript, or a raw
 MongoDB URI for writes.

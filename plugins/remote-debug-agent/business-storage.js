@@ -123,22 +123,20 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
           if (recovered.state === "prepared") return { id: intent.id, state: "prepared", result: recovered.result };
           throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED", intent.id);
         }
-        let evidence = { state: "unavailable" };
         try {
-          const statusRoute = identity.jobId ? "/mongodb/bulk/job" : identity.mutationId ? "/mongodb/mutations/list" : undefined;
-          if (statusRoute) {
-            const result = await fetchJson(settings, statusRoute, { method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ instanceId: request.instanceId, ...(identity.jobId ? { jobId: identity.jobId } : {}) }), timeoutMs: 15000, signal });
-            // Existing remote journal/lease/receipts remain authoritative. An
-            // observation never changes an uncertain intent to replayable.
-            evidence = guard.sanitize(result.parsed).value;
-          }
-          const reconciled = await call(settings, { action: "reconcile", scope, id: intent.id, result: evidence }, signal);
+          // The Manager obtains exact evidence; bounded listings can omit an old
+          // journal and cannot repair a post-command verification failure.
+          const reconciled = await call(settings, { action: "recover_operation", mode: "reconcile", scope, id: intent.id }, signal);
           if (reconciled.state === "complete") return { id: intent.id, ...reconciled };
         } catch { /* Remain uncertain and pinned. */ }
         throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED", intent.id);
       }
       return intent;
+    },
+    async bindExecution(settings, intent, scope, operation) {
+      try {
+        return await call(settings, { action: "claim_execution", id: intent.id, scope, operationId: operation.operationId }, operation.signal);
+      } catch (error) { error.intentId = intent.id; throw error; }
     },
     async dispatchPrepare(settings, intent, scope, request, operation) {
       try {

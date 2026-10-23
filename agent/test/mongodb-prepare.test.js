@@ -72,7 +72,7 @@ test("index created with an uncertain result is not executed again or inferred f
   const execute = { mode: "commit", mutationId: plan.mutationId, planHash: plan.planHash, confirmation: "确认执行" };
   await assert.rejects(h.run(execute));
   assert.equal(h.state.writes, 1);
-  const found = await h.run(recover); assert.equal(found.status, "commit_failed");
+  const found = await h.run(recover); assert.equal(found.status, "commit_unknown");
   await assert.rejects(h.run(execute), { code: "MONGODB_MUTATION_STATE_INVALID" });
   assert.equal(h.state.writes, 1);
 });

@@ -2995,6 +2995,9 @@ async function requestAgent(pathName, payload, options = {}) {
         { intentId: prepared.intentId || operation.privacyIntent.id });
       return prepared;
     }
+    if (operation.privacyIntent && ["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(pathName)) {
+      payload = { ...payload, _businessExecution: await businessStorage.bindExecution(settings, operation.privacyIntent, scope, operation) };
+    }
   }
   let response;
   let parsed;
