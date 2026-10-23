@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-23T01:48:51.338Z",
+  "runtimeId": "2.4.0:26e3b2d2128ffdd0e579921cc384ad35588d68082e555c07be0fb23c91f44214",
+  "pid": 33467,
+  "lifecycle": "desktop",
+  "instances": [
+    {
+      "id": "default",
+      "status": "running",
+      "health": "healthy",
+      "workerPid": 33502,
+      "taskPageKeys": [
+        "ok",
+        "tasks",
+        "total",
+        "nextOffset",
+        "pool",
+        "revision"
+      ],
+      "total": 0,
+      "tasks": []
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "health": "healthy",
+      "workerPid": 33503,
+      "taskPageKeys": [
+        "ok",
+        "tasks",
+        "total",
+        "nextOffset",
+        "pool",
+        "revision"
+      ],
+      "total": 0,
+      "tasks": []
+    }
+  ]
+}

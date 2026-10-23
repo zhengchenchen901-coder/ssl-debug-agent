@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: bundled worker does not start the manager entrypoint
+ok 1 - bundled worker does not start the manager entrypoint
+  ---
+  duration_ms: 62.19075
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + source Manager
+ok 2 - index allowlist rejection is durable and retryable with source MCP + source Manager
+  ---
+  duration_ms: 242.558208
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + bundled Manager
+ok 3 - index allowlist rejection is durable and retryable with source MCP + bundled Manager
+  ---
+  duration_ms: 256.961125
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: prepare success lost on delivery is cached across restart, never dispatched twice
+ok 4 - prepare success lost on delivery is cached across restart, never dispatched twice
+  ---
+  duration_ms: 205.033083
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost remote prepare reply recovers by exact identity without a second prepare
+ok 5 - lost remote prepare reply recovers by exact identity without a second prepare
+  ---
+  duration_ms: 216.352541
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: no-plan recovery fences the old attempt before the same intent can retry
+ok 6 - no-plan recovery fences the old attempt before the same intent can retry
+  ---
+  duration_ms: 164.961916
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: validation rejection lost on delivery stays retryable after restart
+ok 7 - validation rejection lost on delivery stays retryable after restart
+  ---
+  duration_ms: 201.536625
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: committed index with a lost response reconciles without repeating createIndex
+ok 8 - committed index with a lost response reconciles without repeating createIndex
+  ---
+  duration_ms: 278.7765
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+ok 9 - MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+  ---
+  duration_ms: 614.567208
+  type: 'test'
+  ...
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:33425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery reports missing execution evidence and never adopts a same-spec index
+ok 10 - MCP recovery reports missing execution evidence and never adopts a same-spec index
+  ---
+  duration_ms: 272.181792
+  type: 'test'
+  ...
+# Subtest: data and config paths follow compatibility precedence
+ok 11 - data and config paths follow compatibility precedence
+  ---
+  duration_ms: 1.878292
+  type: 'test'
+  ...
+# Subtest: legacy migration copies only persistent data and never overwrites targets
+ok 12 - legacy migration copies only persistent data and never overwrites targets
+  ---
+  duration_ms: 4.911
+  type: 'test'
+  ...
+# Subtest: legacy project-root mode migrates .env to config.env in place
+ok 13 - legacy project-root mode migrates .env to config.env in place
+  ---
+  duration_ms: 0.605958
+  type: 'test'
+  ...
+# Subtest: bundled runtime manifest is readable from the plugin root
+ok 14 - bundled runtime manifest is readable from the plugin root
+  ---
+  duration_ms: 0.504167
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2552.194417

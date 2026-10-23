@@ -1,0 +1,31 @@
+{
+  "initialize": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261023"
+  },
+  "toolCount": 50,
+  "recoveryTool": true,
+  "capabilityCheck": "passed",
+  "instanceListCheck": "passed",
+  "restoreReceipts": [
+    {
+      "id": "default",
+      "result": "recovered"
+    },
+    {
+      "id": "test-server",
+      "result": "recovered"
+    },
+    {
+      "id": "default",
+      "status": "running",
+      "health": "healthy"
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "health": "healthy"
+    }
+  ],
+  "diagnosticBytes": 0
+}
