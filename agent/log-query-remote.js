@@ -114,19 +114,19 @@ export async function remoteLogQuery(input, runtime = {}) {
       try {
         const resolved = await canonical(directory);
         const handle = await fs.promises.opendir(resolved);
-        try {
-          for await (const entry of handle) {
-            active();
-            if (job) await runtime.check?.("discovery", 0);
-            if (++directoryEntries > input.maxDirectoryEntries) { listingTruncated = true; break; }
-            if ((!entry.isFile() && !entry.isSymbolicLink()) || !logName(entry.name) || !fileMatches(entry.name)) continue;
-            try { await addFile(path.join(directory, entry.name), resolved); }
-            catch (error) {
-              if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;
-              warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });
-            }
+        // The iterator owns closure, including break/throw. Closing again can
+        // throw synchronously on Node 12 and mask the original read error.
+        for await (const entry of handle) {
+          active();
+          if (job) await runtime.check?.("discovery", 0);
+          if (++directoryEntries > input.maxDirectoryEntries) { listingTruncated = true; break; }
+          if ((!entry.isFile() && !entry.isSymbolicLink()) || !logName(entry.name) || !fileMatches(entry.name)) continue;
+          try { await addFile(path.join(directory, entry.name), resolved); }
+          catch (error) {
+            if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;
+            warn({ path: path.join(directory, entry.name), code: error.code, message: error.message });
           }
-        } finally { await handle.close().catch(() => {}); }
+        }
       } catch (error) {
         if (error.code === "OPERATION_DEADLINE_EXCEEDED") throw error;
         warn({ path: directory, code: error.code, message: error.message });

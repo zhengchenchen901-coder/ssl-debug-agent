@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "pluginVersion": "2.4.0+codex.20261023.1",
-  "runtimeId": "2.4.0:89b3fb6fc923ee4f91a1e15b6de4b60eb4fbee7811d87373f0d6e342a464c778",
+  "pluginVersion": "2.4.0+codex.20261023.2",
+  "runtimeId": "2.4.0:6015adee113a2f5d55bcc1a18c72afc78f4870eacd26d5b74d0cd34113473f71",
   "node": ">=22.18 <23",
   "server": "server.cjs",
   "worker": "worker-entry.cjs",
   "privacyWorker": "privacy-worker.cjs",
   "hashes": {
-    "server.cjs": "51ae82e01aad4ca3a35a916047271aed5df7dbbb56b2b6d752215e9815b3e18c",
-    "worker-entry.cjs": "5e4bb8b0c5eb7b7f0817e60afb0de5e637dbe5fcd739f94fc083f68b26ac5b3b",
+    "server.cjs": "83c64322ca3d8133452c0a0d747cb9884be052bb57180fcdddfd9e71c2218ee0",
+    "worker-entry.cjs": "8ec87417014453329baf0a1bd92e99203bec97b300fc13825bd8348be7d40ce9",
     "privacy-worker.cjs": "088acec3336869d8543b3dc1e546fffe52fd8ef4d31daada0390e8538b57abd3",
     "public/admin-registration.js": "b24f91e152e7217780070775c1471c805f21d13972a532d9739d41630097d840",
     "public/dashboard.css": "9a87c5a324e4cfda9a5731d1b49142a744000b67824291d839b5af121669e2d9",
