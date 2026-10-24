@@ -1,3 +1,4 @@
+import { openInstancePage, openInstanceMenu, openAdministratorSettings } from "./helpers/workspace-browser.js";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -41,6 +42,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
   page.on("pageerror", error => errors.push(error.message));
   await unlock(page, from);
+  await openInstanceMenu(page, "fixture");
   await page.locator('[data-action="export"][data-id="fixture"]').click();
   await page.locator("#transferPassword").fill(password); await page.locator("#transferConfirm").fill("different-password-123");
   await page.locator("#submitTransferButton").click(); await page.getByText("两次输入的口令不一致。", { exact: true }).waitFor();
@@ -64,7 +66,7 @@ try {
   await page.locator("#transferId").fill("copy"); await page.locator("#transferName").fill("导入副本");
   await page.screenshot({ path: process.env.RDA_TRANSFER_SCREENSHOT || path.join(os.tmpdir(), "rda-instance-transfer-ui.png"), fullPage: true });
   await page.locator("#submitTransferButton").click(); await page.locator("#transferBackdrop").waitFor({ state: "hidden" });
-  await page.locator('[data-action="export"][data-id="copy"]').waitFor();
+  await page.locator('.instance-name-button[data-id="copy"]').waitFor();
   assert.equal(to.registry.getInternal("fixture").host, "existing.invalid");
   assert.equal(to.registry.getInternal("copy").host, "fixture.invalid");
   assert.equal(to.memoryStore.ensureLoaded("copy").sections.notes.fixture.summary, "browser memory");

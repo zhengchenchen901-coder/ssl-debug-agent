@@ -62,7 +62,7 @@ adminForm.addEventListener("submit", async (event) => {
     await adminApi(resetting ? "/api/manual/reset" : "/api/manual/register", body);
     adminForm.reset();
     if (!resetting) adminCount++;
-    adminMessage.textContent = resetting ? "管理员密码已重置，该账号的旧会话已退出。" : "管理员注册成功。现在可以关闭此窗口，在实例列表点击“手动操作”。";
+    adminMessage.textContent = resetting ? "管理员密码已重置，该账号的旧会话已退出。" : "管理员注册成功。现在可以关闭此窗口，在实例工作区点击“手动工作台”。";
     updateMode();
   } catch (error) { adminMessage.textContent = error.message; }
   finally { busy = false; saveAdminButton.disabled = false; }

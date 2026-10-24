@@ -1,0 +1,23 @@
+{
+  "recordId": "CLIENT-UX-20261024",
+  "nativeNodeTests": {
+    "agent": {
+      "tests": 53,
+      "pass": 53,
+      "fail": 0,
+      "skipped": 0
+    },
+    "plugin": {
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "runtimeId": "2.4.0:5808265ed62a9204fb8eadcaf2a19278a1d48e759e6c79c1a8787dae6144a2a3",
+  "runtimeArtifactHashesVerified": 26,
+  "publicSourceParity": true,
+  "testflowExecution": "not-run: missing browser execution bindings, lifecycle, immutable image and cross-project execution integration",
+  "nativeBrowserRegressionAssets": "updated, not executed as a suite",
+  "offlineBrowserVisual": "blocked by browser URL policy: file protocol not allowed"
+}

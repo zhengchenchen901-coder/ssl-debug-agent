@@ -1,3 +1,4 @@
+import { openInstancePage, openInstanceMenu, openAdministratorSettings } from "./helpers/workspace-browser.js";
 // Isolated end-to-end: real MCP stdio -> Manager cache/SSE -> real browser.
 // No remote server, production registry, credentials or shell commands.
 import assert from "node:assert/strict";
@@ -62,9 +63,8 @@ try {
   page.on("request", (request) => { if (request.url().includes("/api/output-preview/")) requests.push(request.url()); });
   await page.goto(base);
   await page.locator("#authToken").fill(token); await page.locator("#authForm button").click();
-  await page.locator('[data-action="preview"][data-id="test"]').click();
-  const panels = page.locator(".output-preview-row .output-preview");
-  const panel = panels.nth(0), body = panel.locator(".output-preview-body");
+  await openInstancePage(page, "test", "tasks");
+  const panel = page.locator('.output-preview[data-instance-id="test"]'), body = panel.locator(".output-preview-body");
   const follow = panel.getByLabel("跟随最新");
   await call("first");
   await body.filter({ hasText: "第一条输出" }).waitFor();
@@ -76,7 +76,6 @@ try {
   await body.evaluate((node) => { node.scrollTop = 100; window.previewBodyFixture = node; });
   await Promise.all([
     page.waitForResponse((response) => new URL(response.url()).pathname === "/api/instances"),
-    page.locator("#reloadButton").click(),
   ]);
   await page.evaluate(() => new Promise(requestAnimationFrame));
   assert.match(await body.textContent(), /第一条输出/);
@@ -104,8 +103,9 @@ try {
   await call("other", "other");
   await page.waitForFunction(() => document.querySelector('[data-action="preview"][data-id="other"]').textContent.includes("(1)"));
   assert.match(await body.textContent(), /第一条输出/);
-  await page.locator('[data-action="preview"][data-id="other"]').click();
-  await panels.nth(1).locator(".output-preview-body").filter({ hasText: "其他实例的独立输出" }).waitFor();
+  await page.locator("#instancePicker").selectOption("other");
+  await page.locator('.output-preview[data-instance-id="other"] .output-preview-body').filter({ hasText: "其他实例的独立输出" }).waitFor();
+  await page.locator("#instancePicker").selectOption("test");
   await call("unsafe"); await body.filter({ hasText: "<img" }).waitFor();
   assert.equal(await panel.locator("img").count(), 0);
   await panel.getByRole("button", { name: "查看协议消息", exact: true }).click(); await body.filter({ hasText: '"jsonrpc"' }).waitFor();
@@ -118,8 +118,9 @@ try {
   await page.keyboard.press("Escape");
   assert.equal(await panel.evaluate((node) => node.classList.contains("output-preview-expanded")), false);
   await call(null, null, "remote_debug_list_instances");
-  await page.locator("#globalOutputButton").click();
+  await page.locator('[data-page="global"]').click();
   await page.locator("#globalOutputPreview .output-preview-body").filter({ hasText: '"instances"' }).waitFor();
+  await openInstancePage(page, "test", "tasks");
   // A stale response after logout must not restore content or credentials.
   let releaseRead, markReadStarted;
   const delayedRead = new Promise((resolve) => { releaseRead = resolve; });
@@ -139,7 +140,7 @@ try {
   assert.equal(await page.locator(".output-preview-body").evaluateAll((nodes) => nodes.every((node) => node.textContent === "面板已锁定")), true);
   assert.equal(await page.evaluate(() => sessionStorage.getItem("remote-debug-auth")), null);
   await page.locator("#authToken").fill(token); await page.locator("#authForm button").click();
-  await page.locator('[data-action="preview"][data-id="test"]').click();
+  await openInstancePage(page, "test", "tasks");
   await body.filter({ hasText: '"jsonrpc"' }).waitFor();
   const cached = app.locals.outputPreview.snapshot().records;
   assert.equal(cached.length, wire.length);

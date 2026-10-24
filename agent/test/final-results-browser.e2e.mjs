@@ -1,3 +1,4 @@
+import { openInstancePage, openInstanceMenu, openAdministratorSettings } from "./helpers/workspace-browser.js";
 // Real browser + MCP stdio + authenticated Manager, entirely local fixtures.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -44,8 +45,9 @@ try {
   await page.goto(url);
   await page.locator("#authToken").fill(token); await page.locator("#authForm button").click();
   await page.waitForFunction(() => document.querySelector("#authPanel").hidden);
+  await page.locator('[data-page="environment"]').click(); await page.locator('[data-management-tab="manager"]').click();
   await page.locator("#managerFinalResults").getByText("Manager 最终报告", { exact: true }).waitFor();
-  await page.locator('[data-action="tasks"][data-id="first"]').click();
+  await openInstancePage(page, "first", "results");
   const panel = page.locator("#drawer .final-results");
   await panel.getByText("第一实例最终报告", { exact: true }).waitFor();
   assert.equal(await panel.getByText("第二实例独立报告", { exact: true }).count(), 0);
@@ -65,11 +67,11 @@ try {
   assert.equal(await panel.locator(".task-card").evaluateAll((cards) => cards.every((card) => card.scrollWidth <= card.clientWidth + 1)), true);
   await page.setViewportSize({ width: 1480, height: 1000 });
   const screenshot = path.join(os.tmpdir(), "rda-final-results-dashboard.png"); await page.screenshot({ path: screenshot, fullPage: true });
-  await page.reload(); await page.locator('[data-action="tasks"][data-id="first"]').click();
+  await page.reload(); await openInstancePage(page, "first", "results");
   await panel.getByText("第一实例最终报告", { exact: true }).waitFor();
   page.once("dialog", (dialog) => dialog.accept()); await panel.getByRole("button", { name: "删除最终结果", exact: true }).click();
   await panel.getByText("暂无最终结果。任务收尾并发布交付物后显示在这里。", { exact: true }).waitFor();
-  await page.locator("#closeDrawerButton").click(); await page.locator('[data-action="tasks"][data-id="second"]').click();
+  await page.locator("#closeDrawerButton").click(); await openInstancePage(page, "second", "results");
   await panel.getByText("第二实例独立报告", { exact: true }).waitFor();
   await page.locator("#closeDrawerButton").click();
   await page.locator("#authLogout").click();

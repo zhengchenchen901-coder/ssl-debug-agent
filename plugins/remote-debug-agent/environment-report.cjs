@@ -201,13 +201,19 @@ function writeOfflineDashboard(dataDir, report) {
   }
   let html = fs.readFileSync(path.join(publicDir, "dashboard.html"), "utf8");
   const css = fs.readFileSync(path.join(publicDir, "dashboard.css"), "utf8");
+  const uiCss = fs.existsSync(path.join(publicDir, "ui.css")) ? fs.readFileSync(path.join(publicDir, "ui.css"), "utf8") : "";
+  const workspace = fs.existsSync(path.join(publicDir, "workspace.js")) ? fs.readFileSync(path.join(publicDir, "workspace.js"), "utf8") : "";
   const script = fs.readFileSync(path.join(publicDir, "environment-report.js"), "utf8");
   const embedded = JSON.stringify({ ok: true, mode: "offline", report: report }).replace(/</g, "\\u003c");
-  html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function () { return "<style>" + css + "</style>"; })
+  html = html.replace('<link rel="stylesheet" href="/ui.css" />', function () { return "<style>" + uiCss + "</style>"; })
+    .replace('<script src="/workspace.js" defer></script>', function () { return "<script>" + workspace + "</script>"; })
+    .replace('<script src="/ui.js" defer></script>', "")
+    .replace('<link rel="stylesheet" href="/dashboard.css" />', function () { return "<style>" + css + "</style>"; })
     .replace('<script src="/environment-report.js" defer></script>',
       function () { return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>"; })
     .replace('<script src="/dashboard.js" type="module"></script>', "")
-    .replace('<script src="/admin-registration.js" type="module"></script>', "");
+    .replace('<script src="/admin-registration.js" type="module"></script>', "")
+    .replace(/<script src="\/(?:output-preview|instance-tasks|final-results)\.js" defer><\/script>/g, "");
   fs.writeFileSync(file, html, { mode: 0o600 });
 }
 

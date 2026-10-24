@@ -12,7 +12,7 @@ import { openManualDatabase, manualMongoCommand, normalizeManualQuery, validateR
 import { openManualTerminal, terminalSize } from "./manual-terminal.js";
 
 const moduleDirectory = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-const ASSETS = new Set(["manual.html", "manual.js", "manual.css", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
+const ASSETS = new Set(["manual.html", "manual.js", "manual.css", "ui.css", "ui.js", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
 const IDLE_MS = 15 * 60_000;
 const MAX_SESSION_MS = 8 * 60 * 60_000;
 const TOKEN = /^[a-f0-9]{64}$/;

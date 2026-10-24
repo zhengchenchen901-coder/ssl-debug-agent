@@ -23,6 +23,7 @@
   function render(data) {
     const report = data.report;
     if (!report) { panel.hidden = true; return; }
+    const empty = document.querySelector("#environmentEmpty"); if (empty) empty.hidden = true;
     snapshot = data;
     panel.hidden = false;
     const failed = report.status === "failed";
@@ -52,6 +53,7 @@
     });
     history.hidden = !(report.failures || []).length;
     if (data.mode !== "manager") {
+      window.remoteDebugWorkspace?.diagnostic();
       ["#authPanel", "#authLogout"].forEach(function (id) { const node = document.querySelector(id); if (node) node.hidden = true; });
       document.querySelectorAll(".metrics, .table-panel:not(#environmentPanel)").forEach(function (node) { node.hidden = true; });
       document.querySelector("#connectionText").textContent = data.mode === "offline" ? "离线诊断" : "仅诊断模式";

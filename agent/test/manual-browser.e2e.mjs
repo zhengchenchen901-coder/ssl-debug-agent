@@ -1,3 +1,4 @@
+import { openInstancePage, openInstanceMenu, openAdministratorSettings } from "./helpers/workspace-browser.js";
 // Isolated browser integration: no production registry, credentials or server.
 // Native OS prompts are mocked here; the actual native helper is checked separately.
 import assert from "node:assert/strict";
@@ -62,18 +63,21 @@ try {
   await page.goto(`http://127.0.0.1:${manager.address().port}/`);
   await page.locator("#authToken").fill(token);
   await page.locator("#authForm button").click();
-  await page.locator('button[data-action="edit"]').click();
+  await openInstancePage(page, "test", "settings");
+  await page.locator('[data-settings-tab="database"]').click(); await page.locator('[data-database-tab="manual"]').click();
   await page.locator('[name="manualMongoEnabled"]').check();
   await page.locator('[name="manualMongoConfigPath"]').fill("/isolated/profiles.json");
   await page.locator('[name="manualMongoDriverPath"]').fill("/isolated/node_modules/mongodb");
   await page.locator('[name="manualMongoConfigProfile"]').fill("manualAdmin");
-  await page.locator('#instanceForm button[type="submit"]').filter({ hasText: /^保存$/ }).click();
+  await page.locator("#saveInstanceButton").click();
   await page.locator("#modalBackdrop").waitFor({ state: "hidden" });
   assert.equal(registry.getInternal("test").manualMongo.configProfile, "manualAdmin");
   assert.equal(registry.getInternal("test").mongodb, undefined);
-  await page.locator('button[data-action="edit"]').click();
+  await openInstancePage(page, "test", "settings");
+  await page.locator('[data-settings-tab="database"]').click(); await page.locator('[data-database-tab="manual"]').click();
   assert.equal(await page.locator('[name="manualMongoConfigPath"]').inputValue(), "/isolated/profiles.json");
-  await page.locator("#closeModalButton").click();
+  await page.locator("#cancelModalButton").click();
+  await openAdministratorSettings(page);
   await page.locator("#registerAdminButton").click();
   await page.locator("#saveAdminButton").waitFor({ state: "visible" });
   await page.locator('#adminForm input[name="username"]').fill("admin");
@@ -83,8 +87,9 @@ try {
   await page.waitForFunction(() => document.getElementById("adminMessage").textContent.includes("注册成功"));
   assert.equal(verifications, 1);
   await page.locator("#closeAdminButton").click();
+  await openInstancePage(page, "test");
   const popupEvent = page.waitForEvent("popup");
-  await page.locator('button[data-action="manual"]').click();
+  await page.getByRole("button", { name: "手动工作台", exact: true }).click();
   const popup = await popupEvent;
   await popup.waitForURL(/127\.0\.0\.1:\d+\/\?instanceId=test/);
   assert.notEqual(new URL(popup.url()).port, String(manager.address().port));
@@ -119,6 +124,7 @@ try {
   await loggedOut;
   await popup.locator("#loginPanel").waitFor({ state: "visible" });
   assert.equal(manager.managerLifecycle.publicStatus().activeLeaseCount, 0);
+  await openAdministratorSettings(page);
   await page.locator("#registerAdminButton").click();
   await page.locator("#adminResetMode").click();
   await page.locator('#adminForm input[name="username"]').fill("admin");

@@ -56,6 +56,12 @@ test("HTTP authentication and origin checks precede parsing and remote side effe
     }); req.on("error", reject); req.end();
   });
   assert.equal(calls, 0);
+  for (const asset of ["/ui.css", "/ui.js", "/workspace.js"]) {
+    const assetResponse = await fetch(base + asset);
+    assert.equal(assetResponse.status, 200);
+    assert.doesNotMatch(await assetResponse.text(), new RegExp(token));
+  }
+  assert.equal((await fetch(base + "/ui-private.js")).status, 401);
   assert.equal((await fetch(base + "/events")).status, 401);
   assert.equal((await fetch(base + "/api/environment-report")).status, 401);
   assert.equal((await fetch(base + "/status")).status, 401);

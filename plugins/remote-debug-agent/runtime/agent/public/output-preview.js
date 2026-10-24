@@ -103,6 +103,7 @@
 
   function createView(key) {
     const panel = element("section", "output-preview");
+    panel.dataset.instanceId = key === null ? "manager" : key;
     panel.setAttribute("aria-label", key === null ? "全局 MCP 输出预览" : "实例 MCP 输出预览");
     const toolbar = element("div", "output-preview-toolbar");
     const title = element("strong", "", key === null ? "全局 MCP 输出" : "Codex 输出预览");
@@ -138,7 +139,7 @@
       const expanded = panel.classList.toggle("output-preview-expanded");
       view.expand.textContent = expanded ? "还原窗口" : "展开大窗口";
     });
-    const close = action("收起", () => toggle(key, false));
+    const close = action("收起", () => toggle(key, false)); view.close = close;
     toolbar.append(title, connectionLabel, followLabel, view.pause, clear, view.modeButton, view.copy, view.expand, close);
     const hint = element("p", "output-preview-hint", "显示插件最终脱敏后发出的工具结果；记录仅保留在内存中。每次工具返回后更新。");
     const content = element("div", "output-preview-content");
@@ -159,7 +160,7 @@
     view.open = force ?? !view.open;
     if (!view.open) { view.panel.classList.remove("output-preview-expanded"); view.expand.textContent = "展开大窗口"; }
     if (key === null) globalContainer.hidden = !view.open;
-    else if (rows.has(key)) rows.get(key).preview.hidden = !view.open;
+    else if (rows.has(key)) rows.get(key).preview.hidden = !view.open || Boolean(view.mounted);
     updateButtons(); status(); refresh(view);
   }
 
@@ -262,9 +263,9 @@
       if (!entry) {
         const view = createView(instance.id);
         const preview = element("tr", "output-preview-row"), cell = element("td");
-        preview.hidden = true; cell.colSpan = 10; cell.append(view.panel); preview.append(cell);
+        preview.hidden = true; cell.colSpan = 5; cell.append(view.panel); preview.append(cell);
         entry = { row: renderRow(instance), preview }; rows.set(instance.id, entry);
-      } else entry.row.replaceChildren(...renderRow(instance).children);
+      } else if (!entry.row.querySelector(".row-menu[open]")) entry.row.replaceChildren(...renderRow(instance).children);
       // Keep preview DOM mounted during the five-second status refresh.
       for (const node of [entry.row, entry.preview]) {
         if (node !== position) container.insertBefore(node, position);
@@ -284,6 +285,24 @@
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") for (const view of views.values()) { view.panel.classList.remove("output-preview-expanded"); view.expand.textContent = "展开大窗口"; }
   });
-  window.remoteDebugOutputPreview = { renderRows, toggle, unlock, lock };
+  function mount(key, container) {
+    const view = views.get(key);
+    if (!view) return false;
+    view.mounted = true; view.close.hidden = true; container.append(view.panel); toggle(key, true);
+    if (rows.has(key)) rows.get(key).preview.hidden = true;
+    return true;
+  }
+  function unmount(key) {
+    const view = views.get(key); if (!view) return;
+    view.mounted = false; view.close.hidden = false; toggle(key, false);
+    rows.get(key)?.preview.firstChild?.append(view.panel);
+  }
+  function filterInstances(ids) {
+    for (const [key, entry] of rows) {
+      entry.row.hidden = !ids.has(key);
+      entry.preview.hidden = !ids.has(key) || !views.get(key)?.open || Boolean(views.get(key)?.mounted);
+    }
+  }
+  window.remoteDebugOutputPreview = { renderRows, toggle, unlock, lock, mount, unmount, filterInstances };
   unlock();
 })();

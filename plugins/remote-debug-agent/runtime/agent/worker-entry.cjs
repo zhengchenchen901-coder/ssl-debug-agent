@@ -48397,16 +48397,22 @@ var require_environment_report = __commonJS({
       }
       let html = fs14.readFileSync(path21.join(publicDir, "dashboard.html"), "utf8");
       const css = fs14.readFileSync(path21.join(publicDir, "dashboard.css"), "utf8");
+      const uiCss = fs14.existsSync(path21.join(publicDir, "ui.css")) ? fs14.readFileSync(path21.join(publicDir, "ui.css"), "utf8") : "";
+      const workspace = fs14.existsSync(path21.join(publicDir, "workspace.js")) ? fs14.readFileSync(path21.join(publicDir, "workspace.js"), "utf8") : "";
       const script = fs14.readFileSync(path21.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
-      html = html.replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
+      html = html.replace('<link rel="stylesheet" href="/ui.css" />', function() {
+        return "<style>" + uiCss + "</style>";
+      }).replace('<script src="/workspace.js" defer></script>', function() {
+        return "<script>" + workspace + "</script>";
+      }).replace('<script src="/ui.js" defer></script>', "").replace('<link rel="stylesheet" href="/dashboard.css" />', function() {
         return "<style>" + css + "</style>";
       }).replace(
         '<script src="/environment-report.js" defer></script>',
         function() {
           return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>";
         }
-      ).replace('<script src="/dashboard.js" type="module"></script>', "").replace('<script src="/admin-registration.js" type="module"></script>', "");
+      ).replace('<script src="/dashboard.js" type="module"></script>', "").replace('<script src="/admin-registration.js" type="module"></script>', "").replace(/<script src="\/(?:output-preview|instance-tasks|final-results)\.js" defer><\/script>/g, "");
       fs14.writeFileSync(file, html, { mode: 384 });
     }
     function recordRuntimeEvent(dataDir, event2, attemptId) {
@@ -57649,7 +57655,7 @@ async function runService(input, { action, config, operation, runSSH: runSSH2 })
 // http-auth.js
 var import_node_path4 = __toESM(require("node:path"), 1);
 var import_local_auth = __toESM(require_local_auth(), 1);
-var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/dashboard.js", "/instance-tasks.js", "/final-results.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
+var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/ui.css", "/ui.js", "/workspace.js", "/dashboard.js", "/instance-tasks.js", "/final-results.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
 function publicHealth(request, token, identity2) {
   const nonce = request.headers["x-remote-debug-challenge"];
   return {
@@ -59200,7 +59206,7 @@ function openManualTerminal(instance2, options) {
 
 // manual-workbench.js
 var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path8.default.dirname((0, import_node_url3.fileURLToPath)(void 0));
-var ASSETS = /* @__PURE__ */ new Set(["manual.html", "manual.js", "manual.css", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
+var ASSETS = /* @__PURE__ */ new Set(["manual.html", "manual.js", "manual.css", "ui.css", "ui.js", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
 var IDLE_MS = 15 * 6e4;
 var MAX_SESSION_MS = 8 * 60 * 6e4;
 var TOKEN = /^[a-f0-9]{64}$/;

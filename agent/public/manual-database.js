@@ -6,6 +6,18 @@
   const text = (id, value) => { element(id).textContent = value; };
   const identity = (target) => target.users.length ? target.users.map((user) => `${user.user}@${user.db}`).join(", ") : "未认证连接（无数据库用户）";
   const targetText = (target) => `${target.instanceId} · ${target.hosts} · ${identity(target)} · ${target.profile}`;
+  let databaseView = "documents";
+  function showDatabaseView(view = databaseView) {
+    databaseView = view;
+    const shell = view === "shell";
+    if (element("dbBrowser")) element("dbBrowser").hidden = shell;
+    element("databaseOperations").hidden = !shell || element("databaseWorkArea").hidden;
+    element("dbDocumentsNav")?.setAttribute("aria-selected", String(!shell));
+    element("dbShellNav")?.setAttribute("aria-selected", String(shell));
+    if (shell) requestAnimationFrame(fitShell);
+  }
+  element("dbDocumentsNav")?.addEventListener("click", () => showDatabaseView("documents"));
+  element("dbShellNav")?.addEventListener("click", () => showDatabaseView("shell"));
   function show(mode) {
     const database = mode === "database";
     element("workspace").classList.toggle("database-mode", database);
@@ -13,6 +25,7 @@
     element("databaseWorkArea").hidden = element("databaseOperations").hidden = !database;
     element("sshNav").classList.toggle("active", !database);
     element("databaseNav").classList.toggle("active", database);
+    showDatabaseView();
     requestAnimationFrame(() => database ? fitShell() : fitTerminal());
   }
   function activity() {
@@ -124,13 +137,13 @@
     documents(result, result.database || database, result.collection || collection, result.kind || operation);
   }
   function fitShell() {
-    if (!dbTerminal || element("databaseWorkArea").hidden || element("workspace").hidden) return;
+    if (!dbTerminal || element("databaseWorkArea").hidden || element("databaseOperations").hidden || element("workspace").hidden) return;
     dbFit.fit();
     if (shellReady && dbSocket?.readyState === WebSocket.OPEN) dbSocket.send(JSON.stringify({ type: "resize", cols: dbTerminal.cols, rows: dbTerminal.rows }));
   }
   function createShell() {
     if (dbTerminal) return;
-    dbTerminal = new window.Terminal({ cursorBlink: true, fontSize: 12, scrollback: 3000, disableStdin: true, theme: { background: "#090f17", foreground: "#cddaea" } });
+    dbTerminal = new window.Terminal({ cursorBlink: true, fontSize: 12, scrollback: 3000, disableStdin: true, theme: { background: "#1b252b", foreground: "#d8e6e7" } });
     dbFit = new window.FitAddon.FitAddon(); dbTerminal.loadAddon(dbFit); dbTerminal.open(element("dbTerminal"));
     dbTerminal.onData((data) => {
       if (!shellReady || dbSocket?.readyState !== WebSocket.OPEN) return;

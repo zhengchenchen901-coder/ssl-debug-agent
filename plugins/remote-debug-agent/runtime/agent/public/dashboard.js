@@ -23,7 +23,7 @@ const cancelModalButton = document.querySelector("#cancelModalButton");
 const modalTitle = document.querySelector("#modalTitle");
 const instanceForm = document.querySelector("#instanceForm");
 const formMessage = document.querySelector("#formMessage");
-const saveFormButton = instanceForm.querySelector('button[type="submit"]');
+const saveFormButton = document.querySelector("#saveInstanceButton") || instanceForm.querySelector('button[type="submit"]');
 const drawer = document.querySelector("#drawer");
 const drawerMask = document.querySelector("#drawerMask");
 const closeDrawerButton = document.querySelector("#closeDrawerButton");
@@ -42,7 +42,7 @@ function lockPanel() {
   sessionStorage.removeItem("remote-debug-auth");
   state.instances = [];
   state.online = false;
-  closeDrawer();
+  closeDrawer(false);
   showManagerFinalResults();
   closeModal();
   closeTransfer();
@@ -55,7 +55,7 @@ function lockPanel() {
 function updateAuthVisibility() {
   authPanel.hidden = Boolean(authToken);
   authLogout.hidden = !authToken;
-  document.querySelectorAll(".metrics, .table-panel:not(#authPanel):not(#environmentPanel)").forEach((node) => { node.hidden = !authToken; });
+  window.remoteDebugWorkspace?.authVisibility(Boolean(authToken));
 }
 
 const statusLabels = {
@@ -64,6 +64,7 @@ const statusLabels = {
   stopping: "停止中",
   stopped: "已停止",
   unhealthy: "不健康",
+  connected: "已连接", disconnected: "未连接", authenticated: "已验证", healthy: "正常", failed: "失败", unknown: "未知", reconnecting: "重连中",
 };
 
 const memoryStatusLabels = {
@@ -85,6 +86,7 @@ const state = {
   pendingActions: new Set(),
   lastConnectionError: "",
   toastTimer: null,
+  savingForm: false,
 };
 
 function text(value, fallback = "--") {
@@ -236,8 +238,10 @@ function updateMetrics() {
     newButton.title = state.online ? "" : "主进程不可用";
   }
   if (saveFormButton) {
-    saveFormButton.disabled = !state.online;
+    saveFormButton.disabled = !state.online || state.savingForm;
     saveFormButton.title = state.online ? "" : "主进程不可用";
+    const sandboxSave = document.querySelector("#saveSandboxButton");
+    if (sandboxSave) sandboxSave.disabled = !state.online || state.savingForm;
   }
   if (shutdownButton) {
     shutdownButton.hidden = state.lifecycle?.lifetime !== "manual";
@@ -308,117 +312,57 @@ function setActionPending(action, id, pending) {
     state.pendingActions.delete(key);
   }
   render();
+  for (const control of document.querySelectorAll(`button[data-action="${action}"][data-id="${id}"]`)) {
+    if (pending) control.disabled = true;
+    control.classList.toggle("is-loading", pending);
+    control.setAttribute("aria-busy", String(pending));
+  }
 }
 
 function renderRow(instance) {
-  const runtime = runtimeOf(instance);
-  const health = healthOf(runtime);
-  const transportHealth = health.transport || {};
-  const operationHealth = health.operations || {};
-  const canUseManager = state.online;
-  const row = document.createElement("tr");
-
-  const name = createElement("td");
-  const nameMain = createElement("div", "cell-main");
-  nameMain.append(createElement("strong", "", instance.name));
-  nameMain.append(createElement("span", "mono", instance.id));
+  const runtime = runtimeOf(instance), health = healthOf(runtime);
+  const row = createElement("tr"); row.dataset.instanceId = instance.id;
+  const name = createElement("td"), nameMain = createElement("div", "cell-main");
+  nameMain.append(button(instance.name, "view", instance, "instance-name-button"), createElement("span", "mono", instance.id));
   name.append(nameMain);
-
-  const target = createElement("td");
-  const targetMain = createElement("div", "cell-main");
-  targetMain.append(createElement("strong", "", targetLabel(instance)));
-  targetMain.append(createElement("span", "", instance.enabled ? "已启用" : "已禁用"));
+  const target = createElement("td"), targetMain = createElement("div", "cell-main");
+  targetMain.append(createElement("strong", "mono", targetLabel(instance)), createElement("span", "", `${instance.username} · ${instance.enabled ? "已启用" : "已禁用"}`));
   target.append(targetMain);
-
-  const user = createElement("td", "", text(instance.username));
-  const ssh = createElement("td", "mono", String(instance.port || 22));
-  const status = createElement("td");
-  const statusMain = createElement("div", "cell-main");
-  statusMain.append(
-    statusPill(runtime.status || "stopped"),
-    createElement("span", "mono", `SSH ${text(transportHealth.status)}`),
-    createElement(
-      "span",
-      "mono",
-      `active ${text(operationHealth.active, "0")} / queued ${text(operationHealth.queued, "0")}`,
-    ),
-    createElement("span", "mono", `reconnects ${text(transportHealth.reconnectCount, "0")}`),
-  );
+  const status = createElement("td"), statusMain = createElement("div", "cell-main");
+  const recentError = runtime.lastError || health.transport?.lastError;
+  statusMain.append(statusPill(runtime.status || "stopped"), createElement("span", "", recentError ? `${recentError.code || "ERROR"}: ${recentError.message || ""}` : `SSH ${text(statusLabel(health.transport?.status))}`));
   status.append(statusMain);
-
-  const memoryInfo = memoryOf(instance);
-  const memory = createElement("td");
-  const memoryMain = createElement("div", "cell-main");
-  memoryMain.append(memoryStatusPill(memoryInfo));
-  memoryMain.append(createElement("span", "", formatClock(memoryInfo.updatedAt)));
-  memory.append(memoryMain);
-
-  const worker = createElement("td");
-  const workerMain = createElement("div", "cell-main");
-  workerMain.append(createElement("span", "mono", `port ${text(runtime.workerPort)}`));
-  workerMain.append(createElement("span", "mono", `pid ${text(runtime.pid)}`));
-  worker.append(workerMain);
-
-  const heartbeat = createElement("td", "", formatClock(runtime.lastHeartbeatAt));
-  const recentError = runtime.lastError || transportHealth.lastError;
-  const error = createElement(
-    "td",
-    recentError ? "cell-main" : "muted",
-    recentError ? `${recentError.code || "ERROR"}: ${recentError.message || ""}` : "--",
-  );
-
-  const actions = createElement("td");
-  const actionWrap = createElement("div", "record-actions");
-  const view = button("查看", "view", instance);
-  const tasks = button("任务", "tasks", instance);
-  tasks.disabled = !canUseManager;
-  const edit = button("编辑", "edit", instance);
-  edit.disabled = !canUseManager;
-  edit.title = canUseManager ? "" : "主进程不可用";
-  const startLoading = isActionPending("start", instance.id) || runtime.status === "starting";
-  const start = button(startLoading ? "启动中" : "启动", "start", instance);
-  start.disabled = !canUseManager || startLoading || runtime.status === "running";
-  start.title = canUseManager ? "" : "主进程不可用";
-  start.classList.toggle("is-loading", startLoading);
-  start.setAttribute("aria-busy", String(startLoading));
-  const stopLoading = isActionPending("stop", instance.id) || runtime.status === "stopping";
-  const stop = button(stopLoading ? "停止中" : "停止", "stop", instance);
-  stop.disabled = !canUseManager || stopLoading || runtime.status === "stopped" || (!runtime.pid && !runtime.workerPort);
-  stop.title = canUseManager ? "" : "主进程不可用";
-  stop.classList.toggle("is-loading", stopLoading);
-  stop.setAttribute("aria-busy", String(stopLoading));
-  const deleteButton = button("删除", "delete", instance, "button danger");
-  deleteButton.disabled = !canUseManager;
-  deleteButton.title = canUseManager ? "" : "主进程不可用";
-  const refresh = button("重新加载配置", "refresh", instance);
-  refresh.disabled = !canUseManager;
-  refresh.title = canUseManager ? "" : "主进程不可用";
-  const manual = button("手动操作", "manual", instance);
-  manual.disabled = !canUseManager || !instance.enabled;
-  manual.title = "使用管理员账号打开独立的 SSH 工作台";
-  actionWrap.append(
-    view,
-    tasks,
-    edit,
-    button("导出配置", "export", instance),
-    start,
-    stop,
-    deleteButton,
-    refresh,
-    manual,
-    button("输出预览", "preview", instance),
-  );
-  actions.append(actionWrap);
-
-  row.append(name, target, user, ssh, status, memory, worker, heartbeat, error, actions);
+  const workload = createElement("td"), workloadMain = createElement("div", "cell-main");
+  workloadMain.append(createElement("strong", "", `活动 ${health.operations?.active || 0} / 排队 ${health.operations?.queued || 0}`), memoryStatusPill(memoryOf(instance)));
+  workload.append(workloadMain);
+  const actions = createElement("td"), wrap = createElement("div", "record-actions");
+  const menu = createElement("details", "row-menu"), summary = createElement("summary", "", "•••");
+  summary.setAttribute("aria-label", `${instance.name}更多操作`);
+  const items = createElement("div", "menu-items");
+  for (const [label, action] of [["任务与输出", "tasks"], ["实例设置", "edit"], ["导出配置", "export"], ["启动 Worker", "start"], ["停止 Worker", "stop"], ["重新加载配置", "refresh"], ["手动工作台", "manual"], ["过程输出", "preview"], ["删除实例", "delete"]]) {
+    const item = button(label, action, instance, `button${action === "delete" ? " danger" : ""}`);
+    item.disabled = !state.online && action !== "preview";
+    if (action === "start") item.disabled ||= runtime.status === "running" || runtime.status === "starting" || isActionPending("start", instance.id) || !instance.enabled;
+    if (action === "stop") item.disabled ||= runtime.status === "stopped" || runtime.status === "stopping" || isActionPending("stop", instance.id) || (!runtime.pid && !runtime.workerPort);
+    if (action === "manual") item.disabled ||= !instance.enabled;
+    if (isActionPending(action, instance.id)) { item.textContent = "操作中…"; item.classList.toggle("is-loading", true); item.setAttribute("aria-busy", "true"); item.disabled = true; }
+    items.append(item);
+  }
+  menu.append(summary, items); wrap.append(button("进入 ↗", "view", instance), menu); actions.append(wrap);
+  row.append(name, target, status, workload, actions);
   return row;
 }
 
 function render() {
   updateMetrics();
-  if (window.remoteDebugOutputPreview) window.remoteDebugOutputPreview.renderRows(state.instances, renderRow, instanceRows);
-  else instanceRows.replaceChildren(...state.instances.map(renderRow));
-  emptyState.hidden = state.instances.length > 0;
+  const visible = window.remoteDebugWorkspace?.visibleInstances(state.instances) || state.instances;
+  if (window.remoteDebugOutputPreview) {
+    window.remoteDebugOutputPreview.renderRows(state.instances, renderRow, instanceRows);
+    window.remoteDebugOutputPreview.filterInstances(new Set(visible.map(instance => instance.id)));
+  } else instanceRows.replaceChildren(...visible.map(renderRow));
+  emptyState.hidden = visible.length > 0;
+  emptyState.textContent = state.instances.length ? "没有符合条件的实例，试试其他名称或状态。" : "当前还没有连接实例，点击“新建实例”开始配置。";
+  window.remoteDebugWorkspace?.update();
 }
 
 function findInstance(id) {
@@ -619,6 +563,7 @@ async function loadMongoOptions(collectionsOnly = false) {
 
 function openModal(instance = null) {
   resetForm(instance);
+  window.remoteDebugWorkspace?.presentForm(instance);
   modalBackdrop.hidden = false;
   instanceForm.elements.name.focus();
   void loadMongoOptions();
@@ -627,6 +572,9 @@ function openModal(instance = null) {
 function closeModal() {
   mongoOptionsGeneration++;
   modalBackdrop.hidden = true;
+  instanceForm.elements.passphrase.value = "";
+  instanceForm.elements.sandboxManagementPassword.value = "";
+  window.remoteDebugWorkspace?.formClosed();
 }
 
 function formPayload() {
@@ -721,13 +669,17 @@ function formPayload() {
 
 async function submitForm(event) {
   event.preventDefault();
+  if (state.savingForm) return;
   formMessage.textContent = "";
+  if (window.remoteDebugWorkspace?.validateForm() === false) return;
   if (!state.online) {
     formMessage.textContent = "主进程不可用，恢复后再保存";
     return;
   }
   try {
     const payload = formPayload();
+    state.savingForm = true; instanceForm.inert = true; instanceForm.setAttribute("aria-busy", "true");
+    saveFormButton.textContent = "保存中…"; updateMetrics();
     const configureSandbox = event.submitter?.value === "sandbox";
     let savedId = state.editingId;
     if (state.editingId) {
@@ -735,7 +687,7 @@ async function submitForm(event) {
         method: "PUT",
         body: JSON.stringify(payload),
       });
-      showToast("实例已保存，运行中的实例请点击行内“重新加载配置”生效");
+      showToast("实例已保存，运行中的实例请点击“重新加载配置”生效");
     } else {
       const created = await api("/api/instances", {
         method: "POST",
@@ -747,6 +699,8 @@ async function submitForm(event) {
     instanceForm.elements.sandboxManagementPassword.value = "";
     closeModal();
     await loadInstances();
+    state.savingForm = false;
+    window.remoteDebugWorkspace?.saved(savedId);
     if (configureSandbox) {
       if (!savedId) throw new Error("无法识别已保存实例");
       const current = findInstance(savedId);
@@ -762,6 +716,9 @@ async function submitForm(event) {
   } catch (error) {
     formMessage.textContent = `${error.code || "ERROR"}: ${error.message}`;
     showToast(formMessage.textContent);
+  } finally {
+    state.savingForm = false; instanceForm.inert = false; instanceForm.setAttribute("aria-busy", "false");
+    saveFormButton.textContent = "保存配置"; updateMetrics();
   }
 }
 
@@ -791,7 +748,8 @@ function compactPathList(values) {
   return visible.join("，");
 }
 
-function openDrawer(instance) {
+function openDrawer(instance, view = "overview") {
+  window.remoteDebugWorkspace?.showInstance(instance, view);
   instanceTasksPanel?.destroy();
   instanceFinalResultsPanel?.destroy();
   const runtime = runtimeOf(instance);
@@ -803,40 +761,29 @@ function openDrawer(instance) {
   const memorySummary = memory.summary || {};
   const resources = memorySummary.resources || {};
   const services = memorySummary.services || {};
-  drawerTitle.textContent = instance.name;
+  if (!window.remoteDebugWorkspace) drawerTitle.textContent = instance.name;
   const details = createElement("section", "detail-list");
-  details.append(
-    detailRow("实例 ID", instance.id),
-    detailRow("目标", targetLabel(instance)),
-    detailRow("用户名", instance.username),
-    detailRow("私钥路径", instance.privateKeyPath),
-    detailRow("私钥口令", instance.hasPassphrase ? "已配置" : "未配置"),
-    detailRow("审计日志", instance.auditLog || "默认"),
+  details.append(createElement("h2", "", "连接健康"),
     detailRow("状态", state.online ? statusLabel(runtime.status) : `上次：${statusLabel(runtime.status)}`),
-    detailRow("Worker 端口", runtime.workerPort),
-    detailRow("进程 ID", runtime.pid),
+    detailRow("SSH 传输", statusLabel(transportHealth.status)), detailRow("身份验证", statusLabel(authenticationHealth.status)),
+    detailRow("Worker 端口 / PID", `${text(runtime.workerPort)} / ${text(runtime.pid)}`),
     detailRow("最近心跳", formatClock(runtime.lastHeartbeatAt)),
-    detailRow("最近错误", runtime.lastError ? `${runtime.lastError.code}: ${runtime.lastError.message}` : "--"),
-    detailRow("Memory 状态", state.online ? memoryStatusLabel(memory) : `缓存：${memoryStatusLabel(memory)}`),
-    detailRow("Memory 更新时间", formatClock(memory.updatedAt)),
-    detailRow("系统摘要", memorySummary.system),
-    detailRow("资源概览", compactOverview([["磁盘", resources.disk], ["内存", resources.memory]])),
-    detailRow("服务概览", compactOverview([["nginx", services.nginx], ["mongod", services.mongod], ["pm2", services.pm2]])),
-    detailRow("配置路径", compactPathList(memorySummary.configPaths)),
-    detailRow("日志路径", compactPathList(memorySummary.logPaths)),
-  );
-
-  details.append(
-    detailRow("Health overall", health.overall),
-    detailRow("SSH transport", transportHealth.status),
-    detailRow("SSH generation", transportHealth.generation),
-    detailRow("SSH reconnects", transportHealth.reconnectCount),
-    detailRow("SSH next retry", formatClock(transportHealth.nextRetryAt)),
-    detailRow("Authentication", authenticationHealth.status),
-    detailRow("Active operations", operationHealth.active),
-    detailRow("Queued operations", operationHealth.queued),
-    detailRow("Active SSH channels", operationHealth.activeChannels),
-  );
+    detailRow("活动 / 排队", `${operationHealth.active || 0} / ${operationHealth.queued || 0}`),
+    detailRow("最近错误", runtime.lastError ? `${runtime.lastError.code}: ${runtime.lastError.message}` : "无"));
+  const connectionDetails = createElement("details", "connection-details");
+  connectionDetails.append(createElement("summary", "", "连接与运行详情"),
+    detailRow("实例 ID", instance.id), detailRow("目标", targetLabel(instance)), detailRow("用户名", instance.username),
+    detailRow("私钥路径", instance.privateKeyPath), detailRow("私钥口令", instance.hasPassphrase ? "已配置" : "未配置"),
+    detailRow("审计日志", instance.auditLog || "默认"), detailRow("健康汇总", health.overall),
+    detailRow("SSH 重连次数", transportHealth.reconnectCount), detailRow("下次重试", formatClock(transportHealth.nextRetryAt)),
+    detailRow("活动 SSH 通道", operationHealth.activeChannels));
+  details.append(connectionDetails);
+  const workerActions = createElement("div", "toolbar-actions");
+  for (const [label, action] of [[runtime.status === "running" ? "停止 Worker" : "启动 Worker", runtime.status === "running" ? "stop" : "start"], ["重新加载配置", "refresh"]]) {
+    const control = button(label, action, instance); control.disabled = !state.online || isActionPending(action, instance.id);
+    control.addEventListener("click", () => runAction(action, instance.id)); workerActions.append(control);
+  }
+  details.append(workerActions);
 
   const eventList = createElement("section", "event-list");
   const events = runtime.events || [];
@@ -854,11 +801,28 @@ function openDrawer(instance) {
     }
   }
 
-  drawerBody.replaceChildren(details, createElement("h2", "", "最近事件"), eventList);
-  instanceTasksPanel = window.remoteDebugInstanceTasks?.create({ instanceId: instance.id, api, notify: showToast });
-  if (instanceTasksPanel) drawerBody.prepend(instanceTasksPanel.element);
-  instanceFinalResultsPanel = window.remoteDebugFinalResults?.create({ instanceId: instance.id, api, notify: showToast });
-  if (instanceFinalResultsPanel) drawerBody.prepend(instanceFinalResultsPanel.element);
+  const workspaceEnabled = Boolean(window.remoteDebugWorkspace);
+  drawerBody.replaceChildren();
+  if (!workspaceEnabled || view === "overview") drawerBody.append(details, createElement("h2", "", "最近事件"), eventList);
+  if (!workspaceEnabled || view === "tasks") {
+    instanceTasksPanel = window.remoteDebugInstanceTasks?.create({ instanceId: instance.id, api, notify: showToast });
+    if (instanceTasksPanel) drawerBody.append(instanceTasksPanel.element);
+    if (workspaceEnabled) window.remoteDebugWorkspace.attachOutput(instance, drawerBody);
+  }
+  if (!workspaceEnabled || view === "results") {
+    instanceFinalResultsPanel = window.remoteDebugFinalResults?.create({ instanceId: instance.id, api, notify: showToast });
+    if (instanceFinalResultsPanel) drawerBody.append(instanceFinalResultsPanel.element);
+  }
+  if (view === "memory") {
+    const memoryPanel = createElement("section", "detail-list");
+    memoryPanel.append(createElement("h2", "", "已记录的环境摘要"),
+      detailRow("记忆状态", state.online ? memoryStatusLabel(memory) : `缓存：${memoryStatusLabel(memory)}`),
+      detailRow("更新时间", formatClock(memory.updatedAt)), detailRow("系统摘要", memorySummary.system),
+      detailRow("资源概览", compactOverview([["磁盘", resources.disk], ["内存", resources.memory]])),
+      detailRow("服务概览", compactOverview([["nginx", services.nginx], ["mongod", services.mongod], ["pm2", services.pm2]])),
+      detailRow("配置路径", compactPathList(memorySummary.configPaths)), detailRow("日志路径", compactPathList(memorySummary.logPaths)));
+    drawerBody.append(memoryPanel);
+  }
   const servicePanel = createElement("section", "detail-list");
   servicePanel.append(createElement("h2", "", "后端服务启动"));
   const serviceSelect = createElement("select");
@@ -868,7 +832,7 @@ function openDrawer(instance) {
   const serviceOutput = createElement("pre", "sandbox-output", serviceIds.length ? "检查会验证实际进程与端口；启动只补齐缺失进程。异常恢复需要单独授权。" : "当前实例没有已验证的启动配置。请先编辑本实例配置，不会从其他实例复制。");
   const serviceButtons = createElement("div", "toolbar-actions");
   for (const [label, action] of [["检查服务", "inspect"], ["启动服务", "start"]]) {
-    const button = createElement("button", "secondary", label);
+    const button = createElement("button", "button", label);
     button.type = "button";
     button.disabled = !serviceIds.length || !state.online || runtime.status !== "running";
     button.addEventListener("click", async () => {
@@ -893,7 +857,7 @@ function openDrawer(instance) {
     serviceButtons.append(button);
   }
   servicePanel.append(serviceSelect, serviceButtons, serviceOutput);
-  drawerBody.append(servicePanel);
+  if (!workspaceEnabled || view === "overview") drawerBody.append(servicePanel);
   const sandboxPanel = createElement("section", "detail-list");
   sandboxPanel.append(createElement("h2", "", "插件存储沙盒"));
   const jobInput = createElement("input");
@@ -909,7 +873,7 @@ function openDrawer(instance) {
     ["清理过期任务", "/sandbox/prepare-cleanup", { jobId: true }],
   ]) {
     const button = createElement("button", "button", label);
-    button.type = "button";
+    button.type = "button"; button.disabled = !state.online;
     button.addEventListener("click", async () => {
       button.disabled = true;
       try {
@@ -921,7 +885,7 @@ function openDrawer(instance) {
         }
         let result = await api(route, { method: "POST", body: JSON.stringify(payload) });
         output.textContent = JSON.stringify(result, null, 2);
-        if (route === "/sandbox/prepare-cleanup" && window.confirm(`任务 ${payload.jobId} 已超过保留期。将清理 ${result.fileCount} 个文件及对应过期凭据，约 ${result.bytes} 字节。确定清理吗？`)) {
+        if (route === "/sandbox/prepare-cleanup" && output.isConnected && window.confirm(`实例 ${instance.id} 的任务 ${payload.jobId} 已超过保留期。将清理 ${result.fileCount} 个文件及对应过期凭据，约 ${result.bytes} 字节。确定清理吗？`)) {
           result = await api("/sandbox/cleanup", { method: "POST", body: JSON.stringify({ instanceId: instance.id, jobId: payload.jobId, cleanupHash: result.cleanupHash, confirmation: "确认清理" }) });
           output.textContent = JSON.stringify(result, null, 2);
         }
@@ -931,27 +895,30 @@ function openDrawer(instance) {
     buttons.append(button);
   }
   sandboxPanel.append(jobInput, buttons, output);
-  drawerBody.append(sandboxPanel);
+  if (!workspaceEnabled || view === "storage") drawerBody.append(sandboxPanel);
   drawer.hidden = false;
-  drawerMask.hidden = false;
+  drawerMask.hidden = workspaceEnabled;
 }
 
-function closeDrawer() {
+function closeDrawer(navigate = true) {
   instanceTasksPanel?.destroy(); instanceTasksPanel = null;
   instanceFinalResultsPanel?.destroy(); instanceFinalResultsPanel?.element.remove(); instanceFinalResultsPanel = null;
   drawer.hidden = true;
   drawerMask.hidden = true;
+  if (navigate && window.remoteDebugWorkspace) window.remoteDebugWorkspace.route("instances");
 }
 
 const managerActions = new Set(["edit", "delete", "start", "stop", "refresh", "manual", "export"]);
 
 async function runAction(action, id) {
+  if (isActionPending(action, id)) return;
   const instance = findInstance(id);
   if (!instance) {
     return;
   }
   if (action === "preview") {
-    window.remoteDebugOutputPreview?.toggle(id);
+    if (window.remoteDebugWorkspace) window.remoteDebugWorkspace.route("instance:tasks", id);
+    else window.remoteDebugOutputPreview?.toggle(id);
     return;
   }
 
@@ -961,10 +928,12 @@ async function runAction(action, id) {
   }
 
   if (action === "view" || action === "tasks") {
-    openDrawer(instance);
+    if (window.remoteDebugWorkspace) window.remoteDebugWorkspace.route(`instance:${action === "tasks" ? "tasks" : "overview"}`, id);
+    else openDrawer(instance);
     return;
   }
   if (action === "edit") {
+    if (window.remoteDebugWorkspace?.confirmDiscard() === false) return;
     openModal(instance);
     return;
   }
@@ -1009,6 +978,7 @@ async function runAction(action, id) {
       await loadInstances();
     } finally {
       setActionPending(action, id, false);
+      window.remoteDebugWorkspace?.refreshInstance(id);
     }
   }
 }
@@ -1018,6 +988,7 @@ instanceRows.addEventListener("click", (event) => {
   if (!target) {
     return;
   }
+  const menu = target.closest(".row-menu"); if (menu) menu.open = false;
   runAction(target.dataset.action, target.dataset.id);
 });
 
@@ -1056,15 +1027,16 @@ shutdownButton?.addEventListener("click", async () => {
     showToast(`${error.code || "ERROR"}: ${error.message}`);
   }
 });
-closeModalButton.addEventListener("click", closeModal);
-cancelModalButton.addEventListener("click", closeModal);
+const cancelInstanceForm = () => window.remoteDebugWorkspace ? window.remoteDebugWorkspace.cancelled() : closeModal();
+closeModalButton.addEventListener("click", cancelInstanceForm);
+cancelModalButton.addEventListener("click", cancelInstanceForm);
 modalBackdrop.addEventListener("click", (event) => {
   if (event.target === modalBackdrop) {
-    closeModal();
+    cancelInstanceForm();
   }
 });
 instanceForm.addEventListener("submit", submitForm);
-closeDrawerButton.addEventListener("click", closeDrawer);
+closeDrawerButton.addEventListener("click", () => window.remoteDebugWorkspace ? window.remoteDebugWorkspace.route("instances") : closeDrawer());
 drawerMask.addEventListener("click", closeDrawer);
 
 authForm.addEventListener("submit", async (event) => {
@@ -1138,7 +1110,7 @@ document.querySelector("#importInstanceButton").addEventListener("click", () => 
 document.querySelector("#closeTransferButton").addEventListener("click", closeTransfer);
 document.querySelector("#cancelTransferButton").addEventListener("click", closeTransfer);
 transferBackdrop.addEventListener("click", event => { if (event.target === transferBackdrop) closeTransfer(); });
-document.addEventListener("keydown", event => { if (event.key === "Escape") closeTransfer(); });
+document.addEventListener("keydown", event => { if (event.key === "Escape") { closeTransfer(); if (!modalBackdrop.hidden && !modalBackdrop.classList.contains("embedded-settings")) cancelInstanceForm(); } });
 window.addEventListener("pagehide", closeTransfer);
 transferForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -1202,3 +1174,6 @@ transferForm.addEventListener("submit", async event => {
   } catch (error) { if (active()) transferMessage.textContent = error.message; }
   finally { if (active()) submitTransfer.disabled = false; }
 });
+
+
+window.remoteDebugWorkspace?.init({ state, api, render, loadInstances, openDrawer, closeDrawer, openModal, closeModal, runAction, isUnlocked: () => Boolean(authToken), notify: showToast });

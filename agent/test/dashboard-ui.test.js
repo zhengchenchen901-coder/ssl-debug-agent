@@ -36,6 +36,27 @@ test("dashboard unlock, logout and expired credentials stay confined to one tab"
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
+test("repeated worker actions do not dispatch a second request while the first is pending", async () => {
+  const script = await fs.readFile(path.resolve(here, "..", "public", "dashboard.js"), "utf8");
+  const instance = { id: "fixture", name: "fixture", enabled: true, runtime: { status: "running", pid: 1 } };
+  const response = payload => ({ ok: true, status: 200, text: async () => JSON.stringify(payload) });
+  let dispatches = 0, release;
+  const { context } = createDashboardHarness(async route => {
+    if (route.endsWith("/stop")) {
+      dispatches++;
+      return new Promise(resolve => { release = () => resolve(response({ ok: true })); });
+    }
+    return response({ ok: true, instances: [instance] });
+  });
+  vm.runInContext(script, context);
+  await context.loadInstances();
+  const pending = context.runAction("stop", "fixture");
+  await context.runAction("stop", "fixture");
+  assert.equal(dispatches, 1);
+  release();
+  await pending;
+});
+
 class FakeElement {
   constructor(tagName = "div") {
     this.tagName = tagName;

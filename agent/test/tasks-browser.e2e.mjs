@@ -1,3 +1,4 @@
+import { openInstancePage, openInstanceMenu, openAdministratorSettings } from "./helpers/workspace-browser.js";
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import { randomUUID } from "node:crypto";
@@ -39,7 +40,7 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator("#authToken").fill(token); await page.locator("#authForm button").click();
-  await page.locator('[data-action="tasks"][data-id="first"]').click();
+  await openInstancePage(page, "first", "tasks");
   await page.getByText("历史归档查询", { exact: true }).waitFor();
   assert.equal(await page.getByText("批量数据库修改", { exact: true }).count(), 0);
   assert.equal(await page.locator(".task-card").filter({ hasText: "普通查询" }).getByRole("button", { name: "手动最高档" }).count(), 0);
@@ -50,14 +51,14 @@ try {
   assert.equal(await page.locator(".task-card").evaluateAll((nodes) => nodes.every((node) => node.scrollWidth <= node.clientWidth + 1)), true);
   await page.setViewportSize({ width: 1480, height: 1000 });
   assert.equal(resources.tasks.get(id).resourceMode, "manual_max");
-  await page.reload(); await page.locator('[data-action="tasks"][data-id="first"]').click();
+  await page.reload(); await openInstancePage(page, "first", "tasks");
   await page.getByRole("button", { name: "恢复自动", exact: true }).waitFor();
   const screenshot = "/tmp/rda-task-dashboard.png"; await page.screenshot({ path: screenshot, fullPage: true });
   await page.getByRole("button", { name: "恢复自动", exact: true }).click();
   await page.getByRole("button", { name: "手动最高档", exact: true }).waitFor();
   assert.equal(resources.tasks.get(id).resourceMode, "auto");
   await page.locator("#closeDrawerButton").click();
-  await page.locator('[data-action="tasks"][data-id="second"]').click();
+  await openInstancePage(page, "second", "tasks");
   await page.getByText("批量数据库修改", { exact: true }).waitFor();
   assert.equal(await page.getByText("历史归档查询", { exact: true }).count(), 0);
   assert.deepEqual(errors, []);

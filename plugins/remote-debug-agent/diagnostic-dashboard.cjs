@@ -79,7 +79,8 @@ async function ensureDashboard(pluginRoot, dataDir, report) {
 async function serve(pluginRoot, dataDir, preferredPort) {
   const token = crypto.randomBytes(24).toString("hex");
   const publicDir = path.join(pluginRoot, "runtime", "agent", "public");
-  const assets = { "/": ["dashboard.html", "text/html"], "/dashboard.css": ["dashboard.css", "text/css"],
+  const assets = { "/": ["dashboard.html", "text/html"], "/dashboard.css": ["dashboard.css", "text/css"], "/ui.css": ["ui.css", "text/css"],
+    "/ui.js": ["ui.js", "text/javascript"], "/workspace.js": ["workspace.js", "text/javascript"],
     "/environment-report.js": ["environment-report.js", "text/javascript"], "/dashboard.js": ["dashboard.js", "text/javascript"] };
   const server = http.createServer(function (req, res) {
     res.setHeader("Cache-Control", "no-store");

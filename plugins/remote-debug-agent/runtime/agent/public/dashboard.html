@@ -3,23 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Remote Debug Agent</title>
+    <title>Remote Debug Agent · 工作空间</title>
     <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/ui.css" />
     <link rel="stylesheet" href="/dashboard.css" />
+    <script src="/ui.js" defer></script>
   </head>
-  <body>
-    <header class="topbar">
-      <div class="title-block">
-        <p class="eyebrow">Remote Debug Agent</p>
-        <h1>连接实例管理</h1>
-      </div>
-      <div class="connection" aria-live="polite">
-        <span id="connectionDot" class="dot pending"></span>
-        <span id="connectionText">加载中</span>
-      </div>
-    </header>
-
-    <main>
+  <body class="dashboard-app">
+    <a class="skip-link" href="#mainContent">跳至内容</a>
+    <div class="app-shell">
+      <aside class="app-sidebar" aria-label="工作空间导航">
+        <div class="app-brand"><span class="brand-mark" aria-hidden="true">&gt;_</span><div>Remote Debug<small>AGENT WORKSPACE</small></div></div>
+        <p class="nav-label">管理空间</p>
+        <nav id="globalNav" aria-label="全局导航">
+<button class="nav-item" type="button" data-page="instances"><span class="nav-symbol" aria-hidden="true">▤</span>连接实例</button><button class="nav-item" type="button" data-page="global"><span class="nav-symbol" aria-hidden="true">≋</span>全局输出</button><button class="nav-item" type="button" data-page="environment"><span class="nav-symbol" aria-hidden="true">⚙</span>环境与管理</button>
+        </nav>
+        <div id="instanceNav" class="instance-nav" hidden>
+          <p class="nav-label">当前实例</p><p id="navInstanceName" class="nav-instance-name"></p>
+          <nav aria-label="实例导航">
+<button class="nav-item" type="button" data-page="instance:overview"><span class="nav-symbol" aria-hidden="true">▦</span>实例总览</button><button class="nav-item" type="button" data-page="instance:tasks"><span class="nav-symbol" aria-hidden="true">☷</span>任务与输出</button><button class="nav-item" type="button" data-page="instance:results"><span class="nav-symbol" aria-hidden="true">▣</span>最终交付物</button><button class="nav-item" type="button" data-page="instance:memory"><span class="nav-symbol" aria-hidden="true">▧</span>实例记忆</button><button class="nav-item" type="button" data-page="instance:storage"><span class="nav-symbol" aria-hidden="true">▥</span>存储与审计</button><button class="nav-item" type="button" data-page="instance:settings"><span class="nav-symbol" aria-hidden="true">⚙</span>实例设置</button>
+          </nav>
+        </div>
+        <div class="sidebar-status connection" aria-live="polite"><span id="connectionDot" class="dot pending"></span><div><span id="connectionText">面板未解锁</span><small>本地管理空间</small></div></div>
+      </aside>
+      <div class="app-workspace">
+        <header class="topbar">
+          <div id="breadcrumbs" class="breadcrumbs">管理空间 <span>/</span> 连接实例</div>
+          <div class="toolbar-actions"><button id="appearanceButton" class="icon-button" type="button" aria-label="切换明暗外观">◐</button><button id="authLogout" class="button subtle" type="button" hidden>退出面板</button></div>
+        </header>
+        <main id="mainContent">
       <section id="authPanel" class="table-panel" aria-label="本地访问令牌">
         <h2>解锁本地面板</h2>
         <p>从本地受保护的 .runtime/http-auth.json 文件复制访问令牌。令牌仅保留在当前标签页。</p>
@@ -30,7 +42,26 @@
           <p id="authMessage" role="alert"></p>
         </form>
       </section>
-      <button id="authLogout" class="button" type="button" hidden>退出面板</button>
+
+          <div id="dashboardContent" hidden>
+            <section id="instancesPage" data-workspace-page="instances">
+              <div class="page-heading"><div><p class="eyebrow">YOUR INFRASTRUCTURE</p><h1>连接实例</h1><p>连接远端环境，从这里进入你的调试工作区。</p></div><div class="toolbar-actions"><button id="importInstanceButton" class="button" type="button">导入实例</button><button id="newButton" class="button primary" type="button">＋ 新建实例</button></div></div>
+              <section class="metrics" aria-label="实例状态"><span><strong id="totalCount">0</strong> 个实例</span><span><span class="dot live"></span> <strong id="runningCount">0</strong> 个运行中</span><span id="tableHint">管理本地 Worker 与远端 SSH 连接</span></section>
+              <section class="table-panel" aria-label="实例列表">
+                <div class="table-toolbar"><label class="search-field"><span aria-hidden="true">⌕</span><input id="instanceSearch" type="search" aria-label="搜索实例" placeholder="搜索名称、ID 或主机" /></label><div class="toolbar-actions"><label class="filter-label">状态<select id="instanceFilter"><option value="all">全部</option><option value="running">运行中</option><option value="stopped">已停止</option><option value="unhealthy">异常</option></select></label><button id="reloadButton" class="button subtle" type="button">刷新</button></div></div>
+                <div id="emptyState" class="empty-state" hidden>当前还没有连接实例，点击“新建实例”开始配置。</div>
+                <div class="table-scroll"><table class="pro-table instance-table"><thead><tr><th>实例</th><th>连接目标</th><th>连接状态</th><th>工作负载与记忆</th><th class="actions-col">操作</th></tr></thead><tbody id="instanceRows"></tbody></table></div>
+                <p class="table-note">连接状态、任务与记忆按实例独立管理。</p>
+              </section>
+            </section>
+            <section id="globalPage" data-workspace-page="global" hidden>
+              <div class="page-heading"><div><p class="eyebrow">ACTIVITY STREAM</p><h1>全局输出</h1><p>查看 Manager 与未归属当前实例的过程输出。各实例输出位于自己的工作区。</p></div><button id="globalOutputButton" class="button" type="button" aria-expanded="false">展开输出</button></div>
+              <div id="globalOutputPreview" hidden></div>
+            </section>
+            <section id="managementPage" data-workspace-page="environment" hidden>
+              <div class="page-heading"><div><p class="eyebrow">LOCAL MANAGEMENT</p><h1>环境与管理</h1><p>统一查看插件运行环境，管理本机管理员与 Manager。</p></div></div>
+              <div class="tabs" role="tablist" aria-label="管理分区"><button id="environmentTab" type="button" role="tab" aria-controls="environmentSection" aria-selected="true" data-management-tab="environment">环境检查</button><button id="adminTab" type="button" role="tab" aria-controls="adminSection" aria-selected="false" data-management-tab="admin">管理员</button><button id="managerTab" type="button" role="tab" aria-controls="managerSection" aria-selected="false" data-management-tab="manager">Manager</button></div>
+              <div id="environmentSection" role="tabpanel" aria-labelledby="environmentTab">
       <section id="environmentPanel" class="table-panel environment-panel" aria-label="插件环境检查" hidden>
         <div class="table-toolbar">
           <div>
@@ -51,68 +82,23 @@
           <div id="environmentHistoryRows"></div>
         </details>
       </section>
-      <section class="metrics" aria-label="运行状态">
-        <div class="metric">
-          <span>实例总数</span>
-          <strong id="totalCount">0</strong>
-        </div>
-        <div class="metric">
-          <span>运行中</span>
-          <strong id="runningCount">0</strong>
-        </div>
-        <div class="metric">
-          <span>端口范围</span>
-          <strong id="portRange">--</strong>
-        </div>
-        <div class="metric">
-          <span>默认实例</span>
-          <strong id="defaultInstance">--</strong>
-        </div>
-      </section>
 
-      <section class="table-panel" aria-label="实例列表">
-        <div class="table-toolbar">
-          <div>
-            <h2>实例列表</h2>
-            <p id="tableHint">管理本地 worker 与远端 SSH 连接</p>
+                <p id="environmentEmpty" class="empty-state">等待环境报告；可重新读取报告。</p>
+              </div>
+              <section id="adminSection" class="table-panel padded-panel" role="tabpanel" aria-labelledby="adminTab" hidden><h2>插件管理员</h2><p class="muted">使用独立管理员账号登录手动工作台。注册与恢复需要操作系统身份验证。</p><button id="registerAdminButton" class="button primary" type="button">注册管理员</button></section>
+              <section id="managerSection" role="tabpanel" aria-labelledby="managerTab" hidden><div class="table-panel padded-panel"><h2>本地 Manager</h2><dl class="description-list"><dt>Worker 端口范围</dt><dd id="portRange">--</dd><dt>配置中的默认实例 ID</dt><dd id="defaultInstance">--</dd></dl><p class="muted">多实例操作需要明确选择目标，默认实例配置不代表所有操作的自动目标。</p><button id="shutdownButton" class="button danger" type="button" hidden>关闭 Manager</button></div><section id="managerFinalResults" class="table-panel"></section></section>
+            </section>
+            <section id="instancePage" data-workspace-page="instance" hidden>
+              <div class="instance-context"><label for="instancePicker">当前实例</label><select id="instancePicker"></select><span id="instanceTarget" class="mono"></span><span id="instanceSnapshot" class="muted"></span></div>
+              <section id="drawer" class="instance-detail" aria-label="实例工作区" hidden><div class="page-heading"><div><p class="eyebrow" id="instancePageEyebrow">INSTANCE WORKSPACE</p><h1 id="drawerTitle">实例详情</h1><p id="instancePageDescription"></p></div><div id="instanceActions" class="toolbar-actions"></div></div><button id="closeDrawerButton" class="button subtle back-button" type="button">← 返回实例列表</button><div id="drawerBody" class="drawer-body"></div></section>
+              <div id="instanceSettingsMount" hidden></div>
+            </section>
           </div>
-          <div class="toolbar-actions">
-            <button id="globalOutputButton" class="button" type="button" aria-expanded="false">全局输出</button>
-            <button id="shutdownButton" class="button danger" type="button" hidden>关闭 Manager</button>
-            <button id="reloadButton" class="button" type="button">刷新列表</button>
-            <button id="registerAdminButton" class="button" type="button">注册管理员</button>
-            <button id="importInstanceButton" class="button" type="button">导入实例</button>
-            <button id="newButton" class="button primary" type="button">新建实例</button>
-          </div>
-        </div>
-
-        <div id="globalOutputPreview" hidden></div>
-        <div id="emptyState" class="empty-state" hidden>
-          当前还没有连接实例。
-        </div>
-        <div class="table-scroll">
-          <table class="pro-table">
-            <thead>
-              <tr>
-                <th>实例</th>
-                <th>目标</th>
-                <th>用户</th>
-                <th>SSH</th>
-                <th>状态</th>
-                <th>Memory</th>
-                <th>Worker</th>
-                <th>最近心跳</th>
-                <th>最近错误</th>
-                <th class="actions-col">操作</th>
-              </tr>
-            </thead>
-            <tbody id="instanceRows"></tbody>
-          </table>
-        </div>
-      </section>
-      <section id="managerFinalResults" class="table-panel" hidden></section>
-    </main>
-
+        </main>
+        <footer class="app-footer"><span>Remote Debug Agent</span><span>本地面板 · 操作目标按实例隔离</span></footer>
+      </div>
+    </div>
+    <div id="drawerMask" hidden></div>
     <div id="modalBackdrop" class="overlay" hidden>
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-header">
@@ -120,6 +106,17 @@
           <button id="closeModalButton" class="icon-button" type="button" aria-label="关闭">×</button>
         </div>
         <form id="instanceForm" class="form-grid">
+          <div id="settingsTabs" class="tabs wide" role="tablist" aria-label="实例设置分组">
+            <button id="settings-ssh-tab" type="button" role="tab" aria-controls="settings-ssh-panel" aria-selected="true" data-settings-tab="ssh">连接与基础</button>
+            <button id="settings-database-tab" type="button" role="tab" aria-controls="settings-database-panel" aria-selected="false" data-settings-tab="database">数据库连接</button>
+            <button id="settings-services-tab" type="button" role="tab" aria-controls="settings-services-panel" aria-selected="false" data-settings-tab="services">服务与日志</button>
+            <button id="settings-permissions-tab" type="button" role="tab" aria-controls="settings-permissions-panel" aria-selected="false" data-settings-tab="permissions">操作权限</button>
+          </div>
+          <div id="databaseTabs" class="connection-tabs wide" role="group" aria-label="数据库连接用途" hidden>
+            <button class="button" type="button" aria-pressed="true" data-database-tab="auto">自动业务连接</button>
+            <button class="button" type="button" aria-pressed="false" data-database-tab="manual">人工管理连接</button>
+            <button class="button" type="button" aria-pressed="false" data-database-tab="sandbox">沙盒管理连接</button>
+          </div>
           <label>
             <span>实例 ID</span>
             <input name="id" autocomplete="off" placeholder="default" />
@@ -263,29 +260,17 @@
             <p class="muted">按住 Ctrl（Mac 使用 Command）可选择多项。集合选项来自所选数据库；集合白名单对所有所选数据库中的同名集合生效。已保存的名称会保留。</p>
             <button id="reloadMongoOptions" class="button" type="button">重新读取选项</button>
             <p id="mongodbOptionsStatus" class="muted" aria-live="polite"></p>
-            <p class="muted">开启写入时需填写两项白名单。保存后，运行中的实例需点击行内“重新加载配置”；已停止的实例下次启动时生效。重新加载仅重启本地 Agent worker，不重启远端 PM2。实际写入仍需准备具体写入计划。</p>
+            <p class="muted">开启写入时需填写两项白名单。保存后，运行中的实例需点击“重新加载配置”；已停止的实例下次启动时生效。重新加载仅重启本地 Agent worker，不重启远端 PM2。实际写入仍需准备具体写入计划。</p>
           </fieldset>
           <div id="formMessage" class="form-message" aria-live="polite"></div>
           <div class="modal-actions">
             <button id="cancelModalButton" class="button" type="button">取消</button>
-            <button class="button" type="submit" value="sandbox">保存并配置沙盒账户</button>
-            <button class="button primary" type="submit">保存</button>
+            <button id="saveSandboxButton" class="button" type="submit" value="sandbox">保存并配置沙盒账户</button>
+            <button id="saveInstanceButton" class="button primary" type="submit">保存配置</button>
           </div>
         </form>
       </section>
     </div>
-
-    <aside id="drawer" class="drawer" aria-label="实例详情" hidden>
-      <div class="drawer-header">
-        <div>
-          <p class="eyebrow">Instance Detail</p>
-          <h2 id="drawerTitle">实例详情</h2>
-        </div>
-        <button id="closeDrawerButton" class="icon-button" type="button" aria-label="关闭">×</button>
-      </div>
-      <div id="drawerBody" class="drawer-body"></div>
-    </aside>
-    <div id="drawerMask" class="drawer-mask" hidden></div>
 
     <div id="adminBackdrop" class="overlay" hidden>
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
@@ -327,8 +312,9 @@
       </section>
     </div>
 
-    <div id="toast" class="toast" hidden></div>
 
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script src="/workspace.js" defer></script>
     <script src="/environment-report.js" defer></script>
     <script src="/output-preview.js" defer></script>
     <script src="/instance-tasks.js" defer></script>

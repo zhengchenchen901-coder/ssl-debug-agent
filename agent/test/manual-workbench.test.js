@@ -166,6 +166,12 @@ test("manual listener rejects cross-origin requests and Manager tokens; no crede
   assert.ok(!JSON.stringify(result.target).includes("privateKey"));
   assert.equal((await request(workbench, "/api/session", undefined, result.token)).status, 200);
   assert.equal((await request(workbench, "/assets/../manual-auth.js")).status, 404);
+  for (const asset of ["ui.css", "ui.js", "manual.css", "manual.js"]) {
+    const response = await fetch(origin + "/assets/" + asset);
+    assert.equal(response.status, 200);
+    const contents = await response.text();
+    assert.ok(!contents.includes(PASSWORD) && !contents.includes(result.token));
+  }
   const page = await (await fetch(origin + "/")).text();
   assert.ok(!page.includes(PASSWORD) && !page.includes(result.token));
   const badSocket = new WebSocket(origin.replace("http:", "ws:") + "/terminal", { origin: "http://evil.example" });

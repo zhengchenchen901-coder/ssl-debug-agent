@@ -1,3 +1,4 @@
+import { openInstancePage, openInstanceMenu, openAdministratorSettings } from "./helpers/workspace-browser.js";
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import fs from "node:fs/promises";
@@ -32,7 +33,7 @@ try {
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator("#authToken").fill(token); await page.locator("#authForm button").click();
-  await page.locator('[data-action="tasks"][data-id="test-server"]').click();
+  await openInstancePage(page, "test-server", "overview");
   const panel = page.getByRole("heading", { name: "后端服务启动", exact: true }).locator("..");
   await panel.getByRole("button", { name: "检查服务", exact: true }).click();
   await panel.locator("pre").filter({ hasText: '"status": "healthy"' }).waitFor();
@@ -48,16 +49,17 @@ try {
   assert.equal(accepted, true); assert.equal(calls.at(-1).body.confirmation, "启动服务");
   assert.equal(calls.at(-1).id, "test-server"); assert.match(calls.at(-1).body.profileHash, /^[a-f0-9]{64}$/);
   await page.locator("#closeDrawerButton").click();
-  await page.locator('[data-action="tasks"][data-id="empty-fixture"]').click();
+  await openInstancePage(page, "empty-fixture", "overview");
   const empty = page.getByRole("heading", { name: "后端服务启动", exact: true }).locator("..");
   assert.equal(await empty.getByRole("button", { name: "启动服务", exact: true }).isDisabled(), true);
   assert.match(await empty.locator("pre").innerText(), /没有已验证的启动配置/);
   await page.locator("#closeDrawerButton").click();
-  await page.locator('[data-action="edit"][data-id="test-server"]').click();
+  await openInstancePage(page, "test-server", "settings");
+  await page.locator('[data-settings-tab="services"]').click();
   const profiles = page.locator('#instanceForm textarea[name="serviceProfiles"]');
   assert.equal(JSON.parse(await profiles.inputValue()).be.instanceId, "test-server");
   await profiles.fill("{}");
-  await Promise.all([page.waitForResponse(response => response.url().endsWith("/api/instances/test-server") && response.request().method() === "PUT"), page.locator("#instanceForm").getByRole("button", { name: "保存", exact: true }).click()]);
+  await Promise.all([page.waitForResponse(response => response.url().endsWith("/api/instances/test-server") && response.request().method() === "PUT"), page.locator("#instanceForm").getByRole("button", { name: "保存配置", exact: true }).click()]);
   assert.deepEqual(registry.get("test-server").serviceProfiles, {});
   assert.deepEqual(registry.get("empty-fixture").serviceProfiles, {});
   assert.ok(calls.every(call => call.id === "test-server"));

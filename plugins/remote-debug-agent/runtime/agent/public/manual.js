@@ -5,7 +5,7 @@ const loginForm = element("loginForm");
 let token = "", socket = null, terminal = null, fit = null, sessionPoll = null, ready = false;
 let generation = 0, lastInputAt = 0;
 element("loginInstance").textContent = instanceId || "未选择实例";
-if (!instanceId) { element("loginMessage").textContent = "请从实例列表点击“手动操作”进入。"; element("loginButton").disabled = true; }
+if (!instanceId) { element("loginMessage").textContent = "请从实例工作区点击“手动工作台”进入。"; element("loginButton").disabled = true; }
 
 async function api(route, body) {
   const response = await fetch(route, { method: body === undefined ? "GET" : "POST", headers: {
@@ -55,7 +55,7 @@ function fitTerminal() {
 function createTerminal() {
   if (!window.Terminal || !window.FitAddon) throw new Error("终端组件未能加载，请刷新页面后重试。");
   terminal = new window.Terminal({ cursorBlink: true, fontSize: 13, lineHeight: 1.25, scrollback: 3000, disableStdin: true,
-    fontFamily: 'Menlo, Monaco, Consolas, "Liberation Mono", monospace', theme: { background: "#090f17", foreground: "#cddaea", cursor: "#80e0c1", selectionBackground: "#28443f" } });
+    fontFamily: 'Menlo, Monaco, Consolas, "Liberation Mono", monospace', theme: { background: "#1b252b", foreground: "#d8e6e7", cursor: "#80e0c1", selectionBackground: "#28443f" } });
   fit = new window.FitAddon.FitAddon();
   terminal.loadAddon(fit);
   terminal.open(element("terminal"));
