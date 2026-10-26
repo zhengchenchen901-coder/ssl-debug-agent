@@ -1056,7 +1056,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
       "maxFiles", "fileOffset", "maxScanBytes", "maxExpandedBytes", "root", "directories", "remove",
       "memberPrefix", "memberOffset", "area", "jobId",
       "jobTimeoutMs", "cpuPercent", "readBytesPerSecond", "processBytesPerSecond", "batchScanBytes",
-      "stopAfterFile", "fileLimit", "profile", "type", "references",
+      "stopAfterFile", "fileLimit", "profile", "type", "references", "originalRequest",
     ].includes(propertyName)) {
       continue;
     }
@@ -1135,6 +1135,14 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     for (const tool of list.result.tools) {
       assertStrictCompatibleSchema(tool.inputSchema, `${tool.name}.inputSchema`);
     }
+    const recoverySchema = list.result.tools.find((tool) => tool.name === "remote_debug_mongodb_recover_operation").inputSchema;
+    assert.ok(recoverySchema.properties.mode.enum.includes("historical"));
+    assert.deepEqual(recoverySchema.properties.originalRequest.required, ["jobId", "chunkIndex", "units"]);
+    assert.equal(recoverySchema.required.includes("originalRequest"), false, "historical diagnostics do not require re-uploading original input");
+    const expected = recoverySchema.properties.originalRequest.properties.units.items.properties.operations.items.oneOf[1].properties.expected;
+    const indexedPath = new RegExp(Object.keys(expected.patternProperties)[0]);
+    assert.equal(indexedPath.test("integrals.0.value"), true);
+    for (const path of ["integrals.$.value", "integrals.01.value", "integrals.100000.value"]) assert.equal(indexedPath.test(path), false);
     const runCommand = list.result.tools.find((tool) => tool.name === "remote_debug_run_command");
     assert.equal(runCommand.inputSchema.properties.timeoutMs.maximum, 120_000);
     const readFile = list.result.tools.find((tool) => tool.name === "remote_debug_read_file");

@@ -1,0 +1,307 @@
+{
+  "sourceSha256": "6bc587f95035f17770443b168d6e27442500ef8b172df838a67fd92195610e28",
+  "opaqueReferences": "passed unchanged to the original context; only the plugin resolves their original types",
+  "calls": [
+    {
+      "name": "remote_debug_get_capabilities"
+    },
+    {
+      "name": "remote_debug_list_instances"
+    },
+    {
+      "name": "remote_debug_restart_instance"
+    },
+    {
+      "name": "remote_debug_restart_instance"
+    },
+    {
+      "name": "remote_debug_list_instances"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "historical"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "historical"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "historical"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect"
+    }
+  ],
+  "localWorkerRestores": [
+    "default",
+    "test-server"
+  ],
+  "initialize": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261026.2"
+  },
+  "historicalEntryExposed": true,
+  "instances": [
+    {
+      "id": "default",
+      "status": "running",
+      "health": "healthy"
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "health": "healthy"
+    }
+  ],
+  "inspectBefore": {
+    "ok": true,
+    "intentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+    "state": "uncertain",
+    "route": "/mongodb/bulk/prepare",
+    "legacy": true,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0,
+      "businessPrivacy": {
+        "contextId": "2d216fb3-3f02-48fc-bd05-e05026c4179d",
+        "storage": "encrypted_sqlite",
+        "policyVersion": 1
+      }
+    }
+  },
+  "historyBefore": {
+    "ok": true,
+    "intentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+    "state": "uncertain",
+    "route": "/mongodb/bulk/prepare",
+    "legacy": true,
+    "reason": "historical_request_required",
+    "history": {
+      "requestMatched": false,
+      "recordFingerprint": "e74a375835b2d709f91efc58655c624448e06ce1f00737de179776be8b32f029",
+      "jobId": "37265270-8912-48c0-8c4d-2947a1cc6e41",
+      "chunkIndex": 0,
+      "diagnostics": {
+        "trust": "diagnostic_only",
+        "intentBound": false,
+        "requestDigestBound": false,
+        "candidateCount": 1,
+        "mcp": {
+          "status": "read",
+          "complete": true,
+          "matches": [
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "mcp_started",
+              "code": "MCP_TOOLS_CALL_STARTED",
+              "line": 12889,
+              "sha256": "a7195b827fa035cc2bb786b852c4d9edd278f781b071161ea1daac97abbdaec4"
+            },
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "mcp_failed",
+              "code": "MONGODB_BULK_FIELD_REJECTED",
+              "line": 12890,
+              "sha256": "587121cb13177faa5895af05acb578b741c3e2a2d2a16f42e124bd5c4d81a002"
+            }
+          ],
+          "snapshotBytes": 18024077
+        },
+        "worker": {
+          "status": "read",
+          "complete": true,
+          "matches": [
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "worker_audit",
+              "code": "MONGODB_BULK_FIELD_REJECTED",
+              "validationRejected": true,
+              "line": 2404,
+              "sha256": "154b3979cb29dba30ab0e572c4f85d3447a896b64cb625a5d52562f096842b40"
+            }
+          ],
+          "snapshotBytes": 875316
+        }
+      }
+    },
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0,
+      "businessPrivacy": {
+        "contextId": "2d216fb3-3f02-48fc-bd05-e05026c4179d",
+        "storage": "encrypted_sqlite",
+        "policyVersion": 1
+      }
+    }
+  },
+  "recovery": {
+    "ok": true,
+    "intentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+    "state": "uncertain",
+    "route": "/mongodb/bulk/prepare",
+    "legacy": true,
+    "reason": "historical_dispatch_evidence_required",
+    "history": {
+      "requestMatched": true,
+      "recordFingerprint": "e74a375835b2d709f91efc58655c624448e06ce1f00737de179776be8b32f029",
+      "jobId": "37265270-8912-48c0-8c4d-2947a1cc6e41",
+      "chunkIndex": 0,
+      "diagnostics": {
+        "trust": "diagnostic_only",
+        "intentBound": false,
+        "requestDigestBound": false,
+        "candidateCount": 1,
+        "mcp": {
+          "status": "read",
+          "complete": true,
+          "matches": [
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "mcp_started",
+              "code": "MCP_TOOLS_CALL_STARTED",
+              "line": 12889,
+              "sha256": "a7195b827fa035cc2bb786b852c4d9edd278f781b071161ea1daac97abbdaec4"
+            },
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "mcp_failed",
+              "code": "MONGODB_BULK_FIELD_REJECTED",
+              "line": 12890,
+              "sha256": "587121cb13177faa5895af05acb578b741c3e2a2d2a16f42e124bd5c4d81a002"
+            }
+          ],
+          "snapshotBytes": 18026259
+        },
+        "worker": {
+          "status": "read",
+          "complete": true,
+          "matches": [
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "worker_audit",
+              "code": "MONGODB_BULK_FIELD_REJECTED",
+              "validationRejected": true,
+              "line": 2404,
+              "sha256": "154b3979cb29dba30ab0e572c4f85d3447a896b64cb625a5d52562f096842b40"
+            }
+          ],
+          "snapshotBytes": 875316
+        }
+      },
+      "remoteEvidenceCode": "MONGODB_BULK_JOB_NOT_FOUND"
+    },
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0,
+      "businessPrivacy": {
+        "contextId": "2d216fb3-3f02-48fc-bd05-e05026c4179d",
+        "storage": "encrypted_sqlite",
+        "policyVersion": 1
+      }
+    }
+  },
+  "historyAfter": {
+    "ok": true,
+    "intentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+    "state": "uncertain",
+    "route": "/mongodb/bulk/prepare",
+    "legacy": true,
+    "reason": "historical_request_required",
+    "history": {
+      "requestMatched": false,
+      "recordFingerprint": "e74a375835b2d709f91efc58655c624448e06ce1f00737de179776be8b32f029",
+      "jobId": "37265270-8912-48c0-8c4d-2947a1cc6e41",
+      "chunkIndex": 0,
+      "diagnostics": {
+        "trust": "diagnostic_only",
+        "intentBound": false,
+        "requestDigestBound": false,
+        "candidateCount": 1,
+        "mcp": {
+          "status": "read",
+          "complete": true,
+          "matches": [
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "mcp_started",
+              "code": "MCP_TOOLS_CALL_STARTED",
+              "line": 12889,
+              "sha256": "a7195b827fa035cc2bb786b852c4d9edd278f781b071161ea1daac97abbdaec4"
+            },
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "mcp_failed",
+              "code": "MONGODB_BULK_FIELD_REJECTED",
+              "line": 12890,
+              "sha256": "587121cb13177faa5895af05acb578b741c3e2a2d2a16f42e124bd5c4d81a002"
+            }
+          ],
+          "snapshotBytes": 18028426
+        },
+        "worker": {
+          "status": "read",
+          "complete": true,
+          "matches": [
+            {
+              "operationId": "babbe8ae-55d5-411a-9cee-2e92430c864c",
+              "kind": "worker_audit",
+              "code": "MONGODB_BULK_FIELD_REJECTED",
+              "validationRejected": true,
+              "line": 2404,
+              "sha256": "154b3979cb29dba30ab0e572c4f85d3447a896b64cb625a5d52562f096842b40"
+            }
+          ],
+          "snapshotBytes": 875620
+        }
+      }
+    },
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0,
+      "businessPrivacy": {
+        "contextId": "2d216fb3-3f02-48fc-bd05-e05026c4179d",
+        "storage": "encrypted_sqlite",
+        "policyVersion": 1
+      }
+    }
+  },
+  "inspectAfter": {
+    "ok": true,
+    "intentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+    "state": "uncertain",
+    "route": "/mongodb/bulk/prepare",
+    "legacy": true,
+    "outputGuard": {
+      "policyVersion": 1,
+      "replacements": 0,
+      "omittedFields": 0,
+      "businessPrivacy": {
+        "contextId": "2d216fb3-3f02-48fc-bd05-e05026c4179d",
+        "storage": "encrypted_sqlite",
+        "policyVersion": 1
+      }
+    }
+  },
+  "protectedRecordUnchanged": true,
+  "businessWrites": false,
+  "replayedOrReplacedJob": false,
+  "remoteRecoveryAudit": {
+    "time": "2026-10-26T04:17:28.492Z",
+    "tool": "mongodb-bulk-recoverUpload",
+    "ok": false,
+    "errorCode": "MONGODB_BULK_JOB_NOT_FOUND",
+    "operationId": "4d0b762b-6efb-43b2-a2cb-8780e7974fa1",
+    "errorLayer": "mongodb-bulk",
+    "errorPhase": "recoverUpload"
+  }
+}

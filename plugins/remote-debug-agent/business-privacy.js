@@ -105,6 +105,10 @@ export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 10
     return alias;
   }
   function resolve(name, input, scope) {
+    if (name === "remote_debug_mongodb_recover_operation" && input.originalRequest !== undefined) {
+      const { originalRequest, ...outer } = input;
+      return { ...resolve(name, outer, scope), originalRequest: resolve("remote_debug_mongodb_prepare_bulk", originalRequest, scope) };
+    }
     const check = budget();
     function walk(value, allowed, depth = 0) {
       check(depth);

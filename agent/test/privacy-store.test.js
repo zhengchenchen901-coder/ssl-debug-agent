@@ -315,3 +315,34 @@ test("redacted bulk request collisions cannot return a receipt for different ori
   assert.throws(() => f.call("intent", { ...args, dispatchDigest: "c".repeat(64) }), { code: "BUSINESS_OPERATION_CONTENT_CONFLICT" });
   assert.equal(f.call("intent", args).state, "complete");
 });
+
+test("historical bulk internal actions cannot be invoked with caller-supplied proof", async (t) => {
+  const f = fixture(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: { database: "business" } }, origin = "http://127.0.0.1:4343";
+  const scope = businessTargetScope(origin, instance, "business");
+  for (const action of ["historical_bulk_identity", "historical_bulk_result"]) {
+    await assert.rejects(privacyRequest({ call: () => assert.fail("must not reach store") }, { action, auth: f.auth, scope, id: "a".repeat(64), result: { ok: true } }, { instance: () => instance, origin }), { code: "BUSINESS_STORAGE_ACTION_DENIED" });
+  }
+});
+
+test("historical result commit is atomic, preserves old identity, and cannot be replayed or replaced", async (t) => {
+  const { prepareRequestDigest } = await import("../../plugins/remote-debug-agent/prepare-protocol.js");
+  let fail = false;
+  const f = fixture(t, { fault: boundary => { if (fail && boundary === "beforeCommit") throw Error("injected historical receipt failure"); } });
+  const request = { instanceId: "isolated", database: "business", jobId: "old-job", chunkIndex: 0, units: [] };
+  const identity = { instanceId: "isolated", jobId: request.jobId, chunkIndex: 0 };
+  const intent = f.call("intent", { route: "/mongodb/bulk/prepare", request, identity });
+  const chunk = { jobId: request.jobId, chunkIndex: 0, chunkHash: "a".repeat(64), endOfUpload: false };
+  const receipt = { id: intent.id, request, requestDigest: prepareRequestDigest(request), chunk, result: { ok: true, ...chunk, status: "uploading" } };
+  const before = f.call("historical_bulk_identity", { id: intent.id, request });
+  fail = true; assert.throws(() => f.call("historical_bulk_result", receipt));
+  fail = false; f.reopen();
+  assert.equal(f.call("historical_bulk_identity", { id: intent.id, request }).recordFingerprint, before.recordFingerprint);
+  assert.throws(() => f.call("historical_bulk_result", { ...receipt, requestDigest: "b".repeat(64) }), { code: "BUSINESS_OPERATION_DENIED" });
+  const complete = f.call("historical_bulk_result", receipt);
+  assert.equal(complete.id, intent.id); assert.equal(complete.state, "complete"); assert.equal(complete.bulkPrepare, undefined);
+  assert.deepEqual(complete.identity, identity);
+  const fingerprint = f.call("historical_bulk_identity", { id: intent.id, request }).recordFingerprint;
+  assert.equal(f.call("historical_bulk_result", receipt).state, "complete");
+  assert.equal(f.call("historical_bulk_identity", { id: intent.id, request }).recordFingerprint, fingerprint);
+  assert.throws(() => f.call("intent", { route: "/mongodb/bulk/prepare", request, identity, dispatchDigest: "c".repeat(64) }), { code: "BUSINESS_OPERATION_CONTENT_CONFLICT" });
+});

@@ -154,6 +154,7 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     },
     async recover(settings, input, scope, operation) {
       return call(settings, { action: "recover_operation", id: input.intentId, mode: input.mode || "inspect", scope,
+        ...(input.originalRequest !== undefined ? { originalRequest: input.originalRequest } : {}),
         operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: input.timeoutMs }, operation.signal);
     },
     async outcome(settings, intent, scope, result, signal) {

@@ -33,6 +33,9 @@ const bulk = {
   receiptStorage, activeBatchIndexes: [scalar], committed: fields("matched modified inserted unchanged"),
   differences: json, changedFields: [scalar], planPreview: [batch], batches: [batch],
 };
+const historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
+const bulkHistory = { ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
+  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan } };
 const draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
 const execution = {
   ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
@@ -88,7 +91,7 @@ const contracts = {
   remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
   remote_debug_get_capabilities: { capabilities: json },
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
-  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk } },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
   remote_debug_mongodb_prepare_write: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,

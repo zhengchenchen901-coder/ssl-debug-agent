@@ -1,0 +1,52 @@
+{
+  "version": "2.4.0+codex.20261026",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026",
+  "runtimeId": "2.4.0:27a5a96d6dc629a2621999040db40b289967e1dedc1ac1f2131625df39fd185f",
+  "managerPidBefore": 63991,
+  "managerPidAfter": 64244,
+  "runtimeHashesVerified": 26,
+  "wrapperAndSkillParity": 8,
+  "toolCount": 50,
+  "originalIntentTouched": false,
+  "businessWrites": false,
+  "localWorkerRestores": [
+    {
+      "id": "default",
+      "result": "accepted"
+    },
+    {
+      "id": "test-server",
+      "result": "accepted"
+    }
+  ],
+  "configurationHashesUnchanged": {
+    "/Users/zhengchenchen/.remote-debug-agent/config.env": true,
+    "/Users/zhengchenchen/.remote-debug-agent/.runtime/http-auth.json": true,
+    "/Users/zhengchenchen/.remote-debug-agent/.remote-debug/instances.json": true,
+    "/Users/zhengchenchen/.codex/config.toml": true
+  },
+  "instances": [
+    {
+      "id": "default",
+      "status": "running",
+      "health": "healthy",
+      "workerPid": 64578,
+      "activeOperations": 0,
+      "queuedOperations": 0,
+      "taskTotal": 0
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "health": "healthy",
+      "workerPid": 64581,
+      "activeOperations": 0,
+      "queuedOperations": 0,
+      "taskTotal": 0
+    }
+  ],
+  "backup": "/Users/zhengchenchen/.codex/plugins/backups/remote-debug-before-bulk-update-20261026/plugins/remote-debug-agent",
+  "backupSourceRevision": "0596e6a",
+  "testflowExecution": false,
+  "verification": "installed environment check + hash/parity verification + real MCP initialize/list/capabilities/instances; no new E2E execution"
+}

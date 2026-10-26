@@ -1041,6 +1041,8 @@ async function __bulkUpload() {
 function __bulkRecoverUpload() {
   var jobId = __request.jobId;
   __bulkEnsureRoot();
+  // A read-only recovery must not create a directory/lock for an absent job.
+  __bulkManifest(jobId, false);
   return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
     var manifest = __bulkManifest(jobId, false);
     var chunk = __bulkReadJson(__bulkChunkPath(jobId, __request.chunkIndex), 4 * 1024 * 1024);

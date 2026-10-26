@@ -34,7 +34,7 @@ var require_windows_privacy = __commonJS({
     "use strict";
     var fs2 = require("fs");
     var path2 = require("path");
-    var { createHash: createHash2 } = require("crypto");
+    var { createHash: createHash3 } = require("crypto");
     var { execFileSync: execFileSync2 } = require("child_process");
     function fail(code = "BUSINESS_STORAGE_UNAVAILABLE") {
       return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
@@ -47,7 +47,7 @@ var require_windows_privacy = __commonJS({
         const helper = path2.join(__dirname, "native/windows-privacy.ps1");
         const manifestPath = fs2.existsSync(path2.join(__dirname, "runtime-manifest.json")) ? path2.join(__dirname, "runtime-manifest.json") : path2.join(__dirname, "runtime/agent/runtime-manifest.json");
         const expected = JSON.parse(fs2.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
-        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash2("sha256").update(fs2.readFileSync(helper)).digest("hex") !== expected) throw fail("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash3("sha256").update(fs2.readFileSync(helper)).digest("hex") !== expected) throw fail("BUSINESS_STORAGE_INTEGRITY_INVALID");
         const raw = run(
           path2.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
           ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
@@ -69,7 +69,7 @@ var require_windows_privacy = __commonJS({
       }
     }
     function targetFor(directory) {
-      return "RemoteDebugAgent/business-privacy/v1/" + createHash2("sha256").update(fs2.realpathSync.native(directory)).digest("hex");
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash3("sha256").update(fs2.realpathSync.native(directory)).digest("hex");
     }
     function prepareStore(directory) {
       return native("prepare-store", { directory });
@@ -101,7 +101,7 @@ var import_node_worker_threads = require("node:worker_threads");
 
 // privacy-store.js
 var import_node_sqlite = require("node:sqlite");
-var import_node_crypto2 = require("node:crypto");
+var import_node_crypto3 = require("node:crypto");
 var import_node_fs = __toESM(require("node:fs"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
 
@@ -140,6 +140,11 @@ function loadPrivacyKey(directory, { platform = process.platform, run = import_n
 }
 
 // ../plugins/remote-debug-agent/prepare-protocol.js
+var import_node_crypto2 = require("node:crypto");
+function prepareRequestDigest(input) {
+  const { operationId, deadlineAt, timeoutMs, _businessPrepare, ...request } = input;
+  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
+}
 function isPrepareTicket(value) {
   return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
 }
@@ -172,8 +177,8 @@ var PrivacyStore = class {
     const filename = import_node_path.default.join(this.directory, "privacy.sqlite");
     const master = key ? Buffer.from(key) : loadPrivacyKey(this.directory, { existing: process.platform === "win32" ? windowsExisting : import_node_fs.default.existsSync(filename) });
     if (master.length !== 32) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
-    this.enc = Buffer.from((0, import_node_crypto2.hkdfSync)("sha256", master, "rda-privacy-v1", "encryption", 32));
-    this.index = Buffer.from((0, import_node_crypto2.hkdfSync)("sha256", master, "rda-privacy-v1", "reverse-index", 32));
+    this.enc = Buffer.from((0, import_node_crypto3.hkdfSync)("sha256", master, "rda-privacy-v1", "encryption", 32));
+    this.index = Buffer.from((0, import_node_crypto3.hkdfSync)("sha256", master, "rda-privacy-v1", "reverse-index", 32));
     master.fill(0);
     try {
       this.db = new import_node_sqlite.DatabaseSync(filename);
@@ -203,13 +208,13 @@ var PrivacyStore = class {
     }
   }
   hash(...items) {
-    return (0, import_node_crypto2.createHmac)("sha256", this.index).update(JSON.stringify(items)).digest("hex");
+    return (0, import_node_crypto3.createHmac)("sha256", this.index).update(JSON.stringify(items)).digest("hex");
   }
   aad(kind, id, ctx, scope) {
     return Buffer.from(JSON.stringify(["rda", 1, 1, kind, id, ctx, scope]));
   }
   seal(kind, id, ctx, scope, value) {
-    const nonce = (0, import_node_crypto2.randomBytes)(12), cipher = (0, import_node_crypto2.createCipheriv)("aes-256-gcm", this.enc, nonce);
+    const nonce = (0, import_node_crypto3.randomBytes)(12), cipher = (0, import_node_crypto3.createCipheriv)("aes-256-gcm", this.enc, nonce);
     cipher.setAAD(this.aad(kind, id, ctx, scope));
     return JSON.stringify({ v: 1, k: 1, n: nonce.toString("base64"), c: Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]).toString("base64"), t: cipher.getAuthTag().toString("base64") });
   }
@@ -217,7 +222,7 @@ var PrivacyStore = class {
     try {
       const e = JSON.parse(row.envelope);
       if (e.v !== 1 || e.k !== 1) throw privacyError();
-      const cipher = (0, import_node_crypto2.createDecipheriv)("aes-256-gcm", this.enc, Buffer.from(e.n, "base64"));
+      const cipher = (0, import_node_crypto3.createDecipheriv)("aes-256-gcm", this.enc, Buffer.from(e.n, "base64"));
       cipher.setAAD(this.aad(row.kind, row.id, row.ctx, row.scope));
       cipher.setAuthTag(Buffer.from(e.t, "base64"));
       const value = JSON.parse(Buffer.concat([cipher.update(Buffer.from(e.c, "base64")), cipher.final()]).toString("utf8"));
@@ -252,12 +257,12 @@ var PrivacyStore = class {
     if (!auth || typeof auth.contextId !== "string" || !/^[a-f0-9]{64}$/.test(auth.capability || "")) throw privacyError("BUSINESS_CONTEXT_DENIED");
     const context = this.get("context", auth.contextId, auth.contextId, "");
     const proof = this.hash("capability", auth.capability);
-    if (!context || context.expires <= this.now() || !(0, import_node_crypto2.timingSafeEqual)(Buffer.from(context.proof), Buffer.from(proof))) throw privacyError("BUSINESS_CONTEXT_DENIED");
+    if (!context || context.expires <= this.now() || !(0, import_node_crypto3.timingSafeEqual)(Buffer.from(context.proof), Buffer.from(proof))) throw privacyError("BUSINESS_CONTEXT_DENIED");
     return auth.contextId;
   }
   execute(action, input = {}) {
     if (action === "create") return this.transaction(() => {
-      const contextId = (0, import_node_crypto2.randomUUID)(), capability = (0, import_node_crypto2.randomBytes)(32).toString("hex"), expires = this.now() + 365 * DAY;
+      const contextId = (0, import_node_crypto3.randomUUID)(), capability = (0, import_node_crypto3.randomBytes)(32).toString("hex"), expires = this.now() + 365 * DAY;
       this.put("context", contextId, contextId, "", { proof: this.hash("capability", capability), expires }, expires);
       return { contextId, capability };
     });
@@ -305,19 +310,20 @@ var PrivacyStore = class {
         for (const ref of refs) this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, taskId, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND ctx=? AND id IN (SELECT ref FROM links WHERE ctx=? AND task=?)").run(ctx, ctx, taskId);
       }
-      const deliveryId = input.deliveryId || (0, import_node_crypto2.randomUUID)();
+      const deliveryId = input.deliveryId || (0, import_node_crypto3.randomUUID)();
       const canonicalize = (value) => typeof value === "string" ? aliases[value] || value : Array.isArray(value) ? value.map(canonicalize) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, child]) => [key, canonicalize(child)])) : value;
       this.put("delivery", deliveryId, ctx, scope, { aliases, output: canonicalize(input.output), delivered: false }, this.now() + 30 * DAY);
-      this.put("event", (0, import_node_crypto2.randomUUID)(), ctx, scope, { type: "references_committed", count: refs.size, deliveryId }, this.now() + 30 * DAY);
+      this.put("event", (0, import_node_crypto3.randomUUID)(), ctx, scope, { type: "references_committed", count: refs.size, deliveryId }, this.now() + 30 * DAY);
       return { aliases, deliveryId };
     });
     if (action === "intent") return this.transaction(() => {
       const id = this.hash("operation", ctx, input.scope, input.route, input.request);
       const previous = this.get("operation", id, ctx, scope);
-      if (previous?.bulkPrepare && previous.bulkPrepare.requestDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
+      const boundDigest = previous?.bulkPrepare?.requestDigest || previous?.historicalRecovery?.requestDigest;
+      if (boundDigest && boundDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
       const retryPrepare = previous?.state === "rejected_before_dispatch" && (previous.prepare || previous.bulkPrepare) && input.dispatchDigest === (previous.prepare || previous.bulkPrepare).requestDigest;
       if (previous && !retryPrepare && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
-      const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { mutationId: previous?.prepare?.mutationId || (0, import_node_crypto2.randomUUID)(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : void 0;
+      const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { mutationId: previous?.prepare?.mutationId || (0, import_node_crypto3.randomUUID)(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : void 0;
       const record = {
         state: "uncertain",
         route: input.route,
@@ -345,6 +351,36 @@ var PrivacyStore = class {
       if (!record) throw privacyError("BUSINESS_OPERATION_DENIED");
       return { id: input.id, ...record };
     }
+    if (action === "historical_bulk_identity") {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record || record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare) throw privacyError("BUSINESS_OPERATION_DENIED");
+      const requestMatched = input.request !== void 0 && this.hash("operation", ctx, input.scope, record.route, input.request) === input.id;
+      return { requestMatched, recordFingerprint: this.hash("operation-record", ctx, input.scope, input.id, record) };
+    }
+    if (action === "historical_bulk_result") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope), chunk = input.chunk, result = input.result;
+      if (!record || record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare || this.hash("operation", ctx, input.scope, record.route, input.request) !== input.id || input.requestDigest !== prepareRequestDigest(input.request) || record.identity?.jobId !== chunk?.jobId || record.identity?.chunkIndex !== chunk?.chunkIndex || result?.ok !== true || result.jobId !== chunk.jobId || result.chunkIndex !== chunk.chunkIndex || result.chunkHash !== chunk.chunkHash || chunk.endOfUpload && (result.status !== "prepared" || !/^[a-f0-9]{64}$/.test(result.planHash || ""))) throw privacyError("BUSINESS_OPERATION_DENIED");
+      if (record.state !== "uncertain") return { id: input.id, ...record };
+      const value = { ...record, state: "complete", result, historicalRecovery: {
+        version: 1,
+        evidence: "exact_remote_chunk",
+        requestDigest: input.requestDigest,
+        chunk,
+        at: this.now(),
+        operationId: input.operationId
+      } };
+      this.put("operation", input.id, ctx, scope, value, this.now() + 90 * DAY, false);
+      this.put("event", (0, import_node_crypto3.randomUUID)(), ctx, scope, {
+        type: "historical_bulk_recovered",
+        operation: input.id,
+        evidence: "exact_remote_chunk",
+        operationId: input.operationId,
+        chunkHash: chunk.chunkHash
+      }, this.now() + 90 * DAY);
+      const taskId = this.hash("task", ctx, input.scope, "operation:" + input.id), task = this.get("task", taskId, ctx, scope);
+      if (task) this.put("task", taskId, ctx, scope, { ...task, active: false }, task.expires, false);
+      return { id: input.id, ...value };
+    });
     if (action === "claim_prepare") return this.transaction(() => {
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.prepare || record.state !== "uncertain" || record.dispatched || record.prepare.requestDigest !== input.dispatchDigest || record.prepare.attempt !== input.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
@@ -371,7 +407,7 @@ var PrivacyStore = class {
       }, result, reconciliation: void 0 } : { ...record, reconciliation: { code: result?.ok === true ? "MONGODB_BULK_RECEIPT_CONFLICT" : result?.error?.code } };
       const resolved = value.state !== "uncertain";
       this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY : Number.MAX_SAFE_INTEGER, !resolved);
-      this.put("event", (0, import_node_crypto2.randomUUID)(), ctx, scope, {
+      this.put("event", (0, import_node_crypto3.randomUUID)(), ctx, scope, {
         type: "bulk_prepare_state",
         operation: input.id,
         state: value.state,
@@ -410,7 +446,7 @@ var PrivacyStore = class {
       } else value = { ...record, reconciliation: { state: "unavailable", code: input.result?.error?.code } };
       const resolved = value.state !== "uncertain";
       this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY : Number.MAX_SAFE_INTEGER, !resolved);
-      this.put("event", (0, import_node_crypto2.randomUUID)(), ctx, scope, {
+      this.put("event", (0, import_node_crypto3.randomUUID)(), ctx, scope, {
         type: "prepare_state",
         operation: input.id,
         state: value.state,

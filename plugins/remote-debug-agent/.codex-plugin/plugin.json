@@ -1,6 +1,6 @@
 {
   "name": "remote-debug-agent",
-  "version": "2.4.0+codex.20261023.2",
+  "version": "2.4.0+codex.20261026.2",
   "description": "Safe remote Linux debugging through a local SSH-backed agent.",
   "author": {
     "name": "Local Developer"

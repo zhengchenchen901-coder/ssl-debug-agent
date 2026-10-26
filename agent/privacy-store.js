@@ -3,7 +3,7 @@ import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, ra
 import fs from "node:fs";
 import path from "node:path";
 import { loadPrivacyKey, privacyError } from "./privacy-key.js";
-import { isPrepareTicket } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { isPrepareTicket, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import windowsPrivacy from "../plugins/remote-debug-agent/windows-privacy.cjs";
 
 const REF = /^rda_ref_v1_[a-f0-9]{48}$/;
@@ -154,7 +154,8 @@ export class PrivacyStore {
       const previous = this.get("operation", id, ctx, scope);
       // Redacted request identity can collide when only a protected value
       // changes. Never serve an old chunk acknowledgement for different bytes.
-      if (previous?.bulkPrepare && previous.bulkPrepare.requestDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
+      const boundDigest = previous?.bulkPrepare?.requestDigest || previous?.historicalRecovery?.requestDigest;
+      if (boundDigest && boundDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
       const retryPrepare = previous?.state === "rejected_before_dispatch" && (previous.prepare || previous.bulkPrepare) &&
         input.dispatchDigest === (previous.prepare || previous.bulkPrepare).requestDigest;
       if (previous && !retryPrepare && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
@@ -184,6 +185,31 @@ export class PrivacyStore {
       if (!record) throw privacyError("BUSINESS_OPERATION_DENIED");
       return { id: input.id, ...record };
     }
+    if (action === "historical_bulk_identity") {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record || record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare) throw privacyError("BUSINESS_OPERATION_DENIED");
+      const requestMatched = input.request !== undefined && this.hash("operation", ctx, input.scope, record.route, input.request) === input.id;
+      return { requestMatched, recordFingerprint: this.hash("operation-record", ctx, input.scope, input.id, record) };
+    }
+    if (action === "historical_bulk_result") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope), chunk = input.chunk, result = input.result;
+      if (!record || record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare ||
+          this.hash("operation", ctx, input.scope, record.route, input.request) !== input.id ||
+          input.requestDigest !== prepareRequestDigest(input.request) ||
+          record.identity?.jobId !== chunk?.jobId || record.identity?.chunkIndex !== chunk?.chunkIndex ||
+          result?.ok !== true || result.jobId !== chunk.jobId || result.chunkIndex !== chunk.chunkIndex || result.chunkHash !== chunk.chunkHash ||
+          chunk.endOfUpload && (result.status !== "prepared" || !/^[a-f0-9]{64}$/.test(result.planHash || ""))) throw privacyError("BUSINESS_OPERATION_DENIED");
+      if (record.state !== "uncertain") return { id: input.id, ...record };
+      const value = { ...record, state: "complete", result, historicalRecovery: {
+        version: 1, evidence: "exact_remote_chunk", requestDigest: input.requestDigest, chunk, at: this.now(), operationId: input.operationId,
+      } };
+      this.put("operation", input.id, ctx, scope, value, this.now() + 90 * DAY, false);
+      this.put("event", randomUUID(), ctx, scope, { type: "historical_bulk_recovered", operation: input.id,
+        evidence: "exact_remote_chunk", operationId: input.operationId, chunkHash: chunk.chunkHash }, this.now() + 90 * DAY);
+      const taskId = this.hash("task", ctx, input.scope, "operation:" + input.id), task = this.get("task", taskId, ctx, scope);
+      if (task) this.put("task", taskId, ctx, scope, { ...task, active: false }, task.expires, false);
+      return { id: input.id, ...value };
+    });
     if (action === "claim_prepare") return this.transaction(() => {
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.prepare || record.state !== "uncertain" || record.dispatched ||

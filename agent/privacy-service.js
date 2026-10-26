@@ -6,6 +6,49 @@ import { businessTargetScope } from "../plugins/remote-debug-agent/business-priv
 import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { createOutputGuard } from "../plugins/remote-debug-agent/output-guard.js";
 import { normalizeMongoBulkChunk } from "./mongodb-bulk.js";
+import { createBulkHistoryReader } from "./mongodb-bulk-history.js";
+
+async function historicalBulkRequest(service, input, record, target, { instance, dispatch, historicalEvidence }, view) {
+  if (record.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const raw = input.originalRequest;
+  if (raw !== undefined && (!raw || raw.instanceId !== target.id || raw.database !== target.database)) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const { operationId, deadlineAt, timeoutMs, ...request } = raw ? createOutputGuard().sanitize(raw).value : {};
+  const binding = await service.call("historical_bulk_identity", { ...input, request: raw ? request : undefined });
+  let diagnostics;
+  try { diagnostics = historicalEvidence ? await historicalEvidence({ record, target }) : { trust: "diagnostic_only", scanStatus: "not_configured" }; }
+  catch { diagnostics = { trust: "diagnostic_only", scanStatus: "unavailable" }; }
+  const history = { ...binding, jobId: record.identity.jobId, chunkIndex: record.identity.chunkIndex, diagnostics };
+  if (!raw) return { ...view(record, record.state === "uncertain" ? "historical_request_required" : undefined), history };
+  if (!binding.requestMatched) {
+    if (record.state !== "uncertain") throw privacyError("BUSINESS_OPERATION_DENIED");
+    return { ...view(record, "historical_request_mismatch"), history };
+  }
+  // Legacy keyed intent identity covered credential-sanitized JSON, not a raw
+  // digest. If redaction lost original bytes, an exact raw chunk cannot be
+  // inferred even when its redacted request looks identical.
+  if (JSON.stringify(raw).includes("[REDACTED]") || prepareRequestDigest(raw) !== prepareRequestDigest(request)) {
+    return { ...view(record, "historical_original_bytes_unbound"), history };
+  }
+  if (record.state !== "uncertain") return { ...view(record), history: { ...history, evidence: record.historicalRecovery?.evidence } };
+  try {
+    const { instanceId, ...chunkInput } = raw;
+    // Normalizing a read-only recovery identity must not require enabling new
+    // bulk uploads. All database/collection/value bounds remain in force.
+    const chunk = normalizeMongoBulkChunk(chunkInput, { ...instance(target.id).mongodb, bulkEnabled: true });
+    const identity = { jobId: chunk.jobId, database: chunk.database, chunkIndex: chunk.chunkIndex, chunkHash: chunk.chunkHash, endOfUpload: chunk.endOfUpload };
+    if (!dispatch) throw privacyError("BUSINESS_STORAGE_UNAVAILABLE");
+    const result = createOutputGuard().sanitize(await dispatch(target.id, "/mongodb/bulk/recover-prepare", {
+      ...identity, operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt,
+    })).value;
+    const saved = await service.call("historical_bulk_result", { ...input, request, requestDigest: prepareRequestDigest(raw), chunk: identity, result });
+    return { ...view(saved), history: { ...history, evidence: "exact_remote_chunk" } };
+  } catch (error) {
+    // A missing job, plain-text audit, caller proof, validation code, or even a
+    // not_dispatched flag cannot retrospectively bind an old dispatch to intent.
+    return { ...view(record, "historical_dispatch_evidence_required"), history: { ...history,
+      remoteEvidenceCode: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_RECOVERY_UNAVAILABLE" } };
+  }
+}
 
 async function bulkPrepareRequest(service, input, record, target, { instance, dispatch }, view) {
   if (!dispatch || record.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -93,7 +136,7 @@ export class PrivacyService {
 
 // This authenticated protocol exposes only bounded operations. The recovery MCP
 // tool delegates here; it never receives capabilities or supplies remote proof.
-export async function privacyRequest(service, input, { instance, origin, dispatch } = {}) {
+export async function privacyRequest(service, input, { instance, origin, dispatch, historicalEvidence } = {}) {
   // Reconciliation proof is fetched below by the Manager, never accepted from
   // an MCP caller's result object. The store action remains internal.
   const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
@@ -113,7 +156,11 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
       legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason, recoveryCode: value.reconciliation?.code, ...(value.result ? { result: value.result } : {}) });
     if (input.action === "recover_operation") {
-      if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (!["inspect", "reconcile", "historical"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (input.mode === "historical") {
+        if (record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare) throw privacyError("BUSINESS_OPERATION_DENIED");
+        return historicalBulkRequest(service, input, record, target, { instance, dispatch, historicalEvidence }, view);
+      }
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
       if (record.route === "/mongodb/bulk/prepare") {
         if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
@@ -182,12 +229,13 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
   return service.call(input.action, input);
 }
 
-export function installPrivacyRoutes(app, { directory, registry, service, dispatch } = {}) {
+export function installPrivacyRoutes(app, { directory, registry, service, dispatch, dataDirectory, historicalEvidence } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
     try {
-      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch });
+      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch,
+        historicalEvidence: historicalEvidence || (dataDirectory ? createBulkHistoryReader({ dataDirectory, instance: (id) => registry.getInternal(id) }) : undefined) });
       response.json({ ok: true, result });
     } catch (error) {
       response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });

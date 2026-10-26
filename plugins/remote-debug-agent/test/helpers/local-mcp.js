@@ -7,12 +7,13 @@ import os from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { PrivacyService, privacyRequest } from "../../../../agent/privacy-service.js";
+import { createBulkHistoryReader } from "../../../../agent/mongodb-bulk-history.js";
 import localAuth from "../../local-auth.cjs";
 import { nativeFixture } from "../../../../agent/test/helpers/windows-privacy-fixture.js";
 
 // A fresh authenticated loopback Manager stub and real MCP process. The supplied
 // handler owns its isolated database/runtime; this cannot load saved instances.
-export async function localMcp(t, { instance, handler, framing = "json-line", nativeKey = false, pluginRoot, initializeStorage }) {
+export async function localMcp(t, { instance, handler, framing = "json-line", nativeKey = false, pluginRoot, initializeStorage, beforePeer }) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rda-privacy-mcp-"));
   const token = localAuth.ensureAuthToken(localAuth.resolveAuthFile(root));
   const requests = [], previews = [], wire = [], diagnostics = [];
@@ -35,6 +36,7 @@ export async function localMcp(t, { instance, handler, framing = "json-line", na
     if (req.url === "/api/private/business-storage") {
       try {
         const result = await privacyRequest(privacyService, input, { instance: (id) => id === instance.id ? instance : undefined, origin: `http://${req.headers.host}`,
+          historicalEvidence: createBulkHistoryReader({ dataDirectory: root, instance: () => instance }),
           dispatch: async (id, route, request) => {
             requests.push({ path: route, input: { ...request, instanceId: id } });
             return { ok: true, instanceId: id, ...await handler(route, request) };
@@ -56,6 +58,7 @@ export async function localMcp(t, { instance, handler, framing = "json-line", na
     catch (error) { res.statusCode = 400; res.end(JSON.stringify({ ok: false, error: { code: error.code || "FIXTURE_ERROR", message: error.message } })); }
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await beforePeer?.({ directory, key, root, origin: `http://127.0.0.1:${server.address().port}` });
   const peerOptions = { root, url: `http://127.0.0.1:${server.address().port}`, contextFile: path.join(root, "context.json"), framing, wire, diagnostics, pluginRoot };
   let peer = await mcpPeer(t, peerOptions);
   t.after(async () => {

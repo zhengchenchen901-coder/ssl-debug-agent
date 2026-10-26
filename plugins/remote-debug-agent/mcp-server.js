@@ -10,6 +10,7 @@ import localAuth from "./local-auth.cjs";
 import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard.js";
 import { createBusinessPrivacy } from "./business-privacy.js";
 import { createBusinessStorage } from "./business-storage.js";
+import { bulkPreparePayload } from "./prepare-protocol.js";
 import { createOutputPreviewPublisher, outputPreviewMetadata } from "./output-preview.js";
 import { FINAL_RESULT_TOOLS, callFinalResultTool } from "./final-results.js";
 import {
@@ -550,14 +551,14 @@ const tools = [
   },
   {
     name: "remote_debug_mongodb_recover_operation",
-    description: "Inspect or reconcile an exact protected MongoDB operation in this local context. Reconciliation may fence an unprepared attempt in the technical journal, but never executes business writes. Legacy operations without verifiable identity remain protected. Use the intentId from the error; never create a replacement request.",
+    description: "Inspect or reconcile an exact protected MongoDB operation. mode=historical inspects original legacy bulk diagnostics and optionally verifies originalRequest against the keyed original intent, then reads exact remote chunk/plan evidence. Text logs and missing jobs cannot release protection. It never uploads or executes. Use the original intentId and protected context; never create a replacement job.",
     inputSchema: {
       type: "object", additionalProperties: false, required: ["instanceId", "database", "intentId"],
       properties: {
         instanceId: instanceIdProperty,
         database: { type: "string", minLength: 1, maxLength: 128 },
         intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
-        mode: { type: "string", enum: ["inspect", "reconcile"], default: "inspect" },
+        mode: { type: "string", enum: ["inspect", "reconcile", "historical"], default: "inspect" },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
       },
     },
@@ -734,7 +735,7 @@ const tools = [
                         expected: {
                           type: "object", minProperties: 1,
                           description: "Map every changed path to {exists:false} or {exists:true,value:<original>}; this distinguishes a missing field from null.",
-                          patternProperties: { "^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*$": { type: "object", required: ["exists"], properties: { exists: { type: "boolean" }, value: {} } } },
+                          patternProperties: { "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$": { type: "object", required: ["exists"], properties: { exists: { type: "boolean" }, value: {} } } },
                           additionalProperties: false,
                         },
                         update: {
@@ -1233,6 +1234,11 @@ const tools = [
     },
   },
 ];
+
+// A historical request is a candidate for keyed identity verification, never
+// caller-supplied evidence or a new prepare/upload operation.
+tools.find((tool) => tool.name === "remote_debug_mongodb_recover_operation").inputSchema.properties.originalRequest =
+  structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
 
 const synchronousLogSchema = tools.find((tool) => tool.name === "remote_debug_query_logs").inputSchema;
 tools.push({
@@ -2980,6 +2986,16 @@ async function requestAgent(pathName, payload, options = {}) {
     const scopeForDatabase = (name) => businessPrivacy.targetScope(new URL(settings.agentUrl).origin, instance, name);
     const scope = database ? scopeForDatabase(database) : undefined;
     operation.privacyRefs = await businessStorage.prepare(settings, payload, scope, operation.signal);
+    if (pathName === "/mongodb/operations/recover" && payload.originalRequest !== undefined) {
+      const candidate = payload.originalRequest;
+      const allowed = tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema.properties;
+      if (payload.mode !== "historical" || !candidate || typeof candidate !== "object" || Array.isArray(candidate) ||
+          Object.keys(candidate).some((key) => !Object.hasOwn(allowed, key)) ||
+          candidate.instanceId !== undefined && candidate.instanceId !== instanceId || candidate.database !== undefined && candidate.database !== database) {
+        throw Object.assign(new Error("Historical recovery requires an exact original bulk request in the same target."), { code: "BUSINESS_OPERATION_DENIED" });
+      }
+      payload = { ...payload, originalRequest: bulkPreparePayload({ ...candidate, instanceId, database }) };
+    }
     payload = businessPrivacy.resolve(operation.toolName, payload, scope);
     const acceptsDatabase = tools.find((tool) => tool.name === operation.toolName)?.inputSchema.properties.database;
     payload = { ...payload, instanceId, ...(database && acceptsDatabase ? { database } : {}) };
@@ -3122,7 +3138,7 @@ async function callTool(name, args, operation) {
   }
   if (name === "remote_debug_mongodb_recover_operation") {
     return callAgent("/mongodb/operations/recover", { instanceId: args?.instanceId, database: args?.database,
-      intentId: args?.intentId, mode: args?.mode || "inspect", timeoutMs: args?.timeoutMs }, operation);
+      intentId: args?.intentId, mode: args?.mode || "inspect", originalRequest: args?.originalRequest, timeoutMs: args?.timeoutMs }, operation);
   }
   // References have meaning only in explicitly supported structured arguments.
   // In particular, never interpolate one into shell commands or file paths.
@@ -3238,18 +3254,7 @@ async function callTool(name, args, operation) {
   }
 
   if (name === "remote_debug_mongodb_prepare_bulk") {
-    return callAgent("/mongodb/bulk/prepare", {
-      instanceId: args?.instanceId,
-      jobId: args?.jobId,
-      database: args?.database,
-      chunkIndex: args?.chunkIndex,
-      chunkHash: args?.chunkHash,
-      units: args?.units,
-      purpose: args?.purpose,
-      rollbackTtlMs: args?.rollbackTtlMs,
-      endOfUpload: args?.endOfUpload,
-      timeoutMs: args?.timeoutMs,
-    }, operation);
+    return callAgent("/mongodb/bulk/prepare", bulkPreparePayload(args), operation);
   }
 
   if (name === "remote_debug_mongodb_execute_bulk") {

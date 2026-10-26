@@ -44,6 +44,22 @@ Legacy ordinary intents without a verifiable identity remain protected
 with `legacy_evidence_required`; missing lists/indexes and elapsed lock age are
 not recovery proof. Never clear a journal, local record or lock to bypass this.
 
+For an original historical bulk intent, use the same tool with
+`mode=historical` in its original protected context. Without `originalRequest`
+it returns bounded Manager/worker log diagnostics and a protected-record
+fingerprint. To seek recovery, provide the exact original bulk input as
+`originalRequest`; this is a candidate for keyed identity verification, not
+evidence and not another upload. The Manager verifies the original intent's
+keyed JSON identity before reading the exact remote chunk/manifest/plan. Only
+positive matching remote evidence can complete preparation delivery, preserving
+the original intent/job and an audit event. Missing original bytes, request
+mismatch, missing job, plain log validation errors, and caller-supplied proof
+cannot discharge protection. `historical_dispatch_evidence_required` means stop;
+the reported fingerprint remains unchanged. Never re-upload the candidate to
+test it, invent a dispatch ticket, edit protection records, or decode opaque
+references. Credential-redacted historical bytes cannot be reconstructed by
+guessing. This path never compensates points or authorizes business execution.
+
 After index execute/rollback, `commit_unknown` / `rollback_unknown` are never
 permission to repeat DDL. Reconcile the original intent in its original protected
 context. The Manager reads the exact mutation/plan and execution acknowledgement,

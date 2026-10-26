@@ -167,3 +167,18 @@ test("local sandbox bulk completes, reuses protected IDs, preserves chunk hashes
   await run("rollbackBatch", { batchIndex: 0, leaseId: "b".repeat(64) });
   assert.equal(h.rows("business", "orders").get("order-1").count, 0);
 });
+
+test("historical candidate restores typed references only within original bulk business surfaces", () => {
+  const f = fixture(), originalId = { $oid: "507f1f77bcf86cd799439011" };
+  const ref = f.protect([{ _id: originalId }])[0]._id;
+  const args = { instanceId: "local", database: "business", intentId: "a".repeat(64), mode: "historical", originalRequest: {
+    jobId: "old-job", chunkIndex: 0, units: [{ unitId: "old-unit", operations: [{ operation: "updateOne", collection: "orders", id: ref,
+      expected: { "entries.0.origin_id": { exists: true, value: ref } }, update: { $set: { "entries.0.parent_id": ref } } }] }],
+  } };
+  const restored = f.privacy.resolve("remote_debug_mongodb_recover_operation", args, f.context.scope);
+  assert.deepEqual(restored.originalRequest.units[0].operations[0].id, originalId);
+  assert.deepEqual(restored.originalRequest.units[0].operations[0].expected["entries.0.origin_id"].value, originalId);
+  assert.throws(() => f.privacy.resolve("remote_debug_mongodb_recover_operation", { ...args, intentId: ref }, f.context.scope), { code: "BUSINESS_REFERENCE_INVALID" });
+  assert.throws(() => f.privacy.resolve("remote_debug_mongodb_recover_operation", { ...args, originalRequest: { ...args.originalRequest, jobId: ref } }, f.context.scope), { code: "BUSINESS_REFERENCE_INVALID" });
+  assert.throws(() => f.privacy.resolve("remote_debug_mongodb_recover_operation", args, "another-target"), { code: "BUSINESS_REFERENCE_INVALID" });
+});

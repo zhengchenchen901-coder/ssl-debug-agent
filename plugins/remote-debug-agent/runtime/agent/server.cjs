@@ -15225,11 +15225,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path20) {
-      if (!path20 || typeof path20 !== "string") {
+    function lookup(path21) {
+      if (!path21 || typeof path21 !== "string") {
         return false;
       }
-      var extension3 = extname("x." + path20).toLowerCase().slice(1);
+      var extension3 = extname("x." + path21).toLowerCase().slice(1);
       if (!extension3) {
         return false;
       }
@@ -19093,13 +19093,13 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path20 = require("node:path");
-    var fs14 = require("node:fs");
-    var dirname = path20.dirname;
-    var basename = path20.basename;
-    var extname = path20.extname;
-    var join = path20.join;
-    var resolve = path20.resolve;
+    var path21 = require("node:path");
+    var fs15 = require("node:fs");
+    var dirname = path21.dirname;
+    var basename = path21.basename;
+    var extname = path21.extname;
+    var join = path21.join;
+    var resolve = path21.resolve;
     module2.exports = View;
     function View(name2, options) {
       var opts = options || {};
@@ -19128,17 +19128,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View.prototype.lookup = function lookup(name2) {
-      var path21;
+      var path22;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name2);
-      for (var i = 0; i < roots.length && !path21; i++) {
+      for (var i = 0; i < roots.length && !path22; i++) {
         var root = roots[i];
         var loc = resolve(root, name2);
         var dir = dirname(loc);
         var file = basename(loc);
-        path21 = this.resolve(dir, file);
+        path22 = this.resolve(dir, file);
       }
-      return path21;
+      return path22;
     };
     View.prototype.render = function render(options, callback) {
       var sync = true;
@@ -19160,21 +19160,21 @@ var require_view = __commonJS({
     };
     View.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path21 = join(dir, file);
-      var stat = tryStat(path21);
+      var path22 = join(dir, file);
+      var stat = tryStat(path22);
       if (stat && stat.isFile()) {
-        return path21;
+        return path22;
       }
-      path21 = join(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path21);
+      path22 = join(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path22);
       if (stat && stat.isFile()) {
-        return path21;
+        return path22;
       }
     };
-    function tryStat(path21) {
-      debug('stat "%s"', path21);
+    function tryStat(path22) {
+      debug('stat "%s"', path22);
       try {
-        return fs14.statSync(path21);
+        return fs15.statSync(path22);
       } catch (e) {
         return void 0;
       }
@@ -20430,15 +20430,15 @@ var require_dist3 = __commonJS({
       let index = 0;
       function consumeUntil(end) {
         const output = [];
-        let path20 = "";
+        let path21 = "";
         function writePath() {
-          if (!path20)
+          if (!path21)
             return;
           output.push({
             type: "text",
-            value: encodePath(path20)
+            value: encodePath(path21)
           });
-          path20 = "";
+          path21 = "";
         }
         while (index < chars.length) {
           const value = chars[index++];
@@ -20450,7 +20450,7 @@ var require_dist3 = __commonJS({
             if (index === chars.length) {
               throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            path20 += chars[index++];
+            path21 += chars[index++];
             continue;
           }
           if (value === ":" || value === "*") {
@@ -20494,7 +20494,7 @@ var require_dist3 = __commonJS({
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
             throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
           }
-          path20 += value;
+          path21 += value;
         }
         if (end) {
           throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
@@ -20504,17 +20504,17 @@ var require_dist3 = __commonJS({
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path20, options = {}) {
+    function compile(path21, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const data = typeof path20 === "object" ? path20 : parse(path20, options);
+      const data = typeof path21 === "object" ? path21 : parse(path21, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
-      return function path21(params = {}) {
+      return function path22(params = {}) {
         const missing = [];
-        const path22 = fn(params, missing);
+        const path23 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path22;
+        return path23;
       };
     }
     function tokensToFunction(tokens, delimiter, encode) {
@@ -20576,9 +20576,9 @@ var require_dist3 = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path20, options = {}) {
+    function match(path21, options = {}) {
       const { decode = decodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path20, options);
+      const { regexp, keys } = pathToRegexp(path21, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20590,7 +20590,7 @@ var require_dist3 = __commonJS({
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path21 = m[0];
+        const path22 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20599,21 +20599,21 @@ var require_dist3 = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path21, params };
+        return { path: path22, params };
       };
     }
-    function pathToRegexp(path20, options = {}) {
+    function pathToRegexp(path21, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path21) {
-        if (Array.isArray(path21)) {
-          for (const p of path21)
+      function process2(path22) {
+        if (Array.isArray(path22)) {
+          for (const p of path22)
             process2(p);
           return;
         }
-        const data = typeof path21 === "object" ? path21 : parse(path21, options);
+        const data = typeof path22 === "object" ? path22 : parse(path22, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20624,7 +20624,7 @@ var require_dist3 = __commonJS({
           combinations++;
         });
       }
-      process2(path20);
+      process2(path21);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape2(delimiter) + "$)?";
@@ -20764,18 +20764,18 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path20, options, fn) {
+    function Layer(path21, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path20, options, fn);
+        return new Layer(path21, options, fn);
       }
-      debug("new %o", path20);
+      debug("new %o", path21);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path20 === "/" && opts.end === false;
+      this.slash = path21 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
@@ -20814,7 +20814,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path20) ? path20.map(matcher) : [matcher(path20)];
+      this.matchers = Array.isArray(path21) ? path21.map(matcher) : [matcher(path21)];
     }
     Layer.prototype.handleError = function handleError(error2, req, res, next) {
       const fn = this.handle;
@@ -20854,9 +20854,9 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path20) {
+    Layer.prototype.match = function match(path21) {
       let match2;
-      if (path20 != null) {
+      if (path21 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
@@ -20864,7 +20864,7 @@ var require_layer = __commonJS({
         }
         let i = 0;
         while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path20);
+          match2 = this.matchers[i](path21);
           i++;
         }
       }
@@ -20892,13 +20892,13 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path20) {
-      if (path20 instanceof RegExp || path20 === "/") {
-        return path20;
+    function loosen(path21) {
+      if (path21 instanceof RegExp || path21 === "/") {
+        return path21;
       }
-      return Array.isArray(path20) ? path20.map(function(p) {
+      return Array.isArray(path21) ? path21.map(function(p) {
         return loosen(p);
-      }) : String(path20).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path21).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
@@ -20914,9 +20914,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path20) {
-      debug("new %o", path20);
-      this.path = path20;
+    function Route(path21) {
+      debug("new %o", path21);
+      this.path = path21;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -21124,8 +21124,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path20 = getPathname(req);
-        if (path20 == null) {
+        const path21 = getPathname(req);
+        if (path21 == null) {
           return done(layerError);
         }
         let layer;
@@ -21133,7 +21133,7 @@ var require_router = __commonJS({
         let route2;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path20);
+          match = matchLayer(layer, path21);
           route2 = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -21171,18 +21171,18 @@ var require_router = __commonJS({
           } else if (route2) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path20);
+            trimPrefix(layer, layerError, layerPath, path21);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path20) {
+      function trimPrefix(layer, layerError, layerPath, path21) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path20.substring(0, layerPath.length)) {
+          if (layerPath !== path21.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path20[layerPath.length];
+          const c = path21[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -21206,7 +21206,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path20 = "/";
+      let path21 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21214,7 +21214,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path20 = handler;
+          path21 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21226,8 +21226,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path20, fn.name || "<anonymous>");
-        const layer = new Layer(path20, {
+        debug("use %o %s", path21, fn.name || "<anonymous>");
+        const layer = new Layer(path21, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -21237,9 +21237,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route2(path20) {
-      const route3 = new Route(path20);
-      const layer = new Layer(path20, {
+    Router.prototype.route = function route2(path21) {
+      const route3 = new Route(path21);
+      const layer = new Layer(path21, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -21252,8 +21252,8 @@ var require_router = __commonJS({
       return route3;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path20) {
-        const route2 = this.route(path20);
+      Router.prototype[method] = function(path21) {
+        const route2 = this.route(path21);
         route2[method].apply(route2, slice.call(arguments, 1));
         return this;
       };
@@ -21282,9 +21282,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path20) {
+    function matchLayer(layer, path21) {
       try {
-        return layer.match(path20);
+        return layer.match(path21);
       } catch (err) {
         return err;
       }
@@ -21512,7 +21512,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path20 = "/";
+      var path21 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21520,7 +21520,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path20 = fn;
+          path21 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21530,12 +21530,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path20, fn2);
+          return router.use(path21, fn2);
         }
-        debug(".use app under %s", path20);
-        fn2.mountpath = path20;
+        debug(".use app under %s", path21);
+        fn2.mountpath = path21;
         fn2.parent = this;
-        router.use(path20, function mounted_app(req, res, next) {
+        router.use(path21, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -21547,8 +21547,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route2(path20) {
-      return this.router.route(path20);
+    app.route = function route2(path21) {
+      return this.router.route(path21);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21591,7 +21591,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path20() {
+    app.path = function path21() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -21607,17 +21607,17 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path20) {
+      app[method] = function(path21) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path20);
+          return this.set(path21);
         }
-        var route2 = this.route(path20);
+        var route2 = this.route(path21);
         route2[method].apply(route2, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path20) {
-      var route2 = this.route(path20);
+    app.all = function all(path21) {
+      var route2 = this.route(path21);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route2[methods[i]].apply(route2, args);
@@ -22527,7 +22527,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path20() {
+    defineGetter(req, "path", function path21() {
       return parse(this).pathname;
     });
     defineGetter(req, "host", function host() {
@@ -22738,8 +22738,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename(path20) {
-      const normalized = path20.replaceAll("\\", "/");
+    function basename(path21) {
+      const normalized = path21.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22980,32 +22980,32 @@ var require_send = __commonJS({
     var escapeHtml = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
-    var fs14 = require("fs");
+    var fs15 = require("fs");
     var mime = require_mime_types();
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path20 = require("path");
+    var path21 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path20.extname;
-    var join = path20.join;
-    var normalize = path20.normalize;
-    var resolve = path20.resolve;
-    var sep = path20.sep;
+    var extname = path21.extname;
+    var join = path21.join;
+    var normalize = path21.normalize;
+    var resolve = path21.resolve;
+    var sep = path21.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send;
-    function send(req, path21, options) {
-      return new SendStream(req, path21, options);
+    function send(req, path22, options) {
+      return new SendStream(req, path22, options);
     }
-    function SendStream(req, path21, options) {
+    function SendStream(req, path22, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path21;
+      this.path = path22;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -23119,10 +23119,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path21) {
+    SendStream.prototype.redirect = function redirect(path22) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path21);
+        this.emit("directory", res, path22);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -23142,38 +23142,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path21 = decode(this.path);
-      if (path21 === -1) {
+      var path22 = decode(this.path);
+      if (path22 === -1) {
         this.error(400);
         return res;
       }
-      if (~path21.indexOf("\0")) {
+      if (~path22.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path21) {
-          path21 = normalize("." + sep + path21);
+        if (path22) {
+          path22 = normalize("." + sep + path22);
         }
-        if (UP_PATH_REGEXP.test(path21)) {
-          debug('malicious path "%s"', path21);
+        if (UP_PATH_REGEXP.test(path22)) {
+          debug('malicious path "%s"', path22);
           this.error(403);
           return res;
         }
-        parts = path21.split(sep);
-        path21 = normalize(join(root, path21));
+        parts = path22.split(sep);
+        path22 = normalize(join(root, path22));
       } else {
-        if (UP_PATH_REGEXP.test(path21)) {
-          debug('malicious path "%s"', path21);
+        if (UP_PATH_REGEXP.test(path22)) {
+          debug('malicious path "%s"', path22);
           this.error(403);
           return res;
         }
-        parts = normalize(path21).split(sep);
-        path21 = resolve(path21);
+        parts = normalize(path22).split(sep);
+        path22 = resolve(path22);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path21);
+        debug('%s dotfile "%s"', this._dotfiles, path22);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -23187,13 +23187,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path21);
+        this.sendIndex(path22);
         return res;
       }
-      this.sendFile(path21);
+      this.sendFile(path22);
       return res;
     };
-    SendStream.prototype.send = function send2(path21, stat) {
+    SendStream.prototype.send = function send2(path22, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -23205,9 +23205,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path21);
-      this.setHeader(path21, stat);
-      this.type(path21);
+      debug('pipe "%s"', path22);
+      this.setHeader(path22, stat);
+      this.type(path22);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -23256,30 +23256,30 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path21, opts);
+      this.stream(path22, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path21) {
+    SendStream.prototype.sendFile = function sendFile(path22) {
       var i = 0;
       var self2 = this;
-      debug('stat "%s"', path21);
-      fs14.stat(path21, function onstat(err, stat) {
-        var pathEndsWithSep = path21[path21.length - 1] === sep;
-        if (err && err.code === "ENOENT" && !extname(path21) && !pathEndsWithSep) {
+      debug('stat "%s"', path22);
+      fs15.stat(path22, function onstat(err, stat) {
+        var pathEndsWithSep = path22[path22.length - 1] === sep;
+        if (err && err.code === "ENOENT" && !extname(path22) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self2.onStatError(err);
-        if (stat.isDirectory()) return self2.redirect(path21);
+        if (stat.isDirectory()) return self2.redirect(path22);
         if (pathEndsWithSep) return self2.error(404);
-        self2.emit("file", path21, stat);
-        self2.send(path21, stat);
+        self2.emit("file", path22, stat);
+        self2.send(path22, stat);
       });
       function next(err) {
         if (self2._extensions.length <= i) {
           return err ? self2.onStatError(err) : self2.error(404);
         }
-        var p = path21 + "." + self2._extensions[i++];
+        var p = path22 + "." + self2._extensions[i++];
         debug('stat "%s"', p);
-        fs14.stat(p, function(err2, stat) {
+        fs15.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -23287,7 +23287,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path21) {
+    SendStream.prototype.sendIndex = function sendIndex(path22) {
       var i = -1;
       var self2 = this;
       function next(err) {
@@ -23295,9 +23295,9 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join(path21, self2._index[i]);
+        var p = join(path22, self2._index[i]);
         debug('stat "%s"', p);
-        fs14.stat(p, function(err2, stat) {
+        fs15.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -23306,10 +23306,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path21, options) {
+    SendStream.prototype.stream = function stream(path22, options) {
       var self2 = this;
       var res = this.res;
-      var stream2 = fs14.createReadStream(path21, options);
+      var stream2 = fs15.createReadStream(path22, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -23324,17 +23324,17 @@ var require_send = __commonJS({
         self2.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path21) {
+    SendStream.prototype.type = function type(path22) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path21);
+      var ext = extname(path22);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path21, stat) {
+    SendStream.prototype.setHeader = function setHeader(path22, stat) {
       var res = this.res;
-      this.emit("headers", res, path21, stat);
+      this.emit("headers", res, path22, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -23392,9 +23392,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path21) {
+    function decode(path22) {
       try {
-        return decodeURIComponent(path21);
+        return decodeURIComponent(path22);
       } catch (err) {
         return -1;
       }
@@ -23538,7 +23538,7 @@ var require_response = __commonJS({
     var http2 = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path20 = require("node:path");
+    var path21 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -23547,8 +23547,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send = require_send();
-    var extname = path20.extname;
-    var resolve = path20.resolve;
+    var extname = path21.extname;
+    var resolve = path21.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http2.ServerResponse.prototype);
@@ -23694,26 +23694,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path21, options, callback) {
+    res.sendFile = function sendFile(path22, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path21) {
+      if (!path22) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path21 !== "string") {
+      if (typeof path22 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path21)) {
+      if (!opts.root && !pathIsAbsolute(path22)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path21);
+      var pathname = encodeURI(path22);
       opts.etag = this.app.enabled("etag");
       var file = send(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23724,7 +23724,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path21, filename, options, callback) {
+    res.download = function download(path22, filename, options, callback) {
       var done = callback;
       var name2 = filename;
       var opts = options || null;
@@ -23741,7 +23741,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name2 || path21)
+        "Content-Disposition": contentDisposition(name2 || path22)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23754,7 +23754,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path21) : path21;
+      var fullPath = !opts.root ? resolve(path22) : path22;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -24037,11 +24037,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path20 = parseUrl(req).pathname;
-        if (path20 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path20 = "";
+        var path21 = parseUrl(req).pathname;
+        if (path21 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path21 = "";
         }
-        var stream = send(req, path20, opts);
+        var stream = send(req, path21, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -24152,9 +24152,9 @@ var require_express2 = __commonJS({
 var require_windows_privacy = __commonJS({
   "../plugins/remote-debug-agent/windows-privacy.cjs"(exports2, module2) {
     "use strict";
-    var fs14 = require("fs");
-    var path20 = require("path");
-    var { createHash: createHash14 } = require("crypto");
+    var fs15 = require("fs");
+    var path21 = require("path");
+    var { createHash: createHash15 } = require("crypto");
     var { execFileSync } = require("child_process");
     function fail4(code = "BUSINESS_STORAGE_UNAVAILABLE") {
       return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
@@ -24162,14 +24162,14 @@ var require_windows_privacy = __commonJS({
     function native(action, input = {}, run = execFileSync) {
       if (process.platform !== "win32") throw fail4("BUSINESS_KEYSTORE_UNSUPPORTED");
       const systemRoot = process.env.SystemRoot || process.env.WINDIR;
-      if (!systemRoot || !path20.isAbsolute(systemRoot)) throw fail4("BUSINESS_KEYSTORE_UNAVAILABLE");
+      if (!systemRoot || !path21.isAbsolute(systemRoot)) throw fail4("BUSINESS_KEYSTORE_UNAVAILABLE");
       try {
-        const helper = path20.join(__dirname, "native/windows-privacy.ps1");
-        const manifestPath = fs14.existsSync(path20.join(__dirname, "runtime-manifest.json")) ? path20.join(__dirname, "runtime-manifest.json") : path20.join(__dirname, "runtime/agent/runtime-manifest.json");
-        const expected = JSON.parse(fs14.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
-        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash14("sha256").update(fs14.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        const helper = path21.join(__dirname, "native/windows-privacy.ps1");
+        const manifestPath = fs15.existsSync(path21.join(__dirname, "runtime-manifest.json")) ? path21.join(__dirname, "runtime-manifest.json") : path21.join(__dirname, "runtime/agent/runtime-manifest.json");
+        const expected = JSON.parse(fs15.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash15("sha256").update(fs15.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
         const raw = run(
-          path20.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
+          path21.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
           ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
           {
             input: JSON.stringify({ action, ...input }),
@@ -24189,7 +24189,7 @@ var require_windows_privacy = __commonJS({
       }
     }
     function targetFor(directory) {
-      return "RemoteDebugAgent/business-privacy/v1/" + createHash14("sha256").update(fs14.realpathSync.native(directory)).digest("hex");
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash15("sha256").update(fs15.realpathSync.native(directory)).digest("hex");
     }
     function prepareStore(directory) {
       return native("prepare-store", { directory });
@@ -24220,7 +24220,7 @@ var require_windows_privacy = __commonJS({
 var require_windows_storage = __commonJS({
   "../plugins/remote-debug-agent/windows-storage.cjs"(exports2, module2) {
     "use strict";
-    var path20 = require("path");
+    var path21 = require("path");
     var { execFileSync } = require("child_process");
     var aclScript = `
 $ErrorActionPreference = 'Stop'
@@ -24261,8 +24261,8 @@ if (-not $full) { throw 'Owner lacks access' }
 `;
     function protectOrCheckWindows(target2, protect) {
       const root = process.env.SystemRoot || process.env.WINDIR;
-      if (!root || !path20.isAbsolute(root)) throw new Error("Windows system directory is unavailable");
-      const executable = path20.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+      if (!root || !path21.isAbsolute(root)) throw new Error("Windows system directory is unavailable");
+      const executable = path21.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
       execFileSync(executable, ["-NoProfile", "-NonInteractive", "-Command", aclScript], {
         env: { ...process.env, RDA_AUTH_ACL_TARGET: target2, RDA_AUTH_ACL_ACTION: protect ? "protect" : "check" },
         stdio: "pipe",
@@ -24278,8 +24278,8 @@ if (-not $full) { throw 'Owner lacks access' }
 var require_local_auth = __commonJS({
   "../plugins/remote-debug-agent/local-auth.cjs"(exports2, module2) {
     "use strict";
-    var fs14 = require("fs");
-    var path20 = require("path");
+    var fs15 = require("fs");
+    var path21 = require("path");
     var crypto = require("crypto");
     function authError(message, code = "LOCAL_AUTH_STORAGE_UNSAFE", statusCode = 503) {
       const error2 = new Error(message);
@@ -24287,10 +24287,10 @@ var require_local_auth = __commonJS({
       return error2;
     }
     function resolveAuthFile(dataDir, env = process.env) {
-      return path20.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path20.join(".runtime", "http-auth.json"));
+      return path21.resolve(dataDir, env.REMOTE_DEBUG_AUTH_FILE || path21.join(".runtime", "http-auth.json"));
     }
     function protectOrCheck(target2, directory, protect) {
-      const stat = fs14.lstatSync(target2);
+      const stat = fs15.lstatSync(target2);
       if (stat.isSymbolicLink() || (directory ? !stat.isDirectory() : !stat.isFile())) {
         throw authError("authentication storage must be a regular file in a protected directory");
       }
@@ -24302,19 +24302,19 @@ var require_local_auth = __commonJS({
         }
       } else {
         if (stat.uid !== process.getuid()) throw authError("authentication storage is owned by another user");
-        if (protect) fs14.chmodSync(target2, directory ? 448 : 384);
-        if ((fs14.statSync(target2).mode & 511) !== (directory ? 448 : 384)) {
+        if (protect) fs15.chmodSync(target2, directory ? 448 : 384);
+        if ((fs15.statSync(target2).mode & 511) !== (directory ? 448 : 384)) {
           throw authError("authentication storage requires owner-only permissions");
         }
       }
     }
     function readAuthToken(filePath) {
       try {
-        protectOrCheck(path20.dirname(filePath), true, false);
+        protectOrCheck(path21.dirname(filePath), true, false);
         protectOrCheck(filePath, false, false);
-        const stat = fs14.statSync(filePath);
+        const stat = fs15.statSync(filePath);
         if (stat.size > 1024) throw authError("authentication credential file is invalid");
-        const value = JSON.parse(fs14.readFileSync(filePath, "utf8"));
+        const value = JSON.parse(fs15.readFileSync(filePath, "utf8"));
         if (value.version !== 1 || !/^[a-f0-9]{64}$/.test(value.token)) throw authError("authentication credential file is invalid");
         return value.token;
       } catch (error2) {
@@ -24323,30 +24323,30 @@ var require_local_auth = __commonJS({
       }
     }
     function ensureAuthToken(filePath) {
-      const directory = path20.dirname(filePath);
+      const directory = path21.dirname(filePath);
       try {
-        fs14.mkdirSync(directory, { recursive: true, mode: 448 });
+        fs15.mkdirSync(directory, { recursive: true, mode: 448 });
         protectOrCheck(directory, true, true);
-        if (fs14.existsSync(filePath)) return readAuthToken(filePath);
+        if (fs15.existsSync(filePath)) return readAuthToken(filePath);
         const token = crypto.randomBytes(32).toString("hex");
-        const temporaryPath = path20.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
+        const temporaryPath = path21.join(directory, `.http-auth-${process.pid}-${crypto.randomBytes(16).toString("hex")}.tmp`);
         try {
-          const fd = fs14.openSync(temporaryPath, "wx", 384);
+          const fd = fs15.openSync(temporaryPath, "wx", 384);
           try {
-            fs14.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
-            fs14.fsyncSync(fd);
+            fs15.writeFileSync(fd, JSON.stringify({ version: 1, token }) + "\n", "utf8");
+            fs15.fsyncSync(fd);
           } finally {
-            fs14.closeSync(fd);
+            fs15.closeSync(fd);
           }
           protectOrCheck(temporaryPath, false, true);
           try {
-            fs14.linkSync(temporaryPath, filePath);
+            fs15.linkSync(temporaryPath, filePath);
           } catch (error2) {
             if (error2.code !== "EEXIST") throw error2;
           }
         } finally {
           try {
-            fs14.unlinkSync(temporaryPath);
+            fs15.unlinkSync(temporaryPath);
           } catch {
           }
         }
@@ -26626,7 +26626,7 @@ var require_websocket = __commonJS({
     var http2 = require("http");
     var net2 = require("net");
     var tls = require("tls");
-    var { randomBytes: randomBytes6, createHash: createHash14 } = require("crypto");
+    var { randomBytes: randomBytes6, createHash: createHash15 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -27307,7 +27307,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest3 = createHash14("sha1").update(key + GUID).digest("base64");
+        const digest3 = createHash15("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest3) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -27676,7 +27676,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter4 = require("events");
     var http2 = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash14 } = require("crypto");
+    var { createHash: createHash15 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -27983,7 +27983,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest3 = createHash14("sha1").update(key + GUID).digest("base64");
+        const digest3 = createHash15("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -34509,7 +34509,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv: createDecipheriv2,
       createECDH,
-      createHash: createHash14,
+      createHash: createHash15,
       createHmac,
       createSign,
       createVerify,
@@ -35197,11 +35197,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash14("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash15("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash14("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash15("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -35366,8 +35366,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash14("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash14("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash15("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash15("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -35407,7 +35407,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash14("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash15("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -36051,11 +36051,11 @@ var require_agent = __commonJS({
       };
     })();
     var WINDOWS_PIPE_REGEX = /^[/\\][/\\]\.[/\\]pipe[/\\].+/;
-    function createAgent(path20) {
-      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path20)) {
-        return path20 === "pageant" ? new PageantAgent() : new CygwinAgent(path20);
+    function createAgent(path21) {
+      if (process.platform === "win32" && !WINDOWS_PIPE_REGEX.test(path21)) {
+        return path21 === "pageant" ? new PageantAgent() : new CygwinAgent(path21);
       }
-      return new OpenSSHAgent(path20);
+      return new OpenSSHAgent(path21);
     }
     var AgentProtocol = (() => {
       const SSH_AGENTC_REQUEST_IDENTITIES = 11;
@@ -37729,7 +37729,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash14,
+      createHash: createHash15,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -38155,7 +38155,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash14(this.hashName);
+          const hash = createHash15(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -39163,9 +39163,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest3 = createHash14(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest3 = createHash15(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest3.length < len) {
-          const chunk = createHash14(hashName).update(secret).update(exchangeHash).update(digest3).digest();
+          const chunk = createHash15(hashName).update(secret).update(exchangeHash).update(digest3).digest();
           const extended = Buffer.allocUnsafe(digest3.length + chunk.length);
           extended.set(digest3, 0);
           extended.set(chunk, digest3.length);
@@ -39410,7 +39410,7 @@ var require_Protocol = __commonJS({
     var IDENT = Buffer.from(`${IDENT_RAW}\r
 `);
     var MAX_LINE_LEN = 8192;
-    var MAX_LINES = 1024;
+    var MAX_LINES2 = 1024;
     var PING_PAYLOAD = Buffer.from([
       MESSAGE.GLOBAL_REQUEST,
       // "keepalive@openssh.com"
@@ -40829,7 +40829,7 @@ var require_Protocol = __commonJS({
           }
           if (this._server)
             throw new Error("Greetings from clients not permitted");
-          if (++lines > MAX_LINES)
+          if (++lines > MAX_LINES2)
             throw new Error("Max greeting lines exceeded");
           needNL = false;
           start = p + 1;
@@ -41030,8 +41030,8 @@ var require_SFTP = __commonJS({
   "node_modules/ssh2/lib/protocol/SFTP.js"(exports2, module2) {
     "use strict";
     var EventEmitter4 = require("events");
-    var fs14 = require("fs");
-    var { constants: constants2 } = fs14;
+    var fs15 = require("fs");
+    var { constants: constants2 } = fs15;
     var {
       Readable: ReadableStream,
       Writable: WritableStream
@@ -41299,17 +41299,17 @@ var require_SFTP = __commonJS({
       // ===========================================================================
       // Client-specific ===========================================================
       // ===========================================================================
-      createReadStream(path20, options) {
+      createReadStream(path21, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new ReadStream(this, path20, options);
+        return new ReadStream(this, path21, options);
       }
-      createWriteStream(path20, options) {
+      createWriteStream(path21, options) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        return new WriteStream(this, path20, options);
+        return new WriteStream(this, path21, options);
       }
-      open(path20, flags_, attrs, cb) {
+      open(path21, flags_, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         if (typeof attrs === "function") {
@@ -41328,7 +41328,7 @@ var require_SFTP = __commonJS({
           attrsFlags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41336,7 +41336,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         writeUInt32BE(buf, attrsFlags, p += 4);
         if (attrsLen) {
@@ -41460,14 +41460,14 @@ var require_SFTP = __commonJS({
       fastGet(remotePath, localPath, opts, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        fastXfer(this, fs14, remotePath, localPath, opts, cb);
+        fastXfer(this, fs15, remotePath, localPath, opts, cb);
       }
       fastPut(localPath, remotePath, opts, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        fastXfer(fs14, this, localPath, remotePath, opts, cb);
+        fastXfer(fs15, this, localPath, remotePath, opts, cb);
       }
-      readFile(path20, options, callback_) {
+      readFile(path21, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41540,13 +41540,13 @@ var require_SFTP = __commonJS({
             return callback && callback(er, buffer);
           });
         };
-        this.open(path20, flag, 438, (er, handle_) => {
+        this.open(path21, flag, 438, (er, handle_) => {
           if (er)
             return callback && callback(er);
           handle = handle_;
           const tryStat = (er2, st) => {
             if (er2) {
-              this.stat(path20, (er_, st_) => {
+              this.stat(path21, (er_, st_) => {
                 if (er_) {
                   return this.close(handle, () => {
                     callback && callback(er2);
@@ -41567,7 +41567,7 @@ var require_SFTP = __commonJS({
           this.fstat(handle, tryStat);
         });
       }
-      writeFile(path20, data, options, callback_) {
+      writeFile(path21, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41586,7 +41586,7 @@ var require_SFTP = __commonJS({
         if (options.encoding && !Buffer.isEncoding(options.encoding))
           throw new Error(`Unknown encoding: ${options.encoding}`);
         const flag = options.flag || "w";
-        this.open(path20, flag, options.mode, (openErr, handle) => {
+        this.open(path21, flag, options.mode, (openErr, handle) => {
           if (openErr) {
             callback && callback(openErr);
           } else {
@@ -41595,7 +41595,7 @@ var require_SFTP = __commonJS({
             if (position === null) {
               const tryStat = (er, st) => {
                 if (er) {
-                  this.stat(path20, (er_, st_) => {
+                  this.stat(path21, (er_, st_) => {
                     if (er_) {
                       return this.close(handle, () => {
                         callback && callback(er);
@@ -41614,7 +41614,7 @@ var require_SFTP = __commonJS({
           }
         });
       }
-      appendFile(path20, data, options, callback_) {
+      appendFile(path21, data, options, callback_) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let callback;
@@ -41632,12 +41632,12 @@ var require_SFTP = __commonJS({
           throw new TypeError("Bad arguments");
         if (!options.flag)
           options = Object.assign({ flag: "a" }, options);
-        this.writeFile(path20, data, options, callback);
+        this.writeFile(path21, data, options, callback);
       }
-      exists(path20, cb) {
+      exists(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        this.stat(path20, (err) => {
+        this.stat(path21, (err) => {
           cb && cb(err ? false : true);
         });
       }
@@ -41680,7 +41680,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} RENAME`
         );
       }
-      mkdir(path20, attrs, cb) {
+      mkdir(path21, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -41694,7 +41694,7 @@ var require_SFTP = __commonJS({
           flags = attrs.flags;
           attrsLen = attrs.nb;
         }
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41702,7 +41702,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -41718,10 +41718,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} MKDIR`
         );
       }
-      rmdir(path20, cb) {
+      rmdir(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41729,7 +41729,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
@@ -41819,10 +41819,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} FSTAT`
         );
       }
-      stat(path20, cb) {
+      stat(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41830,17 +41830,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} STAT`
         );
       }
-      lstat(path20, cb) {
+      lstat(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41848,17 +41848,17 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} LSTAT`
         );
       }
-      opendir(path20, cb) {
+      opendir(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41866,14 +41866,14 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = { cb };
         const isBuffered = sendOrBuffer(this, buf);
         this._debug && this._debug(
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} OPENDIR`
         );
       }
-      setstat(path20, attrs, cb) {
+      setstat(path21, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         let flags = 0;
@@ -41885,7 +41885,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41893,7 +41893,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -41953,8 +41953,8 @@ var require_SFTP = __commonJS({
           mtime: toUnixTimestamp(mtime)
         }, cb);
       }
-      utimes(path20, atime, mtime, cb) {
-        return this.setstat(path20, {
+      utimes(path21, atime, mtime, cb) {
+        return this.setstat(path21, {
           atime: toUnixTimestamp(atime),
           mtime: toUnixTimestamp(mtime)
         }, cb);
@@ -41965,8 +41965,8 @@ var require_SFTP = __commonJS({
           gid
         }, cb);
       }
-      chown(path20, uid, gid, cb) {
-        return this.setstat(path20, {
+      chown(path21, uid, gid, cb) {
+        return this.setstat(path21, {
           uid,
           gid
         }, cb);
@@ -41976,15 +41976,15 @@ var require_SFTP = __commonJS({
           mode
         }, cb);
       }
-      chmod(path20, mode, cb) {
-        return this.setstat(path20, {
+      chmod(path21, mode, cb) {
+        return this.setstat(path21, {
           mode
         }, cb);
       }
-      readlink(path20, cb) {
+      readlink(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -41992,7 +41992,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42037,10 +42037,10 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} SYMLINK`
         );
       }
-      realpath(path20, cb) {
+      realpath(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42048,7 +42048,7 @@ var require_SFTP = __commonJS({
         const reqid = this._writeReqid = this._writeReqid + 1 & MAX_REQID;
         writeUInt32BE(buf, reqid, 5);
         writeUInt32BE(buf, pathLen, p);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42093,13 +42093,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${which} posix-rename@openssh.com`);
         }
       }
-      ext_openssh_statvfs(path20, cb) {
+      ext_openssh_statvfs(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["statvfs@openssh.com"];
         if (!ext || ext !== "2")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 19 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42109,7 +42109,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 19, p);
         buf.utf8Write("statvfs@openssh.com", p += 4, 19);
         writeUInt32BE(buf, pathLen, p += 19);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = { extended: "statvfs@openssh.com", cb };
         const isBuffered = sendOrBuffer(this, buf);
         if (this._debug) {
@@ -42195,7 +42195,7 @@ var require_SFTP = __commonJS({
           `SFTP: Outbound: ${isBuffered ? "Buffered" : "Sending"} fsync@openssh.com`
         );
       }
-      ext_openssh_lsetstat(path20, attrs, cb) {
+      ext_openssh_lsetstat(path21, attrs, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["lsetstat@openssh.com"];
@@ -42210,7 +42210,7 @@ var require_SFTP = __commonJS({
         } else if (typeof attrs === "function") {
           cb = attrs;
         }
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 20 + 4 + pathLen + 4 + attrsLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42220,7 +42220,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 20, p);
         buf.utf8Write("lsetstat@openssh.com", p += 4, 20);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         writeUInt32BE(buf, flags, p += pathLen);
         if (attrsLen) {
           p += 4;
@@ -42237,13 +42237,13 @@ var require_SFTP = __commonJS({
           this._debug(`SFTP: Outbound: ${status} lsetstat@openssh.com`);
         }
       }
-      ext_openssh_expandPath(path20, cb) {
+      ext_openssh_expandPath(path21, cb) {
         if (this.server)
           throw new Error("Client-only method called in server mode");
         const ext = this._extensions["expand-path@openssh.com"];
         if (ext !== "1")
           throw new Error("Server does not support this extended request");
-        const pathLen = Buffer.byteLength(path20);
+        const pathLen = Buffer.byteLength(path21);
         let p = 9;
         const buf = Buffer.allocUnsafe(4 + 1 + 4 + 4 + 23 + 4 + pathLen);
         writeUInt32BE(buf, buf.length - 4, 0);
@@ -42253,7 +42253,7 @@ var require_SFTP = __commonJS({
         writeUInt32BE(buf, 23, p);
         buf.utf8Write("expand-path@openssh.com", p += 4, 23);
         writeUInt32BE(buf, pathLen, p += 20);
-        buf.utf8Write(path20, p += 4, pathLen);
+        buf.utf8Write(path21, p += 4, pathLen);
         this._requests[reqid] = {
           cb: (err, names) => {
             if (typeof cb !== "function")
@@ -42726,13 +42726,13 @@ var require_SFTP = __commonJS({
             if (--left === 0)
               cb(err);
           };
-          if (srcHandle && (src === fs14 || src.outgoing.state === "open"))
+          if (srcHandle && (src === fs15 || src.outgoing.state === "open"))
             ++left;
-          if (dstHandle && (dst === fs14 || dst.outgoing.state === "open"))
+          if (dstHandle && (dst === fs15 || dst.outgoing.state === "open"))
             ++left;
-          if (srcHandle && (src === fs14 || src.outgoing.state === "open"))
+          if (srcHandle && (src === fs15 || src.outgoing.state === "open"))
             src.close(srcHandle, cbfinal);
-          if (dstHandle && (dst === fs14 || dst.outgoing.state === "open"))
+          if (dstHandle && (dst === fs15 || dst.outgoing.state === "open"))
             dst.close(dstHandle, cbfinal);
         } else {
           cb(err);
@@ -42748,7 +42748,7 @@ var require_SFTP = __commonJS({
           tryStat(null, { size: fileSize });
         function tryStat(err2, attrs) {
           if (err2) {
-            if (src !== fs14) {
+            if (src !== fs15) {
               src.stat(srcPath, (err_, attrs_) => {
                 if (err_)
                   return onerror(err2);
@@ -43531,12 +43531,12 @@ var require_SFTP = __commonJS({
       [REQUEST.LSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed LSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received LSTAT (id:${reqID})`);
-        if (!sftp.emit("LSTAT", reqID, path20)) {
+        if (!sftp.emit("LSTAT", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43555,13 +43555,13 @@ var require_SFTP = __commonJS({
       [REQUEST.SETSTAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed SETSTAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received SETSTAT (id:${reqID})`);
-        if (!sftp.emit("SETSTAT", reqID, path20, attrs)) {
+        if (!sftp.emit("SETSTAT", reqID, path21, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43583,12 +43583,12 @@ var require_SFTP = __commonJS({
       [REQUEST.OPENDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed OPENDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received OPENDIR (id:${reqID})`);
-        if (!sftp.emit("OPENDIR", reqID, path20)) {
+        if (!sftp.emit("OPENDIR", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43607,63 +43607,63 @@ var require_SFTP = __commonJS({
       [REQUEST.REMOVE]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed REMOVE packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received REMOVE (id:${reqID})`);
-        if (!sftp.emit("REMOVE", reqID, path20)) {
+        if (!sftp.emit("REMOVE", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.MKDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         const attrs = readAttrs(sftp._biOpt);
         bufferParser.clear();
         if (attrs === void 0)
           return doFatalSFTPError(sftp, "Malformed MKDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received MKDIR (id:${reqID})`);
-        if (!sftp.emit("MKDIR", reqID, path20, attrs)) {
+        if (!sftp.emit("MKDIR", reqID, path21, attrs)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.RMDIR]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed RMDIR packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received RMDIR (id:${reqID})`);
-        if (!sftp.emit("RMDIR", reqID, path20)) {
+        if (!sftp.emit("RMDIR", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.REALPATH]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed REALPATH packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received REALPATH (id:${reqID})`
         );
-        if (!sftp.emit("REALPATH", reqID, path20)) {
+        if (!sftp.emit("REALPATH", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
       [REQUEST.STAT]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed STAT packet");
         sftp._debug && sftp._debug(`SFTP: Inbound: Received STAT (id:${reqID})`);
-        if (!sftp.emit("STAT", reqID, path20)) {
+        if (!sftp.emit("STAT", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43683,14 +43683,14 @@ var require_SFTP = __commonJS({
       [REQUEST.READLINK]: (sftp, payload) => {
         bufferParser.init(payload, 1);
         const reqID = bufferParser.readUInt32BE();
-        const path20 = bufferParser.readString(true);
+        const path21 = bufferParser.readString(true);
         bufferParser.clear();
-        if (path20 === void 0)
+        if (path21 === void 0)
           return doFatalSFTPError(sftp, "Malformed READLINK packet");
         sftp._debug && sftp._debug(
           `SFTP: Inbound: Received READLINK (id:${reqID})`
         );
-        if (!sftp.emit("READLINK", reqID, path20)) {
+        if (!sftp.emit("READLINK", reqID, path21)) {
           sftp.status(reqID, STATUS_CODE.OP_UNSUPPORTED);
         }
       },
@@ -43761,7 +43761,7 @@ var require_SFTP = __commonJS({
     function roundUpToMultipleOf8(n) {
       return n + 7 & ~7;
     }
-    function ReadStream(sftp, path20, options) {
+    function ReadStream(sftp, path21, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -43775,7 +43775,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       ReadableStream.call(this, options);
-      this.path = path20;
+      this.path = path21;
       this.flags = options.flags === void 0 ? "r" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -43906,7 +43906,7 @@ var require_SFTP = __commonJS({
       },
       configurable: true
     });
-    function WriteStream(sftp, path20, options) {
+    function WriteStream(sftp, path21, options) {
       if (options === void 0)
         options = {};
       else if (typeof options === "string")
@@ -43918,7 +43918,7 @@ var require_SFTP = __commonJS({
       options.emitClose = false;
       options.autoDestroy = false;
       WritableStream.call(this, options);
-      this.path = path20;
+      this.path = path21;
       this.flags = options.flags === void 0 ? "w" : options.flags;
       this.mode = options.mode === void 0 ? 438 : options.mode;
       this.start = options.start;
@@ -44600,7 +44600,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash14,
+      createHash: createHash15,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -44822,7 +44822,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash14(hashAlgo).update(key).digest("hex");
+              key = createHash15(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -48126,20 +48126,20 @@ var require_lib4 = __commonJS({
 var require_environment_report = __commonJS({
   "../plugins/remote-debug-agent/environment-report.cjs"(exports2, module2) {
     "use strict";
-    var fs14 = require("fs");
+    var fs15 = require("fs");
     var os2 = require("os");
-    var path20 = require("path");
+    var path21 = require("path");
     var crypto = require("crypto");
     var localAuth8 = require_local_auth();
     function dataDirectory(env) {
-      return path20.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path20.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path20.join(os2.homedir(), ".remote-debug-agent")));
+      return path21.resolve(env.REMOTE_DEBUG_DATA_DIR || env.REMOTE_DEBUG_PROJECT_ROOT || (env.LOCALAPPDATA ? path21.join(env.LOCALAPPDATA, "RemoteDebugAgent") : path21.join(os2.homedir(), ".remote-debug-agent")));
     }
     function reportPath(dataDir) {
-      return path20.join(dataDir, ".runtime", "environment-report.json");
+      return path21.join(dataDir, ".runtime", "environment-report.json");
     }
     function readJson(file) {
       try {
-        return JSON.parse(fs14.readFileSync(file, "utf8"));
+        return JSON.parse(fs15.readFileSync(file, "utf8"));
       } catch (_) {
         return null;
       }
@@ -48148,14 +48148,14 @@ var require_environment_report = __commonJS({
       return readJson(reportPath(dataDir));
     }
     function writeJson(file, value) {
-      fs14.mkdirSync(path20.dirname(file), { recursive: true, mode: 448 });
+      fs15.mkdirSync(path21.dirname(file), { recursive: true, mode: 448 });
       const temporary = file + "." + process.pid + "." + crypto.randomBytes(6).toString("hex") + ".tmp";
       try {
-        fs14.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
-        fs14.renameSync(temporary, file);
+        fs15.writeFileSync(temporary, JSON.stringify(value, null, 2) + "\n", { mode: 384 });
+        fs15.renameSync(temporary, file);
       } finally {
         try {
-          fs14.unlinkSync(temporary);
+          fs15.unlinkSync(temporary);
         } catch (_) {
         }
       }
@@ -48177,12 +48177,12 @@ var require_environment_report = __commonJS({
       return actual[0] < Number(range[4]) && (actual[0] > minimum[0] || actual[0] === minimum[0] && (actual[1] > minimum[1] || actual[1] === minimum[1] && actual[2] >= minimum[2]));
     }
     function effectiveEnvironment(env, dataDir) {
-      const configPath = path20.resolve(env.REMOTE_DEBUG_ENV_PATH || path20.join(dataDir, "config.env"));
+      const configPath = path21.resolve(env.REMOTE_DEBUG_ENV_PATH || path21.join(dataDir, "config.env"));
       const effective = Object.assign({}, env);
       let configError = null;
       try {
-        if (fs14.existsSync(configPath)) {
-          fs14.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
+        if (fs15.existsSync(configPath)) {
+          fs15.readFileSync(configPath, "utf8").split(/\r?\n/).forEach(function(line) {
             const match = /^\s*(REMOTE_DEBUG_[A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
             if (!match) return;
             let value = match[2];
@@ -48200,9 +48200,9 @@ var require_environment_report = __commonJS({
       options = options || {};
       const dataDir = dataDirectory(env);
       const settings = effectiveEnvironment(env, dataDir);
-      const runtimeRoot = path20.join(pluginRoot, "runtime", "agent");
-      const manifest = readJson(path20.join(runtimeRoot, "runtime-manifest.json"));
-      const pkg = readJson(path20.join(pluginRoot, "package.json"));
+      const runtimeRoot = path21.join(pluginRoot, "runtime", "agent");
+      const manifest = readJson(path21.join(runtimeRoot, "runtime-manifest.json"));
+      const pkg = readJson(path21.join(pluginRoot, "package.json"));
       const requirement = manifest && manifest.node || pkg && pkg.engines && pkg.engines.node || "unknown";
       const version = options.nodeVersion || process.versions.node;
       const checks = [];
@@ -48269,10 +48269,10 @@ var require_environment_report = __commonJS({
             "public/environment-report.js"
           ].concat(Object.keys(manifest.hashes))));
           const invalid5 = requiredFiles.filter(function(file) {
-            const resolved = path20.resolve(runtimeRoot, file);
-            if (!resolved.startsWith(runtimeRoot + path20.sep) || !fs14.existsSync(resolved)) return true;
+            const resolved = path21.resolve(runtimeRoot, file);
+            if (!resolved.startsWith(runtimeRoot + path21.sep) || !fs15.existsSync(resolved)) return true;
             try {
-              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs14.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
+              return !manifest.hashes[file] || crypto.createHash("sha256").update(fs15.readFileSync(resolved)).digest("hex") !== manifest.hashes[file];
             } catch (_) {
               return true;
             }
@@ -48292,16 +48292,16 @@ var require_environment_report = __commonJS({
       check(
         "config",
         "本地配置文件",
-        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs14.existsSync(settings.configPath) ? settings.configPath : "未创建",
+        settings.configError ? settings.configPath + "（" + settings.configError + "）" : fs15.existsSync(settings.configPath) ? settings.configPath : "未创建",
         "可选；文件存在时需可读，连接信息也可来自实例配置或环境变量",
-        settings.configError ? "fail" : fs14.existsSync(settings.configPath) ? "pass" : "warn",
+        settings.configError ? "fail" : fs15.existsSync(settings.configPath) ? "pass" : "warn",
         settings.configError ? "将 REMOTE_DEBUG_ENV_PATH 指向可读的配置文件，并检查文件权限。" : "如需配置连接，在 dashboard 新建实例；缺少此文件本身不阻止 MCP 启动。"
       );
       try {
-        fs14.mkdirSync(path20.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
-        const probe = path20.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
-        fs14.writeFileSync(probe, "", { mode: 384 });
-        fs14.unlinkSync(probe);
+        fs15.mkdirSync(path21.join(dataDir, ".runtime"), { recursive: true, mode: 448 });
+        const probe = path21.join(dataDir, ".runtime", ".environment-probe-" + process.pid + "-" + crypto.randomBytes(6).toString("hex"));
+        fs15.writeFileSync(probe, "", { mode: 384 });
+        fs15.unlinkSync(probe);
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "pass", "");
       } catch (_) {
         check("storage", "诊断报告目录", dataDir, "当前用户可创建和写入报告", "fail", "为当前用户提供目录写入权限，或设置 REMOTE_DEBUG_DATA_DIR 到可写目录。");
@@ -48311,9 +48311,9 @@ var require_environment_report = __commonJS({
       })) {
         let probeDir;
         try {
-          probeDir = fs14.mkdtempSync(path20.join(dataDir, ".runtime", ".permissions-probe-"));
-          const file = path20.join(probeDir, "probe");
-          fs14.writeFileSync(file, "", { mode: 384 });
+          probeDir = fs15.mkdtempSync(path21.join(dataDir, ".runtime", ".permissions-probe-"));
+          const file = path21.join(probeDir, "probe");
+          fs15.writeFileSync(file, "", { mode: 384 });
           localAuth8.protectOrCheck(probeDir, true, true);
           localAuth8.protectOrCheck(file, false, true);
           localAuth8.protectOrCheck(probeDir, true, false);
@@ -48338,7 +48338,7 @@ var require_environment_report = __commonJS({
         } finally {
           if (probeDir) {
             try {
-              fs14.rmSync(probeDir, { recursive: true, force: true });
+              fs15.rmSync(probeDir, { recursive: true, force: true });
             } catch (_) {
             }
           }
@@ -48372,15 +48372,15 @@ var require_environment_report = __commonJS({
         stage: "environment",
         checks,
         failures: history.slice(-10),
-        offlineDashboard: path20.join(dataDir, ".runtime", "environment-dashboard.html"),
+        offlineDashboard: path21.join(dataDir, ".runtime", "environment-dashboard.html"),
         dashboardUrl: null
       };
     }
     function writeOfflineDashboard(dataDir, report) {
-      const publicDir = path20.join(report.pluginRoot, "runtime", "agent", "public");
-      const file = path20.join(dataDir, ".runtime", "environment-dashboard.html");
+      const publicDir = path21.join(report.pluginRoot, "runtime", "agent", "public");
+      const file = path21.join(dataDir, ".runtime", "environment-dashboard.html");
       if (!["dashboard.html", "dashboard.css", "environment-report.js"].every(function(name2) {
-        return fs14.existsSync(path20.join(publicDir, name2));
+        return fs15.existsSync(path21.join(publicDir, name2));
       })) {
         let escape2 = function(value) {
           return String(value || "").replace(/[&<>"']/g, function(char) {
@@ -48392,14 +48392,14 @@ var require_environment_report = __commonJS({
             return "<td>" + escape2(value) + "</td>";
           }).join("") + "</tr>";
         }).join("");
-        fs14.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
+        fs15.writeFileSync(file, '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Remote Debug Agent</title><style>body{font:14px system-ui;background:#f5f7fb;color:#1f2329;margin:28px}main{background:white;padding:20px;border-radius:8px;overflow:auto}td,th{text-align:left;padding:12px;border-bottom:1px solid #d9dee8;overflow-wrap:anywhere}table{width:100%}</style><header><p>Remote Debug Agent</p><h1>连接实例管理</h1></header><main><h2>插件环境检查</h2><p>离线诊断 · ' + escape2(report.checkedAt) + " · 页面运行文件缺失，请根据下表修复插件。</p><table><thead><tr><th>检查项</th><th>实际情况</th><th>符合条件</th><th>结果</th><th>解决方法</th></tr></thead><tbody>" + rows + "</tbody></table></main></html>", { mode: 384 });
         return;
       }
-      let html = fs14.readFileSync(path20.join(publicDir, "dashboard.html"), "utf8");
-      const css = fs14.readFileSync(path20.join(publicDir, "dashboard.css"), "utf8");
-      const uiCss = fs14.existsSync(path20.join(publicDir, "ui.css")) ? fs14.readFileSync(path20.join(publicDir, "ui.css"), "utf8") : "";
-      const workspace = fs14.existsSync(path20.join(publicDir, "workspace.js")) ? fs14.readFileSync(path20.join(publicDir, "workspace.js"), "utf8") : "";
-      const script = fs14.readFileSync(path20.join(publicDir, "environment-report.js"), "utf8");
+      let html = fs15.readFileSync(path21.join(publicDir, "dashboard.html"), "utf8");
+      const css = fs15.readFileSync(path21.join(publicDir, "dashboard.css"), "utf8");
+      const uiCss = fs15.existsSync(path21.join(publicDir, "ui.css")) ? fs15.readFileSync(path21.join(publicDir, "ui.css"), "utf8") : "";
+      const workspace = fs15.existsSync(path21.join(publicDir, "workspace.js")) ? fs15.readFileSync(path21.join(publicDir, "workspace.js"), "utf8") : "";
+      const script = fs15.readFileSync(path21.join(publicDir, "environment-report.js"), "utf8");
       const embedded = JSON.stringify({ ok: true, mode: "offline", report }).replace(/</g, "\\u003c");
       html = html.replace('<link rel="stylesheet" href="/ui.css" />', function() {
         return "<style>" + uiCss + "</style>";
@@ -48413,7 +48413,7 @@ var require_environment_report = __commonJS({
           return "<script>window.environmentSnapshot=" + embedded + ";</script><script>" + script + "</script>";
         }
       ).replace('<script src="/dashboard.js" type="module"></script>', "").replace('<script src="/admin-registration.js" type="module"></script>', "").replace(/<script src="\/(?:output-preview|instance-tasks|final-results)\.js" defer><\/script>/g, "");
-      fs14.writeFileSync(file, html, { mode: 384 });
+      fs15.writeFileSync(file, html, { mode: 384 });
     }
     function recordRuntimeEvent(dataDir, event2, attemptId) {
       if (!attemptId) return;
@@ -48494,7 +48494,7 @@ var import_express3 = __toESM(require_express2(), 1);
 
 // privacy-service.js
 var import_node_worker_threads = require("node:worker_threads");
-var import_node_path = __toESM(require("node:path"), 1);
+var import_node_path2 = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
 // privacy-key.js
@@ -48590,6 +48590,11 @@ var bulk = {
   planPreview: [batch],
   batches: [batch]
 };
+var historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
+var bulkHistory = {
+  ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
+  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan }
+};
 var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
 var execution = {
   ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
@@ -48672,7 +48677,7 @@ var contracts = {
   remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
   remote_debug_get_capabilities: { capabilities: json },
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
-  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk } },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
   remote_debug_mongodb_prepare_write: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,
@@ -50219,6 +50224,8 @@ async function __bulkUpload() {
 function __bulkRecoverUpload() {
   var jobId = __request.jobId;
   __bulkEnsureRoot();
+  // A read-only recovery must not create a directory/lock for an absent job.
+  __bulkManifest(jobId, false);
   return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
     var manifest = __bulkManifest(jobId, false);
     var chunk = __bulkReadJson(__bulkChunkPath(jobId, __request.chunkIndex), 4 * 1024 * 1024);
@@ -51771,7 +51778,7 @@ function normalizeUpdate(value) {
       if (!safeBulkPath(field) || field === "_id" || field.startsWith("_id.")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
-      if (paths.some((path20) => path20 === field || path20.startsWith(`${field}.`) || field.startsWith(`${path20}.`))) {
+      if (paths.some((path21) => path21 === field || path21.startsWith(`${field}.`) || field.startsWith(`${path21}.`))) {
         throw bulkError(`update paths overlap at ${field}`, "MONGODB_BULK_UPDATE_INVALID");
       }
       if (operator === "$inc" && (typeof fieldValue !== "number" || !Number.isFinite(fieldValue))) {
@@ -51805,7 +51812,7 @@ function assertArrayGuards(expected, update, paths) {
       if (i === parts.length - 1 && operator === "$set" && expected[field]?.exists === false && fields3[field] && typeof fields3[field] === "object" && !Array.isArray(fields3[field]) && !Object.keys(fields3[field]).some((key) => key.startsWith("$")) && bulkIdentity(Object.prototype.hasOwnProperty.call(fields3[field], "_id") ? fields3[field]._id : fields3[field].id)) continue;
       const guard = Object.entries(expected).some(([key, condition]) => {
         const suffix = key.slice(prefix.length + 1);
-        return key.startsWith(prefix + ".") && /^(?:_id|id|[A-Za-z_][A-Za-z0-9_]*_id)$/.test(suffix) && condition.exists === true && bulkIdentity(condition.value) && !paths.some((path20) => overlaps(path20, key));
+        return key.startsWith(prefix + ".") && /^(?:_id|id|[A-Za-z_][A-Za-z0-9_]*_id)$/.test(suffix) && condition.exists === true && bulkIdentity(condition.value) && !paths.some((path21) => overlaps(path21, key));
       });
       if (!guard || i === parts.length - 1) throw bulkError("indexed edits require an unchanged element identity; only a missing full-element $set may append", "MONGODB_BULK_ARRAY_GUARD_REQUIRED");
     }
@@ -51817,7 +51824,7 @@ function normalizeExpected(value, changedPaths) {
   }
   const expected = {};
   for (const [field, condition] of Object.entries(value)) {
-    if (!safeBulkPath(field) || !condition || typeof condition !== "object" || Array.isArray(condition) || Object.keys(expected).some((path20) => overlaps(path20, field))) {
+    if (!safeBulkPath(field) || !condition || typeof condition !== "object" || Array.isArray(condition) || Object.keys(expected).some((path21) => overlaps(path21, field))) {
       throw bulkError("expected must map safe field paths to existence/value conditions", "MONGODB_BULK_EXPECTED_INVALID");
     }
     const exists = condition.exists;
@@ -52341,7 +52348,161 @@ var MongoBulkJobRunner = class {
   }
 };
 
+// mongodb-bulk-history.js
+var import_promises = __toESM(require("node:fs/promises"), 1);
+var import_node_path = __toESM(require("node:path"), 1);
+var import_node_crypto4 = require("node:crypto");
+var import_node_readline = require("node:readline");
+var MAX_BYTES2 = 64 * 1024 * 1024;
+var MAX_LINE_BYTES = 64 * 1024;
+var MAX_LINES = 2e5;
+async function scan(filename, select) {
+  let file;
+  const result = { status: "unavailable", complete: false, matches: [] };
+  try {
+    for (let parent = import_node_path.default.dirname(filename); parent !== import_node_path.default.dirname(parent); parent = import_node_path.default.dirname(parent)) {
+      const stat = await import_promises.default.lstat(parent);
+      if (stat.isSymbolicLink() && !(process.platform === "darwin" && ["/var", "/tmp"].includes(parent))) {
+        result.status = "unsafe";
+        return result;
+      }
+    }
+    const constants2 = (await import("node:fs")).constants;
+    file = await import_promises.default.open(filename, constants2.O_RDONLY | (constants2.O_NOFOLLOW || 0));
+    const before = await file.stat();
+    if (!before.isFile() || before.nlink !== 1 || process.getuid && before.uid !== process.getuid() || before.mode & 18) {
+      result.status = "unsafe";
+      return result;
+    }
+    if (before.size > MAX_BYTES2) {
+      result.status = "budget_exceeded";
+      return result;
+    }
+    result.snapshotBytes = before.size;
+    let lineNumber = 0, invalid5 = false;
+    if (before.size) {
+      const lines = (0, import_node_readline.createInterface)({ input: file.createReadStream({ start: 0, end: before.size - 1, autoClose: false }), crlfDelay: Infinity });
+      try {
+        for await (const line of lines) {
+          if (++lineNumber > MAX_LINES || Buffer.byteLength(line) > MAX_LINE_BYTES) {
+            result.status = "budget_exceeded";
+            return result;
+          }
+          let row;
+          try {
+            row = JSON.parse(line);
+          } catch {
+            invalid5 = true;
+            continue;
+          }
+          const value = select(row);
+          if (value) {
+            if (result.matches.length >= 100) {
+              result.status = "budget_exceeded";
+              return result;
+            }
+            result.matches.push({ ...value, line: lineNumber, sha256: (0, import_node_crypto4.createHash)("sha256").update(line).digest("hex") });
+          }
+        }
+      } finally {
+        lines.close();
+      }
+      const last = Buffer.alloc(1);
+      await file.read(last, 0, 1, before.size - 1);
+      if (last[0] !== 10) invalid5 = true;
+    }
+    const after = await file.stat();
+    const current = await import_promises.default.lstat(filename);
+    if (current.ino !== before.ino || current.dev !== before.dev || current.isSymbolicLink() || after.size !== before.size || after.mtimeMs !== before.mtimeMs) {
+      result.status = "changed";
+      return result;
+    }
+    result.status = invalid5 ? "incomplete" : "read";
+    result.complete = !invalid5;
+    return result;
+  } catch (error2) {
+    result.status = error2.code === "ENOENT" ? "missing" : error2.code === "ELOOP" ? "unsafe" : "unavailable";
+    return result;
+  } finally {
+    await file?.close();
+  }
+}
+function createBulkHistoryReader({ dataDirectory, instance: instance2 } = {}) {
+  return async ({ record, target: target2 }) => {
+    const current = instance2(target2.id), identity2 = record.identity || {};
+    const inWindow = (row) => Number.isFinite(record.started) && Date.parse(row.time) >= record.started - 1e4 && Date.parse(row.time) <= record.started + 9e5;
+    const mcp = await scan(import_node_path.default.join(dataDirectory, "logs", "mcp-error.log"), (row) => {
+      if (!inWindow(row) || row.toolName !== "remote_debug_mongodb_prepare_bulk" || !/^[A-Za-z0-9._:-]{1,128}$/.test(row.operationId || "")) return;
+      if (row.code === "MCP_TOOLS_CALL_STARTED" && row.arguments?.instanceId === target2.id && row.arguments.jobId === identity2.jobId && row.arguments.chunkIndex === identity2.chunkIndex) {
+        return { operationId: row.operationId, kind: "mcp_started", code: row.code };
+      }
+      if (row.code === "MCP_TOOLS_CALL_FAILED") return { operationId: row.operationId, kind: "mcp_failed", code: /^[A-Z][A-Z0-9_]{1,80}$/.test(row.error?.code || "") ? row.error.code : "UNKNOWN" };
+    });
+    const ids = new Set(mcp.matches.filter((row) => row.kind === "mcp_started").map((row) => row.operationId));
+    mcp.matches = mcp.matches.filter((row) => ids.has(row.operationId));
+    const worker = await scan(current?.auditLog || import_node_path.default.join(dataDirectory, ".remote-debug", "instances", target2.id, "audit.jsonl"), (row) => {
+      if (!inWindow(row) || row.tool !== "mongodb-bulk-upload" || !ids.has(row.operationId)) return;
+      return {
+        operationId: row.operationId,
+        kind: "worker_audit",
+        code: /^[A-Z][A-Z0-9_]{1,80}$/.test(row.errorCode || "") ? row.errorCode : "UNKNOWN",
+        validationRejected: row.ok === false && row.errorLayer === "mongodb-bulk" && row.errorPhase === "validation"
+      };
+    });
+    return {
+      trust: "diagnostic_only",
+      intentBound: false,
+      requestDigestBound: false,
+      candidateCount: ids.size,
+      mcp,
+      worker
+    };
+  };
+}
+
 // privacy-service.js
+async function historicalBulkRequest(service, input, record, target2, { instance: instance2, dispatch, historicalEvidence }, view) {
+  if (record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const raw = input.originalRequest;
+  if (raw !== void 0 && (!raw || raw.instanceId !== target2.id || raw.database !== target2.database)) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const { operationId, deadlineAt, timeoutMs, ...request } = raw ? createOutputGuard().sanitize(raw).value : {};
+  const binding = await service.call("historical_bulk_identity", { ...input, request: raw ? request : void 0 });
+  let diagnostics;
+  try {
+    diagnostics = historicalEvidence ? await historicalEvidence({ record, target: target2 }) : { trust: "diagnostic_only", scanStatus: "not_configured" };
+  } catch {
+    diagnostics = { trust: "diagnostic_only", scanStatus: "unavailable" };
+  }
+  const history = { ...binding, jobId: record.identity.jobId, chunkIndex: record.identity.chunkIndex, diagnostics };
+  if (!raw) return { ...view(record, record.state === "uncertain" ? "historical_request_required" : void 0), history };
+  if (!binding.requestMatched) {
+    if (record.state !== "uncertain") throw privacyError("BUSINESS_OPERATION_DENIED");
+    return { ...view(record, "historical_request_mismatch"), history };
+  }
+  if (JSON.stringify(raw).includes("[REDACTED]") || prepareRequestDigest(raw) !== prepareRequestDigest(request)) {
+    return { ...view(record, "historical_original_bytes_unbound"), history };
+  }
+  if (record.state !== "uncertain") return { ...view(record), history: { ...history, evidence: record.historicalRecovery?.evidence } };
+  try {
+    const { instanceId: instanceId2, ...chunkInput } = raw;
+    const chunk = normalizeMongoBulkChunk(chunkInput, { ...instance2(target2.id).mongodb, bulkEnabled: true });
+    const identity2 = { jobId: chunk.jobId, database: chunk.database, chunkIndex: chunk.chunkIndex, chunkHash: chunk.chunkHash, endOfUpload: chunk.endOfUpload };
+    if (!dispatch) throw privacyError("BUSINESS_STORAGE_UNAVAILABLE");
+    const result = createOutputGuard().sanitize(await dispatch(target2.id, "/mongodb/bulk/recover-prepare", {
+      ...identity2,
+      operationId: input.operationId,
+      timeoutMs: input.timeoutMs,
+      deadlineAt: input.deadlineAt
+    })).value;
+    const saved = await service.call("historical_bulk_result", { ...input, request, requestDigest: prepareRequestDigest(raw), chunk: identity2, result });
+    return { ...view(saved), history: { ...history, evidence: "exact_remote_chunk" } };
+  } catch (error2) {
+    return { ...view(record, "historical_dispatch_evidence_required"), history: {
+      ...history,
+      remoteEvidenceCode: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_RECOVERY_UNAVAILABLE"
+    } };
+  }
+}
 async function bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view) {
   if (!dispatch || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
   const recovering = input.action === "recover_operation";
@@ -52409,14 +52570,14 @@ async function bulkPrepareRequest(service, input, record, target2, { instance: i
   }
   return recovering ? view(saved, saved.state === "uncertain" ? "bulk_prepare_evidence_required" : unclaimed ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
 }
-var here = typeof __dirname === "string" ? __dirname : import_node_path.default.dirname((0, import_node_url.fileURLToPath)(void 0));
+var here = typeof __dirname === "string" ? __dirname : import_node_path2.default.dirname((0, import_node_url.fileURLToPath)(void 0));
 var PrivacyService = class {
   constructor({ directory, key, maxQueue = 32, workerPath } = {}) {
     this.options = { directory, key };
     this.maxQueue = maxQueue;
     this.pending = /* @__PURE__ */ new Map();
     this.sequence = 0;
-    this.workerPath = workerPath || import_node_path.default.join(here, typeof __filename === "string" ? "privacy-worker.cjs" : "privacy-worker.js");
+    this.workerPath = workerPath || import_node_path2.default.join(here, typeof __filename === "string" ? "privacy-worker.cjs" : "privacy-worker.js");
   }
   start() {
     if (this.ready) return this.ready;
@@ -52475,7 +52636,7 @@ var PrivacyService = class {
     await this.worker?.terminate();
   }
 };
-async function privacyRequest(service, input, { instance: instance2, origin, dispatch } = {}) {
+async function privacyRequest(service, input, { instance: instance2, origin, dispatch, historicalEvidence } = {}) {
   const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate2 = (scope2) => {
@@ -52506,7 +52667,11 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       ...value.result ? { result: value.result } : {}
     });
     if (input.action === "recover_operation") {
-      if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (!["inspect", "reconcile", "historical"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (input.mode === "historical") {
+        if (record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare) throw privacyError("BUSINESS_OPERATION_DENIED");
+        return historicalBulkRequest(service, input, record, target2, { instance: instance2, dispatch, historicalEvidence }, view);
+      }
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
       if (record.route === "/mongodb/bulk/prepare") {
         if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
@@ -52596,12 +52761,17 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
   }
   return service.call(input.action, input);
 }
-function installPrivacyRoutes(app, { directory, registry, service, dispatch } = {}) {
+function installPrivacyRoutes(app, { directory, registry, service, dispatch, dataDirectory, historicalEvidence } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
     try {
-      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch });
+      const result = await privacyRequest(storage, request.body, {
+        instance: (id) => registry.getInternal(id),
+        origin: new URL(`http://${request.headers.host}`).origin,
+        dispatch,
+        historicalEvidence: historicalEvidence || (dataDirectory ? createBulkHistoryReader({ dataDirectory, instance: (id) => registry.getInternal(id) }) : void 0)
+      });
       response.json({ ok: true, result });
     } catch (error2) {
       response.status(409).json({ ok: false, error: { code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
@@ -52611,8 +52781,8 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch } = 
 
 // service-start-runtime.js
 async function serviceStartRuntime(request, profile, dependencies) {
-  const fs14 = dependencies?.fs || require("fs");
-  const path20 = require("path").posix;
+  const fs15 = dependencies?.fs || require("fs");
+  const path21 = require("path").posix;
   const execFile2 = dependencies?.execFile || require("child_process").execFile;
   const now = dependencies?.now || Date.now;
   const sleep2 = dependencies?.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
@@ -52621,7 +52791,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
   delete baseEnv.NODE_PATH;
   const started = [], attempted = [], verified = [];
   let phase = "preflight", locked = false, cwd, script, interpreter;
-  const lock = path20.join(profile.pm2Home, ".remote-debug-service-start.lock");
+  const lock = path21.join(profile.pm2Home, ".remote-debug-service-start.lock");
   const deadline = Math.min(request.deadlineAt, now() + profile.startupTimeoutMs);
   const fail4 = (code) => {
     throw Object.assign(new Error(code), { serviceCode: code });
@@ -52631,21 +52801,21 @@ async function serviceStartRuntime(request, profile, dependencies) {
     if (ms < 50) fail4("SERVICE_START_TIMEOUT");
     return ms;
   };
-  const real = (file) => fs14.realpathSync(file);
+  const real = (file) => fs15.realpathSync(file);
   const inside = (file, root) => file.startsWith(`${root}/`);
   const bounded2 = (file, max = 262144) => {
-    const fd = fs14.openSync(file, "r");
+    const fd = fs15.openSync(file, "r");
     try {
       const buffer = Buffer.alloc(max + 1);
       let n = 0, read;
       do {
-        read = fs14.readSync(fd, buffer, n, buffer.length - n, n);
+        read = fs15.readSync(fd, buffer, n, buffer.length - n, n);
         n += read;
       } while (read && n < buffer.length);
       if (n > max) fail4("SERVICE_EVIDENCE_TOO_LARGE");
       return buffer.subarray(0, n).toString("utf8");
     } finally {
-      fs14.closeSync(fd);
+      fs15.closeSync(fd);
     }
   };
   const run = (file, args, env = baseEnv) => new Promise((resolve, reject) => {
@@ -52732,11 +52902,11 @@ async function serviceStartRuntime(request, profile, dependencies) {
   const portEvidence = (proc, pid, listeners) => {
     const owned = /* @__PURE__ */ new Set();
     if (pid) {
-      const files = fs14.readdirSync(`/proc/${pid}/fd`);
+      const files = fs15.readdirSync(`/proc/${pid}/fd`);
       if (files.length > 16384) fail4("SERVICE_EVIDENCE_TOO_LARGE");
       for (const file of files) {
         try {
-          const match = /^socket:\[(\d+)\]$/.exec(fs14.readlinkSync(`/proc/${pid}/fd/${file}`));
+          const match = /^socket:\[(\d+)\]$/.exec(fs15.readlinkSync(`/proc/${pid}/fd/${file}`));
           if (match) owned.add(match[1]);
         } catch (error2) {
           if (error2.code !== "ENOENT") throw error2;
@@ -52758,9 +52928,9 @@ async function serviceStartRuntime(request, profile, dependencies) {
       if (error2.code === "ENOENT") return null;
       throw error2;
     }
-    const root = real(path20.join(profile.pm2Home, "logs"));
+    const root = real(path21.join(profile.pm2Home, "logs"));
     if (!inside(file, root)) fail4("SERVICE_LOG_PATH_CONFLICT");
-    const stat = fs14.statSync(file);
+    const stat = fs15.statSync(file);
     if (!stat.isFile()) fail4("SERVICE_LOG_PATH_CONFLICT");
     return { file, size: stat.size, ino: stat.ino };
   };
@@ -52769,13 +52939,13 @@ async function serviceStartRuntime(request, profile, dependencies) {
     if (!log) return false;
     if (offset && (log.ino !== offset.ino || log.size < offset.size)) return false;
     const start = Math.max(offset ? offset.size : 0, log.size - 65536);
-    const fd = fs14.openSync(log.file, "r");
+    const fd = fs15.openSync(log.file, "r");
     try {
       const buffer = Buffer.alloc(Math.min(65536, Math.max(0, log.size - start)));
-      const count = fs14.readSync(fd, buffer, 0, buffer.length, start);
+      const count = fs15.readSync(fd, buffer, 0, buffer.length, start);
       return buffer.subarray(0, count).toString("utf8").includes(profile.startupMarker);
     } finally {
-      fs14.closeSync(fd);
+      fs15.closeSync(fd);
     }
   };
   const output = (status, extra = {}) => ({
@@ -52794,30 +52964,30 @@ async function serviceStartRuntime(request, profile, dependencies) {
     remaining();
     phase = "paths";
     cwd = resolveRelease();
-    if (!fs14.statSync(cwd).isDirectory()) fail4("SERVICE_CWD_INVALID");
-    script = real(path20.join(cwd, profile.entry));
-    if (!inside(script, cwd) || !fs14.statSync(script).isFile()) fail4("SERVICE_ENTRY_PATH_INVALID");
-    if (!/\.m?js$/.test(script) || /\.config\.m?js$/i.test(script) || /^ecosystem(?:\.|$)/i.test(path20.basename(script))) fail4("SERVICE_ENTRY_PATH_INVALID");
+    if (!fs15.statSync(cwd).isDirectory()) fail4("SERVICE_CWD_INVALID");
+    script = real(path21.join(cwd, profile.entry));
+    if (!inside(script, cwd) || !fs15.statSync(script).isFile()) fail4("SERVICE_ENTRY_PATH_INVALID");
+    if (!/\.m?js$/.test(script) || /\.config\.m?js$/i.test(script) || /^ecosystem(?:\.|$)/i.test(path21.basename(script))) fail4("SERVICE_ENTRY_PATH_INVALID");
     interpreter = approved(profile.interpreter);
     if (real(profile.pm2Home) !== profile.pm2Home) fail4("SERVICE_PM2_HOME_SYMLINK");
-    fs14.accessSync(interpreter, fs14.constants.X_OK);
-    fs14.accessSync(profile.pm2Path, fs14.constants.X_OK);
+    fs15.accessSync(interpreter, fs15.constants.X_OK);
+    fs15.accessSync(profile.pm2Path, fs15.constants.X_OK);
     phase = "runtime";
     const version = (await run(interpreter, ["--version"])).trim();
     if (version !== `v${profile.nodeVersion}`) fail4("SERVICE_NODE_VERSION_MISMATCH");
     phase = "env-files";
     for (const file of profile.envFiles) {
       approved(file);
-      if (!fs14.statSync(file).isFile()) fail4("SERVICE_ENV_FILE_INVALID");
-      fs14.accessSync(file, fs14.constants.R_OK);
+      if (!fs15.statSync(file).isFile()) fail4("SERVICE_ENV_FILE_INVALID");
+      fs15.accessSync(file, fs15.constants.R_OK);
     }
     phase = "pm2-daemon";
-    const daemon = Number(bounded2(path20.join(profile.pm2Home, "pm2.pid"), 32).trim());
+    const daemon = Number(bounded2(path21.join(profile.pm2Home, "pm2.pid"), 32).trim());
     if (!Number.isSafeInteger(daemon) || daemon < 1 || !bounded2(`/proc/${daemon}/cmdline`).includes("PM2")) fail4("SERVICE_PM2_DAEMON_UNAVAILABLE");
     if (request.action === "start") {
       phase = "lock";
       try {
-        fs14.mkdirSync(lock, { mode: 448 });
+        fs15.mkdirSync(lock, { mode: 448 });
         locked = true;
       } catch (error2) {
         if (error2.code === "EEXIST") fail4("SERVICE_START_BUSY");
@@ -52858,8 +53028,8 @@ async function serviceStartRuntime(request, profile, dependencies) {
       if (find(entries, proc)) fail4("SERVICE_CONCURRENT_PROCESS_CHANGE");
       if (portEvidence(proc, null, sockets()).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
       const logName = proc.name.replace(/_/g, "-");
-      const guessedLog = path20.join(profile.pm2Home, "logs", `${logName}-out.log`);
-      if (fs14.existsSync(guessedLog)) offsets.set(proc.name, { size: fs14.statSync(guessedLog).size, ino: fs14.statSync(guessedLog).ino });
+      const guessedLog = path21.join(profile.pm2Home, "logs", `${logName}-out.log`);
+      if (fs15.existsSync(guessedLog)) offsets.set(proc.name, { size: fs15.statSync(guessedLog).size, ino: fs15.statSync(guessedLog).ino });
       else offsets.set(proc.name, { size: 0 });
       attempted.push(proc.name);
       await pm2([
@@ -52949,7 +53119,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
   } finally {
     if (locked) {
       try {
-        fs14.rmdirSync(lock);
+        fs15.rmdirSync(lock);
       } catch {
       }
     }
@@ -52958,7 +53128,7 @@ async function serviceStartRuntime(request, profile, dependencies) {
 
 // service-profiles.js
 var import_posix3 = __toESM(require("node:path/posix"), 1);
-var import_node_crypto4 = require("node:crypto");
+var import_node_crypto5 = require("node:crypto");
 var SERVICE_START_CONFIRMATION = "启动服务";
 var SERVICE_ENV_KEYS = ["NODE_ENV", "PORT", "WS_PORT", "CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED", "ORDER_AI_ALLOWED_RESTAURANTS"];
 var SERVICE_CAPABILITIES = Object.freeze({
@@ -53083,10 +53253,10 @@ function normalizeServiceProfiles(value, context) {
   return result;
 }
 function serviceProfileHash(profile) {
-  return (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
+  return (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
 }
 function serviceTargetHash(target2, allowedPaths) {
-  return (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify({
+  return (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify({
     host: target2.host,
     port: target2.port,
     username: target2.username,
@@ -53235,7 +53405,7 @@ async function runService(input, { action, config, operation, runSSH: runSSH2 })
 }
 
 // http-auth.js
-var import_node_path2 = __toESM(require("node:path"), 1);
+var import_node_path3 = __toESM(require("node:path"), 1);
 var import_local_auth = __toESM(require_local_auth(), 1);
 var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/ui.css", "/ui.js", "/workspace.js", "/dashboard.js", "/instance-tasks.js", "/final-results.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
 function publicHealth(request, token, identity2) {
@@ -53246,7 +53416,7 @@ function publicHealth(request, token, identity2) {
   };
 }
 function installHttpAuth(app, config, options = {}) {
-  const dataDir = import_node_path2.default.dirname(import_node_path2.default.dirname(config.runtime?.statePath || import_node_path2.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const dataDir = import_node_path3.default.dirname(import_node_path3.default.dirname(config.runtime?.statePath || import_node_path3.default.join(process.cwd(), ".runtime", "agent-state.json")));
   const filePath = config.auth?.filePath || import_local_auth.default.resolveAuthFile(dataDir);
   const token = options.authToken || (options.initializeAuth ? import_local_auth.default.ensureAuthToken(filePath) : import_local_auth.default.readAuthToken(filePath));
   if (!/^[a-f0-9]{64}$/.test(token)) throw import_local_auth.default.authError("valid HTTP authentication credentials are required");
@@ -53282,9 +53452,9 @@ function installHttpAuth(app, config, options = {}) {
 var import_express = __toESM(require_express2(), 1);
 var import_node_http = __toESM(require("node:http"), 1);
 var import_node_fs5 = __toESM(require("node:fs"), 1);
-var import_node_path8 = __toESM(require("node:path"), 1);
+var import_node_path9 = __toESM(require("node:path"), 1);
 var import_node_url3 = require("node:url");
-var import_node_crypto14 = require("node:crypto");
+var import_node_crypto15 = require("node:crypto");
 
 // node_modules/ws/wrapper.mjs
 var import_stream = __toESM(require_stream(), 1);
@@ -53301,11 +53471,11 @@ var import_local_auth4 = __toESM(require_local_auth(), 1);
 
 // manual-auth.js
 var import_node_fs = __toESM(require("node:fs"), 1);
-var import_node_path3 = __toESM(require("node:path"), 1);
-var import_node_crypto5 = require("node:crypto");
+var import_node_path4 = __toESM(require("node:path"), 1);
+var import_node_crypto6 = require("node:crypto");
 var import_node_util = require("node:util");
 var import_local_auth2 = __toESM(require_local_auth(), 1);
-var scrypt = (0, import_node_util.promisify)(import_node_crypto5.scrypt);
+var scrypt = (0, import_node_util.promisify)(import_node_crypto6.scrypt);
 var USERNAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$/;
 var HEX64 = /^[a-f0-9]{64}$/;
 var HASH_OPTIONS = { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
@@ -53323,7 +53493,7 @@ function validateAdminCredentials(username, password) {
 var ManualAdminStore = class {
   constructor(directory) {
     this.directory = directory;
-    this.filePath = import_node_path3.default.join(directory, "accounts.json");
+    this.filePath = import_node_path4.default.join(directory, "accounts.json");
   }
   protectDirectory() {
     import_node_fs.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
@@ -53347,11 +53517,11 @@ var ManualAdminStore = class {
     const account = this.read().find((item) => item.username === username);
     const actual = await scrypt(password, account?.salt || "0".repeat(64), 64, HASH_OPTIONS);
     const expected = Buffer.from(account?.hash || "0".repeat(128), "hex");
-    return (0, import_node_crypto5.timingSafeEqual)(actual, expected) && Boolean(account);
+    return (0, import_node_crypto6.timingSafeEqual)(actual, expected) && Boolean(account);
   }
   async register(username, password) {
     validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto5.randomBytes)(32).toString("hex");
+    const salt = (0, import_node_crypto6.randomBytes)(32).toString("hex");
     const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
     const accounts = this.read();
     if (accounts.some((account) => account.username === username)) throw manualError("ADMIN_EXISTS", "管理员账号已存在。", 409);
@@ -53360,7 +53530,7 @@ var ManualAdminStore = class {
   }
   async reset(username, password) {
     validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto5.randomBytes)(32).toString("hex");
+    const salt = (0, import_node_crypto6.randomBytes)(32).toString("hex");
     const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
     const accounts = this.read();
     if (!accounts.some((account) => account.username === username)) throw manualError("ADMIN_NOT_FOUND", "管理员账号不存在。", 404);
@@ -53368,7 +53538,7 @@ var ManualAdminStore = class {
   }
   save(accounts) {
     this.protectDirectory();
-    const temporaryPath = import_node_path3.default.join(this.directory, `.accounts-${(0, import_node_crypto5.randomBytes)(16).toString("hex")}.tmp`);
+    const temporaryPath = import_node_path4.default.join(this.directory, `.accounts-${(0, import_node_crypto6.randomBytes)(16).toString("hex")}.tmp`);
     try {
       import_node_fs.default.writeFileSync(temporaryPath, JSON.stringify({ version: 1, accounts }) + "\n", { flag: "wx", mode: 384 });
       import_local_auth2.default.protectOrCheck(temporaryPath, false, true);
@@ -53404,15 +53574,15 @@ var ManualLoginLimiter = class {
 
 // manual-owner-verification.js
 var import_node_fs2 = __toESM(require("node:fs"), 1);
-var import_node_path5 = __toESM(require("node:path"), 1);
+var import_node_path6 = __toESM(require("node:path"), 1);
 var import_node_url2 = require("node:url");
-var import_node_crypto6 = require("node:crypto");
+var import_node_crypto7 = require("node:crypto");
 var import_node_child_process = require("node:child_process");
 var import_node_util2 = require("node:util");
 var import_local_auth3 = __toESM(require_local_auth(), 1);
 
 // manual-windows-owner.js
-var import_node_path4 = __toESM(require("node:path"), 1);
+var import_node_path5 = __toESM(require("node:path"), 1);
 function proofFrom(stdout, nonce) {
   try {
     const proof = JSON.parse(stdout.trim());
@@ -53443,8 +53613,8 @@ function verificationError(proof) {
 async function invoke(execute2, nativeDirectory, args, signal, timeout) {
   const root = process.env.SystemRoot || "C:\\Windows";
   return execute2(
-    import_node_path4.default.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
-    ["-NoProfile", "-NonInteractive", "-STA", "-ExecutionPolicy", "Bypass", "-File", import_node_path4.default.join(nativeDirectory, "verify-owner.ps1"), ...args],
+    import_node_path5.default.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+    ["-NoProfile", "-NonInteractive", "-STA", "-ExecutionPolicy", "Bypass", "-File", import_node_path5.default.join(nativeDirectory, "verify-owner.ps1"), ...args],
     { timeout, maxBuffer: 4096, windowsHide: true, signal }
   );
 }
@@ -53475,13 +53645,13 @@ async function verifyWindowsOwner(execute2, nativeDirectory, nonce, signal) {
 
 // manual-owner-verification.js
 var execute = (0, import_node_util2.promisify)(import_node_child_process.execFile);
-var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path5.default.dirname((0, import_node_url2.fileURLToPath)(void 0));
+var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path6.default.dirname((0, import_node_url2.fileURLToPath)(void 0));
 var ManualOwnerVerification = class {
   constructor(directory, options = {}) {
     this.directory = directory;
     this.platform = options.platform || process.platform;
     this.execute = options.execute || execute;
-    this.nativeDirectory = options.nativeDirectory || import_node_path5.default.join(moduleDirectory, "native");
+    this.nativeDirectory = options.nativeDirectory || import_node_path6.default.join(moduleDirectory, "native");
     this.preparing = null;
     this.architecture = options.architecture || process.arch;
     this.nativeArchitecture = null;
@@ -53513,13 +53683,13 @@ var ManualOwnerVerification = class {
     return this.execute(command, args, options);
   }
   async macHelper() {
-    const source = import_node_path5.default.join(this.nativeDirectory, "verify-owner.swift");
-    const hash = (0, import_node_crypto6.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
+    const source = import_node_path6.default.join(this.nativeDirectory, "verify-owner.swift");
+    const hash = (0, import_node_crypto7.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
     import_node_fs2.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
     import_local_auth3.default.protectOrCheck(this.directory, true, true);
-    const helper = import_node_path5.default.join(this.directory, `verify-owner-${hash}`);
+    const helper = import_node_path6.default.join(this.directory, `verify-owner-${hash}`);
     if (!import_node_fs2.default.existsSync(helper)) {
-      const temporary = `${helper}-${(0, import_node_crypto6.randomBytes)(8).toString("hex")}`;
+      const temporary = `${helper}-${(0, import_node_crypto7.randomBytes)(8).toString("hex")}`;
       let stage = "compiler";
       try {
         await this.executeMac("/usr/bin/xcrun", ["--find", "swiftc"], { timeout: 1e4, maxBuffer: 4096, signal: this.controller?.signal });
@@ -53587,7 +53757,7 @@ var ManualOwnerVerification = class {
   }
   async verify() {
     if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
-    const nonce = (0, import_node_crypto6.randomBytes)(32).toString("hex");
+    const nonce = (0, import_node_crypto7.randomBytes)(32).toString("hex");
     const controller = new AbortController();
     if (this.preparing) await this.preparing;
     this.controller = controller;
@@ -53621,12 +53791,12 @@ var ManualOwnerVerification = class {
 
 // manual-mongodb.js
 var import_ssh22 = __toESM(require_lib4(), 1);
-var import_node_crypto13 = require("node:crypto");
+var import_node_crypto14 = require("node:crypto");
 
 // ssh-connection-supervisor.js
 var import_node_events = require("node:events");
-var import_promises = __toESM(require("node:fs/promises"), 1);
-var import_node_crypto12 = require("node:crypto");
+var import_promises2 = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto13 = require("node:crypto");
 var import_ssh2 = __toESM(require_lib4(), 1);
 
 // channel-scheduler.js
@@ -53854,8 +54024,8 @@ var ChannelScheduler = class {
 
 // config.js
 var import_node_fs4 = __toESM(require("node:fs"), 1);
-var import_node_crypto11 = require("node:crypto");
-var import_node_path7 = __toESM(require("node:path"), 1);
+var import_node_crypto12 = require("node:crypto");
+var import_node_path8 = __toESM(require("node:path"), 1);
 var import_posix8 = __toESM(require("node:path/posix"), 1);
 
 // log-projects.js
@@ -54055,8 +54225,8 @@ function normalizeLogListOptions(input = {}) {
   return { category, limit, cursor };
 }
 function normalizeArchiveMemberListOptions(input = {}) {
-  const path20 = input.path;
-  if (typeof path20 !== "string" || path20.trim() === "") {
+  const path21 = input.path;
+  if (typeof path21 !== "string" || path21.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
@@ -54068,15 +54238,15 @@ function normalizeArchiveMemberListOptions(input = {}) {
     throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
   }
   return {
-    path: path20,
+    path: path21,
     prefix: normalizeArchiveMemberPrefix(prefix),
     limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
     cursor
   };
 }
 function normalizeLogReadOptions(input = {}) {
-  const path20 = input.path;
-  if (typeof path20 !== "string" || path20.trim() === "") {
+  const path21 = input.path;
+  if (typeof path21 !== "string" || path21.trim() === "") {
     throw logInputError("path must be a non-empty string", "INVALID_PATH");
   }
   const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
@@ -54091,7 +54261,7 @@ function normalizeLogReadOptions(input = {}) {
     );
   }
   return {
-    path: path20,
+    path: path21,
     memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
     tailLines: positiveInteger(
       input.tailLines,
@@ -54197,7 +54367,7 @@ function normalizeResourcePolicy(value) {
 }
 
 // approved-commands.js
-var import_node_crypto7 = require("node:crypto");
+var import_node_crypto8 = require("node:crypto");
 var APPROVED_COMMAND_CONFIRMATION = "使用命令";
 var DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1e3;
 var DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 3e5;
@@ -54228,7 +54398,7 @@ var ApprovedCommandError = class extends Error {
   }
 };
 function hashCommands(commands) {
-  return (0, import_node_crypto7.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
+  return (0, import_node_crypto8.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
 }
 function redactCommand(command, maxChars = 512) {
   if (typeof command !== "string" || command.length === 0) {
@@ -54350,7 +54520,7 @@ function createCommandDraftStore(options = {}) {
     const normalizedCommands = normalizeCommands(commands, settings);
     const ttlMs = settings.ttlMs || DEFAULT_APPROVED_COMMAND_TTL_MS;
     const draft2 = {
-      draftId: (0, import_node_crypto7.randomUUID)(),
+      draftId: (0, import_node_crypto8.randomUUID)(),
       purpose: normalizePurpose(purpose),
       commands: normalizedCommands,
       commandHash: hashCommands(normalizedCommands),
@@ -54433,17 +54603,17 @@ function createCommandDraftStore(options = {}) {
 
 // command-review.js
 var import_node_child_process2 = require("node:child_process");
-var import_node_crypto10 = require("node:crypto");
+var import_node_crypto11 = require("node:crypto");
 var import_node_fs3 = __toESM(require("node:fs"), 1);
 var import_node_os = __toESM(require("node:os"), 1);
-var import_node_path6 = __toESM(require("node:path"), 1);
+var import_node_path7 = __toESM(require("node:path"), 1);
 
 // security.js
 var import_posix7 = __toESM(require("node:path/posix"), 1);
-var import_node_crypto9 = require("node:crypto");
+var import_node_crypto10 = require("node:crypto");
 
 // mongodb-mutations.js
-var import_node_crypto8 = require("node:crypto");
+var import_node_crypto9 = require("node:crypto");
 var import_posix6 = __toESM(require("node:path/posix"), 1);
 var MONGODB_MUTATION_SCHEMA_VERSION = 1;
 var MONGODB_MUTATION_OPERATIONS = Object.freeze([
@@ -54847,7 +55017,7 @@ function normalizeCommonMutation(input, config, operationId, kind = "document") 
   );
   return {
     kind,
-    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto8.randomUUID)(),
+    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto9.randomUUID)(),
     purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
     database,
     collection,
@@ -54932,7 +55102,7 @@ function normalizeMongoImport(input = {}, config = {}, options = {}) {
       riskLevel: "high"
     };
     const { operationId: _operationId, ...identity2 } = batch2;
-    batch2.mutationId = "import-" + (0, import_node_crypto8.createHash)("sha256").update(JSON.stringify(identity2)).digest("hex");
+    batch2.mutationId = "import-" + (0, import_node_crypto9.createHash)("sha256").update(JSON.stringify(identity2)).digest("hex");
     batches.push(batch2);
     documents = [];
     bytes = 2;
@@ -54979,7 +55149,7 @@ function normalizeMongoTransaction(input = {}, config = {}, options = {}) {
       "MONGODB_TRANSACTION_TOO_LARGE"
     );
   }
-  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto8.randomUUID)();
+  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto9.randomUUID)();
   const database = input.database || input.operations[0]?.database || normalizedConfig.database;
   const operations = input.operations.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item) || item.kind === "index") {
@@ -56307,7 +56477,7 @@ async function runMongoMutation(input = {}, options = {}) {
         mode: "prepare",
         kind,
         operationId: options.operation?.operationId || mutation2.operationId,
-        mutationId: ticket?.mutationId || (0, import_node_crypto8.randomUUID)(),
+        mutationId: ticket?.mutationId || (0, import_node_crypto9.randomUUID)(),
         ...ticket ? { prepare: ticket, database: mutation2.database } : {},
         mutation: mutation2
       };
@@ -56331,7 +56501,7 @@ async function runMongoMutation(input = {}, options = {}) {
         execution: execution2,
         mutationId: normalizeMutationId(input.mutationId),
         planHash: normalizePlanHash(input.planHash),
-        operationId: options.operation?.operationId || (0, import_node_crypto8.randomUUID)()
+        operationId: options.operation?.operationId || (0, import_node_crypto9.randomUUID)()
       };
       const expectedConfirmation = mode === "commit" ? MONGODB_MUTATION_CONFIRMATION : MONGODB_ROLLBACK_CONFIRMATION;
       if (input.confirmation !== expectedConfirmation) {
@@ -56345,8 +56515,8 @@ async function runMongoMutation(input = {}, options = {}) {
       request = {
         mode: "list",
         status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : void 0,
-        mutationId: (0, import_node_crypto8.randomUUID)(),
-        operationId: options.operation?.operationId || (0, import_node_crypto8.randomUUID)()
+        mutationId: (0, import_node_crypto9.randomUUID)(),
+        operationId: options.operation?.operationId || (0, import_node_crypto9.randomUUID)()
       };
     } else {
       throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
@@ -56566,7 +56736,7 @@ var SECURITY_POLICY = {
     "mongosh --version"
   ]
 };
-var SECURITY_POLICY_VERSION = (0, import_node_crypto9.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
+var SECURITY_POLICY_VERSION = (0, import_node_crypto10.createHash)("sha256").update(JSON.stringify(SECURITY_POLICY)).digest("hex");
 var ALLOWED_COMMANDS = new Set(SECURITY_POLICY.allowedExecutables);
 var DENIED_COMMANDS = new Set(SECURITY_POLICY.deniedExecutables);
 var SHELL_CONTROL_PATTERN = /[;&|`$<>(){}[\]\\\n\r\0]/;
@@ -57281,8 +57451,8 @@ function normalizeBaseUrl(value) {
   return parsed.toString().replace(/\/$/, "");
 }
 function defaultCodexHome(env = process.env) {
-  return import_node_path6.default.resolve(
-    env.CODEX_HOME || import_node_path6.default.join(env.USERPROFILE || env.HOME || import_node_os.default.homedir(), ".codex")
+  return import_node_path7.default.resolve(
+    env.CODEX_HOME || import_node_path7.default.join(env.USERPROFILE || env.HOME || import_node_os.default.homedir(), ".codex")
   );
 }
 function defaultCodexCommand() {
@@ -57345,7 +57515,7 @@ function normalizeSnapshot(value, options = {}) {
   const provider = assertSafeProvider(codex.provider);
   const model2 = assertSafeModel(codex.model);
   const baseUrl = normalizeBaseUrl(codex.baseUrl);
-  const codexHome = import_node_path6.default.resolve(String(codex.codexHome || options.codexHome || defaultCodexHome()));
+  const codexHome = import_node_path7.default.resolve(String(codex.codexHome || options.codexHome || defaultCodexHome()));
   return {
     version: COMMAND_REVIEW_CONFIG_VERSION,
     codex: {
@@ -57362,9 +57532,9 @@ function normalizeSnapshot(value, options = {}) {
   };
 }
 function writeJsonAtomically(filePath, value, fsImpl = import_node_fs3.default) {
-  const directory = import_node_path6.default.dirname(filePath);
+  const directory = import_node_path7.default.dirname(filePath);
   fsImpl.mkdirSync(directory, { recursive: true });
-  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto10.randomUUID)()}.tmp`;
+  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto11.randomUUID)()}.tmp`;
   try {
     fsImpl.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}
 `, "utf8");
@@ -57391,9 +57561,9 @@ function resolveCommandReviewConfig(options = {}) {
   const env = options.env || process.env;
   const fsImpl = options.fs || import_node_fs3.default;
   const cwd = options.cwd || process.cwd();
-  const configPath = import_node_path6.default.resolve(
+  const configPath = import_node_path7.default.resolve(
     cwd,
-    options.configPath || env.REMOTE_DEBUG_COMMAND_REVIEW_CONFIG_PATH || import_node_path6.default.join(".remote-debug", "command-review.json")
+    options.configPath || env.REMOTE_DEBUG_COMMAND_REVIEW_CONFIG_PATH || import_node_path7.default.join(".remote-debug", "command-review.json")
   );
   const refresh = parseBooleanFlag(
     options.refresh === void 0 ? env.REMOTE_DEBUG_COMMAND_REVIEW_REFRESH : options.refresh
@@ -57401,9 +57571,9 @@ function resolveCommandReviewConfig(options = {}) {
   const autoExecuteEnabled = parseBooleanFlag(
     options.autoExecuteEnabled === void 0 ? env.REMOTE_DEBUG_COMMAND_REVIEW_AUTO_EXECUTE : options.autoExecuteEnabled
   );
-  const codexConfigPath = import_node_path6.default.resolve(
+  const codexConfigPath = import_node_path7.default.resolve(
     cwd,
-    options.codexConfigPath || import_node_path6.default.join(options.codexHome || defaultCodexHome(env), "config.toml")
+    options.codexConfigPath || import_node_path7.default.join(options.codexHome || defaultCodexHome(env), "config.toml")
   );
   const configExists = fsImpl.existsSync(configPath);
   if (!refresh && !autoExecuteEnabled && !configExists) {
@@ -57887,10 +58057,10 @@ function readModelOutput(outputPath, stdout, fsImpl = import_node_fs3.default) {
 }
 async function runCodexReviewOnce({ draft: draft2, config, prompt, timeoutMs, signal, options = {} }) {
   const fsImpl = options.fs || import_node_fs3.default;
-  const tempRoot = options.tempRoot || fsImpl.mkdtempSync(import_node_path6.default.join(import_node_os.default.tmpdir(), "remote-debug-command-review-"));
+  const tempRoot = options.tempRoot || fsImpl.mkdtempSync(import_node_path7.default.join(import_node_os.default.tmpdir(), "remote-debug-command-review-"));
   const ownsTempRoot = !options.tempRoot;
-  const schemaPath = import_node_path6.default.join(tempRoot, "review-schema.json");
-  const outputPath = import_node_path6.default.join(tempRoot, "review-output.json");
+  const schemaPath = import_node_path7.default.join(tempRoot, "review-schema.json");
+  const outputPath = import_node_path7.default.join(tempRoot, "review-output.json");
   try {
     fsImpl.writeFileSync(schemaPath, `${JSON.stringify(MODEL_REVIEW_SCHEMA, null, 2)}
 `, "utf8");
@@ -58065,8 +58235,8 @@ function parseEnvFile(contents) {
 }
 function candidateEnvPaths(cwd) {
   const paths = [
-    import_node_path7.default.resolve(cwd, "..", ".env"),
-    import_node_path7.default.resolve(cwd, ".env")
+    import_node_path8.default.resolve(cwd, "..", ".env"),
+    import_node_path8.default.resolve(cwd, ".env")
   ];
   return [...new Set(paths)];
 }
@@ -58247,14 +58417,14 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
   const sourceRoots = normalizeSourceRoots(mergedEnv.REMOTE_DEBUG_SOURCE_ROOTS);
   return {
     output: {
-      directory: import_node_path7.default.resolve(cwd, mergedEnv.REMOTE_DEBUG_OUTPUT_DIR || (import_node_path7.default.basename(cwd) === "agent" && import_node_fs4.default.existsSync(import_node_path7.default.resolve(cwd, "..", "plugins", "remote-debug-agent", "package.json")) ? "../output" : "output"))
+      directory: import_node_path8.default.resolve(cwd, mergedEnv.REMOTE_DEBUG_OUTPUT_DIR || (import_node_path8.default.basename(cwd) === "agent" && import_node_fs4.default.existsSync(import_node_path8.default.resolve(cwd, "..", "plugins", "remote-debug-agent", "package.json")) ? "../output" : "output"))
     },
     agent: {
       host: "127.0.0.1",
       port: agentPort
     },
     auth: {
-      filePath: import_node_path7.default.resolve(mergedEnv.REMOTE_DEBUG_DATA_DIR || mergedEnv.REMOTE_DEBUG_PROJECT_ROOT || cwd, mergedEnv.REMOTE_DEBUG_AUTH_FILE || import_node_path7.default.join(".runtime", "http-auth.json"))
+      filePath: import_node_path8.default.resolve(mergedEnv.REMOTE_DEBUG_DATA_DIR || mergedEnv.REMOTE_DEBUG_PROJECT_ROOT || cwd, mergedEnv.REMOTE_DEBUG_AUTH_FILE || import_node_path8.default.join(".runtime", "http-auth.json"))
     },
     ssh: {
       host: mergedEnv.REMOTE_DEBUG_HOST || "",
@@ -58302,10 +58472,10 @@ function loadConfig(env = process.env, cwd = process.cwd()) {
       env: mergedEnv
     }),
     audit: {
-      logPath: mergedEnv.REMOTE_DEBUG_AUDIT_LOG || import_node_path7.default.resolve(cwd, "audit", "remote-debug-agent.jsonl")
+      logPath: mergedEnv.REMOTE_DEBUG_AUDIT_LOG || import_node_path8.default.resolve(cwd, "audit", "remote-debug-agent.jsonl")
     },
     runtime: {
-      statePath: mergedEnv.REMOTE_DEBUG_RUNTIME_STATE_PATH || import_node_path7.default.resolve(cwd, ".runtime", "agent-state.json"),
+      statePath: mergedEnv.REMOTE_DEBUG_RUNTIME_STATE_PATH || import_node_path8.default.resolve(cwd, ".runtime", "agent-state.json"),
       runtimeId: mergedEnv.REMOTE_DEBUG_RUNTIME_ID || "development"
     },
     lifecycle: {
@@ -58428,7 +58598,7 @@ function fingerprintConfig(config) {
   };
 }
 function configFingerprint(config) {
-  return (0, import_node_crypto11.createHash)("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
+  return (0, import_node_crypto12.createHash)("sha256").update(JSON.stringify(fingerprintConfig(config))).digest("hex");
 }
 function assertSshConfig(config) {
   const missing = [];
@@ -58455,7 +58625,7 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
     super();
     this.config = config;
     this.ClientClass = options.ClientClass || import_ssh2.Client;
-    this.readFile = options.readFile || import_promises.default.readFile;
+    this.readFile = options.readFile || import_promises2.default.readFile;
     this.now = options.now || (() => Date.now());
     this.random = options.random || Math.random;
     this.setTimeoutFn = options.setTimeout || setTimeout;
@@ -58532,7 +58702,7 @@ var SshConnectionSupervisor = class extends import_node_events.EventEmitter {
       keepaliveInterval: this.keepaliveIntervalMs,
       keepaliveCountMax: this.keepaliveCountMax,
       hostVerifier: (key) => {
-        const fingerprint = `SHA256:${(0, import_node_crypto12.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
+        const fingerprint = `SHA256:${(0, import_node_crypto13.createHash)("sha256").update(key).digest("base64").replace(/=+$/, "")}`;
         const matched = fingerprints.includes(fingerprint);
         this.hostVerification = { status: matched ? "verified" : "mismatch", observedFingerprint: fingerprint };
         if (!matched) this.hostVerificationError = operationError(`server host key does not match trusted fingerprints; observed ${fingerprint}`, {
@@ -58884,7 +59054,7 @@ function normalizeManualMongo(value, existing) {
 
 // manual-mongodb-runtime.js
 function manualMongoRemote(config, shellFingerprint) {
-  const fs14 = require("fs"), crypto = require("crypto");
+  const fs15 = require("fs"), crypto = require("crypto");
   const fail4 = (code) => {
     const error2 = new Error(code);
     error2.code = code;
@@ -58893,7 +59063,7 @@ function manualMongoRemote(config, shellFingerprint) {
   function connection() {
     let file;
     try {
-      file = JSON.parse(fs14.readFileSync(config.configPath, "utf8"));
+      file = JSON.parse(fs15.readFileSync(config.configPath, "utf8"));
     } catch (_) {
       fail4("MANUAL_DB_PROFILE_REQUIRED");
     }
@@ -58931,7 +59101,7 @@ function manualMongoRemote(config, shellFingerprint) {
   let connected = false, closing = false;
   const encode = (value) => JSON.parse(EJSON.stringify(value, { relaxed: false }));
   const decode = (value) => EJSON.parse(JSON.stringify(value), { relaxed: false });
-  const MAX_BYTES2 = 384 * 1024;
+  const MAX_BYTES3 = 384 * 1024;
   const emit = (value) => {
     const line = JSON.stringify(value);
     if (Buffer.byteLength(line) > 512 * 1024) fail4("MANUAL_DB_RESULT_LIMIT");
@@ -58969,11 +59139,11 @@ function manualMongoRemote(config, shellFingerprint) {
       pendingDocument = void 0;
       if (document2 === null) break;
       const value = encode(document2), size = Buffer.byteLength(JSON.stringify(value));
-      if (size > MAX_BYTES2) {
+      if (size > MAX_BYTES3) {
         await closeCursor();
         fail4("MANUAL_DB_DOCUMENT_LIMIT");
       }
-      if (bytes + size > MAX_BYTES2) {
+      if (bytes + size > MAX_BYTES3) {
         pendingDocument = document2;
         break;
       }
@@ -59067,7 +59237,7 @@ function manualMongoRemote(config, shellFingerprint) {
       for (const item of names) {
         if (data.length >= limit) break;
         bytes += Buffer.byteLength(JSON.stringify(item));
-        if (bytes > MAX_BYTES2) break;
+        if (bytes > MAX_BYTES3) break;
         data.push({ name: item.name });
       }
       return { data, hasMore: names.length > data.length, after: data.length ? data[data.length - 1].name : null };
@@ -59199,7 +59369,7 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
   const client = new ClientClass();
   const supervisor = new SshConnectionSupervisor({ ssh: { ...instance2, readyTimeout: 15e3 } });
   let stream, closed = false, buffer = Buffer.alloc(0), pending;
-  const id = (0, import_node_crypto13.randomUUID)();
+  const id = (0, import_node_crypto14.randomUUID)();
   let resolveReady, rejectReady;
   const ready = new Promise((resolve, reject) => {
     resolveReady = resolve;
@@ -59284,7 +59454,7 @@ function openManualDatabase(instance2, { ClientClass = import_ssh22.Client } = {
       if (closed) throw databaseError("MANUAL_DB_CLOSED", 409);
       if (pending) throw databaseError("MANUAL_DB_BUSY", 409);
       return new Promise((resolve, reject) => {
-        const requestId = (0, import_node_crypto13.randomUUID)();
+        const requestId = (0, import_node_crypto14.randomUUID)();
         const timer = setTimeout(() => fail4(databaseError("MANUAL_DB_TIMEOUT", 504)), 25e3);
         const done = (callback) => (value) => {
           clearTimeout(timer);
@@ -59378,7 +59548,7 @@ function openManualTerminal(instance2, options) {
 }
 
 // manual-workbench.js
-var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path8.default.dirname((0, import_node_url3.fileURLToPath)(void 0));
+var moduleDirectory2 = typeof __dirname === "string" ? __dirname : import_node_path9.default.dirname((0, import_node_url3.fileURLToPath)(void 0));
 var ASSETS = /* @__PURE__ */ new Set(["manual.html", "manual.js", "manual.css", "ui.css", "ui.js", "manual-database.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"]);
 var IDLE_MS = 15 * 6e4;
 var MAX_SESSION_MS = 8 * 60 * 6e4;
@@ -59392,7 +59562,7 @@ var SSH_MESSAGES = {
   MANUAL_SHELL_FAILED: "远端交互式 Shell 无法启动或已断开。"
 };
 function digest(instance2) {
-  return (0, import_node_crypto14.createHash)("sha256").update(JSON.stringify(instance2)).digest("hex");
+  return (0, import_node_crypto15.createHash)("sha256").update(JSON.stringify(instance2)).digest("hex");
 }
 function target(instance2) {
   return { id: instance2.id, name: instance2.name, host: instance2.host, port: instance2.port, username: instance2.username };
@@ -59418,9 +59588,9 @@ var ManualWorkbench = class {
   constructor({ registry, dataDirectory, lifecycle, ...options }) {
     this.registry = registry;
     this.lifecycle = lifecycle;
-    this.directory = import_node_path8.default.join(dataDirectory, ".remote-debug", "manual-admin");
+    this.directory = import_node_path9.default.join(dataDirectory, ".remote-debug", "manual-admin");
     this.store = options.store || new ManualAdminStore(this.directory);
-    this.ownerVerification = options.ownerVerification || new ManualOwnerVerification(import_node_path8.default.join(this.directory, "native"));
+    this.ownerVerification = options.ownerVerification || new ManualOwnerVerification(import_node_path9.default.join(this.directory, "native"));
     this.openTerminal = options.openTerminal || openManualTerminal;
     this.openDatabase = options.openDatabase || openManualDatabase;
     this.now = options.now || Date.now;
@@ -59441,7 +59611,7 @@ var ManualWorkbench = class {
   audit(event2, session = {}, metadata = {}) {
     const entry2 = { time: new Date(this.now()).toISOString(), event: event2, sessionId: session.id, instanceId: session.instanceId, username: session.username, ...metadata };
     this.store.protectDirectory();
-    const logPath = import_node_path8.default.join(this.directory, "sessions.jsonl");
+    const logPath = import_node_path9.default.join(this.directory, "sessions.jsonl");
     if (import_node_fs5.default.existsSync(logPath)) {
       import_local_auth4.default.protectOrCheck(logPath, false, false);
       if (import_node_fs5.default.lstatSync(logPath).nlink !== 1) throw manualError("ADMIN_STORAGE_INVALID", "审计文件无效。", 503);
@@ -59507,8 +59677,8 @@ var ManualWorkbench = class {
     const instance2 = this.instance(body.instanceId);
     this.prune();
     if (this.sessions.size >= 8) throw manualError("MANUAL_SESSION_LIMIT", "最多同时打开 8 个人工会话。", 409);
-    const token = (0, import_node_crypto14.randomBytes)(32).toString("hex");
-    const session = { id: (0, import_node_crypto14.randomUUID)(), username: body.username, instanceId: instance2.id, fingerprint: digest(instance2), createdAt: this.now(), lastInputAt: this.now(), socket: null };
+    const token = (0, import_node_crypto15.randomBytes)(32).toString("hex");
+    const session = { id: (0, import_node_crypto15.randomUUID)(), username: body.username, instanceId: instance2.id, fingerprint: digest(instance2), createdAt: this.now(), lastInputAt: this.now(), socket: null };
     this.audit("login", session);
     this.sessions.set(token, session);
     this.keepAlive(session);
@@ -59558,7 +59728,7 @@ var ManualWorkbench = class {
     if (session[kind === "database" ? "databaseSocket" : "socket"]) throw manualError("MANUAL_TERMINAL_EXISTS", "此会话已有终端，请先断开。", 409);
     if (kind === "database" && !session.databaseTarget) throw databaseError("MANUAL_DB_NOT_CONNECTED", 409);
     for (const [ticket2, value] of this.tickets) if (value.token === token && value.kind === kind) this.tickets.delete(ticket2);
-    const ticket = (0, import_node_crypto14.randomBytes)(32).toString("hex");
+    const ticket = (0, import_node_crypto15.randomBytes)(32).toString("hex");
     this.tickets.set(ticket, { token, kind, connectionId: session.database?.id, expiresAt: this.now() + 1e4 });
     return { ok: true, ticket };
   }
@@ -59633,7 +59803,7 @@ var ManualWorkbench = class {
     });
     app.use("/api/database", import_express.default.json({ limit: "900kb", strict: true }));
     app.use(import_express.default.json({ limit: "8kb", strict: true }));
-    const publicDirectory = import_node_path8.default.join(moduleDirectory2, "public");
+    const publicDirectory = import_node_path9.default.join(moduleDirectory2, "public");
     app.get("/", (_request, response) => response.sendFile("manual.html", { root: publicDirectory }));
     app.get("/assets/{*asset}", (request, response) => {
       const asset = request.params.asset.join("/");
@@ -59721,7 +59891,7 @@ var ManualWorkbench = class {
       const input = validateReplacement(request.body);
       const token = this.bearer(request), session = this.getSession(token);
       await this.databaseRequest(token, request.body.connectionId, { operation: "check" });
-      const planId = (0, import_node_crypto14.randomBytes)(32).toString("hex");
+      const planId = (0, import_node_crypto15.randomBytes)(32).toString("hex");
       session.databasePlan = { ...input, planId, connectionId: session.database.id, expiresAt: this.now() + 6e4 };
       this.audit("database-write-prepared", session, { database: input.database, collection: input.collection, connectionId: session.database.id, action: "replaceOne" });
       response.json({ ok: true, planId, target: this.databaseTarget(session), database: input.database, collection: input.collection, action: "replaceOne", confirmation: "确认替换此文档", expiresInMs: 6e4 });
@@ -59933,8 +60103,8 @@ function installManualManagerRoutes(app, workbench) {
 }
 
 // local-sandbox.js
-var import_promises2 = __toESM(require("node:fs/promises"), 1);
-var import_node_path9 = __toESM(require("node:path"), 1);
+var import_promises3 = __toESM(require("node:fs/promises"), 1);
+var import_node_path10 = __toESM(require("node:path"), 1);
 function sandboxError(message, code = "SANDBOX_PATH_REJECTED") {
   return Object.assign(new Error(message), { code, statusCode: 400, retriable: false });
 }
@@ -59948,25 +60118,25 @@ function redactSandboxLog(value, depth = 0) {
 async function inspectLocalSandbox(dataDir, instanceId2, input) {
   if (!["status", "export"].includes(input.action)) throw sandboxError("local sandbox supports status and bounded audit export only", "SANDBOX_ACTION_INVALID");
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(instanceId2)) throw sandboxError("invalid instance id");
-  const root = import_node_path9.default.resolve(dataDir, ".remote-debug", "instances");
-  const directory = import_node_path9.default.join(root, instanceId2);
+  const root = import_node_path10.default.resolve(dataDir, ".remote-debug", "instances");
+  const directory = import_node_path10.default.join(root, instanceId2);
   for (const item of [root, directory]) {
     try {
-      const stat = await import_promises2.default.lstat(item);
+      const stat = await import_promises3.default.lstat(item);
       if (stat.isSymbolicLink() || !stat.isDirectory()) throw sandboxError("local sandbox is not a regular directory");
     } catch (error2) {
       if (error2.code === "ENOENT") return { instanceId: instanceId2, initialized: false, files: [], bytes: 0, records: [] };
       throw error2;
     }
   }
-  const relativeRoot = import_node_path9.default.relative(await import_promises2.default.realpath(dataDir), await import_promises2.default.realpath(root));
-  if (relativeRoot.startsWith("..") || import_node_path9.default.isAbsolute(relativeRoot)) throw sandboxError("local sandbox root escapes the data directory");
-  if (import_node_path9.default.dirname(await import_promises2.default.realpath(directory)) !== await import_promises2.default.realpath(root)) throw sandboxError("instance directory escapes the local sandbox");
+  const relativeRoot = import_node_path10.default.relative(await import_promises3.default.realpath(dataDir), await import_promises3.default.realpath(root));
+  if (relativeRoot.startsWith("..") || import_node_path10.default.isAbsolute(relativeRoot)) throw sandboxError("local sandbox root escapes the data directory");
+  if (import_node_path10.default.dirname(await import_promises3.default.realpath(directory)) !== await import_promises3.default.realpath(root)) throw sandboxError("instance directory escapes the local sandbox");
   const files = [];
   for (const name2 of ["audit.jsonl", "memory.json"]) {
-    const file = import_node_path9.default.join(directory, name2);
+    const file = import_node_path10.default.join(directory, name2);
     try {
-      const stat = await import_promises2.default.lstat(file);
+      const stat = await import_promises3.default.lstat(file);
       if (stat.isSymbolicLink() || !stat.isFile()) throw sandboxError("sandbox file is not a regular file");
       files.push({ name: name2, bytes: stat.size });
     } catch (error2) {
@@ -59978,7 +60148,7 @@ async function inspectLocalSandbox(dataDir, instanceId2, input) {
   const metadata = files.find((file) => file.name === "audit.jsonl");
   if (!metadata) return { instanceId: instanceId2, records: [], scannedBytes: 0 };
   const start = Math.max(0, metadata.bytes - 65536);
-  const handle = await import_promises2.default.open(import_node_path9.default.join(directory, metadata.name), "r");
+  const handle = await import_promises3.default.open(import_node_path10.default.join(directory, metadata.name), "r");
   const buffer = Buffer.alloc(Math.min(metadata.bytes, 65536));
   try {
     await handle.read(buffer, 0, buffer.length, start);
@@ -59998,7 +60168,7 @@ async function inspectLocalSandbox(dataDir, instanceId2, input) {
 }
 
 // output-preview.js
-var import_node_crypto15 = require("node:crypto");
+var import_node_crypto16 = require("node:crypto");
 var MAX_WIRE_BYTES = 8 * 1024 * 1024;
 var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 var INSTANCE = /^[a-zA-Z0-9._-]{1,128}$/;
@@ -60023,7 +60193,7 @@ function validate(input) {
   return { message, payload };
 }
 function createOutputPreviewStore({ maxInstanceBytes = 10 * 1024 * 1024, maxBytes = 50 * 1024 * 1024, maxInstanceEvents = 100, maxEvents = 500 } = {}) {
-  const epoch = (0, import_node_crypto15.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
+  const epoch = (0, import_node_crypto16.randomUUID)(), records = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
   let sequence = 0, bytes = 0, lastEvicted = 0;
   function evict(id) {
     const entry2 = records.get(id);
@@ -60143,10 +60313,10 @@ function installOutputPreviewRoutes(app, store, registry) {
 }
 
 // final-results.js
-var import_promises3 = __toESM(require("node:fs/promises"), 1);
+var import_promises4 = __toESM(require("node:fs/promises"), 1);
 var import_node_fs6 = require("node:fs");
-var import_node_path10 = __toESM(require("node:path"), 1);
-var import_node_crypto16 = require("node:crypto");
+var import_node_path11 = __toESM(require("node:path"), 1);
+var import_node_crypto17 = require("node:crypto");
 var import_local_auth5 = __toESM(require_local_auth(), 1);
 
 // ../plugins/remote-debug-agent/final-results.js
@@ -60212,7 +60382,7 @@ var MAX_FILE = 4 * 1024 * 1024;
 var MAX_TASK = 8 * 1024 * 1024;
 var MAX_FILES = 32;
 var MAX_TASKS = 1e4;
-var digest2 = (data) => (0, import_node_crypto16.createHash)("sha256").update(data).digest("hex");
+var digest2 = (data) => (0, import_node_crypto17.createHash)("sha256").update(data).digest("hex");
 var fail2 = (code, statusCode = 400) => Object.assign(new Error(code), { code, statusCode, retriable: false });
 function object3(value, keys) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key))) throw fail2("FINAL_RESULT_INVALID");
@@ -60237,9 +60407,9 @@ function validateReferences(references) {
 }
 var FinalResultStore = class {
   constructor({ root, sanitize, now = () => /* @__PURE__ */ new Date(), maxFileBytes = MAX_FILE, maxTaskBytes = MAX_TASK } = {}) {
-    if (!root || !import_node_path10.default.isAbsolute(root) || import_node_path10.default.resolve(root) === import_node_path10.default.parse(import_node_path10.default.resolve(root)).root) throw fail2("FINAL_RESULT_ROOT_INVALID");
-    this.root = import_node_path10.default.resolve(root);
-    this.stageRoot = import_node_path10.default.join(import_node_path10.default.dirname(this.root), `.${import_node_path10.default.basename(this.root)}-final-staging`);
+    if (!root || !import_node_path11.default.isAbsolute(root) || import_node_path11.default.resolve(root) === import_node_path11.default.parse(import_node_path11.default.resolve(root)).root) throw fail2("FINAL_RESULT_ROOT_INVALID");
+    this.root = import_node_path11.default.resolve(root);
+    this.stageRoot = import_node_path11.default.join(import_node_path11.default.dirname(this.root), `.${import_node_path11.default.basename(this.root)}-final-staging`);
     this.sanitize = sanitize || ((value) => createOutputGuard().sanitize(value).value);
     this.now = now;
     this.maxFileBytes = maxFileBytes;
@@ -60250,22 +60420,22 @@ var FinalResultStore = class {
     let created = false;
     if (create) {
       try {
-        await import_promises3.default.mkdir(directory, { mode: 448 });
+        await import_promises4.default.mkdir(directory, { mode: 448 });
         created = true;
       } catch (error2) {
         if (error2.code !== "EEXIST") throw error2;
       }
     }
-    const stat = await import_promises3.default.lstat(directory);
+    const stat = await import_promises4.default.lstat(directory);
     if (stat.isSymbolicLink() || !stat.isDirectory() || typeof process.getuid === "function" && stat.uid !== process.getuid()) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
-    if (create && process.platform !== "win32") await import_promises3.default.chmod(directory, 448);
+    if (create && process.platform !== "win32") await import_promises4.default.chmod(directory, 448);
     if (create && process.platform === "win32") import_local_auth5.default.protectOrCheck(directory, true, true);
-    if (created) await this.syncDirectory(import_node_path10.default.dirname(directory));
+    if (created) await this.syncDirectory(import_node_path11.default.dirname(directory));
     return directory;
   }
   async base(create = false) {
-    if (create) await import_promises3.default.mkdir(import_node_path10.default.dirname(this.root), { recursive: true, mode: 448 });
-    const parent = await import_promises3.default.realpath(import_node_path10.default.dirname(this.root));
+    if (create) await import_promises4.default.mkdir(import_node_path11.default.dirname(this.root), { recursive: true, mode: 448 });
+    const parent = await import_promises4.default.realpath(import_node_path11.default.dirname(this.root));
     if (this.parent && parent !== this.parent) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
     this.parent = parent;
     return this.directory(this.root, create);
@@ -60274,14 +60444,14 @@ var FinalResultStore = class {
     identity(instanceId2);
     let directory = await this.base(create);
     for (const segment of instanceId2 === null ? ["manager", "tasks"] : ["instances", instanceId2, "tasks"]) {
-      directory = await this.directory(import_node_path10.default.join(directory, segment), create);
+      directory = await this.directory(import_node_path11.default.join(directory, segment), create);
     }
     return directory;
   }
   async readFile(file, maxBytes) {
-    const stat = await import_promises3.default.lstat(file);
+    const stat = await import_promises4.default.lstat(file);
     if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > maxBytes) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
-    const handle = await import_promises3.default.open(file, import_node_fs6.constants.O_RDONLY | (import_node_fs6.constants.O_NOFOLLOW || 0));
+    const handle = await import_promises4.default.open(file, import_node_fs6.constants.O_RDONLY | (import_node_fs6.constants.O_NOFOLLOW || 0));
     try {
       const opened = await handle.stat();
       if (!opened.isFile() || opened.nlink !== 1 || opened.ino !== stat.ino || opened.dev !== stat.dev || opened.size > maxBytes) throw fail2("FINAL_RESULT_PATH_REJECTED", 409);
@@ -60368,19 +60538,19 @@ var FinalResultStore = class {
       return { result: existing, duplicate: true };
     }
     const tasks = await this.tasksDirectory(instanceId2, true);
-    if ((await import_promises3.default.readdir(tasks)).length >= MAX_TASKS) throw fail2("FINAL_RESULT_CAPACITY", 507);
+    if ((await import_promises4.default.readdir(tasks)).length >= MAX_TASKS) throw fail2("FINAL_RESULT_CAPACITY", 507);
     await this.directory(this.stageRoot, true);
-    const stage = await import_promises3.default.mkdtemp(import_node_path10.default.join(this.stageRoot, "publish-"));
+    const stage = await import_promises4.default.mkdtemp(import_node_path11.default.join(this.stageRoot, "publish-"));
     try {
       const files = [];
       for (const item of normalized.artifacts) {
-        await this.directory(import_node_path10.default.join(stage, item.category), true);
-        const artifactId = (0, import_node_crypto16.randomUUID)();
+        await this.directory(import_node_path11.default.join(stage, item.category), true);
+        const artifactId = (0, import_node_crypto17.randomUUID)();
         const relativePath = `${item.category}/${artifactId}.${FORMATS[item.format]}`;
-        await this.writeFile(import_node_path10.default.join(stage, relativePath), item.encoding === "binary" ? Buffer.from(item.content, "base64") : item.content);
+        await this.writeFile(import_node_path11.default.join(stage, relativePath), item.encoding === "binary" ? Buffer.from(item.content, "base64") : item.content);
         files.push({ artifactId, category: item.category, format: item.format, encoding: item.encoding, name: item.name, relativePath, bytes: item.bytes, sha256: item.sha256 });
       }
-      for (const category of new Set(files.map((file) => file.category))) await this.syncDirectory(import_node_path10.default.join(stage, category));
+      for (const category of new Set(files.map((file) => file.category))) await this.syncDirectory(import_node_path11.default.join(stage, category));
       const manifest = {
         version: 1,
         taskId,
@@ -60396,10 +60566,10 @@ var FinalResultStore = class {
         totalBytes: normalized.totalBytes,
         files
       };
-      await this.writeFile(import_node_path10.default.join(stage, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+      await this.writeFile(import_node_path11.default.join(stage, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
       await this.syncDirectory(stage);
       try {
-        await import_promises3.default.rename(stage, import_node_path10.default.join(tasks, taskId));
+        await import_promises4.default.rename(stage, import_node_path11.default.join(tasks, taskId));
       } catch (error2) {
         if (!["EEXIST", "ENOTEMPTY"].includes(error2.code)) throw error2;
         const winner = await this.getFinalResult(instanceId2, taskId);
@@ -60410,11 +60580,11 @@ var FinalResultStore = class {
       await this.syncDirectory(tasks);
       return { result: manifest, duplicate: false };
     } finally {
-      await import_promises3.default.rm(stage, { recursive: true, force: true });
+      await import_promises4.default.rm(stage, { recursive: true, force: true });
     }
   }
   async writeFile(file, content) {
-    const handle = await import_promises3.default.open(file, "wx", 384);
+    const handle = await import_promises4.default.open(file, "wx", 384);
     try {
       await handle.writeFile(content, "utf8");
       await handle.sync();
@@ -60425,7 +60595,7 @@ var FinalResultStore = class {
   }
   async syncDirectory(directory) {
     if (process.platform === "win32") return;
-    const handle = await import_promises3.default.open(directory, "r");
+    const handle = await import_promises4.default.open(directory, "r");
     try {
       await handle.sync();
     } finally {
@@ -60445,8 +60615,8 @@ var FinalResultStore = class {
     if (!UUID2.test(taskId)) throw fail2("FINAL_RESULT_INVALID");
     try {
       const tasks = await this.tasksDirectory(instanceId2);
-      const directory = await this.directory(import_node_path10.default.join(tasks, taskId));
-      const bytes = await this.readFile(import_node_path10.default.join(directory, "manifest.json"), 128 * 1024);
+      const directory = await this.directory(import_node_path11.default.join(tasks, taskId));
+      const bytes = await this.readFile(import_node_path11.default.join(directory, "manifest.json"), 128 * 1024);
       let manifest;
       try {
         manifest = JSON.parse(bytes.toString("utf8"));
@@ -60485,7 +60655,7 @@ var FinalResultStore = class {
     page(offset, limit);
     let entries;
     try {
-      entries = await import_promises3.default.readdir(await this.tasksDirectory(instanceId2), { withFileTypes: true });
+      entries = await import_promises4.default.readdir(await this.tasksDirectory(instanceId2), { withFileTypes: true });
     } catch (error2) {
       if (error2.code === "ENOENT") return { results: [], total: 0, totalBytes: 0, unavailable: 0, nextOffset: null, outputDirectory: this.root };
       throw error2;
@@ -60522,11 +60692,11 @@ var FinalResultStore = class {
     const file = manifest.files.find((item) => item.artifactId === artifactId);
     if (!file) throw fail2("FINAL_RESULT_NOT_FOUND", 404);
     const tasks = await this.tasksDirectory(instanceId2);
-    const task = await this.directory(import_node_path10.default.join(tasks, taskId));
-    await this.directory(import_node_path10.default.join(task, file.category));
+    const task = await this.directory(import_node_path11.default.join(tasks, taskId));
+    await this.directory(import_node_path11.default.join(task, file.category));
     let content;
     try {
-      content = await this.readFile(import_node_path10.default.join(task, file.relativePath), this.maxFileBytes);
+      content = await this.readFile(import_node_path11.default.join(task, file.relativePath), this.maxFileBytes);
     } catch (error2) {
       if (error2.code === "ENOENT") throw fail2("FINAL_RESULT_CORRUPT", 409);
       throw error2;
@@ -60539,10 +60709,10 @@ var FinalResultStore = class {
       await this.getFinalResult(instanceId2, taskId);
       const tasks = await this.tasksDirectory(instanceId2);
       await this.directory(this.stageRoot, true);
-      const trash = import_node_path10.default.join(this.stageRoot, `delete-${(0, import_node_crypto16.randomUUID)()}`);
-      await import_promises3.default.rename(import_node_path10.default.join(tasks, taskId), trash);
+      const trash = import_node_path11.default.join(this.stageRoot, `delete-${(0, import_node_crypto17.randomUUID)()}`);
+      await import_promises4.default.rename(import_node_path11.default.join(tasks, taskId), trash);
       await this.syncDirectory(tasks);
-      await import_promises3.default.rm(trash, { recursive: true, force: true });
+      await import_promises4.default.rm(trash, { recursive: true, force: true });
       return { taskId, removed: true };
     });
     this.queue = result.catch(() => {
@@ -60610,15 +60780,15 @@ function installFinalResultRoutes(app, { root, registry, store } = {}) {
 }
 
 // server.js
-var import_node_crypto24 = require("node:crypto");
-var import_promises7 = __toESM(require("node:fs/promises"), 1);
-var import_node_path16 = __toESM(require("node:path"), 1);
+var import_node_crypto25 = require("node:crypto");
+var import_promises8 = __toESM(require("node:fs/promises"), 1);
+var import_node_path17 = __toESM(require("node:path"), 1);
 var import_node_perf_hooks = require("node:perf_hooks");
 var import_node_url5 = require("node:url");
 var import_environment_report = __toESM(require_environment_report(), 1);
 
 // activity.js
-var import_node_crypto17 = require("node:crypto");
+var import_node_crypto18 = require("node:crypto");
 var import_node_events2 = require("node:events");
 var DEFAULT_MAX_EVENTS = 200;
 var DEFAULT_PREVIEW_CHARS = 4e3;
@@ -60649,7 +60819,7 @@ function createActivityLog(options = {}) {
   const events = [];
   function publish(event2) {
     const entry2 = {
-      id: (0, import_node_crypto17.randomUUID)(),
+      id: (0, import_node_crypto18.randomUUID)(),
       time: (/* @__PURE__ */ new Date()).toISOString(),
       ...event2
     };
@@ -60693,8 +60863,8 @@ function createActivityLog(options = {}) {
 }
 
 // audit.js
-var import_promises4 = __toESM(require("node:fs/promises"), 1);
-var import_node_path11 = __toESM(require("node:path"), 1);
+var import_promises5 = __toESM(require("node:fs/promises"), 1);
+var import_node_path12 = __toESM(require("node:path"), 1);
 function safeLength(value) {
   return typeof value === "string" ? Buffer.byteLength(value, "utf8") : 0;
 }
@@ -60770,18 +60940,18 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
 }
 async function writeAuditLog(logPath, event2, now) {
   const entry2 = buildAuditEntry(event2, now);
-  await import_promises4.default.mkdir(import_node_path11.default.dirname(logPath), { recursive: true });
-  await import_promises4.default.appendFile(logPath, `${JSON.stringify(entry2)}
+  await import_promises5.default.mkdir(import_node_path12.default.dirname(logPath), { recursive: true });
+  await import_promises5.default.appendFile(logPath, `${JSON.stringify(entry2)}
 `, "utf8");
   return entry2;
 }
 
 // mongodb-sandbox-access.js
-var import_node_crypto18 = require("node:crypto");
+var import_node_crypto19 = require("node:crypto");
 
 // mongodb-sandbox-access-runtime.js
 async function sandboxAccessRuntime(request, config, marker) {
-  const fs14 = require("fs"), path20 = require("path"), crypto = require("crypto");
+  const fs15 = require("fs"), path21 = require("path"), crypto = require("crypto");
   const URLSearchParams = require("url").URLSearchParams;
   const collection = "__remote_debug_bulk_receipts";
   let client, managerClient, plan, lockFd, lockPath, temporary;
@@ -60829,34 +60999,34 @@ async function sandboxAccessRuntime(request, config, marker) {
     });
   }
   function regular2(file, privateFile) {
-    const stat = fs14.lstatSync(file);
-    if (!stat.isFile() || stat.isSymbolicLink() || fs14.realpathSync(file) !== file || stat.size > (privateFile ? 65536 : 4 * 1024 * 1024) || privateFile && (stat.mode & 63 || stat.uid !== process.getuid())) fail4("SANDBOX_SETUP_FILE_UNSAFE");
+    const stat = fs15.lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || fs15.realpathSync(file) !== file || stat.size > (privateFile ? 65536 : 4 * 1024 * 1024) || privateFile && (stat.mode & 63 || stat.uid !== process.getuid())) fail4("SANDBOX_SETUP_FILE_UNSAFE");
     return stat;
   }
   function directory(dir) {
-    if (!fs14.existsSync(dir)) fs14.mkdirSync(dir, { mode: 448 });
-    const stat = fs14.lstatSync(dir);
-    if (!stat.isDirectory() || stat.isSymbolicLink() || fs14.realpathSync(dir) !== dir || stat.mode & 63 || stat.uid !== process.getuid()) fail4("SANDBOX_SETUP_STORAGE_UNSAFE");
+    if (!fs15.existsSync(dir)) fs15.mkdirSync(dir, { mode: 448 });
+    const stat = fs15.lstatSync(dir);
+    if (!stat.isDirectory() || stat.isSymbolicLink() || fs15.realpathSync(dir) !== dir || stat.mode & 63 || stat.uid !== process.getuid()) fail4("SANDBOX_SETUP_STORAGE_UNSAFE");
   }
   function atomic(file, value, owner) {
     const suffix = crypto.randomBytes(8).toString("hex");
     temporary = file + "." + suffix + ".tmp";
-    const fd = fs14.openSync(temporary, "wx", 384);
+    const fd = fs15.openSync(temporary, "wx", 384);
     try {
-      fs14.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n", "utf8");
-      if (owner) fs14.fchownSync(fd, owner.uid, owner.gid);
-      fs14.fchmodSync(fd, 384);
-      fs14.fsyncSync(fd);
+      fs15.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n", "utf8");
+      if (owner) fs15.fchownSync(fd, owner.uid, owner.gid);
+      fs15.fchmodSync(fd, 384);
+      fs15.fsyncSync(fd);
     } finally {
-      fs14.closeSync(fd);
+      fs15.closeSync(fd);
     }
-    fs14.renameSync(temporary, file);
+    fs15.renameSync(temporary, file);
     temporary = null;
-    const directoryFd = fs14.openSync(path20.dirname(file), "r");
+    const directoryFd = fs15.openSync(path21.dirname(file), "r");
     try {
-      fs14.fsyncSync(directoryFd);
+      fs15.fsyncSync(directoryFd);
     } finally {
-      fs14.closeSync(directoryFd);
+      fs15.closeSync(directoryFd);
     }
   }
   function uriParts(uri) {
@@ -60910,7 +61080,7 @@ async function sandboxAccessRuntime(request, config, marker) {
       return config.configPath.startsWith(root);
     }) || config.receiptsCollection !== collection) fail4("SANDBOX_SETUP_SCOPE_INVALID");
     const stat = regular2(config.configPath, false);
-    const original = fs14.readFileSync(config.configPath, "utf8"), fileConfig = JSON.parse(original);
+    const original = fs15.readFileSync(config.configPath, "utf8"), fileConfig = JSON.parse(original);
     const source = getKey(fileConfig[config.configProfile], config.uriKey), parts = uriParts(source);
     if (!client) client = await connect(source);
     const build = await client.db("admin").command({ buildInfo: 1 }, primary);
@@ -61024,20 +61194,20 @@ async function sandboxAccessRuntime(request, config, marker) {
     };
   }
   try {
-    directory(path20.dirname(config.journalRoot));
+    directory(path21.dirname(config.journalRoot));
     directory(config.journalRoot);
-    const planFile = path20.join(config.journalRoot, request.setupId + ".json");
+    const planFile = path21.join(config.journalRoot, request.setupId + ".json");
     if (request.action === "prepare") {
       const state = await preflight();
       plan = { version: 1, setupId: request.setupId, expiresAt: new Date(Date.now() + 30 * 60 * 1e3).toISOString(), snapshot: state.snapshot };
       plan.planHash = hash(plan);
       plan.status = "prepared";
-      if (fs14.existsSync(planFile)) fail4("SANDBOX_SETUP_PLAN_EXISTS");
-      fs14.writeFileSync(planFile, JSON.stringify(plan), { flag: "wx", mode: 384 });
+      if (fs15.existsSync(planFile)) fail4("SANDBOX_SETUP_PLAN_EXISTS");
+      fs15.writeFileSync(planFile, JSON.stringify(plan), { flag: "wx", mode: 384 });
     } else {
       if (request.confirmation !== "确认配置沙盒") fail4("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
       regular2(planFile, true);
-      plan = JSON.parse(fs14.readFileSync(planFile, "utf8"));
+      plan = JSON.parse(fs15.readFileSync(planFile, "utf8"));
       const body = { version: plan.version, setupId: plan.setupId, expiresAt: plan.expiresAt, snapshot: plan.snapshot };
       if (plan.version !== 1 || plan.setupId !== request.setupId || plan.planHash !== request.planHash || hash(body) !== request.planHash || plan.snapshot.scope !== scope2 || plan.snapshot.passwordConfigHash !== textHash(request.setupId + ":" + config.managementPassword)) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
       if (plan.status !== "completed") {
@@ -61046,7 +61216,7 @@ async function sandboxAccessRuntime(request, config, marker) {
         lockPath = config.configPath + ".rda-sandbox-access.lock";
         phase = "lock";
         try {
-          lockFd = fs14.openSync(lockPath, "wx", 384);
+          lockFd = fs15.openSync(lockPath, "wx", 384);
         } catch (_) {
           fail4("SANDBOX_SETUP_BUSY");
         }
@@ -61077,13 +61247,13 @@ async function sandboxAccessRuntime(request, config, marker) {
         await verifyManager();
         if (state.snapshot.profileNeedsUpdate) {
           phase = "write-config";
-          if (textHash(fs14.readFileSync(config.configPath, "utf8")) !== plan.snapshot.configHash) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
+          if (textHash(fs15.readFileSync(config.configPath, "utf8")) !== plan.snapshot.configHash) fail4("SANDBOX_SETUP_PLAN_CONFLICT");
           const backup = config.configPath + ".before-rda-sandbox-" + request.setupId;
-          fs14.writeFileSync(backup, state.original, { flag: "wx", mode: 384 });
+          fs15.writeFileSync(backup, state.original, { flag: "wx", mode: 384 });
           state.fileConfig[config.managementProfile] = { url: uri };
           atomic(config.configPath, state.fileConfig, state.stat);
         } else if (state.stat.mode & 63) {
-          fs14.chmodSync(config.configPath, 384);
+          fs15.chmodSync(config.configPath, 384);
         }
         phase = "journal-complete";
         plan.status = "completed";
@@ -61102,7 +61272,7 @@ async function sandboxAccessRuntime(request, config, marker) {
       plan.status = "partial";
       plan.errorDiagnostic = diagnostic;
       try {
-        atomic(path20.join(config.journalRoot, request.setupId + ".json"), plan);
+        atomic(path21.join(config.journalRoot, request.setupId + ".json"), plan);
       } catch (_) {
       }
     }
@@ -61110,16 +61280,16 @@ async function sandboxAccessRuntime(request, config, marker) {
     process.exitCode = 1;
   } finally {
     if (temporary) try {
-      fs14.unlinkSync(temporary);
+      fs15.unlinkSync(temporary);
     } catch (_) {
     }
     if (lockFd !== void 0) {
       try {
-        fs14.closeSync(lockFd);
+        fs15.closeSync(lockFd);
       } catch (_) {
       }
       try {
-        fs14.unlinkSync(lockPath);
+        fs15.unlinkSync(lockPath);
       } catch (_) {
       }
     }
@@ -61161,7 +61331,7 @@ function accessSettings(rawConfig, instanceId2) {
   return config;
 }
 function sandboxSettingsHash(rawConfig, instanceId2) {
-  return (0, import_node_crypto18.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId2))).digest("hex");
+  return (0, import_node_crypto19.createHash)("sha256").update(JSON.stringify(accessSettings(rawConfig, instanceId2))).digest("hex");
 }
 function buildSandboxAccessScript(request, rawConfig, instanceId2) {
   return `(${sandboxAccessRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(accessSettings(rawConfig, instanceId2))}, ${JSON.stringify(MONGODB_RESULT_MARKER)});`;
@@ -61177,7 +61347,7 @@ async function runSandboxAccess(input = {}, options = {}) {
   if (action === "execute" && (!/^[a-f0-9-]{36}$/.test(input.setupId || "") || !/^[a-f0-9]{64}$/.test(input.planHash || "") || input.confirmation !== "确认配置沙盒")) {
     throw fail3("SANDBOX_SETUP_CONFIRMATION_REQUIRED");
   }
-  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto18.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
+  const request = action === "prepare" ? { action, setupId: (0, import_node_crypto19.randomUUID)() } : { action, setupId: input.setupId, planHash: input.planHash, confirmation: input.confirmation };
   const script = buildSandboxAccessScript(request, rawConfig, instanceId2);
   if (typeof options.runSSH !== "function") throw fail3("MONGODB_RUNNER_UNAVAILABLE");
   let remote;
@@ -61240,10 +61410,10 @@ function timestamp(value, field) {
 function normalizeLogQuery(input, config) {
   const projects = normalizeLogProjects(config.logs?.projects, config.security.allowedPaths, config.security.sourceRoots);
   const projectId = text(input.projectId, "projectId", 32);
-  const path20 = text(input.path, "path", 4096);
-  if (Boolean(projectId) === Boolean(path20)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
+  const path21 = text(input.path, "path", 4096);
+  if (Boolean(projectId) === Boolean(path21)) throw logInputError("provide exactly one of projectId or path", "INVALID_LOG_QUERY");
   if (projectId && !Object.hasOwn(projects, projectId)) throw logInputError(`unknown log project: ${projectId}`, "LOG_PROJECT_NOT_FOUND");
-  if (path20) assertPathAllowed(path20, config.security.allowedPaths);
+  if (path21) assertPathAllowed(path21, config.security.allowedPaths);
   const contains = text(input.contains, "contains");
   const route2 = text(input.route, "route");
   if (route2 && !route2.startsWith("/")) throw logInputError("route must be an exact absolute route", "INVALID_LOG_QUERY");
@@ -61253,7 +61423,7 @@ function normalizeLogQuery(input, config) {
   const toTime = timestamp(input.toTime, "toTime");
   const mode = input.mode || (contains || route2 || level || method || fromTime || toTime ? "search" : "latest");
   if (!LOG_QUERY_CAPABILITIES.modes.includes(mode)) throw logInputError("mode must be latest, search, files, or members", "INVALID_LOG_QUERY");
-  if (mode === "members" && (!path20 || !/\.(?:tar\.gz|tgz)$/i.test(path20))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
+  if (mode === "members" && (!path21 || !/\.(?:tar\.gz|tgz)$/i.test(path21))) throw logInputError("members mode requires an exact tar.gz path", "NOT_A_LOG_ARCHIVE");
   if (mode === "latest" && (contains || route2 || level || method || fromTime || toTime)) throw logInputError("use search mode for record filters", "INVALID_LOG_QUERY");
   if (["files", "members"].includes(mode) && (contains || route2 || level || method || fromTime || toTime)) throw logInputError("record filters require search mode", "INVALID_LOG_QUERY");
   const dateFrom = date(input.date || input.dateFrom, "dateFrom");
@@ -61264,10 +61434,10 @@ function normalizeLogQuery(input, config) {
   const memberPath = text(input.memberPath, "memberPath", 4096);
   const memberOffset = input.memberOffset ?? 0;
   if (!Number.isInteger(memberOffset) || memberOffset < 0 || memberOffset > 5e3) throw logInputError("invalid memberOffset", "INVALID_LOG_QUERY");
-  if (memberPath && path20 && !/\.(?:tar\.gz|tgz)$/i.test(path20)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
+  if (memberPath && path21 && !/\.(?:tar\.gz|tgz)$/i.test(path21)) throw logInputError("memberPath requires a tar.gz or tgz archive", "ARCHIVE_MEMBER_NOT_ALLOWED");
   return {
     projectId,
-    path: path20,
+    path: path21,
     directories: projectId ? projects[projectId].directories : [],
     allowedRoots: config.security.allowedPaths,
     mode,
@@ -63800,8 +63970,8 @@ async function readLog(options = {}) {
 
 // instance-registry.js
 var import_node_fs7 = __toESM(require("node:fs"), 1);
-var import_node_path12 = __toESM(require("node:path"), 1);
-var import_node_crypto19 = require("node:crypto");
+var import_node_path13 = __toESM(require("node:path"), 1);
+var import_node_crypto20 = require("node:crypto");
 var import_local_auth6 = __toESM(require_local_auth(), 1);
 var REGISTRY_VERSION = 4;
 var DEFAULT_WORKER_PORT_RANGE = { start: 4400, end: 4499 };
@@ -64068,7 +64238,7 @@ function normalizeMongoSettings(input, existing) {
   return normalized;
 }
 function normalizeInstance(input, existing = {}) {
-  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto19.randomUUID)());
+  const id = input.id || existing.id || slugify(input.name || input.host || (0, import_node_crypto20.randomUUID)());
   assertInstanceId(id);
   const name2 = String(input.name ?? existing.name ?? id).trim();
   if (!name2) {
@@ -64152,18 +64322,18 @@ function hasUnavailablePreferredWorkerPort(rawInstances, manager, managerPort) {
   });
 }
 function registryRootFrom(cwd) {
-  const normalized = import_node_path12.default.resolve(cwd);
-  if (import_node_path12.default.basename(normalized).toLowerCase() === "agent") {
-    return import_node_path12.default.dirname(normalized);
+  const normalized = import_node_path13.default.resolve(cwd);
+  if (import_node_path13.default.basename(normalized).toLowerCase() === "agent") {
+    return import_node_path13.default.dirname(normalized);
   }
   return normalized;
 }
 function defaultRegistryPath(cwd = process.cwd(), env = process.env) {
   if (env.REMOTE_DEBUG_INSTANCE_REGISTRY) {
-    return import_node_path12.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
+    return import_node_path13.default.resolve(env.REMOTE_DEBUG_INSTANCE_REGISTRY);
   }
-  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path12.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
-  return import_node_path12.default.resolve(root, ".remote-debug", "instances.json");
+  const root = env.REMOTE_DEBUG_PROJECT_ROOT ? import_node_path13.default.resolve(env.REMOTE_DEBUG_PROJECT_ROOT) : registryRootFrom(cwd);
+  return import_node_path13.default.resolve(root, ".remote-debug", "instances.json");
 }
 function envDefaultInstance(env, cwd) {
   const dotEnv = loadDotEnv(cwd);
@@ -64293,9 +64463,9 @@ var InstanceRegistry = class {
     return registry;
   }
   save(nextRegistry = this.registry) {
-    import_node_fs7.default.mkdirSync(import_node_path12.default.dirname(this.registryPath), { recursive: true, mode: 448 });
+    import_node_fs7.default.mkdirSync(import_node_path13.default.dirname(this.registryPath), { recursive: true, mode: 448 });
     const containsSecret = nextRegistry.instances.some((instance2) => Boolean(instance2.passphrase || instance2.mongodb?.sandboxManagementPassword));
-    if (containsSecret) import_local_auth6.default.protectOrCheck(import_node_path12.default.dirname(this.registryPath), true, true);
+    if (containsSecret) import_local_auth6.default.protectOrCheck(import_node_path13.default.dirname(this.registryPath), true, true);
     const tempPath = `${this.registryPath}.${process.pid}.${Date.now()}.tmp`;
     try {
       const fd = import_node_fs7.default.openSync(tempPath, "wx", 384);
@@ -64413,7 +64583,7 @@ var InstanceRegistry = class {
 };
 
 // log-jobs.js
-var import_node_crypto20 = require("node:crypto");
+var import_node_crypto21 = require("node:crypto");
 var import_node_string_decoder2 = require("node:string_decoder");
 var import_posix11 = __toESM(require("node:path/posix"), 1);
 
@@ -64537,7 +64707,7 @@ var LogJobRunner = class {
       }
     }
     const job = {
-      jobId: (0, import_node_crypto20.randomUUID)(),
+      jobId: (0, import_node_crypto21.randomUUID)(),
       status: "queued",
       createdAt: this.now(),
       query,
@@ -64686,7 +64856,7 @@ var LogJobRunner = class {
   }
   async sendControl(job, input) {
     if (!job.channel || job.status === "cancelling") throw fault("log task control channel is not ready", "LOG_JOB_NOT_READY", 409);
-    const requestId = (0, import_node_crypto20.randomUUID)();
+    const requestId = (0, import_node_crypto21.randomUUID)();
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         job.controls.delete(requestId);
@@ -65186,17 +65356,17 @@ var RemoteResourceManager = class extends import_node_events3.EventEmitter {
 
 // worker-manager.js
 var import_node_child_process3 = require("node:child_process");
-var import_node_crypto22 = require("node:crypto");
-var import_promises6 = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto23 = require("node:crypto");
+var import_promises7 = __toESM(require("node:fs/promises"), 1);
 var import_node_net = __toESM(require("node:net"), 1);
-var import_node_path14 = __toESM(require("node:path"), 1);
+var import_node_path15 = __toESM(require("node:path"), 1);
 var import_node_url4 = require("node:url");
 
 // memory-store.js
-var import_node_crypto21 = require("node:crypto");
+var import_node_crypto22 = require("node:crypto");
 var import_node_fs8 = __toESM(require("node:fs"), 1);
-var import_promises5 = __toESM(require("node:fs/promises"), 1);
-var import_node_path13 = __toESM(require("node:path"), 1);
+var import_promises6 = __toESM(require("node:fs/promises"), 1);
+var import_node_path14 = __toESM(require("node:path"), 1);
 var MEMORY_VERSION = 1;
 var MEMORY_STATUSES = /* @__PURE__ */ new Set([
   "missing",
@@ -65221,8 +65391,8 @@ function nowIso3() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function projectRootFrom(cwd) {
-  const normalized = import_node_path13.default.resolve(cwd);
-  return import_node_path13.default.basename(normalized).toLowerCase() === "agent" ? import_node_path13.default.dirname(normalized) : normalized;
+  const normalized = import_node_path14.default.resolve(cwd);
+  return import_node_path14.default.basename(normalized).toLowerCase() === "agent" ? import_node_path14.default.dirname(normalized) : normalized;
 }
 function stableJson(value) {
   if (Array.isArray(value)) {
@@ -65271,7 +65441,7 @@ function sanitizeMemoryValue(value, key = "", depth = 0) {
   return String(value);
 }
 function targetFingerprint(instance2 = {}) {
-  return (0, import_node_crypto21.createHash)("sha256").update(stableJson({
+  return (0, import_node_crypto22.createHash)("sha256").update(stableJson({
     host: instance2.host || "",
     port: instance2.port || 22,
     username: instance2.username || ""
@@ -65286,9 +65456,9 @@ function targetSummary(instance2 = {}) {
 }
 function memoryRootFromOptions(options) {
   if (options.memoryRoot) {
-    return import_node_path13.default.resolve(options.memoryRoot);
+    return import_node_path14.default.resolve(options.memoryRoot);
   }
-  return import_node_path13.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
+  return import_node_path14.default.resolve(projectRootFrom(options.cwd || process.cwd()), ".remote-debug", "instances");
 }
 function isObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -65596,7 +65766,7 @@ var MemoryStore = class {
     this.records = /* @__PURE__ */ new Map();
   }
   memoryPath(instanceId2) {
-    return import_node_path13.default.resolve(this.root, instanceId2, "memory.json");
+    return import_node_path14.default.resolve(this.root, instanceId2, "memory.json");
   }
   ensureLoaded(instanceId2) {
     if (this.records.has(instanceId2)) {
@@ -65636,11 +65806,11 @@ var MemoryStore = class {
   }
   async write(instanceId2, memory2) {
     const filePath = this.memoryPath(instanceId2);
-    await import_promises5.default.mkdir(import_node_path13.default.dirname(filePath), { recursive: true });
-    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto21.randomUUID)()}.tmp`;
-    await import_promises5.default.writeFile(tempPath, `${JSON.stringify(memory2, null, 2)}
+    await import_promises6.default.mkdir(import_node_path14.default.dirname(filePath), { recursive: true });
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto22.randomUUID)()}.tmp`;
+    await import_promises6.default.writeFile(tempPath, `${JSON.stringify(memory2, null, 2)}
 `, "utf8");
-    await import_promises5.default.rename(tempPath, filePath);
+    await import_promises6.default.rename(tempPath, filePath);
     this.records.set(instanceId2, memory2);
   }
   async markInitializing(instance2, source = "worker-start") {
@@ -65804,13 +65974,13 @@ var MemoryStore = class {
   }
   async deleteInstance(instanceId2) {
     this.records.delete(instanceId2);
-    await import_promises5.default.rm(this.memoryPath(instanceId2), { force: true });
+    await import_promises6.default.rm(this.memoryPath(instanceId2), { force: true });
   }
 };
 
 // worker-manager.js
 var moduleFilePath = typeof __filename === "string" ? __filename : (0, import_node_url4.fileURLToPath)(void 0);
-var moduleDirectory3 = typeof __dirname === "string" ? __dirname : import_node_path14.default.dirname(moduleFilePath);
+var moduleDirectory3 = typeof __dirname === "string" ? __dirname : import_node_path15.default.dirname(moduleFilePath);
 var RESTORE_SNAPSHOT_VERSION = 1;
 var RESTORE_SHUTDOWN_REASONS = /* @__PURE__ */ new Set(["lease-expired"]);
 var RESTORE_SNAPSHOT_REASONS = /* @__PURE__ */ new Set(["active-runtime", ...RESTORE_SHUTDOWN_REASONS]);
@@ -65902,17 +66072,17 @@ async function waitForExit(child, timeoutMs) {
   });
 }
 function projectRootFrom2(cwd) {
-  const normalized = import_node_path14.default.resolve(cwd);
-  return import_node_path14.default.basename(normalized).toLowerCase() === "agent" ? import_node_path14.default.dirname(normalized) : normalized;
+  const normalized = import_node_path15.default.resolve(cwd);
+  return import_node_path15.default.basename(normalized).toLowerCase() === "agent" ? import_node_path15.default.dirname(normalized) : normalized;
 }
 function defaultRestoreSnapshotPath(cwd) {
-  return import_node_path14.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
+  return import_node_path15.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.json");
 }
 function defaultRestoreSnapshotDiagnosticPath(cwd) {
-  return import_node_path14.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
+  return import_node_path15.default.resolve(projectRootFrom2(cwd), ".remote-debug", "manager-runtime.last.json");
 }
 function configEnv(instance2, port, manager, cwd, memoryInit) {
-  const instanceDir = import_node_path14.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance2.id);
+  const instanceDir = import_node_path15.default.resolve(projectRootFrom2(cwd), ".remote-debug", "instances", instance2.id);
   return {
     REMOTE_DEBUG_WORKER: "1",
     REMOTE_DEBUG_INSTANCE_ID: instance2.id,
@@ -65924,7 +66094,7 @@ function configEnv(instance2, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_PRIVATE_KEY_PATH: instance2.privateKeyPath,
     REMOTE_DEBUG_PRIVATE_KEY_PASSPHRASE: instance2.passphrase || "",
     REMOTE_DEBUG_SSH_HOST_KEY_FINGERPRINTS: JSON.stringify(instance2.hostKeyFingerprints || []),
-    REMOTE_DEBUG_AUDIT_LOG: instance2.auditLog || import_node_path14.default.resolve(instanceDir, "audit.jsonl"),
+    REMOTE_DEBUG_AUDIT_LOG: instance2.auditLog || import_node_path15.default.resolve(instanceDir, "audit.jsonl"),
     REMOTE_DEBUG_APPROVED_COMMANDS: instance2.approvedCommands?.enabled ? "1" : "0",
     REMOTE_DEBUG_APPROVED_EXECUTION_TIMEOUT_MS: instance2.approvedCommands?.executionTimeoutMs === void 0 ? "" : String(instance2.approvedCommands.executionTimeoutMs),
     REMOTE_DEBUG_APPROVED_EXECUTION_MAX_TIMEOUT_MS: instance2.approvedCommands?.maxExecutionTimeoutMs === void 0 ? "" : String(instance2.approvedCommands.maxExecutionTimeoutMs),
@@ -65936,7 +66106,7 @@ function configEnv(instance2, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_SSH_KEEPALIVE_COUNT_MAX: String(manager.sshNetwork.keepaliveCountMax),
     REMOTE_DEBUG_SSH_MAX_BUSINESS_CHANNELS: String(manager.sshNetwork.maxBusinessChannels),
     REMOTE_DEBUG_HEALTH_INTERVAL_MS: String(manager.healthIntervalMs),
-    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path14.default.resolve(instanceDir, ".runtime", "agent-state.json"),
+    REMOTE_DEBUG_RUNTIME_STATE_PATH: import_node_path15.default.resolve(instanceDir, ".runtime", "agent-state.json"),
     REMOTE_DEBUG_RUNTIME_ID: process.env.REMOTE_DEBUG_RUNTIME_ID || "development",
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0"
   };
@@ -65947,7 +66117,7 @@ var WorkerManager = class {
     this.managerPort = options.managerPort;
     this.cwd = options.cwd || process.cwd();
     this.nodePath = options.nodePath || process.execPath;
-    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path14.default.resolve(moduleDirectory3, "worker-entry.js");
+    this.workerEntryPath = options.workerEntryPath || process.env.REMOTE_DEBUG_WORKER_ENTRY_PATH || import_node_path15.default.resolve(moduleDirectory3, "worker-entry.js");
     this.forkWorker = options.forkWorker || ((entryPath, forkOptions) => (0, import_node_child_process3.fork)(entryPath, [], forkOptions));
     this.fetchImpl = options.fetchImpl || fetch;
     this.canBindPort = options.canBindPort || canBindPort;
@@ -66024,7 +66194,7 @@ var WorkerManager = class {
   }
   async readRestoreSnapshotDiagnostic() {
     try {
-      return JSON.parse(await import_promises6.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
+      return JSON.parse(await import_promises7.default.readFile(this.restoreSnapshotDiagnosticPath, "utf8"));
     } catch (error2) {
       if (error2?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot diagnostic", error2);
@@ -66034,11 +66204,11 @@ var WorkerManager = class {
   }
   async writeRestoreSnapshotDiagnostic(diagnostic) {
     try {
-      await import_promises6.default.mkdir(import_node_path14.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
+      await import_promises7.default.mkdir(import_node_path15.default.dirname(this.restoreSnapshotDiagnosticPath), { recursive: true });
       const tempPath = `${this.restoreSnapshotDiagnosticPath}.${process.pid}.${Date.now()}.tmp`;
-      await import_promises6.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
+      await import_promises7.default.writeFile(tempPath, `${JSON.stringify(diagnostic, null, 2)}
 `, "utf8");
-      await import_promises6.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
+      await import_promises7.default.rename(tempPath, this.restoreSnapshotDiagnosticPath);
     } catch (error2) {
       console.error("failed to write manager restore snapshot diagnostic", error2);
     }
@@ -66066,7 +66236,7 @@ var WorkerManager = class {
     let previousSnapshot = null;
     let previousSnapshotReadError = null;
     try {
-      previousSnapshot = JSON.parse(await import_promises6.default.readFile(this.restoreSnapshotPath, "utf8"));
+      previousSnapshot = JSON.parse(await import_promises7.default.readFile(this.restoreSnapshotPath, "utf8"));
     } catch (error2) {
       if (error2?.code !== "ENOENT") {
         previousSnapshotReadError = {
@@ -66090,7 +66260,7 @@ var WorkerManager = class {
       });
     }
     try {
-      await import_promises6.default.rm(this.restoreSnapshotPath, { force: true });
+      await import_promises7.default.rm(this.restoreSnapshotPath, { force: true });
     } catch (error2) {
       console.error("failed to clear manager restore snapshot", error2);
     }
@@ -66113,11 +66283,11 @@ var WorkerManager = class {
       lastReason: reason,
       instances
     };
-    await import_promises6.default.mkdir(import_node_path14.default.dirname(this.restoreSnapshotPath), { recursive: true });
+    await import_promises7.default.mkdir(import_node_path15.default.dirname(this.restoreSnapshotPath), { recursive: true });
     const tempPath = `${this.restoreSnapshotPath}.${process.pid}.${Date.now()}.tmp`;
-    await import_promises6.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
+    await import_promises7.default.writeFile(tempPath, `${JSON.stringify(snapshot, null, 2)}
 `, "utf8");
-    await import_promises6.default.rename(tempPath, this.restoreSnapshotPath);
+    await import_promises7.default.rename(tempPath, this.restoreSnapshotPath);
     return {
       written: true,
       reason,
@@ -66159,7 +66329,7 @@ var WorkerManager = class {
   async readRestoreSnapshot() {
     let parsed;
     try {
-      parsed = JSON.parse(await import_promises6.default.readFile(this.restoreSnapshotPath, "utf8"));
+      parsed = JSON.parse(await import_promises7.default.readFile(this.restoreSnapshotPath, "utf8"));
     } catch (error2) {
       if (error2?.code !== "ENOENT") {
         console.error("failed to read manager restore snapshot", error2);
@@ -66364,7 +66534,7 @@ var WorkerManager = class {
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance2);
     const runtime2 = {
       status: "starting",
-      authToken: (0, import_node_crypto22.randomBytes)(32).toString("hex"),
+      authToken: (0, import_node_crypto23.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
       workerPort,
@@ -66943,12 +67113,12 @@ var WorkerManager = class {
 
 // instance-transfer.js
 var import_node_fs9 = __toESM(require("node:fs"), 1);
-var import_node_path15 = __toESM(require("node:path"), 1);
-var import_node_crypto23 = require("node:crypto");
+var import_node_path16 = __toESM(require("node:path"), 1);
+var import_node_crypto24 = require("node:crypto");
 var import_node_util3 = require("node:util");
 var import_express2 = __toESM(require_express2(), 1);
 var import_local_auth7 = __toESM(require_local_auth(), 1);
-var derive = (0, import_node_util3.promisify)(import_node_crypto23.scrypt);
+var derive = (0, import_node_util3.promisify)(import_node_crypto24.scrypt);
 var FORMAT = "remote-debug-instance";
 var AAD = Buffer.from(`${FORMAT}:1:scrypt:32768:8:1:aes-256-gcm`);
 var MAX_TRANSFER_BYTES = 8 * 1024 * 1024;
@@ -67000,11 +67170,11 @@ async function encryptTransfer(payload, password) {
     plain.fill(0);
     throw failure("TRANSFER_TOO_LARGE", 413);
   }
-  const salt = (0, import_node_crypto23.randomBytes)(16), iv = (0, import_node_crypto23.randomBytes)(12);
+  const salt = (0, import_node_crypto24.randomBytes)(16), iv = (0, import_node_crypto24.randomBytes)(12);
   let key;
   try {
     key = await derive(password, salt, 32, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
-    const cipher = (0, import_node_crypto23.createCipheriv)("aes-256-gcm", key, iv);
+    const cipher = (0, import_node_crypto24.createCipheriv)("aes-256-gcm", key, iv);
     cipher.setAAD(AAD);
     const data = Buffer.concat([cipher.update(plain), cipher.final()]);
     return {
@@ -67034,7 +67204,7 @@ async function decryptTransfer(bundle, password) {
   let key, plain;
   try {
     key = await derive(password, salt, 32, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
-    const decipher = (0, import_node_crypto23.createDecipheriv)("aes-256-gcm", key, iv);
+    const decipher = (0, import_node_crypto24.createDecipheriv)("aes-256-gcm", key, iv);
     decipher.setAAD(AAD);
     decipher.setAuthTag(tag);
     plain = Buffer.concat([decipher.update(encrypted), decipher.final()]);
@@ -67112,16 +67282,16 @@ var InstanceTransfer = class {
     this.memoryStore = memoryStore;
     this.protect = protect;
     this.busy = false;
-    const baseCwd = import_node_path15.default.resolve(cwd);
+    const baseCwd = import_node_path16.default.resolve(cwd);
     this.cwd = baseCwd;
-    this.base = import_node_path15.default.basename(baseCwd).toLowerCase() === "agent" ? import_node_path15.default.dirname(baseCwd) : baseCwd;
+    this.base = import_node_path16.default.basename(baseCwd).toLowerCase() === "agent" ? import_node_path16.default.dirname(baseCwd) : baseCwd;
   }
   checkStorageParents() {
-    const relative = import_node_path15.default.relative(this.base, this.memoryStore.root);
-    if (relative === ".." || relative.startsWith(`..${import_node_path15.default.sep}`) || import_node_path15.default.isAbsolute(relative)) throw failure("TRANSFER_STORAGE_UNSAFE");
+    const relative = import_node_path16.default.relative(this.base, this.memoryStore.root);
+    if (relative === ".." || relative.startsWith(`..${import_node_path16.default.sep}`) || import_node_path16.default.isAbsolute(relative)) throw failure("TRANSFER_STORAGE_UNSAFE");
     let current = import_node_fs9.default.realpathSync(this.base);
-    for (const part of relative.split(import_node_path15.default.sep).filter(Boolean)) {
-      current = import_node_path15.default.join(current, part);
+    for (const part of relative.split(import_node_path16.default.sep).filter(Boolean)) {
+      current = import_node_path16.default.join(current, part);
       try {
         const info = import_node_fs9.default.lstatSync(current);
         if (!info.isDirectory() || info.isSymbolicLink()) throw failure("TRANSFER_STORAGE_UNSAFE");
@@ -67152,7 +67322,7 @@ var InstanceTransfer = class {
       let bytes, memory2 = null;
       try {
         this.checkStorageParents();
-        bytes = regular(import_node_path15.default.resolve(this.cwd, instance2.privateKeyPath), MAX_KEY_BYTES);
+        bytes = regular(import_node_path16.default.resolve(this.cwd, instance2.privateKeyPath), MAX_KEY_BYTES);
         const file = this.memoryStore.memoryPath(id);
         try {
           memory2 = JSON.parse(regular(file, MAX_TRANSFER_BYTES).toString("utf8"));
@@ -67224,18 +67394,18 @@ var InstanceTransfer = class {
       if (this.conflict(id)) throw failure("TRANSFER_ID_CONFLICT", 409);
       if (typeof name2 !== "string" || !name2.trim() || name2.length > 256) throw failure("TRANSFER_INVALID");
       let staged, published = false, keyBytes;
-      const root = import_node_path15.default.resolve(this.memoryStore.root), directory = import_node_path15.default.join(root, id);
+      const root = import_node_path16.default.resolve(this.memoryStore.root), directory = import_node_path16.default.join(root, id);
       try {
         import_node_fs9.default.mkdirSync(root, { recursive: true, mode: 448 });
         safeDirectory(root, true);
         const canonicalRoot = import_node_fs9.default.realpathSync(root);
-        staged = import_node_path15.default.join(canonicalRoot, `.import-${(0, import_node_crypto23.randomUUID)()}`);
+        staged = import_node_path16.default.join(canonicalRoot, `.import-${(0, import_node_crypto24.randomUUID)()}`);
         import_node_fs9.default.mkdirSync(staged, { mode: 448 });
         this.protect(staged, true, true);
         const instance2 = structuredClone(payload.instance);
         instance2.id = id;
         instance2.name = name2.trim();
-        instance2.privateKeyPath = import_node_path15.default.join(directory, "imported-ssh-key");
+        instance2.privateKeyPath = import_node_path16.default.join(directory, "imported-ssh-key");
         delete instance2.auditLog;
         delete instance2.preferredWorkerPort;
         delete instance2.createdAt;
@@ -67248,7 +67418,7 @@ var InstanceTransfer = class {
           throw failure("TRANSFER_INVALID");
         }
         const write = (file, bytes) => {
-          const target2 = import_node_path15.default.join(staged, file);
+          const target2 = import_node_path16.default.join(staged, file);
           const fd = import_node_fs9.default.openSync(target2, "wx", 384);
           try {
             this.protect(target2, false, true);
@@ -67323,7 +67493,7 @@ function installInstanceTransferRoutes(app, { registry, workerManager, cwd }) {
 
 // server.js
 var moduleFilePath2 = typeof __filename === "string" ? __filename : (0, import_node_url5.fileURLToPath)(void 0);
-var moduleDirectory4 = typeof __dirname === "string" ? __dirname : import_node_path16.default.dirname(moduleFilePath2);
+var moduleDirectory4 = typeof __dirname === "string" ? __dirname : import_node_path17.default.dirname(moduleFilePath2);
 var DEFAULT_AGENT_LIFETIME2 = "manual";
 var DESKTOP_AGENT_LIFETIME = "desktop";
 var DEFAULT_MANAGER_LEASE_TTL_MS = 45e3;
@@ -67332,7 +67502,7 @@ var MAX_MANAGER_LEASE_TTL_MS = 12e4;
 var DEFAULT_MANAGER_LEASE_CHECK_INTERVAL_MS = 5e3;
 var DEFAULT_DESKTOP_STARTUP_GRACE_MS = 6e4;
 function registerEnvironmentReport(app, config) {
-  const dataDir = import_node_path16.default.dirname(import_node_path16.default.dirname(config.runtime?.statePath || import_node_path16.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const dataDir = import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(process.cwd(), ".runtime", "agent-state.json")));
   app.get("/api/environment-report", (_request, response) => {
     response.set("Cache-Control", "no-store");
     response.json({ ok: true, mode: "manager", report: import_environment_report.default.readReport(dataDir) });
@@ -67388,11 +67558,11 @@ async function writeRuntimeState(config, event2) {
     ...event2,
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
-  await import_promises7.default.mkdir(import_node_path16.default.dirname(statePath), { recursive: true });
-  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto24.randomUUID)()}.tmp`;
-  await import_promises7.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
+  await import_promises8.default.mkdir(import_node_path17.default.dirname(statePath), { recursive: true });
+  const tempPath = `${statePath}.${process.pid}.${Date.now()}.${(0, import_node_crypto25.randomUUID)()}.tmp`;
+  await import_promises8.default.writeFile(tempPath, `${JSON.stringify(state, null, 2)}
 `, "utf8");
-  await import_promises7.default.rename(tempPath, statePath);
+  await import_promises8.default.rename(tempPath, statePath);
 }
 function requestText(value, maxChars = 256) {
   if (value === void 0 || value === null) {
@@ -67409,7 +67579,7 @@ function sourceFrom(request) {
 function createOperation(request, config, tool, requestPayload) {
   return {
     type: "interaction",
-    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto24.randomUUID)(),
+    operationId: requestPayload?.operationId || request.body?.operationId || (0, import_node_crypto25.randomUUID)(),
     tool,
     source: sourceFrom(request),
     target: publicTarget(config),
@@ -67697,7 +67867,7 @@ function createApp(options = {}) {
   const activity = options.activity || createActivityLog();
   const commandDraftStore = options.commandDraftStore || createCommandDraftStore();
   const app = (0, import_express3.default)();
-  const publicDir = import_node_path16.default.join(moduleDirectory4, "public");
+  const publicDir = import_node_path17.default.join(moduleDirectory4, "public");
   installHttpAuth(app, config, options);
   app.use("/mongodb/imports/prepare", import_express3.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express3.default.json({ limit: "5mb" }));
@@ -69060,7 +69230,7 @@ function createManagerApp(options = {}) {
     ...options.lifecycleOptions
   });
   const app = (0, import_express3.default)();
-  const publicDir = import_node_path16.default.join(moduleDirectory4, "public");
+  const publicDir = import_node_path17.default.join(moduleDirectory4, "public");
   let commandReviewInFlight = false;
   app.locals.registry = registry;
   app.locals.workerManager = workerManager;
@@ -69087,7 +69257,7 @@ function createManagerApp(options = {}) {
       retriable: false
     } });
   });
-  installFinalResultRoutes(app, { registry, root: config.output?.directory || import_node_path16.default.resolve(options.cwd || process.cwd(), "output"), store: options.finalResults });
+  installFinalResultRoutes(app, { registry, root: config.output?.directory || import_node_path17.default.resolve(options.cwd || process.cwd(), "output"), store: options.finalResults });
   app.use("/mongodb/imports/prepare", import_express3.default.json({ limit: "5mb" }));
   app.use("/mongodb/bulk/prepare", import_express3.default.json({ limit: "5mb" }));
   app.use("/api/private/business-storage", import_express3.default.json({ limit: "17mb" }));
@@ -69099,12 +69269,13 @@ function createManagerApp(options = {}) {
   installPrivacyRoutes(app, {
     registry,
     service: options.privacyService,
+    dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: (id, route2, payload) => workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
-    directory: import_node_path16.default.join(import_node_path16.default.dirname(import_node_path16.default.dirname(config.runtime?.statePath || import_node_path16.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
+    directory: import_node_path17.default.join(import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
   });
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
     registry,
-    dataDirectory: import_node_path16.default.dirname(import_node_path16.default.dirname(config.runtime?.statePath || import_node_path16.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
+    dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     lifecycle,
     ...options.manualOptions
   });
@@ -69699,7 +69870,7 @@ function createManagerApp(options = {}) {
   app.post("/api/sandbox/local", managerAsync(async (request, response) => {
     const instanceId2 = registry.resolveId(request.body?.instanceId);
     response.set("X-Remote-Debug-Instance-Id", instanceId2);
-    const dataDir = import_node_path16.default.dirname(import_node_path16.default.dirname(config.runtime?.statePath || import_node_path16.default.join(process.cwd(), ".runtime", "agent-state.json")));
+    const dataDir = import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(process.cwd(), ".runtime", "agent-state.json")));
     const result = await inspectLocalSandbox(dataDir, instanceId2, request.body || {});
     response.json({ ok: true, ...result });
   }));
@@ -69844,7 +70015,7 @@ function isServerEntrypointProcess(options = {}) {
   const env = options.env || process.env;
   const filePath = options.filePath || moduleFilePath2;
   return Boolean(
-    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path16.default.resolve(filePath) === import_node_path16.default.resolve(argv[1])
+    !isEnabledFlag(env.REMOTE_DEBUG_WORKER) && argv[1] && import_node_path17.default.resolve(filePath) === import_node_path17.default.resolve(argv[1])
   );
 }
 function startWorkerServer(config = loadConfig()) {

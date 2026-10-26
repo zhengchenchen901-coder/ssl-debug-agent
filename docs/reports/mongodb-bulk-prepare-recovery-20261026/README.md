@@ -1,5 +1,9 @@
 # MongoDB bulk 字段校验与准备意图恢复：本地修复记录
 
+后续已实现正式历史入口并实际核验 ZCIVO 原 intent，结果及证据见 [历史恢复记录](../mongodb-historical-recovery-20261026/README.md)。原保护记录未改写。
+
+后续用户已授权并完成本地插件更新：见 [安装与生效核验](installation.md)。下文保留修复交付时的验证与生产恢复边界。
+
 日期：2026-10-26。交付为未提交的源码、重新生成的仓库 runtime、技能说明与回归测试。没有修改已安装插件缓存，没有提交、推送、PR、发布、部署、定时任务或生产工具调用。
 
 开始时工作区干净，HEAD 为 `0596e6a9ab73906ac2c61f05631472c4521fccd5`。仓库和上级目录没有额外 AGENTS.md，遵循本会话提供的规则。已读取安装版 TestFlow 0.2.0 技能及 Remote Debug Agent 2.4.0+codex.20261023.2 的 database-mutations 技能与 bulk 参考。

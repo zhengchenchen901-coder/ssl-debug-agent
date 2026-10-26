@@ -1996,6 +1996,7 @@ export function createManagerApp(options = {}) {
   let restoreCheckScheduled = false;
 
   installPrivacyRoutes(app, { registry, service: options.privacyService,
+    dataDirectory: path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: (id, route, payload) => workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
     directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });
 

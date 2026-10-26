@@ -1,0 +1,130 @@
+{
+  "recordId": "MONGODB-HISTORICAL-RECOVERY-20261026",
+  "baseHead": "579f78348849d0b62762804c2947e085689466b8",
+  "priorWorkspaceChangesPreserved": true,
+  "originalIntentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+  "originalRequestMatched": true,
+  "finalState": "uncertain",
+  "finalReason": "historical_dispatch_evidence_required",
+  "remoteEvidenceCode": "MONGODB_BULK_JOB_NOT_FOUND",
+  "protectedRecordUnchanged": true,
+  "recordFingerprint": "e74a375835b2d709f91efc58655c624448e06ce1f00737de179776be8b32f029",
+  "remoteRecoveryAudit": {
+    "time": "2026-10-26T04:17:28.492Z",
+    "tool": "mongodb-bulk-recoverUpload",
+    "ok": false,
+    "errorCode": "MONGODB_BULK_JOB_NOT_FOUND",
+    "operationId": "4d0b762b-6efb-43b2-a2cb-8780e7974fa1",
+    "errorLayer": "mongodb-bulk",
+    "errorPhase": "recoverUpload"
+  },
+  "nativeAgent": {
+    "tests": 493,
+    "pass": 479,
+    "fail": 0,
+    "skipped": 14,
+    "log": "/Users/zhengchenchen/od-projects/ssl-debug-output/mongodb-historical-recovery-20261026/agent-final.tap",
+    "sha256": "dbf7d387ad9a4f5667be3821a27caee57ea2ad3686a9acfd1f85b27a84895553"
+  },
+  "nativePlugin": {
+    "tests": 135,
+    "pass": 130,
+    "fail": 0,
+    "skipped": 5,
+    "log": "/Users/zhengchenchen/od-projects/ssl-debug-output/mongodb-historical-recovery-20261026/plugin-final.tap",
+    "sha256": "01db77c333979990a6a53bf8e03ebc36bacc656a4de5d332c87ee902c6f26638"
+  },
+  "sourceHashes": {
+    "agent/mongodb-bulk-runtime.js": "78c318acbaaf05924e9289be871d16e4548ee131d9d7254d56f60e8d9190200e",
+    "agent/privacy-service.js": "13c6784b8c391f34294249d8a5ee21537020f1d6f00079954a2d702c8c264a7e",
+    "agent/privacy-store.js": "fb83de8200363d6ed67618134c5eba609e7ebeeca315b8fd3e7fc67923b8d169",
+    "agent/server.js": "200d0a6ececc8dd27a23b80da96bceb9dab28c82b1cbd849766239c6835c25de",
+    "agent/test/privacy-store.test.js": "0243128e41890fa0ca16fc88fbe09fd157483c520691eacf793baf64763522c6",
+    "plugins/remote-debug-agent/.codex-plugin/plugin.json": "2c216431b9afd1c89fea5cfec03c2c7bd072d4a4515310b3f0d807da00a9fb52",
+    "plugins/remote-debug-agent/business-privacy.js": "6e920b2d3ea25123735562ae015f421ac2266b1a8f0e0f6cae5f2a1e8a45f9dc",
+    "plugins/remote-debug-agent/business-storage.js": "9022fc4fdae3c147112ce4b8e6c630daa1c8da1712802e23c88399c53277ba7f",
+    "plugins/remote-debug-agent/mcp-server.js": "1a82412114d453803a12d0cff9943b9889efd2749048436817c8b54024b48be7",
+    "plugins/remote-debug-agent/output-contracts.js": "2551203b06315b811746feebc12463a7b4512ecf58c45918b26de84267721f0a",
+    "plugins/remote-debug-agent/prepare-protocol.js": "ce9b7082f2e28d864ff80b8ba61d1ba45480467787c1fb3fbb1d435801fdca00",
+    "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs": "6cae14eff095fa33278b388df3c77fc8e3afe4d1d4742747cd0ff6c5c0413176",
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json": "8b24adab82a7d5b8f36760169390c7eaa804e628e271b8b57d5a8ce9e6f98194",
+    "plugins/remote-debug-agent/runtime/agent/server.cjs": "e9c64a8cff0833cd6d52f21ea8a6764b33bacdd736696fb9a3d819857c9e9529",
+    "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs": "712e673d5fc684d8ddaa5bd4ca598b4849237e99cc9acb5ce9f3ec55e5be0afb",
+    "plugins/remote-debug-agent/skills/database-mutations/SKILL.md": "05833e254d086bb7c82ca74a38bfb70147142ce7262dd993d47441ffd9692be2",
+    "plugins/remote-debug-agent/test/business-privacy.test.js": "90f61698933488ee7c337f8fb4a6ce30f3e407b6286f19bfc495fd46ed560dbd",
+    "plugins/remote-debug-agent/test/helpers/local-mcp.js": "bc6d6d82b7759218decf8fe3e8fab123c59993d044bdc86bde651f045ee96754",
+    "plugins/remote-debug-agent/test/mcp-smoke.test.js": "2fc02a5f36592b23e223a25879b859ab3b89856d923908a447e2a2a66229bf84",
+    "agent/mongodb-bulk-history.js": "18db0351c32d101adaa280395a2b1d1db87d78d13817e1bea5f74692b44f85a3",
+    "agent/test/mongodb-bulk-history.test.js": "059e1304369f1d993c7694d615fab8f09c9b9a2213b56d5eb203faa67359358c",
+    "plugins/remote-debug-agent/test/bulk-historical-recovery.test.js": "8410957a350c13bb47fb7c867e73f1b711559462b6e097906fe3c251c72fc4ca"
+  },
+  "installedPluginVersion": "2.4.0+codex.20261026.2",
+  "runtimeId": "2.4.0:e515098eb54c66b785b0de2a7a1fe1afa9f64192bf00fc85b69832d326c93dca",
+  "runtimeHashesVerified": 26,
+  "managerPid": 68707,
+  "localWorkers": [
+    {
+      "id": "default",
+      "status": "running",
+      "health": "healthy",
+      "workerPid": 68708,
+      "active": 0,
+      "queued": 0
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "health": "healthy",
+      "workerPid": 68825,
+      "active": 0,
+      "queued": 0
+    }
+  ],
+  "configurationsUnchanged": true,
+  "testflow": {
+    "snapshotId": "e02c3db0837a8816cb0ed9a426f2f6b127b4143c49b4510e50043813c56f262c",
+    "workflowId": "e02c3db0837a8816cb0ed9a426f2f6b127b4143c49b4510e50043813c56f262c",
+    "runId": "fd4ce435-e7be-4ade-b245-d7a796856e85",
+    "flowId": "1fbf0cc7-502d-4416-80a8-d7882c22fae4",
+    "fixedInputVerified": true,
+    "completeness": "partial-static",
+    "counts": {
+      "files": 25,
+      "directSymbols": 720,
+      "impactedSymbols": 5690,
+      "candidateEntries": 18,
+      "diagnostics": 19844
+    },
+    "diagnosticKinds": [
+      "non-source-impact-unknown",
+      "unresolved-call",
+      "ambiguous-symbol-identity",
+      "cgb-not-configured",
+      "broad-impact"
+    ],
+    "executed": false,
+    "blockers": [
+      "No node:test execution adapter or versioned jest-unit assets/configuration for this project",
+      "No executable TestFlow bindings/lifecycle/assertions/dependency image contract registered for this project"
+    ],
+    "coverage": "unknown; static impact is not runtime coverage"
+  },
+  "productionBusinessWrites": false,
+  "replayedBulkPrepare": false,
+  "createdReplacementJob": false,
+  "manualProtectionRecordEdits": false,
+  "gitCommitPushOrRemoteDeployment": false,
+  "failedAttemptsRetained": [
+    {
+      "file": "targeted-final.tap",
+      "failures": 2,
+      "reason": "New integration test expected no MCP log file; real MCP creates its startup log. Asserted actual read status and zero historical candidates instead."
+    },
+    {
+      "file": "plugin-full.tap",
+      "failures": 1,
+      "reason": "Schema helper incorrectly treated originalRequest as mandatory; declared it optional and added explicit historical schema/path assertions."
+    }
+  ],
+  "evidenceFileSha256": "61de7a7dfa78329df89f5eb33d39dbf426eac1db9236bde3d46fdc3bbaf531d6"
+}
