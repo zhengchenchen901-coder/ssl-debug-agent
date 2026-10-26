@@ -226,33 +226,50 @@ identity/array guards. It is not a storage outage or permission to upload a
 different job. Credential redaction that changes the exact input still requires
 `BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED`; never reconstruct lost bytes.
 
-inspect_risk exposes the riskPlanId, exact input/effect digests, expiry, missing
-fence prerequisites and a signed-migration challenge. historicalOutcome stays
-unknown; current business balances or matching ledgers do not change it.
+inspect_risk exposes the policy version, exact input/effect digests, expiry,
+Manager-observed remote job status and residual risks. Optional reviewMemo is
+bounded and sanitized, explicitly a caller statement rather than verified proof.
+Preserve dates and evidence timestamps; do not describe an older business snapshot
+as current. historicalOutcome remains unknown.
+
+New plans use human-risk-acceptance-v2. The independent administrator is the
+final authority for the remaining uncertainty: external migration receipts and
+instance-wide quarantine are NOT prerequisites for this policy. Do not trap human
+review behind machine certainty that cannot be obtained. Already-quarantined
+instance holds remain intact; this flow does not silently remove them.
 
 Final approval MUST happen in the independent human administrator workbench:
-open “未知任务风险处置”, read the riskPlanId in that authenticated session, review
-the target/old and proposed jobs/digests/scope, acknowledge the duplicate-risk
-warning, and type `我接受历史结果未知的风险，并批准建立此替代任务`.
+open “未知任务风险处置”, read the exact riskPlanId in that authenticated session,
+review facts, gaps, old/new identities, effects and duplicate/late-commit risks,
+and type `我接受历史结果未知的风险，并批准建立此替代任务`.
 Fresh native OS owner verification is mandatory. Manager credentials, a privacy
 capability, chat confirmation, MCP arguments or a caller-supplied actor/proof
-cannot substitute. Do not ask the user to disclose their administrator password.
-This task's permission to develop this feature is not final approval of any
-real risk plan. Approval records history as unknown, never “proven not executed”.
+cannot substitute. Never ask for an administrator password in chat. Development
+permission does not approve any real plan.
 
-Approval requires an externally enforced, trusted migration receipt provisioned
-by the installation owner. The source supports REMOTE_DEBUG_EXECUTOR_TRUST_FILE
-and REMOTE_DEBUG_EXECUTOR_RECEIPT_DIRECTORY; no public tool uploads a receipt or
-changes trust. Ed25519 verification authenticates the configured external
-issuer; it does not itself revoke old MongoDB/SSH credentials or drain sessions.
-That issuer must actually complete and attest the permanent all-path retirement,
-including old processes/queues/leases, authenticated sessions, terminal in-flight
-transactions and restarts. Do not generate a real receipt merely to bypass this
-requirement. Without this external integration, missing/invalid/expired proof,
-or unsupported Windows ACL verification, approval and creation fail closed.
+Approval closes the original job's managed local admissions and active task flag,
+pins its original uncertain record unchanged, and records who accepted which
+risks. create_replacement next writes and verifies an exact durable retirement
+record in the remote sandbox using the fixed internal Node helper, then records
+the unique replacement intent and both directions of the lineage. Missing remote
+jobs receive a control tombstone, not fabricated historical upload/execute data.
+Unsupported caller-provided result/proof or retirement routes remain unavailable
+through public MCP. Retired control records are never eligible for sandbox cleanup.
+
+Termination here covers managed admissions and cooperative workers. It does not
+prove that previously dispatched fence-unaware helpers, authenticated sessions or
+in-flight MongoDB transactions were cancelled. Those unknowns are disclosed for
+human acceptance, not falsely certified away. A new helper checks retirement
+before work and before commit; races or older code can still leave late effects.
+History is never rewritten as “proven not executed”.
+
+Legacy plans retain their old external-fence requirements and signatures; their
+approvals are never promoted to this new policy. Re-prepare the exact proposal
+under v2, review its new identity/hash and obtain a new native human approval.
+Do not use an old riskPlanId or old approval to bypass the policy transition.
 
 After the human approves the exact plan, create_replacement consumes its
-riskPlanId and approved reviewHash. It atomically records the unknown retirement,
+riskPlanId and approved reviewHash. After remote retirement acknowledgement, it atomically records
 one replacement intent, admission gate and audit lineage, then uploads only the
 approved first chunk through the existing protected prepare protocol. It never
 executes business writes. Lost replies reconcile the same intent; never change
@@ -262,11 +279,11 @@ empty units, endOfUpload=true, same purpose/TTL). Only an exact accepted sealed
 plan admits normal execute/resume/rollback for its immutable planHash; business
 execution retains its existing explicit confirmation and rollback rules.
 
-The plan lasts one hour; approval lasts at most fifteen minutes and no longer
-than the external receipt. Expiry or changed evidence requires fresh review and
+The plan lasts one hour; v2 approval lasts at most fifteen minutes and no longer
+than the plan. Legacy approval also remains bounded by its external receipt. Expiry or changed evidence requires fresh review and
 native confirmation of the same identity; it does not authorize another job.
 Only one replacement may be established per original disposition. A preparation
 conflict is a failure to inspect, not permission to create a different task.
-Future certificate renewal/installation requires owner-controlled provisioning.
+The same replacement identity is reused after expiry or a lost reply.
 No deployment, migration, real disposition or new business job is performed just
 to verify this feature; use disposable local fixtures.

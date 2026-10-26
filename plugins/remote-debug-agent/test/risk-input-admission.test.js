@@ -39,7 +39,7 @@ for (const bundled of [false, true]) test(`full insertOne first chunk admits ris
   config.agent = { host: "127.0.0.1", port: 0 }; config.runtime.statePath = path.join(root, ".runtime", "state.json");
   const service = new PrivacyService({ directory, key, fenceAuthority: {}, ...(bundled ? { workerPath: path.resolve(import.meta.dirname, "../runtime/agent/privacy-worker.cjs") } : {}) });
   const calls = [];
-  const workerManager = { publicInstances: () => registry.list(), callInstance: async (...args) => { calls.push(args); throw Error("Remote dispatch forbidden in admission fixture"); } };
+  const workerManager = { publicInstances: () => registry.list(), callInstance: async (...args) => { if (args[1] !== "/mongodb/bulk/job") calls.push(args); throw Error("Remote dispatch forbidden in admission fixture"); } };
   const runtime = bundled ? createRequire(import.meta.url)("../runtime/agent/server.cjs") : { createManagerApp };
   const app = runtime.createManagerApp({ config, registry, workerManager, privacyService: service, authToken: token });
   const server = http.createServer(app); await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -64,8 +64,8 @@ for (const bundled of [false, true]) test(`full insertOne first chunk admits ris
   assert.notEqual(read.isError, true, JSON.stringify(read));
   for (const state of [plan, read.payload]) {
     assert.equal(state.historicalOutcome, "unknown"); assert.equal(state.state, "awaiting_human");
-    assert.equal(state.fenceReason, "executor_fence_authority_not_configured"); assert.equal(state.remoteFenceConfirmed, false);
-    assert.equal(state.humanApproved, false); assert.equal(state.humanConfirmationRequired, true); assert.equal(state.canApprove, false); assert.equal(state.replacementAllowed, false);
+    assert.equal(state.fenceReason, "human_risk_acceptance_no_external_attestation"); assert.equal(state.remoteFenceConfirmed, false);
+    assert.equal(state.humanApproved, false); assert.equal(state.humanConfirmationRequired, true); assert.equal(state.canApprove, true); assert.equal(state.replacementAllowed, false);
     assert.equal(state.binding.requestDigest, prepareRequestDigest(original));
   }
   assert.equal((await propose()).payload.riskPlanId, plan.riskPlanId);

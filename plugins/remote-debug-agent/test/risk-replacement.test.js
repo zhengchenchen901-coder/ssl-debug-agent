@@ -33,7 +33,10 @@ for (const bundled of [false, true]) test(`public MCP and ${bundled ? "bundled" 
   const service = new PrivacyService({ directory, key, fenceAuthority: { trustFile, receiptDirectory }, ...(bundled ? { workerPath: path.resolve(import.meta.dirname, "../runtime/agent/privacy-worker.cjs") } : {}) });
   const calls = []; let nativeChecks = 0;
   const workerManager = { publicInstances: () => registry.list(), callInstance: async (id, route, request) => {
-    calls.push(route); assert.equal(route, "/mongodb/bulk/prepare", "only approved preparation is dispatched");
+    if (route === "/mongodb/bulk/job") return { ok: true, ...await h.run({ action: "get", jobId: request.jobId }) };
+    calls.push(route);
+    if (route === "/mongodb/bulk/retire") { const { operationId, timeoutMs, deadlineAt, ...body } = request; return { ok: true, ...await h.run({ action: "retire", ...body }) }; }
+    assert.equal(route, "/mongodb/bulk/prepare", "only approved preparation is dispatched");
     const { operationId, timeoutMs, deadlineAt, ...chunk } = request;
     return { ok: true, instanceId: id, ...await h.run({ action: "upload", chunk }) };
   } };
@@ -57,17 +60,15 @@ for (const bundled of [false, true]) test(`public MCP and ${bundled ? "bundled" 
   const proposal = await disposition({ mode: "prepare_risk", dispositionId: base.dispositionId, reviewHash: base.reviewHash, originalRequest: original, replacementRequest: replacement });
   assert.notEqual(proposal.isError, true, JSON.stringify(proposal)); const plan = proposal.payload;
   assert.equal(plan.humanConfirmationRequired, true); assert.equal(plan.remoteFenceConfirmed, false); assert.equal(calls.length, 0);
+  assert.equal(plan.approvalPolicy, "human-risk-acceptance-v2");
+  assert.equal(plan.canApprove, true);
   const unapproved = await disposition({ mode: "create_replacement", riskPlanId: plan.riskPlanId, reviewHash: plan.reviewHash });
   assert.equal(unapproved.payload.error.code, "BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
   for (const extra of [{ humanApproved: true }, { actor: { username: "admin" } }, { fenceReceipt: {} }]) {
     assert.equal((await disposition({ mode: "create_replacement", riskPlanId: plan.riskPlanId, reviewHash: plan.reviewHash, ...extra })).isError, true);
   }
-  const issuedAt = Date.now(), payload = { issuer: "fixture-authority", receiptId: "isolated-permanent-fence", riskPlanId: plan.riskPlanId,
-    challengeDigest: digest(plan.fenceChallenge), issuedAt, validUntil: issuedAt + 1800000, protection: "permanent", historicalOutcome: "unknown", inFlightTransactions: "terminal", restartSafe: true,
-    legacyCredentialsRevoked: true, oldSessionsDrained: true, oldQueuesDrained: true, coverage: [...FENCE_COVERAGE] };
-  fs.writeFileSync(path.join(receiptDirectory, plan.riskPlanId + ".json"), JSON.stringify({ version: 1, payload, signature: sign(null, Buffer.from(JSON.stringify(payload)), authority.privateKey).toString("base64") }), { mode: 0o600 });
   const updated = (await disposition({ mode: "inspect_risk", riskPlanId: plan.riskPlanId })).payload;
-  assert.equal(updated.canApprove, true); assert.equal(updated.remoteFenceConfirmed, true); assert.equal(updated.humanApproved, false);
+  assert.equal(updated.canApprove, true); assert.equal(updated.remoteFenceConfirmed, false); assert.equal(updated.humanApproved, false);
   assert.equal((await disposition({ mode: "create_replacement", riskPlanId: plan.riskPlanId, reviewHash: updated.reviewHash })).isError, true);
   const workbench = app.locals.manualWorkbench;
   await workbench.store.register("admin", "isolated-risk-mcp-password-123");
@@ -80,13 +81,13 @@ for (const bundled of [false, true]) test(`public MCP and ${bundled ? "bundled" 
   assert.notEqual(created.isError, true, JSON.stringify(created)); assert.equal(created.payload.result.jobId, replacement.jobId);
   assert.equal(created.payload.historicalOutcome, "unknown"); assert.equal(created.payload.humanApproved, true);
   await disposition({ mode: "create_replacement", riskPlanId: plan.riskPlanId, reviewHash: approved.value.reviewHash });
-  assert.deepEqual(calls, ["/mongodb/bulk/prepare"]);
+  assert.deepEqual(calls, ["/mongodb/bulk/retire", "/mongodb/bulk/prepare", "/mongodb/bulk/retire"]);
   const sealed = await peer.call("remote_debug_mongodb_prepare_bulk", { ...replacement, chunkIndex: 1, units: [], endOfUpload: true });
   assert.notEqual(sealed.isError, true, JSON.stringify(sealed)); assert.equal(sealed.payload.status, "prepared");
   const state = (await disposition({ mode: "inspect_risk", riskPlanId: plan.riskPlanId })).payload;
   assert.equal(state.state, "prepared"); assert.equal(state.planHash, sealed.payload.planHash);
   const deniedOld = await peer.call("remote_debug_mongodb_prepare_bulk", original);
-  assert.equal(deniedOld.payload.error.code, "BUSINESS_DISPOSITION_QUARANTINED");
+  assert.equal(deniedOld.payload.error.code, "BUSINESS_ORIGINAL_JOB_TERMINATED");
   assert.equal(h.rows("business", "orders").get("order-1").count, 0); assert.equal(h.state.events.some(x => x.action === "businessWrite"), false);
   const oldState = await peer.call("remote_debug_mongodb_recover_operation", { ...target, intentId: old.id });
   assert.equal(oldState.payload.state, "uncertain");

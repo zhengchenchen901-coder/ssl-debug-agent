@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "scope": "reviewable preview only; no real tool draft or migration plan created",
+  "target": {
+    "instanceId": "default",
+    "database": "yenneferbak"
+  },
+  "probe": {
+    "tool": "remote_debug_prepare_command_draft",
+    "arguments": {
+      "instanceId": "default",
+      "purpose": "只读执行边界探测；不读取配置、凭据、业务数据，不迁移、不签发",
+      "commands": [
+        "node -e 'console.log(JSON.stringify((function executorBoundaryProbe() {\n  const fs = require(\"fs\"), os = require(\"os\");\n  let procReadable = true, processes = 0, ownUidProcesses = 0, qemuProcesses = 0, mongoProcesses = 0;\n  const uid = process.getuid ? process.getuid() : null;\n  try {\n    for (const id of fs.readdirSync(\"/proc\")) {\n      if (!/^[0-9]+$/.test(id)) continue;\n      try {\n        const s = fs.statSync(\"/proc/\" + id), comm = fs.readFileSync(\"/proc/\" + id + \"/comm\", \"utf8\").trim();\n        processes++;\n        if (s.uid === uid) ownUidProcesses++;\n        if (/^qemu(-system|-kvm)/.test(comm)) qemuProcesses++;\n        if (comm === \"mongod\") mongoProcesses++;\n      } catch (error) { if (error.code !== \"ENOENT\" && error.code !== \"ESRCH\") procReadable = false; }\n    }\n  } catch { procReadable = false; }\n  return { version: 1, readOnly: true, platform: os.platform(), uid, procReadable,\n    processes, ownUidProcesses, qemuProcesses, mongoProcesses,\n    remoteFenceConfirmed: false, canIssueReceipt: false,\n    constraints: [\"ssh_helper_cannot_revoke_its_own_execution_boundary\",\n      \"process_counts_do_not_identify_database_topology_or_authenticated_sessions\",\n      \"independent_owner_inventory_and_privileged_authority_required\"] };\n})()));'"
+      ]
+    },
+    "expectedCommandHash": "d428ca2edd71a837b5e43b23e12b979bef21806fcaa7848362ed4c67128b6f54",
+    "sourceSha256": "c8ef885fd5851d09c913f855ca542f04eb08fb08612c3dd99b016752f0378282",
+    "actualDraftId": null,
+    "actualDraftExpiry": null,
+    "remoteExecutionPerformed": false,
+    "nextGate": "review exact immutable draft; Node rejected for automatic execution; explicit 使用命令 required"
+  },
+  "migration": {
+    "topologyVerified": false,
+    "profileApplicability": "unknown; shared or external state not supported",
+    "migrationId": null,
+    "reviewHash": null,
+    "canExecute": false,
+    "impactIfApplicable": "all old execution AND database VMs permanently offline; raw disks in private root vault; no replacement service provisioned",
+    "separateAuthorizations": [
+      "candidate installation/enablement",
+      "exact topology and migration/outage scope",
+      "original disposition quarantine",
+      "independent administrator risk approval with fresh native OS owner verification",
+      "create_replacement",
+      "normal business execution"
+    ]
+  },
+  "realCase": {
+    "historicalOutcome": "unknown",
+    "observedRiskPlanId": "0f1a8ff13eef46527ead6f1bf70466b46d65adaa90251fa258ad980527989701",
+    "observedRiskPlanExpiry": "2026-10-26T16:06:38.255+08:00",
+    "liveStateRecheckedThisTask": false,
+    "mustReinspectAndRefreshIfExpired": true,
+    "oldIntentProtectionCleared": false,
+    "replacementJobCreated": false,
+    "businessWrites": 0,
+    "authorizedBusinessScope": "33 records / 33 recipients / 2097 points / 36 original batches; exclude 52 records / 4488 points and redeemed 80 points"
+  }
+}

@@ -4,8 +4,8 @@ import { ManualWorkbench } from "../manual-workbench.js";
 import { riskReplacementFixture } from "./helpers/risk-replacement-fixture.js";
 const PASSWORD = "isolated-risk-admin-password-123";
 const unixOnly = { skip: process.platform === "win32" };
-async function fixture(t) {
-  const f = riskReplacementFixture(t, { liveClock: true }), plan = f.prepare(); f.issue(plan);
+async function fixture(t, options = {}) {
+  const f = riskReplacementFixture(t, { liveClock: true, humanRisk: options.humanRisk }), plan = f.prepare(); if (!options.humanRisk) f.issue(plan);
   let nativeChecks = 0, nativeAction = async () => {};
   const registry = { getInternal: id => id === f.instance.id ? { ...f.instance, enabled: true } : undefined };
   const workbench = new ManualWorkbench({ registry, dataDirectory: f.root,
@@ -59,4 +59,24 @@ test("risk review displays exact immutable plan and never exposes business preim
   assert.equal(response.body.operationCount, 2); assert.equal(response.body.unitCount, 1);
   assert.equal(response.body.historicalOutcome, "unknown"); assert.equal(response.body.binding.intentId, f.old.id);
   assert.equal(response.body.binding.originalOperationId, null);
+});
+
+test("v2 human workbench can approve without an external receipt or whole-instance quarantine", unixOnly, async t => {
+  const f = await fixture(t, { humanRisk: true }), review = await f.review();
+  assert.equal(review.body.canApprove, true); assert.equal(review.body.remoteFenceConfirmed, false);
+  assert.equal(review.body.approvalPolicy, "human-risk-acceptance-v2");
+  assert.equal(review.body.legacyInFlightOutcome, "unknown");
+  const result = await f.approveUI(review.body);
+  assert.equal(result.status, 200); assert.equal(result.body.acceptedResidualRisk, true);
+  assert.equal(result.body.originalTaskState, "terminated_unknown"); assert.equal(f.nativeChecks, 1);
+  assert.equal(f.store.db.prepare("SELECT count(*) n FROM records WHERE kind='disposition_hold'").get().n, 0);
+  assert.equal(f.requests.length, 0);
+});
+
+test("v2 native prompt cannot approve after the enrolled target changes", unixOnly, async t => {
+  const f = await fixture(t, { humanRisk: true }), review = await f.review();
+  f.nativeAction = async () => { f.instance.host = "changed.fixture.invalid"; };
+  const result = await f.approveUI(review.body);
+  assert.equal(result.status, 401); assert.equal(result.body.error.code, "MANUAL_SESSION_EXPIRED"); assert.equal(f.inspect(review.body).humanApproved, false);
+  assert.equal(f.store.db.prepare("SELECT count(*) n FROM records WHERE kind='risk_job_retirement'").get().n, 0);
 });

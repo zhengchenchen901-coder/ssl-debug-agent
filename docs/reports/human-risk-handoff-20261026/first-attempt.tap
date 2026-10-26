@@ -1,0 +1,91 @@
+TAP version 13
+# (node:9135) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: independent human review accepts unknown history with no receipt or instance quarantine
+ok 1 - independent human review accepts unknown history with no receipt or instance quarantine
+  ---
+  duration_ms: 99.113291
+  type: 'test'
+  ...
+# Subtest: proposal cannot upload before review; approval closes only the original job across contexts
+ok 2 - proposal cannot upload before review; approval closes only the original job across contexts
+  ---
+  duration_ms: 18.226792
+  type: 'test'
+  ...
+# Subtest: remote retirement failure keeps original closed and creates no replacement intent or upload
+ok 3 - remote retirement failure keeps original closed and creates no replacement intent or upload
+  ---
+  duration_ms: 18.725083
+  type: 'test'
+  ...
+# Subtest: lost remote retirement response resumes the same termination and unique replacement after restart
+ok 4 - lost remote retirement response resumes the same termination and unique replacement after restart
+  ---
+  duration_ms: 91.680917
+  type: 'test'
+  ...
+# Subtest: remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+not ok 5 - remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+  ---
+  duration_ms: 92.771041
+  type: 'test'
+  location: '/Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/human-risk-handoff.test.js:69:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      Comparison {
+    +   code: 'MONGODB_BULK_UNKNOWN_FIELD'
+    -   code: 'MONGODB_BULK_JOB_RETIRED'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'MONGODB_BULK_JOB_RETIRED'
+  actual:
+  error: 'bulk chunk contains unsupported fields'
+  stack: |-
+    operationError (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/operation.js:46:10)
+    bulkError (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:47:17)
+    assertKnownFields (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:64:70)
+    normalizeMongoBulkChunk (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:338:3)
+    Object.run (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/helpers/bulk-sandbox-fixture.js:103:68)
+    TestContext.<anonymous> (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/human-risk-handoff.test.js:76:30)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/human-risk-handoff.test.js:76:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: remote acknowledgment is mandatory; public caller cannot inject a termination result
+ok 6 - remote acknowledgment is mandatory; public caller cannot inject a termination result
+  ---
+  duration_ms: 17.994208
+  type: 'test'
+  ...
+# Subtest: human-created replacement seals normally, admits only its immutable plan, never reopens original
+ok 7 - human-created replacement seals normally, admits only its immutable plan, never reopens original
+  ---
+  duration_ms: 155.993666
+  type: 'test'
+  ...
+# Subtest: two proposals cannot both be human-approved for one original; expiry requires fresh review
+ok 8 - two proposals cannot both be human-approved for one original; expiry requires fresh review
+  ---
+  duration_ms: 82.562583
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 623.911208

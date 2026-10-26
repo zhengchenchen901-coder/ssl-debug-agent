@@ -1559,7 +1559,7 @@ export function createApp(options = {}) {
       let result;
       if (action === "upload") {
         result = await runMongoBulk({ action: "upload", chunk: raw }, { operation: requestOperation });
-      } else if (action === "recoverUpload") {
+      } else if (action === "retire" || action === "recoverUpload") {
         result = await runMongoBulk({ ...raw, action }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk({ action, ...raw }, { operation: requestOperation });
@@ -1662,6 +1662,7 @@ export function createApp(options = {}) {
     handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
   app.post("/mongodb/mutations/recover-execution", (request, response) =>
     handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
+  app.post("/mongodb/bulk/retire", (request, response) => handleMongoBulk(request, response, "retire", "/mongodb/bulk/retire"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
   app.post("/mongodb/bulk/recover-prepare", (request, response) => handleMongoBulk(request, response, "recoverUpload", "/mongodb/bulk/recover-prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
@@ -1998,7 +1999,9 @@ export function createManagerApp(options = {}) {
   installPrivacyRoutes(app, { registry, service: options.privacyService,
     dataDirectory: path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: async (id, route, payload) => {
-      await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload);
+      // Internal to the already-approved handoff. Ordinary admissions for this
+      // old job are now closed; no Manager proxy or MCP tool exposes retire.
+      if (route !== "/mongodb/bulk/retire") await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload);
       return workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" });
     },
     directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });

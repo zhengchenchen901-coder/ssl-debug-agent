@@ -1,6 +1,6 @@
 import { privacyError } from "./privacy-key.js";
 import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
-import { replacementAdmission, riskRetirementStatus } from "./mongodb-risk-replacement.js";
+import { replacementAdmission, riskRetirementStatus, assertRiskJobAdmission } from "./mongodb-risk-replacement.js";
 
 export const DISPOSITION_CONFIRMATION = "确认隔离原意图";
 const HASH = /^[a-f0-9]{64}$/;
@@ -30,12 +30,13 @@ function targetOf(input) {
   return target;
 }
 function view(store, record) {
+  const instanceHold = !!store.get("disposition_hold", store.hash("disposition-instance-hold", record.binding.instanceId), "", "");
   return { ok: true, dispositionId: record.id, reviewHash: record.reviewHash,
     state: record.state, binding: record.binding, recordFingerprint: record.recordFingerprint,
     createdAt: record.createdAt, expiresAt: record.expiresAt, quarantinedAt: record.quarantinedAt,
-    auditId: record.auditId, localContainment: ["quarantined", "retired_unknown"].includes(record.state),
+    auditId: record.auditId, localContainment: instanceHold || ["termination_requested", "retired_unknown"].includes(record.state),
     requiresConfirmation: record.state === "review_required", confirmation: DISPOSITION_CONFIRMATION,
-    containmentScope: "instance_all_mongodb_write_admissions",
+    containmentScope: record.retirement && !instanceHold ? "original_job_managed_admissions" : "instance_all_mongodb_write_admissions",
     remoteFenceConfirmed: false, historicalOutcome: "unknown", replacementAllowed: false,
     missingRequirements: record.missingRequirements, ...riskRetirementStatus(store, record) };
 }
@@ -115,6 +116,7 @@ export function dispositionStoreAction(store, action, input, ctx, scope) {
 
 export function assertInstanceAdmission(store, instanceId, admission = {}) {
   if (typeof instanceId !== "string" || !instanceId) denied();
+  assertRiskJobAdmission(store, instanceId, admission);
   if (store.get("disposition_hold", store.hash("disposition-instance-hold", instanceId), "", "")) {
     if (replacementAdmission(store, instanceId, admission)) return { ok: true };
     throw privacyError("BUSINESS_DISPOSITION_QUARANTINED");

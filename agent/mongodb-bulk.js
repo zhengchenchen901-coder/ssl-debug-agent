@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import posixPath from "node:path/posix";
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
+import { MONGODB_JOB_RETIREMENT_RUNTIME } from "./mongodb-job-retirement-runtime.js";
 import { MONGODB_BULK_RUNTIME } from "./mongodb-bulk-runtime.js";
 import { MONGODB_TECHNICAL_RECEIPTS_COLLECTION, MONGODB_TTL_POLICY_SCRIPT } from "./mongodb-ttl-policy.js";
 import { MONGODB_SANDBOX_RUNTIME } from "./mongodb-sandbox-runtime.js";
@@ -404,6 +405,7 @@ export function buildMongoBulkScript(request, config, normalizationOptions = {})
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
+    MONGODB_JOB_RETIREMENT_RUNTIME,
     "var __ttlFail = __bulkFail;",
     MONGODB_TTL_POLICY_SCRIPT,
     MONGODB_SANDBOX_RUNTIME,
@@ -430,6 +432,7 @@ function parseMarker(stdout) {
 function normalizeActionRequest(input, config) {
   const action = input.action;
   const fields = {
+    retire: ["jobId", "replacementJobId", "riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest", "approvalAuditId"],
     recoverUpload: ["jobId", "database", "chunkIndex", "chunkHash", "endOfUpload"],
     sandboxStatus: ["offset", "limit"], sandboxExport: ["jobId", "limit"], sandboxPrepareCleanup: ["jobId"], sandboxCleanup: ["jobId", "cleanupHash", "confirmation"],
     upload: input.chunk ? ["chunk"] : ["jobId", "database", "chunkIndex", "purpose", "rollbackTtlMs", "units", "chunkHash", "endOfUpload"],
@@ -440,6 +443,11 @@ function normalizeActionRequest(input, config) {
     rollbackStart: ["jobId", "planHash", "leaseId", "confirmation"], executeStart: ["jobId", "planHash", "leaseId", "confirmation"],
   };
   if (fields[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields[action]], "bulk action");
+  if (action === "retire") {
+    if (![input.jobId, input.replacementJobId].every(x => typeof x === "string" && JOB_ID_PATTERN.test(x)) || input.jobId === input.replacementJobId ||
+        ![input.riskPlanId, input.dispositionId, input.originalRequestDigest, input.replacementRequestDigest, input.approvalAuditId].every(x => typeof x === "string" && HASH_PATTERN.test(x))) throw bulkError("invalid exact reviewed retirement identity", "MONGODB_BULK_RETIREMENT_INVALID");
+    return { ...input, action };
+  }
   if (action === "recoverUpload") {
     if (!JOB_ID_PATTERN.test(input.jobId || "") || input.database !== config.database || !Number.isInteger(input.chunkIndex) ||
         input.chunkIndex < 0 || input.chunkIndex > 9999 || !HASH_PATTERN.test(input.chunkHash || "") || typeof input.endOfUpload !== "boolean") {
@@ -521,7 +529,7 @@ function normalizeActionRequest(input, config) {
 
 export async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
-  const recoveryAction = input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" ||
+  const recoveryAction = input.action === "retire" || input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" ||
     input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" ||
     input.action === "control" && input.command === "pause" ||
     input.action === "dispatch" && input.phase === "rollback" ||
@@ -666,6 +674,10 @@ export class MongoBulkJobRunner {
     try {
       while (true) {
         const state = await this.run({ action: "get", jobId: job.jobId, includePlan: true }, { priority: "control", timeoutMs: 60_000 });
+        if (state.status === "terminated_unknown") {
+          if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "stopped", phase: "terminated_unknown", inFlight: false });
+          return;
+        }
         if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "running", phase: state.nextBatch < state.batchCount ? "executing" : "verifying",
           progress: Object.fromEntries(["batchCount", "nextBatch", "nextVerifyBatch", "committedBatchCount", "verifiedBatchCount", "operationCount"].filter((key) => Number.isFinite(state[key])).map((key) => [key, state[key]])) });
         if (state.desiredState === "pause" || state.status === "pause_requested" || state.status === "recovery_required" || state.status === "paused" && state.desiredState !== "running") {

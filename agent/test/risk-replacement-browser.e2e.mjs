@@ -6,10 +6,13 @@ import path from "node:path";
 import { chromium } from "playwright-core";
 import { ManualWorkbench } from "../manual-workbench.js";
 import { riskReplacementFixture } from "./helpers/risk-replacement-fixture.js";
-const cleanups = [], t = { after: fn => cleanups.push(fn) }, f = riskReplacementFixture(t, { liveClock: true });
+const cleanups = [], t = { after: fn => cleanups.push(fn) }, f = riskReplacementFixture(t, { liveClock: true, humanRisk: true });
 let workbench, browser, nativePrompts = 0;
 try {
-  const plan = f.prepare(); f.issue(plan);
+  await f.h.initialize();
+  const plan = await f.public({ mode: "prepare_risk", dispositionId: f.parent.dispositionId, reviewHash: f.parent.reviewHash,
+    originalRequest: f.original, replacementRequest: f.candidate,
+    reviewMemo: "合成夹具：当前未观察到补偿，旧任务准备回执缺失。历史及在途结果无法确定，需人工接受迟到提交和重复补偿风险。" });
   workbench = new ManualWorkbench({ registry: { getInternal: id => id === f.instance.id ? { ...f.instance, enabled: true } : undefined }, dataDirectory: f.root,
     ownerVerification: { status: () => ({ supported: true }), verify: async () => { nativePrompts++; } }, riskReview: (action, input) => f.human(action, input),
     openTerminal: (_instance, options) => { const terminal = { close() {}, write() {}, resize() {}, pause() {}, resume() {} }; queueMicrotask(options.onReady); return terminal; } });
@@ -38,7 +41,7 @@ try {
   await page.screenshot({ path: path.join(output, "human-approved-no-job.png"), fullPage: true });
   await page.locator("#logoutButton").click(); await page.locator("#loginPanel").waitFor({ state: "visible" });
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ ok: true, realBrowser: true, realIndependentAdminHttp: true, nativeOwnerDialog: "mocked", issuer: "fixture", businessWrites: 0, replacementJobsCreated: 0, output }));
+  console.log(JSON.stringify({ ok: true, realBrowser: true, realIndependentAdminHttp: true, nativeOwnerDialog: "mocked", externalReceiptRequired: false, businessWrites: 0, replacementJobsCreated: 0, output }));
 } finally {
   await browser?.close(); await workbench?.close(); for (const cleanup of cleanups.reverse()) await cleanup();
 }

@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-26T07:39:56.183Z",
+  "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-executor-retirement/workspace.json",
+  "status": "blocked",
+  "error": "缺少匹配的 be-jest/jest-unit 执行适配器",
+  "supportedAdapters": [
+    "be-jest",
+    "jest-unit"
+  ],
+  "actualFrameworks": [
+    "node:test",
+    "python-unittest"
+  ],
+  "missing": [
+    "matching execution adapter",
+    "versioned assets/input/state/assertion bindings",
+    "immutable dependency image and isolation contract"
+  ],
+  "prepareExecuted": false,
+  "executeExecuted": false,
+  "jobId": null,
+  "targetCoverage": "unknown"
+}

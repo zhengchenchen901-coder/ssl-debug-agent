@@ -11,8 +11,8 @@ import { riskStoreAction, humanRiskStoreAction, recordReplacementPrepared } from
 const REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 const DAY = 86400000;
 export class PrivacyStore {
-  constructor({ directory, key, now = Date.now, fault, fenceAuthority } = {}) {
-    this.now = now; this.fault = fault;
+  constructor({ directory, key, now = Date.now, fault, fenceAuthority, riskPolicy } = {}) {
+    this.now = now; this.fault = fault; this.riskPolicy = riskPolicy;
     this.fenceAuthority = fenceAuthority || { trustFile: process.env.REMOTE_DEBUG_EXECUTOR_TRUST_FILE, receiptDirectory: process.env.REMOTE_DEBUG_EXECUTOR_RECEIPT_DIRECTORY };
     this.directory = path.resolve(directory);
     let windowsExisting;

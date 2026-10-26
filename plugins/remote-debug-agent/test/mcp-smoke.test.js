@@ -1014,7 +1014,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
   const properties = schema.properties || {};
   const required = schema.required || [];
   for (const propertyName of Object.keys(properties)) {
-    if (path === "remote_debug_mongodb_disposition.inputSchema" && ["intentId", "dispositionId", "riskPlanId", "reviewHash", "confirmation", "replacementRequest"].includes(propertyName)) continue; // Required by its mode-specific oneOf.
+    if (path === "remote_debug_mongodb_disposition.inputSchema" && ["intentId", "dispositionId", "riskPlanId", "reviewHash", "confirmation", "replacementRequest", "reviewMemo"].includes(propertyName)) continue; // Required by its mode-specific oneOf.
     if ([
       "instanceId",
       "timeoutMs",

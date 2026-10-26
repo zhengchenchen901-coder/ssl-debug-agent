@@ -1,0 +1,260 @@
+{
+  "retirementFreeze": {
+    "snapshotId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "workflowId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "projectId": "ssl-debug-agent",
+    "stage": "input-frozen",
+    "base": {
+      "projectId": "ssl-debug-agent",
+      "kind": "git",
+      "revision": "970970a225f9eb7e7b58496455c019b12849d264",
+      "tree": "f05ac5b0e446f80ddf28abfda03d05ca4222aeb2",
+      "contentHash": "cfca0fad6c9fdd7553d55d4d436a51d9803a6403674ac8f44020ed49f0d3b3c2"
+    },
+    "target": {
+      "projectId": "ssl-debug-agent",
+      "kind": "workspace",
+      "revision": "970970a225f9eb7e7b58496455c019b12849d264",
+      "tree": "f05ac5b0e446f80ddf28abfda03d05ca4222aeb2",
+      "contentHash": "6040a2fc15d221de5f73e95c21e66719ada224f43f8cd9fa026abe911bf4f2df"
+    },
+    "captureVerified": true,
+    "attempts": 1,
+    "captureMs": 472,
+    "modelCalls": 0,
+    "artifact": ".testflow/frozen/e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c.json"
+  },
+  "retirementAnalysis": {
+    "schemaVersion": 1,
+    "runId": "4fdd4dc9-5221-4a44-86b5-db8eac97f071",
+    "projectId": "ssl-debug-agent",
+    "stage": "impact-analyzed",
+    "modelCalls": 0,
+    "snapshotId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "workflowId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "captureVerified": true,
+    "fixedInputVerified": true,
+    "workspaceStateUnchanged": true,
+    "base": {
+      "projectId": "ssl-debug-agent",
+      "kind": "git",
+      "revision": "970970a225f9eb7e7b58496455c019b12849d264",
+      "tree": "f05ac5b0e446f80ddf28abfda03d05ca4222aeb2",
+      "contentHash": "cfca0fad6c9fdd7553d55d4d436a51d9803a6403674ac8f44020ed49f0d3b3c2"
+    },
+    "target": {
+      "projectId": "ssl-debug-agent",
+      "kind": "workspace",
+      "revision": "970970a225f9eb7e7b58496455c019b12849d264",
+      "tree": "f05ac5b0e446f80ddf28abfda03d05ca4222aeb2",
+      "contentHash": "6040a2fc15d221de5f73e95c21e66719ada224f43f8cd9fa026abe911bf4f2df"
+    },
+    "counts": {
+      "files": 43,
+      "directSymbols": 107,
+      "impactedSymbols": 1432,
+      "candidateEntries": 13,
+      "diagnostics": 3869
+    },
+    "metrics": {
+      "phasesMs": {
+        "snapshot": 157.3900830000639,
+        "indexes": 13205.774250000017,
+        "historical-changes": 115.20154200005345,
+        "impact": 304.56616599997506,
+        "persist": 149.42674999986775
+      },
+      "totalMs": 13932.377250000136,
+      "peakRssBytes": 1630289920,
+      "heapUsedBytes": 811170040
+    },
+    "indexStats": {
+      "base": {
+        "parsedFiles": 217,
+        "reusedFiles": 0
+      },
+      "target": {
+        "parsedFiles": 16,
+        "reusedFiles": 206
+      },
+      "history": {
+        "changedFiles": 0,
+        "parsedFiles": 0,
+        "reusedFiles": 0,
+        "fullIndexes": 0,
+        "cgbScans": 0
+      }
+    },
+    "adapter": {
+      "name": "typescript-index-v6",
+      "version": "1",
+      "typescript": "5.9.3"
+    },
+    "completeness": "partial-static",
+    "truncated": false,
+    "artifacts": {
+      "changeSet": ".testflow/runs/4fdd4dc9-5221-4a44-86b5-db8eac97f071/change-set.json",
+      "impact": ".testflow/runs/4fdd4dc9-5221-4a44-86b5-db8eac97f071/impact.json",
+      "manifest": ".testflow/runs/4fdd4dc9-5221-4a44-86b5-db8eac97f071/manifest.json"
+    },
+    "flowId": "a96b6855-492c-4821-a64a-4c9d9bb50655"
+  },
+  "retirementScope": {
+    "flowId": "a96b6855-492c-4821-a64a-4c9d9bb50655",
+    "stage": "scope-selected",
+    "scopeId": "64235effe46f870056efe7c4df27b1e92c547345e97adba6fe550899f9b5d54d",
+    "workflowId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "projectId": "ssl-debug-agent",
+    "sourceRunId": "4fdd4dc9-5221-4a44-86b5-db8eac97f071",
+    "modelCalls": 0,
+    "counts": {
+      "fullImpact": 1432,
+      "functions": 48,
+      "selectedChanges": 72,
+      "outOfScopeChanges": 0,
+      "deferredCalls": 83
+    },
+    "artifact": ".testflow/scopes/64235effe46f870056efe7c4df27b1e92c547345e97adba6fe550899f9b5d54d/analysis-scope.json",
+    "entryFunctionIds": [
+      "agent/executor-boundary-probe.js::fn:executorBoundaryProbe",
+      "agent/mongodb-fence-authority.js::fn:inspectFenceAuthority",
+      "agent/mongodb-risk-replacement.js::fn:riskView",
+      "authority/install-verifier.mjs::fn:validateEnrollment",
+      "authority/install-verifier.mjs::fn:validateReceipt"
+    ],
+    "functionIds": [
+      "agent/executor-boundary-probe.js::fn:executorBoundaryProbe",
+      "agent/mongodb-fence-authority.js::fn:fenceChallenge",
+      "agent/mongodb-fence-authority.js::fn:inspectFenceAuthority",
+      "agent/mongodb-fence-authority.js::fn:readOwnedFile",
+      "agent/mongodb-fence-authority.js::symbol:digest/fn:digest",
+      "agent/mongodb-risk-replacement.js::fn:humanHash",
+      "agent/mongodb-risk-replacement.js::fn:riskView",
+      "agent/public/manual.js::fn:renderRiskReview",
+      "agent/public/manual.js::symbol:element/fn:element",
+      "agent/scripts/build-runtime.mjs::fn:listArtifacts",
+      "agent/security.js::fn:securityCapabilities",
+      "agent/ssh.js::fn:quotePosixArgument",
+      "authority/install-verifier.mjs::fn:callback:catch:0:e3b0c44298fc",
+      "authority/install-verifier.mjs::fn:main",
+      "authority/install-verifier.mjs::fn:main/fn:callback:some:0:e3b0c44298fc",
+      "authority/install-verifier.mjs::fn:publish",
+      "authority/install-verifier.mjs::fn:readJson",
+      "authority/install-verifier.mjs::fn:secureTree",
+      "authority/install-verifier.mjs::fn:secureTree/fn:callback:reduce:0:a323a451fde2",
+      "authority/install-verifier.mjs::fn:validateEnrollment",
+      "authority/install-verifier.mjs::fn:validateEnrollment/fn:callback:every:0:e3b0c44298fc",
+      "authority/install-verifier.mjs::fn:validateReceipt",
+      "authority/install-verifier.mjs::fn:validateReceipt/fn:callback:every:0:e3b0c44298fc",
+      "authority/install-verifier.mjs::symbol:assert/fn:assert",
+      "plugins/remote-debug-agent/output-contracts.js::symbol:fields/fn:fields",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:callback:catch:0:e3b0c44298fc",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:main",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:main/fn:callback:some:0:e3b0c44298fc",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:publish",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:readJson",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:secureTree",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:secureTree/fn:callback:reduce:0:a323a451fde2",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:validateEnrollment",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:validateEnrollment/fn:callback:every:0:e3b0c44298fc",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:validateReceipt",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::fn:validateReceipt/fn:callback:every:0:e3b0c44298fc",
+      "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs::symbol:assert/fn:assert",
+      "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs::fn:fenceChallenge",
+      "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs::fn:humanHash",
+      "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs::fn:inspectFenceAuthority",
+      "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs::fn:readOwnedFile",
+      "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs::fn:riskView",
+      "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs::symbol:digest/fn:digest",
+      "plugins/remote-debug-agent/runtime/agent/public/manual.js::fn:renderRiskReview",
+      "plugins/remote-debug-agent/runtime/agent/server.cjs::fn:securityCapabilities",
+      "plugins/remote-debug-agent/runtime/agent/server.cjs::symbol:fields/fn:fields",
+      "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs::fn:securityCapabilities",
+      "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs::symbol:fields/fn:fields"
+    ]
+  },
+  "retirementGraph": {
+    "schemaVersion": 1,
+    "projectId": "ssl-debug-agent",
+    "runId": "15354d50-2787-47cd-9ef8-1239f942aa3c",
+    "sourceRunId": "4fdd4dc9-5221-4a44-86b5-db8eac97f071",
+    "stage": "graph-built",
+    "scopeId": "64235effe46f870056efe7c4df27b1e92c547345e97adba6fe550899f9b5d54d",
+    "workflowId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "modelCalls": 0,
+    "completeness": "partial-static",
+    "truncated": true,
+    "counts": {
+      "functions": 71,
+      "blocks": 3711,
+      "callSites": 306,
+      "interproceduralEdges": 138,
+      "diagnostics": 471
+    },
+    "cacheStats": {
+      "builtFunctions": 71,
+      "reusedFunctions": 0
+    },
+    "metrics": {
+      "phasesMs": {
+        "load-inputs": 1293.878000000026,
+        "functions": 1059.5384169998579,
+        "link-evidence": 2.3783330000005662,
+        "persist": 60.6215000001248
+      },
+      "totalMs": 2416.453208999941,
+      "peakRssBytes": 1630289920,
+      "heapUsedBytes": 488889400
+    },
+    "artifacts": {
+      "impactGraph": ".testflow/runs/15354d50-2787-47cd-9ef8-1239f942aa3c/impact-graph.json",
+      "manifest": ".testflow/runs/15354d50-2787-47cd-9ef8-1239f942aa3c/manifest.json"
+    },
+    "flowId": "a96b6855-492c-4821-a64a-4c9d9bb50655"
+  },
+  "retirementPlan": {
+    "schemaVersion": 1,
+    "runId": "75047e15-2d5b-4a7c-a2a4-5f8baa857959",
+    "projectId": "ssl-debug-agent",
+    "stage": "candidate-plan",
+    "scopeId": "64235effe46f870056efe7c4df27b1e92c547345e97adba6fe550899f9b5d54d",
+    "outOfScopeChanges": 0,
+    "workflowId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "metrics": {
+      "phasesMs": {
+        "load-graph": 130.6712080000434,
+        "targets-assets": 84.19124999991618,
+        "search": 38.828750000102445,
+        "bindings": 0.17987499991431832,
+        "persist": 29.481374999973923
+      },
+      "totalMs": 283.3873330000788,
+      "peakRssBytes": 1630289920,
+      "heapUsedBytes": 118675648
+    },
+    "sourceGraphRunId": "15354d50-2787-47cd-9ef8-1239f942aa3c",
+    "modelCalls": 0,
+    "executable": false,
+    "bounded": true,
+    "counts": {
+      "targets": 1733,
+      "paths": 3,
+      "assets": 697,
+      "confirmedAssociations": 0,
+      "importedEvidence": 0,
+      "unplannedTargets": 1724,
+      "uncoveredTargets": 1733,
+      "unboundPaths": 3,
+      "verifiedPaths": 0,
+      "searchStates": 10000
+    },
+    "artifacts": {
+      "testPlan": ".testflow/runs/75047e15-2d5b-4a7c-a2a4-5f8baa857959/test-plan.json",
+      "testAssets": ".testflow/runs/75047e15-2d5b-4a7c-a2a4-5f8baa857959/test-assets.json",
+      "coverageGaps": ".testflow/runs/75047e15-2d5b-4a7c-a2a4-5f8baa857959/coverage-gaps.json",
+      "missingCases": ".testflow/runs/75047e15-2d5b-4a7c-a2a4-5f8baa857959/missing-cases.json",
+      "manifest": ".testflow/runs/75047e15-2d5b-4a7c-a2a4-5f8baa857959/manifest.json"
+    },
+    "flowId": "a96b6855-492c-4821-a64a-4c9d9bb50655"
+  }
+}

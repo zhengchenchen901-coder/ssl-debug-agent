@@ -62,8 +62,8 @@ function __bulkAllowedFile(filePath, transient) {
   if (__path.normalize(filePath) !== filePath || __path.isAbsolute(relative) || parts.length > 2) return false;
   var name = parts[parts.length - 1];
   if (transient) name = name.replace(/\.[0-9]+\.[a-f0-9]{16,24}\.tmp$/, "");
-  if (parts.length === 1) return /^(\.storage-v1\.json|\.worker-lease\.json|\.worker-lease\.lock|\.storage-quota\.lock)$/.test(name);
-  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(parts[0]) && /^(manifest|plan|control)\.json$|^(chunk|batch|after|differences)-[0-9]+\.json$|^events\.jsonl$|^\.(manifest|prepare)\.lock$/.test(name);
+  if (parts.length === 1) return /^(\.storage-v1\.json|\.worker-lease\.json|\.worker-lease\.lock|\.storage-quota\.lock|\.risk-retirement\.lock)$/.test(name);
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(parts[0]) && /^(manifest|plan|control|retirement)\.json$|^(chunk|batch|after|differences)-[0-9]+\.json$|^events\.jsonl$|^\.(manifest|prepare)\.lock$/.test(name);
 }
 
 function __bulkGuardFile(filePath, transient) {
@@ -109,7 +109,7 @@ function __bulkQuotaWrite(filePath, bytes, action) {
   __bulkGuardFile(filePath);
   return __bulkWithLock(__path.join(__bulkRoot(), ".storage-quota.lock"), function () {
     var usage = __bulkStorageUsage(), existing = __bulkGuardFile(filePath);
-    var control = /\/(manifest|control)\.json$|\/\.worker-lease\.json$|\/events\.jsonl$/.test(filePath);
+    var control = /\/(manifest|control|retirement)\.json$|\/\.worker-lease\.json$|\/events\.jsonl$/.test(filePath);
     var limit = __storageLimits.maxBytes + (control ? __storageLimits.controlReserveBytes : 0);
     var filesLimit = __storageLimits.maxFiles + (control ? __storageLimits.controlReserveFiles : 0);
     var jobFiles = __path.dirname(filePath) === __bulkRoot() ? 0 : __fs.readdirSync(__path.dirname(filePath)).length;
@@ -238,6 +238,7 @@ function __bulkManifest(jobId, allowMissing) {
     if (allowMissing) return null;
     __bulkFail("MONGODB_BULK_JOB_NOT_FOUND", "bulk job was not found");
   }
+  __bulkAssertNotRetired(jobId);
   var manifest = __bulkReadJson(__path.join(directory, "manifest.json"), 4 * 1024 * 1024);
   if (!manifest || [1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
   return manifest;
@@ -414,6 +415,7 @@ function __bulkStatus(manifest, plan, options) {
     database: manifest.database,
     receiptStorage: __bulkReceiptStorage(manifest),
     status: current,
+    riskLineage: manifest.riskLineage,
     mode: manifest.mode || "execute",
     desiredState: manifest.desiredState || "running",
     createdAt: manifest.createdAt,
@@ -928,6 +930,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
     var now = new Date();
     var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
     await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary, businessDatabase: __config.database, scope: storage.scope }, { session: session });
+    __bulkAssertNotRetired(jobId);
     committing = true;
     await session.commitTransaction();
     return { alreadyCommitted: false, summary: summary };
@@ -983,12 +986,14 @@ async function __bulkUpload() {
   var jobId = chunk.jobId;
   var dir = __bulkEnsureJobDir(jobId);
   var accepted = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    __bulkAssertNotRetired(jobId);
     var manifestPath = __path.join(dir, "manifest.json");
     var manifest = __bulkReadJson(manifestPath, 4 * 1024 * 1024);
     var identity = { schemaVersion: 2, receiptStorage: { database: __config.sandboxDatabase, collection: __config.receiptsCollection, scope: __bulkSourceScope() }, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     if (!manifest) {
       if (chunk.chunkIndex !== 0) __bulkFail("MONGODB_BULK_CHUNK_ORDER", "the first upload chunk must have index 0");
       manifest = identity;
+      manifest.riskLineage = __bulkReplacementLineage(jobId) || undefined;
     } else if ([1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
       __bulkFail("MONGODB_BULK_JOB_CONFLICT", "jobId already belongs to a different upload plan");
     }
@@ -1365,6 +1370,8 @@ function __bulkFinish(jobId, planHash, leaseId, mode) {
 }
 
 function __bulkGet(jobId) {
+  var retired = __bulkRetirement(jobId);
+  if (retired) return __bulkRetirementView(retired);
   var manifest = __bulkManifest(jobId, false);
   var plan = manifest.planHash ? __bulkLoadPlan(jobId, manifest) : null;
   var query = __request.query || {};
@@ -1388,6 +1395,8 @@ function __bulkList() {
   var dirs = __fs.readdirSync(root).filter(function (name) { return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name); });
   var items = [];
   dirs.forEach(function (name) {
+    var retired = __bulkRetirement(name);
+    if (retired) { items.push(__bulkRetirementView(retired)); return; }
     var manifest = __bulkReadJson(__path.join(root, name, "manifest.json"), 4 * 1024 * 1024);
     if (manifest && manifest.jobId === name) {
       items.push({ jobId: name, database: manifest.database, status: manifest.status, mode: manifest.mode || "execute", createdAt: manifest.createdAt, updatedAt: manifest.updatedAt, planHash: manifest.planHash, operationCount: manifest.operationCount, unitCount: manifest.unitCount, batchCount: manifest.batchCount || 0, rollbackExpiresAt: manifest.rollbackExpiresAt, pauseReason: manifest.pauseReason });
@@ -1415,7 +1424,9 @@ async function __bulkMain() {
       return;
     }
     var jobId = __bulkJobId();
-    if (action === "upload") data = await __bulkUpload();
+    if (action !== "get" && action !== "retire") __bulkAssertNotRetired(jobId);
+    if (action === "retire") data = __bulkRetireJob(jobId);
+    else if (action === "upload") data = await __bulkUpload();
     else if (action === "recoverUpload") data = __bulkRecoverUpload();
     else if (action === "get") data = __bulkGet(jobId);
     else if (action === "executeStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "execute");

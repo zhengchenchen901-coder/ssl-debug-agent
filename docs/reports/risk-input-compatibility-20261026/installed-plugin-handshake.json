@@ -1,0 +1,10 @@
+{
+  "version": "2.4.0+codex.20261026.4",
+  "toolCount": 51,
+  "dispositionPresent": true,
+  "prepareRiskSchemaPresent": true,
+  "inspectRiskSchemaPresent": true,
+  "calledTools": [],
+  "isolation": "temporary data/auth/log directory; explicit unused loopback URL disables automatic Manager prewarm",
+  "managerRestartRequested": false
+}

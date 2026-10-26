@@ -3,6 +3,9 @@ import { bulkPreparePayload, prepareRequestDigest } from "../plugins/remote-debu
 import { digest, fenceChallenge, inspectFenceAuthority, requireFenceAuthority } from "./mongodb-fence-authority.js";
 
 export const RISK_CONFIRMATION = "我接受历史结果未知的风险，并批准建立此替代任务";
+export const HUMAN_RISK_POLICY = "human-risk-acceptance-v2";
+const humanPolicy = plan => plan.approvalPolicy === HUMAN_RISK_POLICY;
+const retirementKey = (store, plan) => store.hash("risk-job-retirement", plan.binding.instanceId, plan.binding.jobId);
 const HASH = /^[a-f0-9]{64}$/;
 const MAX = Number.MAX_SAFE_INTEGER;
 const denied = (code = "BUSINESS_REPLACEMENT_DENIED") => { throw privacyError(code); };
@@ -32,25 +35,35 @@ function originalCurrent(store, plan, ctx, scope) {
   if (!original || original.state !== "uncertain" || store.hash("operation-record", ctx, plan.targetScope, plan.binding.intentId, original) !== plan.recordFingerprint) denied("BUSINESS_REPLACEMENT_STALE");
 }
 function humanHash(store, plan, proof) {
+  if (humanPolicy(plan)) return store.hash("risk-human-review-v2", plan.id, plan.requestDigest, plan.sealDigest, plan.recordFingerprint, plan.expiresAt, plan.reviewMemo, plan.observations, plan.approvalPolicy);
   return store.hash("risk-human-review", plan.id, plan.requestDigest, plan.sealDigest, plan.recordFingerprint, plan.expiresAt, proof.fingerprint || null);
 }
 export function riskView(store, plan) {
-  const proof = inspectFenceAuthority(plan, store.fenceAuthority, store.now());
+  const proof = humanPolicy(plan) ? { confirmed: false, reason: "human_risk_acceptance_no_external_attestation" } : inspectFenceAuthority(plan, store.fenceAuthority, store.now());
   const approved = !!plan.approval;
+  const human = humanPolicy(plan);
   const scope = store.hash("scope", plan.targetScope), parent = store.get("disposition", plan.dispositionId, plan.binding.contextId, scope);
   const original = store.get("operation", plan.binding.intentId, plan.binding.contextId, scope);
   const originalUnchanged = original?.state === "uncertain" && store.hash("operation-record", plan.binding.contextId, plan.targetScope, plan.binding.intentId, original) === plan.recordFingerprint;
-  const parentEligible = parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id;
+  const candidateEligible = !human || store.get("risk_candidate", store.hash("risk-candidate", plan.binding.instanceId, plan.replacementRequest.jobId), "", "")?.riskPlanId === plan.id;
+  const parentEligible = human && parent?.state === "review_required" || human && parent?.state === "termination_requested" && parent.retirement?.riskPlanId === plan.id || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id;
   return { ok: true, riskPlanId: plan.id, dispositionId: plan.dispositionId, state: plan.state,
     binding: plan.binding, replacementJobId: plan.replacementRequest.jobId,
     replacementRequestDigest: plan.requestDigest, sealRequestDigest: plan.sealDigest, effectDigest: plan.effectDigest,
     reviewHash: humanHash(store, plan, proof), createdAt: plan.createdAt, expiresAt: plan.expiresAt,
     historicalOutcome: "unknown", risk: "possible_prior_commit_or_unobserved_rollback_duplicate_compensation_risk",
     confirmation: RISK_CONFIRMATION, humanConfirmationRequired: !approved, humanApproved: approved,
-    canApprove: proof.confirmed && parentEligible && originalUnchanged && plan.state === "awaiting_human" && store.now() < plan.expiresAt,
+    canApprove: (human || proof.confirmed) && parentEligible && candidateEligible && originalUnchanged && plan.state === "awaiting_human" && store.now() < plan.expiresAt,
     remoteFenceConfirmed: proof.confirmed, fenceReason: proof.reason, fenceReceiptId: proof.receiptId,
     fenceFingerprint: proof.fingerprint, fenceValidUntil: proof.validUntil,
-    replacementAllowed: approved && parentEligible && originalUnchanged && proof.confirmed && plan.approval.fenceFingerprint === proof.fingerprint && store.now() < plan.approval.validUntil,
+    approvalPolicy: plan.approvalPolicy || "external-fence-v1", approvalAuthority: human ? "independent-human-administrator" : "external-fence-and-human",
+    reviewMemo: plan.reviewMemo || "", memoSource: "caller_statement_not_verified_evidence", observations: plan.observations,
+    acceptedResidualRisk: human && approved, legacyInFlightOutcome: "unknown",
+    originalTaskState: parent?.retirement?.riskPlanId === plan.id ? "terminated_unknown" : "protected_unknown",
+    terminationScope: "managed_job_admissions_and_cooperative_workers",
+    remoteTermination: plan.remoteRetirement ? "recorded" : "pending",
+    warning: "历史结果未知；当前数据不变不能证明从未执行。人工批准接受旧进程迟到、事务结果未知及重复补偿风险；不代表全局撤权或证明未执行。",
+    replacementAllowed: approved && parentEligible && originalUnchanged && (human || proof.confirmed && plan.approval.fenceFingerprint === proof.fingerprint) && store.now() < plan.approval.validUntil,
     unitCount: plan.replacementRequest.units.length,
     operationCount: plan.replacementRequest.units.reduce((n, u) => n + u.operations.length, 0),
     collections: [...new Set(plan.replacementRequest.units.flatMap(u => u.operations.map(o => o.collection)))],
@@ -86,24 +99,52 @@ export function riskStoreAction(store, action, input, ctx, scope) {
     const gateId = store.hash("replacement-gate", replacement.instanceId, replacement.jobId);
     const existingGate = store.get("replacement_gate", gateId, "", "");
     const request = wire(replacement), seal = wire({ ...replacement, chunkIndex: 1, chunkHash: undefined, units: [], endOfUpload: true });
-    const id = store.hash("risk-replacement", ctx, input.scope, parent.id, prepareRequestDigest(request), parent.recordFingerprint);
+    const approvalPolicy = store.riskPolicy === "external-fence-v1" ? "external-fence-v1" : HUMAN_RISK_POLICY;
+    const reviewMemo = input.reviewMemo || "";
+    if (typeof reviewMemo !== "string" || reviewMemo.length > 4000) denied();
+    const id = store.hash(approvalPolicy === HUMAN_RISK_POLICY ? "human-risk-replacement-v2" : "risk-replacement", ctx, input.scope, parent.id, prepareRequestDigest(request), parent.recordFingerprint, ...(approvalPolicy === HUMAN_RISK_POLICY ? [reviewMemo] : []));
     if (existingGate && existingGate.riskPlanId !== id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
     const old = store.get("risk_replacement", id, ctx, scope);
     if (old && (old.approval ? store.now() < old.approval.validUntil : store.now() < old.expiresAt)) return riskView(store, old);
-    const plan = { id, dispositionId: parent.id, state: "awaiting_human", binding: parent.binding,
+    const plan = { id, approvalPolicy, reviewMemo, observations: input.observations, dispositionId: parent.id, state: "awaiting_human", binding: parent.binding,
       targetScope: input.scope, recordFingerprint: parent.recordFingerprint, replacementRequest: request,
       requestDigest: prepareRequestDigest(request), sealRequest: seal, sealDigest: prepareRequestDigest(seal),
       effectDigest: digest(effects(original, original.jobId)), createdAt: old?.createdAt || store.now(), expiresAt: store.now() + 3600000,
-      ...(old?.creationAuditId ? { creationAuditId: old.creationAuditId, replacementIntentId: old.replacementIntentId, planHash: old.planHash } : {}) };
+      ...(old?.creationAuditId ? { creationAuditId: old.creationAuditId, replacementIntentId: old.replacementIntentId, planHash: old.planHash, remoteRetirement: old.remoteRetirement } : {}) };
     originalCurrent(store, plan, ctx, scope);
     plan.auditId = audit(store, "risk_replacement_prepared", plan, ctx, scope, { revision: store.now() });
     store.put("risk_replacement", id, ctx, scope, plan, MAX, true);
+    if (humanPolicy(plan)) {
+      const candidateKey = store.hash("risk-candidate", plan.binding.instanceId, request.jobId);
+      const prior = store.get("risk_candidate", candidateKey, "", "");
+      if (prior && prior.riskPlanId !== id) {
+        const other = load(store, prior.riskPlanId).plan;
+        if (other.approval || other.creationAuditId) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+      }
+      store.put("risk_candidate", candidateKey, "", "", { riskPlanId: id, ctx, scope }, MAX, true);
+    }
     return riskView(store, plan);
   });
-  if (["inspect_risk_replacement", "create_risk_replacement"].includes(action)) return store.transaction(() => {
+  if (["inspect_risk_replacement", "create_risk_replacement", "risk_handoff_context", "record_risk_retirement"].includes(action)) return store.transaction(() => {
     const { plan } = load(store, input.riskPlanId, ctx, scope);
     if (plan.targetScope !== input.scope) denied();
     if (action === "inspect_risk_replacement") return riskView(store, plan);
+    if (action === "risk_handoff_context" || action === "record_risk_retirement") {
+      if (!humanPolicy(plan)) return { required: false };
+      requireHumanApproval(store, plan, input, ctx, scope);
+      const request = { jobId: plan.binding.jobId, replacementJobId: plan.replacementRequest.jobId,
+        riskPlanId: plan.id, dispositionId: plan.dispositionId, originalRequestDigest: plan.binding.requestDigest,
+        replacementRequestDigest: plan.requestDigest, approvalAuditId: plan.approval.auditId };
+      if (action === "risk_handoff_context") return { required: true, request };
+      const result = input.result;
+      if (!result || result.status !== "terminated_unknown" || result.managedAdmissionClosed !== true || !HASH.test(result.controlRecordDigest || "") ||
+          Object.entries(request).some(([key, value]) => key !== "approvalAuditId" && result[key] !== value)) denied("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
+      const saved = { ...plan, remoteRetirement: { ...request, recordedAt: store.now(), originalJobFound: result.originalJobFound === true,
+        legacyInFlightOutcome: "unknown", controlRecordDigest: result.controlRecordDigest } };
+      store.put("risk_replacement", plan.id, ctx, scope, saved, MAX, true);
+      audit(store, "risk_original_remote_termination_recorded", saved, ctx, scope, saved.remoteRetirement);
+      return { ok: true };
+    }
     return createReplacementIntent(store, plan, input, ctx, scope);
   });
   return undefined;
@@ -124,7 +165,7 @@ export function humanRiskStoreAction(store, action, input) {
     if (input.confirmation !== RISK_CONFIRMATION || typeof input.actor?.username !== "string" || !input.actor.username ||
         typeof input.actor.sessionId !== "string" || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) ||
         input.actor.verifiedAt > store.now() || store.now() - input.actor.verifiedAt > 60000) denied();
-    const proof = requireFenceAuthority(plan, store);
+    const proof = humanPolicy(plan) ? {} : requireFenceAuthority(plan, store);
     if (input.reviewHash !== humanHash(store, plan, proof)) denied("BUSINESS_REPLACEMENT_STALE");
     if (plan.approval) {
       if (plan.approval.reviewHash !== input.reviewHash || store.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
@@ -132,28 +173,52 @@ export function humanRiskStoreAction(store, action, input) {
     }
     if (store.now() >= plan.expiresAt) denied("BUSINESS_REPLACEMENT_REVIEW_EXPIRED");
     originalCurrent(store, plan, ctx, scope);
+    if (humanPolicy(plan) && store.get("risk_candidate", store.hash("risk-candidate", plan.binding.instanceId, plan.replacementRequest.jobId), "", "")?.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_STALE");
     const parent = store.get("disposition", plan.dispositionId, ctx, scope);
-    if (!(parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
+    if (!(humanPolicy(plan) && ["review_required", "termination_requested"].includes(parent?.state) || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
     const gateId = store.hash("replacement-gate", plan.binding.instanceId, plan.replacementRequest.jobId);
     const gate = store.get("replacement_gate", gateId, "", "");
     if (gate && gate.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
     const approval = { ...input.actor, reviewHash: input.reviewHash, fenceFingerprint: proof.fingerprint,
-      validUntil: Math.min(plan.expiresAt, proof.validUntil, store.now() + 900000) };
+      validUntil: Math.min(plan.expiresAt, proof.validUntil || MAX, store.now() + 900000), policy: plan.approvalPolicy, residualRiskAccepted: humanPolicy(plan) };
     approval.auditId = audit(store, "risk_replacement_human_approved", plan, ctx, scope, approval);
     const saved = { ...plan, state: "human_approved", approval };
+    if (humanPolicy(plan)) {
+      const key = retirementKey(store, plan), retired = store.get("risk_job_retirement", key, "", "");
+      if (retired && retired.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+      store.put("risk_job_retirement", key, "", "", { instanceId: plan.binding.instanceId, jobId: plan.binding.jobId,
+        database: plan.binding.database, riskPlanId: plan.id, replacementJobId: plan.replacementRequest.jobId,
+        dispositionId: parent.id, approvalAuditId: approval.auditId, historicalOutcome: "unknown", at: store.now() }, MAX, true);
+      const taskId = store.hash("task", ctx, plan.targetScope, "operation:" + plan.binding.intentId);
+      const task = store.get("task", taskId, ctx, scope);
+      if (task) store.put("task", taskId, ctx, scope, { ...task, active: false, status: "terminated_unknown", replacementJobId: plan.replacementRequest.jobId }, MAX, true);
+      if (parent.state !== "retired_unknown") store.put("disposition", parent.id, ctx, scope, { ...parent, state: "termination_requested",
+        retirement: { riskPlanId: plan.id, replacementJobId: plan.replacementRequest.jobId, approvalAuditId: approval.auditId, at: store.now() } }, MAX, true);
+    }
     store.put("risk_replacement", plan.id, ctx, scope, saved, MAX, true);
     if (gate) store.put("replacement_gate", gateId, "", "", { ...gate, approvalAuditId: approval.auditId, fenceFingerprint: proof.fingerprint }, MAX, true);
     // No replacement intent, remote job, grant or upload is created here.
     return riskView(store, saved);
   });
 }
+function requireHumanApproval(store, plan, input, ctx, scope) {
+  if (!plan.approval || plan.approval.policy !== HUMAN_RISK_POLICY || input.reviewHash !== plan.approval.reviewHash) denied("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
+  if (store.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
+  originalCurrent(store, plan, ctx, scope);
+  const retirement = store.get("risk_job_retirement", retirementKey(store, plan), "", "");
+  if (retirement?.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+}
 function createReplacementIntent(store, plan, input, ctx, scope) {
   if (!plan.approval || input.reviewHash !== plan.approval.reviewHash) denied("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
-  const proof = requireFenceAuthority(plan, store);
-  if (proof.fingerprint !== plan.approval.fenceFingerprint || store.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
+  if (humanPolicy(plan)) {
+    requireHumanApproval(store, plan, input, ctx, scope);
+    if (!plan.remoteRetirement) denied("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
+  }
+  const proof = humanPolicy(plan) ? {} : requireFenceAuthority(plan, store);
+  if (!humanPolicy(plan) && proof.fingerprint !== plan.approval.fenceFingerprint || store.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
   originalCurrent(store, plan, ctx, scope);
   const parent = store.get("disposition", plan.dispositionId, ctx, scope);
-  if (!(parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
+  if (!(humanPolicy(plan) && parent?.state === "termination_requested" && parent.retirement?.riskPlanId === plan.id || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
   const id = store.hash("operation", ctx, plan.targetScope, "/mongodb/bulk/prepare", plan.replacementRequest);
   const previous = store.get("operation", id, ctx, scope);
   const gateId = store.hash("replacement-gate", plan.binding.instanceId, plan.replacementRequest.jobId);
@@ -183,9 +248,12 @@ export function riskRetirementStatus(store, parent) {
   if (!parent.retirement) return {};
   const { plan, ctx } = load(store, parent.retirement.riskPlanId);
   if (ctx !== parent.binding.contextId || plan.dispositionId !== parent.id || plan.binding.intentId !== parent.binding.intentId) denied();
-  const proof = inspectFenceAuthority(plan, store.fenceAuthority, store.now());
+  const proof = humanPolicy(plan) ? { confirmed: false, reason: "human_risk_acceptance_no_external_attestation" } : inspectFenceAuthority(plan, store.fenceAuthority, store.now());
   return { riskPlanId: plan.id, replacementJobId: parent.retirement.replacementJobId, replacementIntentId: parent.retirement.replacementIntentId,
-    remoteFenceConfirmed: proof.confirmed, historicalOutcome: "unknown", replacementAllowed: false };
+    remoteFenceConfirmed: proof.confirmed, historicalOutcome: "unknown", replacementAllowed: false,
+    ...(humanPolicy(plan) ? { approvalPolicy: plan.approvalPolicy, acceptedResidualRisk: true,
+      missingRequirements: plan.remoteRetirement ? [] : ["remote_managed_job_termination_pending"],
+      historicalEvidenceGaps: parent.missingRequirements.filter(x => /^(original_|historical_)/.test(x)) } : {}) };
 }
 
 export function replacementAdmission(store, instanceId, admission = {}) {
@@ -194,8 +262,8 @@ export function replacementAdmission(store, instanceId, admission = {}) {
   const gate = store.get("replacement_gate", store.hash("replacement-gate", instanceId, identity.jobId), "", "");
   if (!gate) return false;
   const { plan } = load(store, gate.riskPlanId, gate.ctx, gate.scope);
-  const proof = requireFenceAuthority(plan, store);
-  if (!plan.approval || proof.fingerprint !== plan.approval.fenceFingerprint || store.now() >= plan.approval.validUntil ||
+  const proof = humanPolicy(plan) ? {} : requireFenceAuthority(plan, store);
+  if (!plan.approval || !humanPolicy(plan) && proof.fingerprint !== plan.approval.fenceFingerprint || store.now() >= plan.approval.validUntil ||
       plan.binding.instanceId !== instanceId || admission.ctx && admission.ctx !== gate.ctx) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
   if (admission.route === "/mongodb/bulk/prepare") {
     const candidate = admission.dispatchDigest || prepareRequestDigest(wire({ ...request, instanceId }));
@@ -220,4 +288,13 @@ export function recordReplacementPrepared(store, record, result) {
   store.put("replacement_gate", gateId, "", "", { ...gate, planHash: result.planHash }, MAX, true);
   const auditId = audit(store, "risk_replacement_prepared_remotely", plan, ctx, scope, { planHash: result.planHash });
   store.put("risk_replacement", plan.id, ctx, scope, { ...plan, state: "prepared", planHash: result.planHash, preparedAuditId: auditId }, MAX, true);
+}
+
+export function assertRiskJobAdmission(store, instanceId, admission = {}) {
+  const identity = admission.identity || admission.request || {};
+  if (typeof identity.jobId !== "string") return;
+  const retired = store.get("risk_job_retirement", store.hash("risk-job-retirement", instanceId, identity.jobId), "", "");
+  if (retired) denied("BUSINESS_ORIGINAL_JOB_TERMINATED");
+  const candidate = store.get("risk_candidate", store.hash("risk-candidate", instanceId, identity.jobId), "", "");
+  if (candidate && !replacementAdmission(store, instanceId, admission)) denied("BUSINESS_REPLACEMENT_NOT_ADMITTED");
 }

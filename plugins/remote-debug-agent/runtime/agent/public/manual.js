@@ -189,8 +189,12 @@ function renderRiskReview(plan) {
       原请求摘要: plan.binding.requestDigest, 原操作身份: plan.binding.originalOperationId,
       原计划哈希: plan.binding.planHash, 替代任务: plan.replacementJobId, 替代请求摘要: plan.replacementRequestDigest,
       业务效果摘要: plan.effectDigest, 单元数: plan.unitCount, 操作数: plan.operationCount, 集合: plan.collections,
-      状态: plan.state, 历史结果: "未知", 旧任务永久阻断已核验: plan.remoteFenceConfirmed,
-      阻断缺口: plan.fenceReason || null, 阻断回执: plan.fenceReceiptId || null,
+      状态: plan.state, 历史结果: "未知", 全局撤权已有证明: plan.remoteFenceConfirmed,
+      外部证明是否为批准前提: plan.approvalPolicy !== "human-risk-acceptance-v2",
+      外部证明状态: plan.approvalPolicy === "human-risk-acceptance-v2" ? "不作为本次人工裁决的前提" : plan.fenceReason || null, 阻断回执: plan.fenceReceiptId || null,
+      审核策略: plan.approvalPolicy, 审核说明: plan.reviewMemo, 说明来源: "调用者说明，未经独立验证",
+      系统观测: plan.observations, 剩余风险: plan.warning, 旧任务状态: plan.originalTaskState,
+      远端终止记录: plan.remoteTermination, 终止范围: "本系统后续调度及新版执行器；不保证召回历史已派发进程", 已派发旧进程结果: plan.legacyInFlightOutcome,
       人工批准: plan.humanApproved, 审阅哈希: plan.reviewHash, 到期时间: new Date(plan.expiresAt).toLocaleString()
     }, null, 2);
 }
@@ -220,7 +224,7 @@ element("riskLoad").addEventListener("click", async () => {
     const plan = await api("/api/risk-replacement/review", { riskPlanId: element("riskPlanId").value.trim() });
     currentRiskReview = plan;
     renderRiskReview(plan);
-    element("riskMessage").textContent = plan.canApprove ? "请核对上方计划，再勾选风险确认并输入完整语句。" : "当前计划不可批准；请检查状态、有效期及旧任务阻断缺口。";
+    element("riskMessage").textContent = plan.canApprove ? "请核对上方计划，再勾选风险确认并输入完整语句。" : "当前计划不可批准；请检查计划状态、有效期和是否已有替代任务。";
     lastInputAt = Date.now(); riskButtonState();
   } catch (error) { element("riskMessage").textContent = error.message; }
 });
@@ -233,7 +237,7 @@ element("riskApprove").addEventListener("click", async () => {
       confirmation: element("riskConfirmation").value });
     currentRiskReview = approved;
     renderRiskReview(approved);
-    element("riskMessage").textContent = "此计划已获人工批准，尚未建立或执行替代任务。后续仅允许使用这一份计划。";
+    element("riskMessage").textContent = "此计划已获人工批准。原任务已关闭本机后续调度；下一步将记录远端终止并建立关联替代任务，尚未执行补分。";
     lastInputAt = Date.now();
   } catch (error) { currentRiskReview = null; element("riskMessage").textContent = error.message + " 请重新读取计划。"; }
   riskButtonState();

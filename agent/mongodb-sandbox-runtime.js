@@ -74,6 +74,7 @@ function __sandboxFiles(jobId) {
 }
 
 function __sandboxCleanupPlan(jobId) {
+  __bulkAssertNotRetired(jobId);
   var manifest = __bulkManifest(jobId, false);
   var plan = __bulkLoadPlan(jobId, manifest);
   var storage = __bulkReceiptStorage(manifest);

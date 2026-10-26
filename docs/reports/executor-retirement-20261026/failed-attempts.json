@@ -1,0 +1,11 @@
+{
+  "attempts": [
+    {
+      "stage": "intermediate Python SIGKILL fixture edit",
+      "result": "unittest loader IndentationError; no test or production execution",
+      "resolution": "fixed fixture indentation; 31 final unit tests pass"
+    }
+  ],
+  "testflowPrepareExecuted": false,
+  "testflowExecuteExecuted": false
+}

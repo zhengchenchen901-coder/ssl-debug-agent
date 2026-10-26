@@ -1,0 +1,36 @@
+test_exclusive_raw_disk_identity_snapshot (test_libvirt.LibvirtBoundaryTests) ... ok
+test_external_or_shared_devices_rejected (test_libvirt.LibvirtBoundaryTests) ... ok
+test_external_os_state_and_qemu_extensions_rejected (test_libvirt.LibvirtBoundaryTests) ... ok
+test_live_persistent_disk_drift_rejected (test_libvirt.LibvirtBoundaryTests) ... ok
+test_nonraw_backing_shared_mirror_and_network_disks_rejected (test_libvirt.LibvirtBoundaryTests) ... ok
+test_snapshot_and_checkpoint_and_saved_memory_rejected (test_libvirt.LibvirtBoundaryTests) ... ok
+test_stop_undefine_never_remove_storage_or_restore (test_libvirt.LibvirtBoundaryTests) ... ok
+test_symlink_disk_rejected (test_libvirt.LibvirtBoundaryTests) ... ok
+test_actual_sigkill_recovery_at_domain_and_disk_and_receipt_boundaries (test_retirement.RetirementTests) ... ok
+test_concurrent_authority_lock (test_retirement.RetirementTests) ... ok
+test_corrupted_audit_refuses_authorization (test_retirement.RetirementTests) ... ok
+test_crash_after_rename_recovers_without_repeating_other_identity (test_retirement.RetirementTests) ... ok
+test_crash_after_undefine_recovers_same_plan (test_retirement.RetirementTests) ... ok
+test_disk_or_definition_drift_denies (test_retirement.RetirementTests) ... ok
+test_exact_review_and_separate_owner_confirmation (test_retirement.RetirementTests) ... ok
+test_expired_challenge (test_retirement.RetirementTests) ... ok
+test_expired_risk_plan_renews_only_with_new_exact_owner_review (test_retirement.RetirementTests) ... ok
+test_no_receipt_when_emulator_survives_or_domain_returns (test_retirement.RetirementTests) ... ok
+test_no_signing_before_completion (test_retirement.RetirementTests) ... ok
+test_plan_expiry_denies_before_any_shutdown (test_retirement.RetirementTests) ... ok
+test_plan_tampering_rejected (test_retirement.RetirementTests) ... ok
+test_prepare_readonly_and_exact_stable_plan (test_retirement.RetirementTests) ... ok
+test_production_cli_denies_this_unprivileged_synthetic_install (test_retirement.RetirementTests) ... ok
+test_real_filesystem_moves_private_vault_and_audit (test_retirement.RetirementTests) ... ok
+test_rebind_denies_new_target_or_reappearing_domain (test_retirement.RetirementTests) ... ok
+test_receipt_synthetic_marked_and_exact_challenge (test_retirement.RetirementTests) ... ok
+test_renewal_expired_risk_plan_denied (test_retirement.RetirementTests) ... ok
+test_shutdown_failure_stays_retiring_without_receipt (test_retirement.RetirementTests) ... ok
+test_unenrolled_domain_denies (test_retirement.RetirementTests) ... ok
+test_vault_path_reappeared_or_content_identity_changed (test_retirement.RetirementTests) ... ok
+test_wrong_target_and_unsupported_shared_topology (test_retirement.RetirementTests) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 0.121s
+
+OK

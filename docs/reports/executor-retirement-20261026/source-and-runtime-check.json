@@ -1,0 +1,1544 @@
+{
+  "snapshotId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+  "snapshotRestoredAndVerified": true,
+  "checks": [
+    {
+      "file": "agent/.DS_Store",
+      "sha256": "019045115bb558e61915c1357e1909ee659f2f021150f51ef1fe2b5ac31ff24d",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/activity.js",
+      "sha256": "3e69ad81db5611e4486b386a0a4289a4a95b0b410d65ac8f8386440acd514fe0",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/approved-commands.js",
+      "sha256": "df51544371df1732850df9f66519459cb4684271c953f424242be47a263a7dbc",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/audit.js",
+      "sha256": "1a5a8828526b774a8132971882f9f74a8bb7acd7b446c7bea01eef8cb03e4314",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/channel-scheduler.js",
+      "sha256": "68f7cce800357ea09b32de02f7a6436e0bb890a97135091df570fba21ce7cc91",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/command-review.js",
+      "sha256": "ed6ca7e66615d6244e1707a4c65a102f10107887229c83df35a2183f7a2ccf28",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/config.js",
+      "sha256": "196327db85da13f853431f3c746b1b0ed125f2a86a530088268f21f31d981270",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/executor-boundary-probe.js",
+      "sha256": "30c2cac82e956e42982f1ab1ed628778764d2db03ad2342c56bb73eeefea9d79",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/final-result-routes.js",
+      "sha256": "7f9abf982237c8514a0ddb1e50925cc2d20b09cdedf2d9b492a879bbdd1a45d0",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/final-results.js",
+      "sha256": "ef7eac1361cac408256eec3a00674f2c7a118b5da0a44b97a1ce9e897fcd29d4",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/http-auth.js",
+      "sha256": "0597b71f84c774296b7d515b00ae056ced5103d80fb7a14df787e9a49d51255f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/instance-registry.js",
+      "sha256": "506a742a9691aaf95dcbcd6a1793f0f2ff0570f39ce309aa77771fad28144cd9",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/instance-transfer.js",
+      "sha256": "8247dd6e71ebb67bebe18ba4d1dcf61abdcca4c478261b3315c39720cce1e15f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/local-sandbox.js",
+      "sha256": "c20677cd1f3a0a3b4d06e4997d591a711f1d7613e43e043d29dfa63073a5427f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-job-remote.js",
+      "sha256": "f7a273bdf8b7cf4023878bbf8108fbb393595244ead2fcac465d277dc068fd77",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-jobs.js",
+      "sha256": "694c451137cbed43c8bf2b7d8c19bf991dbb2eb9ad141e11c319ec780d857b36",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-policy.js",
+      "sha256": "49aafdd053cade93d51b62146eb7156b1bfa50fbab31c4ad9d1ec3517ec116ce",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-projects.js",
+      "sha256": "7f4767445b712b84e9b3ec9dfdab229a4a30fde05e6b4a6536deb0e649b6215a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-query-remote.js",
+      "sha256": "e95b22126bcc4417b1888724dc7175a9c3dea2a957c8d3c57575fcee0ba29603",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-query-runtime-source.js",
+      "sha256": "205f4bfe2ddbb6159d0de9416ba6a6abbafa86d7d414cba36232ac918c74516b",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/log-query.js",
+      "sha256": "f85b9f90bba9410303e042da8507d53fdc5187afbf8b72619e791c479e9af560",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/logs.js",
+      "sha256": "8a07aa6e24d397b53ad5bcc0e511184bc856145b27322476175c9e76d1bb7b45",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-auth.js",
+      "sha256": "b4a3531e617ecc30d898c4b1c7916c3a2ccd33b682df1b417f5b3ecb8fedea2f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-mongodb-config.js",
+      "sha256": "70db425cd1ed134076f4a368b52600c3d76d05bbbd6a5a2ac6e62eed104c97a3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-mongodb-runtime.js",
+      "sha256": "d95d4ec4e483064f84a3e842df8c8f52fde989c9477972600f49554ffc94fda0",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-mongodb.js",
+      "sha256": "c48dd74d3664fd2718b7775b3d80f0909963c07f83335a6ce05ec18b366f32b2",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-owner-verification.js",
+      "sha256": "7fb13031d4ed736461c61d672d67b545e30cd959b5d2e1a15c1623986cefd379",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-terminal.js",
+      "sha256": "ddfe99ff4601b230893c221fb0e9a6aec2b4c0a0dc039e4e7de0ca8df52d4372",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-windows-owner.js",
+      "sha256": "58794df9275fcfebcfbb9762b670221db47082f041d9d89a88eb7e2f7905d9d8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/manual-workbench.js",
+      "sha256": "cea64461eff61eaa7e42a26f47ba505a1462260df481c0808d79a788854ddc25",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/memory-discovery.js",
+      "sha256": "f1183f2fe3c05c518ef2aeb93f12af69d2d16c4380464a8026c64acd194f8218",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/memory-store.js",
+      "sha256": "3f5012107fe892d755e50786db379ae0500429ef0cc9d69b92786e50408437e7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-bulk-history.js",
+      "sha256": "18db0351c32d101adaa280395a2b1d1db87d78d13817e1bea5f74692b44f85a3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-bulk-runtime.js",
+      "sha256": "78c318acbaaf05924e9289be871d16e4548ee131d9d7254d56f60e8d9190200e",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-bulk.js",
+      "sha256": "6e8f6135d15f3b3be3e6efaa766f5bbf963ec49e9f13fb1aab23cb5c2d306fa5",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-codec.js",
+      "sha256": "0d43e5ac25e4026b8aa8496d418de270e0ff60599bfb13a9c1831c92249810d9",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-disposition.js",
+      "sha256": "61f4b97b854d3db60118e61749bcd762149a190363ae8e8b19747d7acc1b1a23",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-fence-authority.js",
+      "sha256": "443c9e600f9d8a9dc0f9fb7ebccbb347f9f47c4aa871d1b44c4a27813813e0cd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-mutations.js",
+      "sha256": "d21da5052a247122c251f43f545094186af8ea8626259e03527a9ec659db3658",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-risk-replacement.js",
+      "sha256": "841c7a4bfeef357ace61bfcb465c044a116f719a9f3c0c9587b42a62c7d686db",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-sandbox-access-runtime.js",
+      "sha256": "bc895895c6efe0b3a28dbceeb193db75f8e8c3aad2c7945b9707b57a44ebdc33",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-sandbox-access.js",
+      "sha256": "8b81ca6064b021b7e34cded14a4be103b76c848535a3babb497a7fdcda040d50",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-sandbox-runtime.js",
+      "sha256": "098a87481350b8d23621866b7002840024f4b7e7f51817942ab1ac3d6c4c6289",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb-ttl-policy.js",
+      "sha256": "1b88953bcd217832d6a58c320103f0be61e2cbdae2ccd96499ca468a128a5a3c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/mongodb.js",
+      "sha256": "c86ff9a8e3af9f4c78d498e65bafc39ef36615a217103adde5b1c95480eb4721",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/native/verify-owner.ps1",
+      "sha256": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/native/verify-owner.swift",
+      "sha256": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/operation.js",
+      "sha256": "686144ebbc3ac194cf045a803a395d047bf34dfa1173df0cf2e01e6bbd7ff116",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/output-preview.js",
+      "sha256": "e0b8e24758de95b9fb095a183edfe489fcf2ec5e40350e8d977facb3c794abac",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/package-lock.json",
+      "sha256": "c1658614a29d750235d8e4572845009afbc260b4b87cf60b3e6522c1f76fc0fa",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/package.json",
+      "sha256": "f3619de3231bd27d0f153fdc42da796c3e639b98b9c1c017a154cf3b6fd7e830",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/privacy-key.js",
+      "sha256": "005ca155eb82158cccc24868569c1d92a45700d6fca4c31839983f3df99ba2bc",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/privacy-service.js",
+      "sha256": "9f2319f24761dd37b1959855fcee96cad209f54eedcf8fb29c22dfcb9817fd3a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/privacy-store.js",
+      "sha256": "4417a6c8017a622fd9911497e923a1b797f22057fbe432d23e6114b95ef173f6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/privacy-worker.js",
+      "sha256": "ed011c18d34ae24d310358b02f368e5cfd582f9e89edf981f53ffcb784d9f04a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/admin-registration.js",
+      "sha256": "05de25066f3c69a1e9b22de7fad729297e3244f9502ef78ce16b3ba279c508e9",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/dashboard.css",
+      "sha256": "76402f488f66f57eca750a822a5860a5d7051ab46c01f6944886719d1a92aa47",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/dashboard.html",
+      "sha256": "049c1460a553e37542f59b5f151c2a128d6f759f36103f820326fd4d16096f67",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/dashboard.js",
+      "sha256": "a243b7c442ed4b74465a612fd2a12a0867c37f1b2f7f91c1beb324f5be39a74f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/environment-report.js",
+      "sha256": "385f6f36f31719a2b008b084611bcae8d55b248d0ecd890e24a79f4d824485c3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/final-results.js",
+      "sha256": "5b25fe197f656138191501341e552f7082a966cefee573428d6d53ddf7037237",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/instance-tasks.js",
+      "sha256": "8e78827828b3b75256e99fb1e59ab61ad6a1e5372549a4250890e10276a68d7c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/manual-database.js",
+      "sha256": "3c4ec5558ed2075a837adec43fe4e6307f86dacab4466e3bb732a3ee337bca54",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/manual.css",
+      "sha256": "ed7bc6b32a7a0e5d322ea1842cd9e4d5c7a4098a86669785ffafe34bb2c5eba3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/manual.html",
+      "sha256": "9b3cdf8b0393ce84dfae4194bb81a42af4132e9848b0346d567943242cba5b24",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/manual.js",
+      "sha256": "6d2906c48096a2438ce38ccb4a881169ae04545e48fcd5efe141c75d9868976c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/output-preview.js",
+      "sha256": "323d2dde0265912a570ecae060272643a07ec3e8ecf1bc4ccd412fd99e16a88c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/ui.css",
+      "sha256": "9e5289a140c8f543bde00db4612faeeee3fbf6c2081d8621cb6ebf7c19e3ae65",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/ui.js",
+      "sha256": "814af3e1449435051b803fadd5b440425f2ea2975a594f86ee4fd7a6179f07b0",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/vendor/LICENSE-addon-fit.txt",
+      "sha256": "e256f01188af527e4d06d21d06fbf785ae9c50d4b328bf03cbe0ba7f0aa4228f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/vendor/LICENSE-xterm.txt",
+      "sha256": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/vendor/addon-fit.js",
+      "sha256": "ba3ea256ce0620a0992a197d6c9baea64823fc93d8da07a9e366ca9943c18527",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/vendor/xterm.css",
+      "sha256": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/vendor/xterm.js",
+      "sha256": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/public/workspace.js",
+      "sha256": "626d8c05b58ab96f496be33a567b4b12bea9cb05538fb245202f6beecfe7f204",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/remote-resource-manager.js",
+      "sha256": "76f44f62f8c7fbb0856a026a294e0b9bd18ae7a4deff86326d21d864df708ca9",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/remote-resource-runtime-source.js",
+      "sha256": "44085e7f9d22878faecefc36342957794f228cf31b6e359da1d1be90e9b41bf4",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/remote-resource-runtime.js",
+      "sha256": "6224139ce9187534977b25ac372828000eabd2bedd3b53ad4f5c75b9242788ec",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/remote-resource-sampler.js",
+      "sha256": "c494c0fdb129db018f3c220d603bd559829709f53359f0aef790089583728cee",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/resource-policy.js",
+      "sha256": "6ca30739afc7894409451ebf8b2afb7ab2f7e17ee9b5038494947b877bf57f5d",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/scripts/build-runtime.mjs",
+      "sha256": "3bf9babe5e4b5ff87d7e4443712e9061447c528ab8ad3bace9b597697c46db6c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/scripts/build-terminal-assets.mjs",
+      "sha256": "a3b8118b64ba5dd15ba6058829cb31dd5a57a264ab109d209fce6df48a60ddb7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/scripts/preview-executor-probe.mjs",
+      "sha256": "beb70e7e471b7a66d2ff7f52c3d9443a9426a4755e38b1372e1b24ff3471fbf7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/security.js",
+      "sha256": "e6ec679cd9a3722bce9fd4cbe6a1b14ea741c51d5a2f55953c617f555afe0dc7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/server.js",
+      "sha256": "45658cb20c6afe5b294d81251c7956ec3211d825af7c272cc24dfd9f4b55322d",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/service-profiles.js",
+      "sha256": "843d177c2a5092deafafe716bcca4eb262ef66abf0ed9d2cef2cd37688d304e6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/service-start-runtime.js",
+      "sha256": "857b587bf74c71b0278a1e5f527bef360ce361667ac768d64a99fccef70f0499",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/services.js",
+      "sha256": "cccd33125819b48511e8776e3f9edbf3f1c8eb3aac07cea44e893e119d0b9388",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/ssh-connection-supervisor.js",
+      "sha256": "325826e216092f804ba8493b7549220c484e55d7efb938208caa3010125f8654",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/ssh.js",
+      "sha256": "ea1ce4052fc32559bc1222a9e7d2c88dbc66246034f41a7d58d59ed71a825a8f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/task-registry.js",
+      "sha256": "328c290c889e5d534e564f7a42099b32da5f9cfddae4349513fb0a970a27e097",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/approved-commands.test.js",
+      "sha256": "651f76e438c1605af45189f4cf688d50d1ec9b23f9c5e86adabb6248c792e5ea",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/audit.test.js",
+      "sha256": "8a85b268a6f52a31640b258b353fcd09ec8a445ee99c3f1f22ebd600900b143c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/channel-scheduler.test.js",
+      "sha256": "d19dc373c1a538ffbb0f6dd1845207b8bac42efcbc9c7d7c25610e6cc68f3950",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/command-review-server.test.js",
+      "sha256": "15ce6c2c78c91b6bc994c83bb8b5c7451b610b43d8a0ab53d9e588cfa558e735",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/command-review.test.js",
+      "sha256": "94ec06d035d6bc564f97f7f2b50623adc306be4612825965014e474e49bfaaea",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/config.test.js",
+      "sha256": "9da1dab68f48cfa2667c880b24035d45286f690fa959886dd55c92e0f1570bfd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/dashboard-ui.test.js",
+      "sha256": "7cdb9150dbc20cfeddc9bbeaae9a2d62337e76aedc3090ff8951f85627355460",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/environment-report.test.js",
+      "sha256": "f5268a59427ed4d43548f2714826c5807575e1742b691161dd7a1dfd73dc4906",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/executor-boundary.test.js",
+      "sha256": "4cad9dddb98060b591ee1a1832bf7e676a26a6fa07dc9b051bcf3cd30fbc8d26",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/final-results-browser.e2e.mjs",
+      "sha256": "9b7c17177946ff3ea7a142e3a200ea42c0554dd273bc4e1db1317e8a95e4cc38",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/final-results.test.js",
+      "sha256": "7d0564fee5bd892d429935d12d9fbb7e49ba4495e5daf3a0786f1e7f27341f10",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/fixtures/workspace-server.mjs",
+      "sha256": "17710d328fb3e109098067d077d84a3dfc7722823596234dba5256b46c8a0016",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/bulk-sandbox-fixture.js",
+      "sha256": "42c6bb175944df01a2f838b68c834abe6c829f231a81e38fd0c4b13fab2d8156",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/disposition-crash.mjs",
+      "sha256": "8ed80d840dc0007ba57edb06860813f5062ad419fed9ecb550a0e95d205e037b",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/http-auth.js",
+      "sha256": "2b174e418cf522c1828d0d2a4884906a22dc5c23bde85d871fffb99528df8099",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/mutation-prepare-harness.js",
+      "sha256": "0651b79ba5504818b12647b8b462bd83cd7beba2142bcc71fee6bfe659648080",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/privacy-store-crash.mjs",
+      "sha256": "7706e6dbf42c5d2bbf9efbb01491cc4a611efd4133fa148b9e313e965c9c83d8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/risk-replacement-crash.mjs",
+      "sha256": "471cd012fe475196cbdfac43dbaa1b71c6956e82a68152d0299e3a776cffa15a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/risk-replacement-fixture.js",
+      "sha256": "ab3c99570e1a053c798cfed4f1c48a5a7695d9b98963307c202dd9a71ce6eaeb",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/windows-privacy-child.mjs",
+      "sha256": "bd7fe1110b23bf1d0ff91e127c39c36c635dc9934a7c7a4e8c06b89050bf0b0a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/windows-privacy-fixture.js",
+      "sha256": "ca9fd493f19499c2f45f4dccfb0b228abb900e7dfe4a4f8df0934a6cd44190e1",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/windows-privacy-fixture.ps1",
+      "sha256": "01a3c04ca78c0e36399207ee9aba065afaec6443576b5ec1546c9c517a0c8d6e",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/helpers/workspace-browser.js",
+      "sha256": "0e9cd06c256d3a4333136b5d694462bb8582e1afaa5c1692d0a112e4b8d0c571",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/instance-transfer-browser.e2e.mjs",
+      "sha256": "1e2f19e7ced84d9a9fc94068f82f89f6c062c4c6c3f934cec91744dd0e7cdfb3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/instance-transfer-interop.mjs",
+      "sha256": "3635f6eb4f6410e91299c7d1b029e6e5bfd57b045df60e7c258d447df2bd4cf3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/instance-transfer.test.js",
+      "sha256": "ca478161e0dc253b6832e9447c033d641bbd8223bfc5b96b06dadb272a726937",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/instances.test.js",
+      "sha256": "0741b4266c11d249c507fb4cae21bf4707cf0617c53914b76d6d8cf31f815484",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/log-directory-lifecycle.test.js",
+      "sha256": "a03b7b5256ceb938b43b85ede0b553e02ae5aa23eecb0e79675befe4eb6b85da",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/log-jobs.test.js",
+      "sha256": "85aa58cfd0adbbbf3632384570d665bd56e4e406a6efed10eb46e2732a0f07a3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/log-query.test.js",
+      "sha256": "ce839b63ae351709d2b529a5c8bfe3da4cfa804734d58e89b45eca6986531cda",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/logs.test.js",
+      "sha256": "069047094fc8ff0cb1aa673618d6299bb4c6dd810b9cbd3082c9b5b941de6ffc",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-browser.e2e.mjs",
+      "sha256": "4392a60a7cbb6a51ca2f97d80f11f9840ba2e5c4c2835465b48e35331065901a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-database.e2e.mjs",
+      "sha256": "4267651656732a779c6ef68680cfcb2b0c6ea98c61d4b20704a0bd68afabddcb",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-database.test.js",
+      "sha256": "555dd2c46531a43ccdb13ae8accbecf59499bff0ac2926b10443fc52d19c7beb",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-owner-verification.test.js",
+      "sha256": "6c7a1ff56724bda68d9dbd627fa7c7ad5603ad0f73d6c5fa6ce00b9bff1c1f26",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-risk-replacement.test.js",
+      "sha256": "47ffa9b65dff2183e446226a222fad27500bc672af7ec64e889849bf26f4b180",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-windows-owner.test.js",
+      "sha256": "26e7d4ed4bb10bec37904fac599906fe9e0090d2a787fe12830a9e6649a124d8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/manual-workbench.test.js",
+      "sha256": "766f3185364e535ec1d5f2c286218b2f30d9aab426ba89d46a702422e0df83f8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/memory.test.js",
+      "sha256": "a5420c759d5edd22a2e10af16e2f2fb363c0d6835cdb9bff5faa9f48ab8373df",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-array-mutations.test.js",
+      "sha256": "007f3308cf24e302defc45c13a10237d85118b5c1a81cf6236291083966bee38",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-bulk-history.test.js",
+      "sha256": "059e1304369f1d993c7694d615fab8f09c9b9a2213b56d5eb203faa67359358c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-bulk-replica-set.test.js",
+      "sha256": "757e0f1625b0cf4e29611d6e3fa12fb59884badd97cda3155d1ea437d8067741",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-bulk-sanitized-input.test.js",
+      "sha256": "7d0967814095af36a16aa797a8ecd10c6d823b10be87792682d03c25400af761",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-bulk.test.js",
+      "sha256": "eb1d2ac20e1a35c45a004909bff6e1b77ce88903540f77ae571037d108342a80",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-codec.test.js",
+      "sha256": "2d5b99edf458d74003a32a01802c5f1fbef3ce3af2ed1535262ac7208f641b15",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-disposition.test.js",
+      "sha256": "10f49d0d7ad78543af8696c696f0ac1a1fa14a39d113ec3a4a50e9881d7dee71",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-import.test.js",
+      "sha256": "f959abc655340775feb3d6a1f661ebf8dd3af2b608dde1799fcc81aad0384de4",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-index-recovery.test.js",
+      "sha256": "734a8188b246596a007db1f918fe517084ba75553f20c31d17244f222f57db81",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-index-replica-set.test.js",
+      "sha256": "25a497bf822377448f5e802457b224ddc6e1c46e319fabab455a8ee8338408e6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-mutations.test.js",
+      "sha256": "d93a07923a29eec08a826848fb20a105c4124efaaed347e3760c550146c68345",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-prepare.test.js",
+      "sha256": "939d1e92ddb977f91c373c9709aa85d3834b37c75d6730e79156f1cdd7d3719c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-risk-replacement.test.js",
+      "sha256": "a6c9443cded0d4d8926ed64d34851d8e2b946f3fa2ea151c6a659938b1e00e6e",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-sandbox-access.test.js",
+      "sha256": "cdc2a2fa5e1a8755aa52a843cc3e47d45465d4aacf3d64e82fe06bcb46d6b2c4",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-sandbox-files.test.js",
+      "sha256": "9b9ccec1e49ae3f3c01f2a88a3dd1be0ae98eb7d32f9c3361a2bf1af64980487",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-sandbox.test.js",
+      "sha256": "f98c2d4d9009e20f3ad1a9111a38e795fc75f00ce0240dd9f3e61da333770392",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb-ttl.test.js",
+      "sha256": "c995e78e18fc0ec7926d0d3a70eee3fea9f409e56d8b08a706502156963d7a06",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/mongodb.test.js",
+      "sha256": "359aadd2fa150ab0383616d21a5e9ee09a6eeb5d3fa82c3c0de8ee5f1589b4f2",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/output-preview-browser.e2e.mjs",
+      "sha256": "2a988838d61c2f804e5ae16d0e7c4d3747485f2bf36523258bbe8de2e18f7ca4",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/output-preview.test.js",
+      "sha256": "643b2bc7dd195ad1e003ed49a71c7f521fe4bcab2641732a3cd87e02c727857c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/privacy-keychain.test.js",
+      "sha256": "9da2c044a2b37bf73e7128dc7fd70259cb42f82a9235e79d1f21872d55f6b058",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/privacy-platform.test.js",
+      "sha256": "31100b5b97ec0abf51cd1d207067532b807cf9ee1aafdb2c2e5f733fc5c1a21c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/privacy-store.test.js",
+      "sha256": "0243128e41890fa0ca16fc88fbe09fd157483c520691eacf793baf64763522c6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/privacy-windows.test.js",
+      "sha256": "76ed089801019b6dbecfdfc41117fe0135603d7ca6b190ccfc6dfeb617f053c8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/resource-log-integration.test.js",
+      "sha256": "2e142f11dc70d32b06470effe2851f5d80afa4d189d645a7e0947a9440ea91ee",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/resource-mongo-integration.test.js",
+      "sha256": "e5333709ebeeb322da5147cacd2fb5dba009a89f4790bf803f525d51a3ec9568",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/resources.test.js",
+      "sha256": "90b462e60a86ba66951820d1418ed6b4037ef6ecd21f1687deafc9cb6aff8918",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/risk-replacement-browser.e2e.mjs",
+      "sha256": "c181dc42a1bc015d16485f372cdd8e2deb972a73a89588da6e019223c4a9fd48",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/security-boundaries.test.js",
+      "sha256": "e2cd4ae752dad621d606ad3d3171b9c81b089314c343dd6956d517cfecd26307",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/security.test.js",
+      "sha256": "52da9a728cc6379ffa1ba59ce62c2886bf5c13a3fd3bbf38fe3f0a0ff74a1466",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/server.test.js",
+      "sha256": "9b0e4e672b9beba784fd50b1420aaabcb0bdb009d0018d59fc13da3b54fcff55",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/services-browser.e2e.mjs",
+      "sha256": "7c34e61388e37263e3602a99659f745d6aafeb107d3f09480d6a3de23e332abb",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/services-http.test.js",
+      "sha256": "2d34165a985661191e126ece108aa3353854a9010dd162043840dca61b4e21e7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/services.test.js",
+      "sha256": "dd6367bd5785ee74dec5bc0f5d8699a57549b1688e9ccd21b48ce28ebd39bd06",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/ssh-network.test.js",
+      "sha256": "a55013b47b82608dbfb5694bde59905312bc755f767b1d6f9473cbd0bb095973",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/ssh-supervisor.test.js",
+      "sha256": "cde1e66719e121d072c1f3d57ce9a4423580b4f5ad38974370959db4eab3d3f0",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/tasks-browser.e2e.mjs",
+      "sha256": "5cf0966501ada59f5e1c8dd8f2b0a95caf26c2accd9cdbe7511eb8cde4e926f9",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/windows-owner-native.ps1",
+      "sha256": "34beb447bdf4f1d793ef22dee77c42ad4b019186420c44b236c9e180ff1f7141",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/test/worker-entry.test.js",
+      "sha256": "ec3daa022f63940cade1b8c8b2eb87490c3b3141d59cdd79d45e0b609c5bc496",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/worker-entry.js",
+      "sha256": "cebc2fc5159ae5b8b43d9f56b67a2457a7319ee8df4942a5de47fcc04e831ef4",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/worker-manager.js",
+      "sha256": "664620ea0c14fd4c09ceefce608459a61bfa8b9d80554f097a4ddf2c00e6c3c5",
+      "matchesCurrent": true
+    },
+    {
+      "file": "agent/worker-resource-client.js",
+      "sha256": "718fe536d8d851f8925d46d119dfb8c333bfa5b2f8652259a6c72839eedacb93",
+      "matchesCurrent": true
+    },
+    {
+      "file": "authority/README.md",
+      "sha256": "05f5b9479d4c0d9618d29d66d2390512e76089eada63a1e5d64c5f0744dd6eb7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "authority/install-verifier.mjs",
+      "sha256": "c26cda879c9a093e581580d0fc1096270fe8040a65ca0ff0afe2f8bb3974fa44",
+      "matchesCurrent": true
+    },
+    {
+      "file": "authority/inventory.example.json",
+      "sha256": "b5335fcf7816b86a0101ca2605372c6369a553fecc80371e2f068754f25fd424",
+      "matchesCurrent": true
+    },
+    {
+      "file": "authority/retirement.py",
+      "sha256": "ebc7db005943b700053e419aaf6f05aa1e781bb355e202b8a35ebbe261c40090",
+      "matchesCurrent": true
+    },
+    {
+      "file": "authority/test/test_libvirt.py",
+      "sha256": "6eaba561c5e17210130fe0dda19bf75a0ea25a08e23b9fc80ff15dafe37ed595",
+      "matchesCurrent": true
+    },
+    {
+      "file": "authority/test/test_retirement.py",
+      "sha256": "36e0a8db0bdfe6af63142dfb2b7673a106fd8f5df8bad4a2a2e7bb4a5c49fb28",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/.codex-plugin/plugin.json",
+      "sha256": "cf7a9a26bb5c032d03e9d0ca7454811f5785d2c5999f8b364dc65348877075b7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/.mcp.json",
+      "sha256": "1c00508bce1d0526de92941b9ef4d716fea59b356e3575f4f302a4767803cb75",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/business-privacy.js",
+      "sha256": "6527a1ee5c8a81f9864f8eab23687ff3d557c6baba7ca8948b63c345ec0fdc5f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/business-storage.js",
+      "sha256": "8e9a86da79ffe8d53e372ad949096e7f0856011564fd6d8632d8b47a2f859f36",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/diagnostic-dashboard.cjs",
+      "sha256": "a606984a8e01433333db4785ccd3af5bf890dd1f2941124b094bb102d4d2f7ec",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/environment-report.cjs",
+      "sha256": "e4eddab0f9b3261d23153ef288f729137dee89480983bb972e5b3e194f040735",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/final-results.js",
+      "sha256": "db0021ae7741f9cd19128af63a1202b47f12252f22135755631123d3a8ec5f35",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/launch.cjs",
+      "sha256": "e63b16227c2b6822c5618ef7f75147b7721dc42bf573f3f05d3766442a510a8e",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/local-auth.cjs",
+      "sha256": "783e07eda1ff5ccbb1ba0e26320ec500990092c5755748ee1cc21151baff1cb7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/mcp-server.js",
+      "sha256": "cfd6ddbbd0641701247287b67ae02f84a82754c81a8261d1f71eb4eab09ec6ff",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/native/windows-privacy.ps1",
+      "sha256": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/node-runtime.cjs",
+      "sha256": "3322dfa40bf9193fe02df46c4e25c9d131b2aab64d46df32a085d7c94cf311f8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/output-contracts.js",
+      "sha256": "981bfd803e2f36ff039607758dd5c86ad828ded07b701398aa37de6337ab5755",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/output-guard.js",
+      "sha256": "92680bcaa86cd86f8982bcd425c954a4aa970f2a1664a749a61edc65ff7d3c41",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/output-preview.js",
+      "sha256": "af90e73bde1117169ebae240a6fd1e14d02399f1e836bef67670374535ddcddb",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/package.json",
+      "sha256": "68ab9dfcda0b5f0c79a5ca164402dd86ed8ef0d171d84ad7301df84cfeb95dc6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/prepare-protocol.js",
+      "sha256": "ce9b7082f2e28d864ff80b8ba61d1ba45480467787c1fb3fbb1d435801fdca00",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime-support.js",
+      "sha256": "9b94bd90b52d2d6770b55f0f4f2347c83d8d6ce943b36c68a9c6a8160d7ea540",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/authority/README.md",
+      "sha256": "05f5b9479d4c0d9618d29d66d2390512e76089eada63a1e5d64c5f0744dd6eb7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/authority/executor-retirement.md",
+      "sha256": "26476dd2ce37beb5920a0ac84bfe83da23f01185ae2d3755d27bf5041ea3877b",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/authority/install-verifier.mjs",
+      "sha256": "c26cda879c9a093e581580d0fc1096270fe8040a65ca0ff0afe2f8bb3974fa44",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/authority/inventory.example.json",
+      "sha256": "b5335fcf7816b86a0101ca2605372c6369a553fecc80371e2f068754f25fd424",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/authority/retirement.py",
+      "sha256": "ebc7db005943b700053e419aaf6f05aa1e781bb355e202b8a35ebbe261c40090",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/native/verify-owner.ps1",
+      "sha256": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/native/verify-owner.swift",
+      "sha256": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/native/windows-privacy.ps1",
+      "sha256": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs",
+      "sha256": "b49ebf7637e6d7653baabc54d30613b1e3ca6ff7e0498ea4ee7720a3cff878cc",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/admin-registration.js",
+      "sha256": "05de25066f3c69a1e9b22de7fad729297e3244f9502ef78ce16b3ba279c508e9",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/dashboard.css",
+      "sha256": "76402f488f66f57eca750a822a5860a5d7051ab46c01f6944886719d1a92aa47",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/dashboard.html",
+      "sha256": "049c1460a553e37542f59b5f151c2a128d6f759f36103f820326fd4d16096f67",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/dashboard.js",
+      "sha256": "a243b7c442ed4b74465a612fd2a12a0867c37f1b2f7f91c1beb324f5be39a74f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/environment-report.js",
+      "sha256": "385f6f36f31719a2b008b084611bcae8d55b248d0ecd890e24a79f4d824485c3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/final-results.js",
+      "sha256": "5b25fe197f656138191501341e552f7082a966cefee573428d6d53ddf7037237",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/instance-tasks.js",
+      "sha256": "8e78827828b3b75256e99fb1e59ab61ad6a1e5372549a4250890e10276a68d7c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/manual-database.js",
+      "sha256": "3c4ec5558ed2075a837adec43fe4e6307f86dacab4466e3bb732a3ee337bca54",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/manual.css",
+      "sha256": "ed7bc6b32a7a0e5d322ea1842cd9e4d5c7a4098a86669785ffafe34bb2c5eba3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/manual.html",
+      "sha256": "9b3cdf8b0393ce84dfae4194bb81a42af4132e9848b0346d567943242cba5b24",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/manual.js",
+      "sha256": "6d2906c48096a2438ce38ccb4a881169ae04545e48fcd5efe141c75d9868976c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/output-preview.js",
+      "sha256": "323d2dde0265912a570ecae060272643a07ec3e8ecf1bc4ccd412fd99e16a88c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/ui.css",
+      "sha256": "9e5289a140c8f543bde00db4612faeeee3fbf6c2081d8621cb6ebf7c19e3ae65",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/ui.js",
+      "sha256": "814af3e1449435051b803fadd5b440425f2ea2975a594f86ee4fd7a6179f07b0",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/vendor/LICENSE-addon-fit.txt",
+      "sha256": "e256f01188af527e4d06d21d06fbf785ae9c50d4b328bf03cbe0ba7f0aa4228f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/vendor/LICENSE-xterm.txt",
+      "sha256": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/vendor/addon-fit.js",
+      "sha256": "ba3ea256ce0620a0992a197d6c9baea64823fc93d8da07a9e366ca9943c18527",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/vendor/xterm.css",
+      "sha256": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/vendor/xterm.js",
+      "sha256": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/public/workspace.js",
+      "sha256": "626d8c05b58ab96f496be33a567b4b12bea9cb05538fb245202f6beecfe7f204",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json",
+      "sha256": "32f2c81094a0c9fbf08751923fa23377c16a81582d7e410e977cfe3c9dd34f8b",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/server.cjs",
+      "sha256": "33b8a2ceaf0fd86139b9e4f007dda6c59667407591e78c8aee0b1d2ceda266ad",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs",
+      "sha256": "3d012cfc902aa0ff8a9c6e957bb53340636e422b2a8c9530103eae33e1723bfd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/scripts/diagnose-mcp.js",
+      "sha256": "8d0a83d5fefa6bc6ca6518fb4daee3e428b451900ea52b0e3a6876ffa00ba604",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/scripts/offline-report.py",
+      "sha256": "4b7707839ff4a6cca9d9040fc4b83902451dd5f475bc982b54c2861121f90d96",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/backend-api-errors/SKILL.md",
+      "sha256": "4b4e1cdd38eaa64a8669975dd90d22d9f4f487f6d61c1e09de9fcd586f446efc",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/backend-api-errors/agents/openai.yaml",
+      "sha256": "bfdd54d90e73695a808347ce3d5dc71c56f8cc271a2707d2372c05205709435b",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/command-draft-review/SKILL.md",
+      "sha256": "8592613ad12c749adb0cd8e2efeb18ce57f95ce0aa6d6940136f8d2a3051ee6e",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/command-draft-review/agents/openai.yaml",
+      "sha256": "17c1b01b7fa54b7cf5ee479c23dfe67026365ae9562f3f56afa03c558275a7a3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/database-mutations/SKILL.md",
+      "sha256": "03b5cddd116acf5c3dbf783d68f6ccd2c2eaf4a88abdf1bfe07955c04c4de6ef",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/database-mutations/agents/openai.yaml",
+      "sha256": "132d1beb20268e3be144afb96eceddbb9184d799a7c7d98db1adb0b1826c397e",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/database-mutations/references/mongodb-bulk.md",
+      "sha256": "f41c0c262c663822fca0dee6d8ce98d2ba491dfbed5282c1b2122e0d352bb8ec",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/environment-check/SKILL.md",
+      "sha256": "fa31d3f23a6439ab9bb621ff3f7fb41a7c84bc11838b3b1ec8a9ee4de9e2105f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/final-results.md",
+      "sha256": "4f0e84c7c0b3695e211e2a34846ee16e0123bc4e4a52ebbf60878b2db5990a4d",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/mongodb/SKILL.md",
+      "sha256": "944f5754db1bed6faf81c44067344145f4fb975fb09190e5620cb3c665992a6d",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/remote-debug/SKILL.md",
+      "sha256": "8ee62e871ecc3ecf2bd6c30beb11fcdd4b3764cd4a61bce031b273973340f2be",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/restart-instance/SKILL.md",
+      "sha256": "4cddfde053833ff462448db27e40c5f3bc241acc8eb35a44b424f0f239a126f1",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/restart-instance/agents/openai.yaml",
+      "sha256": "d1a66f3652c5c6600dcb4938b58702538c7257b274ce3d3222ca513b299ce8fa",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/update-instance-memory/SKILL.md",
+      "sha256": "128753a27d254947e9fb6c5f0636bd35fe28bd195ba63ed051ebcee950ad5e5a",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/update-instance-memory/agents/openai.yaml",
+      "sha256": "5f76d0a84cb61c107f0308d5dcf1c72019821e8766cf47975b5283542d6d183f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/bulk-historical-recovery.test.js",
+      "sha256": "8410957a350c13bb47fb7c867e73f1b711559462b6e097906fe3c251c72fc4ca",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/bulk-prepare-recovery.test.js",
+      "sha256": "4b190fedd127a57615385c1cf91a99fcf29626a00b955b5fa1f3d6a76e4dc445",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/bundled-instance-transfer.test.js",
+      "sha256": "9f288f226116d2fe66d764cf0db65dacc44cf82d41ad1959518573134c46ea06",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/bundled-services.test.js",
+      "sha256": "c8837d86e87b57ee28a39ffe17022ae3d50b02878ab287cdeb2604424f74d32d",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/bundled-ttl.test.js",
+      "sha256": "9f26e8ab8109c98d70e02b37a4c7b4addf1ad18bf0e640fe6b5c7a59b0779e8f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/bundled-worker.test.js",
+      "sha256": "dff7a0a9d1a9608b99b3e4d419d827c9640cbd0a00d9e6234c5f90b256666d70",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/business-persistence.test.js",
+      "sha256": "7a35f637a1af305c4bb1fa02d9175e71295b25372d4fc517dd4659f7c7ebd661",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/business-privacy-mongo.e2e.mjs",
+      "sha256": "8a4a05475aa0859095c4185d7fcc136e965a1f41e7b61c451114575dec66e240",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/business-privacy-protocol.test.js",
+      "sha256": "c7c455d58d53224aba8d8a7c35590e3f8c63df094347d498b055e6df2c8ecdd1",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/business-privacy.test.js",
+      "sha256": "c09f0ca60fa6297cb7c873fd6892584708eba6ae1fbe391047573b21ee663425",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/environment-check.test.js",
+      "sha256": "929631cf8c0f6b7074611321213cad6e002cab656d08bf108eaed8c9d0ce428f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/final-results.test.js",
+      "sha256": "b1ea949496cec134e260cf091371c75b46d58ae4f536dbd926de82fb241aa705",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/helpers/local-mcp.js",
+      "sha256": "bc6d6d82b7759218decf8fe3e8fab123c59993d044bdc86bde651f045ee96754",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/helpers/privacy-manager.mjs",
+      "sha256": "2b9b963e698a559e3d06cfbda400b7ffb522d070c57eab0dbb8766449c45e825",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/install-script.test.js",
+      "sha256": "22054a596b353922af42299a8920c83f60d65b871342aff9b5c3ff02e71b1c5c",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/local-auth.test.js",
+      "sha256": "6562549f2bb17674baede12df6879af92b78d5ec0a839ac1597f2850199255e3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/mcp-smoke.test.js",
+      "sha256": "fb1b2172b9bb9717bd8c20e0ae348014c6c07278396581f8c3e15986c27c4870",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/mongodb-disposition.test.js",
+      "sha256": "20ecaec42e5ee089cd51529cdacf4e5e5fb0091c4666e843fcf8ecd7c95726dd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/node-runtime.test.js",
+      "sha256": "362628eb46897890d7398e4876bcd88602eb42714c2841101bde95cde8ed83a3",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/output-guard-protocol.test.js",
+      "sha256": "10389fa84b74d4cf5f9e8aa8906a0d3ab0f615734eec21f9fef572b573f91f5b",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/output-guard.test.js",
+      "sha256": "bff1644ac15f1fddc33ef99bd61f89b20dee27605e0209f4fc2402c0433166d7",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/output-preview.test.js",
+      "sha256": "9e8f591b62420246f9847cb52b8e23c65f02b4d6d3993234a54a6bef570ab1b1",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/platform-storage.test.js",
+      "sha256": "cb6137291c6ca87a5a0928124b036665f163eb6a9e69fd20f372bfd5b68eb99f",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/prepare-recovery.test.js",
+      "sha256": "ab8cc8cb90a41e0c16c46a5880585df1f83df662ab4b1a75f83306b84e01f355",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/risk-input-admission.test.js",
+      "sha256": "a2ca6be75f1337c469d793cf0e7f796a5267237ebf6f8cdf09c76cd8a404d239",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/risk-replacement.test.js",
+      "sha256": "953d7bb658dc6599eb28a1c4b51fed259e9f6ab154cc46fbe3c02a85dfd5a9cd",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/runtime-support.test.js",
+      "sha256": "829ee0f8be7cf5c73b6689dd47b22b5a3b283896a98a6ae9286e9a5106ab50c8",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/windows-business-failure.test.js",
+      "sha256": "21874669e62483d97b0fdec3460d90e4a29374fa8678e7393e68e8d601053214",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/windows-business-context.js",
+      "sha256": "42da7f8e0b4b0f2bb3b8635af87bc1dfdfc8f72d23544405c45dab9685e0cd64",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/windows-privacy.cjs",
+      "sha256": "ab0300c32792d1ff16da0e8d8421999c7531acf41ac659666e3b93cb70c481be",
+      "matchesCurrent": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/windows-storage.cjs",
+      "sha256": "4526890687aac2d5098420560cc6c409371bcfbcbfa2be2a2f3797f854282d8d",
+      "matchesCurrent": true
+    }
+  ],
+  "runtimeId": "2.4.0:5cea06624eca1ed74551f614f5c4d97405f5a95edc0dc5328dd3d77b229efdba",
+  "runtimeChecks": [
+    {
+      "file": "server.cjs",
+      "expected": "33b8a2ceaf0fd86139b9e4f007dda6c59667407591e78c8aee0b1d2ceda266ad",
+      "match": true
+    },
+    {
+      "file": "worker-entry.cjs",
+      "expected": "3d012cfc902aa0ff8a9c6e957bb53340636e422b2a8c9530103eae33e1723bfd",
+      "match": true
+    },
+    {
+      "file": "privacy-worker.cjs",
+      "expected": "b49ebf7637e6d7653baabc54d30613b1e3ca6ff7e0498ea4ee7720a3cff878cc",
+      "match": true
+    },
+    {
+      "file": "authority/executor-retirement.md",
+      "expected": "26476dd2ce37beb5920a0ac84bfe83da23f01185ae2d3755d27bf5041ea3877b",
+      "match": true
+    },
+    {
+      "file": "authority/install-verifier.mjs",
+      "expected": "c26cda879c9a093e581580d0fc1096270fe8040a65ca0ff0afe2f8bb3974fa44",
+      "match": true
+    },
+    {
+      "file": "authority/inventory.example.json",
+      "expected": "b5335fcf7816b86a0101ca2605372c6369a553fecc80371e2f068754f25fd424",
+      "match": true
+    },
+    {
+      "file": "authority/README.md",
+      "expected": "05f5b9479d4c0d9618d29d66d2390512e76089eada63a1e5d64c5f0744dd6eb7",
+      "match": true
+    },
+    {
+      "file": "authority/retirement.py",
+      "expected": "ebc7db005943b700053e419aaf6f05aa1e781bb355e202b8a35ebbe261c40090",
+      "match": true
+    },
+    {
+      "file": "public/admin-registration.js",
+      "expected": "05de25066f3c69a1e9b22de7fad729297e3244f9502ef78ce16b3ba279c508e9",
+      "match": true
+    },
+    {
+      "file": "public/dashboard.css",
+      "expected": "76402f488f66f57eca750a822a5860a5d7051ab46c01f6944886719d1a92aa47",
+      "match": true
+    },
+    {
+      "file": "public/dashboard.html",
+      "expected": "049c1460a553e37542f59b5f151c2a128d6f759f36103f820326fd4d16096f67",
+      "match": true
+    },
+    {
+      "file": "public/dashboard.js",
+      "expected": "a243b7c442ed4b74465a612fd2a12a0867c37f1b2f7f91c1beb324f5be39a74f",
+      "match": true
+    },
+    {
+      "file": "public/environment-report.js",
+      "expected": "385f6f36f31719a2b008b084611bcae8d55b248d0ecd890e24a79f4d824485c3",
+      "match": true
+    },
+    {
+      "file": "public/final-results.js",
+      "expected": "5b25fe197f656138191501341e552f7082a966cefee573428d6d53ddf7037237",
+      "match": true
+    },
+    {
+      "file": "public/instance-tasks.js",
+      "expected": "8e78827828b3b75256e99fb1e59ab61ad6a1e5372549a4250890e10276a68d7c",
+      "match": true
+    },
+    {
+      "file": "public/manual-database.js",
+      "expected": "3c4ec5558ed2075a837adec43fe4e6307f86dacab4466e3bb732a3ee337bca54",
+      "match": true
+    },
+    {
+      "file": "public/manual.css",
+      "expected": "ed7bc6b32a7a0e5d322ea1842cd9e4d5c7a4098a86669785ffafe34bb2c5eba3",
+      "match": true
+    },
+    {
+      "file": "public/manual.html",
+      "expected": "9b3cdf8b0393ce84dfae4194bb81a42af4132e9848b0346d567943242cba5b24",
+      "match": true
+    },
+    {
+      "file": "public/manual.js",
+      "expected": "6d2906c48096a2438ce38ccb4a881169ae04545e48fcd5efe141c75d9868976c",
+      "match": true
+    },
+    {
+      "file": "public/output-preview.js",
+      "expected": "323d2dde0265912a570ecae060272643a07ec3e8ecf1bc4ccd412fd99e16a88c",
+      "match": true
+    },
+    {
+      "file": "public/ui.css",
+      "expected": "9e5289a140c8f543bde00db4612faeeee3fbf6c2081d8621cb6ebf7c19e3ae65",
+      "match": true
+    },
+    {
+      "file": "public/ui.js",
+      "expected": "814af3e1449435051b803fadd5b440425f2ea2975a594f86ee4fd7a6179f07b0",
+      "match": true
+    },
+    {
+      "file": "public/vendor/addon-fit.js",
+      "expected": "ba3ea256ce0620a0992a197d6c9baea64823fc93d8da07a9e366ca9943c18527",
+      "match": true
+    },
+    {
+      "file": "public/vendor/LICENSE-addon-fit.txt",
+      "expected": "e256f01188af527e4d06d21d06fbf785ae9c50d4b328bf03cbe0ba7f0aa4228f",
+      "match": true
+    },
+    {
+      "file": "public/vendor/LICENSE-xterm.txt",
+      "expected": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
+      "match": true
+    },
+    {
+      "file": "public/vendor/xterm.css",
+      "expected": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
+      "match": true
+    },
+    {
+      "file": "public/vendor/xterm.js",
+      "expected": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
+      "match": true
+    },
+    {
+      "file": "public/workspace.js",
+      "expected": "626d8c05b58ab96f496be33a567b4b12bea9cb05538fb245202f6beecfe7f204",
+      "match": true
+    },
+    {
+      "file": "native/verify-owner.ps1",
+      "expected": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
+      "match": true
+    },
+    {
+      "file": "native/verify-owner.swift",
+      "expected": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab",
+      "match": true
+    },
+    {
+      "file": "native/windows-privacy.ps1",
+      "expected": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "match": true
+    }
+  ]
+}

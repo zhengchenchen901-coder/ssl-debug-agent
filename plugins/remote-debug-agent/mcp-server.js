@@ -566,7 +566,7 @@ const tools = [
   },
   {
     name: "remote_debug_mongodb_disposition",
-    description: "Review/quarantine an exact uncertain bulk intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk reads the proposal and its executor fence challenge. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. create_replacement creates/uploads the exact approved replacement only after a configured trusted authority's permanent legacy fence/drain receipt is verified. Historical outcome remains unknown. Creation never executes business writes; sealing and execution use normal bulk tools and immutable plan confirmation. Legacy environments without verified external migration fail closed.",
+    description: "Review/quarantine an exact uncertain bulk intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Creation never executes business writes; sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
     inputSchema: {
       type: "object", additionalProperties: false, required: ["instanceId", "database", "mode"],
       oneOf: [
@@ -581,6 +581,7 @@ const tools = [
       properties: {
         instanceId: instanceIdProperty, database: { type: "string", minLength: 1, maxLength: 128 },
         mode: { type: "string", enum: ["prepare", "inspect", "quarantine", "admit_replacement", "prepare_risk", "inspect_risk", "create_replacement"] },
+        reviewMemo: { type: "string", maxLength: 4000, description: "Facts and remaining uncertainties for human review; caller statement, not trusted execution proof." },
         riskPlanId: { type: "string", pattern: "^[a-f0-9]{64}$" },
         intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
         dispositionId: { type: "string", pattern: "^[a-f0-9]{64}$" },
@@ -3177,9 +3178,10 @@ async function callTool(name, args, operation) {
     const byMode = { prepare: ["intentId", "originalRequest"], inspect: ["dispositionId"],
       quarantine: ["dispositionId", "reviewHash", "confirmation"], admit_replacement: ["dispositionId", "reviewHash"],
       prepare_risk: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"], inspect_risk: ["riskPlanId"], create_replacement: ["riskPlanId", "reviewHash"] };
+    const optional = args?.mode === "prepare_risk" ? ["reviewMemo"] : [];
     const required = byMode[args?.mode];
     if (!required || !args.instanceId || !args.database || required.some(key => args[key] === undefined) ||
-        Object.keys(args).some(key => ![...common, ...required].includes(key))) {
+        Object.keys(args).some(key => ![...common, ...required, ...optional].includes(key))) {
       throw Object.assign(new Error("Explicit original target and mode-specific disposition fields are required."), { code: "BUSINESS_DISPOSITION_DENIED" });
     }
     return callAgent("/mongodb/operations/disposition", args, operation);

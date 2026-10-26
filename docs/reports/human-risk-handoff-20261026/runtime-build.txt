@@ -1,0 +1,13 @@
+
+  ../plugins/remote-debug-agent/runtime/agent/server.cjs  2.7mb ⚠️
+
+⚡ Done in 29ms
+
+  ../plugins/remote-debug-agent/runtime/agent/worker-entry.cjs  2.8mb ⚠️
+
+⚡ Done in 19ms
+
+  ../plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs  75.8kb
+
+⚡ Done in 2ms
+Built Remote Debug Agent runtime 2.4.0:e4e1734a9863e7c34476f9d50e27309c5d4b8686318c91c6435781bb117ed6a2

@@ -154,7 +154,7 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     const common = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
     const fields = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine"
       ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"]
-        : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"]
+        : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest", "reviewMemo"]
           : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "create_replacement" ? ["reviewHash"] : [])] : [];
     if (!fields.length || Object.keys(input).some(key => ![...common, ...fields].includes(key))) throw privacyError("BUSINESS_DISPOSITION_DENIED");
     if (input.mode === "prepare_risk") {
@@ -175,11 +175,25 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         }
         requests[name] = request;
       }
-      return service.call("prepare_risk_replacement", { ...input, ...requests });
+      if (input.reviewMemo !== undefined && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4000)) throw privacyError("BUSINESS_DISPOSITION_DENIED");
+      const reviewMemo = input.reviewMemo === undefined ? "" : createOutputGuard().sanitize({ reviewMemo: input.reviewMemo }).value.reviewMemo;
+      let observations;
+      try {
+        const observed = await dispatch(target.id, "/mongodb/bulk/job", { jobId: requests.originalRequest.jobId, includeDifferences: false, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt, operationId: input.operationId });
+        observations = { source: "manager_remote_job_read", observedAt: Date.now(), status: observed.ok === false ? "unavailable" : observed.status || "unknown", code: observed.error?.code, historicalOutcome: "unknown" };
+      } catch (error) { observations = { source: "manager_remote_job_read", observedAt: Date.now(), status: "unavailable", code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "UNKNOWN", historicalOutcome: "unknown" }; }
+      return service.call("prepare_risk_replacement", { ...input, ...requests, reviewMemo, observations });
     }
     if (input.mode === "inspect_risk") return service.call("inspect_risk_replacement", input);
     if (input.mode === "create_replacement") {
-      const reserved = await service.call("create_risk_replacement", input), target = JSON.parse(input.scope);
+      const target = JSON.parse(input.scope);
+      const handoff = await service.call("risk_handoff_context", input);
+      if (handoff.required) {
+        const result = createOutputGuard().sanitize(await dispatch(target.id, "/mongodb/bulk/retire", {
+          ...handoff.request, operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt })).value;
+        await service.call("record_risk_retirement", { ...input, result });
+      }
+      const reserved = await service.call("create_risk_replacement", input);
       if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
       const record = reserved.intent;
       const result = await bulkPrepareRequest(service, { ...input, id: record.id, attempt: record.bulkPrepare.attempt,

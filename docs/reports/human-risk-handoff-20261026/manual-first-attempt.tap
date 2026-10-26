@@ -1,0 +1,115 @@
+TAP version 13
+# (node:9307) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: independent human review accepts unknown history with no receipt or instance quarantine
+ok 1 - independent human review accepts unknown history with no receipt or instance quarantine
+  ---
+  duration_ms: 103.588334
+  type: 'test'
+  ...
+# Subtest: proposal cannot upload before review; approval closes only the original job across contexts
+ok 2 - proposal cannot upload before review; approval closes only the original job across contexts
+  ---
+  duration_ms: 21.333417
+  type: 'test'
+  ...
+# Subtest: remote retirement failure keeps original closed and creates no replacement intent or upload
+ok 3 - remote retirement failure keeps original closed and creates no replacement intent or upload
+  ---
+  duration_ms: 23.558583
+  type: 'test'
+  ...
+# Subtest: lost remote retirement response resumes the same termination and unique replacement after restart
+ok 4 - lost remote retirement response resumes the same termination and unique replacement after restart
+  ---
+  duration_ms: 109.049291
+  type: 'test'
+  ...
+# Subtest: remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+ok 5 - remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+  ---
+  duration_ms: 103.76675
+  type: 'test'
+  ...
+# Subtest: remote acknowledgment is mandatory; public caller cannot inject a termination result
+ok 6 - remote acknowledgment is mandatory; public caller cannot inject a termination result
+  ---
+  duration_ms: 18.221708
+  type: 'test'
+  ...
+# Subtest: human-created replacement seals normally, admits only its immutable plan, never reopens original
+ok 7 - human-created replacement seals normally, admits only its immutable plan, never reopens original
+  ---
+  duration_ms: 162.895667
+  type: 'test'
+  ...
+# Subtest: two proposals cannot both be human-approved for one original; expiry requires fresh review
+ok 8 - two proposals cannot both be human-approved for one original; expiry requires fresh review
+  ---
+  duration_ms: 85.266959
+  type: 'test'
+  ...
+# (node:9308) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: final risk approval requires independent admin login, same-origin review and fresh native owner verification
+ok 9 - final risk approval requires independent admin login, same-origin review and fresh native owner verification
+  ---
+  duration_ms: 145.01075
+  type: 'test'
+  ...
+# Subtest: knowing an MCP plan hash without reading it in the human session cannot approve
+ok 10 - knowing an MCP plan hash without reading it in the human session cannot approve
+  ---
+  duration_ms: 100.893625
+  type: 'test'
+  ...
+# Subtest: cancelled native approval, session logout during prompt and changed evidence create no replacement
+ok 11 - cancelled native approval, session logout during prompt and changed evidence create no replacement
+  ---
+  duration_ms: 102.858042
+  type: 'test'
+  ...
+# Subtest: risk review displays exact immutable plan and never exposes business preimages or authority key
+ok 12 - risk review displays exact immutable plan and never exposes business preimages or authority key
+  ---
+  duration_ms: 95.032625
+  type: 'test'
+  ...
+# Subtest: v2 human workbench can approve without an external receipt or whole-instance quarantine
+ok 13 - v2 human workbench can approve without an external receipt or whole-instance quarantine
+  ---
+  duration_ms: 91.242458
+  type: 'test'
+  ...
+# Subtest: v2 native prompt cannot approve after the enrolled target changes
+not ok 14 - v2 native prompt cannot approve after the enrolled target changes
+  ---
+  duration_ms: 81.366416
+  type: 'test'
+  location: '/Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/manual-risk-replacement.test.js:76:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    401 !== 409
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 409
+  actual: 401
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/manual-risk-replacement.test.js:80:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 13
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 767.164459

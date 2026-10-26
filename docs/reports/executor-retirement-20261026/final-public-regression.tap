@@ -1,0 +1,98 @@
+TAP version 13
+# (node:99878) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: remote Node probe reads only bounded proc identity, never config/argv/env/credentials
+ok 1 - remote Node probe reads only bounded proc identity, never config/argv/env/credentials
+  ---
+  duration_ms: 0.847167
+  type: 'test'
+  ...
+# Subtest: probe marks inaccessible process facts unknown and cannot certify retirement
+ok 2 - probe marks inaccessible process facts unknown and cannot certify retirement
+  ---
+  duration_ms: 0.233083
+  type: 'test'
+  ...
+# Subtest: local probe preview is an explicit manual-only immutable command draft input
+ok 3 - local probe preview is an explicit manual-only immutable command draft input
+  ---
+  duration_ms: 32.916958
+  type: 'test'
+  ...
+# Subtest: synthetic issuer receipts are denied even under otherwise trusted configured public key
+ok 4 - synthetic issuer receipts are denied even under otherwise trusted configured public key
+  ---
+  duration_ms: 10.155958
+  type: 'test'
+  ...
+# Subtest: cold-retirement enrollment cannot be forged with MCP-user-owned trust files
+ok 5 - cold-retirement enrollment cannot be forged with MCP-user-owned trust files
+  ---
+  duration_ms: 4.6605
+  type: 'test'
+  ...
+# Subtest: public risk state distinguishes retirement from availability and retains unknown history
+ok 6 - public risk state distinguishes retirement from availability and retains unknown history
+  ---
+  duration_ms: 5.465833
+  type: 'test'
+  ...
+# Subtest: owner enrollment uses Ed25519, exact target, and refuses synthetic enrollment or unknown fields
+ok 7 - owner enrollment uses Ed25519, exact target, and refuses synthetic enrollment or unknown fields
+  ---
+  duration_ms: 0.286542
+  type: 'test'
+  ...
+# Subtest: owner receipt import rejects test environment, wrong key, expiry, coverage and identity
+ok 8 - owner receipt import rejects test environment, wrong key, expiry, coverage and identity
+  ---
+  duration_ms: 1.035375
+  type: 'test'
+  ...
+# (node:99879) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:99879) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and source Manager
+ok 9 - full insertOne first chunk admits risk review through public stdio MCP and source Manager
+  ---
+  duration_ms: 451.250792
+  type: 'test'
+  ...
+# {"riskPlanId":"5271fc4fc0bf467814688a21bd5c9636fbae45536fc116fec84d53f3982b72e8","unitCount":34,"operationCount":100,"fenceReason":"executor_fence_authority_not_configured","canApprove":false,"replacementAllowed":false,"remoteDispatches":0}
+# (node:99879) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+ok 10 - full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+  ---
+  duration_ms: 468.614584
+  type: 'test'
+  ...
+# {"riskPlanId":"1488d2d886c939e033ea7f4e946cd340e2af44b5813080b8c249b333aebd54e8","unitCount":34,"operationCount":100,"fenceReason":"executor_fence_authority_not_configured","canApprove":false,"replacementAllowed":false,"remoteDispatches":0}
+# (node:99880) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:99880) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and source Manager require human approval before any replacement upload
+ok 11 - public MCP and source Manager require human approval before any replacement upload
+  ---
+  duration_ms: 491.043833
+  type: 'test'
+  ...
+# (node:99880) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and bundled Manager require human approval before any replacement upload
+ok 12 - public MCP and bundled Manager require human approval before any replacement upload
+  ---
+  duration_ms: 475.890916
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1069.217

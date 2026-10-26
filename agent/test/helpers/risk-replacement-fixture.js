@@ -19,7 +19,7 @@ export function riskReplacementFixture(t, options = {}) {
   fs.writeFileSync(trustFile, JSON.stringify({ version: 1, issuer, boundaryType: "externally-enforced-legacy-retirement-v1", publicKey: pair.publicKey.export({ type: "spki", format: "pem" }) }), { mode: 0o600 });
   const h = bulkSandboxFixture(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: h.config }, origin = "http://127.0.0.1:49999";
   const scope = businessTargetScope(origin, instance, "business"), key = randomBytes(32), fenceAuthority = { trustFile, receiptDirectory };
-  let clock = Date.now(), store = new PrivacyStore({ directory, key, fenceAuthority, now: () => options.liveClock ? Date.now() : clock, fault: options.fault });
+  let clock = Date.now(), store = new PrivacyStore({ directory, key, fenceAuthority, now: () => options.liveClock ? Date.now() : clock, riskPolicy: options.humanRisk ? undefined : "external-fence-v1", fault: options.fault });
   const auth = store.execute("create");
   const original = wire({ instanceId: instance.id, database: "business", jobId: "legacy-original", chunkIndex: 0, purpose: "isolated fixture", units: [
     { unitId: "one", operations: [
@@ -31,7 +31,7 @@ export function riskReplacementFixture(t, options = {}) {
   const call = (action, input = {}) => store.execute(action, { auth, scope, ...input });
   const old = call("intent", { route: "/mongodb/bulk/prepare", request: original, identity: { instanceId: instance.id, jobId: original.jobId, chunkIndex: 0 } });
   const parent = call("prepare_disposition", { id: old.id, request: original, requestDigest: digest(original) });
-  call("quarantine_disposition", { dispositionId: parent.dispositionId, reviewHash: parent.reviewHash, confirmation: "确认隔离原意图" });
+  if (!options.humanRisk) call("quarantine_disposition", { dispositionId: parent.dispositionId, reviewHash: parent.reviewHash, confirmation: "确认隔离原意图" });
   const candidate = structuredClone(original); candidate.jobId = "approved-replacement"; candidate.units[0].operations[1].document.remediation_job_id = candidate.jobId;
   const prepare = (replacementRequest = candidate) => call("prepare_risk_replacement", { dispositionId: parent.dispositionId, reviewHash: parent.reviewHash, originalRequest: original, replacementRequest });
   const receiptPath = plan => path.join(receiptDirectory, plan.riskPlanId + ".json");
@@ -50,7 +50,10 @@ export function riskReplacementFixture(t, options = {}) {
   const service = { call: async (action, input) => store.execute(action, input) };
   const requests = [];
   const requestOptions = { instance: id => id === instance.id ? instance : undefined, origin, dispatch: async (id, route, request) => {
+    if (route === "/mongodb/bulk/job") return { ok: true, ...await h.run({ action: "get", jobId: request.jobId }) };
     requests.push(route);
+    if (options.humanRisk && route === "/mongodb/bulk/retire") { const { operationId, timeoutMs, deadlineAt, ...body } = request; return { ok: true, ...await h.run({ action: "retire", ...body }) }; }
+    if (options.humanRisk && route === "/mongodb/bulk/job") { return { ok: true, ...await h.run({ action: "get", jobId: request.jobId }) }; }
     if (route !== "/mongodb/bulk/prepare") throw Error("Unexpected fixture dispatch: " + route);
     const { operationId, timeoutMs, deadlineAt, ...chunk } = request;
     return { ok: true, ...await h.run({ action: "upload", chunk }) };
@@ -61,6 +64,6 @@ export function riskReplacementFixture(t, options = {}) {
     public: input => privacyRequest(service, { action: "disposition", auth, scope, ...input }, requestOptions),
     human: (action, input) => humanRiskRequest(service, action, input, requestOptions.instance),
     advance: n => clock += n, get now() { return clock; }, get store() { return store; },
-    reopen: () => { store.close(); store = new PrivacyStore({ directory, key, fenceAuthority, now: () => options.liveClock ? Date.now() : clock }); },
+    reopen: () => { store.close(); store = new PrivacyStore({ directory, key, fenceAuthority, riskPolicy: options.humanRisk ? undefined : "external-fence-v1", now: () => options.liveClock ? Date.now() : clock }); },
   };
 }

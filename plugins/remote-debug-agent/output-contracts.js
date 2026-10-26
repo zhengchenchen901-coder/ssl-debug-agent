@@ -30,6 +30,9 @@ mutation.batches = [batch];
 const receiptStorage = fields("database collection legacy scope schemaVersion");
 const bulk = {
   ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
+  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
+  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
+  managedAdmissionClosed: "boolean", originalJobFound: "boolean",
   receiptStorage, activeBatchIndexes: [scalar], committed: fields("matched modified inserted unchanged"),
   differences: json, changedFields: [scalar], planPreview: [batch], batches: [batch],
 };
@@ -93,9 +96,11 @@ const contracts = {
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
   remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
   remote_debug_mongodb_disposition: { ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"), requiresConfirmation: "boolean",
-    localContainment: "boolean", remoteFenceConfirmed: "boolean", replacementAllowed: "boolean", missingRequirements: [scalar],
+    localContainment: "boolean", remoteFenceConfirmed: "boolean", replacementAllowed: "boolean", missingRequirements: [scalar], historicalEvidenceGaps: [scalar],
     ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
     humanConfirmationRequired: "boolean", humanApproved: "boolean", canApprove: "boolean", collections: [scalar],
+    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
+    acceptedResidualRisk: "boolean", observations: { ...fields("source observedAt status code historicalOutcome") },
     binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
     fenceChallenge: { ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
       binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash") },

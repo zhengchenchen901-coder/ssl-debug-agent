@@ -1,0 +1,233 @@
+{
+  "evidenceId": "executor-retirement-20261026-local-candidate-v1",
+  "createdAt": "2026-10-26T07:48:08.917683+00:00",
+  "status": "partial",
+  "outcome": "local candidate implementation and synthetic validation; production applicability/validation and online shared MongoDB cutover not delivered",
+  "native": {
+    "agent": {
+      "tests": 557,
+      "pass": 543,
+      "fail": 0,
+      "skipped": 14,
+      "cancelled": 0,
+      "skippedTitles": [
+        "a selected gzip log continues beyond the synchronous 256 MiB scan ceiling # SKIP",
+        "an archive beyond 2 GiB reaches a late member in one bounded-memory traversal # SKIP",
+        "real Windows helper prepares without prompting and decodes synthetic protected credentials # SKIP",
+        "MongoDB bulk executes and rolls back a cross-collection transaction on a real replica set # SKIP",
+        "real secondary lag reproduces legacy verification failure; fixed helper recovers with one DDL # SKIP",
+        "real authenticated MongoDB sandbox setup and owned password reset deny business access # SKIP",
+        "real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database # SKIP",
+        "Windows native helper rejects tampering before launching PowerShell # SKIP",
+        "Windows native credentials: first creation, reopen and six concurrent processes share one key # SKIP",
+        "Windows initialization lock is released after process death and blocks competing creators # SKIP",
+        "Windows existing SQLite, WAL or SHM without credential never creates a replacement # SKIP",
+        "Windows malformed or denied credential never falls back or overwrites # SKIP",
+        "Windows rejects unsafe ACLs, hardlinks, junctions, network, synchronization and plugin cache paths # SKIP",
+        "Windows context CreateNew concurrency, durable reuse, source mismatch, corruption and ACL protection # SKIP"
+      ]
+    },
+    "plugin": {
+      "tests": 145,
+      "pass": 140,
+      "fail": 0,
+      "skipped": 5,
+      "cancelled": 0,
+      "skippedTitles": [
+        "install.ps1 supports check-only, repeat installs, migration, and safe conflicts # SKIP",
+        "MCP uses 4343 as the default local agent port # SKIP port 4343 is already in use",
+        "Windows initializes and reuses private storage with an incompatible inherited module path # SKIP",
+        "Windows rejects a credential accessible to Everyone # SKIP",
+        "Windows missing privacy credential blocks business calls while ordinary diagnostics remain available # SKIP"
+      ]
+    },
+    "authority": {
+      "tests": 31,
+      "pass": 31,
+      "fail": 0,
+      "skipped": 0,
+      "realLibvirt": false,
+      "realFilesAndSigkill": true
+    },
+    "finalPublicRegression": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "skippedTitles": []
+    },
+    "browser": {
+      "passed": true,
+      "realChromium": true,
+      "realIndependentAdminHttp": true,
+      "issuer": "fixture",
+      "nativeOwnerVerification": "mock",
+      "businessWrites": 0
+    }
+  },
+  "testflow": {
+    "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-executor-retirement/workspace.json",
+    "snapshotId": "e60f8a2b9f360b2794987474afdd5ada72713c41fb2da2651b9144d72fb2a90c",
+    "flowId": "a96b6855-492c-4821-a64a-4c9d9bb50655",
+    "impactRunId": "4fdd4dc9-5221-4a44-86b5-db8eac97f071",
+    "scopeId": "64235effe46f870056efe7c4df27b1e92c547345e97adba6fe550899f9b5d54d",
+    "graphRunId": "15354d50-2787-47cd-9ef8-1239f942aa3c",
+    "planRunId": "75047e15-2d5b-4a7c-a2a4-5f8baa857959",
+    "captureVerified": true,
+    "fixedInputVerified": true,
+    "workspaceStateUnchangedAtAnalyze": true,
+    "completeness": "partial-static",
+    "graphTruncated": true,
+    "pythonStaticAnalysis": "unsupported/unknown",
+    "candidateCounts": {
+      "targets": 1733,
+      "paths": 3,
+      "assets": 697,
+      "confirmedAssociations": 0,
+      "importedEvidence": 0,
+      "unplannedTargets": 1724,
+      "uncoveredTargets": 1733,
+      "unboundPaths": 3,
+      "verifiedPaths": 0,
+      "searchStates": 10000
+    },
+    "executable": false,
+    "prepareExecuted": false,
+    "executeExecuted": false,
+    "jobId": null,
+    "targetCoverage": "unknown; no execution evidence"
+  },
+  "source": {
+    "comparedFrozenCodeFiles": 276,
+    "allMatch": true,
+    "runtimeArtifacts": 31,
+    "runtimeId": "2.4.0:5cea06624eca1ed74551f614f5c4d97405f5a95edc0dc5328dd3d77b229efdba",
+    "allRuntimeHashesMatch": true
+  },
+  "covered": [
+    "exact owner review hash and separate confirmation",
+    "readonly immutable Node probe preview and automatic-review rejection",
+    "cold-retirement state machine and durable real filesystem quarantine",
+    "actual SIGKILL at domain, disk and receipt publication checkpoints",
+    "same-plan recovery, expiry and explicit fresh rebind review",
+    "unsupported XML devices, external state and disk topology refusal",
+    "synthetic receipt refusal and root-controlled enrollment guard",
+    "source/bundled public MCP safe boundary status",
+    "original null-prototype input compatibility and prior risk/human authorization regressions"
+  ],
+  "notCovered": [
+    "live Linux/libvirt hypervisor retirement/reboot persistence",
+    "actual physical MongoDB/SSH topology and credential/session/transaction retirement",
+    "shared/external MongoDB online cutover and replacement service/data migration",
+    "real native owner OS prompt",
+    "positive root owner enrollment/import console end-to-end",
+    "TestFlow execution/target/block/branch/ordered-path coverage",
+    "current real business data/preimages"
+  ],
+  "constraints": {
+    "realRemoteDraftsCreated": 0,
+    "realProbeExecuted": false,
+    "realMigrations": 0,
+    "realPrivateKeysOrProtectedContextsRead": false,
+    "realQuarantine": false,
+    "realRiskApproval": false,
+    "realReplacementJobs": 0,
+    "realBusinessWrites": 0,
+    "installEnableRestartDeploy": false,
+    "commitPushPr": false,
+    "crossThreadMessages": 0
+  },
+  "artifacts": [
+    {
+      "file": "agent-regression-final.tap",
+      "sha256": "94ed6fa08208ba0748047e02bd916e1bdc019012db16fa8a2f61236194f1b5ad",
+      "bytes": 129614
+    },
+    {
+      "file": "agent-regression.tap",
+      "sha256": "a16a2812dc5248955fcacc2de44e7ca7115bb7794a7a87b9dff524665b69bc4c",
+      "bytes": 129631
+    },
+    {
+      "file": "authority-tests.txt",
+      "sha256": "290195c09d3662e96d8152ec59893ce53c6d67e0e0ec8aa7eec6654e832de611",
+      "bytes": 2835
+    },
+    {
+      "file": "boundary-tests.tap",
+      "sha256": "348f539c3aed989771cfc01593bcd4acab3b341cc6b6243baccdf5b56dd25dca",
+      "bytes": 2195
+    },
+    {
+      "file": "browser/human-approved-no-job.png",
+      "sha256": "6d1acf19cfdcb84768614298c24b7078afae356431f752a0fe923069215dfc1d",
+      "bytes": 229254
+    },
+    {
+      "file": "browser/human-review.png",
+      "sha256": "cf7f642644a007924e228c2d5abba7ae33554c1ac1db5cc2d68d7a486d6eb988",
+      "bytes": 228021
+    },
+    {
+      "file": "browser-result.txt",
+      "sha256": "e4aa3c44ee28c44bb36a80ad5c2e8afa416bbe35eea678ea4ebf67fbc286fd6d",
+      "bytes": 436
+    },
+    {
+      "file": "failed-attempts.json",
+      "sha256": "f50a2bf2b29ba044223ac5366ac69f69bf53faf5ecc298b9685ec419763d61f4",
+      "bytes": 326
+    },
+    {
+      "file": "final-public-regression.tap",
+      "sha256": "112c6eae34b17e8b2910f612c5a3c61d782c916a7d0f3627c13cd53351187456",
+      "bytes": 4726
+    },
+    {
+      "file": "operations-preview.json",
+      "sha256": "a979190e8dab63b57efaa9087f468f814bb2fef4602db41d2192a987d1d81d0b",
+      "bytes": 3405
+    },
+    {
+      "file": "plugin-regression-final.tap",
+      "sha256": "68257cb68eb4c01f40d0f395b708ad30b4f99bdff8476b9bbe896ba2a23fb6ca",
+      "bytes": 46162
+    },
+    {
+      "file": "plugin-regression.tap",
+      "sha256": "c1969b14e0ee5b4a0020ad567e9e12369820ba016c5afc69fffaf78a2bf68922",
+      "bytes": 46320
+    },
+    {
+      "file": "probe-draft-preview.json",
+      "sha256": "89e629841ed95c98d35ba4a78b794240d5c5af65185d819126b4200930f4eac8",
+      "bytes": 1753
+    },
+    {
+      "file": "regression.tap",
+      "sha256": "0d660415e9e32ac5ec1fe6dc846bbcb59cad69ff9330c1b3dca4e2b3849e75b4",
+      "bytes": 13636
+    },
+    {
+      "file": "runtime-build.txt",
+      "sha256": "4858f692a20169d1220c39c5b5724ea0b49a46af2b3dc30f77abe844dd1cc6e8",
+      "bytes": 381
+    },
+    {
+      "file": "source-and-runtime-check.json",
+      "sha256": "7fc320fbd748b935924fcd7586be4b1ae1626bb799f152c462320f71c4316fe6",
+      "bytes": 55982
+    },
+    {
+      "file": "testflow-blocker.json",
+      "sha256": "8b1228099510b493054db29e18f59b2bdf3bbb1ed3961d1271dc93911c6d3f1a",
+      "bytes": 652
+    },
+    {
+      "file": "testflow-stages.json",
+      "sha256": "02b4297e4fa5b6a03c79ae29ebf30948ce93a37b57cda2ef6005b094f3b2fb93",
+      "bytes": 11407
+    }
+  ]
+}

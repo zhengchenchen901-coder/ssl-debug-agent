@@ -1,0 +1,1026 @@
+TAP version 13
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy chunk recovers the original keyed intent from exact durable evidence without replay
+ok 1 - legacy chunk recovers the original keyed intent from exact durable evidence without replay
+  ---
+  duration_ms: 497.818792
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy seal recovers the original keyed intent from exact durable evidence without replay
+ok 2 - legacy seal recovers the original keyed intent from exact durable evidence without replay
+  ---
+  duration_ms: 596.112208
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: plain historical audit and a missing job leave the exact protected record unchanged even with matching input
+ok 3 - plain historical audit and a missing job leave the exact protected record unchanged even with matching input
+  ---
+  duration_ms: 239.650041
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy candidate amount mismatch cannot become recovery evidence
+ok 4 - legacy candidate amount mismatch cannot become recovery evidence
+  ---
+  duration_ms: 198.235042
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy candidate job mismatch cannot become recovery evidence
+ok 5 - legacy candidate job mismatch cannot become recovery evidence
+  ---
+  duration_ms: 206.567583
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy candidate chunk mismatch cannot become recovery evidence
+ok 6 - legacy candidate chunk mismatch cannot become recovery evidence
+  ---
+  duration_ms: 232.612208
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy candidate purpose mismatch cannot become recovery evidence
+ok 7 - legacy candidate purpose mismatch cannot become recovery evidence
+  ---
+  duration_ms: 182.242958
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy candidate database mismatch cannot become recovery evidence
+ok 8 - legacy candidate database mismatch cannot become recovery evidence
+  ---
+  duration_ms: 172.319084
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy candidate instance mismatch cannot become recovery evidence
+ok 9 - legacy candidate instance mismatch cannot become recovery evidence
+  ---
+  duration_ms: 182.394125
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy remote jobId mismatch cannot discharge the original intent
+ok 10 - legacy remote jobId mismatch cannot discharge the original intent
+  ---
+  duration_ms: 239.556042
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy remote chunkHash mismatch cannot discharge the original intent
+ok 11 - legacy remote chunkHash mismatch cannot discharge the original intent
+  ---
+  duration_ms: 206.871375
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy remote chunkIndex mismatch cannot discharge the original intent
+ok 12 - legacy remote chunkIndex mismatch cannot discharge the original intent
+  ---
+  duration_ms: 203.442375
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy identity that lost credential bytes cannot adopt a matching redacted request
+ok 13 - legacy identity that lost credential bytes cannot adopt a matching redacted request
+  ---
+  duration_ms: 155.765667
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: legacy recovery cannot accept a caller proof or create a replacement job by unknown request fields
+ok 14 - legacy recovery cannot accept a caller proof or create a replacement job by unknown request fields
+  ---
+  duration_ms: 160.267875
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: completed historical recovery still rejects a different candidate and a different context scope
+ok 15 - completed historical recovery still rejects a different candidate and a different context scope
+  ---
+  duration_ms: 218.943792
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: original legacy envelope recovers through real source Manager route and store
+ok 16 - original legacy envelope recovers through real source Manager route and store
+  ---
+  duration_ms: 207.947708
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: original legacy envelope recovers through real bundled Manager route and store
+ok 17 - original legacy envelope recovers through real bundled Manager route and store
+  ---
+  duration_ms: 186.411125
+  type: 'test'
+  ...
+# (node:10506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a literal redaction placeholder cannot stand in for lost historical credential bytes
+ok 18 - a literal redaction placeholder cannot stand in for lost historical credential bytes
+  ---
+  duration_ms: 106.262583
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk validation rejection is durable, preserves exact intent, and never dispatches
+ok 19 - bulk validation rejection is durable, preserves exact intent, and never dispatches
+  ---
+  duration_ms: 432.567084
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk pre-SSH worker rejection survives Manager config drift without being confused with a remote error
+ok 20 - bulk pre-SSH worker rejection survives Manager config drift without being confused with a remote error
+  ---
+  duration_ms: 246.446625
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk chunk success lost between Manager and MCP survives restart without reupload
+ok 21 - bulk chunk success lost between Manager and MCP survives restart without reupload
+  ---
+  duration_ms: 363.502333
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk seal success lost between Manager and MCP survives restart without reupload
+ok 22 - bulk seal success lost between Manager and MCP survives restart without reupload
+  ---
+  duration_ms: 511.029291
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost worker chunk reply recovers exact durable evidence without replay
+ok 23 - lost worker chunk reply recovers exact durable evidence without replay
+  ---
+  duration_ms: 432.506334
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost worker seal reply recovers exact durable evidence without replay
+ok 24 - lost worker seal reply recovers exact durable evidence without replay
+  ---
+  duration_ms: 436.998375
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: disconnect after dispatch with no remote receipt stays uncertain, never inferred from missing job
+ok 25 - disconnect after dispatch with no remote receipt stays uncertain, never inferred from missing job
+  ---
+  duration_ms: 183.826834
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: wrong chunk evidence and partial seal cannot complete an exact bulk intent
+ok 26 - wrong chunk evidence and partial seal cannot complete an exact bulk intent
+  ---
+  duration_ms: 205.18225
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk preparation uses audited source Manager with exact receipts and durable rejection
+ok 27 - bulk preparation uses audited source Manager with exact receipts and durable rejection
+  ---
+  duration_ms: 192.642542
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk preparation uses audited bundled Manager with exact receipts and durable rejection
+ok 28 - bulk preparation uses audited bundled Manager with exact receipts and durable rejection
+  ---
+  duration_ms: 197.636167
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: partial seal keeps exact job and uncertain protection without rebuilding or executing
+ok 29 - partial seal keeps exact job and uncertain protection without rebuilding or executing
+  ---
+  duration_ms: 294.950625
+  type: 'test'
+  ...
+# (node:10507) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a mismatched initial acknowledgement cannot be delivered as prepare success
+ok 30 - a mismatched initial acknowledgement cannot be delivered as prepare success
+  ---
+  duration_ms: 220.019292
+  type: 'test'
+  ...
+# Subtest: isolated bundled manager downloads, previews and imports without source dependencies or remote calls
+ok 31 - isolated bundled manager downloads, previews and imports without source dependencies or remote calls
+  ---
+  duration_ms: 321.470584
+  type: 'test'
+  ...
+# Subtest: isolated bundle enforces profile/hash authorization and sends a standalone fixed helper
+ok 32 - isolated bundle enforces profile/hash authorization and sends a standalone fixed helper
+  ---
+  duration_ms: 171.561
+  type: 'test'
+  ...
+# Subtest: installed bundle enforces TTL policy without source checkout or node_modules
+ok 33 - installed bundle enforces TTL policy without source checkout or node_modules
+  ---
+  duration_ms: 352.878542
+  type: 'test'
+  ...
+# Subtest: bundled worker does not start the manager entrypoint
+ok 34 - bundled worker does not start the manager entrypoint
+  ---
+  duration_ms: 88.274667
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+ok 35 - persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 1496.526875
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+ok 36 - persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 1405.913833
+  type: 'test'
+  ...
+# (node:10513) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+ok 37 - real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 345.571542
+  type: 'test'
+  ...
+# (node:10513) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+ok 38 - real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 312.108709
+  type: 'test'
+  ...
+# Subtest: business field policy distinguishes identifier words from BSON tags, flags and index definitions
+ok 39 - business field policy distinguishes identifier words from BSON tags, flags and index definitions
+  ---
+  duration_ms: 0.716291
+  type: 'test'
+  ...
+# Subtest: typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+ok 40 - typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+  ---
+  duration_ms: 5.54275
+  type: 'test'
+  ...
+# Subtest: aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+ok 41 - aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+  ---
+  duration_ms: 0.742667
+  type: 'test'
+  ...
+# Subtest: references cannot cross processes, instances, endpoints, databases or changed target profiles
+ok 42 - references cannot cross processes, instances, endpoints, databases or changed target profiles
+  ---
+  duration_ms: 0.541083
+  type: 'test'
+  ...
+# Subtest: known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+ok 43 - known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+  ---
+  duration_ms: 2.548375
+  type: 'test'
+  ...
+# Subtest: index definitions, plugin identifiers, plan hashes and counts retain their contracts
+ok 44 - index definitions, plugin identifiers, plan hashes and counts retain their contracts
+  ---
+  duration_ms: 0.260458
+  type: 'test'
+  ...
+# Subtest: privacy capacity fails closed and leaves existing references valid
+ok 45 - privacy capacity fails closed and leaves existing references valid
+  ---
+  duration_ms: 0.337333
+  type: 'test'
+  ...
+# Subtest: business substrings never alter import/job IDs or database metadata
+ok 46 - business substrings never alter import/job IDs or database metadata
+  ---
+  duration_ms: 0.42175
+  type: 'test'
+  ...
+# Subtest: aggregation aliases and derived identifier values remain private while counts remain numeric
+ok 47 - aggregation aliases and derived identifier values remain private while counts remain numeric
+  ---
+  duration_ms: 0.8215
+  type: 'test'
+  ...
+# Subtest: historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+ok 48 - historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+  ---
+  duration_ms: 18.666292
+  type: 'test'
+  ...
+# Subtest: local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+ok 49 - local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+  ---
+  duration_ms: 688.139
+  type: 'test'
+  ...
+# Subtest: historical candidate restores typed references only within original bulk business surfaces
+ok 50 - historical candidate restores typed references only within original bulk business surfaces
+  ---
+  duration_ms: 0.306042
+  type: 'test'
+  ...
+# Subtest: disposition protocol remains intact when private business IDs equal its metadata values
+ok 51 - disposition protocol remains intact when private business IDs equal its metadata values
+  ---
+  duration_ms: 0.367416
+  type: 'test'
+  ...
+# Subtest: preflight enforces the packaged range without changing the default runtime
+ok 52 - preflight enforces the packaged range without changing the default runtime
+  ---
+  duration_ms: 61.461708
+  type: 'test'
+  ...
+# Subtest: diagnostic dashboard reuses the original page, has no business endpoints, and safely releases its port
+ok 53 - diagnostic dashboard reuses the original page, has no business endpoints, and safely releases its port
+  ---
+  duration_ms: 102.782708
+  type: 'test'
+  ...
+# Subtest: offline report escapes embedded data and does not require an HTTP server
+ok 54 - offline report escapes embedded data and does not require an HTTP server
+  ---
+  duration_ms: 16.593209
+  type: 'test'
+  ...
+# Subtest: preflight rejects a corrupted runtime before MCP starts
+ok 55 - preflight rejects a corrupted runtime before MCP starts
+  ---
+  duration_ms: 482.956
+  type: 'test'
+  ...
+# Subtest: missing dashboard files still leave an escaped offline failure report
+ok 56 - missing dashboard files still leave an escaped offline failure report
+  ---
+  duration_ms: 237.975042
+  type: 'test'
+  ...
+# Subtest: an unreadable config file reports its condition without leaking values
+ok 57 - an unreadable config file reports its condition without leaking values
+  ---
+  duration_ms: 9.081542
+  type: 'test'
+  ...
+# Subtest: launcher preserves a directory failure and saves its report in a writable fallback
+ok 58 - launcher preserves a directory failure and saves its report in a writable fallback
+  ---
+  duration_ms: 58.114834
+  type: 'test'
+  ...
+# Subtest: runtime events update only their own attempt and do not claim tool availability before discovery
+ok 59 - runtime events update only their own attempt and do not claim tool availability before discovery
+  ---
+  duration_ms: 29.659041
+  type: 'test'
+  ...
+# Subtest: launcher preserves MCP JSON-line handshake and tool registration
+ok 60 - launcher preserves MCP JSON-line handshake and tool registration
+  ---
+  duration_ms: 90.603042
+  type: 'test'
+  ...
+# Subtest: a real Node 14 bootstrap relaunches MCP under the selected compatible runtime
+ok 61 - a real Node 14 bootstrap relaunches MCP under the selected compatible runtime
+  ---
+  duration_ms: 178.792667
+  type: 'test'
+  ...
+# Subtest: Python generates the offline dashboard when Node is absent
+ok 62 - Python generates the offline dashboard when Node is absent
+  ---
+  duration_ms: 65.610875
+  type: 'test'
+  ...
+# Subtest: final report publication preserves opaque references and scrubs known business values before POST
+ok 63 - final report publication preserves opaque references and scrubs known business values before POST
+  ---
+  duration_ms: 4.983791
+  type: 'test'
+  ...
+# Subtest: final-result tools reject unknown/unscoped arguments and invalid read bounds before requests
+ok 64 - final-result tools reject unknown/unscoped arguments and invalid read bounds before requests
+  ---
+  duration_ms: 0.749834
+  type: 'test'
+  ...
+# Subtest: install.ps1 supports check-only, repeat installs, migration, and safe conflicts
+ok 65 - install.ps1 supports check-only, repeat installs, migration, and safe conflicts # SKIP
+  ---
+  duration_ms: 0.302916
+  type: 'test'
+  ...
+# Subtest: health proofs cannot be replayed for another challenge or listener
+ok 66 - health proofs cannot be replayed for another challenge or listener
+  ---
+  duration_ms: 0.902917
+  type: 'test'
+  ...
+# Subtest: MCP preserves authentication errors and does not restart or fall back
+ok 67 - MCP preserves authentication errors and does not restart or fall back
+  ---
+  duration_ms: 110.626
+  type: 'test'
+  ...
+# Subtest: MCP refuses legacy unauthenticated Managers before sending credentials
+ok 68 - MCP refuses legacy unauthenticated Managers before sending credentials
+  ---
+  duration_ms: 119.359708
+  type: 'test'
+  ...
+# Subtest: explicit Agent credentials are read-only and never regenerated when absent
+ok 69 - explicit Agent credentials are read-only and never regenerated when absent
+  ---
+  duration_ms: 81.5065
+  type: 'test'
+  ...
+# Subtest: MCP rejects HTTP redirects without forwarding credentials
+ok 70 - MCP rejects HTTP redirects without forwarding credentials
+  ---
+  duration_ms: 91.150375
+  type: 'test'
+  ...
+# Subtest: a process occupying the Agent port cannot obtain the bearer credential by claiming to be an Agent
+ok 71 - a process occupying the Agent port cannot obtain the bearer credential by claiming to be an Agent
+  ---
+  duration_ms: 84.08625
+  type: 'test'
+  ...
+# (node:10519) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP server exposes remote debug tools and forwards calls
+ok 72 - MCP server exposes remote debug tools and forwards calls
+  ---
+  duration_ms: 1796.508709
+  type: 'test'
+  ...
+# Subtest: service tools preserve startup evidence and reject arbitrary arguments before forwarding
+ok 73 - service tools preserve startup evidence and reject arbitrary arguments before forwarding
+  ---
+  duration_ms: 106.554584
+  type: 'test'
+  ...
+# Subtest: sandbox tools forward only scoped identities and keep local audit access on the Manager
+ok 74 - sandbox tools forward only scoped identities and keep local audit access on the Manager
+  ---
+  duration_ms: 126.60625
+  type: 'test'
+  ...
+# Subtest: MCP server supports newline-delimited stdio clients
+ok 75 - MCP server supports newline-delimited stdio clients
+  ---
+  duration_ms: 43.693959
+  type: 'test'
+  ...
+# Subtest: MCP forwards approved command draft tools
+ok 76 - MCP forwards approved command draft tools
+  ---
+  duration_ms: 88.575042
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent from .env port when no service is listening
+ok 77 - MCP starts the local agent from .env port when no service is listening
+  ---
+  duration_ms: 340.712875
+  type: 'test'
+  ...
+# Subtest: MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE
+ok 78 - MCP preserves worker deadline errors instead of reporting AGENT_UNAVAILABLE
+  ---
+  duration_ms: 64.00525
+  type: 'test'
+  ...
+# Subtest: MCP notifications/cancelled aborts an in-flight manager request
+ok 79 - MCP notifications/cancelled aborts an in-flight manager request
+  ---
+  duration_ms: 63.437708
+  type: 'test'
+  ...
+# Subtest: MCP serializes concurrent local agent startup across processes
+ok 80 - MCP serializes concurrent local agent startup across processes
+  ---
+  duration_ms: 1336.755375
+  type: 'test'
+  ...
+# Subtest: MCP clears stale startup locks before starting the local agent
+ok 81 - MCP clears stale startup locks before starting the local agent
+  ---
+  duration_ms: 592.36875
+  type: 'test'
+  ...
+# Subtest: MCP registers and renews a desktop lease for plugin-started local agents
+ok 82 - MCP registers and renews a desktop lease for plugin-started local agents
+  ---
+  duration_ms: 351.75375
+  type: 'test'
+  ...
+# Subtest: MCP heartbeat restarts a missing plugin-started local agent
+ok 83 - MCP heartbeat restarts a missing plugin-started local agent
+  ---
+  duration_ms: 15627.256167
+  type: 'test'
+  ...
+# Subtest: MCP uses 4343 as the default local agent port
+ok 84 - MCP uses 4343 as the default local agent port # SKIP port 4343 is already in use
+  ---
+  duration_ms: 0.807541
+  type: 'test'
+  ...
+# Subtest: MCP prewarms the local agent after initialize
+ok 85 - MCP prewarms the local agent after initialize
+  ---
+  duration_ms: 157.118542
+  type: 'test'
+  ...
+# Subtest: bundled MCP runs from an isolated cache after the clone directory is renamed
+ok 86 - bundled MCP runs from an isolated cache after the clone directory is renamed
+  ---
+  duration_ms: 1376.338208
+  type: 'test'
+  ...
+# Subtest: MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source
+ok 87 - MCP reports BUNDLED_AGENT_NOT_FOUND instead of falling back to source
+  ---
+  duration_ms: 63.421333
+  type: 'test'
+  ...
+# Subtest: external V2 agent URLs remain usable without a bundled runtime
+ok 88 - external V2 agent URLs remain usable without a bundled runtime
+  ---
+  duration_ms: 67.981542
+  type: 'test'
+  ...
+# Subtest: MCP replaces an outdated source manager when the runtime id differs
+ok 89 - MCP replaces an outdated source manager when the runtime id differs
+  ---
+  duration_ms: 622.737291
+  type: 'test'
+  ...
+# Subtest: MCP reuses an online manager even when target fields differ
+ok 90 - MCP reuses an online manager even when target fields differ
+  ---
+  duration_ms: 174.18925
+  type: 'test'
+  ...
+# Subtest: MCP keeps the manager process when .env target config changes
+ok 91 - MCP keeps the manager process when .env target config changes
+  ---
+  duration_ms: 343.920041
+  type: 'test'
+  ...
+# Subtest: MCP starts a new local agent when .env port changes
+ok 92 - MCP starts a new local agent when .env port changes
+  ---
+  duration_ms: 822.872959
+  type: 'test'
+  ...
+# Subtest: MCP starts the local agent on a fallback port when the configured port is occupied
+ok 93 - MCP starts the local agent on a fallback port when the configured port is occupied
+  ---
+  duration_ms: 338.547625
+  type: 'test'
+  ...
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP source store quarantines exact typed legacy input without replay or replacement
+ok 94 - public MCP source store quarantines exact typed legacy input without replay or replacement
+  ---
+  duration_ms: 616.41075
+  type: 'test'
+  ...
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP bundled store quarantines exact typed legacy input without replay or replacement
+ok 95 - public MCP bundled store quarantines exact typed legacy input without replay or replacement
+  ---
+  duration_ms: 459.797167
+  type: 'test'
+  ...
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP rejects invented proof, risk override, wrong confirmation, and extra identity fields
+ok 96 - public MCP rejects invented proof, risk override, wrong confirmation, and extra identity fields
+  ---
+  duration_ms: 173.49625
+  type: 'test'
+  ...
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real source Manager guards direct requests but never certifies an already queued old execution
+ok 97 - real source Manager guards direct requests but never certifies an already queued old execution
+  ---
+  duration_ms: 198.992666
+  type: 'test'
+  ...
+# (node:10520) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real bundled Manager guards direct requests but never certifies an already queued old execution
+ok 98 - real bundled Manager guards direct requests but never certifies an already queued old execution
+  ---
+  duration_ms: 279.518958
+  type: 'test'
+  ...
+# Subtest: compatible current Node is kept without probing another runtime
+ok 99 - compatible current Node is kept without probing another runtime
+  ---
+  duration_ms: 7.319291
+  type: 'test'
+  ...
+# Subtest: PATH selection uses the probed version and ignores incompatible runtimes
+ok 100 - PATH selection uses the probed version and ignores incompatible runtimes
+  ---
+  duration_ms: 25.843875
+  type: 'test'
+  ...
+# Subtest: NVM chooses the latest compatible version without changing its default
+ok 101 - NVM chooses the latest compatible version without changing its default
+  ---
+  duration_ms: 81.009167
+  type: 'test'
+  ...
+# Subtest: invalid explicit Node is reported instead of ignored
+ok 102 - invalid explicit Node is reported instead of ignored
+  ---
+  duration_ms: 6.707459
+  type: 'test'
+  ...
+# Subtest: an explicit symlink to the running Node resolves without a relaunch loop
+ok 103 - an explicit symlink to the running Node resolves without a relaunch loop
+  ---
+  duration_ms: 10.166666
+  type: 'test'
+  ...
+# (node:10522) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line output guards success, errors, files, logs and documents
+ok 104 - real MCP json-line output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 414.934333
+  type: 'test'
+  ...
+# (node:10522) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length output guards success, errors, files, logs and documents
+ok 105 - real MCP content-length output guards success, errors, files, logs and documents
+  ---
+  duration_ms: 293.244625
+  type: 'test'
+  ...
+# Subtest: malformed JSON cannot expose parser input through stderr
+ok 106 - malformed JSON cannot expose parser input through stderr
+  ---
+  duration_ms: 61.999292
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 107 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 5.146208
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 108 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 0.577167
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 109 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 0.365875
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 110 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 1.554833
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 111 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 0.365042
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 112 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.58975
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 113 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 0.973958
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 114 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 0.265958
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 115 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 0.563875
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 116 - each registered tool must have an output contract
+  ---
+  duration_ms: 4.619542
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 117 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 0.840375
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 118 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 32.111416
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 119 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.222417
+  type: 'test'
+  ...
+# Subtest: service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+ok 120 - service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+  ---
+  duration_ms: 0.50325
+  type: 'test'
+  ...
+# Subtest: an unavailable output guard still permits fixed block previews without echoing request metadata
+ok 121 - an unavailable output guard still permits fixed block previews without echoing request metadata
+  ---
+  duration_ms: 0.938791
+  type: 'test'
+  ...
+# Subtest: preview publisher stays bounded behind slow requests and reports dropped records
+ok 122 - preview publisher stays bounded behind slow requests and reports dropped records
+  ---
+  duration_ms: 1.975708
+  type: 'test'
+  ...
+# Subtest: darwin preserves owner checks and 0700/0600 without loading Windows code
+ok 123 - darwin preserves owner checks and 0700/0600 without loading Windows code
+  ---
+  duration_ms: 1.495667
+  type: 'test'
+  ...
+# Subtest: linux preserves owner checks and 0700/0600 without loading Windows code
+ok 124 - linux preserves owner checks and 0700/0600 without loading Windows code
+  ---
+  duration_ms: 0.3995
+  type: 'test'
+  ...
+# Subtest: Windows initializes and reuses private storage with an incompatible inherited module path
+ok 125 - Windows initializes and reuses private storage with an incompatible inherited module path # SKIP
+  ---
+  duration_ms: 0.419125
+  type: 'test'
+  ...
+# Subtest: Windows rejects a credential accessible to Everyone
+ok 126 - Windows rejects a credential accessible to Everyone # SKIP
+  ---
+  duration_ms: 0.026292
+  type: 'test'
+  ...
+# Subtest: preflight reports permission failure before MCP startup without touching credentials
+ok 127 - preflight reports permission failure before MCP startup without touching credentials
+  ---
+  duration_ms: 32.53775
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + source Manager
+ok 128 - index allowlist rejection is durable and retryable with source MCP + source Manager
+  ---
+  duration_ms: 509.699458
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + bundled Manager
+ok 129 - index allowlist rejection is durable and retryable with source MCP + bundled Manager
+  ---
+  duration_ms: 428.876
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: prepare success lost on delivery is cached across restart, never dispatched twice
+ok 130 - prepare success lost on delivery is cached across restart, never dispatched twice
+  ---
+  duration_ms: 321.723042
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost remote prepare reply recovers by exact identity without a second prepare
+ok 131 - lost remote prepare reply recovers by exact identity without a second prepare
+  ---
+  duration_ms: 413.857792
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: no-plan recovery fences the old attempt before the same intent can retry
+ok 132 - no-plan recovery fences the old attempt before the same intent can retry
+  ---
+  duration_ms: 257.078
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: validation rejection lost on delivery stays retryable after restart
+ok 133 - validation rejection lost on delivery stays retryable after restart
+  ---
+  duration_ms: 288.3325
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: committed index with a lost response reconciles without repeating createIndex
+ok 134 - committed index with a lost response reconciles without repeating createIndex
+  ---
+  duration_ms: 383.92375
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+ok 135 - MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+  ---
+  duration_ms: 706.734375
+  type: 'test'
+  ...
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10535) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery reports missing execution evidence and never adopts a same-spec index
+ok 136 - MCP recovery reports missing execution evidence and never adopts a same-spec index
+  ---
+  duration_ms: 324.66425
+  type: 'test'
+  ...
+# (node:10537) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10537) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and source Manager
+ok 137 - full insertOne first chunk admits risk review through public stdio MCP and source Manager
+  ---
+  duration_ms: 706.446667
+  type: 'test'
+  ...
+# {"riskPlanId":"c3d47a7fcd190fb0a80b721b45acb4f164a00596599db6da78512626d458985f","unitCount":34,"operationCount":100,"fenceReason":"human_risk_acceptance_no_external_attestation","canApprove":true,"replacementAllowed":false,"remoteDispatches":0}
+# (node:10537) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+ok 138 - full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+  ---
+  duration_ms: 633.770542
+  type: 'test'
+  ...
+# {"riskPlanId":"6529f68be890c0b628ebe2f71e66423abd2715edcbab8bd16bad5ff7f3dc7c6e","unitCount":34,"operationCount":100,"fenceReason":"human_risk_acceptance_no_external_attestation","canApprove":true,"replacementAllowed":false,"remoteDispatches":0}
+# (node:10539) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:10539) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and source Manager require human approval before any replacement upload
+ok 139 - public MCP and source Manager require human approval before any replacement upload
+  ---
+  duration_ms: 897.533291
+  type: 'test'
+  ...
+# (node:10539) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and bundled Manager require human approval before any replacement upload
+ok 140 - public MCP and bundled Manager require human approval before any replacement upload
+  ---
+  duration_ms: 819.235042
+  type: 'test'
+  ...
+# Subtest: data and config paths follow compatibility precedence
+ok 141 - data and config paths follow compatibility precedence
+  ---
+  duration_ms: 5.657833
+  type: 'test'
+  ...
+# Subtest: legacy migration copies only persistent data and never overwrites targets
+ok 142 - legacy migration copies only persistent data and never overwrites targets
+  ---
+  duration_ms: 64.218041
+  type: 'test'
+  ...
+# Subtest: legacy project-root mode migrates .env to config.env in place
+ok 143 - legacy project-root mode migrates .env to config.env in place
+  ---
+  duration_ms: 9.729542
+  type: 'test'
+  ...
+# Subtest: bundled runtime manifest is readable from the plugin root
+ok 144 - bundled runtime manifest is readable from the plugin root
+  ---
+  duration_ms: 1.091667
+  type: 'test'
+  ...
+# Subtest: Windows missing privacy credential blocks business calls while ordinary diagnostics remain available
+ok 145 - Windows missing privacy credential blocks business calls while ordinary diagnostics remain available # SKIP
+  ---
+  duration_ms: 0.297375
+  type: 'test'
+  ...
+1..145
+# tests 145
+# suites 0
+# pass 140
+# fail 0
+# cancelled 0
+# skipped 5
+# todo 0
+# duration_ms 24610.716667

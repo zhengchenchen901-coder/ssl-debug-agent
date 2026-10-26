@@ -1,0 +1,304 @@
+{
+  "evidenceId": "human-risk-handoff-20261026-local-v2",
+  "createdAt": "2026-10-26T08:44:13.299068+00:00",
+  "localImplementationStatus": "complete",
+  "acceptanceStatus": "partial; native tests pass, TestFlow execution unavailable, production not operated",
+  "policy": "human-risk-acceptance-v2",
+  "behavior": {
+    "humanIsFinalAuthorityForResidualUncertainty": true,
+    "externalReceiptPrerequisite": false,
+    "instanceWideQuarantinePrerequisite": false,
+    "originalHistoryPreserved": "unknown / uncertain",
+    "approvedOriginalTaskControlState": "terminated_unknown",
+    "remoteTerminationBeforeReplacementIntent": true,
+    "uniqueBidirectionalLineage": true,
+    "normalBusinessExecutionStillRequiresSeparateConfirmation": true,
+    "oldPolicyApprovalsSilentlyUpgraded": false
+  },
+  "nativeFinal": {
+    "agent": {
+      "tests": 567,
+      "pass": 553,
+      "fail": 0,
+      "skipped": 14,
+      "cancelled": 0,
+      "skippedTitles": [
+        "a selected gzip log continues beyond the synchronous 256 MiB scan ceiling # SKIP",
+        "an archive beyond 2 GiB reaches a late member in one bounded-memory traversal # SKIP",
+        "real Windows helper prepares without prompting and decodes synthetic protected credentials # SKIP",
+        "MongoDB bulk executes and rolls back a cross-collection transaction on a real replica set # SKIP",
+        "real secondary lag reproduces legacy verification failure; fixed helper recovers with one DDL # SKIP",
+        "real authenticated MongoDB sandbox setup and owned password reset deny business access # SKIP",
+        "real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database # SKIP",
+        "Windows native helper rejects tampering before launching PowerShell # SKIP",
+        "Windows native credentials: first creation, reopen and six concurrent processes share one key # SKIP",
+        "Windows initialization lock is released after process death and blocks competing creators # SKIP",
+        "Windows existing SQLite, WAL or SHM without credential never creates a replacement # SKIP",
+        "Windows malformed or denied credential never falls back or overwrites # SKIP",
+        "Windows rejects unsafe ACLs, hardlinks, junctions, network, synchronization and plugin cache paths # SKIP",
+        "Windows context CreateNew concurrency, durable reuse, source mismatch, corruption and ACL protection # SKIP"
+      ]
+    },
+    "plugin": {
+      "tests": 145,
+      "pass": 140,
+      "fail": 0,
+      "skipped": 5,
+      "cancelled": 0,
+      "skippedTitles": [
+        "install.ps1 supports check-only, repeat installs, migration, and safe conflicts # SKIP",
+        "MCP uses 4343 as the default local agent port # SKIP port 4343 is already in use",
+        "Windows initializes and reuses private storage with an incompatible inherited module path # SKIP",
+        "Windows rejects a credential accessible to Everyone # SKIP",
+        "Windows missing privacy credential blocks business calls while ordinary diagnostics remain available # SKIP"
+      ]
+    },
+    "newHandoffSubset": {
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "skippedTitles": []
+    },
+    "finalFocusedSubset": {
+      "tests": 70,
+      "pass": 70,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "skippedTitles": []
+    },
+    "browser": {
+      "passed": true,
+      "realChromium": true,
+      "realAdministratorHttp": true,
+      "nativeOwnerPrompt": "mock",
+      "mongoWorker": "synthetic fixture",
+      "externalReceiptRequired": false,
+      "businessWrites": 0,
+      "replacementJobsCreated": 0
+    }
+  },
+  "failedAttempts": [
+    {
+      "stage": "initial handoff test",
+      "file": "first-attempt.tap",
+      "reason": "fixture upload incorrectly included instanceId; validator rejected UNKNOWN_FIELD; corrected fixture scope"
+    },
+    {
+      "stage": "initial new native target-change test",
+      "file": "manual-first-attempt.tap",
+      "reason": "test expected409; existing session invalidation correctly returns401 MANUAL_SESSION_EXPIRED; asserted actual stronger invalidation"
+    },
+    {
+      "stage": "final plugin full suite first run",
+      "file": "plugin-regression-final.tap",
+      "test": "MCP serializes concurrent local agent startup across processes",
+      "reason": "lock waiting event was not observed",
+      "tests": 145,
+      "pass": 139,
+      "fail": 1,
+      "skipped": 5,
+      "resolution": "unchanged full suite rerun passed140/failed0/skipped5; no assertion weakened"
+    },
+    {
+      "stage": "TestFlow freeze",
+      "diagnosticId": "f7ee58e3-5a8f-4390-bf5f-503207f95777",
+      "reason": "test log still writing; retried after stable"
+    },
+    {
+      "stage": "TestFlow scope",
+      "diagnosticId": "d6f71595-c9f9-4e22-941c-27286eee773c",
+      "reason": "selected exported functions were not candidate entries; used actual P1 candidate entry IDs; full changed set retained"
+    },
+    {
+      "stage": "TestFlow plan schema",
+      "diagnosticId": "c952f430-4b09-49a4-aa33-90a5e10ea3c8",
+      "reason": "maxTargets20000 exceeds contract; used10000"
+    }
+  ],
+  "testflow": {
+    "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-human-risk-v2/workspace.json",
+    "snapshotId": "e88f5157122e5b05a1833158f43690fe73412a257476ffbc8c69ee141a938cfe",
+    "workflowId": "e88f5157122e5b05a1833158f43690fe73412a257476ffbc8c69ee141a938cfe",
+    "flowId": "9b511e7a-40f1-4b0a-888d-a39082809613",
+    "impactRunId": "cb5ae719-40ae-4c79-a48f-6bea84901c97",
+    "scopeId": "a6ffd483e25e48d3d8081afb8843b09d05fedb09f4aba51d2a2871014f283aac",
+    "graphRunId": "25752456-c9f4-40fa-b37f-e7acaebe084e",
+    "planRunId": "b23e1137-8f94-484c-b6e8-d92aba598c39",
+    "captureVerified": true,
+    "fixedInputVerified": true,
+    "workspaceStateUnchangedAtAnalyze": true,
+    "fullImpactedSymbols": 6504,
+    "scopeFunctions": 227,
+    "deferredCalls": 333,
+    "graphFunctions": 433,
+    "graphBlocks": 15554,
+    "completeness": "partial-static",
+    "graphTruncated": true,
+    "candidateCounts": {
+      "targets": 1300,
+      "paths": 2,
+      "assets": 705,
+      "confirmedAssociations": 0,
+      "importedEvidence": 0,
+      "unplannedTargets": 1295,
+      "uncoveredTargets": 1300,
+      "unboundPaths": 2,
+      "verifiedPaths": 0,
+      "searchStates": 12000
+    },
+    "executable": false,
+    "prepareExecuted": false,
+    "executeExecuted": false,
+    "jobId": null,
+    "actualTargetBlockBranchPathCoverage": "unknown; no TestFlow execution evidence; serialized remote helper is not a complete static CFG"
+  },
+  "runtime": {
+    "runtimeId": "2.4.0:e4e1734a9863e7c34476f9d50e27309c5d4b8686318c91c6435781bb117ed6a2",
+    "artifacts": 26,
+    "allHashesMatch": true,
+    "frozenCodeFilesCompared": 265,
+    "allSourceBytesMatch": true
+  },
+  "covered": [
+    "human approval without external proof or instance quarantine",
+    "independent admin session and fresh native-verification gate; cancellation and target-change rejection",
+    "hash-bound memo and Manager observations; effects/recipient/amount/date guards unchanged",
+    "atomic original local scheduler termination and immutable unknown evidence",
+    "remote durable control tombstone, absence distinguished from historical job",
+    "old-job all managed write admissions denied; unrelated jobs unaffected",
+    "retirement write failure produces no replacement intent/upload",
+    "lost remote ack, restart and retry reuse exact handoff",
+    "actual SIGKILL before/after approval and creation transactions",
+    "one replacement identity under concurrent creators and cross-proposal conflict",
+    "bidirectional old/new sandbox lineage and existing-job adoption refusal",
+    "cooperative pre-commit retirement causes transaction abort in fixture",
+    "normal first chunk/seal/immutable plan admission and no business execution at creation",
+    "source and bundled Manager public MCP plus real Chromium human workbench"
+  ],
+  "notVerified": [
+    "real native owner OS prompt",
+    "real default/test-server termination or replacement creation",
+    "real remote helpers on target Node/Linux/MongoDB matrix",
+    "recall of previously dispatched fence-unaware helpers or global credential/session revocation: intentionally not claimed by v2",
+    "live business preimages or actual compensation execution",
+    "TestFlow executed targets/blocks/branches/ordered paths"
+  ],
+  "removedPriorTurnFeatures": [
+    "libvirt cold-retirement authority and root signer/enrollment",
+    "cold-retirement runtime distribution",
+    "readonly boundary-probe helper and preview generator"
+  ],
+  "preserved": [
+    "original uncommitted plugin .4 version change and installed handshake evidence",
+    "null-prototype document validation fix",
+    "legacy-policy external-fence verification and old approvals policy boundaries",
+    "original uncertain record and existing global holds; no production task rows edited"
+  ],
+  "constraints": {
+    "realTaskStateWrites": 0,
+    "realBusinessWrites": 0,
+    "realPlansPreparedThisDevelopmentTurn": 0,
+    "realHumanApprovals": 0,
+    "realReplacementJobs": 0,
+    "realMigrationsOrQuarantine": 0,
+    "realPrivateKeysOrProtectedContextsRead": false,
+    "installEnableRemoteRestartDeploy": false,
+    "gitCommitPushPr": false,
+    "crossChatMessages": false
+  },
+  "artifacts": [
+    {
+      "file": "agent-regression-final.tap",
+      "sha256": "e32217df4816c7d856cf233b5c25cc989a2dd3ff8891b3ceb541a26d1081905b",
+      "bytes": 132284
+    },
+    {
+      "file": "agent-regression.tap",
+      "sha256": "de6f42474beb28000e1d730bdb02de8c0c507ebb86ed89fd6186429622d08abe",
+      "bytes": 131822
+    },
+    {
+      "file": "browser/human-approved-no-job.png",
+      "sha256": "d1997e8454808b756da8eed28d4ff11f224203a1d4bc36960917be16ea139f93",
+      "bytes": 309625
+    },
+    {
+      "file": "browser/human-review.png",
+      "sha256": "8f0466974c731b7a86bda2904377a1ba5779754c52d6d3e56f4d2d67d21c466a",
+      "bytes": 305396
+    },
+    {
+      "file": "browser-result-final.txt",
+      "sha256": "0702a19fb19572ec11f5bad1555cc7ecce3e9221a7b20824ffa25e39ae60dcfc",
+      "bytes": 448
+    },
+    {
+      "file": "browser-result.txt",
+      "sha256": "e4b12e4142872e7e52adda6aa53754d1bce02d07ab124a7fb093060e1ec3e5ae",
+      "bytes": 434
+    },
+    {
+      "file": "final-focused-regression.tap",
+      "sha256": "d8b820bb568cb7f793510ab9d2a49e9e9379a1053317915cb23d5885fc892dfe",
+      "bytes": 17817
+    },
+    {
+      "file": "first-attempt.tap",
+      "sha256": "0634d669adea99e90cca74a59dd57732daba7084d9abaeccce0a7d4bc4cc81b3",
+      "bytes": 3957
+    },
+    {
+      "file": "focused-regression.tap",
+      "sha256": "641d76da8320384f9331ed4aba1c804264cb4a4ef373b20b6a59ad64123b6013",
+      "bytes": 5552
+    },
+    {
+      "file": "handoff-final.tap",
+      "sha256": "7adf83304fbb8b98bd02312303ab7877de50dea1ff0172516c2bed64c93e0352",
+      "bytes": 4319
+    },
+    {
+      "file": "manual-first-attempt.tap",
+      "sha256": "6a489e4a30180789658777c45d4704c5ca67b07293aa608a31c0c8a640da9075",
+      "bytes": 4698
+    },
+    {
+      "file": "plugin-regression-final.tap",
+      "sha256": "5b6aaa5fbf85793a616978448d416d5862925dec119a74db240300d61df7d074",
+      "bytes": 47041
+    },
+    {
+      "file": "plugin-regression-retry.tap",
+      "sha256": "e6cf90563f75fdf62844c5eff52eb9788bd859f2a1cae3cb2b7942e420817171",
+      "bytes": 46290
+    },
+    {
+      "file": "plugin-regression.tap",
+      "sha256": "f51c5cb0fbfca327f350bbe8c288d1acd7b1c119af0effb14db1bcbc6beb57ff",
+      "bytes": 46262
+    },
+    {
+      "file": "runtime-build.txt",
+      "sha256": "23feeea5e553333cf6ef54dd87181ad547e439cf117eabc43565ccd4e57a23af",
+      "bytes": 381
+    },
+    {
+      "file": "source-runtime-verification.json",
+      "sha256": "aba7eb4ded5aecf26dad8a1f81ec00ff6180460cd0ae37d51ff9f361d0dfd35d",
+      "bytes": 50592
+    },
+    {
+      "file": "testflow-blocker.json",
+      "sha256": "2d14dc5888c312325f1edb1400b7705110474abcef2b8ee88c9ca36397d1e0c8",
+      "bytes": 623
+    },
+    {
+      "file": "testflow-stages.json",
+      "sha256": "cb6a8c1069447652e8df158f0d437a9f5dba6c80cb0203bd391408c8e20dccc9",
+      "bytes": 25717
+    }
+  ]
+}

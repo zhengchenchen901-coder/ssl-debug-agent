@@ -50244,6 +50244,73 @@ function isPrepareTicket(value) {
 var import_node_crypto5 = require("node:crypto");
 var import_posix5 = __toESM(require("node:path/posix"), 1);
 
+// mongodb-job-retirement-runtime.js
+var MONGODB_JOB_RETIREMENT_RUNTIME = String.raw`
+function __bulkRetirement(jobId) {
+  var dir = __bulkJobDir(jobId);
+  if (!__fs.existsSync(dir)) return null;
+  var record = __bulkReadJson(__path.join(dir, "retirement.json"), 65536);
+  if (record && (record.version !== 1 || record.jobId !== jobId || record.database !== __config.database || record.status !== "terminated_unknown")) __bulkFail("MONGODB_BULK_LOG_INVALID", "invalid retirement record");
+  return record;
+}
+function __bulkAssertNotRetired(jobId) {
+  if (__bulkRetirement(jobId)) __bulkFail("MONGODB_BULK_JOB_RETIRED", "job was terminated by independent human risk review");
+}
+function __bulkRetirementView(record) {
+  return Object.assign({}, record, { managedAdmissionClosed: true, historicalOutcome: "unknown", legacyInFlightOutcome: "unknown", controlRecordDigest: __bulkHash(record) });
+}
+function __bulkRetireJob(jobId) {
+  var dir = __bulkEnsureJobDir(jobId);
+  return __bulkWithLock(__path.join(__bulkRoot(), ".risk-retirement.lock"), function () {
+  return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var existing = __bulkRetirement(jobId);
+    if (existing) {
+      ["replacementJobId", "riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest"].forEach(function (key) {
+        if (existing[key] !== __request[key]) __bulkFail("MONGODB_BULK_RETIREMENT_CONFLICT", "retirement belongs to a different reviewed replacement");
+      });
+      return __bulkRetirementView(existing);
+    }
+    var priorLineage = __bulkReplacementLineage(__request.replacementJobId);
+    if (priorLineage && (priorLineage.originalJobId !== jobId || priorLineage.riskPlanId !== __request.riskPlanId)) __bulkFail("MONGODB_BULK_RETIREMENT_CONFLICT", "replacement already belongs to another retirement");
+    var replacementDir = __bulkJobDir(__request.replacementJobId);
+    if (__fs.existsSync(replacementDir)) {
+      var replacement = __bulkReadJson(__path.join(replacementDir, "manifest.json"), 4 * 1024 * 1024);
+      if (replacement && (!replacement.riskLineage || replacement.riskLineage.originalJobId !== jobId || replacement.riskLineage.riskPlanId !== __request.riskPlanId)) __bulkFail("MONGODB_BULK_RETIREMENT_CONFLICT", "replacement job already exists outside this approved handoff");
+    }
+    var manifest = __bulkReadJson(__path.join(dir, "manifest.json"), 4 * 1024 * 1024);
+    var record = { version: 1, jobId: jobId, database: __config.database, status: "terminated_unknown",
+      replacementJobId: __request.replacementJobId, riskPlanId: __request.riskPlanId, dispositionId: __request.dispositionId,
+      originalRequestDigest: __request.originalRequestDigest, replacementRequestDigest: __request.replacementRequestDigest,
+      approvalAuditId: __request.approvalAuditId, originalJobFound: !!manifest, recordedAt: new Date().toISOString() };
+    // Durable tombstone first. A crash can leave the old manifest unchanged, but
+    // all supported get/write paths consult this pinned record before using it.
+    __bulkWriteJson(__path.join(dir, "retirement.json"), record, 65536);
+    if (manifest) {
+      manifest.status = "terminated_unknown"; manifest.desiredState = "stop";
+      manifest.replacedBy = record.replacementJobId; manifest.riskPlanId = record.riskPlanId;
+      manifest.updatedAt = record.recordedAt; __bulkSaveManifest(manifest);
+    }
+    __bulkAppendJsonLine(__path.join(dir, "events.jsonl"), { at: record.recordedAt, event: "human_risk_job_terminated", riskPlanId: record.riskPlanId, replacementJobId: record.replacementJobId, historicalOutcome: "unknown" });
+    return __bulkRetirementView(record);
+  });
+  });
+}
+function __bulkReplacementLineage(jobId) {
+  var found = null, names = __fs.readdirSync(__bulkRoot());
+  if (names.length > 2008) __bulkFail("SANDBOX_STORAGE_SCAN_LIMIT", "too many entries for lineage inspection");
+  names.forEach(function (name) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name)) return;
+    var retired = __bulkRetirement(name);
+    if (retired && retired.replacementJobId === jobId) {
+      if (found) __bulkFail("MONGODB_BULK_RETIREMENT_CONFLICT", "replacement has more than one original job");
+      found = { originalJobId: retired.jobId, riskPlanId: retired.riskPlanId, dispositionId: retired.dispositionId,
+        replacementRequestDigest: retired.replacementRequestDigest, historicalOutcome: "unknown" };
+    }
+  });
+  return found;
+}
+`;
+
 // mongodb-bulk-runtime.js
 var MONGODB_BULK_RUNTIME = String.raw`
 function __bulkFail(code, message, details) {
@@ -50307,8 +50374,8 @@ function __bulkAllowedFile(filePath, transient) {
   if (__path.normalize(filePath) !== filePath || __path.isAbsolute(relative) || parts.length > 2) return false;
   var name = parts[parts.length - 1];
   if (transient) name = name.replace(/\.[0-9]+\.[a-f0-9]{16,24}\.tmp$/, "");
-  if (parts.length === 1) return /^(\.storage-v1\.json|\.worker-lease\.json|\.worker-lease\.lock|\.storage-quota\.lock)$/.test(name);
-  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(parts[0]) && /^(manifest|plan|control)\.json$|^(chunk|batch|after|differences)-[0-9]+\.json$|^events\.jsonl$|^\.(manifest|prepare)\.lock$/.test(name);
+  if (parts.length === 1) return /^(\.storage-v1\.json|\.worker-lease\.json|\.worker-lease\.lock|\.storage-quota\.lock|\.risk-retirement\.lock)$/.test(name);
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(parts[0]) && /^(manifest|plan|control|retirement)\.json$|^(chunk|batch|after|differences)-[0-9]+\.json$|^events\.jsonl$|^\.(manifest|prepare)\.lock$/.test(name);
 }
 
 function __bulkGuardFile(filePath, transient) {
@@ -50354,7 +50421,7 @@ function __bulkQuotaWrite(filePath, bytes, action) {
   __bulkGuardFile(filePath);
   return __bulkWithLock(__path.join(__bulkRoot(), ".storage-quota.lock"), function () {
     var usage = __bulkStorageUsage(), existing = __bulkGuardFile(filePath);
-    var control = /\/(manifest|control)\.json$|\/\.worker-lease\.json$|\/events\.jsonl$/.test(filePath);
+    var control = /\/(manifest|control|retirement)\.json$|\/\.worker-lease\.json$|\/events\.jsonl$/.test(filePath);
     var limit = __storageLimits.maxBytes + (control ? __storageLimits.controlReserveBytes : 0);
     var filesLimit = __storageLimits.maxFiles + (control ? __storageLimits.controlReserveFiles : 0);
     var jobFiles = __path.dirname(filePath) === __bulkRoot() ? 0 : __fs.readdirSync(__path.dirname(filePath)).length;
@@ -50483,6 +50550,7 @@ function __bulkManifest(jobId, allowMissing) {
     if (allowMissing) return null;
     __bulkFail("MONGODB_BULK_JOB_NOT_FOUND", "bulk job was not found");
   }
+  __bulkAssertNotRetired(jobId);
   var manifest = __bulkReadJson(__path.join(directory, "manifest.json"), 4 * 1024 * 1024);
   if (!manifest || [1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId) __bulkFail("MONGODB_BULK_LOG_INVALID", "bulk job manifest is invalid");
   return manifest;
@@ -50659,6 +50727,7 @@ function __bulkStatus(manifest, plan, options) {
     database: manifest.database,
     receiptStorage: __bulkReceiptStorage(manifest),
     status: current,
+    riskLineage: manifest.riskLineage,
     mode: manifest.mode || "execute",
     desiredState: manifest.desiredState || "running",
     createdAt: manifest.createdAt,
@@ -51173,6 +51242,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
     var now = new Date();
     var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
     await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary, businessDatabase: __config.database, scope: storage.scope }, { session: session });
+    __bulkAssertNotRetired(jobId);
     committing = true;
     await session.commitTransaction();
     return { alreadyCommitted: false, summary: summary };
@@ -51228,12 +51298,14 @@ async function __bulkUpload() {
   var jobId = chunk.jobId;
   var dir = __bulkEnsureJobDir(jobId);
   var accepted = __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    __bulkAssertNotRetired(jobId);
     var manifestPath = __path.join(dir, "manifest.json");
     var manifest = __bulkReadJson(manifestPath, 4 * 1024 * 1024);
     var identity = { schemaVersion: 2, receiptStorage: { database: __config.sandboxDatabase, collection: __config.receiptsCollection, scope: __bulkSourceScope() }, jobId: jobId, database: chunk.database, purpose: chunk.purpose, rollbackTtlMs: chunk.rollbackTtlMs, chunks: [], unitCount: 0, operationCount: 0, inputBytes: 0, status: "uploading", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     if (!manifest) {
       if (chunk.chunkIndex !== 0) __bulkFail("MONGODB_BULK_CHUNK_ORDER", "the first upload chunk must have index 0");
       manifest = identity;
+      manifest.riskLineage = __bulkReplacementLineage(jobId) || undefined;
     } else if ([1, 2].indexOf(manifest.schemaVersion) === -1 || manifest.jobId !== jobId || manifest.database !== chunk.database || manifest.purpose !== chunk.purpose || manifest.rollbackTtlMs !== chunk.rollbackTtlMs) {
       __bulkFail("MONGODB_BULK_JOB_CONFLICT", "jobId already belongs to a different upload plan");
     }
@@ -51610,6 +51682,8 @@ function __bulkFinish(jobId, planHash, leaseId, mode) {
 }
 
 function __bulkGet(jobId) {
+  var retired = __bulkRetirement(jobId);
+  if (retired) return __bulkRetirementView(retired);
   var manifest = __bulkManifest(jobId, false);
   var plan = manifest.planHash ? __bulkLoadPlan(jobId, manifest) : null;
   var query = __request.query || {};
@@ -51633,6 +51707,8 @@ function __bulkList() {
   var dirs = __fs.readdirSync(root).filter(function (name) { return /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name); });
   var items = [];
   dirs.forEach(function (name) {
+    var retired = __bulkRetirement(name);
+    if (retired) { items.push(__bulkRetirementView(retired)); return; }
     var manifest = __bulkReadJson(__path.join(root, name, "manifest.json"), 4 * 1024 * 1024);
     if (manifest && manifest.jobId === name) {
       items.push({ jobId: name, database: manifest.database, status: manifest.status, mode: manifest.mode || "execute", createdAt: manifest.createdAt, updatedAt: manifest.updatedAt, planHash: manifest.planHash, operationCount: manifest.operationCount, unitCount: manifest.unitCount, batchCount: manifest.batchCount || 0, rollbackExpiresAt: manifest.rollbackExpiresAt, pauseReason: manifest.pauseReason });
@@ -51660,7 +51736,9 @@ async function __bulkMain() {
       return;
     }
     var jobId = __bulkJobId();
-    if (action === "upload") data = await __bulkUpload();
+    if (action !== "get" && action !== "retire") __bulkAssertNotRetired(jobId);
+    if (action === "retire") data = __bulkRetireJob(jobId);
+    else if (action === "upload") data = await __bulkUpload();
     else if (action === "recoverUpload") data = __bulkRecoverUpload();
     else if (action === "get") data = __bulkGet(jobId);
     else if (action === "executeStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "execute");
@@ -51767,6 +51845,7 @@ function __sandboxFiles(jobId) {
 }
 
 function __sandboxCleanupPlan(jobId) {
+  __bulkAssertNotRetired(jobId);
   var manifest = __bulkManifest(jobId, false);
   var plan = __bulkLoadPlan(jobId, manifest);
   var storage = __bulkReceiptStorage(manifest);
@@ -52217,6 +52296,7 @@ function buildMongoBulkScript(request, config, normalizationOptions = {}) {
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
+    MONGODB_JOB_RETIREMENT_RUNTIME,
     "var __ttlFail = __bulkFail;",
     MONGODB_TTL_POLICY_SCRIPT,
     MONGODB_SANDBOX_RUNTIME,
@@ -52241,6 +52321,7 @@ function parseMarker(stdout) {
 function normalizeActionRequest(input, config) {
   const action = input.action;
   const fields3 = {
+    retire: ["jobId", "replacementJobId", "riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest", "approvalAuditId"],
     recoverUpload: ["jobId", "database", "chunkIndex", "chunkHash", "endOfUpload"],
     sandboxStatus: ["offset", "limit"],
     sandboxExport: ["jobId", "limit"],
@@ -52263,6 +52344,10 @@ function normalizeActionRequest(input, config) {
     executeStart: ["jobId", "planHash", "leaseId", "confirmation"]
   };
   if (fields3[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields3[action]], "bulk action");
+  if (action === "retire") {
+    if (![input.jobId, input.replacementJobId].every((x) => typeof x === "string" && JOB_ID_PATTERN.test(x)) || input.jobId === input.replacementJobId || ![input.riskPlanId, input.dispositionId, input.originalRequestDigest, input.replacementRequestDigest, input.approvalAuditId].every((x) => typeof x === "string" && HASH_PATTERN.test(x))) throw bulkError("invalid exact reviewed retirement identity", "MONGODB_BULK_RETIREMENT_INVALID");
+    return { ...input, action };
+  }
   if (action === "recoverUpload") {
     if (!JOB_ID_PATTERN.test(input.jobId || "") || input.database !== config.database || !Number.isInteger(input.chunkIndex) || input.chunkIndex < 0 || input.chunkIndex > 9999 || !HASH_PATTERN.test(input.chunkHash || "") || typeof input.endOfUpload !== "boolean") {
       throw bulkError("exact bulk chunk recovery identity is required", "MONGODB_BULK_RECOVERY_IDENTITY_INVALID");
@@ -52340,7 +52425,7 @@ function normalizeActionRequest(input, config) {
 }
 async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
-  const recoveryAction = input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
+  const recoveryAction = input.action === "retire" || input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
   const management = typeof input.action === "string" && input.action.startsWith("sandbox");
   if (management && rawConfig.enabled === false) throw bulkError("MongoDB sandbox access is disabled for this instance", "SANDBOX_MANAGEMENT_NOT_CONFIGURED", 403);
   let config, request, script;
@@ -52493,6 +52578,10 @@ var MongoBulkJobRunner = class {
     try {
       while (true) {
         const state = await this.run({ action: "get", jobId: job.jobId, includePlan: true }, { priority: "control", timeoutMs: 6e4 });
+        if (state.status === "terminated_unknown") {
+          if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "stopped", phase: "terminated_unknown", inFlight: false });
+          return;
+        }
         if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, {
           status: "running",
           phase: state.nextBatch < state.batchCount ? "executing" : "verifying",
@@ -54759,6 +54848,15 @@ function securityCapabilities(config = {}) {
     schemaVersion: SECURITY_POLICY.schemaVersion,
     policyVersion: SECURITY_POLICY_VERSION,
     authority: "remote-debug-agent",
+    humanRiskReplacement: {
+      policy: "human-risk-acceptance-v2",
+      authority: "independent-administrator-with-native-owner-verification",
+      externalMigrationReceiptRequired: false,
+      originalHistory: "unknown",
+      terminationScope: "managed-job-admissions-and-cooperative-workers",
+      legacyInFlightOutcome: "unknown",
+      businessExecutionRequiresSeparateConfirmation: true
+    },
     services: { ...SECURITY_POLICY.services },
     resources: {
       sharedHostPools: true,
@@ -56700,6 +56798,10 @@ mutation.batches = [batch];
 var receiptStorage = fields("database collection legacy scope schemaVersion");
 var bulk = {
   ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
+  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
+  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
+  managedAdmissionClosed: "boolean",
+  originalJobFound: "boolean",
   receiptStorage,
   activeBatchIndexes: [scalar],
   committed: fields("matched modified inserted unchanged"),
@@ -56803,11 +56905,15 @@ var contracts = {
     remoteFenceConfirmed: "boolean",
     replacementAllowed: "boolean",
     missingRequirements: [scalar],
+    historicalEvidenceGaps: [scalar],
     ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
     humanConfirmationRequired: "boolean",
     humanApproved: "boolean",
     canApprove: "boolean",
     collections: [scalar],
+    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
+    acceptedResidualRisk: "boolean",
+    observations: { ...fields("source observedAt status code historicalOutcome") },
     binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
     fenceChallenge: {
       ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
@@ -57445,7 +57551,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
   if (!["create", "attach", "cleanup"].includes(input.action)) validate2(input.scope);
   if (input.action === "disposition") {
     const common2 = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
-    const fields3 = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine" ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"] : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"] : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...input.mode === "create_replacement" ? ["reviewHash"] : []] : [];
+    const fields3 = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine" ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"] : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest", "reviewMemo"] : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...input.mode === "create_replacement" ? ["reviewHash"] : []] : [];
     if (!fields3.length || Object.keys(input).some((key) => ![...common2, ...fields3].includes(key))) throw privacyError("BUSINESS_DISPOSITION_DENIED");
     if (input.mode === "prepare_risk") {
       const target2 = JSON.parse(input.scope), requests = {};
@@ -57463,11 +57569,31 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         }
         requests[name2] = request;
       }
-      return service.call("prepare_risk_replacement", { ...input, ...requests });
+      if (input.reviewMemo !== void 0 && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4e3)) throw privacyError("BUSINESS_DISPOSITION_DENIED");
+      const reviewMemo = input.reviewMemo === void 0 ? "" : createOutputGuard().sanitize({ reviewMemo: input.reviewMemo }).value.reviewMemo;
+      let observations;
+      try {
+        const observed = await dispatch(target2.id, "/mongodb/bulk/job", { jobId: requests.originalRequest.jobId, includeDifferences: false, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt, operationId: input.operationId });
+        observations = { source: "manager_remote_job_read", observedAt: Date.now(), status: observed.ok === false ? "unavailable" : observed.status || "unknown", code: observed.error?.code, historicalOutcome: "unknown" };
+      } catch (error2) {
+        observations = { source: "manager_remote_job_read", observedAt: Date.now(), status: "unavailable", code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "UNKNOWN", historicalOutcome: "unknown" };
+      }
+      return service.call("prepare_risk_replacement", { ...input, ...requests, reviewMemo, observations });
     }
     if (input.mode === "inspect_risk") return service.call("inspect_risk_replacement", input);
     if (input.mode === "create_replacement") {
-      const reserved = await service.call("create_risk_replacement", input), target2 = JSON.parse(input.scope);
+      const target2 = JSON.parse(input.scope);
+      const handoff = await service.call("risk_handoff_context", input);
+      if (handoff.required) {
+        const result2 = createOutputGuard().sanitize(await dispatch(target2.id, "/mongodb/bulk/retire", {
+          ...handoff.request,
+          operationId: input.operationId,
+          timeoutMs: input.timeoutMs,
+          deadlineAt: input.deadlineAt
+        })).value;
+        await service.call("record_risk_retirement", { ...input, result: result2 });
+      }
+      const reserved = await service.call("create_risk_replacement", input);
       if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
       const record = reserved.intent;
       const result = await bulkPrepareRequest(
@@ -69137,7 +69263,7 @@ function createApp(options = {}) {
       let result;
       if (action === "upload") {
         result = await runMongoBulk2({ action: "upload", chunk: raw }, { operation: requestOperation });
-      } else if (action === "recoverUpload") {
+      } else if (action === "retire" || action === "recoverUpload") {
         result = await runMongoBulk2({ ...raw, action }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk2({ action, ...raw }, { operation: requestOperation });
@@ -69230,6 +69356,7 @@ function createApp(options = {}) {
   app.post("/mongodb/mutations/recover-prepare", (request, response) => handleMongoMutation(request, response, "recover_prepare", "/mongodb/mutations/recover-prepare"));
   app.post("/mongodb/mutations/get", (request, response) => handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
   app.post("/mongodb/mutations/recover-execution", (request, response) => handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
+  app.post("/mongodb/bulk/retire", (request, response) => handleMongoBulk(request, response, "retire", "/mongodb/bulk/retire"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
   app.post("/mongodb/bulk/recover-prepare", (request, response) => handleMongoBulk(request, response, "recoverUpload", "/mongodb/bulk/recover-prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
@@ -69532,7 +69659,7 @@ function createManagerApp(options = {}) {
     service: options.privacyService,
     dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: async (id, route2, payload) => {
-      await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload);
+      if (route2 !== "/mongodb/bulk/retire") await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload);
       return workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" });
     },
     directory: import_node_path17.default.join(import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")

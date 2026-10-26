@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-10-26T08:35:39.403Z",
+  "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-human-risk-v2/workspace.json",
+  "status": "blocked",
+  "error": "缺少匹配的 be-jest/jest-unit 执行适配器",
+  "actualFramework": "node:test",
+  "supportedAdapters": [
+    "be-jest",
+    "jest-unit"
+  ],
+  "missing": [
+    "matching execution adapter",
+    "versioned executable assets/input/state/assertion bindings",
+    "immutable dependency image and isolation contract"
+  ],
+  "prepareExecuted": false,
+  "executeExecuted": false,
+  "jobId": null,
+  "targetCoverage": "unknown"
+}

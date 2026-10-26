@@ -1,0 +1,322 @@
+TAP version 13
+# (node:99341) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: remote Node probe reads only bounded proc identity, never config/argv/env/credentials
+ok 1 - remote Node probe reads only bounded proc identity, never config/argv/env/credentials
+  ---
+  duration_ms: 0.941458
+  type: 'test'
+  ...
+# Subtest: probe marks inaccessible process facts unknown and cannot certify retirement
+ok 2 - probe marks inaccessible process facts unknown and cannot certify retirement
+  ---
+  duration_ms: 0.277667
+  type: 'test'
+  ...
+# Subtest: local probe preview is an explicit manual-only immutable command draft input
+ok 3 - local probe preview is an explicit manual-only immutable command draft input
+  ---
+  duration_ms: 36.736459
+  type: 'test'
+  ...
+# Subtest: synthetic issuer receipts are denied even under otherwise trusted configured public key
+ok 4 - synthetic issuer receipts are denied even under otherwise trusted configured public key
+  ---
+  duration_ms: 10.936209
+  type: 'test'
+  ...
+# Subtest: cold-retirement enrollment cannot be forged with MCP-user-owned trust files
+ok 5 - cold-retirement enrollment cannot be forged with MCP-user-owned trust files
+  ---
+  duration_ms: 6.278708
+  type: 'test'
+  ...
+# Subtest: public risk state distinguishes retirement from availability and retains unknown history
+ok 6 - public risk state distinguishes retirement from availability and retains unknown history
+  ---
+  duration_ms: 6.229292
+  type: 'test'
+  ...
+# Subtest: owner enrollment uses Ed25519, exact target, and refuses synthetic enrollment or unknown fields
+ok 7 - owner enrollment uses Ed25519, exact target, and refuses synthetic enrollment or unknown fields
+  ---
+  duration_ms: 0.306583
+  type: 'test'
+  ...
+# Subtest: owner receipt import rejects test environment, wrong key, expiry, coverage and identity
+ok 8 - owner receipt import rejects test environment, wrong key, expiry, coverage and identity
+  ---
+  duration_ms: 1.276625
+  type: 'test'
+  ...
+# (node:99342) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: final risk approval requires independent admin login, same-origin review and fresh native owner verification
+ok 9 - final risk approval requires independent admin login, same-origin review and fresh native owner verification
+  ---
+  duration_ms: 172.331125
+  type: 'test'
+  ...
+# Subtest: knowing an MCP plan hash without reading it in the human session cannot approve
+ok 10 - knowing an MCP plan hash without reading it in the human session cannot approve
+  ---
+  duration_ms: 98.876167
+  type: 'test'
+  ...
+# Subtest: cancelled native approval, session logout during prompt and changed evidence create no replacement
+ok 11 - cancelled native approval, session logout during prompt and changed evidence create no replacement
+  ---
+  duration_ms: 125.064541
+  type: 'test'
+  ...
+# Subtest: risk review displays exact immutable plan and never exposes business preimages or authority key
+ok 12 - risk review displays exact immutable plan and never exposes business preimages or authority key
+  ---
+  duration_ms: 124.532083
+  type: 'test'
+  ...
+# Subtest: sanitized insert documents retain exact chunk identity and normalized content
+ok 13 - sanitized insert documents retain exact chunk identity and normalized content
+  ---
+  duration_ms: 3.619042
+  type: 'test'
+  ...
+# Subtest: null-prototype compatibility retains document shape, dangerous-key and BSON bounds
+ok 14 - null-prototype compatibility retains document shape, dangerous-key and BSON bounds
+  ---
+  duration_ms: 1.213917
+  type: 'test'
+  ...
+# (node:99344) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: risk review retains real legacy uncertainty and creates no replacement without human confirmation
+ok 15 - risk review retains real legacy uncertainty and creates no replacement without human confirmation
+  ---
+  duration_ms: 12.150208
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge amount
+ok 16 - risk review cannot expand original effects or forge amount
+  ---
+  duration_ms: 5.654167
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge recipient
+ok 17 - risk review cannot expand original effects or forge recipient
+  ---
+  duration_ms: 4.7065
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge batch_date
+ok 18 - risk review cannot expand original effects or forge batch_date
+  ---
+  duration_ms: 5.898916
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge new_unit
+ok 19 - risk review cannot expand original effects or forge new_unit
+  ---
+  duration_ms: 4.927584
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge append_preimage
+ok 20 - risk review cannot expand original effects or forge append_preimage
+  ---
+  duration_ms: 4.859833
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge database
+ok 21 - risk review cannot expand original effects or forge database
+  ---
+  duration_ms: 5.136042
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge original_job
+ok 22 - risk review cannot expand original effects or forge original_job
+  ---
+  duration_ms: 5.253333
+  type: 'test'
+  ...
+# Subtest: identity guards cannot be refreshed while changed scalar preimages need a new exact review
+ok 23 - identity guards cannot be refreshed while changed scalar preimages need a new exact review
+  ---
+  duration_ms: 5.649792
+  type: 'test'
+  ...
+# Subtest: fence receipt signature failure cannot be overridden by human confirmation
+ok 24 - fence receipt signature failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 6.411041
+  type: 'test'
+  ...
+# Subtest: fence receipt issuer failure cannot be overridden by human confirmation
+ok 25 - fence receipt issuer failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.985833
+  type: 'test'
+  ...
+# Subtest: fence receipt challenge failure cannot be overridden by human confirmation
+ok 26 - fence receipt challenge failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.466041
+  type: 'test'
+  ...
+# Subtest: fence receipt coverage failure cannot be overridden by human confirmation
+ok 27 - fence receipt coverage failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.598458
+  type: 'test'
+  ...
+# Subtest: fence receipt credentials failure cannot be overridden by human confirmation
+ok 28 - fence receipt credentials failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 4.89475
+  type: 'test'
+  ...
+# Subtest: fence receipt sessions failure cannot be overridden by human confirmation
+ok 29 - fence receipt sessions failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.416583
+  type: 'test'
+  ...
+# Subtest: fence receipt inflight failure cannot be overridden by human confirmation
+ok 30 - fence receipt inflight failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.826708
+  type: 'test'
+  ...
+# Subtest: fence receipt restart failure cannot be overridden by human confirmation
+ok 31 - fence receipt restart failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.136292
+  type: 'test'
+  ...
+# Subtest: fence receipt expired failure cannot be overridden by human confirmation
+ok 32 - fence receipt expired failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 4.429458
+  type: 'test'
+  ...
+# Subtest: fence receipt symlink failure cannot be overridden by human confirmation
+ok 33 - fence receipt symlink failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 4.813209
+  type: 'test'
+  ...
+# Subtest: fence receipt permissions failure cannot be overridden by human confirmation
+ok 34 - fence receipt permissions failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 4.37275
+  type: 'test'
+  ...
+# Subtest: verified external authority plus native approval only creates the exact replacement, never executes
+ok 35 - verified external authority plus native approval only creates the exact replacement, never executes
+  ---
+  duration_ms: 170.140083
+  type: 'test'
+  ...
+# Subtest: changed authority evidence, stale review, foreign context and expired approval prevent creation
+ok 36 - changed authority evidence, stale review, foreign context and expired approval prevent creation
+  ---
+  duration_ms: 11.786875
+  type: 'test'
+  ...
+# Subtest: MCP/storage cannot grant native approval, submit evidence or forge an actor
+ok 37 - MCP/storage cannot grant native approval, submit evidence or forge an actor
+  ---
+  duration_ms: 7.601958
+  type: 'test'
+  ...
+# Subtest: actual crash at replacement creation beforeCommit is atomic and recoverable
+ok 38 - actual crash at replacement creation beforeCommit is atomic and recoverable
+  ---
+  duration_ms: 48.12825
+  type: 'test'
+  ...
+# Subtest: actual crash at replacement creation afterCommit is atomic and recoverable
+ok 39 - actual crash at replacement creation afterCommit is atomic and recoverable
+  ---
+  duration_ms: 48.311791
+  type: 'test'
+  ...
+# (node:99344) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:99344) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent creators share one intent, gate and audit across store workers and restart
+ok 40 - concurrent creators share one intent, gate and audit across store workers and restart
+  ---
+  duration_ms: 53.11825
+  type: 'test'
+  ...
+# Subtest: two approved proposals for one original intent cannot create two replacement jobs
+ok 41 - two approved proposals for one original intent cannot create two replacement jobs
+  ---
+  duration_ms: 8.312958
+  type: 'test'
+  ...
+# Subtest: approval renewal after creation preserves the one replacement identity and its audit lineage
+ok 42 - approval renewal after creation preserves the one replacement identity and its audit lineage
+  ---
+  duration_ms: 8.677875
+  type: 'test'
+  ...
+# Subtest: loss of a replacement upload reply reconciles the same intent without another upload
+ok 43 - loss of a replacement upload reply reconciles the same intent without another upload
+  ---
+  duration_ms: 92.747834
+  type: 'test'
+  ...
+# Subtest: job association rebinding cannot change job_id inside a compound recipient identity
+ok 44 - job association rebinding cannot change job_id inside a compound recipient identity
+  ---
+  duration_ms: 4.74075
+  type: 'test'
+  ...
+# (node:99345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:99345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and source Manager
+ok 45 - full insertOne first chunk admits risk review through public stdio MCP and source Manager
+  ---
+  duration_ms: 537.945458
+  type: 'test'
+  ...
+# {"riskPlanId":"6e8754d24338fa1e8c963364e9f644755de57500e2ff1b31a4f82fb12b012e65","unitCount":34,"operationCount":100,"fenceReason":"executor_fence_authority_not_configured","canApprove":false,"replacementAllowed":false,"remoteDispatches":0}
+# (node:99345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+ok 46 - full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+  ---
+  duration_ms: 437.766333
+  type: 'test'
+  ...
+# {"riskPlanId":"8d8493d0a0862c061a7fd3ccc0eda6ff66db32f43eb284519eae28b8e15857f3","unitCount":34,"operationCount":100,"fenceReason":"executor_fence_authority_not_configured","canApprove":false,"replacementAllowed":false,"remoteDispatches":0}
+# (node:99346) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:99346) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and source Manager require human approval before any replacement upload
+ok 47 - public MCP and source Manager require human approval before any replacement upload
+  ---
+  duration_ms: 582.092292
+  type: 'test'
+  ...
+# (node:99346) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and bundled Manager require human approval before any replacement upload
+ok 48 - public MCP and bundled Manager require human approval before any replacement upload
+  ---
+  duration_ms: 463.463542
+  type: 'test'
+  ...
+1..48
+# tests 48
+# suites 0
+# pass 48
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1218.68625

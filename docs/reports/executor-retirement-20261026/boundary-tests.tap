@@ -1,0 +1,60 @@
+TAP version 13
+# (node:99029) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: remote Node probe reads only bounded proc identity, never config/argv/env/credentials
+ok 1 - remote Node probe reads only bounded proc identity, never config/argv/env/credentials
+  ---
+  duration_ms: 0.724875
+  type: 'test'
+  ...
+# Subtest: probe marks inaccessible process facts unknown and cannot certify retirement
+ok 2 - probe marks inaccessible process facts unknown and cannot certify retirement
+  ---
+  duration_ms: 0.207208
+  type: 'test'
+  ...
+# Subtest: local probe preview is an explicit manual-only immutable command draft input
+ok 3 - local probe preview is an explicit manual-only immutable command draft input
+  ---
+  duration_ms: 27.38475
+  type: 'test'
+  ...
+# Subtest: synthetic issuer receipts are denied even under otherwise trusted configured public key
+ok 4 - synthetic issuer receipts are denied even under otherwise trusted configured public key
+  ---
+  duration_ms: 8.584666
+  type: 'test'
+  ...
+# Subtest: cold-retirement enrollment cannot be forged with MCP-user-owned trust files
+ok 5 - cold-retirement enrollment cannot be forged with MCP-user-owned trust files
+  ---
+  duration_ms: 5.2305
+  type: 'test'
+  ...
+# Subtest: public risk state distinguishes retirement from availability and retains unknown history
+ok 6 - public risk state distinguishes retirement from availability and retains unknown history
+  ---
+  duration_ms: 5.242792
+  type: 'test'
+  ...
+# Subtest: owner enrollment uses Ed25519, exact target, and refuses synthetic enrollment or unknown fields
+ok 7 - owner enrollment uses Ed25519, exact target, and refuses synthetic enrollment or unknown fields
+  ---
+  duration_ms: 0.237875
+  type: 'test'
+  ...
+# Subtest: owner receipt import rejects test environment, wrong key, expiry, coverage and identity
+ok 8 - owner receipt import rejects test environment, wrong key, expiry, coverage and identity
+  ---
+  duration_ms: 0.940042
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97.321375
