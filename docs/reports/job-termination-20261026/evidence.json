@@ -1,0 +1,108 @@
+{
+  "evidenceId": "bulk-job-human-termination-local-20261026",
+  "at": "2026-10-26T15:14:39.870764+00:00",
+  "delivery": "local_only_not_installed",
+  "sourceHashes": {
+    "agent/mongodb-job-termination.js": "50797e580056431daf16e7199b41d387f84e4de189dea65cc0e488149782fc66",
+    "agent/privacy-store.js": "d7837a50f0be508630e7fd60a151c2e822daf03de6d93a2257506977860faf9b",
+    "agent/mongodb-disposition.js": "5acc1400c283e1ff366467a6429382b0ad88db7a7123b612c3cbb5ae87c34d41",
+    "agent/mongodb-job-retirement-runtime.js": "fe864a0e0bdb6c57afd824c0df3520b443043a99c9460ee9ce37494dd061a600",
+    "agent/mongodb-bulk.js": "585ec45341446ca94cd7fd8a57b71d4254c65d54f91bad0399641f707e1ef4bc",
+    "agent/mongodb-bulk-runtime.js": "e9e8083ce26351752bf72fb58cba14c2705ebc132f92e724c04504aac9b7ce4c",
+    "agent/manual-workbench.js": "55f27ceea63d36e6be188c0f93d53369c2393a4d85331bf257dc9fe8b81f742c",
+    "agent/server.js": "42b0b0554d861331070ac8b7f47788625d6c7f6d12cabd044adbdcfead979a3f",
+    "agent/audit.js": "f9bb907f9a6d7ef1bed757e4eff0abe05c73e78ea2408add5539d1c368ae3e81",
+    "agent/security.js": "e1300b35d60e2b3ee5636e2f38936a7adf693a7a6b5584ed02a4e83825f71609",
+    "agent/public/manual.html": "af63c6629a1f1d78f58caee44061afe71f2537a7943cca2e4e8cbfc69ebe2183",
+    "agent/public/manual.js": "61380a9ec35a20e51969186bce1be9c66c2b5bee398a26b4da20e8dd9576b7fb",
+    "agent/public/manual.css": "f6c27a5793ec133c50bb8cc532d3fc5662f75ea22434bc937affe0b7d428b31a",
+    "agent/test/mongodb-job-termination.test.js": "94763431c082080ab912e46a64850a32732b84178a0475937e1bb874654b2e3d",
+    "agent/test/manual-workbench.test.js": "eb616bb1fcbaa1413215958d431c64f3d7c273fbcd13c6690fdacdfa02e268d0",
+    "agent/test/mongodb-bulk.test.js": "7d2b17c9b84e6743442b0e39e78c0e2f6fb3ec0fe5fee9b0dd51fb26aed356e8",
+    "agent/test/server.test.js": "abdb1cd56a4bd9d76de1a5a2e268e61b95ebcaca68dda7cf721e5c90c3a775ad",
+    "agent/test/job-termination-browser.e2e.mjs": "85917505de277ff6b5aa13820bd6cf0d9d2df598c7c5742ecde52bfd813c7af0",
+    "plugins/remote-debug-agent/output-contracts.js": "13f9ad33730dcfdbc4a98a73c3f19b8aa07c09e311f2471c07b40aa0219f3812",
+    "plugins/remote-debug-agent/skills/database-mutations/SKILL.md": "b77c7293d6ec773c3e3cb4d97c7a5d38783020b552ea88cd4afcc142e625cb6e"
+  },
+  "runtimeId": "2.4.0:60a0820c77ef3648de3d7d436d63b0ca4fb7760d1c6b67a408e3898b69e332a7",
+  "runtimeHashesChecked": 26,
+  "runtimeHashMismatches": [],
+  "checks": [
+    {
+      "type": "standalone Docker network=none node:test",
+      "passed": 105,
+      "failed": 0,
+      "skipped": 0,
+      "log": "isolated-regression.tap"
+    },
+    {
+      "type": "standalone Docker focused HTTP node:test",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "log": "isolated-http.tap"
+    },
+    {
+      "type": "standalone synthetic Chrome integration",
+      "status": "passed",
+      "nativeOwner": "mocked",
+      "MongoDBDriver": "simulated",
+      "SSH": "mocked",
+      "businessWrites": 0,
+      "log": "browser-result.json"
+    }
+  ],
+  "resolvedValidationFailures": [
+    "A task-retention test omitted the required records array; fixed fixture and reran final regression",
+    "Early browser fixture omitted enabled and used a Promise for a synchronous terminal contract; fixed fixture and reran browser"
+  ],
+  "containerImage": "sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392",
+  "dependencies": "read-only isolated copy of local agent/node_modules; not TestFlow fixed-lock reproduction",
+  "testflow": {
+    "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-executor-retirement/workspace.json",
+    "projectId": "ssl-debug-agent",
+    "adapter": "node-test",
+    "status": "execution_blocked",
+    "snapshotArtifact": "testflow-freeze.json",
+    "supportedExecutionAdapters": [
+      "be-jest",
+      "jest-unit"
+    ],
+    "missing": [
+      "native node:test execution adapter",
+      "versioned test asset/input/state/assertion bindings",
+      "declared immutable TestFlow dependency image and isolation contract"
+    ],
+    "prepareExecuted": false,
+    "executeExecuted": false,
+    "jobId": null,
+    "targetCoverage": "unknown"
+  },
+  "realJob": {
+    "instanceId": "default",
+    "database": "yenneferbak",
+    "jobId": "432f9201-2933-4c77-afe1-675c9446a497",
+    "planHash": "b68c679dc01a6429f4d96e5fb78efbe95f19a14798f225ee8d86b64201df8eec",
+    "lastReadStatus": "paused",
+    "readOperationId": "f597ac00-5852-4a5e-960c-e98753d829ae",
+    "realTerminationExecuted": false,
+    "furtherRetryAuthorized": false,
+    "replacementCreated": false,
+    "historicalOutcome": "unknown"
+  },
+  "uncovered": [
+    "real native OS owner prompt for this feature",
+    "actual ZCIVO permanent termination",
+    "real MongoDB integration for standalone termination",
+    "TestFlow execution and target coverage",
+    "packaged installation and running Manager/Worker activation"
+  ],
+  "artifacts": {
+    "isolated-regression.tap": "3830037f47860ae0a43b32394bdf5d319a24286deaf50c5e054b3ffccc2a83b7",
+    "review.png": "4b5dd02b0154deeee8ee6139d6a804b48d8c06a216bc5b418c92bb13da73109c",
+    "isolated-http.tap": "6f55a7956deac8be16f00d4590a418f39fd47028fb98f4b85ad8039fe656ed8a",
+    "README.md": "3daf4a0cd1577285ad23f0dd9de6d7d7d81d83b3959a3c6f86b9f60cfee9f40a",
+    "browser-result.json": "462451120ee08f1e69ca2a06154f3132b426e414b73d84e6e4d534f132970887",
+    "terminated.png": "1707359c41310758f0e9ca1131f2c1fdb164a7fb497a3528e1b929e6b9014723"
+  }
+}

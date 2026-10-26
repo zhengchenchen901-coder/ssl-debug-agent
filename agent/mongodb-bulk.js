@@ -442,6 +442,7 @@ function parseMarker(stdout) {
 function normalizeActionRequest(input, config) {
   const action = input.action;
   const fields = {
+    terminate: ["jobId", "planHash", "terminationId", "reviewHash", "approvalAuditId"],
     retire: ["jobId", "replacementJobId", "riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest", "approvalAuditId"],
     recoverUpload: ["jobId", "database", "chunkIndex", "chunkHash", "endOfUpload"],
     sandboxStatus: ["offset", "limit"], sandboxExport: ["jobId", "limit"], sandboxPrepareCleanup: ["jobId"], sandboxCleanup: ["jobId", "cleanupHash", "confirmation"],
@@ -453,6 +454,10 @@ function normalizeActionRequest(input, config) {
     rollbackStart: ["jobId", "planHash", "leaseId", "confirmation"], executeStart: ["jobId", "planHash", "leaseId", "confirmation"],
   };
   if (fields[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields[action]], "bulk action");
+  if (action === "terminate") {
+    if (!JOB_ID_PATTERN.test(input.jobId || "") || ![input.planHash, input.terminationId, input.reviewHash, input.approvalAuditId].every(x => typeof x === "string" && HASH_PATTERN.test(x))) throw bulkError("invalid exact termination identity", "MONGODB_BULK_TERMINATION_INVALID");
+    return { ...input, action };
+  }
   if (action === "retire") {
     if (![input.jobId, input.replacementJobId].every(x => typeof x === "string" && JOB_ID_PATTERN.test(x)) || input.jobId === input.replacementJobId ||
         ![input.riskPlanId, input.dispositionId, input.originalRequestDigest, input.replacementRequestDigest, input.approvalAuditId].every(x => typeof x === "string" && HASH_PATTERN.test(x))) throw bulkError("invalid exact reviewed retirement identity", "MONGODB_BULK_RETIREMENT_INVALID");
@@ -540,7 +545,7 @@ function normalizeActionRequest(input, config) {
 
 export async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
-  const recoveryAction = input.action === "retire" || input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" ||
+  const recoveryAction = input.action === "terminate" || input.action === "retire" || input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" ||
     input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" ||
     input.action === "control" && input.command === "pause" ||
     input.action === "dispatch" && input.phase === "rollback" ||

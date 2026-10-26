@@ -1,0 +1,137 @@
+{
+  "version": "2.4.0+codex.20261026.6",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.6",
+  "runtimeId": "2.4.0:40ba35f35da267d1293d79ae028382f2e671419a3b9aa4821a185323d8d689e1",
+  "installed": true,
+  "enabled": true,
+  "comparedFiles": 95,
+  "allComparedFilesMatch": true,
+  "runtimeArtifacts": 26,
+  "allRuntimeHashesMatch": true,
+  "environmentChecks": "7 pass",
+  "mcp": {
+    "checkedAt": "2026-10-26T14:22:04.738Z",
+    "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.6",
+    "serverInfo": {
+      "name": "remote-debug-agent",
+      "version": "2.4.0+codex.20261026.6"
+    },
+    "toolCount": 51,
+    "readOnlyToolsCalled": [
+      "remote_debug_get_capabilities",
+      "remote_debug_list_instances"
+    ],
+    "instanceStatuses": [
+      {
+        "id": "default",
+        "status": "running",
+        "pid": 14861,
+        "health": "healthy"
+      },
+      {
+        "id": "test-server",
+        "status": "stopped",
+        "pid": null,
+        "health": "stopped"
+      }
+    ],
+    "diagnosticOutputContract": {
+      "lastFailure": true,
+      "nestedCause": true,
+      "frames": true,
+      "unknownDocumentOmitted": true,
+      "syntheticOnly": true
+    },
+    "managerReplacementRequested": false,
+    "businessContextAttached": false,
+    "businessToolsCalled": [],
+    "stderrObserved": false
+  },
+  "liveBefore": {
+    "checkedAt": "2026-10-26T14:20:46.361Z",
+    "manager": {
+      "pid": 13306,
+      "runtimeId": "2.4.0:e4e1734a9863e7c34476f9d50e27309c5d4b8686318c91c6435781bb117ed6a2",
+      "port": 4343
+    },
+    "instances": [
+      {
+        "id": "default",
+        "status": "running",
+        "pid": 14861,
+        "health": "healthy",
+        "worker": {
+          "status": "healthy",
+          "pid": 14861,
+          "lastHeartbeatAt": "2026-10-26T14:20:32.589Z"
+        },
+        "transport": {}
+      },
+      {
+        "id": "test-server",
+        "status": "stopped",
+        "pid": null,
+        "health": "stopped",
+        "worker": {
+          "status": "stopped",
+          "lastHeartbeatAt": null
+        },
+        "transport": {}
+      }
+    ]
+  },
+  "liveAfter": {
+    "checkedAt": "2026-10-26T14:22:37.561Z",
+    "manager": {
+      "pid": 13306,
+      "runtimeId": "2.4.0:e4e1734a9863e7c34476f9d50e27309c5d4b8686318c91c6435781bb117ed6a2",
+      "port": 4343
+    },
+    "instances": [
+      {
+        "id": "default",
+        "status": "running",
+        "pid": 14861,
+        "health": "healthy",
+        "worker": {
+          "status": "healthy",
+          "pid": 14861,
+          "lastHeartbeatAt": "2026-10-26T14:22:32.597Z"
+        },
+        "transport": {}
+      },
+      {
+        "id": "test-server",
+        "status": "stopped",
+        "pid": null,
+        "health": "stopped",
+        "worker": {
+          "status": "stopped",
+          "lastHeartbeatAt": null
+        },
+        "transport": {}
+      }
+    ]
+  },
+  "managerSwitched": false,
+  "reloadRequired": "restart Codex to reload Manager/Worker and MCP together",
+  "backupCodeOnly": true,
+  "oldCachesRestored": [
+    "2.4.0+codex.20261023.2",
+    "2.4.0+codex.20261026",
+    "2.4.0+codex.20261026.2",
+    "2.4.0+codex.20261026.3",
+    "2.4.0+codex.20261026.4",
+    "2.4.0+codex.20261026.5"
+  ],
+  "businessOperationsExecuted": false,
+  "gitCommitPushExecuted": false,
+  "remoteServiceRestarted": false,
+  "testflow": {
+    "snapshotId": "832fdbf7cd75365f9e8d3bcd46a21961e766c63cf35628cedf3d0aa579dedb30",
+    "captureVerified": true,
+    "prepareExecuted": false,
+    "executeExecuted": false,
+    "targetCoverage": "unknown"
+  }
+}

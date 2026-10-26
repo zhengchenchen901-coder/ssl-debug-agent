@@ -1,6 +1,7 @@
 import { privacyError } from "./privacy-key.js";
 import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { replacementAdmission, riskRetirementStatus, assertRiskJobAdmission } from "./mongodb-risk-replacement.js";
+import { assertJobNotTerminated } from "./mongodb-job-termination.js";
 
 export const DISPOSITION_CONFIRMATION = "确认隔离原意图";
 const HASH = /^[a-f0-9]{64}$/;
@@ -116,6 +117,7 @@ export function dispositionStoreAction(store, action, input, ctx, scope) {
 
 export function assertInstanceAdmission(store, instanceId, admission = {}) {
   if (typeof instanceId !== "string" || !instanceId) denied();
+  assertJobNotTerminated(store, instanceId, admission);
   assertRiskJobAdmission(store, instanceId, admission);
   if (store.get("disposition_hold", store.hash("disposition-instance-hold", instanceId), "", "")) {
     if (replacementAdmission(store, instanceId, admission)) return { ok: true };

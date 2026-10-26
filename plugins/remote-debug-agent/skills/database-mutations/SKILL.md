@@ -200,6 +200,34 @@ When this user task concludes, follow [final-result publication](../final-result
 to save its final summary and requested files through the unified local module.
 Do not archive intermediate responses, polling, checkpoints, or pending plans.
 
+## Standalone permanent bulk-job termination
+
+When the user decides a bulk job must never resume (for example its immutable
+guards have changed), use the independent administrator workbench's
+“永久终止任务”. Review the explicit instance, configured database, existing
+jobId, immutable planHash and reason. The workbench reads the current job,
+binds its state to a five-minute review and requires the exact phrase
+`我确认永久终止此任务，不再恢复或重试` plus fresh native OS owner verification.
+MCP, a context capability, Manager token or a caller-provided actor/receipt
+cannot approve termination. No new business task is created.
+
+Approval permanently closes this job's local upload/execute/resume/rollback
+admissions before the fixed worker helper writes a remote retirement record.
+The Manager independently reads that record back. `termination_pending` means
+local admissions are closed but remote acknowledgement is incomplete; report
+that distinction and finish only this termination through a fresh workbench
+review. A lost reply or restart never reopens the job or runs business writes.
+`terminated_unknown` preserves historical and legacy in-flight uncertainty;
+it does not certify cancellation of old dispatched transactions. Plans,
+receipts, before-images, risk lineage and protections remain pinned, with no
+automatic business rollback or cleanup. Existing risk-approval expiry does
+not block this independent termination flow.
+
+After termination, do not retry or refresh the old job/plan. Any future business
+work needs a separately prepared new identity and guards based on current data,
+its own review and execution authorization. Never create that task merely to
+terminate this one.
+
 ## Original-intent disposition and human-approved risk replacement
 
 `remote_debug_mongodb_disposition` retains the original protected context and

@@ -14,6 +14,37 @@ function __bulkAssertNotRetired(jobId) {
 function __bulkRetirementView(record) {
   return Object.assign({}, record, { managedAdmissionClosed: true, historicalOutcome: "unknown", legacyInFlightOutcome: "unknown", controlRecordDigest: __bulkHash(record) });
 }
+function __bulkTerminateJob(jobId) {
+  var dir = __bulkJobDir(jobId);
+  if (!__fs.existsSync(dir)) __bulkFail("MONGODB_BULK_JOB_NOT_FOUND", "bulk job was not found");
+  return __bulkWithLock(__path.join(__bulkRoot(), ".risk-retirement.lock"), function () {
+  return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var existing = __bulkRetirement(jobId);
+    if (existing) {
+      ["planHash", "terminationId", "reviewHash", "approvalAuditId"].forEach(function (key) {
+        if (existing[key] !== __request[key]) __bulkFail("MONGODB_BULK_RETIREMENT_CONFLICT", "retirement belongs to a different reviewed termination");
+      });
+      return __bulkRetirementView(existing);
+    }
+    var manifest = __bulkManifest(jobId, false);
+    __bulkCheckPlan(manifest, __request.planHash);
+    var record = { version: 1, jobId: jobId, database: __config.database, planHash: manifest.planHash,
+      status: "terminated_unknown", terminationId: __request.terminationId, reviewHash: __request.reviewHash,
+      approvalAuditId: __request.approvalAuditId, originalJobFound: true, recordedAt: new Date().toISOString(),
+      previousStatus: manifest.status, committedBatchCount: (manifest.committedBatchIndexes || []).length,
+      verifiedBatchCount: manifest.verifiedBatchCount || 0, unitCount: manifest.unitCount, operationCount: manifest.operationCount };
+    // Tombstone first. Every supported write path and the pre-commit check
+    // consult it; immutable plans, receipts and before-images stay untouched.
+    __bulkWriteJson(__path.join(dir, "retirement.json"), record, 65536);
+    __bulkWriteJson(__path.join(dir, "control.json"), { desiredState: "stop", terminationId: record.terminationId, at: record.recordedAt }, 65536);
+    manifest.status = "terminated_unknown"; manifest.desiredState = "stop";
+    manifest.updatedAt = record.recordedAt; __bulkSaveManifest(manifest);
+    __bulkAppendJsonLine(__path.join(dir, "events.jsonl"), { at: record.recordedAt, event: "human_job_terminated",
+      terminationId: record.terminationId, planHash: record.planHash, historicalOutcome: "unknown" });
+    return __bulkRetirementView(record);
+  });
+  });
+}
 function __bulkRetireJob(jobId) {
   var dir = __bulkEnsureJobDir(jobId);
   return __bulkWithLock(__path.join(__bulkRoot(), ".risk-retirement.lock"), function () {

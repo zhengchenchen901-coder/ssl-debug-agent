@@ -1,0 +1,23 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+TAP version 13
+# Subtest: job termination worker route dispatches fixed action and retains termination audit identity
+ok 1 - job termination worker route dispatches fixed action and retains termination audit identity
+  ---
+  duration_ms: 308.612666
+  type: 'test'
+  ...
+# Subtest: job termination cannot be approved or dispatched through the Manager bearer API
+ok 2 - job termination cannot be approved or dispatched through the Manager bearer API
+  ---
+  duration_ms: 33.891542
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 736.498167

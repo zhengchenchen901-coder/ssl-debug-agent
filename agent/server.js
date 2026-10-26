@@ -1,5 +1,6 @@
 import express from "express";
 import { installPrivacyRoutes, assertMongoDispatchAdmission, humanRiskRequest } from "./privacy-service.js";
+import { humanJobTerminationRequest } from "./mongodb-job-termination.js";
 import { runService, validateServiceRequest } from "./services.js";
 import { assertServiceId, serviceProfileHash, selectServiceProfile, serviceError, serviceAuditFields, serviceTargetHash } from "./service-profiles.js";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
@@ -357,6 +358,9 @@ function mongoMutationSummary(payload) {
 
 function mongoBulkSummary(payload) {
   return {
+    terminationId: payload.terminationId,
+    reviewHash: payload.reviewHash,
+    controlRecordDigest: payload.controlRecordDigest,
     jobId: payload.jobId,
     planHash: payload.planHash,
     status: payload.status,
@@ -1561,7 +1565,7 @@ export function createApp(options = {}) {
       let result;
       if (action === "upload") {
         result = await runMongoBulk({ action: "upload", chunk: raw }, { operation: requestOperation });
-      } else if (action === "retire" || action === "recoverUpload") {
+      } else if (action === "terminate" || action === "retire" || action === "recoverUpload") {
         result = await runMongoBulk({ ...raw, action }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk({ action, ...raw }, { operation: requestOperation });
@@ -1665,6 +1669,7 @@ export function createApp(options = {}) {
   app.post("/mongodb/mutations/recover-execution", (request, response) =>
     handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
   app.post("/mongodb/bulk/retire", (request, response) => handleMongoBulk(request, response, "retire", "/mongodb/bulk/retire"));
+  app.post("/mongodb/bulk/terminate", (request, response) => handleMongoBulk(request, response, "terminate", "/mongodb/bulk/terminate"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
   app.post("/mongodb/bulk/recover-prepare", (request, response) => handleMongoBulk(request, response, "recoverUpload", "/mongodb/bulk/recover-prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
@@ -2014,6 +2019,15 @@ export function createManagerApp(options = {}) {
     lifecycle,
     ...options.manualOptions,
     riskReview: (action, input) => humanRiskRequest(app.locals.privacyService, action, input, id => registry.getInternal(id)),
+    jobTermination: (action, input) => humanJobTerminationRequest(app.locals.privacyService, action, input, {
+      instance: id => registry.getInternal(id),
+      // Only the independent authenticated workbench calls this closure. There
+      // is no Manager proxy route or public MCP execution for termination.
+      dispatch: (id, route, payload) => {
+        if (!["/mongodb/bulk/job", "/mongodb/bulk/terminate"].includes(route)) throw new Error("Unsupported termination dispatch");
+        return workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "manual-workbench" });
+      },
+    }),
   });
   app.locals.manualWorkbench = manualWorkbench;
   installManualManagerRoutes(app, manualWorkbench);

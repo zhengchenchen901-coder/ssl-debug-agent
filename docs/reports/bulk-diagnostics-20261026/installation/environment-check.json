@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "attemptId": "4b0a769614856eecd3440c1c4f4dad53",
+  "trigger": "manual-check",
+  "checkedAt": "2026-10-26T14:21:18.521Z",
+  "updatedAt": "2026-10-26T14:21:18.522Z",
+  "pluginRoot": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.6",
+  "nodeExecutable": "/Users/zhengchenchen/.nvm/versions/node/v22.23.3/bin/node",
+  "nodeRequirement": ">=22.18 <23",
+  "runtimeSelection": null,
+  "dataDir": "/Users/zhengchenchen/.remote-debug-agent",
+  "status": "checked",
+  "stage": "environment",
+  "checks": [
+    {
+      "id": "platform",
+      "label": "系统权限适配",
+      "actual": "darwin / macOS POSIX",
+      "required": "Windows 使用当前用户专用 ACL；macOS/Linux 使用原有 0700/0600 权限",
+      "status": "pass",
+      "remedy": ""
+    },
+    {
+      "id": "node",
+      "label": "插件启动使用的 Node.js",
+      "actual": "22.23.3（/Users/zhengchenchen/.nvm/versions/node/v22.23.3/bin/node）",
+      "required": ">=22.18 <23",
+      "status": "pass",
+      "remedy": ""
+    },
+    {
+      "id": "manifest",
+      "label": "预构建运行清单",
+      "actual": "2.4.0:40ba35f35da267d1293d79ae028382f2e671419a3b9aa4821a185323d8d689e1",
+      "required": "存在有效的 runtime-manifest.json",
+      "status": "pass",
+      "remedy": ""
+    },
+    {
+      "id": "artifacts",
+      "label": "运行文件完整性",
+      "actual": "完整",
+      "required": "运行文件存在且 SHA-256 与清单一致",
+      "status": "pass",
+      "remedy": ""
+    },
+    {
+      "id": "config",
+      "label": "本地配置文件",
+      "actual": "/Users/zhengchenchen/.remote-debug-agent/config.env",
+      "required": "可选；文件存在时需可读，连接信息也可来自实例配置或环境变量",
+      "status": "pass",
+      "remedy": ""
+    },
+    {
+      "id": "storage",
+      "label": "诊断报告目录",
+      "actual": "/Users/zhengchenchen/.remote-debug-agent",
+      "required": "当前用户可创建和写入报告",
+      "status": "pass",
+      "remedy": ""
+    },
+    {
+      "id": "private-storage",
+      "label": "本地认证存储权限",
+      "actual": "macOS POSIX：目录和文件验证通过",
+      "required": "可设置并验证仅当前用户可访问的目录和文件",
+      "status": "pass",
+      "remedy": ""
+    }
+  ],
+  "failures": [
+    {
+      "checkedAt": "2026-10-09T15:15:24.537Z",
+      "stage": "environment",
+      "checks": [
+        {
+          "id": "node",
+          "label": "插件启动使用的 Node.js",
+          "actual": "14.21.3（/Users/zhengchenchen/.nvm/versions/node/v14.21.3/bin/node）",
+          "required": ">=22.18 <23",
+          "status": "fail",
+          "remedy": "让插件启动进程使用满足版本范围的 Node.js；可调整启动环境的 PATH，无需改变其他项目的默认版本。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-09T15:15:40.730Z",
+      "stage": "environment",
+      "checks": [
+        {
+          "id": "node",
+          "label": "插件启动使用的 Node.js",
+          "actual": "14.21.3（/Users/zhengchenchen/.nvm/versions/node/v14.21.3/bin/node）",
+          "required": ">=22.18 <23",
+          "status": "fail",
+          "remedy": "让插件启动进程使用满足版本范围的 Node.js；可调整启动环境的 PATH，无需改变其他项目的默认版本。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-09T15:16:22.408Z",
+      "stage": "environment",
+      "checks": [
+        {
+          "id": "node",
+          "label": "插件启动使用的 Node.js",
+          "actual": "14.21.3（/Users/zhengchenchen/.nvm/versions/node/v14.21.3/bin/node）",
+          "required": ">=22.18 <23",
+          "status": "fail",
+          "remedy": "让插件启动进程使用满足版本范围的 Node.js；可调整启动环境的 PATH，无需改变其他项目的默认版本。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-09T15:16:22.558Z",
+      "stage": "environment",
+      "checks": [
+        {
+          "id": "node",
+          "label": "插件启动使用的 Node.js",
+          "actual": "14.21.3（/Users/zhengchenchen/.nvm/versions/node/v14.21.3/bin/node）",
+          "required": ">=22.18 <23",
+          "status": "fail",
+          "remedy": "让插件启动进程使用满足版本范围的 Node.js；可调整启动环境的 PATH，无需改变其他项目的默认版本。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-09T15:16:22.713Z",
+      "stage": "environment",
+      "checks": [
+        {
+          "id": "node",
+          "label": "插件启动使用的 Node.js",
+          "actual": "14.21.3（/Users/zhengchenchen/.nvm/versions/node/v14.21.3/bin/node）",
+          "required": ">=22.18 <23",
+          "status": "fail",
+          "remedy": "让插件启动进程使用满足版本范围的 Node.js；可调整启动环境的 PATH，无需改变其他项目的默认版本。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-14T08:14:09.930Z",
+      "stage": "manager",
+      "checks": [
+        {
+          "id": "manager",
+          "label": "本地 Agent 启动",
+          "actual": "AGENT_AUTH_UPGRADE_REQUIRED",
+          "required": "Agent 正常启动并响应健康检查",
+          "status": "fail",
+          "remedy": "检查本地配置、运行文件与端口；详细原因见 MCP 运行日志。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-14T08:14:10.248Z",
+      "stage": "manager",
+      "checks": [
+        {
+          "id": "manager",
+          "label": "本地 Agent 启动",
+          "actual": "AGENT_AUTH_UPGRADE_REQUIRED",
+          "required": "Agent 正常启动并响应健康检查",
+          "status": "fail",
+          "remedy": "检查本地配置、运行文件与端口；详细原因见 MCP 运行日志。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-14T08:14:10.643Z",
+      "stage": "manager",
+      "checks": [
+        {
+          "id": "manager",
+          "label": "本地 Agent 启动",
+          "actual": "AGENT_AUTH_UPGRADE_REQUIRED",
+          "required": "Agent 正常启动并响应健康检查",
+          "status": "fail",
+          "remedy": "检查本地配置、运行文件与端口；详细原因见 MCP 运行日志。"
+        }
+      ]
+    },
+    {
+      "checkedAt": "2026-10-14T08:14:19.222Z",
+      "stage": "manager",
+      "checks": [
+        {
+          "id": "manager",
+          "label": "本地 Agent 启动",
+          "actual": "AGENT_AUTH_UPGRADE_REQUIRED",
+          "required": "Agent 正常启动并响应健康检查",
+          "status": "fail",
+          "remedy": "检查本地配置、运行文件与端口；详细原因见 MCP 运行日志。"
+        }
+      ]
+    }
+  ],
+  "offlineDashboard": "/Users/zhengchenchen/.remote-debug-agent/.runtime/environment-dashboard.html",
+  "dashboardUrl": null
+}

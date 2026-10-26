@@ -1,0 +1,30 @@
+{
+  "path": "/Users/zhengchenchen/.codex/plugins/backups/remote-debug-bulk-diagnostics-20261026-212328cf",
+  "versions": [
+    {
+      "version": "2.4.0+codex.20261023.2",
+      "fileCount": 61
+    },
+    {
+      "version": "2.4.0+codex.20261026",
+      "fileCount": 64
+    },
+    {
+      "version": "2.4.0+codex.20261026.2",
+      "fileCount": 64
+    },
+    {
+      "version": "2.4.0+codex.20261026.3",
+      "fileCount": 64
+    },
+    {
+      "version": "2.4.0+codex.20261026.4",
+      "fileCount": 64
+    },
+    {
+      "version": "2.4.0+codex.20261026.5",
+      "fileCount": 66
+    }
+  ],
+  "sourceMatchesValidatedDiagnosticEvidence": true
+}

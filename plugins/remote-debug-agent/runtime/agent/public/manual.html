@@ -41,6 +41,7 @@
           <button id="sshNav" class="nav-item active"><span aria-hidden="true">&gt;_</span> SSH 终端</button>
           <button id="databaseNav" class="nav-item">数据库</button>
           <button id="riskNav" class="nav-item">未知任务风险处置</button>
+          <button id="terminationNav" class="nav-item">永久终止任务</button>
           <div class="sidebar-foot"><span class="live-dot"></span>管理员手动操作</div>
         </aside>
         <div id="sshWorkArea" class="work-area">
@@ -99,6 +100,26 @@
           <div class="info-card"><h3>数据库账户权限</h3><p>人工模式可执行数据库身份允许的读写。插件管理员身份不赋予远端或数据库权限。任意 shell 写入不保证回滚。</p></div>
         </section>
         </div>
+        <section id="terminationWorkArea" class="work-area" hidden>
+          <section class="preview-panel" aria-labelledby="terminationTitle">
+            <h2 id="terminationTitle">永久终止任务</h2>
+            <p>用于守卫失效或决定不再执行的任务。审核后永久关闭该任务的执行、恢复和回滚准入，保留历史记录与未知结果。后续业务需另行核对最新数据并准备新任务。</p>
+            <div class="termination-fields">
+            <label>数据库<input id="terminationDatabase" required maxlength="128" autocomplete="off"></label>
+            <label>任务 ID<input id="terminationJobId" required maxlength="64" autocomplete="off" spellcheck="false"></label>
+            <label class="wide">原计划哈希<input id="terminationPlanHash" required maxlength="64" autocomplete="off" spellcheck="false"></label>
+            <label class="wide">终止原因<textarea id="terminationReason" required maxlength="1000" rows="3"></textarea></label>
+            </div>
+            <button id="terminationLoad" class="button" type="button">读取任务并准备终止审核</button>
+            <pre id="terminationDetails" style="white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"></pre>
+            <label><input id="terminationAcknowledgement" type="checkbox">我已核对实例、数据库、任务和计划，接受历史及旧在途结果仍未知，永久停止此任务。</label>
+            <p>确认语句：我确认永久终止此任务，不再恢复或重试</p>
+            <label class="termination-confirmation">输入最终确认语句<input id="terminationConfirmation" autocomplete="off" spellcheck="false"></label>
+            <button id="terminationApprove" class="button primary" type="button" disabled>系统身份验证并永久终止</button>
+            <p id="terminationMessage" class="message" role="status"></p>
+            <p>此操作保留计划、回执和审计，不回滚积分或创建替代任务。远端记录未核验成功时会明确显示“本地已阻断，远端待核验”。</p>
+          </section>
+        </section>
         <section id="riskWorkArea" class="work-area" hidden>
           <section class="preview-panel" aria-labelledby="riskTitle">
             <h2 id="riskTitle">未知任务风险处置</h2>

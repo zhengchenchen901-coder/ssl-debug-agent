@@ -7,6 +7,7 @@ import { isPrepareTicket, prepareRequestDigest } from "../plugins/remote-debug-a
 import windowsPrivacy from "../plugins/remote-debug-agent/windows-privacy.cjs";
 import { dispositionStoreAction, assertInstanceAdmission, isMongoAdmissionRoute } from "./mongodb-disposition.js";
 import { riskStoreAction, humanRiskStoreAction, recordReplacementPrepared } from "./mongodb-risk-replacement.js";
+import { jobTerminationStoreAction, jobTerminationFor } from "./mongodb-job-termination.js";
 
 const REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 const DAY = 86400000;
@@ -100,6 +101,8 @@ export class PrivacyStore {
   execute(action, input = {}) {
     // Manager-only dispatch gate; absent from the public storage allowlist.
     if (action === "assert_instance_admission") return assertInstanceAdmission(this, input.instanceId, input);
+    const termination = jobTerminationStoreAction(this, action, input);
+    if (termination !== undefined) return termination;
     const humanRisk = humanRiskStoreAction(this, action, input);
     if (humanRisk !== undefined) return humanRisk;
     if (action === "create") return this.transaction(() => {
@@ -142,13 +145,18 @@ export class PrivacyStore {
         if (!row) throw privacyError("BUSINESS_REFERENCE_INVALID"); this.open(row); refs.add(ref);
         this.db.prepare("UPDATE records SET expires=MAX(expires,?) WHERE kind='mapping' AND id=?").run(this.now() + 30 * DAY, ref);
       }
-      for (const task of input.tasks || []) {
+      for (const incoming of input.tasks || []) {
+        const task = { ...incoming };
         if (typeof task.id !== "string" || task.id.length > 256) throw privacyError("BUSINESS_STORAGE_INVALID");
+        let target;
+        try { target = JSON.parse(input.scope); } catch { /* Generic non-Mongo task scopes have no job target. */ }
+        const termination = target?.id ? jobTerminationFor(this, target.id, task.id) : undefined;
+        if (termination) { task.status = termination.state; task.terminationId = termination.terminationId; }
         const taskId = this.hash("task", ctx, input.scope, task.id);
         const previous = this.get("task", taskId, ctx, scope);
-        const active = !["completed", "committed", "rolled_back", "failed", "cancelled", "expired", "prepared", "ready"].includes(task.status);
+        const active = !["completed", "committed", "rolled_back", "failed", "cancelled", "expired", "prepared", "ready", "terminated_unknown", "termination_pending"].includes(task.status);
         const expires = Math.max(previous?.expires || 0, this.now() + (input.retentionMs || 30 * DAY), Number(task.expires) || 0);
-        this.put("task", taskId, ctx, scope, { ...previous, ...task, active, expires }, expires, active);
+        this.put("task", taskId, ctx, scope, { ...previous, ...task, active, expires }, expires, active || !!termination);
         for (const ref of refs) this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, taskId, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND ctx=? AND id IN (SELECT ref FROM links WHERE ctx=? AND task=?)").run(ctx, ctx, taskId);
       }

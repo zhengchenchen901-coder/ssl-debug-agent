@@ -1,0 +1,653 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+TAP version 13
+# Subtest: builds audit entries without secret material
+ok 1 - builds audit entries without secret material
+  ---
+  duration_ms: 9.087417
+  type: 'test'
+  ...
+# Subtest: writes JSONL audit records
+ok 2 - writes JSONL audit records
+  ---
+  duration_ms: 27.903916
+  type: 'test'
+  ...
+# (node:14) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: independent human review accepts unknown history with no receipt or instance quarantine
+ok 3 - independent human review accepts unknown history with no receipt or instance quarantine
+  ---
+  duration_ms: 157.867083
+  type: 'test'
+  ...
+# Subtest: proposal cannot upload before review; approval closes only the original job across contexts
+ok 4 - proposal cannot upload before review; approval closes only the original job across contexts
+  ---
+  duration_ms: 28.587542
+  type: 'test'
+  ...
+# Subtest: remote retirement failure keeps original closed and creates no replacement intent or upload
+ok 5 - remote retirement failure keeps original closed and creates no replacement intent or upload
+  ---
+  duration_ms: 26.045083
+  type: 'test'
+  ...
+# Subtest: lost remote retirement response resumes the same termination and unique replacement after restart
+ok 6 - lost remote retirement response resumes the same termination and unique replacement after restart
+  ---
+  duration_ms: 72.119125
+  type: 'test'
+  ...
+# Subtest: remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+ok 7 - remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+  ---
+  duration_ms: 102.63175
+  type: 'test'
+  ...
+# Subtest: remote acknowledgment is mandatory; public caller cannot inject a termination result
+ok 8 - remote acknowledgment is mandatory; public caller cannot inject a termination result
+  ---
+  duration_ms: 29.556375
+  type: 'test'
+  ...
+# Subtest: human-created replacement seals normally, admits only its immutable plan, never reopens original
+ok 9 - human-created replacement seals normally, admits only its immutable plan, never reopens original
+  ---
+  duration_ms: 144.376334
+  type: 'test'
+  ...
+# Subtest: two proposals cannot both be human-approved for one original; expiry requires fresh review
+ok 10 - two proposals cannot both be human-approved for one original; expiry requires fresh review
+  ---
+  duration_ms: 65.254084
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL human_risk_approve beforeCommit preserves atomic termination and one lineage
+ok 11 - v2 actual SIGKILL human_risk_approve beforeCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 341.841375
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL human_risk_approve afterCommit preserves atomic termination and one lineage
+ok 12 - v2 actual SIGKILL human_risk_approve afterCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 314.120125
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL create_risk_replacement beforeCommit preserves atomic termination and one lineage
+ok 13 - v2 actual SIGKILL create_risk_replacement beforeCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 327.898626
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL create_risk_replacement afterCommit preserves atomic termination and one lineage
+ok 14 - v2 actual SIGKILL create_risk_replacement afterCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 310.577
+  type: 'test'
+  ...
+# Subtest: review memo is hash-bound, remote read failures are facts and public input cannot masquerade as evidence
+ok 15 - review memo is hash-bound, remote read failures are facts and public input cannot masquerade as evidence
+  ---
+  duration_ms: 18.233667
+  type: 'test'
+  ...
+# Subtest: existing remote replacement jobs are not silently adopted by a handoff
+ok 16 - existing remote replacement jobs are not silently adopted by a handoff
+  ---
+  duration_ms: 26.322334
+  type: 'test'
+  ...
+# Subtest: cooperative helper aborts a transaction if retirement arrives before its commit
+ok 17 - cooperative helper aborts a transaction if retirement arrives before its commit
+  ---
+  duration_ms: 53.151959
+  type: 'test'
+  ...
+# Subtest: concurrent approved creators cannot establish a second replacement
+ok 18 - concurrent approved creators cannot establish a second replacement
+  ---
+  duration_ms: 74.28075
+  type: 'test'
+  ...
+# Subtest: job termination requires session-bound review, exact hash and fresh native verification
+ok 19 - job termination requires session-bound review, exact hash and fresh native verification
+  ---
+  duration_ms: 333.65025
+  type: 'test'
+  ...
+# Subtest: cancelled native verification and session invalidation never approve job termination
+ok 20 - cancelled native verification and session invalidation never approve job termination
+  ---
+  duration_ms: 153.404417
+  type: 'test'
+  ...
+# Subtest: admin registration requires OS verification and existing administrator authorization; hashes survive reload
+ok 21 - admin registration requires OS verification and existing administrator authorization; hashes survive reload
+  ---
+  duration_ms: 312.93275
+  type: 'test'
+  ...
+# Subtest: cancelled native verification cannot create an account and unknown request fields are rejected
+ok 22 - cancelled native verification cannot create an account and unknown request fields are rejected
+  ---
+  duration_ms: 3.210209
+  type: 'test'
+  ...
+# Subtest: a Windows logon rejection is actionable and never creates an administrator
+ok 23 - a Windows logon rejection is actionable and never creates an administrator
+  ---
+  duration_ms: 5.36825
+  type: 'test'
+  ...
+# Subtest: native password recovery revokes old sessions and replaces the stored password
+ok 24 - native password recovery revokes old sessions and replaces the stored password
+  ---
+  duration_ms: 317.751917
+  type: 'test'
+  ...
+# Subtest: native verification cannot be reused by concurrent registrations and cancelled recovery changes nothing
+ok 25 - native verification cannot be reused by concurrent registrations and cancelled recovery changes nothing
+  ---
+  duration_ms: 190.600458
+  type: 'test'
+  ...
+# Subtest: password recovery rejects an old-password check that was already in flight
+ok 26 - password recovery rejects an old-password check that was already in flight
+  ---
+  duration_ms: 119.870625
+  type: 'test'
+  ...
+# Subtest: native owner verification binds the proof to its invocation and rejects unsupported platforms
+ok 27 - native owner verification binds the proof to its invocation and rejects unsupported platforms
+  ---
+  duration_ms: 0.739167
+  type: 'test'
+  ...
+# Subtest: manual listener rejects cross-origin requests and Manager tokens; no credentials enter URLs or static assets
+ok 28 - manual listener rejects cross-origin requests and Manager tokens; no credentials enter URLs or static assets
+  ---
+  duration_ms: 151.603916
+  type: 'test'
+  ...
+# Subtest: one-time terminal tickets are bound to one instance; input and resize work without command allowlists
+ok 29 - one-time terminal tickets are bound to one instance; input and resize work without command allowlists
+  ---
+  duration_ms: 144.316209
+  type: 'test'
+  ...
+# Subtest: a terminal handshake cannot change instance or connection settings
+ok 30 - a terminal handshake cannot change instance or connection settings
+  ---
+  duration_ms: 125.7875
+  type: 'test'
+  ...
+# Subtest: SSH output pauses until the browser confirms rendering, without extending input idle time
+ok 31 - SSH output pauses until the browser confirms rendering, without extending input idle time
+  ---
+  duration_ms: 128.71075
+  type: 'test'
+  ...
+# Subtest: an expired terminal ticket cannot open a connection
+ok 32 - an expired terminal ticket cannot open a connection
+  ---
+  duration_ms: 128.367292
+  type: 'test'
+  ...
+# Subtest: idle expiry, absolute expiry, logout and configuration changes revoke authorization
+ok 33 - idle expiry, absolute expiry, logout and configuration changes revoke authorization
+  ---
+  duration_ms: 316.574584
+  type: 'test'
+  ...
+# Subtest: login throttling limits password guesses
+ok 34 - login throttling limits password guesses
+  ---
+  duration_ms: 352.502125
+  type: 'test'
+  ...
+# Subtest: Manager routes need local authorization and editing an instance immediately closes its human session
+ok 35 - Manager routes need local authorization and editing an instance immediately closes its human session
+  ---
+  duration_ms: 131.616916
+  type: 'test'
+  ...
+# Subtest: automatic Worker exposes no manual administration, login or terminal routes
+ok 36 - automatic Worker exposes no manual administration, login or terminal routes
+  ---
+  duration_ms: 12.930708
+  type: 'test'
+  ...
+# Subtest: real SSH PTY transports input, output, resizing and interruption; host-key mismatch never opens a shell
+ok 37 - real SSH PTY transports input, output, resizing and interruption; host-key mismatch never opens a shell
+  ---
+  duration_ms: 887.536
+  type: 'test'
+  ...
+# Subtest: rollback starts directly from a user-paused job without inheriting its pause control
+ok 38 - rollback starts directly from a user-paused job without inheriting its pause control
+  ---
+  duration_ms: 206.544375
+  type: 'test'
+  ...
+# Subtest: pausing a resource-waiting bulk job preserves the user pause reason
+ok 39 - pausing a resource-waiting bulk job preserves the user pause reason
+  ---
+  duration_ms: 8.459417
+  type: 'test'
+  ...
+# Subtest: a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+ok 40 - a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+  ---
+  duration_ms: 5.11125
+  type: 'test'
+  ...
+# Subtest: bulk policy is opt-in and keeps sandbox storage outside business allowlists
+ok 41 - bulk policy is opt-in and keeps sandbox storage outside business allowlists
+  ---
+  duration_ms: 1.652792
+  type: 'test'
+  ...
+# Subtest: disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+ok 42 - disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+  ---
+  duration_ms: 4.824
+  type: 'test'
+  ...
+# Subtest: bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+ok 43 - bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+  ---
+  duration_ms: 2.761834
+  type: 'test'
+  ...
+# Subtest: bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+ok 44 - bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+  ---
+  duration_ms: 1.862833
+  type: 'test'
+  ...
+# Subtest: bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+ok 45 - bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+  ---
+  duration_ms: 2.963375
+  type: 'test'
+  ...
+# Subtest: generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+ok 46 - generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+  ---
+  duration_ms: 7.042833
+  type: 'test'
+  ...
+# Subtest: runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+ok 47 - runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+  ---
+  duration_ms: 1.610084
+  type: 'test'
+  ...
+# Subtest: job runner runs bounded concurrent waves and waits for every started transaction
+ok 48 - job runner runs bounded concurrent waves and waits for every started transaction
+  ---
+  duration_ms: 59.479042
+  type: 'test'
+  ...
+# Subtest: job runner pauses only after the other in-flight batch settles
+ok 49 - job runner pauses only after the other in-flight batch settles
+  ---
+  duration_ms: 28.014375
+  type: 'test'
+  ...
+# Subtest: bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+ok 50 - bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+  ---
+  duration_ms: 2.976041
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail
+ok 51 - bulk array runtime checks actual preimage: tail
+  ---
+  duration_ms: 121.494542
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: sparse
+ok 52 - bulk array runtime checks actual preimage: sparse
+  ---
+  duration_ms: 42.973417
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: hole
+ok 53 - bulk array runtime checks actual preimage: hole
+  ---
+  duration_ms: 37.443667
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: object-index
+ok 54 - bulk array runtime checks actual preimage: object-index
+  ---
+  duration_ms: 39.707334
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: identity-conflict
+ok 55 - bulk array runtime checks actual preimage: identity-conflict
+  ---
+  duration_ms: 34.597417
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail-conflict
+ok 56 - bulk array runtime checks actual preimage: tail-conflict
+  ---
+  duration_ms: 42.130417
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: duplicate-identity
+ok 57 - bulk array runtime checks actual preimage: duplicate-identity
+  ---
+  duration_ms: 49.74225
+  type: 'test'
+  ...
+# Subtest: bulk preflight attests no dispatch only before SSH invocation
+ok 58 - bulk preflight attests no dispatch only before SSH invocation
+  ---
+  duration_ms: 1.990542
+  type: 'test'
+  ...
+# Subtest: bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+ok 59 - bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+  ---
+  duration_ms: 64.61375
+  type: 'test'
+  ...
+# (node:17) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: native-reviewed standalone termination closes only this job, retains unknown history and creates no replacement
+ok 60 - native-reviewed standalone termination closes only this job, retains unknown history and creates no replacement
+  ---
+  duration_ms: 229.49225
+  type: 'test'
+  ...
+# Subtest: expired risk approval does not obstruct terminating its established replacement
+ok 61 - expired risk approval does not obstruct terminating its established replacement
+  ---
+  duration_ms: 141.719083
+  type: 'test'
+  ...
+# Subtest: changed state, wrong hash, expired review and forged caller evidence cannot terminate
+ok 62 - changed state, wrong hash, expired review and forged caller evidence cannot terminate
+  ---
+  duration_ms: 131.688708
+  type: 'test'
+  ...
+# Subtest: lost remote reply retains permanent gate and same termination can finish after restart
+ok 63 - lost remote reply retains permanent gate and same termination can finish after restart
+  ---
+  duration_ms: 86.376
+  type: 'test'
+  ...
+# Subtest: remote failure before tombstone never reopens the approved local gate
+ok 64 - remote failure before tombstone never reopens the approved local gate
+  ---
+  duration_ms: 98.450834
+  type: 'test'
+  ...
+# Subtest: a successful command reply without matching independent readback stays pending
+ok 65 - a successful command reply without matching independent readback stays pending
+  ---
+  duration_ms: 50.639333
+  type: 'test'
+  ...
+# Subtest: target configuration changes and foreign instances cannot consume a termination review
+ok 66 - target configuration changes and foreign instances cannot consume a termination review
+  ---
+  duration_ms: 45.857375
+  type: 'test'
+  ...
+# Subtest: SIGKILL beforeCommit preserves atomic permanent admission and restart recovery
+ok 67 - SIGKILL beforeCommit preserves atomic permanent admission and restart recovery
+  ---
+  duration_ms: 355.935083
+  type: 'test'
+  ...
+# Subtest: SIGKILL afterCommit preserves atomic permanent admission and restart recovery
+ok 68 - SIGKILL afterCommit preserves atomic permanent admission and restart recovery
+  ---
+  duration_ms: 352.839292
+  type: 'test'
+  ...
+# Subtest: permanent gate marks existing tasks inactive and read-only observations cannot reactivate them
+ok 69 - permanent gate marks existing tasks inactive and read-only observations cannot reactivate them
+  ---
+  duration_ms: 58.056125
+  type: 'test'
+  ...
+# Subtest: new receipts live outside business DB and share the same committing session
+ok 70 - new receipts live outside business DB and share the same committing session
+  ---
+  duration_ms: 211.705833
+  type: 'test'
+  ...
+# Subtest: failure to insert the sandbox receipt aborts the business update
+ok 71 - failure to insert the sandbox receipt aborts the business update
+  ---
+  duration_ms: 94.245625
+  type: 'test'
+  ...
+# Subtest: legacy plan hashes and legacy business-DB receipts remain usable for recovery and rollback
+ok 72 - legacy plan hashes and legacy business-DB receipts remain usable for recovery and rollback
+  ---
+  duration_ms: 235.399333
+  type: 'test'
+  ...
+# Subtest: sandbox location is bound into the plan and configuration changes cannot silently redirect jobs
+ok 73 - sandbox location is bound into the plan and configuration changes cannot silently redirect jobs
+  ---
+  duration_ms: 59.925
+  type: 'test'
+  ...
+# Subtest: sandbox cleanup refuses symlinked files and roots
+ok 74 - sandbox cleanup refuses symlinked files and roots
+  ---
+  duration_ms: 71.902084
+  type: 'test'
+  ...
+# Subtest: sandbox managers reject business privileges and require a distinct management profile
+ok 75 - sandbox managers reject business privileges and require a distinct management profile
+  ---
+  duration_ms: 18.683458
+  type: 'test'
+  ...
+# Subtest: cleanup denies retained or active jobs and export never reads before-images
+ok 76 - cleanup denies retained or active jobs and export never reads before-images
+  ---
+  duration_ms: 55.704542
+  type: 'test'
+  ...
+# Subtest: expired-job cleanup is fixed to matching sandbox records and rejects stale previews
+ok 77 - expired-job cleanup is fixed to matching sandbox records and rejects stale previews
+  ---
+  duration_ms: 65.030042
+  type: 'test'
+  ...
+# Subtest: management input rejects paths and cleanup requires its explicit confirmation
+ok 78 - management input rejects paths and cleanup requires its explicit confirmation
+  ---
+  duration_ms: 0.9265
+  type: 'test'
+  ...
+# Subtest: local sandbox exports only fixed audit paths with bounded redaction
+ok 79 - local sandbox exports only fixed audit paths with bounded redaction
+  ---
+  duration_ms: 19.452
+  type: 'test'
+  ...
+# (node:19) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+ok 80 - encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+  ---
+  duration_ms: 85.898333
+  type: 'test'
+  ...
+# Subtest: context capability, target database and AAD stop cross-scope resolution and record swapping
+ok 81 - context capability, target database and AAD stop cross-scope resolution and record swapping
+  ---
+  duration_ms: 13.172416
+  type: 'test'
+  ...
+# Subtest: tampered ciphertext, wrong key and missing OS credential fail without exporting data
+ok 82 - tampered ciphertext, wrong key and missing OS credential fail without exporting data
+  ---
+  duration_ms: 15.719917
+  type: 'test'
+  ...
+# Subtest: reverse-index tampering cannot redirect an alias to a different valid ciphertext
+ok 83 - reverse-index tampering cannot redirect an alias to a different valid ciphertext
+  ---
+  duration_ms: 12.854
+  type: 'test'
+  ...
+# (node:19) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent MCP clients get one committed reference through the unique HMAC index
+ok 84 - concurrent MCP clients get one committed reference through the unique HMAC index
+  ---
+  duration_ms: 209.058625
+  type: 'test'
+  ...
+# Subtest: mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+ok 85 - mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+  ---
+  duration_ms: 22.811708
+  type: 'test'
+  ...
+# Subtest: intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+ok 86 - intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+  ---
+  duration_ms: 31.405041
+  type: 'test'
+  ...
+# Subtest: reconciliation accepts only the same remote job, immutable plan and matching terminal state
+ok 87 - reconciliation accepts only the same remote job, immutable plan and matching terminal state
+  ---
+  duration_ms: 21.85475
+  type: 'test'
+  ...
+# Subtest: prepare attempts survive restart, reject stale responses and retain the same mutation identity
+ok 88 - prepare attempts survive restart, reject stale responses and retain the same mutation identity
+  ---
+  duration_ms: 27.317042
+  type: 'test'
+  ...
+# Subtest: execute response loss accepts only the same mutation and terminal plan without replay
+ok 89 - execute response loss accepts only the same mutation and terminal plan without replay
+  ---
+  duration_ms: 20.873625
+  type: 'test'
+  ...
+# Subtest: formal recovery inspects legacy intents without accepting caller supplied proof
+ok 90 - formal recovery inspects legacy intents without accepting caller supplied proof
+  ---
+  duration_ms: 11.091208
+  type: 'test'
+  ...
+# Subtest: failed local prepare outcome commit leaves a recoverable uncertain intent
+ok 91 - failed local prepare outcome commit leaves a recoverable uncertain intent
+  ---
+  duration_ms: 14.395667
+  type: 'test'
+  ...
+# Subtest: active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+ok 92 - active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+  ---
+  duration_ms: 41.95725
+  type: 'test'
+  ...
+# (node:19) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: private service validates current instance/profile and refuses arbitrary actions
+ok 93 - private service validates current instance/profile and refuses arbitrary actions
+  ---
+  duration_ms: 103.710917
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL beforeCommit
+ok 94 - SQLite recovers atomically after actual process SIGKILL beforeCommit
+  ---
+  duration_ms: 318.406459
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL afterCommit
+ok 95 - SQLite recovers atomically after actual process SIGKILL afterCommit
+  ---
+  duration_ms: 307.7735
+  type: 'test'
+  ...
+# (node:19) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: worker queue overload is bounded and returns a redacted busy error
+ok 96 - worker queue overload is bounded and returns a redacted busy error
+  ---
+  duration_ms: 86.137
+  type: 'test'
+  ...
+# Subtest: claimed executions reconcile only the exact original intent and operation
+ok 97 - claimed executions reconcile only the exact original intent and operation
+  ---
+  duration_ms: 10.47125
+  type: 'test'
+  ...
+# Subtest: public privacy RPC rejects caller-supplied reconciliation evidence
+ok 98 - public privacy RPC rejects caller-supplied reconciliation evidence
+  ---
+  duration_ms: 3.683167
+  type: 'test'
+  ...
+# Subtest: bulk legacy envelopes and modern missing evidence are distinguished without accepting caller proof
+ok 99 - bulk legacy envelopes and modern missing evidence are distinguished without accepting caller proof
+  ---
+  duration_ms: 5.563875
+  type: 'test'
+  ...
+# Subtest: bulk intent interrupted before claim can be atomically fenced, preserving identity and blocking a delayed dispatch
+ok 100 - bulk intent interrupted before claim can be atomically fenced, preserving identity and blocking a delayed dispatch
+  ---
+  duration_ms: 18.301125
+  type: 'test'
+  ...
+# Subtest: bulk recovery cannot fence a claimed attempt using a stale unclaimed observation
+ok 101 - bulk recovery cannot fence a claimed attempt using a stale unclaimed observation
+  ---
+  duration_ms: 5.481959
+  type: 'test'
+  ...
+# Subtest: bulk local receipt commit failure remains pinned until exact positive evidence is persisted
+ok 102 - bulk local receipt commit failure remains pinned until exact positive evidence is persisted
+  ---
+  duration_ms: 8.159084
+  type: 'test'
+  ...
+# Subtest: redacted bulk request collisions cannot return a receipt for different original bytes
+ok 103 - redacted bulk request collisions cannot return a receipt for different original bytes
+  ---
+  duration_ms: 5.435666
+  type: 'test'
+  ...
+# Subtest: historical bulk internal actions cannot be invoked with caller-supplied proof
+ok 104 - historical bulk internal actions cannot be invoked with caller-supplied proof
+  ---
+  duration_ms: 3.869583
+  type: 'test'
+  ...
+# Subtest: historical result commit is atomic, preserves old identity, and cannot be replayed or replaced
+ok 105 - historical result commit is atomic, preserves old identity, and cannot be replayed or replaced
+  ---
+  duration_ms: 8.338417
+  type: 'test'
+  ...
+1..105
+# tests 105
+# suites 0
+# pass 105
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4534.705586

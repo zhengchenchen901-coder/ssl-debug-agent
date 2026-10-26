@@ -39,6 +39,9 @@ function route(action) {
 function sendError(error, _request, response, _next) {
   if (error.type === "entity.too.large") error = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
   else if (error.type === "entity.parse.failed") error = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
+  if (error.code?.startsWith("BUSINESS_TERMINATION_")) {
+    error = manualError("MANUAL_TERMINATION_REJECTED", "终止审核已过期、任务状态或目标已变化，请重新读取；已批准的本地终止保护会继续保留。", 409);
+  }
   if (error.code?.startsWith("BUSINESS_REPLACEMENT_")) {
     const messages = {
       BUSINESS_REPLACEMENT_FENCE_REQUIRED: "旧任务永久阻断回执缺失、无效或已过期，不能批准替代任务。",
@@ -65,6 +68,7 @@ export class ManualWorkbench {
     this.openTerminal = options.openTerminal || openManualTerminal;
     this.openDatabase = options.openDatabase || openManualDatabase;
     this.riskReview = options.riskReview;
+    this.jobTermination = options.jobTermination;
     this.now = options.now || Date.now;
     this.idleMs = options.idleMs || IDLE_MS;
     this.maxSessionMs = options.maxSessionMs || MAX_SESSION_MS;
@@ -320,6 +324,40 @@ export class ManualWorkbench {
         session.lastInputAt = this.now();
         response.json(result);
       } finally { session.riskApprovalPending = false; }
+    }));
+    app.post("/api/job-termination/review", route(async (request, response) => {
+      assertFields(request.body, ["database", "jobId", "planHash", "reason"]);
+      const token = this.bearer(request), session = authorize(request);
+      session.jobTerminationReview = null;
+      if (!this.jobTermination) throw manualError("MANUAL_TERMINATION_UNAVAILABLE", "当前版本未接入任务终止审核。", 503);
+      const result = await this.jobTermination("review", { ...request.body, instanceId: session.instanceId });
+      this.getSession(token);
+      session.jobTerminationReview = { terminationId: result.terminationId, reviewHash: result.reviewHash,
+        confirmation: result.confirmation, canApprove: result.canApprove, expiresAt: this.now() + 300000 };
+      session.lastInputAt = this.now();
+      response.json(result);
+    }));
+    app.post("/api/job-termination/approve", route(async (request, response) => {
+      assertFields(request.body, ["terminationId", "reviewHash", "confirmation"]);
+      const token = this.bearer(request), session = authorize(request), review = session.jobTerminationReview;
+      if (!this.jobTermination || !review?.canApprove || review.terminationId !== request.body.terminationId ||
+          review.reviewHash !== request.body.reviewHash || review.confirmation !== request.body.confirmation ||
+          this.now() >= review.expiresAt || session.jobTerminationPending) {
+        throw manualError("MANUAL_TERMINATION_REVIEW_REQUIRED", "请先在当前管理员会话核对具体终止计划。", 409);
+      }
+      session.jobTerminationPending = true;
+      try {
+        await this.ownerVerification.verify();
+        this.getSession(token);
+        if (session.jobTerminationReview !== review) throw manualError("MANUAL_TERMINATION_REVIEW_REQUIRED", "审核已变化，请重新读取。", 409);
+        session.jobTerminationReview = null;
+        const result = await this.jobTermination("approve", { ...request.body, instanceId: session.instanceId,
+          actor: { username: session.username, sessionId: session.id, verifiedAt: this.now() } });
+        this.audit("bulk-job-termination", session, { jobId: result.jobId, planHash: result.planHash,
+          terminationId: result.terminationId, state: result.state, managedAdmissionClosed: result.managedAdmissionClosed });
+        session.lastInputAt = this.now();
+        response.json(result);
+      } finally { session.jobTerminationPending = false; }
     }));
     app.get("/api/database/config", route((request, response) => {
       const session = authorize(request), instance = this.instance(session.instanceId);

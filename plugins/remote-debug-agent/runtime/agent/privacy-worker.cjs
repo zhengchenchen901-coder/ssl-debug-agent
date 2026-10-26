@@ -13,9 +13,9 @@ var __commonJS = (cb, mod) => function __require() {
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    for (let key2 of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key2) && key2 !== except)
+        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
   }
   return to;
 };
@@ -63,8 +63,8 @@ var require_windows_privacy = __commonJS({
         const result = JSON.parse(raw);
         if (result.ok !== true) throw fail(/^BUSINESS_[A-Z_]+$/.test(result.code || "") ? result.code : void 0);
         return result;
-      } catch (error) {
-        if (error.code?.startsWith("BUSINESS_")) throw fail(error.code);
+      } catch (error2) {
+        if (error2.code?.startsWith("BUSINESS_")) throw fail(error2.code);
         throw fail(action === "key" ? "BUSINESS_KEYSTORE_UNAVAILABLE" : action.includes("context") ? "BUSINESS_CONTEXT_DENIED" : "BUSINESS_STORAGE_PATH_INVALID");
       }
     }
@@ -124,18 +124,18 @@ function loadPrivacyKey(directory, { platform = process.platform, run = import_n
   };
   try {
     return read();
-  } catch (error) {
-    if (existing || error.status !== 44) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
+  } catch (error2) {
+    if (existing || error2.status !== 44) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
   }
-  const key = (0, import_node_crypto.randomBytes)(32);
+  const key2 = (0, import_node_crypto.randomBytes)(32);
   try {
-    run("/usr/bin/security", ["-i"], { input: `add-generic-password -s ${service} -a ${account} -w ${key.toString("hex")}
+    run("/usr/bin/security", ["-i"], { input: `add-generic-password -s ${service} -a ${account} -w ${key2.toString("hex")}
 `, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 15e3 });
     return read();
   } catch {
     throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
   } finally {
-    key.fill(0);
+    key2.fill(0);
   }
 }
 
@@ -209,10 +209,10 @@ function inspectFenceAuthority(plan, options = {}, now = Date.now()) {
     const trust = readOwnedFile(options.trustFile);
     const receipt = readOwnedFile(import_node_path.default.join(options.receiptDirectory, plan.id + ".json"));
     if (trust.version !== 1 || trust.boundaryType !== "externally-enforced-legacy-retirement-v1" || typeof trust.issuer !== "string") throw Error();
-    const key = (0, import_node_crypto3.createPublicKey)(trust.publicKey);
-    if (key.asymmetricKeyType !== "ed25519" || receipt.version !== 1 || typeof receipt.signature !== "string" || !/^[A-Za-z0-9+/]{86}==$/.test(receipt.signature)) throw Error();
+    const key2 = (0, import_node_crypto3.createPublicKey)(trust.publicKey);
+    if (key2.asymmetricKeyType !== "ed25519" || receipt.version !== 1 || typeof receipt.signature !== "string" || !/^[A-Za-z0-9+/]{86}==$/.test(receipt.signature)) throw Error();
     const p = receipt.payload;
-    if (!p || !(0, import_node_crypto3.verify)(null, Buffer.from(JSON.stringify(p)), key, Buffer.from(receipt.signature, "base64"))) throw Error();
+    if (!p || !(0, import_node_crypto3.verify)(null, Buffer.from(JSON.stringify(p)), key2, Buffer.from(receipt.signature, "base64"))) throw Error();
     if (p.issuer !== trust.issuer || p.challengeDigest !== digest(fenceChallenge(plan)) || p.riskPlanId !== plan.id || typeof p.receiptId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(p.receiptId) || !Number.isSafeInteger(p.issuedAt) || !Number.isSafeInteger(p.validUntil) || p.issuedAt > now || p.validUntil <= now || p.validUntil - p.issuedAt > 36e5 || p.issuedAt < plan.createdAt || p.protection !== "permanent" || p.historicalOutcome !== "unknown" || p.inFlightTransactions !== "terminal" || p.restartSafe !== true || p.legacyCredentialsRevoked !== true || p.oldSessionsDrained !== true || p.oldQueuesDrained !== true || !Array.isArray(p.coverage) || p.coverage.length !== FENCE_COVERAGE.length || FENCE_COVERAGE.some((x) => !p.coverage.includes(x))) throw Error();
     return { confirmed: true, issuer: trust.issuer, receiptId: p.receiptId, fingerprint: digest(receipt), validUntil: p.validUntil };
   } catch {
@@ -237,9 +237,9 @@ var denied = (code = "BUSINESS_REPLACEMENT_DENIED") => {
 };
 var wire = (value) => JSON.parse(JSON.stringify(bulkPreparePayload(value)));
 function effects(request, originalJobId) {
-  function walk(value, key = "", insideIdentity = false) {
-    insideIdentity ||= ["id", "_id"].includes(key.split(".").at(-1));
-    if (!insideIdentity && typeof value === "string" && ["remediation_job_id", "job_id"].includes(key.split(".").at(-1)) && value === request.jobId) return originalJobId;
+  function walk(value, key2 = "", insideIdentity = false) {
+    insideIdentity ||= ["id", "_id"].includes(key2.split(".").at(-1));
+    if (!insideIdentity && typeof value === "string" && ["remediation_job_id", "job_id"].includes(key2.split(".").at(-1)) && value === request.jobId) return originalJobId;
     if (Array.isArray(value)) return value.map((x) => walk(x, "", insideIdentity));
     if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v, k, insideIdentity)]));
     return value;
@@ -410,7 +410,7 @@ function riskStoreAction(store2, action, input, ctx, scope) {
       };
       if (action === "risk_handoff_context") return { required: true, request };
       const result = input.result;
-      if (!result || result.status !== "terminated_unknown" || result.managedAdmissionClosed !== true || !HASH.test(result.controlRecordDigest || "") || Object.entries(request).some(([key, value]) => key !== "approvalAuditId" && result[key] !== value)) denied("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
+      if (!result || result.status !== "terminated_unknown" || result.managedAdmissionClosed !== true || !HASH.test(result.controlRecordDigest || "") || Object.entries(request).some(([key2, value]) => key2 !== "approvalAuditId" && result[key2] !== value)) denied("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
       const saved = { ...plan, remoteRetirement: {
         ...request,
         recordedAt: store2.now(),
@@ -461,9 +461,9 @@ function humanRiskStoreAction(store2, action, input) {
     approval.auditId = audit(store2, "risk_replacement_human_approved", plan, ctx, scope, approval);
     const saved = { ...plan, state: "human_approved", approval };
     if (humanPolicy(plan)) {
-      const key = retirementKey(store2, plan), retired = store2.get("risk_job_retirement", key, "", "");
+      const key2 = retirementKey(store2, plan), retired = store2.get("risk_job_retirement", key2, "", "");
       if (retired && retired.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
-      store2.put("risk_job_retirement", key, "", "", {
+      store2.put("risk_job_retirement", key2, "", "", {
         instanceId: plan.binding.instanceId,
         jobId: plan.binding.jobId,
         database: plan.binding.database,
@@ -615,9 +615,385 @@ function assertRiskJobAdmission(store2, instanceId, admission = {}) {
   if (candidate && !replacementAdmission(store2, instanceId, admission)) denied("BUSINESS_REPLACEMENT_NOT_ADMITTED");
 }
 
+// ../plugins/remote-debug-agent/output-contracts.js
+var scalar = "scalar";
+var json = "json";
+var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key2) => [key2, scalar]));
+var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
+var warning = fields("code message path source phase");
+var error = { ...fields("operationId code message layer phase retriable cause intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
+var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
+var instance = {
+  ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
+  sourceRoots: json,
+  logProjects: json,
+  serviceProfiles: json,
+  approvedCommands: json,
+  commandReview: json,
+  mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
+  runtime,
+  memory,
+  hasPassphrase: "boolean"
+};
+instance.mongodb.hasSandboxManagementPassword = "boolean";
+var common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
+var entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
+var mutation = {
+  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
+  collections: [scalar],
+  changedFields: [scalar],
+  affectedIds: json,
+  storageStatus: json,
+  rollbackRestoresDocuments: scalar,
+  atomicity: scalar,
+  failedBatch: fields("batchIndex mutationId code"),
+  preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
+};
+var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
+mutation.batches = [batch];
+var receiptStorage = fields("database collection legacy scope schemaVersion");
+function bulkFailure(depth = 2) {
+  const shape = {
+    ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    frames: [fields("function line column")]
+  };
+  if (depth > 0) for (const key2 of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key2] = bulkFailure(depth - 1);
+  return shape;
+}
+var bulk = {
+  ...fields("terminationId reviewHash previousStatus"),
+  lastFailure: bulkFailure(),
+  ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
+  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
+  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
+  managedAdmissionClosed: "boolean",
+  originalJobFound: "boolean",
+  receiptStorage,
+  activeBatchIndexes: [scalar],
+  committed: fields("matched modified inserted unchanged"),
+  differences: json,
+  changedFields: [scalar],
+  planPreview: [batch],
+  batches: [batch]
+};
+var historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
+var bulkHistory = {
+  ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
+  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan }
+};
+var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
+var execution = {
+  ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
+  results: [{ ...fields("commandIndex command commandPreview cmd ok stdout stderr exitCode durationMs timedOut"), timing }],
+  stopped: fields("commandIndex reason exitCode")
+};
+var violation = fields("commandIndex code severity rule reason message");
+var model = { ...fields("status errorCode attempts durationMs decision isReadOnly riskLevel summary"), violations: [violation] };
+var review = { ...fields("reason reviewedAt"), staticViolations: [violation], violations: [violation], model };
+var sandbox = {
+  ...fields("sandboxDatabase storageRoot jobCount bytes initialized activeFilesRetained jobId scannedBytes truncated cleanupHash fileCount retainedUntil removedFiles removedBytes removedReceipts"),
+  receiptStorage,
+  files: [fields("name bytes modified")],
+  records: json,
+  jobs: [{ ...fields("jobId status rollbackExpiresAt"), receiptStorage }],
+  hasMore: scalar
+};
+var access = {
+  ...fields("setupId planHash status expiresAt instanceId sandboxDatabase collection managerUser managerRole executorRole managementProfile configPath configModeAfter backupMode collectionsInitialized passwordReset requiresConfirmation confirmation rollbackMode"),
+  executionUser: fields("user db"),
+  environment: json,
+  managerPrivileges: json,
+  executorPrivileges: json,
+  existing: { ...fields("manager profile executorGranted"), roles: json }
+};
+var logResources = {
+  ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
+  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason")
+};
+var fileReceipt = {
+  ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
+  source: fields("size modifyTime changeTime inode device"),
+  error,
+  warnings: [fields("code message memberPath lineNumber")]
+};
+var logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
+var logJob = {
+  ...logProgress,
+  ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
+  resourceTaskId: scalar,
+  evidenceLimits: fields("count bytes"),
+  fileResults: [fileReceipt],
+  scopeControls: fields("dateFrom dateTo stopAfterFile"),
+  progress: logProgress,
+  resources: logResources,
+  error,
+  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
+  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
+  groups: [fields("level route method code message count")],
+  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
+};
+var finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
+var finalResult = {
+  ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"),
+  final: "boolean",
+  privacy: fields("credentials binary policyVersion"),
+  references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") },
+  files: [finalFile]
+};
+var contracts = {
+  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
+  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
+  remote_debug_get_final_result: { result: finalResult },
+  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
+  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
+    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
+    target: fields("host port username"),
+    envFiles: [scalar],
+    processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }]
+  } }] }] },
+  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
+  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map((name) => [name, {
+    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
+    started: [scalar],
+    attempted: [scalar],
+    missing: [scalar],
+    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }],
+    error
+  }])),
+  remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
+  remote_debug_get_capabilities: { capabilities: json },
+  remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
+  remote_debug_mongodb_disposition: {
+    ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
+    requiresConfirmation: "boolean",
+    localContainment: "boolean",
+    remoteFenceConfirmed: "boolean",
+    replacementAllowed: "boolean",
+    missingRequirements: [scalar],
+    historicalEvidenceGaps: [scalar],
+    ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
+    humanConfirmationRequired: "boolean",
+    humanApproved: "boolean",
+    canApprove: "boolean",
+    collections: [scalar],
+    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
+    acceptedResidualRisk: "boolean",
+    observations: { ...fields("source observedAt status code historicalOutcome") },
+    binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
+    fenceChallenge: {
+      ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
+      binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
+    },
+    result: { ...common, ...bulk, ...fields("intentId intentState state"), result: { ...common, ...bulk } }
+  },
+  remote_debug_mongodb_prepare_write: mutation,
+  remote_debug_mongodb_prepare_index: mutation,
+  remote_debug_mongodb_prepare_transaction: mutation,
+  remote_debug_mongodb_prepare_import: mutation,
+  remote_debug_mongodb_prepare_bulk_storage: mutation,
+  remote_debug_mongodb_execute_mutation: mutation,
+  remote_debug_mongodb_rollback_mutation: mutation,
+  remote_debug_mongodb_list_mutations: { entries: [mutation] },
+  remote_debug_mongodb_prepare_bulk: bulk,
+  remote_debug_mongodb_execute_bulk: bulk,
+  remote_debug_mongodb_get_bulk_job: bulk,
+  remote_debug_mongodb_control_bulk_job: bulk,
+  remote_debug_mongodb_rollback_bulk_job: bulk,
+  remote_debug_mongodb_list_bulk_jobs: { ...fields("offset limit total hasMore"), jobs: [bulk] },
+  remote_debug_prepare_sandbox_access: access,
+  remote_debug_configure_sandbox_access: access,
+  remote_debug_get_sandbox: sandbox,
+  remote_debug_export_sandbox_log: sandbox,
+  remote_debug_prepare_sandbox_cleanup: sandbox,
+  remote_debug_cleanup_sandbox: sandbox,
+  remote_debug_restart_instance: { ...fields("restarted action previousStatus"), instance, runtime },
+  remote_debug_update_memory: { note: { ...fields("topic summary updatedAt"), facts: [scalar] } },
+  remote_debug_run_command: fields("stdout stderr exitCode timedOut"),
+  remote_debug_read_file: fields("path content truncated"),
+  remote_debug_list_dir: { path: scalar, entries: [entry] },
+  remote_debug_list_logs: { ...fields("category nextCursor hasMore truncated scannedEntries sourceCount"), entries: [entry], warnings: [warning] },
+  remote_debug_list_log_archive_members: { ...fields("path compression nextCursor hasMore truncated scannedBytes"), members: [entry] },
+  remote_debug_read_log: fields("path memberPath compression content truncated scannedTruncated scannedBytes archiveScannedBytes totalLines matchedLines"),
+  remote_debug_query_logs: {
+    ...fields("mode projectId content returnedLines matchedLines scannedLines scannedBytes expandedBytes outputBytes outputTruncated scanTruncated complete coverage countsAreComplete hasMoreFiles nextFileOffset hasMoreMembers nextMemberOffset memberBytes directoryListingTruncated warningsTruncated"),
+    files: [entry],
+    scannedFiles: [fields("path scannedBytes startByte endByte")],
+    records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
+    members: [entry],
+    warnings: [warning]
+  },
+  remote_debug_start_log_query: logJob,
+  remote_debug_get_log_query: logJob,
+  remote_debug_control_log_query: logJob,
+  remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
+  remote_debug_set_log_project: { projects: json },
+  remote_debug_prepare_command_draft: draft,
+  remote_debug_get_command_draft: draft,
+  remote_debug_execute_command_draft: execution,
+  remote_debug_review_command_draft: { ...draft, draft, decision: scalar, review, execution }
+};
+var OUTPUT_CONTRACTS = Object.freeze(Object.fromEntries(
+  Object.entries(contracts).map(([name, shape]) => [name, { ...common, ...shape }])
+));
+var ERROR_CONTRACT = {
+  ...common,
+  error,
+  details: { ...fields("ok operationId code layer phase retriable cause agentUrl port manifestPath"), error }
+};
+
+// ../plugins/remote-debug-agent/output-guard.js
+var GUARD_BLOCKED = Object.freeze({
+  ok: false,
+  error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
+});
+var MAX_BYTES = 8 * 1024 * 1024;
+var ASSIGNMENT_NAME = String.raw`[\w.-]*(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key(?:[_-]?id)?|connection[_-]?string|dsn)`;
+var ASSIGNMENT = new RegExp(String.raw`(\b${ASSIGNMENT_NAME}["']?\s*[=:]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}&]+)`, "gi");
+var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pass|token|secret|api[-_]?key|client[-_]?secret)(?:=|\s+))("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s;]+)`, "gi");
+
+// mongodb-job-termination.js
+var TERMINATION_CONFIRMATION = "我确认永久终止此任务，不再恢复或重试";
+var MAX2 = Number.MAX_SAFE_INTEGER;
+var HASH2 = /^[a-f0-9]{64}$/;
+var JOB = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+var deny = (code = "BUSINESS_TERMINATION_REVIEW_REQUIRED") => {
+  throw privacyError(code);
+};
+var key = (store2, instanceId, jobId) => store2.hash("job-termination", instanceId, jobId);
+var load2 = (store2, id) => store2.get("job_termination", id, "", "") || deny();
+var view = (store2, p) => ({
+  ok: true,
+  terminationId: p.id,
+  instanceId: p.instanceId,
+  database: p.database,
+  jobId: p.jobId,
+  planHash: p.planHash,
+  reason: p.reason,
+  state: p.state,
+  reviewHash: p.reviewHash,
+  observations: p.observations,
+  expiresAt: p.expiresAt,
+  confirmation: TERMINATION_CONFIRMATION,
+  canApprove: p.state !== "terminated_unknown" && (!!p.approval || store2.now() < p.expiresAt),
+  managedAdmissionClosed: !!p.approval,
+  remoteTermination: p.receipt ? "recorded" : "pending",
+  historicalOutcome: "unknown",
+  legacyInFlightOutcome: "unknown",
+  approvalAuditId: p.approval?.auditId,
+  controlRecordDigest: p.receipt?.controlRecordDigest,
+  warning: "永久关闭此任务的后续执行、恢复及回滚准入；不回滚业务数据，不创建新任务，不证明历史或旧在途事务从未提交。"
+});
+function jobTerminationStoreAction(store2, action, input) {
+  if (!action.startsWith("human_job_termination_")) return void 0;
+  if (action === "human_job_termination_prepare") return store2.transaction(() => {
+    if (!JOB.test(input.jobId || "") || !HASH2.test(input.planHash || "") || typeof input.reason !== "string" || !input.reason.trim() || input.reason.length > 1e3 || input.observations?.jobId !== input.jobId || input.observations.planHash !== input.planHash || input.observations.database !== input.database) deny();
+    const id = key(store2, input.instanceId, input.jobId), old = store2.get("job_termination", id, "", "");
+    if (old && (old.planHash !== input.planHash || old.targetScope !== input.targetScope)) deny("BUSINESS_TERMINATION_TARGET_CHANGED");
+    if (old?.approval) return view(store2, old);
+    const p2 = {
+      id,
+      instanceId: input.instanceId,
+      database: input.database,
+      targetScope: input.targetScope,
+      jobId: input.jobId,
+      planHash: input.planHash,
+      reason: input.reason.trim(),
+      observations: input.observations,
+      state: "awaiting_human",
+      expiresAt: store2.now() + 3e5
+    };
+    p2.reviewHash = store2.hash("termination-review-v1", p2);
+    store2.put("job_termination", id, "", "", p2, MAX2, true);
+    return view(store2, p2);
+  });
+  const p = load2(store2, input.terminationId);
+  if (p.instanceId !== input.instanceId || input.targetScope !== void 0 && p.targetScope !== input.targetScope) deny("BUSINESS_TERMINATION_TARGET_CHANGED");
+  if (action === "human_job_termination_context") return { targetScope: p.targetScope, database: p.database, jobId: p.jobId, planHash: p.planHash, state: p.state };
+  if (action === "human_job_termination_view") return view(store2, p);
+  if (action === "human_job_termination_approve") return store2.transaction(() => {
+    const current = load2(store2, p.id);
+    if (current.reviewHash !== input.reviewHash || input.confirmation !== TERMINATION_CONFIRMATION || typeof input.actor?.username !== "string" || !input.actor.username || typeof input.actor.sessionId !== "string" || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) || input.actor.verifiedAt > store2.now() || store2.now() - input.actor.verifiedAt > 6e4) deny();
+    if (current.approval) return view(store2, current);
+    if (store2.now() >= current.expiresAt || store2.hash("termination-observations", input.observations) !== store2.hash("termination-observations", current.observations)) deny("BUSINESS_TERMINATION_REVIEW_STALE");
+    const auditId = store2.hash("job-termination-approved", current.id, current.reviewHash, input.actor);
+    const saved = { ...current, state: "termination_pending", approval: { ...input.actor, auditId, at: store2.now() } };
+    store2.put("job_termination", p.id, "", "", saved, MAX2, true);
+    store2.put("event", auditId, "", "", {
+      type: "bulk_job_termination_approved",
+      terminationId: p.id,
+      instanceId: p.instanceId,
+      jobId: p.jobId,
+      planHash: p.planHash,
+      reviewHash: p.reviewHash,
+      actor: input.actor,
+      historicalOutcome: "unknown",
+      at: store2.now()
+    }, MAX2, true);
+    for (const row of store2.db.prepare("SELECT * FROM records WHERE kind='task'").all()) {
+      const task = store2.open(row);
+      if (task.id !== p.jobId) continue;
+      const target = store2.get("context", row.ctx, row.ctx, "");
+      if (!target) continue;
+      const mappings = store2.db.prepare("SELECT * FROM records WHERE kind='mapping' AND ctx=? AND scope=? LIMIT 1").all(row.ctx, row.scope);
+      if (!mappings.length) continue;
+      let scope;
+      try {
+        scope = JSON.parse(store2.open(mappings[0]).scope);
+      } catch {
+        continue;
+      }
+      if (scope.id === p.instanceId && scope.database === p.database) store2.put(
+        "task",
+        row.id,
+        row.ctx,
+        row.scope,
+        { ...task, active: false, status: "termination_pending", terminationId: p.id },
+        MAX2,
+        true
+      );
+    }
+    return view(store2, saved);
+  });
+  if (action === "human_job_termination_dispatch") {
+    if (!p.approval) deny();
+    return { jobId: p.jobId, planHash: p.planHash, terminationId: p.id, reviewHash: p.reviewHash, approvalAuditId: p.approval.auditId };
+  }
+  if (action === "human_job_termination_record") return store2.transaction(() => {
+    const current = load2(store2, p.id), r = input.result;
+    if (!current.approval || r?.ok !== true || r.jobId !== p.jobId || r.database !== p.database || r.planHash !== p.planHash || r.terminationId !== p.id || r.reviewHash !== p.reviewHash || r.approvalAuditId !== current.approval.auditId || r.status !== "terminated_unknown" || r.managedAdmissionClosed !== true || !HASH2.test(r.controlRecordDigest || "")) deny("BUSINESS_TERMINATION_ACK_REQUIRED");
+    const saved = { ...current, state: "terminated_unknown", receipt: r };
+    store2.put("job_termination", p.id, "", "", saved, MAX2, true);
+    const auditId = store2.hash("job-termination-recorded", p.id, r.controlRecordDigest);
+    store2.put("event", auditId, "", "", {
+      type: "bulk_job_termination_recorded",
+      terminationId: p.id,
+      instanceId: p.instanceId,
+      jobId: p.jobId,
+      planHash: p.planHash,
+      controlRecordDigest: r.controlRecordDigest,
+      historicalOutcome: "unknown",
+      at: store2.now()
+    }, MAX2, true);
+    return view(store2, saved);
+  });
+  deny();
+}
+function assertJobNotTerminated(store2, instanceId, admission) {
+  const jobId = (admission.identity || admission.request || {}).jobId;
+  if (typeof jobId !== "string") return;
+  const p = store2.get("job_termination", key(store2, instanceId, jobId), "", "");
+  if (p?.approval) deny("BUSINESS_JOB_PERMANENTLY_TERMINATED");
+}
+function jobTerminationFor(store2, instanceId, jobId) {
+  const p = store2.get("job_termination", key(store2, instanceId, jobId), "", "");
+  return p?.approval ? { terminationId: p.id, state: p.state } : void 0;
+}
+
 // mongodb-disposition.js
 var DISPOSITION_CONFIRMATION = "确认隔离原意图";
-var HASH2 = /^[a-f0-9]{64}$/;
+var HASH3 = /^[a-f0-9]{64}$/;
 var DAY = 864e5;
 var READ_ROUTES = /* @__PURE__ */ new Set([
   "/mongodb/query",
@@ -651,7 +1027,7 @@ function targetOf(input) {
   if (!target?.id || !target.database) denied2();
   return target;
 }
-function view(store2, record) {
+function view2(store2, record) {
   const instanceHold = !!store2.get("disposition_hold", store2.hash("disposition-instance-hold", record.binding.instanceId), "", "");
   return {
     ok: true,
@@ -678,7 +1054,7 @@ function view(store2, record) {
 function dispositionStoreAction(store2, action, input, ctx, scope) {
   if (action === "prepare_disposition") return store2.transaction(() => {
     const target = targetOf(input), original = store2.get("operation", input.id, ctx, scope), request = input.request;
-    if (!HASH2.test(input.id || "") || !original || original.state !== "uncertain" || original.route !== "/mongodb/bulk/prepare" || original.identity?.instanceId !== target.id || !request || request.instanceId !== target.id || request.database !== target.database || store2.hash("operation", ctx, input.scope, original.route, request) !== input.id || typeof original.identity.jobId !== "string" || original.identity.jobId !== request.jobId || !Number.isSafeInteger(original.identity.chunkIndex) || original.identity.chunkIndex !== request.chunkIndex || input.requestDigest !== prepareRequestDigest(request)) denied2();
+    if (!HASH3.test(input.id || "") || !original || original.state !== "uncertain" || original.route !== "/mongodb/bulk/prepare" || original.identity?.instanceId !== target.id || !request || request.instanceId !== target.id || request.database !== target.database || store2.hash("operation", ctx, input.scope, original.route, request) !== input.id || typeof original.identity.jobId !== "string" || original.identity.jobId !== request.jobId || !Number.isSafeInteger(original.identity.chunkIndex) || original.identity.chunkIndex !== request.chunkIndex || input.requestDigest !== prepareRequestDigest(request)) denied2();
     if (original.bulkPrepare && original.bulkPrepare.requestDigest !== input.requestDigest) denied2();
     const fingerprint = store2.hash("operation-record", ctx, input.scope, input.id, original);
     const binding = {
@@ -699,7 +1075,7 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
     }
     const id = store2.hash("disposition", ctx, input.scope, binding, fingerprint);
     const previous = store2.get("disposition", id, ctx, scope);
-    if (previous && (["quarantined", "retired_unknown"].includes(previous.state) || store2.now() < previous.expiresAt)) return view(store2, previous);
+    if (previous && (["quarantined", "retired_unknown"].includes(previous.state) || store2.now() < previous.expiresAt)) return view2(store2, previous);
     const createdAt = store2.now(), expiresAt = createdAt + DAY;
     const record = {
       id,
@@ -721,13 +1097,13 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
       reviewHash: record.reviewHash,
       at: createdAt
     }, Number.MAX_SAFE_INTEGER, true);
-    return view(store2, record);
+    return view2(store2, record);
   });
   if (["inspect_disposition", "quarantine_disposition", "admit_disposition"].includes(action)) return store2.transaction(() => {
-    if (!HASH2.test(input.dispositionId || "")) denied2();
+    if (!HASH3.test(input.dispositionId || "")) denied2();
     const record = store2.get("disposition", input.dispositionId, ctx, scope);
     if (!record || record.binding.contextId !== ctx || record.binding.instanceId !== targetOf(input).id || record.binding.database !== targetOf(input).database) denied2();
-    if (action === "inspect_disposition") return view(store2, record);
+    if (action === "inspect_disposition") return view2(store2, record);
     if (input.reviewHash !== record.reviewHash) denied2();
     if (action === "admit_disposition") {
       const auditId2 = store2.hash("disposition-audit", record.id, "replacement_denied");
@@ -740,10 +1116,10 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
         Number.MAX_SAFE_INTEGER,
         true
       );
-      return { ...view(store2, record), admission: "blocked", admissionAuditId: auditId2 };
+      return { ...view2(store2, record), admission: "blocked", admissionAuditId: auditId2 };
     }
     if (input.confirmation !== DISPOSITION_CONFIRMATION) denied2();
-    if (["quarantined", "retired_unknown"].includes(record.state)) return view(store2, record);
+    if (["quarantined", "retired_unknown"].includes(record.state)) return view2(store2, record);
     if (store2.now() >= record.expiresAt) throw privacyError("BUSINESS_DISPOSITION_REVIEW_EXPIRED");
     const original = store2.get("operation", record.binding.intentId, ctx, scope);
     if (!original || original.state !== "uncertain" || record.recordFingerprint !== store2.hash("operation-record", ctx, input.scope, record.binding.intentId, original)) throw privacyError("BUSINESS_DISPOSITION_STALE");
@@ -765,12 +1141,13 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
       replacementAllowed: false,
       at
     }, Number.MAX_SAFE_INTEGER, true);
-    return view(store2, saved);
+    return view2(store2, saved);
   });
   return void 0;
 }
 function assertInstanceAdmission(store2, instanceId, admission = {}) {
   if (typeof instanceId !== "string" || !instanceId) denied2();
+  assertJobNotTerminated(store2, instanceId, admission);
   assertRiskJobAdmission(store2, instanceId, admission);
   if (store2.get("disposition_hold", store2.hash("disposition-instance-hold", instanceId), "", "")) {
     if (replacementAdmission(store2, instanceId, admission)) return { ok: true };
@@ -783,7 +1160,7 @@ function assertInstanceAdmission(store2, instanceId, admission = {}) {
 var REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 var DAY2 = 864e5;
 var PrivacyStore = class {
-  constructor({ directory, key, now = Date.now, fault, fenceAuthority, riskPolicy } = {}) {
+  constructor({ directory, key: key2, now = Date.now, fault, fenceAuthority, riskPolicy } = {}) {
     this.now = now;
     this.fault = fault;
     this.riskPolicy = riskPolicy;
@@ -801,12 +1178,12 @@ var PrivacyStore = class {
       import_node_fs2.default.chmodSync(this.directory, 448);
       const filename2 = import_node_path2.default.join(this.directory, "privacy.sqlite");
       for (const suffix of ["", "-wal", "-shm"]) if (import_node_fs2.default.existsSync(filename2 + suffix)) {
-        const entry = import_node_fs2.default.lstatSync(filename2 + suffix);
-        if (!entry.isFile() || entry.isSymbolicLink() || process.getuid && entry.uid !== process.getuid()) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
+        const entry2 = import_node_fs2.default.lstatSync(filename2 + suffix);
+        if (!entry2.isFile() || entry2.isSymbolicLink() || process.getuid && entry2.uid !== process.getuid()) throw privacyError("BUSINESS_STORAGE_PATH_INVALID");
       }
     }
     const filename = import_node_path2.default.join(this.directory, "privacy.sqlite");
-    const master = key ? Buffer.from(key) : loadPrivacyKey(this.directory, { existing: process.platform === "win32" ? windowsExisting : import_node_fs2.default.existsSync(filename) });
+    const master = key2 ? Buffer.from(key2) : loadPrivacyKey(this.directory, { existing: process.platform === "win32" ? windowsExisting : import_node_fs2.default.existsSync(filename) });
     if (master.length !== 32) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
     this.enc = Buffer.from((0, import_node_crypto4.hkdfSync)("sha256", master, "rda-privacy-v1", "encryption", 32));
     this.index = Buffer.from((0, import_node_crypto4.hkdfSync)("sha256", master, "rda-privacy-v1", "reverse-index", 32));
@@ -833,9 +1210,9 @@ var PrivacyStore = class {
         if (version !== 0) throw privacyError("BUSINESS_STORAGE_CORRUPT");
         this.put("meta", "key-check", "", "", { version: 1 }, Number.MAX_SAFE_INTEGER, true);
       }
-    } catch (error) {
+    } catch (error2) {
       this.close();
-      throw privacyError(error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_CORRUPT");
+      throw privacyError(error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_CORRUPT");
     }
   }
   hash(...items) {
@@ -893,6 +1270,8 @@ var PrivacyStore = class {
   }
   execute(action, input = {}) {
     if (action === "assert_instance_admission") return assertInstanceAdmission(this, input.instanceId, input);
+    const termination = jobTerminationStoreAction(this, action, input);
+    if (termination !== void 0) return termination;
     const humanRisk = humanRiskStoreAction(this, action, input);
     if (humanRisk !== void 0) return humanRisk;
     if (action === "create") return this.transaction(() => {
@@ -938,18 +1317,29 @@ var PrivacyStore = class {
         refs.add(ref);
         this.db.prepare("UPDATE records SET expires=MAX(expires,?) WHERE kind='mapping' AND id=?").run(this.now() + 30 * DAY2, ref);
       }
-      for (const task of input.tasks || []) {
+      for (const incoming of input.tasks || []) {
+        const task = { ...incoming };
         if (typeof task.id !== "string" || task.id.length > 256) throw privacyError("BUSINESS_STORAGE_INVALID");
+        let target;
+        try {
+          target = JSON.parse(input.scope);
+        } catch {
+        }
+        const termination2 = target?.id ? jobTerminationFor(this, target.id, task.id) : void 0;
+        if (termination2) {
+          task.status = termination2.state;
+          task.terminationId = termination2.terminationId;
+        }
         const taskId = this.hash("task", ctx, input.scope, task.id);
         const previous = this.get("task", taskId, ctx, scope);
-        const active = !["completed", "committed", "rolled_back", "failed", "cancelled", "expired", "prepared", "ready"].includes(task.status);
+        const active = !["completed", "committed", "rolled_back", "failed", "cancelled", "expired", "prepared", "ready", "terminated_unknown", "termination_pending"].includes(task.status);
         const expires = Math.max(previous?.expires || 0, this.now() + (input.retentionMs || 30 * DAY2), Number(task.expires) || 0);
-        this.put("task", taskId, ctx, scope, { ...previous, ...task, active, expires }, expires, active);
+        this.put("task", taskId, ctx, scope, { ...previous, ...task, active, expires }, expires, active || !!termination2);
         for (const ref of refs) this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, taskId, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND ctx=? AND id IN (SELECT ref FROM links WHERE ctx=? AND task=?)").run(ctx, ctx, taskId);
       }
       const deliveryId = input.deliveryId || (0, import_node_crypto4.randomUUID)();
-      const canonicalize = (value) => typeof value === "string" ? aliases[value] || value : Array.isArray(value) ? value.map(canonicalize) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key, child]) => [key, canonicalize(child)])) : value;
+      const canonicalize = (value) => typeof value === "string" ? aliases[value] || value : Array.isArray(value) ? value.map(canonicalize) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key2, child]) => [key2, canonicalize(child)])) : value;
       this.put("delivery", deliveryId, ctx, scope, { aliases, output: canonicalize(input.output), delivered: false }, this.now() + 30 * DAY2);
       this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, { type: "references_committed", count: refs.size, deliveryId }, this.now() + 30 * DAY2);
       return { aliases, deliveryId };
@@ -1070,9 +1460,9 @@ var PrivacyStore = class {
       this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record || record.state !== "uncertain" || record.execution || !["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(record.route) || typeof input.operationId !== "string") throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
-      const execution = { intentId: input.id, operationId: input.operationId };
-      this.put("operation", input.id, ctx, scope, { ...record, execution }, Number.MAX_SAFE_INTEGER, true);
-      return execution;
+      const execution2 = { intentId: input.id, operationId: input.operationId };
+      this.put("operation", input.id, ctx, scope, { ...record, execution: execution2 }, Number.MAX_SAFE_INTEGER, true);
+      return execution2;
     });
     if (action === "prepare_result") return this.transaction(() => {
       this.assertOperationAdmission(input.id, ctx, scope);
@@ -1118,9 +1508,9 @@ var PrivacyStore = class {
       if (action === "reconcile" && input.result?.ok === true && /^[a-f0-9]{64}$/.test(identity.planHash || "")) {
         if (identity.jobId && input.result.jobId === identity.jobId && input.result.planHash === identity.planHash && (previous.route === "/mongodb/bulk/execute" && input.result.status === "completed" || previous.route === "/mongodb/bulk/rollback" && input.result.status === "rolled_back")) proof = input.result;
         if (identity.mutationId) {
-          const entry = input.result.entries?.find((item) => item.mutationId === identity.mutationId && item.planHash === identity.planHash);
-          const bound = !previous.execution || JSON.stringify(entry?.execution) === JSON.stringify(previous.execution);
-          if (entry && bound && !["legacy_execution_evidence_required", "execution_acknowledgement_required"].includes(entry.indexRecovery?.reason) && (previous.route === "/mongodb/mutations/execute" && entry.status === "committed" || previous.route === "/mongodb/mutations/rollback" && entry.status === "rolled_back")) proof = { ok: true, ...entry };
+          const entry2 = input.result.entries?.find((item) => item.mutationId === identity.mutationId && item.planHash === identity.planHash);
+          const bound = !previous.execution || JSON.stringify(entry2?.execution) === JSON.stringify(previous.execution);
+          if (entry2 && bound && !["legacy_execution_evidence_required", "execution_acknowledgement_required"].includes(entry2.indexRecovery?.reason) && (previous.route === "/mongodb/mutations/execute" && entry2.status === "committed" || previous.route === "/mongodb/mutations/rollback" && entry2.status === "rolled_back")) proof = { ok: true, ...entry2 };
         }
       }
       const complete = action === "outcome" || Boolean(proof);
@@ -1183,15 +1573,15 @@ var store;
 try {
   store = new PrivacyStore(import_node_worker_threads.workerData);
   import_node_worker_threads.parentPort.postMessage({ ready: true });
-} catch (error) {
-  import_node_worker_threads.parentPort.postMessage({ failed: error.code || "BUSINESS_STORAGE_UNAVAILABLE" });
+} catch (error2) {
+  import_node_worker_threads.parentPort.postMessage({ failed: error2.code || "BUSINESS_STORAGE_UNAVAILABLE" });
 }
 import_node_worker_threads.parentPort.on("message", ({ id, action, input }) => {
   try {
     if (!store) throw new Error();
     const result = action === "close" ? store.close() : store.execute(action, input);
     import_node_worker_threads.parentPort.postMessage({ id, result });
-  } catch (error) {
-    import_node_worker_threads.parentPort.postMessage({ id, error: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE" });
+  } catch (error2) {
+    import_node_worker_threads.parentPort.postMessage({ id, error: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE" });
   }
 });

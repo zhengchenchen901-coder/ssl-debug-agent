@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-26T14:22:37.561Z",
+  "manager": {
+    "pid": 13306,
+    "runtimeId": "2.4.0:e4e1734a9863e7c34476f9d50e27309c5d4b8686318c91c6435781bb117ed6a2",
+    "port": 4343
+  },
+  "instances": [
+    {
+      "id": "default",
+      "status": "running",
+      "pid": 14861,
+      "health": "healthy",
+      "worker": {
+        "status": "healthy",
+        "pid": 14861,
+        "lastHeartbeatAt": "2026-10-26T14:22:32.597Z"
+      },
+      "transport": {}
+    },
+    {
+      "id": "test-server",
+      "status": "stopped",
+      "pid": null,
+      "health": "stopped",
+      "worker": {
+        "status": "stopped",
+        "lastHeartbeatAt": null
+      },
+      "transport": {}
+    }
+  ]
+}

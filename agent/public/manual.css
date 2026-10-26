@@ -81,3 +81,12 @@
 #riskWorkArea .preview-panel > label { display: block; margin: 14px 0 8px; }
 #riskPlanId, #riskConfirmation { display: block; width: min(100%, 62rem); margin-top: 6px; }
 #riskDetails { max-width: 100%; overflow-wrap: anywhere; }
+/* Explicit target review for permanent task termination. */
+.termination-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0; max-width: 850px; }
+.termination-fields label, .termination-confirmation { display: flex; flex-direction: column; gap: 8px; }
+.termination-fields .wide { grid-column: 1 / -1; }
+.termination-fields input, .termination-fields textarea, .termination-confirmation input { width: 100%; box-sizing: border-box; }
+.termination-confirmation { max-width: 600px; margin: 12px 0; }
+#terminationDetails { padding: 16px; border: 1px solid var(--line, #dce4e9); border-radius: 8px; line-height: 1.6; }
+#terminationDetails:empty { display: none; }
+@media (max-width: 760px) { .termination-fields { grid-template-columns: 1fr; } }

@@ -1,0 +1,16 @@
+import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import crypto from 'node:crypto';
+const root='/Users/zhengchenchen/od-projects/ssl-debug-agent';
+const require=createRequire(import.meta.url),auth=require(root+'/plugins/remote-debug-agent/local-auth.cjs');
+const data='/Users/zhengchenchen/.remote-debug-agent',origin='http://127.0.0.1:4343';
+const token=auth.readAuthToken(auth.resolveAuthFile(data,process.env));
+const nonce=crypto.randomBytes(32).toString('hex');
+const health=await fetch(origin+'/health',{headers:{'X-Remote-Debug-Challenge':nonce}}).then(r=>r.json());
+auth.verifyHealthProof(token,nonce,origin,health);
+const response=await fetch(origin+'/status',{headers:{Authorization:'Bearer '+token}});
+if(!response.ok)throw Error('LOCAL_STATUS_FAILED_'+response.status);
+const status=await response.json();
+const result={checkedAt:new Date().toISOString(),manager:{pid:status.agent?.pid,runtimeId:status.agent?.runtimeId,port:status.agent?.port},instances:(status.instances||[]).map(i=>({id:i.id,status:i.runtime?.status,pid:i.runtime?.pid,health:i.runtime?.health?.overall,worker:i.runtime?.health?.worker,transport:{activeOperations:i.runtime?.health?.transport?.activeOperations,queueLength:i.runtime?.health?.transport?.queueLength}}))};
+await fs.writeFile(new URL(process.argv[2]||'live-status.json',import.meta.url),JSON.stringify(result,null,2)+'\n');
+console.log(JSON.stringify(result));

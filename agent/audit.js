@@ -22,6 +22,9 @@ export function buildAuditEntry(event, now = () => new Date()) {
   for (const key of [
     "jobId",
     "planHash",
+    "terminationId",
+    "reviewHash",
+    "controlRecordDigest",
     "pauseReason",
     "failure",
     "lastFailure",

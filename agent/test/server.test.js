@@ -17,6 +17,41 @@ const depsInstalled =
   fs.existsSync(path.resolve(here, "..", "node_modules", "express")) &&
   fs.existsSync(path.resolve(here, "..", "node_modules", "ssh2"));
 
+test("job termination worker route dispatches fixed action and retains termination audit identity", { skip: !depsInstalled }, async t => {
+  const { createApp } = await import("../server.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-termination-http-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const calls = [], config = makeConfig(path.join(dir, "audit.jsonl"));
+  const server = await listen(createApp({ config, authToken: TEST_AUTH_TOKEN, runMongoBulk: async input => {
+    calls.push(input); return { jobId: input.jobId, planHash: input.planHash, terminationId: input.terminationId,
+      reviewHash: input.reviewHash, controlRecordDigest: "e".repeat(64), status: "terminated_unknown" };
+  } }));
+  t.after(() => close(server));
+  const target = { jobId: "synthetic-job", planHash: "a".repeat(64), terminationId: "b".repeat(64), reviewHash: "c".repeat(64), approvalAuditId: "d".repeat(64) };
+  const r = await postJson(server, "/mongodb/bulk/terminate", target);
+  assert.equal(r.status, 200); assert.equal(calls[0].action, "terminate"); assert.equal(calls[0].jobId, target.jobId);
+  const audit = JSON.parse((await fsPromises.readFile(config.audit.logPath, "utf8")).trim());
+  assert.equal(audit.terminationId, target.terminationId); assert.equal(audit.reviewHash, target.reviewHash);
+});
+
+test("job termination cannot be approved or dispatched through the Manager bearer API", { skip: !depsInstalled }, async t => {
+  const { createManagerApp } = await import("../server.js");
+  const { InstanceRegistry } = await import("../instance-registry.js");
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-termination-manager-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const registry = new InstanceRegistry({ cwd: dir, env: {}, registryPath: path.join(dir, "instances.json") });
+  registry.create({ id: "default", host: "synthetic.invalid", username: "synthetic", privateKeyPath: "unused" });
+  const worker = makeWorkerManagerStub(); let forwarded = 0;
+  worker.callInstance = async () => { forwarded++; return { ok: true }; };
+  const app = createManagerApp({ cwd: dir, registry, workerManager: worker, authToken: TEST_AUTH_TOKEN, config: makeConfig(path.join(dir, "audit.jsonl")) });
+  const server = await listen(app); t.after(async () => { await close(server); await app.locals.privacyService.close(); await app.locals.manualWorkbench.close(); });
+  for (const route of ["/mongodb/bulk/terminate", "/api/job-termination/approve"]) {
+    const r = await fetch(`http://127.0.0.1:${server.address().port}` + route, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ instanceId: "default", jobId: "synthetic-job", actor: { username: "fake" } }) });
+    assert.equal(r.status, 404);
+  }
+  assert.equal(forwarded, 0);
+});
+
 test("sandbox account routes require auth, keep passwords out of audit and use structured runner only", { skip: !depsInstalled }, async (t) => {
   const { createApp } = await import("../server.js");
   const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-access-api-")); t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));

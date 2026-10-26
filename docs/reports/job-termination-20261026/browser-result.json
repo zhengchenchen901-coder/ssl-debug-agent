@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "synthetic": true,
+  "ownerChecks": 1,
+  "nativeOwner": "mocked",
+  "driver": "simulated",
+  "businessWrites": 0,
+  "pageErrors": [],
+  "assertions": [
+    "login and termination navigation",
+    "review exact job and immutable plan",
+    "phrase and acknowledgement required",
+    "editing invalidates review",
+    "fresh native verification",
+    "permanent local gate and independent remote readback",
+    "no business writes or replacement"
+  ]
+}

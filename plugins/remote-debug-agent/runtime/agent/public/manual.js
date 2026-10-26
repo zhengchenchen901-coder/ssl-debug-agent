@@ -175,6 +175,7 @@ window.addEventListener("pagehide", () => {
 
 let currentRiskReview = null;
 function resetRiskReview() {
+  resetTerminationReview();
   currentRiskReview = null;
   element("riskDetails").textContent = "";
   element("riskAcknowledgement").checked = false;
@@ -203,6 +204,8 @@ function riskButtonState() {
     element("riskConfirmation").value !== currentRiskReview.confirmation;
 }
 element("riskNav").addEventListener("click", () => {
+  element("terminationWorkArea").hidden = true;
+  element("terminationNav").classList.remove("active");
   element("sshWorkArea").hidden = true;
   element("databaseWorkArea").hidden = true;
   element("riskWorkArea").hidden = false;
@@ -212,6 +215,7 @@ element("riskNav").addEventListener("click", () => {
   lastInputAt = Date.now();
 });
 for (const id of ["sshNav", "databaseNav"]) element(id).addEventListener("click", () => {
+  element("terminationWorkArea").hidden = true; element("terminationNav").classList.remove("active");
   element("riskWorkArea").hidden = true; element("riskNav").classList.remove("active");
 });
 element("riskPlanId").addEventListener("input", () => { currentRiskReview = null; riskButtonState(); });
@@ -241,4 +245,85 @@ element("riskApprove").addEventListener("click", async () => {
     lastInputAt = Date.now();
   } catch (error) { currentRiskReview = null; element("riskMessage").textContent = error.message + " 请重新读取计划。"; }
   riskButtonState();
+});
+
+let currentTerminationReview = null;
+let terminationBusy = false;
+function resetTerminationReview() {
+  currentTerminationReview = null;
+  element("terminationWorkArea").hidden = true;
+  element("terminationNav").classList.remove("active");
+  element("terminationDetails").textContent = "";
+  element("terminationMessage").textContent = "";
+  element("terminationAcknowledgement").checked = false;
+  element("terminationConfirmation").value = "";
+  terminationButtonState();
+}
+function terminationButtonState() {
+  element("terminationApprove").disabled = terminationBusy || !currentTerminationReview?.canApprove ||
+    !element("terminationAcknowledgement").checked || element("terminationConfirmation").value !== currentTerminationReview.confirmation;
+}
+function setTerminationBusy(busy) {
+  terminationBusy = busy;
+  for (const id of ["terminationLoad", "terminationDatabase", "terminationJobId", "terminationPlanHash", "terminationReason", "terminationAcknowledgement", "terminationConfirmation"]) element(id).disabled = busy;
+  terminationButtonState();
+}
+function renderTerminationReview(plan) {
+  element("terminationDetails").textContent = JSON.stringify({
+    实例: plan.instanceId, 数据库: plan.database, 任务: plan.jobId, 原计划哈希: plan.planHash,
+    终止原因: plan.reason, 任务观测: plan.observations, 终止状态: plan.state,
+    本地永久阻断: plan.managedAdmissionClosed, 远端终止记录: plan.remoteTermination,
+    审核哈希: plan.reviewHash, 终止记录: plan.terminationId, 剩余风险: plan.warning,
+    历史结果: plan.historicalOutcome, 已派发旧进程结果: plan.legacyInFlightOutcome,
+    远端核验异常: plan.recoveryCode || null
+  }, null, 2);
+}
+element("terminationNav").addEventListener("click", () => {
+  for (const id of ["ssh", "database", "risk"]) {
+    element(id + "WorkArea").hidden = true; element(id + "Nav").classList.remove("active");
+  }
+  element("terminationWorkArea").hidden = false;
+  element("terminationNav").classList.add("active");
+  lastInputAt = Date.now();
+});
+for (const id of ["terminationDatabase", "terminationJobId", "terminationPlanHash", "terminationReason"]) element(id).addEventListener("input", () => {
+  currentTerminationReview = null; terminationButtonState();
+});
+for (const id of ["terminationAcknowledgement", "terminationConfirmation"]) element(id).addEventListener("input", terminationButtonState);
+element("terminationLoad").addEventListener("click", async () => {
+  if (terminationBusy) return;
+  currentTerminationReview = null; terminationButtonState();
+  element("terminationAcknowledgement").checked = false; element("terminationConfirmation").value = "";
+  element("terminationDetails").textContent = ""; element("terminationMessage").textContent = "";
+  const requestToken = token;
+  setTerminationBusy(true);
+  try {
+    const plan = await api("/api/job-termination/review", {
+      database: element("terminationDatabase").value.trim(), jobId: element("terminationJobId").value.trim(),
+      planHash: element("terminationPlanHash").value.trim(), reason: element("terminationReason").value.trim()
+    });
+    if (token !== requestToken) return;
+    currentTerminationReview = plan; renderTerminationReview(plan);
+    element("terminationMessage").textContent = plan.state === "terminated_unknown" ? "此任务已永久终止，后续不再恢复。" : "请核对具体任务与影响，确认后完成系统身份验证。";
+    lastInputAt = Date.now();
+  } catch (error) { element("terminationMessage").textContent = error.message; }
+  finally { setTerminationBusy(false); }
+});
+element("terminationApprove").addEventListener("click", async () => {
+  const plan = currentTerminationReview;
+  if (!plan || element("terminationApprove").disabled) return;
+  const requestToken = token;
+  setTerminationBusy(true);
+  try {
+    const result = await api("/api/job-termination/approve", { terminationId: plan.terminationId,
+      reviewHash: plan.reviewHash, confirmation: element("terminationConfirmation").value });
+    if (token !== requestToken) return;
+    currentTerminationReview = result; renderTerminationReview(result);
+    element("terminationAcknowledgement").checked = false; element("terminationConfirmation").value = "";
+    element("terminationMessage").textContent = result.state === "terminated_unknown"
+      ? "任务已永久终止，远端终止记录已核验。未回滚业务数据，未创建新任务。"
+      : "本地已永久阻断，远端终止记录待核验。重新读取审核后可补齐终止记录；不会恢复业务执行。";
+    lastInputAt = Date.now();
+  } catch (error) { currentTerminationReview = null; element("terminationMessage").textContent = error.message + " 请重新读取终止状态。"; }
+  finally { setTerminationBusy(false); }
 });

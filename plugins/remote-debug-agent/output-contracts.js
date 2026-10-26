@@ -35,6 +35,7 @@ function bulkFailure(depth = 2) {
   return shape;
 }
 const bulk = {
+  ...fields("terminationId reviewHash previousStatus"),
   lastFailure: bulkFailure(),
   ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
   riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),

@@ -1461,8 +1461,9 @@ async function __bulkMain() {
       return;
     }
     var jobId = __bulkJobId();
-    if (action !== "get" && action !== "retire") __bulkAssertNotRetired(jobId);
-    if (action === "retire") data = __bulkRetireJob(jobId);
+    if (action !== "get" && action !== "retire" && action !== "terminate") __bulkAssertNotRetired(jobId);
+    if (action === "terminate") data = __bulkTerminateJob(jobId);
+    else if (action === "retire") data = __bulkRetireJob(jobId);
     else if (action === "upload") data = await __bulkUpload();
     else if (action === "recoverUpload") data = __bulkRecoverUpload();
     else if (action === "get") data = __bulkGet(jobId);

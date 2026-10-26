@@ -146,10 +146,11 @@ test("disabling bulk blocks new jobs and resume but preserves inspection, pause,
     { action: "list", limit: 10 },
     { action: "control", command: "pause", jobId, planHash },
     { action: "rollbackStart", jobId, planHash, confirmation: MONGODB_BULK_ROLLBACK_CONFIRMATION },
+    { action: "terminate", jobId, planHash, terminationId: "b".repeat(64), reviewHash: "c".repeat(64), approvalAuditId: "d".repeat(64) },
   ]) {
     await runMongoBulk(input, { config: disabledConfig, runSSH: send });
   }
-  for (const action of ["get", "list", "control", "rollbackStart"]) assert.ok(calls.some((script) => script.includes(`"action":"${action}"`)));
+  for (const action of ["get", "list", "control", "rollbackStart", "terminate"]) assert.ok(calls.some((script) => script.includes(`"action":"${action}"`)));
   await assert.rejects(runMongoBulk({
     action: "executeStart", jobId, planHash, confirmation: MONGODB_BULK_CONFIRMATION,
   }, { config: disabledConfig, runSSH: send }), { code: "MONGODB_BULK_DISABLED" });

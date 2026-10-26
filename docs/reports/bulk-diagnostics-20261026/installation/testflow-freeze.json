@@ -1,0 +1,25 @@
+{
+  "snapshotId": "832fdbf7cd75365f9e8d3bcd46a21961e766c63cf35628cedf3d0aa579dedb30",
+  "workflowId": "832fdbf7cd75365f9e8d3bcd46a21961e766c63cf35628cedf3d0aa579dedb30",
+  "projectId": "ssl-debug-agent",
+  "stage": "input-frozen",
+  "base": {
+    "projectId": "ssl-debug-agent",
+    "kind": "git",
+    "revision": "75805be9bdc0c06f0246599b0fa3016cc2c6b05a",
+    "tree": "63fadde43fae51869c6cefcea51490a00bee1edc",
+    "contentHash": "f7c06a9f9a3c1a9a2526f2a0f859ba2584fafaf4e30dd99f32f962f58ab46bdc"
+  },
+  "target": {
+    "projectId": "ssl-debug-agent",
+    "kind": "workspace",
+    "revision": "75805be9bdc0c06f0246599b0fa3016cc2c6b05a",
+    "tree": "63fadde43fae51869c6cefcea51490a00bee1edc",
+    "contentHash": "0811ffff1cd3ad4f448e9a04123bdf4f959bf5888fe59645983f06c9a6012bc4"
+  },
+  "captureVerified": true,
+  "attempts": 1,
+  "captureMs": 450,
+  "modelCalls": 0,
+  "artifact": ".testflow/frozen/832fdbf7cd75365f9e8d3bcd46a21961e766c63cf35628cedf3d0aa579dedb30.json"
+}

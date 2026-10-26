@@ -17,6 +17,48 @@ import { ManualWorkbench } from "../manual-workbench.js";
 import { TEST_AUTH_TOKEN } from "./helpers/http-auth.js";
 
 const PASSWORD = "manual-admin-password-123";
+
+test("job termination requires session-bound review, exact hash and fresh native verification", async t => {
+  const calls = [], review = { ok: true, terminationId: "a".repeat(64), reviewHash: "b".repeat(64),
+    confirmation: "我确认永久终止此任务，不再恢复或重试", canApprove: true, state: "awaiting_human" };
+  const { workbench, ownerChecks } = await fixture(t, { jobTermination: async (action, input) => {
+    calls.push({ action, input });
+    return action === "review" ? review : { ...review, state: "terminated_unknown", managedAdmissionClosed: true };
+  } });
+  await workbench.store.register("admin", PASSWORD);
+  const { token } = await login(workbench);
+  const approval = { terminationId: review.terminationId, reviewHash: review.reviewHash, confirmation: review.confirmation };
+  assert.equal((await request(workbench, "/api/job-termination/approve", approval, token)).status, 409);
+  assert.equal(calls.length, 0); assert.equal(ownerChecks(), 0);
+  const input = { database: "business", jobId: "immutable-job", planHash: "c".repeat(64), reason: "guards changed" };
+  assert.equal((await request(workbench, "/api/job-termination/review", input, token)).status, 200);
+  assert.equal((await request(workbench, "/api/job-termination/approve", { ...approval, actor: { username: "forged" } }, token)).status, 400);
+  assert.equal((await request(workbench, "/api/job-termination/approve", { ...approval, reviewHash: "d".repeat(64) }, token)).status, 409);
+  const other = await login(workbench);
+  assert.equal((await request(workbench, "/api/job-termination/approve", approval, other.token)).status, 409);
+  assert.equal((await request(workbench, "/api/job-termination/approve", approval, token)).status, 200);
+  assert.equal(ownerChecks(), 1);
+  assert.equal(calls.at(-1).input.instanceId, "test"); assert.equal(calls.at(-1).input.actor.username, "admin");
+  assert.equal((await request(workbench, "/api/job-termination/approve", approval, token)).status, 409);
+  assert.equal(ownerChecks(), 1);
+});
+
+test("cancelled native verification and session invalidation never approve job termination", async t => {
+  const calls = [], review = { terminationId: "a".repeat(64), reviewHash: "b".repeat(64),
+    confirmation: "我确认永久终止此任务，不再恢复或重试", canApprove: true };
+  const { workbench } = await fixture(t, { jobTermination: async action => { calls.push(action); return review; } });
+  await workbench.store.register("admin", PASSWORD);
+  const { token } = await login(workbench);
+  const target = { database: "business", jobId: "immutable-job", planHash: "c".repeat(64), reason: "guards changed" };
+  await request(workbench, "/api/job-termination/review", target, token);
+  workbench.ownerVerification.verify = async () => { throw new Error("synthetic user cancellation"); };
+  const approval = { terminationId: review.terminationId, reviewHash: review.reviewHash, confirmation: review.confirmation };
+  assert.equal((await request(workbench, "/api/job-termination/approve", approval, token)).status, 503);
+  assert.deepEqual(calls, ["review"]);
+  workbench.ownerVerification.verify = async () => { workbench.revoke(token, "synthetic invalidation"); };
+  assert.equal((await request(workbench, "/api/job-termination/approve", approval, token)).status, 401);
+  assert.deepEqual(calls, ["review"]);
+});
 async function fixture(t, options = {}) {
   const directory = await fsp.mkdtemp(path.join(os.tmpdir(), "rda-manual-"));
   const registry = new InstanceRegistry({ cwd: directory, env: {}, registryPath: path.join(directory, ".remote-debug", "instances.json") });

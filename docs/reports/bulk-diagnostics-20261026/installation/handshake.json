@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-26T14:22:04.738Z",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.6",
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261026.6"
+  },
+  "toolCount": 51,
+  "readOnlyToolsCalled": [
+    "remote_debug_get_capabilities",
+    "remote_debug_list_instances"
+  ],
+  "instanceStatuses": [
+    {
+      "id": "default",
+      "status": "running",
+      "pid": 14861,
+      "health": "healthy"
+    },
+    {
+      "id": "test-server",
+      "status": "stopped",
+      "pid": null,
+      "health": "stopped"
+    }
+  ],
+  "diagnosticOutputContract": {
+    "lastFailure": true,
+    "nestedCause": true,
+    "frames": true,
+    "unknownDocumentOmitted": true,
+    "syntheticOnly": true
+  },
+  "managerReplacementRequested": false,
+  "businessContextAttached": false,
+  "businessToolsCalled": [],
+  "stderrObserved": false
+}

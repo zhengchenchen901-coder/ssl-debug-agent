@@ -1,0 +1,600 @@
+{
+  "version": "2.4.0+codex.20261026.6",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.6",
+  "runtimeId": "2.4.0:40ba35f35da267d1293d79ae028382f2e671419a3b9aa4821a185323d8d689e1",
+  "comparedPluginFiles": 95,
+  "files": [
+    {
+      "file": "windows-privacy.cjs",
+      "sha256": "ab0300c32792d1ff16da0e8d8421999c7531acf41ac659666e3b93cb70c481be",
+      "matchesSource": true
+    },
+    {
+      "file": "business-privacy.js",
+      "sha256": "6527a1ee5c8a81f9864f8eab23687ff3d557c6baba7ca8948b63c345ec0fdc5f",
+      "matchesSource": true
+    },
+    {
+      "file": "windows-business-context.js",
+      "sha256": "42da7f8e0b4b0f2bb3b8635af87bc1dfdfc8f72d23544405c45dab9685e0cd64",
+      "matchesSource": true
+    },
+    {
+      "file": ".DS_Store",
+      "sha256": "bdbcf54815f37d5331506caeb03e1b1f7e8de48bd5a801a27b41248d2e0753da",
+      "matchesSource": true
+    },
+    {
+      "file": "windows-storage.cjs",
+      "sha256": "4526890687aac2d5098420560cc6c409371bcfbcbfa2be2a2f3797f854282d8d",
+      "matchesSource": true
+    },
+    {
+      "file": "business-storage.js",
+      "sha256": "8e9a86da79ffe8d53e372ad949096e7f0856011564fd6d8632d8b47a2f859f36",
+      "matchesSource": true
+    },
+    {
+      "file": ".mcp.json",
+      "sha256": "1c00508bce1d0526de92941b9ef4d716fea59b356e3575f4f302a4767803cb75",
+      "matchesSource": true
+    },
+    {
+      "file": "local-auth.cjs",
+      "sha256": "783e07eda1ff5ccbb1ba0e26320ec500990092c5755748ee1cc21151baff1cb7",
+      "matchesSource": true
+    },
+    {
+      "file": "output-contracts.js",
+      "sha256": "1b634ed0637a3bafc97d38da5af64f0950a637be1e64ed7d1ca8ced456301f10",
+      "matchesSource": true
+    },
+    {
+      "file": "diagnostic-dashboard.cjs",
+      "sha256": "a606984a8e01433333db4785ccd3af5bf890dd1f2941124b094bb102d4d2f7ec",
+      "matchesSource": true
+    },
+    {
+      "file": "launch.cjs",
+      "sha256": "e63b16227c2b6822c5618ef7f75147b7721dc42bf573f3f05d3766442a510a8e",
+      "matchesSource": true
+    },
+    {
+      "file": "prepare-protocol.js",
+      "sha256": "ce9b7082f2e28d864ff80b8ba61d1ba45480467787c1fb3fbb1d435801fdca00",
+      "matchesSource": true
+    },
+    {
+      "file": "mcp-server.js",
+      "sha256": "d5c3a9b99848edcf51e4a9e4821cf544ac9a0038c2fa5c2d59037906f44ab6d6",
+      "matchesSource": true
+    },
+    {
+      "file": "final-results.js",
+      "sha256": "db0021ae7741f9cd19128af63a1202b47f12252f22135755631123d3a8ec5f35",
+      "matchesSource": true
+    },
+    {
+      "file": "package.json",
+      "sha256": "68ab9dfcda0b5f0c79a5ca164402dd86ed8ef0d171d84ad7301df84cfeb95dc6",
+      "matchesSource": true
+    },
+    {
+      "file": "output-preview.js",
+      "sha256": "af90e73bde1117169ebae240a6fd1e14d02399f1e836bef67670374535ddcddb",
+      "matchesSource": true
+    },
+    {
+      "file": "output-guard.js",
+      "sha256": "92680bcaa86cd86f8982bcd425c954a4aa970f2a1664a749a61edc65ff7d3c41",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime-support.js",
+      "sha256": "9b94bd90b52d2d6770b55f0f4f2347c83d8d6ce943b36c68a9c6a8160d7ea540",
+      "matchesSource": true
+    },
+    {
+      "file": "environment-report.cjs",
+      "sha256": "e4eddab0f9b3261d23153ef288f729137dee89480983bb972e5b3e194f040735",
+      "matchesSource": true
+    },
+    {
+      "file": "node-runtime.cjs",
+      "sha256": "3322dfa40bf9193fe02df46c4e25c9d131b2aab64d46df32a085d7c94cf311f8",
+      "matchesSource": true
+    },
+    {
+      "file": "native/windows-privacy.ps1",
+      "sha256": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "matchesSource": true
+    },
+    {
+      "file": "test/mcp-smoke.test.js",
+      "sha256": "3856be5276b673478e93b9e87e8d7f0d667080840159601894bb1313f2201bba",
+      "matchesSource": true
+    },
+    {
+      "file": "test/output-guard-protocol.test.js",
+      "sha256": "10389fa84b74d4cf5f9e8aa8906a0d3ab0f615734eec21f9fef572b573f91f5b",
+      "matchesSource": true
+    },
+    {
+      "file": "test/environment-check.test.js",
+      "sha256": "929631cf8c0f6b7074611321213cad6e002cab656d08bf108eaed8c9d0ce428f",
+      "matchesSource": true
+    },
+    {
+      "file": "test/windows-business-failure.test.js",
+      "sha256": "21874669e62483d97b0fdec3460d90e4a29374fa8678e7393e68e8d601053214",
+      "matchesSource": true
+    },
+    {
+      "file": "test/bundled-instance-transfer.test.js",
+      "sha256": "9f288f226116d2fe66d764cf0db65dacc44cf82d41ad1959518573134c46ea06",
+      "matchesSource": true
+    },
+    {
+      "file": "test/business-persistence.test.js",
+      "sha256": "7a35f637a1af305c4bb1fa02d9175e71295b25372d4fc517dd4659f7c7ebd661",
+      "matchesSource": true
+    },
+    {
+      "file": "test/prepare-recovery.test.js",
+      "sha256": "ab8cc8cb90a41e0c16c46a5880585df1f83df662ab4b1a75f83306b84e01f355",
+      "matchesSource": true
+    },
+    {
+      "file": "test/bundled-worker.test.js",
+      "sha256": "dff7a0a9d1a9608b99b3e4d419d827c9640cbd0a00d9e6234c5f90b256666d70",
+      "matchesSource": true
+    },
+    {
+      "file": "test/bundled-services.test.js",
+      "sha256": "c8837d86e87b57ee28a39ffe17022ae3d50b02878ab287cdeb2604424f74d32d",
+      "matchesSource": true
+    },
+    {
+      "file": "test/install-script.test.js",
+      "sha256": "22054a596b353922af42299a8920c83f60d65b871342aff9b5c3ff02e71b1c5c",
+      "matchesSource": true
+    },
+    {
+      "file": "test/business-privacy-mongo.e2e.mjs",
+      "sha256": "8a4a05475aa0859095c4185d7fcc136e965a1f41e7b61c451114575dec66e240",
+      "matchesSource": true
+    },
+    {
+      "file": "test/runtime-support.test.js",
+      "sha256": "829ee0f8be7cf5c73b6689dd47b22b5a3b283896a98a6ae9286e9a5106ab50c8",
+      "matchesSource": true
+    },
+    {
+      "file": "test/bulk-historical-recovery.test.js",
+      "sha256": "8410957a350c13bb47fb7c867e73f1b711559462b6e097906fe3c251c72fc4ca",
+      "matchesSource": true
+    },
+    {
+      "file": "test/mongodb-disposition.test.js",
+      "sha256": "20ecaec42e5ee089cd51529cdacf4e5e5fb0091c4666e843fcf8ecd7c95726dd",
+      "matchesSource": true
+    },
+    {
+      "file": "test/local-auth.test.js",
+      "sha256": "6562549f2bb17674baede12df6879af92b78d5ec0a839ac1597f2850199255e3",
+      "matchesSource": true
+    },
+    {
+      "file": "test/risk-input-admission.test.js",
+      "sha256": "80c6e7459917d124348b3158ba572a37817b6f8548c32b6b629a550ab6ee6f27",
+      "matchesSource": true
+    },
+    {
+      "file": "test/final-results.test.js",
+      "sha256": "b1ea949496cec134e260cf091371c75b46d58ae4f536dbd926de82fb241aa705",
+      "matchesSource": true
+    },
+    {
+      "file": "test/business-privacy-protocol.test.js",
+      "sha256": "c7c455d58d53224aba8d8a7c35590e3f8c63df094347d498b055e6df2c8ecdd1",
+      "matchesSource": true
+    },
+    {
+      "file": "test/platform-storage.test.js",
+      "sha256": "cb6137291c6ca87a5a0928124b036665f163eb6a9e69fd20f372bfd5b68eb99f",
+      "matchesSource": true
+    },
+    {
+      "file": "test/bulk-prepare-recovery.test.js",
+      "sha256": "4b190fedd127a57615385c1cf91a99fcf29626a00b955b5fa1f3d6a76e4dc445",
+      "matchesSource": true
+    },
+    {
+      "file": "test/output-guard.test.js",
+      "sha256": "46ecfa72e5fc5b8c66a68259467bfd406f94cb41034e6eacc4c8231b24eb0bc2",
+      "matchesSource": true
+    },
+    {
+      "file": "test/business-privacy.test.js",
+      "sha256": "c09f0ca60fa6297cb7c873fd6892584708eba6ae1fbe391047573b21ee663425",
+      "matchesSource": true
+    },
+    {
+      "file": "test/output-preview.test.js",
+      "sha256": "9e8f591b62420246f9847cb52b8e23c65f02b4d6d3993234a54a6bef570ab1b1",
+      "matchesSource": true
+    },
+    {
+      "file": "test/bundled-ttl.test.js",
+      "sha256": "9f26e8ab8109c98d70e02b37a4c7b4addf1ad18bf0e640fe6b5c7a59b0779e8f",
+      "matchesSource": true
+    },
+    {
+      "file": "test/node-runtime.test.js",
+      "sha256": "362628eb46897890d7398e4876bcd88602eb42714c2841101bde95cde8ed83a3",
+      "matchesSource": true
+    },
+    {
+      "file": "test/risk-replacement.test.js",
+      "sha256": "c9a967b211b0a65030f7fbfe11a0f92bbd442c498312f53d3900ccccbff2aa5f",
+      "matchesSource": true
+    },
+    {
+      "file": "test/helpers/local-mcp.js",
+      "sha256": "bc6d6d82b7759218decf8fe3e8fab123c59993d044bdc86bde651f045ee96754",
+      "matchesSource": true
+    },
+    {
+      "file": "test/helpers/privacy-manager.mjs",
+      "sha256": "2b9b963e698a559e3d06cfbda400b7ffb522d070c57eab0dbb8766449c45e825",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/.DS_Store",
+      "sha256": "81c6687db43944c8e7708f4b2b54411b8b2fbacd2ebb17b2cc3db1e0a718b672",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/privacy-worker.cjs",
+      "sha256": "0bf5dce507f3b1afa7e17fcccf605498f4576c29d4af635305693f7b1ba7fdb0",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/worker-entry.cjs",
+      "sha256": "b9d3c66c1bb077b9565d89cc11b0c3b516614b8223b8f2bd598ef07fb0937824",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/server.cjs",
+      "sha256": "8fe76893ce7b5b981c34037b884fe6c00c0f08afc2327eae9dfd685b10ab2c68",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/runtime-manifest.json",
+      "sha256": "4e041805eb7358233e0ab2a05784935c2a4d7590f37467c2f18d0d466fdc4d1f",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/native/windows-privacy.ps1",
+      "sha256": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/native/verify-owner.ps1",
+      "sha256": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/native/verify-owner.swift",
+      "sha256": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/ui.js",
+      "sha256": "814af3e1449435051b803fadd5b440425f2ea2975a594f86ee4fd7a6179f07b0",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual.js",
+      "sha256": "38affdea3a5f5adfc4e388c1deea250d81d531d1e080d526b6cfce2c2a8fb736",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/environment-report.js",
+      "sha256": "385f6f36f31719a2b008b084611bcae8d55b248d0ecd890e24a79f4d824485c3",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual-database.js",
+      "sha256": "3c4ec5558ed2075a837adec43fe4e6307f86dacab4466e3bb732a3ee337bca54",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/instance-tasks.js",
+      "sha256": "8e78827828b3b75256e99fb1e59ab61ad6a1e5372549a4250890e10276a68d7c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/dashboard.css",
+      "sha256": "76402f488f66f57eca750a822a5860a5d7051ab46c01f6944886719d1a92aa47",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/dashboard.html",
+      "sha256": "049c1460a553e37542f59b5f151c2a128d6f759f36103f820326fd4d16096f67",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/final-results.js",
+      "sha256": "5b25fe197f656138191501341e552f7082a966cefee573428d6d53ddf7037237",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/workspace.js",
+      "sha256": "626d8c05b58ab96f496be33a567b4b12bea9cb05538fb245202f6beecfe7f204",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/ui.css",
+      "sha256": "9e5289a140c8f543bde00db4612faeeee3fbf6c2081d8621cb6ebf7c19e3ae65",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/output-preview.js",
+      "sha256": "323d2dde0265912a570ecae060272643a07ec3e8ecf1bc4ccd412fd99e16a88c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/admin-registration.js",
+      "sha256": "05de25066f3c69a1e9b22de7fad729297e3244f9502ef78ce16b3ba279c508e9",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/dashboard.js",
+      "sha256": "a243b7c442ed4b74465a612fd2a12a0867c37f1b2f7f91c1beb324f5be39a74f",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual.html",
+      "sha256": "a665b532819972a97ae77a5cacaeffc76913273fc3eb231ee4a217d2b0ce6e1c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual.css",
+      "sha256": "ed7bc6b32a7a0e5d322ea1842cd9e4d5c7a4098a86669785ffafe34bb2c5eba3",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/xterm.css",
+      "sha256": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/addon-fit.js",
+      "sha256": "ba3ea256ce0620a0992a197d6c9baea64823fc93d8da07a9e366ca9943c18527",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/xterm.js",
+      "sha256": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/LICENSE-xterm.txt",
+      "sha256": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/LICENSE-addon-fit.txt",
+      "sha256": "e256f01188af527e4d06d21d06fbf785ae9c50d4b328bf03cbe0ba7f0aa4228f",
+      "matchesSource": true
+    },
+    {
+      "file": "scripts/diagnose-mcp.js",
+      "sha256": "8d0a83d5fefa6bc6ca6518fb4daee3e428b451900ea52b0e3a6876ffa00ba604",
+      "matchesSource": true
+    },
+    {
+      "file": "scripts/offline-report.py",
+      "sha256": "4b7707839ff4a6cca9d9040fc4b83902451dd5f475bc982b54c2861121f90d96",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/final-results.md",
+      "sha256": "4f0e84c7c0b3695e211e2a34846ee16e0123bc4e4a52ebbf60878b2db5990a4d",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/restart-instance/SKILL.md",
+      "sha256": "4cddfde053833ff462448db27e40c5f3bc241acc8eb35a44b424f0f239a126f1",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/restart-instance/agents/openai.yaml",
+      "sha256": "d1a66f3652c5c6600dcb4938b58702538c7257b274ce3d3222ca513b299ce8fa",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/database-mutations/SKILL.md",
+      "sha256": "3a2fe86ded914e34d8b0630b2ab91453b229b679562566495ca6268bc59ee203",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/database-mutations/references/mongodb-bulk.md",
+      "sha256": "f41c0c262c663822fca0dee6d8ce98d2ba491dfbed5282c1b2122e0d352bb8ec",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/database-mutations/agents/openai.yaml",
+      "sha256": "132d1beb20268e3be144afb96eceddbb9184d799a7c7d98db1adb0b1826c397e",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/update-instance-memory/SKILL.md",
+      "sha256": "128753a27d254947e9fb6c5f0636bd35fe28bd195ba63ed051ebcee950ad5e5a",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/update-instance-memory/agents/openai.yaml",
+      "sha256": "5f76d0a84cb61c107f0308d5dcf1c72019821e8766cf47975b5283542d6d183f",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/mongodb/SKILL.md",
+      "sha256": "944f5754db1bed6faf81c44067344145f4fb975fb09190e5620cb3c665992a6d",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/environment-check/SKILL.md",
+      "sha256": "fa31d3f23a6439ab9bb621ff3f7fb41a7c84bc11838b3b1ec8a9ee4de9e2105f",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/remote-debug/SKILL.md",
+      "sha256": "8ee62e871ecc3ecf2bd6c30beb11fcdd4b3764cd4a61bce031b273973340f2be",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/backend-api-errors/SKILL.md",
+      "sha256": "4b4e1cdd38eaa64a8669975dd90d22d9f4f487f6d61c1e09de9fcd586f446efc",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/backend-api-errors/agents/openai.yaml",
+      "sha256": "bfdd54d90e73695a808347ce3d5dc71c56f8cc271a2707d2372c05205709435b",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/command-draft-review/SKILL.md",
+      "sha256": "8592613ad12c749adb0cd8e2efeb18ce57f95ce0aa6d6940136f8d2a3051ee6e",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/command-draft-review/agents/openai.yaml",
+      "sha256": "17c1b01b7fa54b7cf5ee479c23dfe67026365ae9562f3f56afa03c558275a7a3",
+      "matchesSource": true
+    },
+    {
+      "file": ".codex-plugin/plugin.json",
+      "sha256": "397788ecda1315aa6a61148cce058fd37866af23c96496d7c00ee86fbe8294b9",
+      "matchesSource": true
+    }
+  ],
+  "runtimeChecks": [
+    {
+      "file": "server.cjs",
+      "matches": true
+    },
+    {
+      "file": "worker-entry.cjs",
+      "matches": true
+    },
+    {
+      "file": "privacy-worker.cjs",
+      "matches": true
+    },
+    {
+      "file": "public/admin-registration.js",
+      "matches": true
+    },
+    {
+      "file": "public/dashboard.css",
+      "matches": true
+    },
+    {
+      "file": "public/dashboard.html",
+      "matches": true
+    },
+    {
+      "file": "public/dashboard.js",
+      "matches": true
+    },
+    {
+      "file": "public/environment-report.js",
+      "matches": true
+    },
+    {
+      "file": "public/final-results.js",
+      "matches": true
+    },
+    {
+      "file": "public/instance-tasks.js",
+      "matches": true
+    },
+    {
+      "file": "public/manual-database.js",
+      "matches": true
+    },
+    {
+      "file": "public/manual.css",
+      "matches": true
+    },
+    {
+      "file": "public/manual.html",
+      "matches": true
+    },
+    {
+      "file": "public/manual.js",
+      "matches": true
+    },
+    {
+      "file": "public/output-preview.js",
+      "matches": true
+    },
+    {
+      "file": "public/ui.css",
+      "matches": true
+    },
+    {
+      "file": "public/ui.js",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/addon-fit.js",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/LICENSE-addon-fit.txt",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/LICENSE-xterm.txt",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/xterm.css",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/xterm.js",
+      "matches": true
+    },
+    {
+      "file": "public/workspace.js",
+      "matches": true
+    },
+    {
+      "file": "native/verify-owner.ps1",
+      "matches": true
+    },
+    {
+      "file": "native/verify-owner.swift",
+      "matches": true
+    },
+    {
+      "file": "native/windows-privacy.ps1",
+      "matches": true
+    }
+  ],
+  "oldCachesRestored": [
+    "2.4.0+codex.20261023.2",
+    "2.4.0+codex.20261026",
+    "2.4.0+codex.20261026.2",
+    "2.4.0+codex.20261026.3",
+    "2.4.0+codex.20261026.4",
+    "2.4.0+codex.20261026.5"
+  ],
+  "oldCodeBackupsReverified": true,
+  "protectedContextCopied": false,
+  "remoteOperationsExecuted": false
+}
