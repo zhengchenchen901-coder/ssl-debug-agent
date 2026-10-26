@@ -157,6 +157,11 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
         ...(input.originalRequest !== undefined ? { originalRequest: input.originalRequest } : {}),
         operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: input.timeoutMs }, operation.signal);
     },
+    async disposition(settings, input, scope, operation) {
+      const { instanceId, database, intentId, ...fields } = input;
+      return call(settings, { action: "disposition", ...fields, ...(intentId ? { id: intentId } : {}), scope,
+        operationId: operation.operationId, deadlineAt: operation.deadlineAt }, operation.signal);
+    },
     async outcome(settings, intent, scope, result, signal) {
       if (intent) await call(settings, { action: "outcome", scope, id: intent.id, result: guard.sanitize(result).value }, signal);
     },

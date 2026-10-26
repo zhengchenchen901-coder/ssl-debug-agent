@@ -5,12 +5,15 @@ import path from "node:path";
 import { loadPrivacyKey, privacyError } from "./privacy-key.js";
 import { isPrepareTicket, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import windowsPrivacy from "../plugins/remote-debug-agent/windows-privacy.cjs";
+import { dispositionStoreAction, assertInstanceAdmission, isMongoAdmissionRoute } from "./mongodb-disposition.js";
+import { riskStoreAction, humanRiskStoreAction, recordReplacementPrepared } from "./mongodb-risk-replacement.js";
 
 const REF = /^rda_ref_v1_[a-f0-9]{48}$/;
 const DAY = 86400000;
 export class PrivacyStore {
-  constructor({ directory, key, now = Date.now, fault } = {}) {
+  constructor({ directory, key, now = Date.now, fault, fenceAuthority } = {}) {
     this.now = now; this.fault = fault;
+    this.fenceAuthority = fenceAuthority || { trustFile: process.env.REMOTE_DEBUG_EXECUTOR_TRUST_FILE, receiptDirectory: process.env.REMOTE_DEBUG_EXECUTOR_RECEIPT_DIRECTORY };
     this.directory = path.resolve(directory);
     let windowsExisting;
     if (process.platform === "win32") {
@@ -95,6 +98,10 @@ export class PrivacyStore {
     return auth.contextId;
   }
   execute(action, input = {}) {
+    // Manager-only dispatch gate; absent from the public storage allowlist.
+    if (action === "assert_instance_admission") return assertInstanceAdmission(this, input.instanceId, input);
+    const humanRisk = humanRiskStoreAction(this, action, input);
+    if (humanRisk !== undefined) return humanRisk;
     if (action === "create") return this.transaction(() => {
       const contextId = randomUUID(), capability = randomBytes(32).toString("hex"), expires = this.now() + 365 * DAY;
       this.put("context", contextId, contextId, "", { proof: this.hash("capability", capability), expires }, expires);
@@ -103,6 +110,10 @@ export class PrivacyStore {
     const ctx = this.authenticate(input.auth);
     if (action === "attach") return { contextId: ctx };
     const scope = this.hash("scope", input.scope);
+    const disposition = dispositionStoreAction(this, action, input, ctx, scope);
+    if (disposition !== undefined) return disposition;
+    const risk = riskStoreAction(this, action, input, ctx, scope);
+    if (risk !== undefined) return risk;
     if (action === "resolve") {
       if (!Array.isArray(input.refs) || input.refs.length > 10000) throw privacyError("BUSINESS_PRIVACY_LIMIT");
       return { records: input.refs.map((ref) => {
@@ -150,6 +161,7 @@ export class PrivacyStore {
       return { aliases, deliveryId };
     });
     if (action === "intent") return this.transaction(() => {
+      if (isMongoAdmissionRoute(input.route) && input.identity?.instanceId) assertInstanceAdmission(this, input.identity.instanceId, { ...input, ctx });
       const id = this.hash("operation", ctx, input.scope, input.route, input.request);
       const previous = this.get("operation", id, ctx, scope);
       // Redacted request identity can collide when only a protected value
@@ -192,6 +204,7 @@ export class PrivacyStore {
       return { requestMatched, recordFingerprint: this.hash("operation-record", ctx, input.scope, input.id, record) };
     }
     if (action === "historical_bulk_result") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope), chunk = input.chunk, result = input.result;
       if (!record || record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare ||
           this.hash("operation", ctx, input.scope, record.route, input.request) !== input.id ||
@@ -211,6 +224,7 @@ export class PrivacyStore {
       return { id: input.id, ...value };
     });
     if (action === "claim_prepare") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.prepare || record.state !== "uncertain" || record.dispatched ||
           record.prepare.requestDigest !== input.dispatchDigest || record.prepare.attempt !== input.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
@@ -218,6 +232,7 @@ export class PrivacyStore {
       return { ...record, dispatched: true };
     });
     if (action === "claim_bulk_prepare") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.bulkPrepare || record.state !== "uncertain" || record.dispatched ||
           record.bulkPrepare.requestDigest !== input.dispatchDigest || record.bulkPrepare.attempt !== input.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
@@ -225,6 +240,7 @@ export class PrivacyStore {
       return { ...record, dispatched: true, bulkChunk: input.bulkChunk };
     });
     if (action === "bulk_prepare_result") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.bulkPrepare || JSON.stringify(record.bulkPrepare) !== JSON.stringify(input.bulkPrepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
       if (record.state !== "uncertain") return { id: input.id, ...record };
@@ -236,6 +252,7 @@ export class PrivacyStore {
           at: this.now(), evidence: input.unclaimed ? "unclaimed_attempt_fence" : "preflight_before_ssh" }, result, reconciliation: undefined }
         : { ...record, reconciliation: { code: result?.ok === true ? "MONGODB_BULK_RECEIPT_CONFLICT" : result?.error?.code } };
       const resolved = value.state !== "uncertain";
+      if (proven) recordReplacementPrepared(this, record, result);
       this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY : Number.MAX_SAFE_INTEGER, !resolved);
       this.put("event", randomUUID(), ctx, scope, { type: "bulk_prepare_state", operation: input.id, state: value.state,
         attempt: record.bulkPrepare.attempt, operationId: record.operationId || input.operationId, code: value.rejection?.code || value.reconciliation?.code, evidence: value.rejection?.evidence }, this.now() + 90 * DAY);
@@ -246,6 +263,7 @@ export class PrivacyStore {
       return { id: input.id, ...value };
     });
     if (action === "claim_execution") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record || record.state !== "uncertain" || record.execution ||
           !["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(record.route) ||
@@ -255,6 +273,7 @@ export class PrivacyStore {
       return execution;
     });
     if (action === "prepare_result") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record?.prepare || !isPrepareTicket(input.prepare) || JSON.stringify(record.prepare) !== JSON.stringify(input.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
       if (record.state !== "uncertain") return { id: input.id, ...record }; // Stale reply after recovery.
@@ -279,6 +298,7 @@ export class PrivacyStore {
       return { id: input.id, ...value };
     });
     if (action === "outcome" || action === "reconcile") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
       const previous = this.get("operation", input.id, ctx, scope);
       if (!previous) throw privacyError("BUSINESS_OPERATION_DENIED");
       if (previous.route === "/mongodb/bulk/prepare") throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -311,6 +331,12 @@ export class PrivacyStore {
     });
     if (action === "cleanup") return this.cleanup(ctx, Math.min(1000, Math.max(1, Number(input.limit) || 100)));
     throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
+  }
+  assertOperationAdmission(id, ctx, scope) {
+    // Must run under the same BEGIN IMMEDIATE as the state transition: a
+    // concurrent Manager cannot install a hold between this check and commit.
+    const original = this.get("operation", id, ctx, scope);
+    if (original?.identity?.instanceId) assertInstanceAdmission(this, original.identity.instanceId, { route: original.route, identity: original.identity, dispatchDigest: original.bulkPrepare?.requestDigest, ctx });
   }
   cleanup(ctx, limit) {
     return this.transaction(() => {

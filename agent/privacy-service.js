@@ -7,6 +7,8 @@ import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-prot
 import { createOutputGuard } from "../plugins/remote-debug-agent/output-guard.js";
 import { normalizeMongoBulkChunk } from "./mongodb-bulk.js";
 import { createBulkHistoryReader } from "./mongodb-bulk-history.js";
+import { isMongoAdmissionRoute } from "./mongodb-disposition.js";
+import { businessTargetScope as riskTargetScope } from "../plugins/remote-debug-agent/business-privacy.js";
 
 async function historicalBulkRequest(service, input, record, target, { instance, dispatch, historicalEvidence }, view) {
   if (record.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -94,8 +96,8 @@ async function bulkPrepareRequest(service, input, record, target, { instance, di
 
 const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 export class PrivacyService {
-  constructor({ directory, key, maxQueue = 32, workerPath } = {}) {
-    this.options = { directory, key }; this.maxQueue = maxQueue; this.pending = new Map(); this.sequence = 0;
+  constructor({ directory, key, maxQueue = 32, workerPath, fenceAuthority } = {}) {
+    this.options = { directory, key, fenceAuthority }; this.maxQueue = maxQueue; this.pending = new Map(); this.sequence = 0;
     this.workerPath = workerPath || path.join(here, typeof __filename === "string" ? "privacy-worker.cjs" : "privacy-worker.js");
   }
   start() {
@@ -139,7 +141,7 @@ export class PrivacyService {
 export async function privacyRequest(service, input, { instance, origin, dispatch, historicalEvidence } = {}) {
   // Reconciliation proof is fetched below by the Manager, never accepted from
   // an MCP caller's result object. The store action remains internal.
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "disposition"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate = (scope) => {
     if (typeof scope !== "string" || scope.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
@@ -148,6 +150,49 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     if (!current || current.enabled === false || target.endpoint !== origin || scope !== businessTargetScope(origin, current, target.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate(input.scope);
+  if (input.action === "disposition") {
+    const common = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
+    const fields = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine"
+      ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"]
+        : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"]
+          : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "create_replacement" ? ["reviewHash"] : [])] : [];
+    if (!fields.length || Object.keys(input).some(key => ![...common, ...fields].includes(key))) throw privacyError("BUSINESS_DISPOSITION_DENIED");
+    if (input.mode === "prepare_risk") {
+      const target = JSON.parse(input.scope), requests = {};
+      for (const name of ["originalRequest", "replacementRequest"]) {
+        const raw = input[name];
+        if (!raw || raw.instanceId !== target.id || raw.database !== target.database || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+        const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
+        if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+        const { instanceId, ...chunk } = request;
+        normalizeMongoBulkChunk(chunk, { ...instance(target.id).mongodb, bulkEnabled: true });
+        requests[name] = request;
+      }
+      return service.call("prepare_risk_replacement", { ...input, ...requests });
+    }
+    if (input.mode === "inspect_risk") return service.call("inspect_risk_replacement", input);
+    if (input.mode === "create_replacement") {
+      const reserved = await service.call("create_risk_replacement", input), target = JSON.parse(input.scope);
+      if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
+      const record = reserved.intent;
+      const result = await bulkPrepareRequest(service, { ...input, id: record.id, attempt: record.bulkPrepare.attempt,
+        action: record.dispatched ? "recover_operation" : "dispatch_prepare", request: reserved.request }, record, target, { instance, dispatch },
+        saved => ({ ok: true, intentId: record.id, state: saved.state, ...(saved.result ? { result: saved.result } : {}) }));
+      return { ...reserved.risk, result };
+    }
+    if (input.mode === "prepare") {
+      const raw = input.originalRequest;
+      if (!raw || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+      const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
+      if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+      return service.call("prepare_disposition", { ...input, request, requestDigest: prepareRequestDigest(raw) });
+    }
+    return service.call(({ inspect: "inspect_disposition", quarantine: "quarantine_disposition", admit_replacement: "admit_disposition" })[input.mode], input);
+  }
+  if (input.action === "intent" && isMongoAdmissionRoute(input.route)) {
+    const target = JSON.parse(input.scope);
+    if (input.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  }
   if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
     const record = await service.call("inspect_operation", input);
     const target = JSON.parse(input.scope);
@@ -241,4 +286,18 @@ export function installPrivacyRoutes(app, { directory, registry, service, dispat
       response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
     }
   });
+}
+
+// Apply to Manager proxy calls as well as protected dispatch. This gate makes
+// new local admissions fail closed; it cannot recall a request already handed
+// to an old worker, SSH queue, helper or MongoDB transaction.
+export async function assertMongoDispatchAdmission(service, instanceId, route, request) {
+  if (isMongoAdmissionRoute(route)) await service.call("assert_instance_admission", { instanceId, route, request });
+}
+
+export async function humanRiskRequest(service, action, input, instance) {
+  const context = await service.call("human_risk_context", input);
+  const target = JSON.parse(context.targetScope), current = instance(input.instanceId);
+  if (!current || current.enabled === false || context.targetScope !== riskTargetScope(target.endpoint, current, target.database)) throw privacyError("BUSINESS_REPLACEMENT_STALE");
+  return service.call(action, { ...input, targetScope: context.targetScope });
 }

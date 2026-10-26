@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 const PREFIX = "rda_ref_v1_";
 const REFERENCE = /^rda_ref_v1_[a-f0-9]{48}$/;
 const REDACTED = "[REDACTED]";
-const CONTROL_FIELD = /(?:Id|Hash)$|^(?:id|database|collection|collections|name|operation|kind|status|state|intentState|recoveryCode|mode|command|confirmation|changedFields|atomicity|rollbackMode|riskLevel|storageRoot|journalPath|receiptsDatabase|receiptStorage|code|layer|phase)$/;
+const CONTROL_FIELD = /(?:Id|Hash|Digest|Fingerprint)$|^(?:id|database|collection|collections|name|operation|kind|status|state|intentState|recoveryCode|mode|command|confirmation|changedFields|atomicity|rollbackMode|riskLevel|storageRoot|journalPath|receiptsDatabase|receiptStorage|code|layer|phase|requestDigest|recordFingerprint|containmentScope|historicalOutcome|admission|missingRequirements|risk|fenceReason)$/;
 const INPUTS = {
   remote_debug_mongodb_query: ["filter", "pipeline"],
   remote_debug_mongodb_prepare_write: ["filter", "document", "update", "deletedValue"],
@@ -105,9 +105,10 @@ export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 10
     return alias;
   }
   function resolve(name, input, scope) {
-    if (name === "remote_debug_mongodb_recover_operation" && input.originalRequest !== undefined) {
-      const { originalRequest, ...outer } = input;
-      return { ...resolve(name, outer, scope), originalRequest: resolve("remote_debug_mongodb_prepare_bulk", originalRequest, scope) };
+    if (["remote_debug_mongodb_recover_operation", "remote_debug_mongodb_disposition"].includes(name) && input.originalRequest !== undefined) {
+      const { originalRequest, replacementRequest, ...outer } = input;
+      return { ...resolve(name, outer, scope), originalRequest: resolve("remote_debug_mongodb_prepare_bulk", originalRequest, scope),
+        ...(replacementRequest !== undefined ? { replacementRequest: resolve("remote_debug_mongodb_prepare_bulk", replacementRequest, scope) } : {}) };
     }
     const check = budget();
     function walk(value, allowed, depth = 0) {

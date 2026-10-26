@@ -1,0 +1,228 @@
+{
+  "evidenceId": "mongodb-disposition-20261026-local-v1",
+  "createdAt": "2026-10-26T04:59:13.461Z",
+  "deliveryStatus": "local_containment_implemented_permanent_remote_revocation_and_replacement_not_implemented",
+  "originalIntentOperationalCalls": 0,
+  "businessDatabaseWrites": 0,
+  "replacementJobsCreated": 0,
+  "realInstanceQuarantines": 0,
+  "protectedContextFileRead": false,
+  "installedRuntimeReplaced": false,
+  "gitCommitCreated": false,
+  "native": {
+    "nodeVersion": "v22.23.3",
+    "agent": {
+      "tests": 513,
+      "pass": 499,
+      "fail": 0,
+      "skipped": 14,
+      "cancelled": 0,
+      "sha256": "7f0b62255d037d79df24e38674f7a70f0a3a0f445d857b3cadb58de242a871bc",
+      "artifact": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-disposition-testflow/agent-final-tests.tap",
+      "skippedTests": [
+        "ok 135 - a selected gzip log continues beyond the synchronous 256 MiB scan ceiling # SKIP",
+        "ok 136 - an archive beyond 2 GiB reaches a late member in one bounded-memory traversal # SKIP",
+        "ok 180 - real Windows helper prepares without prompting and decodes synthetic protected credentials # SKIP",
+        "ok 219 - MongoDB bulk executes and rolls back a cross-collection transaction on a real replica set # SKIP",
+        "ok 320 - real secondary lag reproduces legacy verification failure; fixed helper recovers with one DDL # SKIP",
+        "ok 346 - real authenticated MongoDB sandbox setup and owned password reset deny business access # SKIP",
+        "ok 383 - real macOS Keychain creates, reopens and refuses missing credentials for an existing encrypted database # SKIP",
+        "ok 411 - Windows native helper rejects tampering before launching PowerShell # SKIP",
+        "ok 412 - Windows native credentials: first creation, reopen and six concurrent processes share one key # SKIP",
+        "ok 413 - Windows initialization lock is released after process death and blocks competing creators # SKIP",
+        "ok 414 - Windows existing SQLite, WAL or SHM without credential never creates a replacement # SKIP",
+        "ok 415 - Windows malformed or denied credential never falls back or overwrites # SKIP",
+        "ok 416 - Windows rejects unsafe ACLs, hardlinks, junctions, network, synchronization and plugin cache paths # SKIP",
+        "ok 417 - Windows context CreateNew concurrency, durable reuse, source mismatch, corruption and ACL protection # SKIP"
+      ]
+    },
+    "plugin": {
+      "tests": 141,
+      "pass": 136,
+      "fail": 0,
+      "skipped": 5,
+      "cancelled": 0,
+      "sha256": "44d201bc75a7fba1ff5d028843a2d66a2d622a775256b80a94c625a99ea2ba81",
+      "artifact": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-disposition-testflow/plugin-final-tests.tap",
+      "skippedTests": [
+        "ok 65 - install.ps1 supports check-only, repeat installs, migration, and safe conflicts # SKIP",
+        "ok 84 - MCP uses 4343 as the default local agent port # SKIP port 4343 is already in use",
+        "ok 125 - Windows initializes and reuses private storage with an incompatible inherited module path # SKIP",
+        "ok 126 - Windows rejects a credential accessible to Everyone # SKIP",
+        "ok 141 - Windows missing privacy credential blocks business calls while ordinary diagnostics remain available # SKIP"
+      ]
+    },
+    "isolation": "temporary_encrypted_stores_loopback_servers_mock_workers_no_business_services",
+    "notTestFlowExecution": true
+  },
+  "testflow": {
+    "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-disposition-testflow/workspace.local.json",
+    "snapshotId": "1b6fe810fb54e479729098bf3d5f72135770bdd01c316f5428f31689a0922a8c",
+    "workflowId": "1b6fe810fb54e479729098bf3d5f72135770bdd01c316f5428f31689a0922a8c",
+    "flowId": "af20fdbb-506e-4c07-a080-5d2c27f8d384",
+    "impactRunId": "0fb0f15e-8d93-422d-9fa6-dab1c748bf21",
+    "scopeId": "ba1fe00c0b01ad24fa1f666dd055ab4d341e1afda7fd8eb9171db7c1c247da33",
+    "graphRunId": "8f40420a-bc6a-45f9-a035-34a6490404cc",
+    "planRunId": "3a4ee36b-0281-488c-91d3-4925a223dfe5",
+    "fixedInputVerified": true,
+    "fullShardedArtifactsVerifiedWithInstalledStorage": true,
+    "completeness": "partial-static",
+    "directSymbols": 177,
+    "impactedSymbols": 3060,
+    "diagnosticCodes": [
+      "non-source-impact-unknown",
+      "unresolved-call",
+      "ambiguous-symbol-identity",
+      "cgb-not-configured",
+      "broad-impact"
+    ],
+    "executable": false,
+    "targets": 3800,
+    "paths": 7,
+    "confirmedAssociations": 0,
+    "importedEvidence": 0,
+    "unplannedTargets": 3685,
+    "uncoveredTargets": 3800,
+    "unboundPaths": 7,
+    "prepareJobId": null,
+    "executeJobId": null,
+    "e2ePassed": false,
+    "blockers": [
+      "installed executor only accepts be-jest or jest-unit; project uses node:test",
+      "no project.execution isolation dependency/image contract",
+      "no versioned execution bindings or confirmed associations"
+    ],
+    "graphBudgetRejected": {
+      "diagnosticId": "c6e74fd5-63c7-4964-aead-18a2482b3192",
+      "actual": 335,
+      "initialLimit": 200,
+      "resolvedLimit": 400
+    }
+  },
+  "coverage": {
+    "verifiedByAssertions": [
+      "legacy envelope created through real old intent protocol",
+      "exact request/context/instance/database/digest/job/chunk binding and missing identity handling",
+      "public typed opaque restoration with no business ID leakage",
+      "forged input/proof/risk acceptance and incorrect confirmation denied",
+      "source and bundled MCP/Manager/PrivacyStore",
+      "instance hold blocks different context/database/job/tool and sandbox cleanup",
+      "late claims/results and concurrent positive receipt versus quarantine",
+      "same transaction hold/disposition/audit with actual SIGKILL before and after commit",
+      "cross-process concurrent idempotence, restart, expiry and stale review",
+      "already admitted old worker completes while replacement remains blocked",
+      "metadata collision does not corrupt fail-closed protocol"
+    ],
+    "notImplemented": [
+      "mandatory remote executor boundary migration",
+      "all legacy processes/queues/leases/credentials/restarts permanently fenced",
+      "trusted historical transaction/batch outcome convergence",
+      "administrator risk takeover",
+      "terminal original-intent retirement and replacement admission grant"
+    ],
+    "notExecuted": [
+      "actual default or test-server operations",
+      "real MongoDB replica set integration",
+      "real protected context attachment or original record fingerprint recheck",
+      "TestFlow prepare/execute or Docker E2E",
+      "installation/deployment"
+    ],
+    "unknown": [
+      "actual original historical dispatch/execution result",
+      "complete block/branch/ordered-path coverage",
+      "live original job and business state"
+    ]
+  },
+  "failuresRetained": [
+    {
+      "id": "native-node14-command",
+      "result": "not executed: unsupported --test; switched to explicit Node22"
+    },
+    {
+      "id": "manager-fixture-contract",
+      "result": "two failed attempts: missing fixture Mongo settings, then nonexistent sandbox/configure route; corrected to actual execute contract"
+    },
+    {
+      "id": "metadata-contract-test",
+      "artifact": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-disposition-testflow/final-metadata-and-disposition.tap",
+      "result": "17 passed 1 failed; test supplied requestDigest at invalid root, corrected to assert actual nested binding contract; final complete plugin suite passed"
+    },
+    {
+      "id": "first-static-snapshot",
+      "snapshotId": "7b3ee67ee299148a9c9a90cd106de4d7de73bd59c41c43809f7c8e8de062ed9e",
+      "runId": "1459bff8-5bca-4224-806c-33b04463a96f",
+      "result": "superseded after test correction; no tests or coverage promoted from it"
+    }
+  ],
+  "candidateRuntimeId": "2.4.0:60cdea40e0630ab4432cb31e253ffb5731732585640469b8132f778a57da51ca",
+  "sourceFiles": {
+    "agent/privacy-service.js": {
+      "sha256": "7302d61c5190c45b027ab5956c0b56e5ee6494640c644a27b4fa50cfed6c4c68",
+      "snapshotMatches": true
+    },
+    "agent/privacy-store.js": {
+      "sha256": "0218db4fd97952d9b8c977486c57fdf9944d5cc9f43a9c38f878fc8c75e059c5",
+      "snapshotMatches": true
+    },
+    "agent/server.js": {
+      "sha256": "1fc24b1b19e30921333fb5022836f464302055964ec370a8484d0c6469d935cc",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/business-privacy.js": {
+      "sha256": "60be56d0c1364117187d9eefcc02427ca129b5c15528d8038fb71c4aadedb4d5",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/business-storage.js": {
+      "sha256": "8e9a86da79ffe8d53e372ad949096e7f0856011564fd6d8632d8b47a2f859f36",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/mcp-server.js": {
+      "sha256": "66539067b3b07bac395bbc01107c98bdf0c1ccae3579fd26078cd612dcccec8d",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/output-contracts.js": {
+      "sha256": "6d6c97b7e3d56bf481bf86d074b834c59585ede6f6155229e61b7e8adc10a852",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs": {
+      "sha256": "0c523dfdc13180672e92840edefef72395ee6323b0303ed9727328ad8ff5abdd",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json": {
+      "sha256": "6dcd6fae7436d0a74c7904cc3bae106cd5a4fe11c71ea251dda286a29a813edc",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/runtime/agent/server.cjs": {
+      "sha256": "0a330d0afc77bdd723af626a3decca738ddf04781b50b6b17896d972363a322b",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs": {
+      "sha256": "8c038b10c116729be6d3754eaace6ecf6da13f02da0080a082c249961d56b421",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/test/business-privacy.test.js": {
+      "sha256": "c09f0ca60fa6297cb7c873fd6892584708eba6ae1fbe391047573b21ee663425",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/test/mcp-smoke.test.js": {
+      "sha256": "340d74b7134c77b94be35cfb62af08619af8db2a58802286f26e630c5f4e7bb3",
+      "snapshotMatches": true
+    },
+    "agent/mongodb-disposition.js": {
+      "sha256": "6a27cf099a7894b94296679dc7f2b75c751b599de6287f48312db250552f1234",
+      "snapshotMatches": true
+    },
+    "agent/test/mongodb-disposition.test.js": {
+      "sha256": "10f49d0d7ad78543af8696c696f0ac1a1fa14a39d113ec3a4a50e9881d7dee71",
+      "snapshotMatches": true
+    },
+    "agent/test/helpers/disposition-crash.mjs": {
+      "sha256": "8ed80d840dc0007ba57edb06860813f5062ad419fed9ecb550a0e95d205e037b",
+      "snapshotMatches": true
+    },
+    "plugins/remote-debug-agent/test/mongodb-disposition.test.js": {
+      "sha256": "20ecaec42e5ee089cd51529cdacf4e5e5fb0091c4666e843fcf8ecd7c95726dd",
+      "snapshotMatches": true
+    }
+  }
+}

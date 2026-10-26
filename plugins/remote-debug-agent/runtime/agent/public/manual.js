@@ -37,6 +37,7 @@ function disconnect() {
 function resetLogin(message = "") {
   disconnect();
   window.ManualDatabase?.reset();
+  resetRiskReview();
   token = "";
   clearInterval(sessionPoll);
   terminal?.dispose(); terminal = null; fit = null;
@@ -170,4 +171,70 @@ window.addEventListener("pagehide", () => {
   if (token) fetch("/api/logout", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: "{}", keepalive: true, credentials: "omit", redirect: "error" }).catch(() => {});
   socket?.close(); window.ManualDatabase?.reset(); token = "";
+});
+
+let currentRiskReview = null;
+function resetRiskReview() {
+  currentRiskReview = null;
+  element("riskDetails").textContent = "";
+  element("riskAcknowledgement").checked = false;
+  element("riskConfirmation").value = "";
+  element("riskApprove").disabled = true;
+  element("riskWorkArea").hidden = true;
+  element("riskNav").classList.remove("active");
+}
+function renderRiskReview(plan) {
+    element("riskDetails").textContent = JSON.stringify({
+      实例: plan.binding.instanceId, 数据库: plan.binding.database, 原意图: plan.binding.intentId, 原任务: plan.binding.jobId,
+      原请求摘要: plan.binding.requestDigest, 原操作身份: plan.binding.originalOperationId,
+      原计划哈希: plan.binding.planHash, 替代任务: plan.replacementJobId, 替代请求摘要: plan.replacementRequestDigest,
+      业务效果摘要: plan.effectDigest, 单元数: plan.unitCount, 操作数: plan.operationCount, 集合: plan.collections,
+      状态: plan.state, 历史结果: "未知", 旧任务永久阻断已核验: plan.remoteFenceConfirmed,
+      阻断缺口: plan.fenceReason || null, 阻断回执: plan.fenceReceiptId || null,
+      人工批准: plan.humanApproved, 审阅哈希: plan.reviewHash, 到期时间: new Date(plan.expiresAt).toLocaleString()
+    }, null, 2);
+}
+function riskButtonState() {
+  element("riskApprove").disabled = !currentRiskReview?.canApprove || !element("riskAcknowledgement").checked ||
+    element("riskConfirmation").value !== currentRiskReview.confirmation;
+}
+element("riskNav").addEventListener("click", () => {
+  element("sshWorkArea").hidden = true;
+  element("databaseWorkArea").hidden = true;
+  element("riskWorkArea").hidden = false;
+  element("riskNav").classList.add("active");
+  element("sshNav").classList.remove("active");
+  element("databaseNav").classList.remove("active");
+  lastInputAt = Date.now();
+});
+for (const id of ["sshNav", "databaseNav"]) element(id).addEventListener("click", () => {
+  element("riskWorkArea").hidden = true; element("riskNav").classList.remove("active");
+});
+element("riskPlanId").addEventListener("input", () => { currentRiskReview = null; riskButtonState(); });
+element("riskAcknowledgement").addEventListener("change", riskButtonState);
+element("riskConfirmation").addEventListener("input", riskButtonState);
+element("riskLoad").addEventListener("click", async () => {
+  currentRiskReview = null; riskButtonState(); element("riskMessage").textContent = "";
+  element("riskAcknowledgement").checked = false; element("riskConfirmation").value = "";
+  try {
+    const plan = await api("/api/risk-replacement/review", { riskPlanId: element("riskPlanId").value.trim() });
+    currentRiskReview = plan;
+    renderRiskReview(plan);
+    element("riskMessage").textContent = plan.canApprove ? "请核对上方计划，再勾选风险确认并输入完整语句。" : "当前计划不可批准；请检查状态、有效期及旧任务阻断缺口。";
+    lastInputAt = Date.now(); riskButtonState();
+  } catch (error) { element("riskMessage").textContent = error.message; }
+});
+element("riskApprove").addEventListener("click", async () => {
+  const plan = currentRiskReview;
+  if (!plan || element("riskApprove").disabled) return;
+  element("riskApprove").disabled = true;
+  try {
+    const approved = await api("/api/risk-replacement/approve", { riskPlanId: plan.riskPlanId, reviewHash: plan.reviewHash,
+      confirmation: element("riskConfirmation").value });
+    currentRiskReview = approved;
+    renderRiskReview(approved);
+    element("riskMessage").textContent = "此计划已获人工批准，尚未建立或执行替代任务。后续仅允许使用这一份计划。";
+    lastInputAt = Date.now();
+  } catch (error) { currentRiskReview = null; element("riskMessage").textContent = error.message + " 请重新读取计划。"; }
+  riskButtonState();
 });

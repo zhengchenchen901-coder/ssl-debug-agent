@@ -182,3 +182,15 @@ test("historical candidate restores typed references only within original bulk b
   assert.throws(() => f.privacy.resolve("remote_debug_mongodb_recover_operation", { ...args, originalRequest: { ...args.originalRequest, jobId: ref } }, f.context.scope), { code: "BUSINESS_REFERENCE_INVALID" });
   assert.throws(() => f.privacy.resolve("remote_debug_mongodb_recover_operation", args, "another-target"), { code: "BUSINESS_REFERENCE_INVALID" });
 });
+
+test("disposition protocol remains intact when private business IDs equal its metadata values", () => {
+  const f = fixture();
+  const values = ["unknown", "blocked", "instance_all_mongodb_write_admissions", "a".repeat(64), "historical_transaction_receipts_required"];
+  f.protect(values.map(_id => ({ _id })));
+  const result = { historicalOutcome: values[0], admission: values[1], containmentScope: values[2],
+    recordFingerprint: values[3], missingRequirements: [values[4]],
+    remoteFenceConfirmed: false, replacementAllowed: false, binding: { instanceId: "local", database: "business", requestDigest: values[3] } };
+  const protectedResult = payload(f.guard.toolResult("remote_debug_mongodb_disposition", result, false, f.context));
+  for (const key of Object.keys(result)) assert.deepEqual(protectedResult[key], result[key], key);
+  assert.equal(f.privacy.scrubKnown({ freeText: "unknown" }).freeText, "[REDACTED]", "flexible user data remains guarded");
+});

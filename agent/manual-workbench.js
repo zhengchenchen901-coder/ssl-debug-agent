@@ -39,6 +39,16 @@ function route(action) {
 function sendError(error, _request, response, _next) {
   if (error.type === "entity.too.large") error = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
   else if (error.type === "entity.parse.failed") error = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
+  if (error.code?.startsWith("BUSINESS_REPLACEMENT_")) {
+    const messages = {
+      BUSINESS_REPLACEMENT_FENCE_REQUIRED: "旧任务永久阻断回执缺失、无效或已过期，不能批准替代任务。",
+      BUSINESS_REPLACEMENT_STALE: "计划、原任务或实例已变化，请重新读取并核对计划。",
+      BUSINESS_REPLACEMENT_REVIEW_EXPIRED: "风险计划已过期，请重新准备审阅。",
+      BUSINESS_REPLACEMENT_APPROVAL_EXPIRED: "人工批准或阻断回执已失效，请重新审阅。",
+      BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED: "原意图尚未完成本地隔离，不能批准替代任务。",
+    };
+    error = manualError("MANUAL_RISK_REVIEW_REJECTED", messages[error.code] || "风险处置请求不匹配当前计划或权限。", 409);
+  }
   const known = typeof error.code === "string" && /^(ADMIN_|OWNER_|MANUAL_|INSTANCE_)/.test(error.code);
   response.status(known ? error.statusCode || 400 : 503).json({ ok: false, error: {
     code: known ? error.code : "MANUAL_UNAVAILABLE", message: known ? error.message : "手动工作台暂不可用，请检查本地配置和文件权限。",
@@ -54,6 +64,7 @@ export class ManualWorkbench {
     this.ownerVerification = options.ownerVerification || new ManualOwnerVerification(path.join(this.directory, "native"));
     this.openTerminal = options.openTerminal || openManualTerminal;
     this.openDatabase = options.openDatabase || openManualDatabase;
+    this.riskReview = options.riskReview;
     this.now = options.now || Date.now;
     this.idleMs = options.idleMs || IDLE_MS;
     this.maxSessionMs = options.maxSessionMs || MAX_SESSION_MS;
@@ -277,6 +288,39 @@ export class ManualWorkbench {
     }));
     app.post("/api/logout", route((request, response) => { authorize(request); this.revoke(this.bearer(request)); response.json({ ok: true }); }));
     app.post("/api/terminal-ticket", route((request, response) => response.json(this.issueTicket(this.bearer(request)))));
+    app.post("/api/risk-replacement/review", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId"]);
+      const session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const result = await this.riskReview("human_risk_view", { riskPlanId: request.body.riskPlanId, instanceId: session.instanceId });
+      this.getSession(this.bearer(request));
+      session.riskReview = { riskPlanId: result.riskPlanId, reviewHash: result.reviewHash, confirmation: result.confirmation,
+        canApprove: result.canApprove, expiresAt: Math.min(result.expiresAt, this.now() + 300000) };
+      session.lastInputAt = this.now();
+      response.json(result);
+    }));
+    app.post("/api/risk-replacement/approve", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId", "reviewHash", "confirmation"]);
+      const token = this.bearer(request), session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const review = session.riskReview;
+      if (!review?.canApprove || review.riskPlanId !== request.body.riskPlanId || review.reviewHash !== request.body.reviewHash ||
+          review.confirmation !== request.body.confirmation || review.expiresAt <= this.now() || session.riskApprovalPending) {
+        throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "请在当前管理员会话中重新读取并确认具体风险计划。", 409);
+      }
+      session.riskApprovalPending = true;
+      try {
+        // Fresh native OS verification is mandatory for EVERY final approval.
+        await this.ownerVerification.verify();
+        this.getSession(token);
+        if (session.riskReview !== review) throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "审阅计划已变化，请重新核对。", 409);
+        session.riskReview = null; // Consume before committing; no stale review reuse.
+        const result = await this.riskReview("human_risk_approve", { ...request.body, instanceId: session.instanceId,
+          actor: { username: session.username, sessionId: session.id, verifiedAt: Date.now() } });
+        session.lastInputAt = this.now();
+        response.json(result);
+      } finally { session.riskApprovalPending = false; }
+    }));
     app.get("/api/database/config", route((request, response) => {
       const session = authorize(request), instance = this.instance(session.instanceId);
       response.json({ ok: true, config: instance.manualMongo || { enabled: false } });

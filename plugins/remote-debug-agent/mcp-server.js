@@ -196,6 +196,7 @@ const toolOperationPolicies = {
     maxMs: MAX_MONGODB_TIMEOUT_MS,
   },
   remote_debug_mongodb_recover_operation: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
+  remote_debug_mongodb_disposition: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_mongodb_prepare_write: {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
     maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
@@ -559,6 +560,32 @@ const tools = [
         database: { type: "string", minLength: 1, maxLength: 128 },
         intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
         mode: { type: "string", enum: ["inspect", "reconcile", "historical"], default: "inspect" },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
+    name: "remote_debug_mongodb_disposition",
+    description: "Review/quarantine an exact uncertain bulk intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk reads the proposal and its executor fence challenge. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. create_replacement creates/uploads the exact approved replacement only after a configured trusted authority's permanent legacy fence/drain receipt is verified. Historical outcome remains unknown. Creation never executes business writes; sealing and execution use normal bulk tools and immutable plan confirmation. Legacy environments without verified external migration fail closed.",
+    inputSchema: {
+      type: "object", additionalProperties: false, required: ["instanceId", "database", "mode"],
+      oneOf: [
+        { properties: { mode: { const: "prepare" } }, required: ["intentId", "originalRequest"] },
+        { properties: { mode: { const: "inspect" } }, required: ["dispositionId"] },
+        { properties: { mode: { const: "quarantine" } }, required: ["dispositionId", "reviewHash", "confirmation"] },
+        { properties: { mode: { const: "admit_replacement" } }, required: ["dispositionId", "reviewHash"] },
+        { properties: { mode: { const: "prepare_risk" } }, required: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"] },
+        { properties: { mode: { const: "inspect_risk" } }, required: ["riskPlanId"] },
+        { properties: { mode: { const: "create_replacement" } }, required: ["riskPlanId", "reviewHash"] },
+      ],
+      properties: {
+        instanceId: instanceIdProperty, database: { type: "string", minLength: 1, maxLength: 128 },
+        mode: { type: "string", enum: ["prepare", "inspect", "quarantine", "admit_replacement", "prepare_risk", "inspect_risk", "create_replacement"] },
+        riskPlanId: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        dispositionId: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        reviewHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+        confirmation: { type: "string", enum: ["确认隔离原意图"] },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
       },
     },
@@ -1238,6 +1265,10 @@ const tools = [
 // A historical request is a candidate for keyed identity verification, never
 // caller-supplied evidence or a new prepare/upload operation.
 tools.find((tool) => tool.name === "remote_debug_mongodb_recover_operation").inputSchema.properties.originalRequest =
+  structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
+tools.find((tool) => tool.name === "remote_debug_mongodb_disposition").inputSchema.properties.originalRequest =
+  structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
+tools.find((tool) => tool.name === "remote_debug_mongodb_disposition").inputSchema.properties.replacementRequest =
   structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
 
 const synchronousLogSchema = tools.find((tool) => tool.name === "remote_debug_query_logs").inputSchema;
@@ -2986,21 +3017,22 @@ async function requestAgent(pathName, payload, options = {}) {
     const scopeForDatabase = (name) => businessPrivacy.targetScope(new URL(settings.agentUrl).origin, instance, name);
     const scope = database ? scopeForDatabase(database) : undefined;
     operation.privacyRefs = await businessStorage.prepare(settings, payload, scope, operation.signal);
-    if (pathName === "/mongodb/operations/recover" && payload.originalRequest !== undefined) {
-      const candidate = payload.originalRequest;
+    for (const requestField of ["originalRequest", "replacementRequest"]) if (["/mongodb/operations/recover", "/mongodb/operations/disposition"].includes(pathName) && payload[requestField] !== undefined) {
+      const candidate = payload[requestField];
       const allowed = tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema.properties;
-      if (payload.mode !== "historical" || !candidate || typeof candidate !== "object" || Array.isArray(candidate) ||
+      if (!(pathName.endsWith("disposition") ? ["prepare", "prepare_risk"].includes(payload.mode) : payload.mode === "historical") || !candidate || typeof candidate !== "object" || Array.isArray(candidate) ||
           Object.keys(candidate).some((key) => !Object.hasOwn(allowed, key)) ||
           candidate.instanceId !== undefined && candidate.instanceId !== instanceId || candidate.database !== undefined && candidate.database !== database) {
         throw Object.assign(new Error("Historical recovery requires an exact original bulk request in the same target."), { code: "BUSINESS_OPERATION_DENIED" });
       }
-      payload = { ...payload, originalRequest: bulkPreparePayload({ ...candidate, instanceId, database }) };
+      payload = { ...payload, [requestField]: bulkPreparePayload({ ...candidate, instanceId, database }) };
     }
     payload = businessPrivacy.resolve(operation.toolName, payload, scope);
     const acceptsDatabase = tools.find((tool) => tool.name === operation.toolName)?.inputSchema.properties.database;
     payload = { ...payload, instanceId, ...(database && acceptsDatabase ? { database } : {}) };
     operation.privacyContext = { scope, scopeForDatabase, queryOperation: payload.operation, queryPipeline: payload.pipeline };
     if (pathName === "/mongodb/operations/recover") return businessStorage.recover(settings, payload, scope, operation);
+    if (pathName === "/mongodb/operations/disposition") return businessStorage.disposition(settings, payload, scope, operation);
     businessPrivacy.learnInput(operation.toolName, outputGuard.sanitize(payload).value, scope);
     operation.privacyInput = payload;
     operation.privacyIntent = await businessStorage.intent(settings, pathName, payload, scope, operation.privacyRefs, operation.signal);
@@ -3139,6 +3171,18 @@ async function callTool(name, args, operation) {
   if (name === "remote_debug_mongodb_recover_operation") {
     return callAgent("/mongodb/operations/recover", { instanceId: args?.instanceId, database: args?.database,
       intentId: args?.intentId, mode: args?.mode || "inspect", originalRequest: args?.originalRequest, timeoutMs: args?.timeoutMs }, operation);
+  }
+  if (name === "remote_debug_mongodb_disposition") {
+    const common = ["instanceId", "database", "mode", "timeoutMs"];
+    const byMode = { prepare: ["intentId", "originalRequest"], inspect: ["dispositionId"],
+      quarantine: ["dispositionId", "reviewHash", "confirmation"], admit_replacement: ["dispositionId", "reviewHash"],
+      prepare_risk: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"], inspect_risk: ["riskPlanId"], create_replacement: ["riskPlanId", "reviewHash"] };
+    const required = byMode[args?.mode];
+    if (!required || !args.instanceId || !args.database || required.some(key => args[key] === undefined) ||
+        Object.keys(args).some(key => ![...common, ...required].includes(key))) {
+      throw Object.assign(new Error("Explicit original target and mode-specific disposition fields are required."), { code: "BUSINESS_DISPOSITION_DENIED" });
+    }
+    return callAgent("/mongodb/operations/disposition", args, operation);
   }
   // References have meaning only in explicitly supported structured arguments.
   // In particular, never interpolate one into shell commands or file paths.

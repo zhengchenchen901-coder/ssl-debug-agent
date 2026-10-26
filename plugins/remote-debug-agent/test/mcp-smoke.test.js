@@ -1014,6 +1014,7 @@ function assertStrictCompatibleSchema(schema, path = "inputSchema") {
   const properties = schema.properties || {};
   const required = schema.required || [];
   for (const propertyName of Object.keys(properties)) {
+    if (path === "remote_debug_mongodb_disposition.inputSchema" && ["intentId", "dispositionId", "riskPlanId", "reviewHash", "confirmation", "replacementRequest"].includes(propertyName)) continue; // Required by its mode-specific oneOf.
     if ([
       "instanceId",
       "timeoutMs",
@@ -1099,6 +1100,7 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
         "remote_debug_mongodb_query",
         "remote_debug_mongodb_prepare_write",
         "remote_debug_mongodb_recover_operation",
+        "remote_debug_mongodb_disposition",
         "remote_debug_mongodb_prepare_index",
         "remote_debug_mongodb_prepare_transaction",
         "remote_debug_mongodb_prepare_import",
@@ -1139,6 +1141,15 @@ test("MCP server exposes remote debug tools and forwards calls", async () => {
     assert.ok(recoverySchema.properties.mode.enum.includes("historical"));
     assert.deepEqual(recoverySchema.properties.originalRequest.required, ["jobId", "chunkIndex", "units"]);
     assert.equal(recoverySchema.required.includes("originalRequest"), false, "historical diagnostics do not require re-uploading original input");
+    const dispositionSchema = list.result.tools.find(tool => tool.name === "remote_debug_mongodb_disposition").inputSchema;
+    assert.deepEqual(dispositionSchema.required, ["instanceId", "database", "mode"]);
+    assert.deepEqual(dispositionSchema.oneOf.map(branch => [branch.properties.mode.const, branch.required]), [
+      ["prepare", ["intentId", "originalRequest"]], ["inspect", ["dispositionId"]],
+      ["quarantine", ["dispositionId", "reviewHash", "confirmation"]], ["admit_replacement", ["dispositionId", "reviewHash"]],
+      ["prepare_risk", ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"]], ["inspect_risk", ["riskPlanId"]], ["create_replacement", ["riskPlanId", "reviewHash"]],
+    ]);
+    assert.deepEqual(dispositionSchema.properties.originalRequest, recoverySchema.properties.originalRequest);
+    assert.deepEqual(dispositionSchema.properties.confirmation.enum, ["确认隔离原意图"]);
     const expected = recoverySchema.properties.originalRequest.properties.units.items.properties.operations.items.oneOf[1].properties.expected;
     const indexedPath = new RegExp(Object.keys(expected.patternProperties)[0]);
     assert.equal(indexedPath.test("integrals.0.value"), true);

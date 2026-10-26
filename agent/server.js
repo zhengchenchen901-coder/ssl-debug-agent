@@ -1,5 +1,5 @@
 import express from "express";
-import { installPrivacyRoutes } from "./privacy-service.js";
+import { installPrivacyRoutes, assertMongoDispatchAdmission, humanRiskRequest } from "./privacy-service.js";
 import { runService, validateServiceRequest } from "./services.js";
 import { assertServiceId, serviceProfileHash, selectServiceProfile, serviceError, serviceAuditFields, serviceTargetHash } from "./service-profiles.js";
 import { installHttpAuth, publicHealth } from "./http-auth.js";
@@ -1997,7 +1997,10 @@ export function createManagerApp(options = {}) {
 
   installPrivacyRoutes(app, { registry, service: options.privacyService,
     dataDirectory: path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
-    dispatch: (id, route, payload) => workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
+    dispatch: async (id, route, payload) => {
+      await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload);
+      return workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" });
+    },
     directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });
 
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
@@ -2005,6 +2008,7 @@ export function createManagerApp(options = {}) {
     dataDirectory: path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     lifecycle,
     ...options.manualOptions,
+    riskReview: (action, input) => humanRiskRequest(app.locals.privacyService, action, input, id => registry.getInternal(id)),
   });
   app.locals.manualWorkbench = manualWorkbench;
   installManualManagerRoutes(app, manualWorkbench);
@@ -2675,6 +2679,7 @@ export function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
+      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload);
       if (pathName.startsWith("/services/")) {
         if (!instanceId) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
         const instance = registry.getInternal(resolvedId);

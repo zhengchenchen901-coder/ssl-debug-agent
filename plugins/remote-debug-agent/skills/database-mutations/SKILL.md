@@ -199,3 +199,67 @@ do not pretend JSON formatting or code-keyword filtering establishes that policy
 When this user task concludes, follow [final-result publication](../final-results.md)
 to save its final summary and requested files through the unified local module.
 Do not archive intermediate responses, polling, checkpoints, or pending plans.
+
+## Original-intent disposition and human-approved risk replacement
+
+`remote_debug_mongodb_disposition` retains the original protected context and
+requires explicit instanceId/database. prepare / inspect / quarantine preserve
+the original uncertain record; quarantine separately requires the displayed
+reviewHash and `确认隔离原意图`. Its instance-wide local write-admission hold is
+not a remote cancellation certificate. Never clear that hold or original locks.
+The legacy admit_replacement mode remains a denial-only compatibility endpoint.
+
+When historical evidence cannot determine the outcome, use prepare_risk with
+that dispositionId/reviewHash, exact originalRequest and an exact
+replacementRequest. The candidate is a proposal, not another job or upload.
+Only a complete first chunk is supported. Its business effects, recipients,
+amounts, unit order and batch expiry dates must equal the original; only scalar
+preimages on updated paths and explicit remediation_job_id/job_id associations
+can change. Identity/absence guards, payload changes or extra units are rejected.
+Changed guards produce a different exact review. Do not put the unauthorized
+52 records into this case's proposal or reset original batch dates.
+
+inspect_risk exposes the riskPlanId, exact input/effect digests, expiry, missing
+fence prerequisites and a signed-migration challenge. historicalOutcome stays
+unknown; current business balances or matching ledgers do not change it.
+
+Final approval MUST happen in the independent human administrator workbench:
+open “未知任务风险处置”, read the riskPlanId in that authenticated session, review
+the target/old and proposed jobs/digests/scope, acknowledge the duplicate-risk
+warning, and type `我接受历史结果未知的风险，并批准建立此替代任务`.
+Fresh native OS owner verification is mandatory. Manager credentials, a privacy
+capability, chat confirmation, MCP arguments or a caller-supplied actor/proof
+cannot substitute. Do not ask the user to disclose their administrator password.
+This task's permission to develop this feature is not final approval of any
+real risk plan. Approval records history as unknown, never “proven not executed”.
+
+Approval requires an externally enforced, trusted migration receipt provisioned
+by the installation owner. The source supports REMOTE_DEBUG_EXECUTOR_TRUST_FILE
+and REMOTE_DEBUG_EXECUTOR_RECEIPT_DIRECTORY; no public tool uploads a receipt or
+changes trust. Ed25519 verification authenticates the configured external
+issuer; it does not itself revoke old MongoDB/SSH credentials or drain sessions.
+That issuer must actually complete and attest the permanent all-path retirement,
+including old processes/queues/leases, authenticated sessions, terminal in-flight
+transactions and restarts. Do not generate a real receipt merely to bypass this
+requirement. Without this external integration, missing/invalid/expired proof,
+or unsupported Windows ACL verification, approval and creation fail closed.
+
+After the human approves the exact plan, create_replacement consumes its
+riskPlanId and approved reviewHash. It atomically records the unknown retirement,
+one replacement intent, admission gate and audit lineage, then uploads only the
+approved first chunk through the existing protected prepare protocol. It never
+executes business writes. Lost replies reconcile the same intent; never change
+job/arguments to retry. Only that candidate and its derived empty seal are
+allowed through the hold. Seal using the normal prepare_bulk tool (chunkIndex=1,
+empty units, endOfUpload=true, same purpose/TTL). Only an exact accepted sealed
+plan admits normal execute/resume/rollback for its immutable planHash; business
+execution retains its existing explicit confirmation and rollback rules.
+
+The plan lasts one hour; approval lasts at most fifteen minutes and no longer
+than the external receipt. Expiry or changed evidence requires fresh review and
+native confirmation of the same identity; it does not authorize another job.
+Only one replacement may be established per original disposition. A preparation
+conflict is a failure to inspect, not permission to create a different task.
+Future certificate renewal/installation requires owner-controlled provisioning.
+No deployment, migration, real disposition or new business job is performed just
+to verify this feature; use disposable local fixtures.

@@ -27307,8 +27307,8 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest3 = createHash15("sha1").update(key + GUID).digest("base64");
-        if (res.headers["sec-websocket-accept"] !== digest3) {
+        const digest4 = createHash15("sha1").update(key + GUID).digest("base64");
+        if (res.headers["sec-websocket-accept"] !== digest4) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
         }
@@ -27983,12 +27983,12 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest3 = createHash15("sha1").update(key + GUID).digest("base64");
+        const digest4 = createHash15("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
           "Connection: Upgrade",
-          `Sec-WebSocket-Accept: ${digest3}`
+          `Sec-WebSocket-Accept: ${digest4}`
         ];
         const ws = new this.options.WebSocket(null, void 0, this.options);
         if (protocols.size) {
@@ -33563,10 +33563,10 @@ var require_crypto = __commonJS({
           mac.update(BUF_INT);
           mac.update(packet);
         }
-        let digest3 = mac.digest();
-        if (digest3.length > this._macActualLen)
-          digest3 = digest3.slice(0, this._macActualLen);
-        this._onWrite(digest3);
+        let digest4 = mac.digest();
+        if (digest4.length > this._macActualLen)
+          digest4 = digest4.slice(0, this._macActualLen);
+        this._onWrite(digest4);
         this.outSeqno = this.outSeqno + 1 >>> 0;
       }
     };
@@ -39163,18 +39163,18 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest3 = createHash15(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
-        while (digest3.length < len) {
-          const chunk = createHash15(hashName).update(secret).update(exchangeHash).update(digest3).digest();
-          const extended = Buffer.allocUnsafe(digest3.length + chunk.length);
-          extended.set(digest3, 0);
-          extended.set(chunk, digest3.length);
-          digest3 = extended;
+        let digest4 = createHash15(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        while (digest4.length < len) {
+          const chunk = createHash15(hashName).update(secret).update(exchangeHash).update(digest4).digest();
+          const extended = Buffer.allocUnsafe(digest4.length + chunk.length);
+          extended.set(digest4, 0);
+          extended.set(chunk, digest4.length);
+          digest4 = extended;
         }
-        if (digest3.length === len)
-          ret = digest3;
+        if (digest4.length === len)
+          ret = digest4;
         else
-          ret = new FastBuffer(digest3.buffer, digest3.byteOffset, len);
+          ret = new FastBuffer(digest4.buffer, digest4.byteOffset, len);
       } else {
         ret = EMPTY_BUFFER;
       }
@@ -56796,6 +56796,25 @@ var contracts = {
   remote_debug_get_capabilities: { capabilities: json },
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
   remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
+  remote_debug_mongodb_disposition: {
+    ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
+    requiresConfirmation: "boolean",
+    localContainment: "boolean",
+    remoteFenceConfirmed: "boolean",
+    replacementAllowed: "boolean",
+    missingRequirements: [scalar],
+    ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
+    humanConfirmationRequired: "boolean",
+    humanApproved: "boolean",
+    canApprove: "boolean",
+    collections: [scalar],
+    binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
+    fenceChallenge: {
+      ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
+      binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
+    },
+    result: { ...common, ...bulk, ...fields("intentId intentState state"), result: { ...common, ...bulk } }
+  },
   remote_debug_mongodb_prepare_write: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,
@@ -57206,6 +57225,33 @@ function createBulkHistoryReader({ dataDirectory, instance: instance2 } = {}) {
   };
 }
 
+// mongodb-fence-authority.js
+var FENCE_COVERAGE = Object.freeze(["dispatch", "upload", "execute", "resume", "replay", "old_processes", "queues", "leases", "restart", "authenticated_sessions", "inflight_transactions", "legacy_credentials"]);
+
+// mongodb-risk-replacement.js
+var MAX = Number.MAX_SAFE_INTEGER;
+
+// mongodb-disposition.js
+var READ_ROUTES = /* @__PURE__ */ new Set([
+  "/mongodb/query",
+  "/mongodb/bulk/job",
+  "/mongodb/bulk/jobs",
+  "/mongodb/mutations/list",
+  "/mongodb/mutations/get",
+  "/mongodb/bulk/recover-prepare",
+  "/mongodb/mutations/recover-prepare",
+  "/mongodb/mutations/recover-execution"
+]);
+function isMongoAdmissionRoute(route2) {
+  return typeof route2 === "string" && (route2 === "/sandbox/cleanup" || route2.startsWith("/mongodb/") && !READ_ROUTES.has(route2));
+}
+var requirements = Object.freeze([
+  "mandatory_executor_boundary_migration_required",
+  "legacy_process_queue_and_lease_drain_attestation_required",
+  "durable_remote_fence_receipt_required",
+  "historical_transaction_receipts_required"
+]);
+
 // privacy-service.js
 async function historicalBulkRequest(service, input, record, target2, { instance: instance2, dispatch, historicalEvidence }, view) {
   if (record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -57318,8 +57364,8 @@ async function bulkPrepareRequest(service, input, record, target2, { instance: i
 }
 var here = typeof __dirname === "string" ? __dirname : import_node_path4.default.dirname((0, import_node_url.fileURLToPath)(void 0));
 var PrivacyService = class {
-  constructor({ directory, key, maxQueue = 32, workerPath } = {}) {
-    this.options = { directory, key };
+  constructor({ directory, key, maxQueue = 32, workerPath, fenceAuthority } = {}) {
+    this.options = { directory, key, fenceAuthority };
     this.maxQueue = maxQueue;
     this.pending = /* @__PURE__ */ new Map();
     this.sequence = 0;
@@ -57383,7 +57429,7 @@ var PrivacyService = class {
   }
 };
 async function privacyRequest(service, input, { instance: instance2, origin, dispatch, historicalEvidence } = {}) {
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "disposition"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate2 = (scope2) => {
     if (typeof scope2 !== "string" || scope2.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
@@ -57397,6 +57443,57 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
     if (!current || current.enabled === false || target2.endpoint !== origin || scope2 !== businessTargetScope(origin, current, target2.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate2(input.scope);
+  if (input.action === "disposition") {
+    const common2 = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
+    const fields3 = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine" ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"] : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"] : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...input.mode === "create_replacement" ? ["reviewHash"] : []] : [];
+    if (!fields3.length || Object.keys(input).some((key) => ![...common2, ...fields3].includes(key))) throw privacyError("BUSINESS_DISPOSITION_DENIED");
+    if (input.mode === "prepare_risk") {
+      const target2 = JSON.parse(input.scope), requests = {};
+      for (const name2 of ["originalRequest", "replacementRequest"]) {
+        const raw = input[name2];
+        if (!raw || raw.instanceId !== target2.id || raw.database !== target2.database || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+        const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
+        if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+        const { instanceId: instanceId2, ...chunk } = request;
+        normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
+        requests[name2] = request;
+      }
+      return service.call("prepare_risk_replacement", { ...input, ...requests });
+    }
+    if (input.mode === "inspect_risk") return service.call("inspect_risk_replacement", input);
+    if (input.mode === "create_replacement") {
+      const reserved = await service.call("create_risk_replacement", input), target2 = JSON.parse(input.scope);
+      if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
+      const record = reserved.intent;
+      const result = await bulkPrepareRequest(
+        service,
+        {
+          ...input,
+          id: record.id,
+          attempt: record.bulkPrepare.attempt,
+          action: record.dispatched ? "recover_operation" : "dispatch_prepare",
+          request: reserved.request
+        },
+        record,
+        target2,
+        { instance: instance2, dispatch },
+        (saved) => ({ ok: true, intentId: record.id, state: saved.state, ...saved.result ? { result: saved.result } : {} })
+      );
+      return { ...reserved.risk, result };
+    }
+    if (input.mode === "prepare") {
+      const raw = input.originalRequest;
+      if (!raw || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+      const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
+      if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+      return service.call("prepare_disposition", { ...input, request, requestDigest: prepareRequestDigest(raw) });
+    }
+    return service.call({ inspect: "inspect_disposition", quarantine: "quarantine_disposition", admit_replacement: "admit_disposition" }[input.mode], input);
+  }
+  if (input.action === "intent" && isMongoAdmissionRoute(input.route)) {
+    const target2 = JSON.parse(input.scope);
+    if (input.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  }
   if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
     const record = await service.call("inspect_operation", input);
     const target2 = JSON.parse(input.scope);
@@ -57455,9 +57552,9 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
     }
     if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
     if (input.action === "dispatch_prepare") {
-      const digest3 = prepareRequestDigest(input.request || {});
+      const digest4 = prepareRequestDigest(input.request || {});
       if (input.request?.instanceId !== target2.id || input.request?.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
-      await service.call("claim_prepare", { ...input, dispatchDigest: digest3 });
+      await service.call("claim_prepare", { ...input, dispatchDigest: digest4 });
     }
     const recovering = input.action === "recover_operation";
     let result, notDispatched = false, fenced = false;
@@ -57523,6 +57620,15 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, dat
       response.status(409).json({ ok: false, error: { code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
     }
   });
+}
+async function assertMongoDispatchAdmission(service, instanceId2, route2, request) {
+  if (isMongoAdmissionRoute(route2)) await service.call("assert_instance_admission", { instanceId: instanceId2, route: route2, request });
+}
+async function humanRiskRequest(service, action, input, instance2) {
+  const context = await service.call("human_risk_context", input);
+  const target2 = JSON.parse(context.targetScope), current = instance2(input.instanceId);
+  if (!current || current.enabled === false || context.targetScope !== businessTargetScope(target2.endpoint, current, target2.database)) throw privacyError("BUSINESS_REPLACEMENT_STALE");
+  return service.call(action, { ...input, targetScope: context.targetScope });
 }
 
 // service-start-runtime.js
@@ -59563,7 +59669,7 @@ var SSH_MESSAGES = {
   MANUAL_SSH_FAILED: "SSH 连接失败或已断开，请检查网络、SSH 账户与私钥。",
   MANUAL_SHELL_FAILED: "远端交互式 Shell 无法启动或已断开。"
 };
-function digest(instance2) {
+function digest2(instance2) {
   return (0, import_node_crypto15.createHash)("sha256").update(JSON.stringify(instance2)).digest("hex");
 }
 function target(instance2) {
@@ -59580,6 +59686,16 @@ function route(action) {
 function sendError(error2, _request, response, _next) {
   if (error2.type === "entity.too.large") error2 = manualError("MANUAL_REQUEST_LIMIT", "请求超过大小上限，请减少文档内容或使用数据库 shell。", 413);
   else if (error2.type === "entity.parse.failed") error2 = manualError("MANUAL_REQUEST_INVALID", "请求 JSON 格式无效。", 400);
+  if (error2.code?.startsWith("BUSINESS_REPLACEMENT_")) {
+    const messages = {
+      BUSINESS_REPLACEMENT_FENCE_REQUIRED: "旧任务永久阻断回执缺失、无效或已过期，不能批准替代任务。",
+      BUSINESS_REPLACEMENT_STALE: "计划、原任务或实例已变化，请重新读取并核对计划。",
+      BUSINESS_REPLACEMENT_REVIEW_EXPIRED: "风险计划已过期，请重新准备审阅。",
+      BUSINESS_REPLACEMENT_APPROVAL_EXPIRED: "人工批准或阻断回执已失效，请重新审阅。",
+      BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED: "原意图尚未完成本地隔离，不能批准替代任务。"
+    };
+    error2 = manualError("MANUAL_RISK_REVIEW_REJECTED", messages[error2.code] || "风险处置请求不匹配当前计划或权限。", 409);
+  }
   const known = typeof error2.code === "string" && /^(ADMIN_|OWNER_|MANUAL_|INSTANCE_)/.test(error2.code);
   response.status(known ? error2.statusCode || 400 : 503).json({ ok: false, error: {
     code: known ? error2.code : "MANUAL_UNAVAILABLE",
@@ -59595,6 +59711,7 @@ var ManualWorkbench = class {
     this.ownerVerification = options.ownerVerification || new ManualOwnerVerification(import_node_path9.default.join(this.directory, "native"));
     this.openTerminal = options.openTerminal || openManualTerminal;
     this.openDatabase = options.openDatabase || openManualDatabase;
+    this.riskReview = options.riskReview;
     this.now = options.now || Date.now;
     this.idleMs = options.idleMs || IDLE_MS;
     this.maxSessionMs = options.maxSessionMs || MAX_SESSION_MS;
@@ -59680,7 +59797,7 @@ var ManualWorkbench = class {
     this.prune();
     if (this.sessions.size >= 8) throw manualError("MANUAL_SESSION_LIMIT", "最多同时打开 8 个人工会话。", 409);
     const token = (0, import_node_crypto15.randomBytes)(32).toString("hex");
-    const session = { id: (0, import_node_crypto15.randomUUID)(), username: body.username, instanceId: instance2.id, fingerprint: digest(instance2), createdAt: this.now(), lastInputAt: this.now(), socket: null };
+    const session = { id: (0, import_node_crypto15.randomUUID)(), username: body.username, instanceId: instance2.id, fingerprint: digest2(instance2), createdAt: this.now(), lastInputAt: this.now(), socket: null };
     this.audit("login", session);
     this.sessions.set(token, session);
     this.keepAlive(session);
@@ -59693,7 +59810,7 @@ var ManualWorkbench = class {
     const session = TOKEN.test(token || "") && this.sessions.get(token);
     if (!session) throw manualError("MANUAL_AUTH_REQUIRED", "请重新登录管理员账号。", 401);
     const instance2 = this.registry.getInternal(session.instanceId);
-    if (this.now() - session.lastInputAt >= this.idleMs || this.now() - session.createdAt >= this.maxSessionMs || !instance2?.enabled || digest(instance2) !== session.fingerprint) {
+    if (this.now() - session.lastInputAt >= this.idleMs || this.now() - session.createdAt >= this.maxSessionMs || !instance2?.enabled || digest2(instance2) !== session.fingerprint) {
       this.revoke(token, "session-expired");
       throw manualError("MANUAL_SESSION_EXPIRED", "会话已过期或实例配置已变化，请重新登录。", 401);
     }
@@ -59832,6 +59949,47 @@ var ManualWorkbench = class {
       response.json({ ok: true });
     }));
     app.post("/api/terminal-ticket", route((request, response) => response.json(this.issueTicket(this.bearer(request)))));
+    app.post("/api/risk-replacement/review", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId"]);
+      const session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const result = await this.riskReview("human_risk_view", { riskPlanId: request.body.riskPlanId, instanceId: session.instanceId });
+      this.getSession(this.bearer(request));
+      session.riskReview = {
+        riskPlanId: result.riskPlanId,
+        reviewHash: result.reviewHash,
+        confirmation: result.confirmation,
+        canApprove: result.canApprove,
+        expiresAt: Math.min(result.expiresAt, this.now() + 3e5)
+      };
+      session.lastInputAt = this.now();
+      response.json(result);
+    }));
+    app.post("/api/risk-replacement/approve", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId", "reviewHash", "confirmation"]);
+      const token = this.bearer(request), session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const review2 = session.riskReview;
+      if (!review2?.canApprove || review2.riskPlanId !== request.body.riskPlanId || review2.reviewHash !== request.body.reviewHash || review2.confirmation !== request.body.confirmation || review2.expiresAt <= this.now() || session.riskApprovalPending) {
+        throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "请在当前管理员会话中重新读取并确认具体风险计划。", 409);
+      }
+      session.riskApprovalPending = true;
+      try {
+        await this.ownerVerification.verify();
+        this.getSession(token);
+        if (session.riskReview !== review2) throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "审阅计划已变化，请重新核对。", 409);
+        session.riskReview = null;
+        const result = await this.riskReview("human_risk_approve", {
+          ...request.body,
+          instanceId: session.instanceId,
+          actor: { username: session.username, sessionId: session.id, verifiedAt: Date.now() }
+        });
+        session.lastInputAt = this.now();
+        response.json(result);
+      } finally {
+        session.riskApprovalPending = false;
+      }
+    }));
     app.get("/api/database/config", route((request, response) => {
       const session = authorize(request), instance2 = this.instance(session.instanceId);
       response.json({ ok: true, config: instance2.manualMongo || { enabled: false } });
@@ -60384,7 +60542,7 @@ var MAX_FILE = 4 * 1024 * 1024;
 var MAX_TASK = 8 * 1024 * 1024;
 var MAX_FILES = 32;
 var MAX_TASKS = 1e4;
-var digest2 = (data) => (0, import_node_crypto17.createHash)("sha256").update(data).digest("hex");
+var digest3 = (data) => (0, import_node_crypto17.createHash)("sha256").update(data).digest("hex");
 var fail2 = (code, statusCode = 400) => Object.assign(new Error(code), { code, statusCode, retriable: false });
 function object3(value, keys) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key))) throw fail2("FINAL_RESULT_INVALID");
@@ -60494,7 +60652,7 @@ var FinalResultStore = class {
         if (decoded.toString("base64") !== item.content) throw fail2("FINAL_RESULT_INVALID");
         content = item.content;
         bytes = decoded.length;
-        sha256 = digest2(decoded);
+        sha256 = digest3(decoded);
       } else if (item.encoding !== void 0 && item.encoding !== "utf8") throw fail2("FINAL_RESULT_INVALID");
       else if (item.format === "json") {
         if (!Object.hasOwn(item, "content")) throw fail2("FINAL_RESULT_INVALID");
@@ -60512,7 +60670,7 @@ var FinalResultStore = class {
       }
       bytes ??= Buffer.byteLength(content);
       if (bytes > this.maxFileBytes || (totalBytes += bytes) > this.maxTaskBytes) throw fail2("FINAL_RESULT_TOO_LARGE", 413);
-      return { category: item.category, format: item.format, name: item.name, content, encoding: item.format === "binary" ? "binary" : "utf8", bytes, sha256: sha256 || digest2(content) };
+      return { category: item.category, format: item.format, name: item.name, content, encoding: item.format === "binary" ? "binary" : "utf8", bytes, sha256: sha256 || digest3(content) };
     });
     return { instanceId: input.instanceId, taskId: input.taskId, title: input.title, type: input.type || "task", status: input.status, references: { ...references }, artifacts, totalBytes };
   }
@@ -60531,7 +60689,7 @@ var FinalResultStore = class {
       throw fail2("FINAL_RESULT_REDACTION_FAILED", 400);
     }
     const normalized = this.normalize(safe);
-    const fingerprint = digest2(JSON.stringify(normalized));
+    const fingerprint = digest3(JSON.stringify(normalized));
     const { instanceId: instanceId2, taskId } = normalized;
     const existing = await this.find(instanceId2, taskId);
     if (existing) {
@@ -60703,7 +60861,7 @@ var FinalResultStore = class {
       if (error2.code === "ENOENT") throw fail2("FINAL_RESULT_CORRUPT", 409);
       throw error2;
     }
-    if (content.length !== file.bytes || digest2(content) !== file.sha256) throw fail2("FINAL_RESULT_CORRUPT", 409);
+    if (content.length !== file.bytes || digest3(content) !== file.sha256) throw fail2("FINAL_RESULT_CORRUPT", 409);
     return { file, content };
   }
   cleanupFinalResult(instanceId2, taskId) {
@@ -69364,14 +69522,18 @@ function createManagerApp(options = {}) {
     registry,
     service: options.privacyService,
     dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
-    dispatch: (id, route2, payload) => workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" }),
+    dispatch: async (id, route2, payload) => {
+      await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload);
+      return workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" });
+    },
     directory: import_node_path17.default.join(import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
   });
   const manualWorkbench = options.manualWorkbench || new ManualWorkbench({
     registry,
     dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     lifecycle,
-    ...options.manualOptions
+    ...options.manualOptions,
+    riskReview: (action, input) => humanRiskRequest(app.locals.privacyService, action, input, (id) => registry.getInternal(id))
   });
   app.locals.manualWorkbench = manualWorkbench;
   installManualManagerRoutes(app, manualWorkbench);
@@ -69999,6 +70161,7 @@ function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId2);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
+      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload);
       if (pathName.startsWith("/services/")) {
         if (!instanceId2) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
         const instance3 = registry.getInternal(resolvedId);
