@@ -1,6 +1,8 @@
 // This script is sent over the existing fixed Node helper channel. Keep it
 // independent of local modules and compatible with older target Node versions.
 export const MONGODB_BULK_RUNTIME = String.raw`
+var __bulkFailureContext = { layer: "mongodb-helper", phase: __request.action, batchIndex: __request.batchIndex, operationId: __request.operationId, outcome: "unknown",
+  fingerprint: function (value) { return __crypto.createHash("sha256").update(value).digest("hex"); } };
 function __bulkFail(code, message, details) {
   var error = new Error(message);
   error.code = code;
@@ -442,6 +444,7 @@ function __bulkStatus(manifest, plan, options) {
     hasMoreDifferences: offset + diffs.length < differenceCount,
     changedFields: manifest.changedFields || [],
     pauseReason: manifest.pauseReason,
+    lastFailure: manifest.lastFailure,
     effectiveConcurrency: Math.min(__config.concurrency || 1, 4),
     planPreview: plan ? plan.batches.map(function (batch) { return { batchIndex: batch.index, operationCount: batch.documents, unitCount: batch.unitCount, changedFields: batch.changedFields, sampleIds: batch.sampleIds, rollbackBytes: batch.rollbackBytes }; }) : undefined,
   };
@@ -676,6 +679,8 @@ async function __bulkLoadClient() {
   var uri = __config.uriKey.split(".").reduce(function (value, key) { return value == null ? undefined : value[key]; }, profile);
   if (typeof uri !== "string" || !uri) __bulkFail("MONGODB_URI_NOT_FOUND", "MongoDB URI was not found in the configured profile");
   var driver = require(__config.driverPath);
+  try { __bulkFailureContext.driverVersion = require(__path.join(__config.driverPath, "package.json")).version; } catch (_versionError) {}
+  __bulkFailureContext.nodeVersion = process.version;
   var MongoClient = driver.MongoClient || driver.default && driver.default.MongoClient;
   if (!MongoClient) __bulkFail("MONGODB_DRIVER_INVALID", "MongoDB driver does not export MongoClient");
   var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverSelectionTimeoutMS: 15000 });
@@ -845,14 +850,18 @@ function __bulkCount(value, primary, fallback) {
 async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
   var manifest = __bulkManifest(jobId, false);
   var storage = __bulkReceiptStorage(manifest);
+  __bulkFailureContext.phase = "connect";
+  __bulkFailureContext.outcome = "not_started";
   var client = await __bulkLoadClient();
-  var session = client.startSession();
+  var session;
   var receiptAction = rollback ? "rollback" : "commit";
   var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction, storage);
   var summary = { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
   var after = [];
   var committing = false;
   try {
+    __bulkFailureContext.phase = "receipt_lookup";
+    session = client.startSession();
     await __bulkCheckStorageCollection(client, storage);
     var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction, storage);
     if (previousReceipt) {
@@ -863,15 +872,20 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
     }
     var beforeEntries = batch.before || [];
     var ops = batch.operations || [];
+    __bulkFailureContext.phase = "transaction_start";
     session.startTransaction({ readPreference: "primary" });
     var beforeByIndex = {};
     beforeEntries.forEach(function (entry) { beforeByIndex[entry.operationIndex] = entry.document; });
+    __bulkFailureContext.phase = "preimage_check";
     var snapshots = await __bulkGetSnapshots(client, ops, session);
     var groups = __bulkGroup(ops);
     var collectionNames = Object.keys(groups);
     for (var c = 0; c < collectionNames.length; c += 1) {
       var collectionName = collectionNames[c];
       var group = groups[collectionName];
+      __bulkFailureContext.collectionIndex = c;
+      __bulkFailureContext.collectionOperationCount = group.length;
+      __bulkFailureContext.phase = "preimage_check";
       var currentDocs = snapshots[collectionName] || [];
       if (!rollback) {
         var writeOperations = [];
@@ -890,6 +904,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
           }
         });
         if (writeOperations.length) {
+          __bulkFailureContext.phase = "business_write";
           var writeResult = await client.db(__config.database).collection(collectionName).bulkWrite(writeOperations, { ordered: true, session: session });
           summary.matched += __bulkCount(writeResult, "matchedCount", "nMatched");
           summary.modified += __bulkCount(writeResult, "modifiedCount", "nModified");
@@ -907,6 +922,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
           else reverseOperations.push({ replaceOne: { filter: { _id: __decode(__bulkOperationId(operation)) }, replacement: __decode(beforeByIndex[entry.index]), upsert: false } });
         });
         if (reverseOperations.length) {
+          __bulkFailureContext.phase = "business_write";
           var reverseResult = await client.db(__config.database).collection(collectionName).bulkWrite(reverseOperations, { ordered: true, session: session });
           var deleted = __bulkCount(reverseResult, "deletedCount", "nRemoved");
           var replaced = __bulkCount(reverseResult, "matchedCount", "nMatched");
@@ -917,6 +933,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
       }
     }
     if (!rollback) {
+      __bulkFailureContext.phase = "postimage_read";
       var afterSnapshots = await __bulkGetSnapshots(client, ops, session);
       ops.forEach(function (operation, index) {
         var current = __bulkFindById(afterSnapshots[operation.collection] || [], __bulkOperationId(operation));
@@ -924,31 +941,42 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
         after.push({ operationIndex: index, id: __encode(current._id), hash: __bulkHash(__encode(current)) });
       });
       summary.unchanged = Math.max(0, summary.matched - summary.modified);
+      __bulkFailureContext.phase = "after_log_write";
       __bulkWriteJson(__path.join(__bulkJobDir(jobId), "after-" + String(batch.index).padStart(6, "0") + ".json"), { batchHash: batch.hash, after: after }, 8 * 1024 * 1024);
     }
     var receipts = client.db(storage.database).collection(storage.collection);
     var now = new Date();
     var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
+    __bulkFailureContext.phase = "receipt_write";
     await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary, businessDatabase: __config.database, scope: storage.scope }, { session: session });
+    __bulkFailureContext.phase = "retirement_check";
     __bulkAssertNotRetired(jobId);
     committing = true;
+    __bulkFailureContext.phase = "commit";
+    __bulkFailureContext.outcome = "unknown";
     await session.commitTransaction();
     return { alreadyCommitted: false, summary: summary };
   } catch (error) {
-    try { await session.abortTransaction(); } catch (_abortError) {}
+    try { if (session) await session.abortTransaction(); if (!committing) __bulkFailureContext.outcome = "not_committed"; }
+    catch (_abortError) { __bulkFailureContext.outcome = "unknown"; }
     if (committing) {
+      var receiptCheckFailure;
       try {
         var checkClient = await __bulkLoadClient();
         try {
           var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction, storage);
           if (receipt && receipt.planHash === planHash && receipt.batchHash === batch.hash) return { alreadyCommitted: true, summary: receipt.summary || summary };
         } finally { await checkClient.close(); }
-      } catch (_checkError) {}
-      __bulkFail("MONGODB_BULK_COMMIT_UNKNOWN", "transaction outcome is uncertain; retry only this exact batch after receipt inspection", { batchIndex: batch.index });
+      } catch (_checkError) { receiptCheckFailure = _checkError; }
+      var uncertain = new Error("transaction outcome is uncertain; retry only this exact batch after receipt inspection");
+      uncertain.code = "MONGODB_BULK_COMMIT_UNKNOWN";
+      uncertain.cause = error;
+      uncertain.receiptCheckFailure = receiptCheckFailure;
+      throw uncertain;
     }
     throw error;
   } finally {
-    try { await session.endSession(); } catch (_sessionError) {}
+    try { if (session) await session.endSession(); } catch (_sessionError) {}
     try { await client.close(); } catch (_clientError) {}
   }
 }
@@ -1328,7 +1356,7 @@ async function __bulkControl(jobId, command, planHash) {
   });
 }
 
-function __bulkPause(jobId, planHash, leaseId, reason) {
+function __bulkPause(jobId, planHash, leaseId, reason, failure) {
   var manifest = __bulkManifest(jobId, false);
   if (planHash && manifest.planHash !== planHash) __bulkFail("MONGODB_BULK_PLAN_HASH_MISMATCH", "planHash does not match the prepared job");
   var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
@@ -1338,10 +1366,19 @@ function __bulkPause(jobId, planHash, leaseId, reason) {
   manifest.runningBatchIndexes = [];
   manifest.activePhase = null;
   manifest.pauseReason = String(reason || "paused").slice(0, 128);
+  if (failure) {
+    var publicFailure = __bulkPublicFailure(failure, failure, __bulkMessages);
+    // The helper may have saved a more precise failure before its SSH reply was
+    // lost. Do not replace that same-operation evidence with a transport error.
+    if (manifest.lastFailure && manifest.lastFailure.operationId && manifest.lastFailure.operationId === publicFailure.operationId && manifest.lastFailure.layer === "mongodb-helper" && publicFailure.layer !== "mongodb-helper") {
+      if (publicFailure.parentOperationId) manifest.lastFailure.parentOperationId = publicFailure.parentOperationId;
+    } else manifest.lastFailure = publicFailure;
+  }
+  // Keep previous failure evidence when a legacy worker or user pauses again.
   manifest.updatedAt = new Date().toISOString();
   __bulkWriteJson(__path.join(__bulkJobDir(jobId), "control.json"), { desiredState: "pause", at: manifest.updatedAt }, 64 * 1024);
   __bulkSaveManifest(manifest);
-  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "paused", reason: manifest.pauseReason });
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "paused", reason: manifest.pauseReason, failure: manifest.lastFailure });
   return { jobId: jobId, status: manifest.status, pauseReason: manifest.pauseReason, planHash: manifest.planHash };
 }
 
@@ -1441,7 +1478,7 @@ async function __bulkMain() {
     else if (action === "verifyBatch") data = await __bulkVerifyBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
     else if (action === "rollbackBatch") data = await __bulkRollbackBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
     else if (action === "dispatch") data = __bulkSetDispatch(jobId, __request.planHash, __request.leaseId, __request.phase, __request.batchIndexes);
-    else if (action === "pause") data = __bulkPause(jobId, __request.planHash, __request.leaseId, __request.reason);
+    else if (action === "pause") data = __bulkPause(jobId, __request.planHash, __request.leaseId, __request.reason, __request.failure);
     else if (action === "heartbeat") {
       var heartbeatManifest = __bulkManifest(jobId, false);
       __bulkCheckPlan(heartbeatManifest, __request.planHash);
@@ -1452,7 +1489,19 @@ async function __bulkMain() {
     else __bulkFail("MONGODB_BULK_ACTION_INVALID", "unsupported bulk action");
     process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
   } catch (error) {
-    process.stdout.write(__marker + JSON.stringify({ ok: false, error: { code: error.code || "MONGODB_BULK_FAILED", message: String(error.message || error).slice(0, 2000), details: error.details } }) + "\n");
+    var failure = __bulkPublicFailure(error, __bulkFailureContext, __bulkMessages);
+    // Persist where the failure occurs, so a lost helper reply/worker restart
+    // cannot erase the original phase or turn its outcome into safe failure.
+    if (["executeBatch", "rollbackBatch", "verifyBatch"].indexOf(__request.action) !== -1) {
+      try {
+        __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+          var failedManifest = __bulkManifest(jobId, false);
+          failedManifest.lastFailure = failure; __bulkSaveManifest(failedManifest);
+          __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: new Date().toISOString(), event: "batch_failed", batchIndex: __request.batchIndex, failure: failure });
+        });
+      } catch (_diagnosticError) { /* structured reply still carries original failure */ }
+    }
+    process.stdout.write(__marker + JSON.stringify({ ok: false, error: failure }) + "\n");
     process.exitCode = 1;
   }
 }

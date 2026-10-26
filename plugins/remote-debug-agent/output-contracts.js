@@ -28,7 +28,14 @@ const mutation = {
 const batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
 mutation.batches = [batch];
 const receiptStorage = fields("database collection legacy scope schemaVersion");
+function bulkFailure(depth = 2) {
+  const shape = { ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    frames: [fields("function line column")] };
+  if (depth > 0) for (const key of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key] = bulkFailure(depth - 1);
+  return shape;
+}
 const bulk = {
+  lastFailure: bulkFailure(),
   ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
   riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
   ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),

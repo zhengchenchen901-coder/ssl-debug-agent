@@ -55,11 +55,11 @@ export function bulkSandboxFixture(t) {
   };
   function collection(db, name) {
     return {
-      async findOne(filter, options = {}) { return clone([...rows(db, name, options.session).values()].find((doc) => match(doc, filter)) || null); },
+      async findOne(filter, options = {}) { if (name === "__remote_debug_bulk_receipts" && state.rejectReceiptRead) throw new Error("receipt lookup failed"); return clone([...rows(db, name, options.session).values()].find((doc) => match(doc, filter)) || null); },
       find(filter, options = {}) { let limit = Infinity; const cursor = { limit(n) { limit = n; return cursor; }, maxTimeMS() { return cursor; }, async toArray() { return clone([...rows(db, name, options.session).values()].filter((doc) => match(doc, filter)).slice(0, limit)); } }; return cursor; },
       async insertOne(doc, options = {}) {
         state.events.push({ action: "insert", db, name, session: options.session, id: doc._id });
-        if (name === "__remote_debug_bulk_receipts" && options.session && state.rejectReceipt) throw new Error("receipt permission denied");
+        if (name === "__remote_debug_bulk_receipts" && options.session && state.rejectReceipt) throw Object.assign(new Error("not authorized on fixture: phone=13800000000 mongodb://secret:secret@private.invalid"), { code: 13 });
         const store = rows(db, name, options.session);
         if (store.has(doc._id)) throw Object.assign(new Error("duplicate"), { code: 11000 });
         store.set(doc._id, clone(doc)); return { insertedId: doc._id };
@@ -88,7 +88,7 @@ export function bulkSandboxFixture(t) {
       return { collection: (name) => collection(db, name), listCollections: (filter) => ({ toArray: async () => [...state.collections.keys()].filter((key) => key.startsWith(db + "/")).map((key) => ({ name: key.slice(db.length + 1), type: "collection" })).filter((item) => match(item, filter)) }), command: async () => ({ authInfo: { authenticatedUserPrivileges: [{ resource: { db: state.unsafeManager ? "business" : "remote_debug_agent", collection: "__remote_debug_bulk_receipts" }, actions: ["find", "remove"] }] } }) };
     }
     startSession() {
-      return { snapshot: null, startTransaction() { this.snapshot = clone(state.collections); }, async commitTransaction() { state.collections = this.snapshot; this.snapshot = null; if (state.loseReply) { state.loseReply = false; throw new Error("lost commit reply"); } }, async abortTransaction() { this.snapshot = null; }, async endSession() {} };
+      return { snapshot: null, startTransaction() { this.snapshot = clone(state.collections); }, async commitTransaction() { state.collections = this.snapshot; this.snapshot = null; if (state.hideReceiptAfterCommit) { state.rejectReceiptRead = true; throw new Error("lost commit reply"); } if (state.loseReply) { state.loseReply = false; throw new Error("lost commit reply"); } }, async abortTransaction() { this.snapshot = null; }, async endSession() {} };
     }
   }
   const remoteRequire = (name) => {
@@ -106,7 +106,7 @@ export function bulkSandboxFixture(t) {
     const context = { require: remoteRequire, process: { pid: process.pid, getuid: process.getuid, stdout: { write: (text) => { stdout += text; } } }, Buffer, setInterval, clearInterval, setTimeout };
     vm.runInNewContext(script, context); await context.done;
     const result = JSON.parse(stdout.split("__REMOTE_DEBUG_MONGODB_RESULT__BULK:")[1]);
-    if (!result.ok) throw Object.assign(new Error(result.error.message), { code: result.error.code });
+    if (!result.ok) throw Object.assign(new Error(result.error.message), { code: result.error.code, failure: result.error });
     return result.data;
   }
   async function initialize() {

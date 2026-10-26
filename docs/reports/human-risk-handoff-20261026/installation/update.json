@@ -1,0 +1,490 @@
+{
+  "checkedAt": "2026-10-26T09:33:56.881888+00:00",
+  "pluginId": "remote-debug-agent@remote-debug-local",
+  "version": "2.4.0+codex.20261026.5",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.5",
+  "enabled": true,
+  "method": "codex plugin add remote-debug-agent@remote-debug-local --json",
+  "runtimeId": "2.4.0:e4e1734a9863e7c34476f9d50e27309c5d4b8686318c91c6435781bb117ed6a2",
+  "fileChecks": [
+    {
+      "file": "windows-privacy.cjs",
+      "sha256": "ab0300c32792d1ff16da0e8d8421999c7531acf41ac659666e3b93cb70c481be",
+      "matchesSource": true
+    },
+    {
+      "file": "business-privacy.js",
+      "sha256": "6527a1ee5c8a81f9864f8eab23687ff3d557c6baba7ca8948b63c345ec0fdc5f",
+      "matchesSource": true
+    },
+    {
+      "file": "windows-business-context.js",
+      "sha256": "42da7f8e0b4b0f2bb3b8635af87bc1dfdfc8f72d23544405c45dab9685e0cd64",
+      "matchesSource": true
+    },
+    {
+      "file": "windows-storage.cjs",
+      "sha256": "4526890687aac2d5098420560cc6c409371bcfbcbfa2be2a2f3797f854282d8d",
+      "matchesSource": true
+    },
+    {
+      "file": "business-storage.js",
+      "sha256": "8e9a86da79ffe8d53e372ad949096e7f0856011564fd6d8632d8b47a2f859f36",
+      "matchesSource": true
+    },
+    {
+      "file": ".mcp.json",
+      "sha256": "1c00508bce1d0526de92941b9ef4d716fea59b356e3575f4f302a4767803cb75",
+      "matchesSource": true
+    },
+    {
+      "file": "local-auth.cjs",
+      "sha256": "783e07eda1ff5ccbb1ba0e26320ec500990092c5755748ee1cc21151baff1cb7",
+      "matchesSource": true
+    },
+    {
+      "file": "output-contracts.js",
+      "sha256": "e51a53f9b87d480b53e567ea4fdda163f23ca1f165f1e219a6d2604ee0ed9b34",
+      "matchesSource": true
+    },
+    {
+      "file": "diagnostic-dashboard.cjs",
+      "sha256": "a606984a8e01433333db4785ccd3af5bf890dd1f2941124b094bb102d4d2f7ec",
+      "matchesSource": true
+    },
+    {
+      "file": "launch.cjs",
+      "sha256": "e63b16227c2b6822c5618ef7f75147b7721dc42bf573f3f05d3766442a510a8e",
+      "matchesSource": true
+    },
+    {
+      "file": "prepare-protocol.js",
+      "sha256": "ce9b7082f2e28d864ff80b8ba61d1ba45480467787c1fb3fbb1d435801fdca00",
+      "matchesSource": true
+    },
+    {
+      "file": "mcp-server.js",
+      "sha256": "d5c3a9b99848edcf51e4a9e4821cf544ac9a0038c2fa5c2d59037906f44ab6d6",
+      "matchesSource": true
+    },
+    {
+      "file": "final-results.js",
+      "sha256": "db0021ae7741f9cd19128af63a1202b47f12252f22135755631123d3a8ec5f35",
+      "matchesSource": true
+    },
+    {
+      "file": "package.json",
+      "sha256": "68ab9dfcda0b5f0c79a5ca164402dd86ed8ef0d171d84ad7301df84cfeb95dc6",
+      "matchesSource": true
+    },
+    {
+      "file": "output-preview.js",
+      "sha256": "af90e73bde1117169ebae240a6fd1e14d02399f1e836bef67670374535ddcddb",
+      "matchesSource": true
+    },
+    {
+      "file": "output-guard.js",
+      "sha256": "92680bcaa86cd86f8982bcd425c954a4aa970f2a1664a749a61edc65ff7d3c41",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime-support.js",
+      "sha256": "9b94bd90b52d2d6770b55f0f4f2347c83d8d6ce943b36c68a9c6a8160d7ea540",
+      "matchesSource": true
+    },
+    {
+      "file": "environment-report.cjs",
+      "sha256": "e4eddab0f9b3261d23153ef288f729137dee89480983bb972e5b3e194f040735",
+      "matchesSource": true
+    },
+    {
+      "file": "node-runtime.cjs",
+      "sha256": "3322dfa40bf9193fe02df46c4e25c9d131b2aab64d46df32a085d7c94cf311f8",
+      "matchesSource": true
+    },
+    {
+      "file": "native/windows-privacy.ps1",
+      "sha256": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/privacy-worker.cjs",
+      "sha256": "0bf5dce507f3b1afa7e17fcccf605498f4576c29d4af635305693f7b1ba7fdb0",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/worker-entry.cjs",
+      "sha256": "89a83701353edeb42e75d43eaaa5e380ff125fe1c845be931b97db475607d60c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/server.cjs",
+      "sha256": "f4b8e81f2f94dcfe6bef8f86504b4ae225c370d76b3b0281ca90d6746ea3d998",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/runtime-manifest.json",
+      "sha256": "541aa02837e419dc6364bb33e5660f92c0abcdb28b543f97a74e381bf28750e8",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/native/windows-privacy.ps1",
+      "sha256": "dd57bd3bbad8c347b5679bce399432ffdf9265039994c038c970d25c73f0a17f",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/native/verify-owner.ps1",
+      "sha256": "7459d4527742e314f1374d065b7a4e229fdf584406d6b9ab04edb8d7102f1ea6",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/native/verify-owner.swift",
+      "sha256": "150a86f326c6174060c821895b5d86bd3a4b4bbf5f798617304f147c4f4fe9ab",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/ui.js",
+      "sha256": "814af3e1449435051b803fadd5b440425f2ea2975a594f86ee4fd7a6179f07b0",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual.js",
+      "sha256": "38affdea3a5f5adfc4e388c1deea250d81d531d1e080d526b6cfce2c2a8fb736",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/environment-report.js",
+      "sha256": "385f6f36f31719a2b008b084611bcae8d55b248d0ecd890e24a79f4d824485c3",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual-database.js",
+      "sha256": "3c4ec5558ed2075a837adec43fe4e6307f86dacab4466e3bb732a3ee337bca54",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/instance-tasks.js",
+      "sha256": "8e78827828b3b75256e99fb1e59ab61ad6a1e5372549a4250890e10276a68d7c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/dashboard.css",
+      "sha256": "76402f488f66f57eca750a822a5860a5d7051ab46c01f6944886719d1a92aa47",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/dashboard.html",
+      "sha256": "049c1460a553e37542f59b5f151c2a128d6f759f36103f820326fd4d16096f67",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/final-results.js",
+      "sha256": "5b25fe197f656138191501341e552f7082a966cefee573428d6d53ddf7037237",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/workspace.js",
+      "sha256": "626d8c05b58ab96f496be33a567b4b12bea9cb05538fb245202f6beecfe7f204",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/ui.css",
+      "sha256": "9e5289a140c8f543bde00db4612faeeee3fbf6c2081d8621cb6ebf7c19e3ae65",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/output-preview.js",
+      "sha256": "323d2dde0265912a570ecae060272643a07ec3e8ecf1bc4ccd412fd99e16a88c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/admin-registration.js",
+      "sha256": "05de25066f3c69a1e9b22de7fad729297e3244f9502ef78ce16b3ba279c508e9",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/dashboard.js",
+      "sha256": "a243b7c442ed4b74465a612fd2a12a0867c37f1b2f7f91c1beb324f5be39a74f",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual.html",
+      "sha256": "a665b532819972a97ae77a5cacaeffc76913273fc3eb231ee4a217d2b0ce6e1c",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/manual.css",
+      "sha256": "ed7bc6b32a7a0e5d322ea1842cd9e4d5c7a4098a86669785ffafe34bb2c5eba3",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/xterm.css",
+      "sha256": "854a7c0fb70e8b1a083c16797ab827299fb18744f5ad34f227b48337e33293c6",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/addon-fit.js",
+      "sha256": "ba3ea256ce0620a0992a197d6c9baea64823fc93d8da07a9e366ca9943c18527",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/xterm.js",
+      "sha256": "14903579ff54664cd72f8e8699e6961a6272c21863ec1c3b118cdc8af5d4a972",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/LICENSE-xterm.txt",
+      "sha256": "b569f629d00f2626a8100df2a1798210535621e42164dfd426a6fe5aac7b0ccd",
+      "matchesSource": true
+    },
+    {
+      "file": "runtime/agent/public/vendor/LICENSE-addon-fit.txt",
+      "sha256": "e256f01188af527e4d06d21d06fbf785ae9c50d4b328bf03cbe0ba7f0aa4228f",
+      "matchesSource": true
+    },
+    {
+      "file": "scripts/diagnose-mcp.js",
+      "sha256": "8d0a83d5fefa6bc6ca6518fb4daee3e428b451900ea52b0e3a6876ffa00ba604",
+      "matchesSource": true
+    },
+    {
+      "file": "scripts/offline-report.py",
+      "sha256": "4b7707839ff4a6cca9d9040fc4b83902451dd5f475bc982b54c2861121f90d96",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/final-results.md",
+      "sha256": "4f0e84c7c0b3695e211e2a34846ee16e0123bc4e4a52ebbf60878b2db5990a4d",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/restart-instance/SKILL.md",
+      "sha256": "4cddfde053833ff462448db27e40c5f3bc241acc8eb35a44b424f0f239a126f1",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/restart-instance/agents/openai.yaml",
+      "sha256": "d1a66f3652c5c6600dcb4938b58702538c7257b274ce3d3222ca513b299ce8fa",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/database-mutations/SKILL.md",
+      "sha256": "3a2fe86ded914e34d8b0630b2ab91453b229b679562566495ca6268bc59ee203",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/database-mutations/references/mongodb-bulk.md",
+      "sha256": "f41c0c262c663822fca0dee6d8ce98d2ba491dfbed5282c1b2122e0d352bb8ec",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/database-mutations/agents/openai.yaml",
+      "sha256": "132d1beb20268e3be144afb96eceddbb9184d799a7c7d98db1adb0b1826c397e",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/update-instance-memory/SKILL.md",
+      "sha256": "128753a27d254947e9fb6c5f0636bd35fe28bd195ba63ed051ebcee950ad5e5a",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/update-instance-memory/agents/openai.yaml",
+      "sha256": "5f76d0a84cb61c107f0308d5dcf1c72019821e8766cf47975b5283542d6d183f",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/mongodb/SKILL.md",
+      "sha256": "944f5754db1bed6faf81c44067344145f4fb975fb09190e5620cb3c665992a6d",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/environment-check/SKILL.md",
+      "sha256": "fa31d3f23a6439ab9bb621ff3f7fb41a7c84bc11838b3b1ec8a9ee4de9e2105f",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/remote-debug/SKILL.md",
+      "sha256": "8ee62e871ecc3ecf2bd6c30beb11fcdd4b3764cd4a61bce031b273973340f2be",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/backend-api-errors/SKILL.md",
+      "sha256": "4b4e1cdd38eaa64a8669975dd90d22d9f4f487f6d61c1e09de9fcd586f446efc",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/backend-api-errors/agents/openai.yaml",
+      "sha256": "bfdd54d90e73695a808347ce3d5dc71c56f8cc271a2707d2372c05205709435b",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/command-draft-review/SKILL.md",
+      "sha256": "8592613ad12c749adb0cd8e2efeb18ce57f95ce0aa6d6940136f8d2a3051ee6e",
+      "matchesSource": true
+    },
+    {
+      "file": "skills/command-draft-review/agents/openai.yaml",
+      "sha256": "17c1b01b7fa54b7cf5ee479c23dfe67026365ae9562f3f56afa03c558275a7a3",
+      "matchesSource": true
+    },
+    {
+      "file": ".codex-plugin/plugin.json",
+      "sha256": "98e9929a8be6d091df4b260a5cbd63053db5b888c086049514e915dc5b70ba1d",
+      "matchesSource": true
+    }
+  ],
+  "runtimeChecks": [
+    {
+      "file": "server.cjs",
+      "matches": true
+    },
+    {
+      "file": "worker-entry.cjs",
+      "matches": true
+    },
+    {
+      "file": "privacy-worker.cjs",
+      "matches": true
+    },
+    {
+      "file": "public/admin-registration.js",
+      "matches": true
+    },
+    {
+      "file": "public/dashboard.css",
+      "matches": true
+    },
+    {
+      "file": "public/dashboard.html",
+      "matches": true
+    },
+    {
+      "file": "public/dashboard.js",
+      "matches": true
+    },
+    {
+      "file": "public/environment-report.js",
+      "matches": true
+    },
+    {
+      "file": "public/final-results.js",
+      "matches": true
+    },
+    {
+      "file": "public/instance-tasks.js",
+      "matches": true
+    },
+    {
+      "file": "public/manual-database.js",
+      "matches": true
+    },
+    {
+      "file": "public/manual.css",
+      "matches": true
+    },
+    {
+      "file": "public/manual.html",
+      "matches": true
+    },
+    {
+      "file": "public/manual.js",
+      "matches": true
+    },
+    {
+      "file": "public/output-preview.js",
+      "matches": true
+    },
+    {
+      "file": "public/ui.css",
+      "matches": true
+    },
+    {
+      "file": "public/ui.js",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/addon-fit.js",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/LICENSE-addon-fit.txt",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/LICENSE-xterm.txt",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/xterm.css",
+      "matches": true
+    },
+    {
+      "file": "public/vendor/xterm.js",
+      "matches": true
+    },
+    {
+      "file": "public/workspace.js",
+      "matches": true
+    },
+    {
+      "file": "native/verify-owner.ps1",
+      "matches": true
+    },
+    {
+      "file": "native/verify-owner.swift",
+      "matches": true
+    },
+    {
+      "file": "native/windows-privacy.ps1",
+      "matches": true
+    }
+  ],
+  "runningManagerStillVersion": ".4",
+  "runningManagerPid": 87921,
+  "runningManagerHasHumanRiskV2": false,
+  "reloadRequired": "restart Codex to reload MCP sessions and local Manager together",
+  "businessToolsCalled": [],
+  "realJobChanges": false,
+  "remoteServiceRestarted": false,
+  "unrelatedMarketplaceError": "list-all found invalid Windows ponytail-local path; targeted add succeeded without modifying it",
+  "nativeRegression": "prior 693 pass / 19 skipped; executable runtime bytes unchanged, metadata advanced only",
+  "testflowExecute": "not rerun; node:test adapter, binding and image gap remains",
+  "installerPrunedOldCaches": true,
+  "oldCompatibilityCachesRestored": [
+    {
+      "version": "2.4.0+codex.20261023.2",
+      "sourceRevision": "ef87c35cf45b945f4472d038bdb00a8b3bd8873b",
+      "runtimeId": "2.4.0:6015adee113a2f5d55bcc1a18c72afc78f4870eacd26d5b74d0cd34113473f71",
+      "runtimeArtifacts": 23,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026",
+      "sourceRevision": "579f78348849d0b62762804c2947e085689466b8",
+      "runtimeId": "2.4.0:27a5a96d6dc629a2621999040db40b289967e1dedc1ac1f2131625df39fd185f",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026.2",
+      "sourceRevision": "eb2255b90f4c53a014dd2aef438db83b09bbb300",
+      "runtimeId": "2.4.0:e515098eb54c66b785b0de2a7a1fe1afa9f64192bf00fc85b69832d326c93dca",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026.3",
+      "sourceRevision": "4ae3ea9a89702264e67c60a9b22f4703dc71985e",
+      "runtimeId": "2.4.0:42785d14f3e328fca822145024b85997c2032451e7d9e18b18115c94c02b1742",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026.4",
+      "sourceRevision": "970970a225f9eb7e7b58496455c019b12849d264",
+      "runtimeId": "2.4.0:0ef2c783a0df192d05c10e95e5444e5704acf2e97595d7d964e698645f11731f",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    }
+  ]
+}

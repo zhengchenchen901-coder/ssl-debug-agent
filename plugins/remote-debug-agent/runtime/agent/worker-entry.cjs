@@ -50313,6 +50313,8 @@ function __bulkReplacementLineage(jobId) {
 
 // mongodb-bulk-runtime.js
 var MONGODB_BULK_RUNTIME = String.raw`
+var __bulkFailureContext = { layer: "mongodb-helper", phase: __request.action, batchIndex: __request.batchIndex, operationId: __request.operationId, outcome: "unknown",
+  fingerprint: function (value) { return __crypto.createHash("sha256").update(value).digest("hex"); } };
 function __bulkFail(code, message, details) {
   var error = new Error(message);
   error.code = code;
@@ -50754,6 +50756,7 @@ function __bulkStatus(manifest, plan, options) {
     hasMoreDifferences: offset + diffs.length < differenceCount,
     changedFields: manifest.changedFields || [],
     pauseReason: manifest.pauseReason,
+    lastFailure: manifest.lastFailure,
     effectiveConcurrency: Math.min(__config.concurrency || 1, 4),
     planPreview: plan ? plan.batches.map(function (batch) { return { batchIndex: batch.index, operationCount: batch.documents, unitCount: batch.unitCount, changedFields: batch.changedFields, sampleIds: batch.sampleIds, rollbackBytes: batch.rollbackBytes }; }) : undefined,
   };
@@ -50988,6 +50991,8 @@ async function __bulkLoadClient() {
   var uri = __config.uriKey.split(".").reduce(function (value, key) { return value == null ? undefined : value[key]; }, profile);
   if (typeof uri !== "string" || !uri) __bulkFail("MONGODB_URI_NOT_FOUND", "MongoDB URI was not found in the configured profile");
   var driver = require(__config.driverPath);
+  try { __bulkFailureContext.driverVersion = require(__path.join(__config.driverPath, "package.json")).version; } catch (_versionError) {}
+  __bulkFailureContext.nodeVersion = process.version;
   var MongoClient = driver.MongoClient || driver.default && driver.default.MongoClient;
   if (!MongoClient) __bulkFail("MONGODB_DRIVER_INVALID", "MongoDB driver does not export MongoClient");
   var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverSelectionTimeoutMS: 15000 });
@@ -51157,14 +51162,18 @@ function __bulkCount(value, primary, fallback) {
 async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
   var manifest = __bulkManifest(jobId, false);
   var storage = __bulkReceiptStorage(manifest);
+  __bulkFailureContext.phase = "connect";
+  __bulkFailureContext.outcome = "not_started";
   var client = await __bulkLoadClient();
-  var session = client.startSession();
+  var session;
   var receiptAction = rollback ? "rollback" : "commit";
   var receiptId = __bulkReceiptId(jobId, batch.index, receiptAction, storage);
   var summary = { matched: 0, modified: 0, inserted: 0, unchanged: 0 };
   var after = [];
   var committing = false;
   try {
+    __bulkFailureContext.phase = "receipt_lookup";
+    session = client.startSession();
     await __bulkCheckStorageCollection(client, storage);
     var previousReceipt = await __bulkFindReceipt(client, jobId, batch.index, receiptAction, storage);
     if (previousReceipt) {
@@ -51175,15 +51184,20 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
     }
     var beforeEntries = batch.before || [];
     var ops = batch.operations || [];
+    __bulkFailureContext.phase = "transaction_start";
     session.startTransaction({ readPreference: "primary" });
     var beforeByIndex = {};
     beforeEntries.forEach(function (entry) { beforeByIndex[entry.operationIndex] = entry.document; });
+    __bulkFailureContext.phase = "preimage_check";
     var snapshots = await __bulkGetSnapshots(client, ops, session);
     var groups = __bulkGroup(ops);
     var collectionNames = Object.keys(groups);
     for (var c = 0; c < collectionNames.length; c += 1) {
       var collectionName = collectionNames[c];
       var group = groups[collectionName];
+      __bulkFailureContext.collectionIndex = c;
+      __bulkFailureContext.collectionOperationCount = group.length;
+      __bulkFailureContext.phase = "preimage_check";
       var currentDocs = snapshots[collectionName] || [];
       if (!rollback) {
         var writeOperations = [];
@@ -51202,6 +51216,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
           }
         });
         if (writeOperations.length) {
+          __bulkFailureContext.phase = "business_write";
           var writeResult = await client.db(__config.database).collection(collectionName).bulkWrite(writeOperations, { ordered: true, session: session });
           summary.matched += __bulkCount(writeResult, "matchedCount", "nMatched");
           summary.modified += __bulkCount(writeResult, "modifiedCount", "nModified");
@@ -51219,6 +51234,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
           else reverseOperations.push({ replaceOne: { filter: { _id: __decode(__bulkOperationId(operation)) }, replacement: __decode(beforeByIndex[entry.index]), upsert: false } });
         });
         if (reverseOperations.length) {
+          __bulkFailureContext.phase = "business_write";
           var reverseResult = await client.db(__config.database).collection(collectionName).bulkWrite(reverseOperations, { ordered: true, session: session });
           var deleted = __bulkCount(reverseResult, "deletedCount", "nRemoved");
           var replaced = __bulkCount(reverseResult, "matchedCount", "nMatched");
@@ -51229,6 +51245,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
       }
     }
     if (!rollback) {
+      __bulkFailureContext.phase = "postimage_read";
       var afterSnapshots = await __bulkGetSnapshots(client, ops, session);
       ops.forEach(function (operation, index) {
         var current = __bulkFindById(afterSnapshots[operation.collection] || [], __bulkOperationId(operation));
@@ -51236,31 +51253,42 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
         after.push({ operationIndex: index, id: __encode(current._id), hash: __bulkHash(__encode(current)) });
       });
       summary.unchanged = Math.max(0, summary.matched - summary.modified);
+      __bulkFailureContext.phase = "after_log_write";
       __bulkWriteJson(__path.join(__bulkJobDir(jobId), "after-" + String(batch.index).padStart(6, "0") + ".json"), { batchHash: batch.hash, after: after }, 8 * 1024 * 1024);
     }
     var receipts = client.db(storage.database).collection(storage.collection);
     var now = new Date();
     var expiry = new Date(Date.parse(batch.rollbackExpiresAt) + 24 * 60 * 60 * 1000);
+    __bulkFailureContext.phase = "receipt_write";
     await receipts.insertOne({ _id: receiptId, jobId: jobId, planHash: planHash, batchIndex: batch.index, batchHash: batch.hash, action: receiptAction, committedAt: now, expiresAt: expiry, summary: summary, businessDatabase: __config.database, scope: storage.scope }, { session: session });
+    __bulkFailureContext.phase = "retirement_check";
     __bulkAssertNotRetired(jobId);
     committing = true;
+    __bulkFailureContext.phase = "commit";
+    __bulkFailureContext.outcome = "unknown";
     await session.commitTransaction();
     return { alreadyCommitted: false, summary: summary };
   } catch (error) {
-    try { await session.abortTransaction(); } catch (_abortError) {}
+    try { if (session) await session.abortTransaction(); if (!committing) __bulkFailureContext.outcome = "not_committed"; }
+    catch (_abortError) { __bulkFailureContext.outcome = "unknown"; }
     if (committing) {
+      var receiptCheckFailure;
       try {
         var checkClient = await __bulkLoadClient();
         try {
           var receipt = await __bulkFindReceipt(checkClient, jobId, batch.index, receiptAction, storage);
           if (receipt && receipt.planHash === planHash && receipt.batchHash === batch.hash) return { alreadyCommitted: true, summary: receipt.summary || summary };
         } finally { await checkClient.close(); }
-      } catch (_checkError) {}
-      __bulkFail("MONGODB_BULK_COMMIT_UNKNOWN", "transaction outcome is uncertain; retry only this exact batch after receipt inspection", { batchIndex: batch.index });
+      } catch (_checkError) { receiptCheckFailure = _checkError; }
+      var uncertain = new Error("transaction outcome is uncertain; retry only this exact batch after receipt inspection");
+      uncertain.code = "MONGODB_BULK_COMMIT_UNKNOWN";
+      uncertain.cause = error;
+      uncertain.receiptCheckFailure = receiptCheckFailure;
+      throw uncertain;
     }
     throw error;
   } finally {
-    try { await session.endSession(); } catch (_sessionError) {}
+    try { if (session) await session.endSession(); } catch (_sessionError) {}
     try { await client.close(); } catch (_clientError) {}
   }
 }
@@ -51640,7 +51668,7 @@ async function __bulkControl(jobId, command, planHash) {
   });
 }
 
-function __bulkPause(jobId, planHash, leaseId, reason) {
+function __bulkPause(jobId, planHash, leaseId, reason, failure) {
   var manifest = __bulkManifest(jobId, false);
   if (planHash && manifest.planHash !== planHash) __bulkFail("MONGODB_BULK_PLAN_HASH_MISMATCH", "planHash does not match the prepared job");
   var lease = __bulkReadJson(__bulkLeasePath(), 64 * 1024);
@@ -51650,10 +51678,19 @@ function __bulkPause(jobId, planHash, leaseId, reason) {
   manifest.runningBatchIndexes = [];
   manifest.activePhase = null;
   manifest.pauseReason = String(reason || "paused").slice(0, 128);
+  if (failure) {
+    var publicFailure = __bulkPublicFailure(failure, failure, __bulkMessages);
+    // The helper may have saved a more precise failure before its SSH reply was
+    // lost. Do not replace that same-operation evidence with a transport error.
+    if (manifest.lastFailure && manifest.lastFailure.operationId && manifest.lastFailure.operationId === publicFailure.operationId && manifest.lastFailure.layer === "mongodb-helper" && publicFailure.layer !== "mongodb-helper") {
+      if (publicFailure.parentOperationId) manifest.lastFailure.parentOperationId = publicFailure.parentOperationId;
+    } else manifest.lastFailure = publicFailure;
+  }
+  // Keep previous failure evidence when a legacy worker or user pauses again.
   manifest.updatedAt = new Date().toISOString();
   __bulkWriteJson(__path.join(__bulkJobDir(jobId), "control.json"), { desiredState: "pause", at: manifest.updatedAt }, 64 * 1024);
   __bulkSaveManifest(manifest);
-  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "paused", reason: manifest.pauseReason });
+  __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: manifest.updatedAt, event: "paused", reason: manifest.pauseReason, failure: manifest.lastFailure });
   return { jobId: jobId, status: manifest.status, pauseReason: manifest.pauseReason, planHash: manifest.planHash };
 }
 
@@ -51753,7 +51790,7 @@ async function __bulkMain() {
     else if (action === "verifyBatch") data = await __bulkVerifyBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
     else if (action === "rollbackBatch") data = await __bulkRollbackBatch(jobId, __request.planHash, __request.leaseId, __request.batchIndex);
     else if (action === "dispatch") data = __bulkSetDispatch(jobId, __request.planHash, __request.leaseId, __request.phase, __request.batchIndexes);
-    else if (action === "pause") data = __bulkPause(jobId, __request.planHash, __request.leaseId, __request.reason);
+    else if (action === "pause") data = __bulkPause(jobId, __request.planHash, __request.leaseId, __request.reason, __request.failure);
     else if (action === "heartbeat") {
       var heartbeatManifest = __bulkManifest(jobId, false);
       __bulkCheckPlan(heartbeatManifest, __request.planHash);
@@ -51764,7 +51801,19 @@ async function __bulkMain() {
     else __bulkFail("MONGODB_BULK_ACTION_INVALID", "unsupported bulk action");
     process.stdout.write(__marker + JSON.stringify({ ok: true, data: data }) + "\n");
   } catch (error) {
-    process.stdout.write(__marker + JSON.stringify({ ok: false, error: { code: error.code || "MONGODB_BULK_FAILED", message: String(error.message || error).slice(0, 2000), details: error.details } }) + "\n");
+    var failure = __bulkPublicFailure(error, __bulkFailureContext, __bulkMessages);
+    // Persist where the failure occurs, so a lost helper reply/worker restart
+    // cannot erase the original phase or turn its outcome into safe failure.
+    if (["executeBatch", "rollbackBatch", "verifyBatch"].indexOf(__request.action) !== -1) {
+      try {
+        __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+          var failedManifest = __bulkManifest(jobId, false);
+          failedManifest.lastFailure = failure; __bulkSaveManifest(failedManifest);
+          __bulkAppendJsonLine(__path.join(__bulkJobDir(jobId), "events.jsonl"), { at: new Date().toISOString(), event: "batch_failed", batchIndex: __request.batchIndex, failure: failure });
+        });
+      } catch (_diagnosticError) { /* structured reply still carries original failure */ }
+    }
+    process.stdout.write(__marker + JSON.stringify({ ok: false, error: failure }) + "\n");
     process.exitCode = 1;
   }
 }
@@ -51871,7 +51920,7 @@ function __sandboxLog(jobId, limit) {
   try { __fs.readSync(fd, buffer, 0, buffer.length, start); } finally { __fs.closeSync(fd); }
   var lines = buffer.toString("utf8").split(/\r?\n/); if (start) lines.shift();
   var records = lines.filter(Boolean).slice(-limit).map(function (line) {
-    try { var event = JSON.parse(line), allowed = {}; ["at", "event", "batchIndex", "chunkIndex", "reason", "summary"].forEach(function (key) { if (event[key] !== undefined) allowed[key] = event[key]; }); return __sandboxRedact(allowed); }
+    try { var event = JSON.parse(line), allowed = {}; ["at", "event", "batchIndex", "chunkIndex", "reason", "summary", "failure"].forEach(function (key) { if (event[key] !== undefined) allowed[key] = event[key]; }); return __sandboxRedact(allowed); }
     catch (_) { return { event: "unparseable_record" }; }
   });
   return { jobId: jobId, records: records, scannedBytes: buffer.length, truncated: start > 0 };
@@ -51922,6 +51971,64 @@ async function __sandboxManage() {
   } finally { try { await client.close(); } catch (_) {} }
 }
 `;
+
+// mongodb-bulk-error.js
+function publicBulkFailure(error2, context = {}, messages = [], depth = 0) {
+  error2 = error2 || {};
+  const code = typeof error2.code === "number" && Number.isSafeInteger(error2.code) ? error2.code : typeof error2.code === "string" && /^(?:MONGODB_|SANDBOX_|SSH_|RESOURCE_|OPERATION_|ERR_|E[A-Z]+$)[A-Z0-9_]{0,95}$/.test(error2.code) ? error2.code : "MONGODB_BULK_FAILED";
+  const original = String(error2.message || "MongoDB bulk request failed");
+  let message = messages.indexOf(original) !== -1 ? original : "Unrecognized error text withheld; inspect code, phase and message fingerprint";
+  const categories = [
+    [/^E11000 duplicate key error/, "Duplicate key rejected by MongoDB; key and document details withheld"],
+    [/^Transaction numbers are only allowed/, "Transaction numbers are only allowed on a replica set member or mongos"],
+    [/^not authorized on /i, "MongoDB authorization rejected; database and command details withheld"],
+    [/^Read preference in a transaction must be primary/, "Read preference in a transaction must be primary"],
+    [/^Cannot (?:read|set) propert(?:y|ies) of (?:undefined|null)/, "Cannot access property of undefined or null; property details withheld"],
+    [/^[A-Za-z_$][A-Za-z0-9_$]* is not (?:defined|a function)$/, "JavaScript reference or callable is missing; identifier withheld"],
+    [/^Document failed validation/, "Document failed MongoDB validation; document details withheld"]
+  ];
+  if (messages.indexOf(original) === -1) {
+    for (const entry2 of categories) if (entry2[0].test(original)) {
+      message = entry2[1];
+      break;
+    }
+  }
+  if (categories.some((entry2) => entry2[1] === original) || original === "Unrecognized error text withheld; inspect code, phase and message fingerprint") message = original;
+  const names = ["Error", "TypeError", "ReferenceError", "RangeError", "SyntaxError", "MongoError", "MongoServerError", "MongoNetworkError", "MongoServerSelectionError", "MongoBulkWriteError", "BulkWriteError", "OperationError"];
+  const result = {
+    version: 1,
+    at: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(error2.at || "") ? error2.at : (/* @__PURE__ */ new Date()).toISOString(),
+    code,
+    name: names.indexOf(error2.name) !== -1 ? error2.name : "Error",
+    message,
+    messageRedacted: error2.messageRedacted === true || message !== original,
+    layer: ["mongodb-bulk", "mongodb-helper", "ssh", "resource", "operation"].indexOf(context.layer) !== -1 ? context.layer : "mongodb-bulk",
+    phase: ["unknown", "runner", "resource_wait", "upload", "get", "list", "executeStart", "rollbackStart", "resume", "control", "dispatch", "executeBatch", "verifyBatch", "rollbackBatch", "pause", "heartbeat", "finish", "connect", "receipt_lookup", "transaction_start", "preimage_check", "business_write", "postimage_read", "after_log_write", "receipt_write", "retirement_check", "commit"].indexOf(context.phase) !== -1 ? context.phase : "unknown",
+    outcome: "unknown",
+    recovery: "inspect_before_resume",
+    retriable: error2.retriable === true
+  };
+  const stackFrames = String(error2.stack || "").split("\n").slice(1, 16).map((line) => {
+    const frame = /\bat (__bulk[A-Za-z0-9_$]+) .*?:(\d+):(\d+)\)?$/.exec(line);
+    return frame ? { function: frame[1], line: Number(frame[2]), column: Number(frame[3]) } : null;
+  }).filter(Boolean);
+  result.frames = (Array.isArray(error2.frames) ? error2.frames : stackFrames).slice(0, 8).filter((frame) => frame && /^__bulk[A-Za-z0-9_$]+$/.test(frame.function) && Number.isInteger(frame.line) && Number.isInteger(frame.column)).map((frame) => ({ function: frame.function, line: frame.line, column: frame.column }));
+  if (typeof context.fingerprint === "function") result.messageFingerprint = context.fingerprint(original);
+  if (/^[a-f0-9]{64}$/.test(error2.messageFingerprint || "")) result.messageFingerprint = error2.messageFingerprint;
+  if (Number.isInteger(context.batchIndex) && context.batchIndex >= 0) result.batchIndex = context.batchIndex;
+  for (const key of ["operationId", "parentOperationId"]) if (typeof context[key] === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(context[key])) result[key] = context[key];
+  if (["not_started", "not_committed", "unknown"].indexOf(context.outcome) !== -1) result.outcome = context.outcome;
+  if (code === "MONGODB_BULK_COMMIT_UNKNOWN") {
+    result.outcome = "unknown";
+    result.recovery = "reconcile_exact_receipt";
+  } else if (code === "MONGODB_BULK_CONFLICT" || code === "MONGODB_ROLLBACK_CONFLICT" || code === "MONGODB_BULK_JOB_RETIRED") result.recovery = "review_required";
+  for (const key of ["driverVersion", "nodeVersion"]) if (/^v?\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(context[key] || error2[key] || "")) result[key] = context[key] || error2[key];
+  for (const key of ["collectionIndex", "collectionOperationCount"]) if (Number.isInteger(context[key]) && context[key] >= 0 && context[key] <= 1e5) result[key] = context[key];
+  if (error2.persistenceFailure && depth < 2) result.persistenceFailure = publicBulkFailure(error2.persistenceFailure, { phase: "pause" }, messages, depth + 1);
+  if (error2.receiptCheckFailure && depth < 2) result.receiptCheckFailure = publicBulkFailure(error2.receiptCheckFailure, context, messages, depth + 1);
+  if (error2.cause && depth < 2) result.cause = publicBulkFailure(error2.cause, context, messages, depth + 1);
+  return result;
+}
 
 // mongodb-bulk.js
 var MONGODB_BULK_CONFIRMATION = "确认执行";
@@ -52278,6 +52385,17 @@ function normalizeMongoBulkStorage(input = {}, config = {}, options = {}) {
     riskLevel: "high"
   };
 }
+var bulkMessages = [...new Set([...[MONGODB_BULK_RUNTIME, MONGODB_JOB_RETIREMENT_RUNTIME, MONGODB_SANDBOX_RUNTIME, MONGODB_TTL_POLICY_SCRIPT].join("\n").matchAll(/__bulkFail\("[A-Z0-9_]+", "([^"\n]*)"/g)].map((match) => match[1]).concat([
+  "transaction outcome is uncertain; retry only this exact batch after receipt inspection",
+  "MongoDB bulk helper timed out"
+]))];
+var failureContext = (input, operation, extra = {}) => ({
+  phase: input.action,
+  batchIndex: input.batchIndex,
+  operationId: operation?.operationId,
+  fingerprint: (value) => (0, import_node_crypto5.createHash)("sha256").update(value).digest("hex"),
+  ...extra
+});
 function safeLiteral2(value) {
   return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
@@ -52294,6 +52412,8 @@ function buildMongoBulkScript(request, config, normalizationOptions = {}) {
     `const __storageLimits = ${safeLiteral2(SANDBOX_STORAGE_LIMITS)};`,
     "const __driverPath = __config.driverPath;",
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
+    `const __bulkPublicFailure = ${publicBulkFailure.toString()};`,
+    `const __bulkMessages = ${safeLiteral2(bulkMessages)};`,
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
     MONGODB_JOB_RETIREMENT_RUNTIME,
@@ -52332,7 +52452,7 @@ function normalizeActionRequest(input, config) {
     list: ["offset", "limit"],
     start: ["jobId", "planHash", "leaseId", "mode"],
     finish: ["jobId", "planHash", "leaseId", "mode"],
-    pause: ["jobId", "planHash", "leaseId", "reason"],
+    pause: ["jobId", "planHash", "leaseId", "reason", "failure"],
     resume: ["jobId", "planHash", "leaseId"],
     executeBatch: ["jobId", "planHash", "leaseId", "batchIndex"],
     rollbackBatch: ["jobId", "planHash", "leaseId", "batchIndex"],
@@ -52372,6 +52492,7 @@ function normalizeActionRequest(input, config) {
       ...input,
       action,
       jobId,
+      failure: action === "pause" && input.failure ? publicBulkFailure(input.failure, { ...input.failure, phase: input.failure.phase, fingerprint: void 0 }, bulkMessages) : void 0,
       query: action === "get" ? {
         includeDifferences: input.includeDifferences === true,
         offset: input.offset,
@@ -52433,16 +52554,18 @@ async function runMongoBulk(input = {}, options = {}) {
     config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
     request = normalizeActionRequest(input, config);
     if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
-    script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
   } catch (error2) {
     if (input.action === "upload") error2.dispatchState = "not_dispatched";
     throw error2;
   }
+  const operation = options.operation || normalizeOperationEnvelope({ operationId: input.operationId, timeoutMs: options.timeoutMs }, { defaultMs: 6e5, maxMs: 6e5 });
+  request.operationId = operation.operationId;
+  script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
   let remoteResult;
   try {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
       config: options.config,
-      operation: options.operation,
+      operation,
       timeoutMs: options.timeoutMs || 6e5,
       priority: options.priority || "interactive",
       resourceTaskId: options.resourceTaskId,
@@ -52450,15 +52573,18 @@ async function runMongoBulk(input = {}, options = {}) {
       stdin: script
     });
   } catch (error2) {
-    throw operationError(redactMongoSecrets(error2.message || "MongoDB bulk helper could not be executed"), {
-      code: error2.code || "MONGODB_BULK_FAILED",
+    const failure2 = publicBulkFailure(error2, failureContext(request, operation, { layer: error2.layer || "mongodb-bulk", phase: error2.phase || request.action }), bulkMessages);
+    const wrapped = operationError(failure2.message, {
+      code: failure2.code,
       statusCode: error2.statusCode || 502,
-      operationId: options.operation && options.operation.operationId,
+      operationId: operation.operationId,
       layer: "mongodb-bulk",
       phase: request.action,
       retriable: error2.retriable === true,
-      cause: error2
+      cause: failure2.cause
     });
+    wrapped.failure = failure2;
+    throw wrapped;
   }
   if (remoteResult && remoteResult.stdoutTruncated || byteLength2(remoteResult && remoteResult.stdout || "") > MAX_BULK_RESULT_BYTES) {
     throw bulkError("MongoDB bulk result exceeded the response limit", "MONGODB_BULK_RESULT_TOO_LARGE", 413);
@@ -52466,15 +52592,22 @@ async function runMongoBulk(input = {}, options = {}) {
   const payload = parseMarker(remoteResult && remoteResult.stdout);
   if (!payload) throw bulkError("MongoDB bulk helper returned no structured response", "MONGODB_BULK_INVALID_RESPONSE", 502);
   if (payload.ok !== true || remoteResult && remoteResult.exitCode !== 0 || remoteResult && remoteResult.timedOut) {
-    const error2 = operationError(redactMongoSecrets(payload.error && payload.error.message || remoteResult && remoteResult.stderr || "MongoDB bulk request failed"), {
+    const error2 = operationError("MongoDB bulk request failed", {
       code: remoteResult && remoteResult.timedOut ? "MONGODB_BULK_TIMEOUT" : payload.error && payload.error.code || "MONGODB_BULK_FAILED",
       statusCode: remoteResult && remoteResult.timedOut ? 408 : 409,
-      operationId: options.operation && options.operation.operationId,
+      operationId: operation.operationId,
       layer: "mongodb-bulk",
       phase: request.action,
       retriable: remoteResult && remoteResult.timedOut === true
     });
-    error2.details = payload.error && payload.error.details;
+    const diagnostic = remoteResult?.timedOut ? { code: "MONGODB_BULK_TIMEOUT", message: "MongoDB bulk helper timed out", cause: payload.error } : payload.error;
+    error2.failure = publicBulkFailure(diagnostic, failureContext(request, operation, {
+      ...diagnostic,
+      layer: payload.error?.layer || "mongodb-helper",
+      phase: payload.error?.phase || request.action,
+      outcome: remoteResult?.timedOut ? "unknown" : payload.error?.outcome
+    }), bulkMessages);
+    error2.message = error2.failure.message;
     throw error2;
   }
   return { ...payload.data || {}, timing: remoteResult && remoteResult.timing };
@@ -52482,7 +52615,17 @@ async function runMongoBulk(input = {}, options = {}) {
 var MongoBulkJobRunner = class {
   constructor(options = {}) {
     this.resourceClient = options.resourceClient;
-    this.run = (input, settings = {}) => options.runMongoBulk(input, { ...settings, resourceTaskId: this.active?.resourceTaskId });
+    this.run = async (input, settings = {}) => {
+      const operation = normalizeOperationEnvelope({ timeoutMs: settings.timeoutMs }, { defaultMs: 6e5, maxMs: 6e5 });
+      try {
+        return await options.runMongoBulk({ ...input, operationId: operation.operationId }, { ...settings, operation, resourceTaskId: this.active?.resourceTaskId });
+      } catch (error2) {
+        error2.failure = error2.failure ? publicBulkFailure(error2.failure, { ...error2.failure, parentOperationId: this.active?.operationId }, bulkMessages) : publicBulkFailure(error2, failureContext(input, operation, { parentOperationId: this.active?.operationId }), bulkMessages);
+        if (this.active?.operationId) error2.failure.parentOperationId = this.active.operationId;
+        throw error2;
+      }
+    };
+    this.onFailure = options.onFailure;
     this.config = normalizeMongoBulkConfig(options.config && options.config.mongodb ? options.config.mongodb : options.config || {}, { requireBulkEnabled: false });
     this.effectiveConcurrency = Math.min(this.config.bulkConcurrency, 4);
     this.active = null;
@@ -52496,7 +52639,7 @@ var MongoBulkJobRunner = class {
     const action = mode === "rollback" ? "rollbackStart" : "executeStart";
     const leaseId = (0, import_node_crypto5.createHash)("sha256").update((0, import_node_crypto5.randomUUID)()).digest("hex");
     const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 6e4 });
-    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source };
+    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source, operationId: metadata.operationId };
     this.attachResourceTask(this.active);
     const promise = this.#runLoop(this.active).finally(() => {
       if (this.active && this.active.leaseId === leaseId) this.active = null;
@@ -52507,7 +52650,7 @@ var MongoBulkJobRunner = class {
     });
     return { ...accepted, accepted: true, background: true, effectiveConcurrency: this.effectiveConcurrency };
   }
-  async control(input) {
+  async control(input, metadata = {}) {
     if (input.command === "resume" && this.config.bulkEnabled !== true) {
       throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly before resuming", "MONGODB_BULK_DISABLED", 403);
     }
@@ -52522,7 +52665,7 @@ var MongoBulkJobRunner = class {
     if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
       const leaseId = (0, import_node_crypto5.createHash)("sha256").update((0, import_node_crypto5.randomUUID)()).digest("hex");
       const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 6e4 });
-      this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
+      this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute", operationId: metadata.operationId };
       this.attachResourceTask(this.active);
       const promise = this.#runLoop(this.active).finally(() => {
         if (this.active && this.active.leaseId === leaseId) this.active = null;
@@ -52597,6 +52740,7 @@ var MongoBulkJobRunner = class {
         }
         let concurrency = this.effectiveConcurrency;
         if (job.resourceTaskId) {
+          job.diagnosticPhase = "resource_wait";
           await this.resourceClient.synchronize(job.resourceTaskId);
           await this.resourceClient.settled(job.resourceTaskId);
           const budget = await this.resourceClient.wait(job.resourceTaskId, job.resourceWaitController.signal);
@@ -52629,9 +52773,20 @@ var MongoBulkJobRunner = class {
       await this.run({ action: "finish", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, mode: job.mode }, { priority: "control", timeoutMs: 6e4 });
       if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "completed", phase: "finished", inFlight: false });
     } catch (error2) {
+      error2.failure ||= publicBulkFailure(error2, {
+        layer: job.diagnosticPhase === "resource_wait" ? "resource" : "mongodb-bulk",
+        phase: job.diagnosticPhase || "runner",
+        parentOperationId: job.operationId,
+        fingerprint: (value) => (0, import_node_crypto5.createHash)("sha256").update(value).digest("hex")
+      }, bulkMessages);
       const reason = job.resourceWaitController?.signal.aborted && ["pause_requested", "MONGODB_BULK_LEASE_LOST"].includes(error2.code) ? "pause_requested" : error2.code || "MONGODB_BULK_FAILED";
       try {
-        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason }, { priority: "control", timeoutMs: 3e4 });
+        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason, failure: error2.failure }, { priority: "control", timeoutMs: 3e4 });
+      } catch (pauseError) {
+        error2.failure.persistenceFailure = pauseError.failure || publicBulkFailure(pauseError, { phase: "pause" }, bulkMessages);
+      }
+      try {
+        await this.onFailure?.({ jobId: job.jobId, planHash: job.planHash, pauseReason: reason, failure: error2.failure });
       } catch {
       }
       if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "paused", phase: "paused", inFlight: false });
@@ -52661,12 +52816,12 @@ var MongoBulkJobRunner = class {
   async #runBatchWave(job, phase, action, indexes) {
     job.waveInFlight = true;
     if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { inFlight: true, phase });
-    await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
-      priority: "control",
-      timeoutMs: 3e4
-    });
     let failure2;
     try {
+      await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
+        priority: "control",
+        timeoutMs: 3e4
+      });
       await this.#withHeartbeat(job, async () => {
         const results = await Promise.allSettled(indexes.map((batchIndex) => this.run({
           action,
@@ -56796,7 +56951,16 @@ var mutation = {
 var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
 mutation.batches = [batch];
 var receiptStorage = fields("database collection legacy scope schemaVersion");
+function bulkFailure(depth = 2) {
+  const shape = {
+    ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    frames: [fields("function line column")]
+  };
+  if (depth > 0) for (const key of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key] = bulkFailure(depth - 1);
+  return shape;
+}
 var bulk = {
+  lastFailure: bulkFailure(),
   ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
   riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
   ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
@@ -61177,6 +61341,11 @@ function buildAuditEntry(event2, now = () => /* @__PURE__ */ new Date()) {
     errorCode: event2.errorCode
   };
   for (const key of [
+    "jobId",
+    "planHash",
+    "pauseReason",
+    "failure",
+    "lastFailure",
     "instanceId",
     "serviceId",
     "profileHash",
@@ -68134,6 +68303,7 @@ function mongoBulkSummary(payload) {
     rolledBackBatchCount: payload.rolledBackBatchCount,
     differenceCount: payload.differenceCount,
     pauseReason: payload.pauseReason,
+    lastFailure: payload.lastFailure,
     accepted: payload.accepted,
     background: payload.background,
     effectiveConcurrency: payload.effectiveConcurrency
@@ -68224,7 +68394,12 @@ function createApp(options = {}) {
   });
   let mongoBulkJobRunner;
   const getMongoBulkJobRunner = () => {
-    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk: runMongoBulk2, resourceClient: options.resourceClient });
+    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({
+      config,
+      runMongoBulk: runMongoBulk2,
+      resourceClient: options.resourceClient,
+      onFailure: (event2) => audit(config, { tool: "mongodb-bulk-background", ok: false, ...event2 })
+    });
     return mongoBulkJobRunner;
   };
   const listLogs2 = (logOptions) => listLogsImpl({
@@ -69270,12 +69445,12 @@ function createApp(options = {}) {
       } else if (action.startsWith("sandbox")) {
         result = await runMongoBulk2({ ...raw, action }, { operation: requestOperation, priority: "background" });
       } else if (action === "execute") {
-        result = await getMongoBulkJobRunner().start(raw, "execute", { source: sourceFrom(request) });
+        result = await getMongoBulkJobRunner().start(raw, "execute", { source: sourceFrom(request), operationId: requestOperation.operationId });
       } else if (action === "rollback") {
-        result = await getMongoBulkJobRunner().start(raw, "rollback", { source: sourceFrom(request) });
+        result = await getMongoBulkJobRunner().start(raw, "rollback", { source: sourceFrom(request), operationId: requestOperation.operationId });
       } else if (action === "control") {
-        if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw);
-        else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw);
+        if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw, { operationId: requestOperation.operationId });
+        else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw, { operationId: requestOperation.operationId });
         else result = await runMongoBulk2({ action: "control", ...raw }, { operation: requestOperation });
       } else {
         throw new Error("unsupported MongoDB bulk request");

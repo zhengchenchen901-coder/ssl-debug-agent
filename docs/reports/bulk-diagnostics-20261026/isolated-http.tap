@@ -1,0 +1,35 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+TAP version 13
+# Subtest: HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler
+ok 1 - HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler
+  ---
+  duration_ms: 410.287792
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled
+ok 2 - HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled
+  ---
+  duration_ms: 28.715125
+  type: 'test'
+  ...
+# Subtest: MongoDB driver errors expose codes without business values in HTTP, activity or audit
+ok 3 - MongoDB driver errors expose codes without business values in HTTP, activity or audit
+  ---
+  duration_ms: 27.413375
+  type: 'test'
+  ...
+# Subtest: background bulk failure is correlated in HTTP job detail and audit after accepting execute
+ok 4 - background bulk failure is correlated in HTTP job detail and audit after accepting execute
+  ---
+  duration_ms: 200.917208
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1059.984709

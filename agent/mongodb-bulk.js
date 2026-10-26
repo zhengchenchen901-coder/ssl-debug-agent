@@ -8,9 +8,9 @@ import { MONGODB_SANDBOX_RUNTIME } from "./mongodb-sandbox-runtime.js";
 import {
   MONGODB_REMOTE_COMMAND,
   MONGODB_RESULT_MARKER,
-  redactMongoSecrets,
 } from "./mongodb.js";
-import { operationError } from "./operation.js";
+import { operationError, normalizeOperationEnvelope } from "./operation.js";
+import { publicBulkFailure } from "./mongodb-bulk-error.js";
 
 export const MONGODB_BULK_CONFIRMATION = "确认执行";
 export const MONGODB_BULK_ROLLBACK_CONFIRMATION = "确认回滚";
@@ -386,6 +386,14 @@ export function normalizeMongoBulkStorage(input = {}, config = {}, options = {})
   };
 }
 
+// Only source-owned literal messages are eligible for verbatim publication.
+const bulkMessages = [...new Set([...[MONGODB_BULK_RUNTIME, MONGODB_JOB_RETIREMENT_RUNTIME, MONGODB_SANDBOX_RUNTIME, MONGODB_TTL_POLICY_SCRIPT].join("\n").matchAll(/__bulkFail\("[A-Z0-9_]+", "([^"\n]*)"/g)].map(match => match[1]).concat([
+  "transaction outcome is uncertain; retry only this exact batch after receipt inspection",
+  "MongoDB bulk helper timed out",
+]))];
+const failureContext = (input, operation, extra = {}) => ({ phase: input.action, batchIndex: input.batchIndex,
+  operationId: operation?.operationId, fingerprint: value => createHash("sha256").update(value).digest("hex"), ...extra });
+
 function safeLiteral(value) {
   return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
@@ -403,6 +411,8 @@ export function buildMongoBulkScript(request, config, normalizationOptions = {})
     `const __storageLimits = ${safeLiteral(SANDBOX_STORAGE_LIMITS)};`,
     'const __driverPath = __config.driverPath;',
     'let __bson; try { __bson = require(require.resolve("bson", { paths: [__driverPath] })); } catch (_error) { __bson = null; }',
+    `const __bulkPublicFailure = ${publicBulkFailure.toString()};`,
+    `const __bulkMessages = ${safeLiteral(bulkMessages)};`,
     MONGODB_CODEC_SCRIPT,
     MONGODB_BULK_RUNTIME,
     MONGODB_JOB_RETIREMENT_RUNTIME,
@@ -437,7 +447,7 @@ function normalizeActionRequest(input, config) {
     sandboxStatus: ["offset", "limit"], sandboxExport: ["jobId", "limit"], sandboxPrepareCleanup: ["jobId"], sandboxCleanup: ["jobId", "cleanupHash", "confirmation"],
     upload: input.chunk ? ["chunk"] : ["jobId", "database", "chunkIndex", "purpose", "rollbackTtlMs", "units", "chunkHash", "endOfUpload"],
     get: ["jobId", "includePlan", "includeDifferences", "offset", "limit", "query"], list: ["offset", "limit"],
-    start: ["jobId", "planHash", "leaseId", "mode"], finish: ["jobId", "planHash", "leaseId", "mode"], pause: ["jobId", "planHash", "leaseId", "reason"], resume: ["jobId", "planHash", "leaseId"],
+    start: ["jobId", "planHash", "leaseId", "mode"], finish: ["jobId", "planHash", "leaseId", "mode"], pause: ["jobId", "planHash", "leaseId", "reason", "failure"], resume: ["jobId", "planHash", "leaseId"],
     executeBatch: ["jobId", "planHash", "leaseId", "batchIndex"], rollbackBatch: ["jobId", "planHash", "leaseId", "batchIndex"], verifyBatch: ["jobId", "planHash", "leaseId", "batchIndex"],
     dispatch: ["jobId", "planHash", "leaseId", "phase", "batchIndexes"], control: ["jobId", "planHash", "command"], heartbeat: ["jobId", "planHash", "leaseId"],
     rollbackStart: ["jobId", "planHash", "leaseId", "confirmation"], executeStart: ["jobId", "planHash", "leaseId", "confirmation"],
@@ -473,6 +483,7 @@ function normalizeActionRequest(input, config) {
       ...input,
       action,
       jobId,
+      failure: action === "pause" && input.failure ? publicBulkFailure(input.failure, { ...input.failure, phase: input.failure.phase, fingerprint: undefined }, bulkMessages) : undefined,
       query: action === "get" ? {
         includeDifferences: input.includeDifferences === true,
         offset: input.offset,
@@ -541,16 +552,18 @@ export async function runMongoBulk(input = {}, options = {}) {
     config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
     request = normalizeActionRequest(input, config);
     if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
-    script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
   } catch (error) {
     if (input.action === "upload") error.dispatchState = "not_dispatched";
     throw error;
   }
+  const operation = options.operation || normalizeOperationEnvelope({ operationId: input.operationId, timeoutMs: options.timeoutMs }, { defaultMs: 600_000, maxMs: 600_000 });
+  request.operationId = operation.operationId;
+  script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
   let remoteResult;
   try {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
       config: options.config,
-      operation: options.operation,
+      operation,
       timeoutMs: options.timeoutMs || 600_000,
       priority: options.priority || "interactive",
       resourceTaskId: options.resourceTaskId,
@@ -558,15 +571,18 @@ export async function runMongoBulk(input = {}, options = {}) {
       stdin: script,
     });
   } catch (error) {
-    throw operationError(redactMongoSecrets(error.message || "MongoDB bulk helper could not be executed"), {
-      code: error.code || "MONGODB_BULK_FAILED",
+    const failure = publicBulkFailure(error, failureContext(request, operation, { layer: error.layer || "mongodb-bulk", phase: error.phase || request.action }), bulkMessages);
+    const wrapped = operationError(failure.message, {
+      code: failure.code,
       statusCode: error.statusCode || 502,
-      operationId: options.operation && options.operation.operationId,
+      operationId: operation.operationId,
       layer: "mongodb-bulk",
       phase: request.action,
       retriable: error.retriable === true,
-      cause: error,
+      cause: failure.cause,
     });
+    wrapped.failure = failure;
+    throw wrapped;
   }
   if (remoteResult && remoteResult.stdoutTruncated || byteLength(remoteResult && remoteResult.stdout || "") > MAX_BULK_RESULT_BYTES) {
     throw bulkError("MongoDB bulk result exceeded the response limit", "MONGODB_BULK_RESULT_TOO_LARGE", 413);
@@ -574,15 +590,22 @@ export async function runMongoBulk(input = {}, options = {}) {
   const payload = parseMarker(remoteResult && remoteResult.stdout);
   if (!payload) throw bulkError("MongoDB bulk helper returned no structured response", "MONGODB_BULK_INVALID_RESPONSE", 502);
   if (payload.ok !== true || remoteResult && remoteResult.exitCode !== 0 || remoteResult && remoteResult.timedOut) {
-    const error = operationError(redactMongoSecrets(payload.error && payload.error.message || remoteResult && remoteResult.stderr || "MongoDB bulk request failed"), {
+    const error = operationError("MongoDB bulk request failed", {
       code: remoteResult && remoteResult.timedOut ? "MONGODB_BULK_TIMEOUT" : payload.error && payload.error.code || "MONGODB_BULK_FAILED",
       statusCode: remoteResult && remoteResult.timedOut ? 408 : 409,
-      operationId: options.operation && options.operation.operationId,
+      operationId: operation.operationId,
       layer: "mongodb-bulk",
       phase: request.action,
       retriable: remoteResult && remoteResult.timedOut === true,
     });
-    error.details = payload.error && payload.error.details;
+    const diagnostic = remoteResult?.timedOut ? { code: "MONGODB_BULK_TIMEOUT", message: "MongoDB bulk helper timed out", cause: payload.error } : payload.error;
+    error.failure = publicBulkFailure(diagnostic, failureContext(request, operation, {
+      ...diagnostic,
+      layer: payload.error?.layer || "mongodb-helper", phase: payload.error?.phase || request.action,
+      outcome: remoteResult?.timedOut ? "unknown" : payload.error?.outcome,
+    }), bulkMessages);
+
+    error.message = error.failure.message;
     throw error;
   }
   return { ...(payload.data || {}), timing: remoteResult && remoteResult.timing };
@@ -591,7 +614,17 @@ export async function runMongoBulk(input = {}, options = {}) {
 export class MongoBulkJobRunner {
   constructor(options = {}) {
     this.resourceClient = options.resourceClient;
-    this.run = (input, settings = {}) => options.runMongoBulk(input, { ...settings, resourceTaskId: this.active?.resourceTaskId });
+    this.run = async (input, settings = {}) => {
+      const operation = normalizeOperationEnvelope({ timeoutMs: settings.timeoutMs }, { defaultMs: 600_000, maxMs: 600_000 });
+      try { return await options.runMongoBulk({ ...input, operationId: operation.operationId }, { ...settings, operation, resourceTaskId: this.active?.resourceTaskId }); }
+      catch (error) {
+        error.failure = error.failure ? publicBulkFailure(error.failure, { ...error.failure, parentOperationId: this.active?.operationId }, bulkMessages)
+          : publicBulkFailure(error, failureContext(input, operation, { parentOperationId: this.active?.operationId }), bulkMessages);
+        if (this.active?.operationId) error.failure.parentOperationId = this.active.operationId;
+        throw error;
+      }
+    };
+    this.onFailure = options.onFailure;
     this.config = normalizeMongoBulkConfig(options.config && options.config.mongodb ? options.config.mongodb : options.config || {}, { requireBulkEnabled: false });
     this.effectiveConcurrency = Math.min(this.config.bulkConcurrency, 4);
     this.active = null;
@@ -606,7 +639,7 @@ export class MongoBulkJobRunner {
     const action = mode === "rollback" ? "rollbackStart" : "executeStart";
     const leaseId = createHash("sha256").update(randomUUID()).digest("hex");
     const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 60_000 });
-    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source };
+    this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source, operationId: metadata.operationId };
     this.attachResourceTask(this.active);
     const promise = this.#runLoop(this.active).finally(() => {
       if (this.active && this.active.leaseId === leaseId) this.active = null;
@@ -617,7 +650,7 @@ export class MongoBulkJobRunner {
     return { ...accepted, accepted: true, background: true, effectiveConcurrency: this.effectiveConcurrency };
   }
 
-  async control(input) {
+  async control(input, metadata = {}) {
     if (input.command === "resume" && this.config.bulkEnabled !== true) {
       throw bulkError("MongoDB bulk changes are disabled; enable mongodb.bulkEnabled explicitly before resuming", "MONGODB_BULK_DISABLED", 403);
     }
@@ -632,7 +665,7 @@ export class MongoBulkJobRunner {
     if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
       const leaseId = createHash("sha256").update(randomUUID()).digest("hex");
       const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 60_000 });
-      this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
+      this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute", operationId: metadata.operationId };
       this.attachResourceTask(this.active);
       const promise = this.#runLoop(this.active).finally(() => {
         if (this.active && this.active.leaseId === leaseId) this.active = null;
@@ -687,6 +720,7 @@ export class MongoBulkJobRunner {
         }
         let concurrency = this.effectiveConcurrency;
         if (job.resourceTaskId) {
+          job.diagnosticPhase = "resource_wait";
           await this.resourceClient.synchronize(job.resourceTaskId);
           await this.resourceClient.settled(job.resourceTaskId);
           const budget = await this.resourceClient.wait(job.resourceTaskId, job.resourceWaitController.signal);
@@ -719,15 +753,19 @@ export class MongoBulkJobRunner {
       await this.run({ action: "finish", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, mode: job.mode }, { priority: "control", timeoutMs: 60_000 });
       if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "completed", phase: "finished", inFlight: false });
     } catch (error) {
+      error.failure ||= publicBulkFailure(error, { layer: job.diagnosticPhase === "resource_wait" ? "resource" : "mongodb-bulk", phase: job.diagnosticPhase || "runner", parentOperationId: job.operationId,
+        fingerprint: value => createHash("sha256").update(value).digest("hex") }, bulkMessages);
       // A helper can acknowledge pause by releasing its lease before dispatch
       // cleanup runs. Preserve that intent, while keeping genuine conflicts.
       const reason = job.resourceWaitController?.signal.aborted && ["pause_requested", "MONGODB_BULK_LEASE_LOST"].includes(error.code)
         ? "pause_requested" : error.code || "MONGODB_BULK_FAILED";
       try {
-        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason }, { priority: "control", timeoutMs: 30_000 });
-      } catch {
-        // The last persisted batch receipt remains the recovery source of truth.
+        await this.run({ action: "pause", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, reason, failure: error.failure }, { priority: "control", timeoutMs: 30_000 });
+      } catch (pauseError) {
+        // Audit still exposes why remote diagnostic persistence was unavailable.
+        error.failure.persistenceFailure = pauseError.failure || publicBulkFailure(pauseError, { phase: "pause" }, bulkMessages);
       }
+      try { await this.onFailure?.({ jobId: job.jobId, planHash: job.planHash, pauseReason: reason, failure: error.failure }); } catch { /* manifest/events remain primary diagnostics */ }
       if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { status: "paused", phase: "paused", inFlight: false });
     } finally {
       clearInterval(heartbeatTimer);
@@ -756,11 +794,11 @@ export class MongoBulkJobRunner {
   async #runBatchWave(job, phase, action, indexes) {
     job.waveInFlight = true;
     if (job.resourceTaskId) this.resourceClient.update(job.resourceTaskId, { inFlight: true, phase });
-    await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
-      priority: "control", timeoutMs: 30_000,
-    });
     let failure;
     try {
+      await this.run({ action: "dispatch", jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, phase, batchIndexes: indexes }, {
+        priority: "control", timeoutMs: 30_000,
+      });
       await this.#withHeartbeat(job, async () => {
         const results = await Promise.allSettled(indexes.map((batchIndex) => this.run({
           action, jobId: job.jobId, planHash: job.planHash, leaseId: job.leaseId, batchIndex,

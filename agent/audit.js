@@ -20,6 +20,11 @@ export function buildAuditEntry(event, now = () => new Date()) {
   };
 
   for (const key of [
+    "jobId",
+    "planHash",
+    "pauseReason",
+    "failure",
+    "lastFailure",
     "instanceId",
     "serviceId",
     "profileHash",

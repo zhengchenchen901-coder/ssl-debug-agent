@@ -1334,3 +1334,30 @@ test("MongoDB driver errors expose codes without business values in HTTP, activi
   }
   assert.doesNotMatch(JSON.stringify(activity.list()) + await fsPromises.readFile(config.audit.logPath, "utf8"), /PRIVATE_UNSEEN_BUSINESS_VALUE/);
 });
+
+test("background bulk failure is correlated in HTTP job detail and audit after accepting execute", { skip: !depsInstalled }, async t => {
+  const { createApp } = await import("../server.js");
+  const { bulkSandboxFixture } = await import("./helpers/bulk-sandbox-fixture.js");
+  const h = bulkSandboxFixture(t); await h.initialize();
+  const jobId = "http-diagnostic-job";
+  await h.run({ action: "upload", chunk: { jobId, chunkIndex: 0, units: [{ unitId: "one", operations: [{ operation: "updateOne", collection: "orders", id: "order-1", expected: { count: { exists: true, value: 0 } }, update: { $inc: { count: 1 } } }] }] } });
+  const plan = await h.run({ action: "upload", chunk: { jobId, chunkIndex: 1, units: [], endOfUpload: true } });
+  h.state.rejectReceipt = true;
+  const dir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "rda-bulk-diagnostic-http-"));
+  t.after(() => fsPromises.rm(dir, { recursive: true, force: true }));
+  const config = makeConfig(path.join(dir, "audit.jsonl")); config.mongodb = h.config;
+  const app = createApp({ config, authToken: TEST_AUTH_TOKEN, runMongoBulk: input => h.run(input) });
+  const server = await listen(app); t.after(() => close(server));
+  const accepted = await postJson(server, "/mongodb/bulk/execute", { jobId, planHash: plan.planHash, confirmation: "确认执行" });
+  assert.equal(accepted.status, 202);
+  await app.locals.mongoBulkJobRunner().tasks.get(jobId);
+  const job = await postJson(server, "/mongodb/bulk/job", { jobId });
+  assert.equal(job.body.lastFailure.code, 13);
+  assert.equal(job.body.lastFailure.phase, "receipt_write");
+  assert.equal(job.body.lastFailure.parentOperationId, accepted.body.operationId);
+  const text = await fsPromises.readFile(config.audit.logPath, "utf8");
+  const audit = text.trim().split(/\r?\n/).map(line => JSON.parse(line));
+  assert.ok(audit.some(entry => entry.tool === "mongodb-bulk-background" && entry.failure.code === 13));
+  assert.ok(audit.some(entry => entry.tool === "mongodb-bulk-get" && entry.lastFailure.operationId === job.body.lastFailure.operationId));
+  assert.doesNotMatch(text + JSON.stringify(job.body), /13800000000|private\.invalid|mongodb:\/\//);
+});

@@ -1,0 +1,525 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+TAP version 13
+# Subtest: builds audit entries without secret material
+ok 1 - builds audit entries without secret material
+  ---
+  duration_ms: 14.138125
+  type: 'test'
+  ...
+# Subtest: writes JSONL audit records
+ok 2 - writes JSONL audit records
+  ---
+  duration_ms: 30.984417
+  type: 'test'
+  ...
+# Subtest: helper failure survives paused get, event export, audit callback and a new runner with the exact plan
+ok 3 - helper failure survives paused get, event export, audit callback and a new runner with the exact plan
+  ---
+  duration_ms: 397.7825
+  type: 'test'
+  ...
+# Subtest: lost commit reply with inaccessible receipt remains unknown and same-plan resume never reapplies increment
+ok 4 - lost commit reply with inaccessible receipt remains unknown and same-plan resume never reapplies increment
+  ---
+  duration_ms: 313.646458
+  type: 'test'
+  ...
+# Subtest: dispatch error releases wave bookkeeping and emits the original sanitized error
+ok 5 - dispatch error releases wave bookkeeping and emits the original sanitized error
+  ---
+  duration_ms: 94.64675
+  type: 'test'
+  ...
+# Subtest: public diagnostic schema never copies arbitrary messages, details, stack or metadata
+ok 6 - public diagnostic schema never copies arbitrary messages, details, stack or metadata
+  ---
+  duration_ms: 0.962708
+  type: 'test'
+  ...
+# Subtest: transport errors have independent operation identities and cannot publish raw SSH cause
+ok 7 - transport errors have independent operation identities and cannot publish raw SSH cause
+  ---
+  duration_ms: 2.959125
+  type: 'test'
+  ...
+# Subtest: rollback starts directly from a user-paused job without inheriting its pause control
+ok 8 - rollback starts directly from a user-paused job without inheriting its pause control
+  ---
+  duration_ms: 227.8425
+  type: 'test'
+  ...
+# Subtest: pausing a resource-waiting bulk job preserves the user pause reason
+ok 9 - pausing a resource-waiting bulk job preserves the user pause reason
+  ---
+  duration_ms: 3.207375
+  type: 'test'
+  ...
+# Subtest: a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+ok 10 - a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+  ---
+  duration_ms: 7.004541
+  type: 'test'
+  ...
+# Subtest: bulk policy is opt-in and keeps sandbox storage outside business allowlists
+ok 11 - bulk policy is opt-in and keeps sandbox storage outside business allowlists
+  ---
+  duration_ms: 1.258458
+  type: 'test'
+  ...
+# Subtest: disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+ok 12 - disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+  ---
+  duration_ms: 3.408292
+  type: 'test'
+  ...
+# Subtest: bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+ok 13 - bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+  ---
+  duration_ms: 2.593833
+  type: 'test'
+  ...
+# Subtest: bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+ok 14 - bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+  ---
+  duration_ms: 1.673917
+  type: 'test'
+  ...
+# Subtest: bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+ok 15 - bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+  ---
+  duration_ms: 2.783542
+  type: 'test'
+  ...
+# Subtest: generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+ok 16 - generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+  ---
+  duration_ms: 6.387417
+  type: 'test'
+  ...
+# Subtest: runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+ok 17 - runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+  ---
+  duration_ms: 1.477875
+  type: 'test'
+  ...
+# Subtest: job runner runs bounded concurrent waves and waits for every started transaction
+ok 18 - job runner runs bounded concurrent waves and waits for every started transaction
+  ---
+  duration_ms: 51.9865
+  type: 'test'
+  ...
+# Subtest: job runner pauses only after the other in-flight batch settles
+ok 19 - job runner pauses only after the other in-flight batch settles
+  ---
+  duration_ms: 27.068084
+  type: 'test'
+  ...
+# Subtest: bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+ok 20 - bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+  ---
+  duration_ms: 2.797917
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail
+ok 21 - bulk array runtime checks actual preimage: tail
+  ---
+  duration_ms: 82.618125
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: sparse
+ok 22 - bulk array runtime checks actual preimage: sparse
+  ---
+  duration_ms: 57.356916
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: hole
+ok 23 - bulk array runtime checks actual preimage: hole
+  ---
+  duration_ms: 39.687916
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: object-index
+ok 24 - bulk array runtime checks actual preimage: object-index
+  ---
+  duration_ms: 41.640208
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: identity-conflict
+ok 25 - bulk array runtime checks actual preimage: identity-conflict
+  ---
+  duration_ms: 34.961125
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail-conflict
+ok 26 - bulk array runtime checks actual preimage: tail-conflict
+  ---
+  duration_ms: 38.403917
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: duplicate-identity
+ok 27 - bulk array runtime checks actual preimage: duplicate-identity
+  ---
+  duration_ms: 42.381792
+  type: 'test'
+  ...
+# Subtest: bulk preflight attests no dispatch only before SSH invocation
+ok 28 - bulk preflight attests no dispatch only before SSH invocation
+  ---
+  duration_ms: 1.484417
+  type: 'test'
+  ...
+# Subtest: bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+ok 29 - bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+  ---
+  duration_ms: 91.926417
+  type: 'test'
+  ...
+# Subtest: new receipts live outside business DB and share the same committing session
+ok 30 - new receipts live outside business DB and share the same committing session
+  ---
+  duration_ms: 217.674667
+  type: 'test'
+  ...
+# Subtest: failure to insert the sandbox receipt aborts the business update
+ok 31 - failure to insert the sandbox receipt aborts the business update
+  ---
+  duration_ms: 85.064625
+  type: 'test'
+  ...
+# Subtest: legacy plan hashes and legacy business-DB receipts remain usable for recovery and rollback
+ok 32 - legacy plan hashes and legacy business-DB receipts remain usable for recovery and rollback
+  ---
+  duration_ms: 205.403417
+  type: 'test'
+  ...
+# Subtest: sandbox location is bound into the plan and configuration changes cannot silently redirect jobs
+ok 33 - sandbox location is bound into the plan and configuration changes cannot silently redirect jobs
+  ---
+  duration_ms: 64.918666
+  type: 'test'
+  ...
+# Subtest: sandbox cleanup refuses symlinked files and roots
+ok 34 - sandbox cleanup refuses symlinked files and roots
+  ---
+  duration_ms: 58.988417
+  type: 'test'
+  ...
+# Subtest: sandbox managers reject business privileges and require a distinct management profile
+ok 35 - sandbox managers reject business privileges and require a distinct management profile
+  ---
+  duration_ms: 15.787541
+  type: 'test'
+  ...
+# Subtest: cleanup denies retained or active jobs and export never reads before-images
+ok 36 - cleanup denies retained or active jobs and export never reads before-images
+  ---
+  duration_ms: 81.537708
+  type: 'test'
+  ...
+# Subtest: expired-job cleanup is fixed to matching sandbox records and rejects stale previews
+ok 37 - expired-job cleanup is fixed to matching sandbox records and rejects stale previews
+  ---
+  duration_ms: 75.711083
+  type: 'test'
+  ...
+# Subtest: management input rejects paths and cleanup requires its explicit confirmation
+ok 38 - management input rejects paths and cleanup requires its explicit confirmation
+  ---
+  duration_ms: 0.915542
+  type: 'test'
+  ...
+# Subtest: local sandbox exports only fixed audit paths with bounded redaction
+ok 39 - local sandbox exports only fixed audit paths with bounded redaction
+  ---
+  duration_ms: 17.024667
+  type: 'test'
+  ...
+# Subtest: sandbox account routes require auth, keep passwords out of audit and use structured runner only
+ok 40 - sandbox account routes require auth, keep passwords out of audit and use structured runner only
+  ---
+  duration_ms: 427.560334
+  type: 'test'
+  ...
+# Subtest: server entrypoint is disabled inside worker mode
+ok 41 - server entrypoint is disabled inside worker mode
+  ---
+  duration_ms: 0.762375
+  type: 'test'
+  ...
+# Subtest: HTTP log query executes a bounded helper and rejects unknown projects
+ok 42 - HTTP log query executes a bounded helper and rejects unknown projects
+  ---
+  duration_ms: 267.653916
+  type: 'test'
+  ...
+# Subtest: manager log mappings persist and override stale worker mappings immediately
+ok 43 - manager log mappings persist and override stale worker mappings immediately
+  ---
+  duration_ms: 30.827
+  type: 'test'
+  ...
+# Subtest: background log HTTP endpoints authenticate, validate scope, and keep jobs separate from requests
+ok 44 - background log HTTP endpoints authenticate, validate scope, and keep jobs separate from requests
+  ---
+  duration_ms: 52.934916
+  type: 'test'
+  ...
+# Subtest: dashboard task APIs authenticate, isolate instances, and enforce manual mode revisions
+ok 45 - dashboard task APIs authenticate, isolate instances, and enforce manual mode revisions
+  ---
+  duration_ms: 19.788083
+  type: 'test'
+  ...
+# Subtest: HTTP API works with mocked SSH
+ok 46 - HTTP API works with mocked SSH
+  ---
+  duration_ms: 14.763167
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB query endpoint is instance-scoped and read-only
+ok 47 - HTTP MongoDB query endpoint is instance-scoped and read-only
+  ---
+  duration_ms: 7.962708
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and list
+ok 48 - HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and list
+  ---
+  duration_ms: 12.874834
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler
+ok 49 - HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler
+  ---
+  duration_ms: 10.690042
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled
+ok 50 - HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled
+  ---
+  duration_ms: 6.8035
+  type: 'test'
+  ...
+# Subtest: dashboard serves status and streams remote interaction activity
+ok 51 - dashboard serves status and streams remote interaction activity
+  ---
+  duration_ms: 11.122042
+  type: 'test'
+  ...
+# Subtest: manager API creates, lists, updates, and deletes instances
+ok 52 - manager API creates, lists, updates, and deletes instances
+  ---
+  duration_ms: 20.064792
+  type: 'test'
+  ...
+# Subtest: manager API includes memory and updates it from proxied tool results
+not ok 53 - manager API includes memory and updates it from proxied tool results
+  ---
+  duration_ms: 95.225209
+  type: 'test'
+  location: '/workspace/agent/test/server.test.js:860:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    409 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/agent/test/server.test.js:935:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: manager lease registration schedules instance restore
+ok 54 - manager lease registration schedules instance restore
+  ---
+  duration_ms: 6.0365
+  type: 'test'
+  ...
+# Subtest: manager lease restore check publishes missing snapshot diagnostics
+ok 55 - manager lease restore check publishes missing snapshot diagnostics
+  ---
+  duration_ms: 5.920708
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":17,"host":"127.0.0.1","port":35005,"target":{"host":"","username":""},"startedAt":"2026-10-26T14:08:23.959Z"}
+# Subtest: manual manager lifetime does not shut down when no lease exists
+ok 56 - manual manager lifetime does not shut down when no lease exists
+  ---
+  duration_ms: 92.646542
+  type: 'test'
+  ...
+# Subtest: desktop manager lifetime shuts down when no lease arrives
+ok 57 - desktop manager lifetime shuts down when no lease arrives
+  ---
+  duration_ms: 28.887542
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":17,"host":"127.0.0.1","port":40863,"target":{"host":"","username":""},"startedAt":"2026-10-26T14:08:24.053Z"}
+# {"name":"remote-debug-agent","role":"manager","pid":17,"host":"127.0.0.1","port":35111,"target":{"host":"","username":""},"startedAt":"2026-10-26T14:08:24.081Z"}
+# Subtest: desktop manager lifetime shuts down after lease expiry
+ok 58 - desktop manager lifetime shuts down after lease expiry
+  ---
+  duration_ms: 60.342125
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":17,"host":"127.0.0.1","port":45483,"target":{"host":"","username":""},"startedAt":"2026-10-26T14:08:24.144Z"}
+# Subtest: manual manager shutdown API triggers graceful shutdown
+ok 59 - manual manager shutdown API triggers graceful shutdown
+  ---
+  duration_ms: 43.542042
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":17,"host":"127.0.0.1","port":33663,"target":{"host":"","username":""},"startedAt":"2026-10-26T14:08:24.185Z"}
+# Subtest: desktop manager shutdown API is rejected
+ok 60 - desktop manager shutdown API is rejected
+  ---
+  duration_ms: 31.201042
+  type: 'test'
+  ...
+# Subtest: manager signal handlers perform graceful shutdown
+ok 61 - manager signal handlers perform graceful shutdown
+  ---
+  duration_ms: 31.958125
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":17,"host":"127.0.0.1","port":40261,"target":{"host":"","username":""},"startedAt":"2026-10-26T14:08:24.216Z"}
+# Error: listen EADDRINUSE: address already in use 127.0.0.1:36103
+#     at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+#     at listenInCluster (node:net:1998:12)
+#     at node:net:2207:7
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'EADDRINUSE',
+#   errno: -98,
+#   syscall: 'listen',
+#   address: '127.0.0.1',
+#   port: 36103
+# }
+# Subtest: startServer records port binding errors in runtime state
+ok 62 - startServer records port binding errors in runtime state
+  ---
+  duration_ms: 64.299167
+  type: 'test'
+  ...
+# Subtest: HTTP /run rejects canonical path escape detected before command execution
+ok 63 - HTTP /run rejects canonical path escape detected before command execution
+  ---
+  duration_ms: 8.004875
+  type: 'test'
+  ...
+# Subtest: MongoDB driver errors expose codes without business values in HTTP, activity or audit
+ok 64 - MongoDB driver errors expose codes without business values in HTTP, activity or audit
+  ---
+  duration_ms: 12.54375
+  type: 'test'
+  ...
+# Subtest: background bulk failure is correlated in HTTP job detail and audit after accepting execute
+ok 65 - background bulk failure is correlated in HTTP job detail and audit after accepting execute
+  ---
+  duration_ms: 136.4865
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 66 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 25.969917
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 67 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 1.707208
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 68 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 1.91375
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 69 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 5.040167
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 70 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 0.667916
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 71 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.4765
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 72 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 4.906542
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 73 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 1.55525
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 74 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 2.01125
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 75 - each registered tool must have an output contract
+  ---
+  duration_ms: 18.948916
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 76 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 2.526334
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 77 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 39.442625
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 78 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.430875
+  type: 'test'
+  ...
+# Subtest: service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+ok 79 - service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+  ---
+  duration_ms: 0.909792
+  type: 'test'
+  ...
+# Subtest: bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted
+ok 80 - bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted
+  ---
+  duration_ms: 0.411167
+  type: 'test'
+  ...
+1..80
+# tests 80
+# suites 0
+# pass 79
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1927.794751

@@ -100,7 +100,7 @@ function __sandboxLog(jobId, limit) {
   try { __fs.readSync(fd, buffer, 0, buffer.length, start); } finally { __fs.closeSync(fd); }
   var lines = buffer.toString("utf8").split(/\r?\n/); if (start) lines.shift();
   var records = lines.filter(Boolean).slice(-limit).map(function (line) {
-    try { var event = JSON.parse(line), allowed = {}; ["at", "event", "batchIndex", "chunkIndex", "reason", "summary"].forEach(function (key) { if (event[key] !== undefined) allowed[key] = event[key]; }); return __sandboxRedact(allowed); }
+    try { var event = JSON.parse(line), allowed = {}; ["at", "event", "batchIndex", "chunkIndex", "reason", "summary", "failure"].forEach(function (key) { if (event[key] !== undefined) allowed[key] = event[key]; }); return __sandboxRedact(allowed); }
     catch (_) { return { event: "unparseable_record" }; }
   });
   return { jobId: jobId, records: records, scannedBytes: buffer.length, truncated: start > 0 };

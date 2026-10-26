@@ -1,0 +1,443 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+TAP version 13
+# Subtest: builds audit entries without secret material
+ok 1 - builds audit entries without secret material
+  ---
+  duration_ms: 9.118708
+  type: 'test'
+  ...
+# Subtest: writes JSONL audit records
+ok 2 - writes JSONL audit records
+  ---
+  duration_ms: 27.957375
+  type: 'test'
+  ...
+# Subtest: helper failure survives paused get, event export, audit callback and a new runner with the exact plan
+ok 3 - helper failure survives paused get, event export, audit callback and a new runner with the exact plan
+  ---
+  duration_ms: 385.6105
+  type: 'test'
+  ...
+# Subtest: lost commit reply with inaccessible receipt remains unknown and same-plan resume never reapplies increment
+ok 4 - lost commit reply with inaccessible receipt remains unknown and same-plan resume never reapplies increment
+  ---
+  duration_ms: 290.298458
+  type: 'test'
+  ...
+# Subtest: dispatch error releases wave bookkeeping and emits the original sanitized error
+ok 5 - dispatch error releases wave bookkeeping and emits the original sanitized error
+  ---
+  duration_ms: 185.626625
+  type: 'test'
+  ...
+# Subtest: public diagnostic schema never copies arbitrary messages, details, stack or metadata
+ok 6 - public diagnostic schema never copies arbitrary messages, details, stack or metadata
+  ---
+  duration_ms: 0.771959
+  type: 'test'
+  ...
+# Subtest: transport errors have independent operation identities and cannot publish raw SSH cause
+ok 7 - transport errors have independent operation identities and cannot publish raw SSH cause
+  ---
+  duration_ms: 2.926958
+  type: 'test'
+  ...
+# Subtest: resource scheduler failure is observable even when no helper was dispatched
+ok 8 - resource scheduler failure is observable even when no helper was dispatched
+  ---
+  duration_ms: 127.214875
+  type: 'test'
+  ...
+# Subtest: rollback starts directly from a user-paused job without inheriting its pause control
+ok 9 - rollback starts directly from a user-paused job without inheriting its pause control
+  ---
+  duration_ms: 216.107917
+  type: 'test'
+  ...
+# Subtest: pausing a resource-waiting bulk job preserves the user pause reason
+ok 10 - pausing a resource-waiting bulk job preserves the user pause reason
+  ---
+  duration_ms: 5.808375
+  type: 'test'
+  ...
+# Subtest: a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+ok 11 - a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+  ---
+  duration_ms: 4.548833
+  type: 'test'
+  ...
+# Subtest: bulk policy is opt-in and keeps sandbox storage outside business allowlists
+ok 12 - bulk policy is opt-in and keeps sandbox storage outside business allowlists
+  ---
+  duration_ms: 1.203792
+  type: 'test'
+  ...
+# Subtest: disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+ok 13 - disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+  ---
+  duration_ms: 3.175541
+  type: 'test'
+  ...
+# Subtest: bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+ok 14 - bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+  ---
+  duration_ms: 2.3495
+  type: 'test'
+  ...
+# Subtest: bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+ok 15 - bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+  ---
+  duration_ms: 1.701334
+  type: 'test'
+  ...
+# Subtest: bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+ok 16 - bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+  ---
+  duration_ms: 2.680334
+  type: 'test'
+  ...
+# Subtest: generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+ok 17 - generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+  ---
+  duration_ms: 6.047167
+  type: 'test'
+  ...
+# Subtest: runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+ok 18 - runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+  ---
+  duration_ms: 1.327083
+  type: 'test'
+  ...
+# Subtest: job runner runs bounded concurrent waves and waits for every started transaction
+ok 19 - job runner runs bounded concurrent waves and waits for every started transaction
+  ---
+  duration_ms: 62.439792
+  type: 'test'
+  ...
+# Subtest: job runner pauses only after the other in-flight batch settles
+ok 20 - job runner pauses only after the other in-flight batch settles
+  ---
+  duration_ms: 27.030833
+  type: 'test'
+  ...
+# Subtest: bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+ok 21 - bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+  ---
+  duration_ms: 2.782208
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail
+ok 22 - bulk array runtime checks actual preimage: tail
+  ---
+  duration_ms: 73.030375
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: sparse
+ok 23 - bulk array runtime checks actual preimage: sparse
+  ---
+  duration_ms: 39.050375
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: hole
+ok 24 - bulk array runtime checks actual preimage: hole
+  ---
+  duration_ms: 34.293917
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: object-index
+ok 25 - bulk array runtime checks actual preimage: object-index
+  ---
+  duration_ms: 41.748125
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: identity-conflict
+ok 26 - bulk array runtime checks actual preimage: identity-conflict
+  ---
+  duration_ms: 33.671291
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail-conflict
+ok 27 - bulk array runtime checks actual preimage: tail-conflict
+  ---
+  duration_ms: 36.314291
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: duplicate-identity
+ok 28 - bulk array runtime checks actual preimage: duplicate-identity
+  ---
+  duration_ms: 40.411
+  type: 'test'
+  ...
+# Subtest: bulk preflight attests no dispatch only before SSH invocation
+ok 29 - bulk preflight attests no dispatch only before SSH invocation
+  ---
+  duration_ms: 2.121292
+  type: 'test'
+  ...
+# Subtest: bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+ok 30 - bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+  ---
+  duration_ms: 121.058
+  type: 'test'
+  ...
+# Subtest: new receipts live outside business DB and share the same committing session
+ok 31 - new receipts live outside business DB and share the same committing session
+  ---
+  duration_ms: 215.235126
+  type: 'test'
+  ...
+# Subtest: failure to insert the sandbox receipt aborts the business update
+ok 32 - failure to insert the sandbox receipt aborts the business update
+  ---
+  duration_ms: 85.459125
+  type: 'test'
+  ...
+# Subtest: legacy plan hashes and legacy business-DB receipts remain usable for recovery and rollback
+ok 33 - legacy plan hashes and legacy business-DB receipts remain usable for recovery and rollback
+  ---
+  duration_ms: 190.313959
+  type: 'test'
+  ...
+# Subtest: sandbox location is bound into the plan and configuration changes cannot silently redirect jobs
+ok 34 - sandbox location is bound into the plan and configuration changes cannot silently redirect jobs
+  ---
+  duration_ms: 62.093916
+  type: 'test'
+  ...
+# Subtest: sandbox cleanup refuses symlinked files and roots
+ok 35 - sandbox cleanup refuses symlinked files and roots
+  ---
+  duration_ms: 68.3585
+  type: 'test'
+  ...
+# Subtest: sandbox managers reject business privileges and require a distinct management profile
+ok 36 - sandbox managers reject business privileges and require a distinct management profile
+  ---
+  duration_ms: 16.161166
+  type: 'test'
+  ...
+# Subtest: cleanup denies retained or active jobs and export never reads before-images
+ok 37 - cleanup denies retained or active jobs and export never reads before-images
+  ---
+  duration_ms: 114.690417
+  type: 'test'
+  ...
+# Subtest: expired-job cleanup is fixed to matching sandbox records and rejects stale previews
+ok 38 - expired-job cleanup is fixed to matching sandbox records and rejects stale previews
+  ---
+  duration_ms: 111.625334
+  type: 'test'
+  ...
+# Subtest: management input rejects paths and cleanup requires its explicit confirmation
+ok 39 - management input rejects paths and cleanup requires its explicit confirmation
+  ---
+  duration_ms: 0.812916
+  type: 'test'
+  ...
+# Subtest: local sandbox exports only fixed audit paths with bounded redaction
+ok 40 - local sandbox exports only fixed audit paths with bounded redaction
+  ---
+  duration_ms: 16.11475
+  type: 'test'
+  ...
+# Subtest: business field policy distinguishes identifier words from BSON tags, flags and index definitions
+ok 41 - business field policy distinguishes identifier words from BSON tags, flags and index definitions
+  ---
+  duration_ms: 7.132708
+  type: 'test'
+  ...
+# Subtest: typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+ok 42 - typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+  ---
+  duration_ms: 29.603167
+  type: 'test'
+  ...
+# Subtest: aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+ok 43 - aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+  ---
+  duration_ms: 3.081417
+  type: 'test'
+  ...
+# Subtest: references cannot cross processes, instances, endpoints, databases or changed target profiles
+ok 44 - references cannot cross processes, instances, endpoints, databases or changed target profiles
+  ---
+  duration_ms: 1.9955
+  type: 'test'
+  ...
+# Subtest: known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+ok 45 - known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+  ---
+  duration_ms: 5.026875
+  type: 'test'
+  ...
+# Subtest: index definitions, plugin identifiers, plan hashes and counts retain their contracts
+ok 46 - index definitions, plugin identifiers, plan hashes and counts retain their contracts
+  ---
+  duration_ms: 0.583
+  type: 'test'
+  ...
+# Subtest: privacy capacity fails closed and leaves existing references valid
+ok 47 - privacy capacity fails closed and leaves existing references valid
+  ---
+  duration_ms: 1.452792
+  type: 'test'
+  ...
+# Subtest: business substrings never alter import/job IDs or database metadata
+ok 48 - business substrings never alter import/job IDs or database metadata
+  ---
+  duration_ms: 1.087292
+  type: 'test'
+  ...
+# Subtest: aggregation aliases and derived identifier values remain private while counts remain numeric
+ok 49 - aggregation aliases and derived identifier values remain private while counts remain numeric
+  ---
+  duration_ms: 1.422958
+  type: 'test'
+  ...
+# Subtest: historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+ok 50 - historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+  ---
+  duration_ms: 35.42925
+  type: 'test'
+  ...
+# Subtest: local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+ok 51 - local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+  ---
+  duration_ms: 190.943917
+  type: 'test'
+  ...
+# Subtest: historical candidate restores typed references only within original bulk business surfaces
+ok 52 - historical candidate restores typed references only within original bulk business surfaces
+  ---
+  duration_ms: 0.814541
+  type: 'test'
+  ...
+# Subtest: disposition protocol remains intact when private business IDs equal its metadata values
+ok 53 - disposition protocol remains intact when private business IDs equal its metadata values
+  ---
+  duration_ms: 0.976166
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 54 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 25.274292
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 55 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 1.689791
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 56 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 1.742375
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 57 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 4.796334
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 58 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 0.679375
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 59 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.508375
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 60 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 4.826416
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 61 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 1.361
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 62 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 1.965542
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 63 - each registered tool must have an output contract
+  ---
+  duration_ms: 18.0725
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 64 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 2.533084
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 65 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 38.537042
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 66 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.416583
+  type: 'test'
+  ...
+# Subtest: service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+ok 67 - service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+  ---
+  duration_ms: 0.850958
+  type: 'test'
+  ...
+# Subtest: bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted
+ok 68 - bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted
+  ---
+  duration_ms: 0.406416
+  type: 'test'
+  ...
+# Subtest: data and config paths follow compatibility precedence
+ok 69 - data and config paths follow compatibility precedence
+  ---
+  duration_ms: 21.32225
+  type: 'test'
+  ...
+# Subtest: legacy migration copies only persistent data and never overwrites targets
+ok 70 - legacy migration copies only persistent data and never overwrites targets
+  ---
+  duration_ms: 23.504917
+  type: 'test'
+  ...
+# Subtest: legacy project-root mode migrates .env to config.env in place
+ok 71 - legacy project-root mode migrates .env to config.env in place
+  ---
+  duration_ms: 2.0895
+  type: 'test'
+  ...
+# Subtest: bundled runtime manifest is readable from the plugin root
+ok 72 - bundled runtime manifest is readable from the plugin root
+  ---
+  duration_ms: 7.174541
+  type: 'test'
+  ...
+1..72
+# tests 72
+# suites 0
+# pass 72
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1335.082251

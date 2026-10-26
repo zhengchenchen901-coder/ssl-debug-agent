@@ -1,0 +1,514 @@
+{
+  "checkedAt": "2026-10-26T09:38:55.724Z",
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261026.5"
+  },
+  "toolCount": 51,
+  "dispositionSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "instanceId",
+      "database",
+      "mode"
+    ],
+    "oneOf": [
+      {
+        "properties": {
+          "mode": {
+            "const": "prepare"
+          }
+        },
+        "required": [
+          "intentId",
+          "originalRequest"
+        ]
+      },
+      {
+        "properties": {
+          "mode": {
+            "const": "inspect"
+          }
+        },
+        "required": [
+          "dispositionId"
+        ]
+      },
+      {
+        "properties": {
+          "mode": {
+            "const": "quarantine"
+          }
+        },
+        "required": [
+          "dispositionId",
+          "reviewHash",
+          "confirmation"
+        ]
+      },
+      {
+        "properties": {
+          "mode": {
+            "const": "admit_replacement"
+          }
+        },
+        "required": [
+          "dispositionId",
+          "reviewHash"
+        ]
+      },
+      {
+        "properties": {
+          "mode": {
+            "const": "prepare_risk"
+          }
+        },
+        "required": [
+          "dispositionId",
+          "reviewHash",
+          "originalRequest",
+          "replacementRequest"
+        ]
+      },
+      {
+        "properties": {
+          "mode": {
+            "const": "inspect_risk"
+          }
+        },
+        "required": [
+          "riskPlanId"
+        ]
+      },
+      {
+        "properties": {
+          "mode": {
+            "const": "create_replacement"
+          }
+        },
+        "required": [
+          "riskPlanId",
+          "reviewHash"
+        ]
+      }
+    ],
+    "properties": {
+      "instanceId": {
+        "type": "string",
+        "description": "Remote Debug Agent instance id. Optional only when exactly one instance is configured."
+      },
+      "database": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "prepare",
+          "inspect",
+          "quarantine",
+          "admit_replacement",
+          "prepare_risk",
+          "inspect_risk",
+          "create_replacement"
+        ]
+      },
+      "reviewMemo": {
+        "type": "string",
+        "maxLength": 4000,
+        "description": "Facts and remaining uncertainties for human review; caller statement, not trusted execution proof."
+      },
+      "riskPlanId": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "intentId": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "dispositionId": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "reviewHash": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "confirmation": {
+        "type": "string",
+        "enum": [
+          "确认隔离原意图"
+        ]
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 600000,
+        "description": "Total operation budget in milliseconds, including queueing, connection, execution, and cleanup. Defaults to 120000."
+      },
+      "originalRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "jobId",
+          "chunkIndex",
+          "units"
+        ],
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "Remote Debug Agent instance id. Optional only when exactly one instance is configured."
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          },
+          "database": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Must equal the instance's configured allowlisted default database."
+          },
+          "chunkIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "chunkHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "Optional SHA-256 of normalized chunk content; the agent calculates and returns it when omitted."
+          },
+          "units": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "unitId",
+                "operations"
+              ],
+              "properties": {
+                "unitId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+                },
+                "operations": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 20,
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "operation",
+                          "collection",
+                          "document"
+                        ],
+                        "properties": {
+                          "operation": {
+                            "type": "string",
+                            "enum": [
+                              "insertOne"
+                            ]
+                          },
+                          "collection": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "document": {
+                            "type": "object",
+                            "required": [
+                              "_id"
+                            ],
+                            "description": "Complete document with an explicit _id."
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "operation",
+                          "collection",
+                          "id",
+                          "expected",
+                          "update"
+                        ],
+                        "properties": {
+                          "operation": {
+                            "type": "string",
+                            "enum": [
+                              "updateOne"
+                            ]
+                          },
+                          "collection": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "id": {
+                            "description": "Exact target _id as a string, safe integer, or Extended JSON ObjectId/Long."
+                          },
+                          "expected": {
+                            "type": "object",
+                            "minProperties": 1,
+                            "description": "Map every changed path to {exists:false} or {exists:true,value:<original>}; this distinguishes a missing field from null.",
+                            "patternProperties": {
+                              "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$": {
+                                "type": "object",
+                                "required": [
+                                  "exists"
+                                ],
+                                "properties": {
+                                  "exists": {
+                                    "type": "boolean"
+                                  },
+                                  "value": {}
+                                }
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "update": {
+                            "type": "object",
+                            "minProperties": 1,
+                            "maxProperties": 3,
+                            "additionalProperties": false,
+                            "properties": {
+                              "$set": {
+                                "type": "object",
+                                "minProperties": 1
+                              },
+                              "$unset": {
+                                "type": "object",
+                                "minProperties": 1
+                              },
+                              "$inc": {
+                                "type": "object",
+                                "minProperties": 1
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "rollbackTtlMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 604800000
+          },
+          "endOfUpload": {
+            "type": "boolean",
+            "description": "Set true only on the final empty chunk after all numbered data chunks."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600000,
+            "description": "Total operation budget in milliseconds, including queueing, connection, execution, and cleanup. Defaults to 120000."
+          }
+        }
+      },
+      "replacementRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "jobId",
+          "chunkIndex",
+          "units"
+        ],
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "description": "Remote Debug Agent instance id. Optional only when exactly one instance is configured."
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          },
+          "database": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Must equal the instance's configured allowlisted default database."
+          },
+          "chunkIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "chunkHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "Optional SHA-256 of normalized chunk content; the agent calculates and returns it when omitted."
+          },
+          "units": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "unitId",
+                "operations"
+              ],
+              "properties": {
+                "unitId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+                },
+                "operations": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 20,
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "operation",
+                          "collection",
+                          "document"
+                        ],
+                        "properties": {
+                          "operation": {
+                            "type": "string",
+                            "enum": [
+                              "insertOne"
+                            ]
+                          },
+                          "collection": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "document": {
+                            "type": "object",
+                            "required": [
+                              "_id"
+                            ],
+                            "description": "Complete document with an explicit _id."
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "operation",
+                          "collection",
+                          "id",
+                          "expected",
+                          "update"
+                        ],
+                        "properties": {
+                          "operation": {
+                            "type": "string",
+                            "enum": [
+                              "updateOne"
+                            ]
+                          },
+                          "collection": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128
+                          },
+                          "id": {
+                            "description": "Exact target _id as a string, safe integer, or Extended JSON ObjectId/Long."
+                          },
+                          "expected": {
+                            "type": "object",
+                            "minProperties": 1,
+                            "description": "Map every changed path to {exists:false} or {exists:true,value:<original>}; this distinguishes a missing field from null.",
+                            "patternProperties": {
+                              "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$": {
+                                "type": "object",
+                                "required": [
+                                  "exists"
+                                ],
+                                "properties": {
+                                  "exists": {
+                                    "type": "boolean"
+                                  },
+                                  "value": {}
+                                }
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "update": {
+                            "type": "object",
+                            "minProperties": 1,
+                            "maxProperties": 3,
+                            "additionalProperties": false,
+                            "properties": {
+                              "$set": {
+                                "type": "object",
+                                "minProperties": 1
+                              },
+                              "$unset": {
+                                "type": "object",
+                                "minProperties": 1
+                              },
+                              "$inc": {
+                                "type": "object",
+                                "minProperties": 1
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "rollbackTtlMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 604800000
+          },
+          "endOfUpload": {
+            "type": "boolean",
+            "description": "Set true only on the final empty chunk after all numbered data chunks."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600000,
+            "description": "Total operation budget in milliseconds, including queueing, connection, execution, and cleanup. Defaults to 120000."
+          }
+        }
+      }
+    }
+  },
+  "newPolicyDescription": "Review/quarantine an exact uncertain bulk intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Creation never executes business writes; sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements. Business ID/key values in results are opaque rda_ref_v1_ references. Reuse the complete reference in structured business-value arguments; the local wrapper restores its original BSON/EJSON type before validation. References are scoped to this MCP process and target database; never edit them, put them inside $oid, interpolate them into text/shell, or calculate chunkHash from them (omit chunkHash and use the agent's returned hash). After MCP restart, query again for fresh references.",
+  "reviewMemoAvailable": true,
+  "managerHasHumanRiskV2": false,
+  "managerReplacementRequested": false,
+  "businessToolsCalled": [],
+  "businessContextAttached": false,
+  "stderrObserved": false
+}

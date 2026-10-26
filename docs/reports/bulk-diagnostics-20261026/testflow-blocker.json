@@ -1,0 +1,22 @@
+{
+  "status": "blocked",
+  "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-executor-retirement/workspace.json",
+  "projectId": "ssl-debug-agent",
+  "adapter": "node-test",
+  "supportedExecutionAdapters": [
+    "be-jest",
+    "jest-unit"
+  ],
+  "missing": [
+    "node:test execution adapter",
+    "versioned test asset/input/state/assertion bindings",
+    "immutable dependency image and TestFlow execution isolation contract"
+  ],
+  "doctor": "ready (diagnostics only)",
+  "snapshotId": "059bd9d34d4c75a883aa71584f71b869d1874899cfe840cb1f36b980adda5bb0",
+  "prepareExecuted": false,
+  "executeExecuted": false,
+  "jobId": null,
+  "targetCoverage": "unknown",
+  "otherValidation": "Explicit Docker/node:test and local replica-set checks recorded separately; these are not TestFlow passes."
+}

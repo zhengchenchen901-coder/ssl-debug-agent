@@ -209,3 +209,15 @@ test("service output contracts preserve evidence and omit arbitrary environment 
   assert.equal(listed.instances[0].profiles[0].profile.envFiles[0], "/home/github/backend-secrets.env");
   assert.doesNotMatch(JSON.stringify(listed), /PRIVATE_CONFIG_SECRET|PRIVATE_UNEXPECTED/);
 });
+
+test("bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted", () => {
+  const diagnostic = { version: 1, code: 13, phase: "receipt_write", layer: "mongodb-helper", message: "MongoDB authorization rejected; database and command details withheld", operationId: "6d16cfd5-033f-4bbf-b82e-92cc8441a1c9", batchIndex: 0, outcome: "not_committed", recovery: "inspect_before_resume", driverVersion: "3.3.4", collectionIndex: 2, collectionOperationCount: 66,
+    cause: { code: "SSH_CONNECTION_FAILED", message: "transport lost", stack: "PRIVATE_STACK" }, frames: [{ function: "__bulkRunTransaction", line: 100, column: 4 }], document: { phone: "PRIVATE_ROW" } };
+  const result = payload(createOutputGuard().toolResult("remote_debug_mongodb_get_bulk_job", { ok: true, jobId: "fixture", lastFailure: diagnostic }));
+  assert.equal(result.lastFailure.code, 13);
+  assert.equal(result.lastFailure.phase, "receipt_write");
+  assert.equal(result.lastFailure.driverVersion, "3.3.4");
+  assert.equal(result.lastFailure.cause.code, "SSH_CONNECTION_FAILED");
+  assert.equal(result.lastFailure.frames[0].function, "__bulkRunTransaction");
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_STACK|PRIVATE_ROW/);
+});

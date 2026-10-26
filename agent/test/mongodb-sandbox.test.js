@@ -42,7 +42,7 @@ test("failure to insert the sandbox receipt aborts the business update", async (
   const h = bulkSandboxFixture(t); await h.initialize(); const plan = await prepare(h, "failed-job");
   await h.run({ action: "executeStart", jobId: "failed-job", planHash: plan.planHash, leaseId: lease });
   h.state.rejectReceipt = true;
-  await assert.rejects(h.run({ action: "executeBatch", jobId: "failed-job", planHash: plan.planHash, leaseId: lease, batchIndex: 0 }), /receipt permission denied/);
+  await assert.rejects(h.run({ action: "executeBatch", jobId: "failed-job", planHash: plan.planHash, leaseId: lease, batchIndex: 0 }), { code: 13 });
   assert.equal(h.rows("business", "orders").get("order-1").count, 0);
 });
 

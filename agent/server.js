@@ -370,6 +370,7 @@ function mongoBulkSummary(payload) {
     rolledBackBatchCount: payload.rolledBackBatchCount,
     differenceCount: payload.differenceCount,
     pauseReason: payload.pauseReason,
+    lastFailure: payload.lastFailure,
     accepted: payload.accepted,
     background: payload.background,
     effectiveConcurrency: payload.effectiveConcurrency,
@@ -474,7 +475,8 @@ export function createApp(options = {}) {
   });
   let mongoBulkJobRunner;
   const getMongoBulkJobRunner = () => {
-    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk, resourceClient: options.resourceClient });
+    if (!mongoBulkJobRunner) mongoBulkJobRunner = new MongoBulkJobRunner({ config, runMongoBulk, resourceClient: options.resourceClient,
+      onFailure: event => audit(config, { tool: "mongodb-bulk-background", ok: false, ...event }) });
     return mongoBulkJobRunner;
   };
   const listLogs = (logOptions) => listLogsImpl({
@@ -1566,12 +1568,12 @@ export function createApp(options = {}) {
       } else if (action.startsWith("sandbox")) {
         result = await runMongoBulk({ ...raw, action }, { operation: requestOperation, priority: "background" });
       } else if (action === "execute") {
-        result = await getMongoBulkJobRunner().start(raw, "execute", { source: sourceFrom(request) });
+        result = await getMongoBulkJobRunner().start(raw, "execute", { source: sourceFrom(request), operationId: requestOperation.operationId });
       } else if (action === "rollback") {
-        result = await getMongoBulkJobRunner().start(raw, "rollback", { source: sourceFrom(request) });
+        result = await getMongoBulkJobRunner().start(raw, "rollback", { source: sourceFrom(request), operationId: requestOperation.operationId });
       } else if (action === "control") {
-        if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw);
-        else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw);
+        if (raw.command === "resume") result = await getMongoBulkJobRunner().control(raw, { operationId: requestOperation.operationId });
+        else if (mongoBulkJobRunner) result = await mongoBulkJobRunner.control(raw, { operationId: requestOperation.operationId });
         else result = await runMongoBulk({ action: "control", ...raw }, { operation: requestOperation });
       } else {
         throw new Error("unsupported MongoDB bulk request");

@@ -1,0 +1,78 @@
+{
+  "evidenceId": "bulk-diagnostics-local-20261026",
+  "scope": "Detailed diagnostics first, per latest user instruction; real business root cause pending new evidence.",
+  "sourceHashes": {
+    "agent/audit.js": "1c545df9d3a60a1ff2b4373e80eeff4efe95257ed7aee142c77616773409ee60",
+    "agent/mongodb-bulk-error.js": "fa288e7487318f9ef94c5f37f7816b31585ae8b032fdc496715bdc5187a28d3d",
+    "agent/mongodb-bulk.js": "8bfdcfac21b5b7710b9d2337a70fdca203b4c855368c048bee9705b37e4e0ad1",
+    "agent/mongodb-bulk-runtime.js": "4d8165fe5e93df20b6933a3e0e01c86ecd0362762190606a2dd53e08466907c0",
+    "agent/mongodb-sandbox-runtime.js": "8ccee25e64cbb36a7508a9ef764760e6f68eae4c2c9773ed9afcfc7064aa6224",
+    "agent/server.js": "639dfed0d05a7fa48263b3f0562f04770883fb2a1cfb748081ec1a21ff046fc0",
+    "agent/test/mongodb-bulk-diagnostics.test.js": "8026d7e380a3ec0e29fe5e1dbbf75fc1b74a2adc9681aba87918e8f872bee3a0",
+    "agent/test/helpers/bulk-sandbox-fixture.js": "de6869b2b7827b1463d6dcd40a68b68a007c9f9e65c91e0663b83f90a642e479",
+    "agent/test/mongodb-sandbox.test.js": "d5e78e5abf1860ba5fb5f83ecc74161a0b13126e9fe3d94cce7082cef4582624",
+    "agent/test/server.test.js": "b523023aa5e92e62263ecffb5b93e21d6becdc1fbf4499a03a89d301c041b837",
+    "plugins/remote-debug-agent/output-contracts.js": "1b634ed0637a3bafc97d38da5af64f0950a637be1e64ed7d1ca8ced456301f10",
+    "plugins/remote-debug-agent/test/output-guard.test.js": "46ecfa72e5fc5b8c66a68259467bfd406f94cb41034e6eacc4c8231b24eb0bc2",
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json": "80acf523b97193d35557ad75f7e441d050f7163b61611af4ac1f4e0cddf1fef3",
+    "plugins/remote-debug-agent/runtime/agent/server.cjs": "8fe76893ce7b5b981c34037b884fe6c00c0f08afc2327eae9dfd685b10ab2c68",
+    "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs": "b9d3c66c1bb077b9565d89cc11b0c3b516614b8223b8f2bd598ef07fb0937824"
+  },
+  "runtimeId": "2.4.0:40ba35f35da267d1293d79ae028382f2e671419a3b9aa4821a185323d8d689e1",
+  "installed": false,
+  "realBusinessOperations": false,
+  "rootCause": "unknown",
+  "testflow": {
+    "snapshotId": "059bd9d34d4c75a883aa71584f71b869d1874899cfe840cb1f36b980adda5bb0",
+    "execution": "blocked",
+    "targetCoverage": "unknown"
+  },
+  "checks": [
+    {
+      "kind": "manual Docker no-network node:test",
+      "passed": 72,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "isolated-regression.tap"
+    },
+    {
+      "kind": "manual Docker HTTP focused node:test",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "isolated-http.tap"
+    },
+    {
+      "kind": "manual Docker MongoDB 4.4.30 single-node replica / host Node22 driver3.3.4 existing integration",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": "replica334.tap"
+    },
+    {
+      "kind": "expanded Docker attempt (not final pass)",
+      "passed": 79,
+      "failed": 1,
+      "skipped": 0,
+      "failure": "manager API includes memory and updates it from proxied tool results: HTTP 409 vs expected 200, server.test.js:935; not resolved or certified unrelated",
+      "evidence": "expanded-attempt-with-failure.tap"
+    }
+  ],
+  "notExecuted": [
+    "TestFlow prepare/execute",
+    "full 34-unit/100-operation synthetic workload (deferred after user asked diagnostics first)",
+    "real ZCIVO retry/resume",
+    "installation/activation",
+    "remote deployment/restart",
+    "Git commit/push/PR"
+  ],
+  "artifacts": {
+    "testflow-freeze.json": "0567b44bbfaee1f7022d3243150612240bac42e7477e6e222513a44615940dd4",
+    "isolated-regression.tap": "af041f641fb542d38a42d24744ef0ee1b67086d73d85cc6d675757cac2310584",
+    "replica334.tap": "09ab4623f1c5160e78b3455fc6c3b063ec4540b0e53c674eb728d2b57c5a579a",
+    "isolated-http.tap": "6513f489d50cd86cccb056e61475c89802baf86c36802297de0ad054b26bc895",
+    "expanded-attempt-with-failure.tap": "e42dc03660e53ae40a7a338e32325529bc8e378cfba1c2b5000d7aa42e1bfd9a",
+    "testflow-blocker.json": "6214a690aeab15faf34577d3bada498f321295b3d19629fb3549ec4269fb8006",
+    "build.log": "656c0f53ab2ce833e810b6b1f2b1d8e2070215419c6eeb7121927de8e27ea5d9"
+  }
+}

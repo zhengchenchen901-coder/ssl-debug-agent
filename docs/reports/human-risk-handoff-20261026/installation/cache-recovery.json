@@ -1,0 +1,43 @@
+{
+  "cause": "Codex plugin add pruned old version directories; old live MCP reported BUNDLED_AGENT_NOT_FOUND",
+  "newSelectedVersion": "2.4.0+codex.20261026.5",
+  "restoredCompatibilityCaches": [
+    {
+      "version": "2.4.0+codex.20261023.2",
+      "sourceRevision": "ef87c35cf45b945f4472d038bdb00a8b3bd8873b",
+      "runtimeId": "2.4.0:6015adee113a2f5d55bcc1a18c72afc78f4870eacd26d5b74d0cd34113473f71",
+      "runtimeArtifacts": 23,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026",
+      "sourceRevision": "579f78348849d0b62762804c2947e085689466b8",
+      "runtimeId": "2.4.0:27a5a96d6dc629a2621999040db40b289967e1dedc1ac1f2131625df39fd185f",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026.2",
+      "sourceRevision": "eb2255b90f4c53a014dd2aef438db83b09bbb300",
+      "runtimeId": "2.4.0:e515098eb54c66b785b0de2a7a1fe1afa9f64192bf00fc85b69832d326c93dca",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026.3",
+      "sourceRevision": "4ae3ea9a89702264e67c60a9b22f4703dc71985e",
+      "runtimeId": "2.4.0:42785d14f3e328fca822145024b85997c2032451e7d9e18b18115c94c02b1742",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    },
+    {
+      "version": "2.4.0+codex.20261026.4",
+      "sourceRevision": "970970a225f9eb7e7b58496455c019b12849d264",
+      "runtimeId": "2.4.0:0ef2c783a0df192d05c10e95e5444e5704acf2e97595d7d964e698645f11731f",
+      "runtimeArtifacts": 26,
+      "allHashesMatch": true
+    }
+  ],
+  "businessStateChanged": false,
+  "managerRestartRequested": false
+}
