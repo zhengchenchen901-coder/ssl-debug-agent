@@ -123,12 +123,12 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
       // pause/resume are explicitly requested state transitions. A completed
       // pause must not suppress a later pause after an intervening resume.
       const intent = await call(settings, { action: "intent", route, request, identity, scope, refs,
-        ...(route === "/mongodb/mutations/prepare" ? { dispatchDigest: prepareRequestDigest(payload) } : {}),
+        ...(["/mongodb/mutations/prepare", "/mongodb/bulk/prepare"].includes(route) ? { dispatchDigest: prepareRequestDigest(payload) } : {}),
         renew: route === "/mongodb/bulk/control" }, signal);
       if (intent.state === "uncertain") {
-        if (intent.prepare) {
+        if (intent.prepare || intent.bulkPrepare) {
           const recovered = await call(settings, { action: "recover_operation", mode: "reconcile", scope, id: intent.id }, signal);
-          if (recovered.state === "prepared") return { id: intent.id, state: "prepared", result: recovered.result };
+          if (["prepared", "complete"].includes(recovered.state)) return { id: intent.id, state: recovered.state, result: recovered.result };
           throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED", intent.id);
         }
         try {
@@ -148,7 +148,7 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     },
     async dispatchPrepare(settings, intent, scope, request, operation) {
       try {
-        return await call(settings, { action: "dispatch_prepare", id: intent.id, attempt: intent.prepare.attempt,
+        return await call(settings, { action: "dispatch_prepare", id: intent.id, attempt: (intent.prepare || intent.bulkPrepare).attempt,
           scope, request, operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: request.timeoutMs }, operation.signal);
       } catch (error) { error.intentId = intent.id; throw error; }
     },

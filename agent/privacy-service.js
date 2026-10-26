@@ -5,6 +5,49 @@ import { privacyError } from "./privacy-key.js";
 import { businessTargetScope } from "../plugins/remote-debug-agent/business-privacy.js";
 import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { createOutputGuard } from "../plugins/remote-debug-agent/output-guard.js";
+import { normalizeMongoBulkChunk } from "./mongodb-bulk.js";
+
+async function bulkPrepareRequest(service, input, record, target, { instance, dispatch }, view) {
+  if (!dispatch || record.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const recovering = input.action === "recover_operation";
+  let result, notDispatched = false, unclaimed = false;
+  try {
+    if (recovering) {
+      if (!record.dispatched) {
+        unclaimed = true;
+        result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+      } else if (!record.bulkChunk) return view(record, "bulk_prepare_evidence_required");
+      else result = await dispatch(target.id, "/mongodb/bulk/recover-prepare", { ...record.bulkChunk,
+        operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+    } else {
+      const { instanceId, ...request } = input.request || {};
+      if (instanceId !== target.id || request.database !== target.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      let chunk, preflightError;
+      try { chunk = normalizeMongoBulkChunk(request, instance(target.id).mongodb); } catch (error) { preflightError = error; }
+      const bulkChunk = chunk && { jobId: chunk.jobId, database: chunk.database, chunkIndex: chunk.chunkIndex,
+        chunkHash: chunk.chunkHash, endOfUpload: chunk.endOfUpload };
+      await service.call("claim_bulk_prepare", { ...input, dispatchDigest: prepareRequestDigest(input.request), bulkChunk });
+      if (preflightError) { notDispatched = true; throw preflightError; }
+      result = await dispatch(target.id, record.route, { ...request,
+        operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+    }
+    result = createOutputGuard().sanitize(result).value;
+  } catch (error) {
+    // Only an explicit pre-SSH attestation proves rejection. phase=validation or
+    // an absent job alone is never enough to discharge a dispatched operation.
+    notDispatched ||= !recovering && error.dispatchState === "not_dispatched";
+    result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_BULK_FAILED",
+      message: "Structured bulk preparation failed; inspect this exact protected intent.",
+      operationId: input.operationId, layer: error.layer, phase: error.phase, retriable: error.retriable } };
+  }
+  const saved = await service.call("bulk_prepare_result", { ...input, bulkPrepare: record.bulkPrepare, result, notDispatched, unclaimed });
+  if (!recovering && result?.ok === true && saved.state !== "complete") {
+    result = { ok: false, error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED",
+      message: "Bulk preparation acknowledgement did not prove the exact chunk identity.", operationId: input.operationId, retriable: false } };
+  }
+  return recovering ? view(saved, saved.state === "uncertain" ? "bulk_prepare_evidence_required" : unclaimed ? "old_attempt_fenced" : undefined)
+    : { ...result, intentId: input.id, intentState: saved.state };
+}
 
 const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 export class PrivacyService {
@@ -66,11 +109,16 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     const record = await service.call("inspect_operation", input);
     const target = JSON.parse(input.scope);
     const view = (value, reason) => ({ ok: true, intentId: input.id, state: value.state, route: value.route,
-      attempt: value.prepare?.attempt, mutationId: value.prepare?.mutationId, legacy: !value.prepare && value.route === "/mongodb/mutations/prepare",
+      attempt: (value.prepare || value.bulkPrepare)?.attempt, mutationId: value.prepare?.mutationId,
+      legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason, recoveryCode: value.reconciliation?.code, ...(value.result ? { result: value.result } : {}) });
     if (input.action === "recover_operation") {
       if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (record.route === "/mongodb/bulk/prepare") {
+        if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
+        return bulkPrepareRequest(service, input, record, target, { instance, dispatch }, view);
+      }
       // Old envelopes have no prepare identity. No absence query or caller-supplied
       // error text can turn those records into permission to dispatch again.
       if (!record.prepare) {
@@ -89,6 +137,9 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         }
         return view(record, "legacy_evidence_required");
       }
+    }
+    if (input.action === "dispatch_prepare" && record.route === "/mongodb/bulk/prepare" && record.bulkPrepare) {
+      return bulkPrepareRequest(service, input, record, target, { instance, dispatch }, view);
     }
     if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
     if (input.action === "dispatch_prepare") {

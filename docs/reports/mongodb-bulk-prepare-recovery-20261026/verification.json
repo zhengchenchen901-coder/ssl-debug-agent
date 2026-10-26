@@ -1,0 +1,147 @@
+{
+  "recordId": "MONGODB-BULK-PREPARE-RECOVERY-20261026",
+  "date": "2026-10-26",
+  "baseHead": "0596e6a9ab73906ac2c61f05631472c4521fccd5",
+  "worktreeInitiallyClean": true,
+  "node": "v22.23.3",
+  "nativeAgent": {
+    "tests": 479,
+    "passed": 465,
+    "failed": 0,
+    "skipped": 14,
+    "sha256": "eeccc059275cc5a14e85b0a1a5e8b661150d844c076e301ab7eca8c428012042",
+    "log": "/Users/zhengchenchen/od-projects/ssl-debug-output/mongodb-bulk-recovery-20261026/native-agent-final.tap"
+  },
+  "nativePlugin": {
+    "tests": 116,
+    "passed": 111,
+    "failed": 0,
+    "skipped": 5,
+    "sha256": "35e073fc145f2ce6631176291537defa55b6b15bf4a1b5d7397518c801834318",
+    "log": "/Users/zhengchenchen/od-projects/ssl-debug-output/mongodb-bulk-recovery-20261026/native-plugin-final.tap"
+  },
+  "isolatedReplica": {
+    "test": {
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "6393be6c948e14d4f76f73145a8e65bdc1d8cb0f9783cbdb67f7f80b64579c64",
+      "log": "/Users/zhengchenchen/od-projects/ssl-debug-output/mongodb-bulk-recovery-20261026/isolated-replica.tap"
+    },
+    "receipt": {
+      "kind": "supplementary-native-node-test-in-isolated-docker",
+      "network": "rda-bulk-d11cf8aaeb83-net",
+      "mongoContainer": "rda-bulk-d11cf8aaeb83-mongo",
+      "dependencyVolume": "rda-bulk-d11cf8aaeb83-deps",
+      "images": {
+        "node": "sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392",
+        "driver": "sha256:d952864e969cbca57b65ae139a7b09883e8f43f2f59d7017dd074f0bfeb71a18",
+        "mongo": "sha256:9ef36ccfdfb42c68dbc7757af3d1e732eaca253ed0cc529a6dd4d728ea97fd44"
+      },
+      "networkInternal": true,
+      "hostPorts": false,
+      "productionConfigMounted": false,
+      "exitCode": 0,
+      "cleanup": {
+        "container": true,
+        "network": true,
+        "volume": true
+      }
+    }
+  },
+  "fieldReproduction": {
+    "sourceSha256": "6bc587f95035f17770443b168d6e27442500ef8b172df838a67fd92195610e28",
+    "opaqueReferences": "replaced with fixture tokens without decoding or rehydration; shape validation only",
+    "baselineResult": "MONGODB_BULK_FIELD_REJECTED",
+    "fixedResult": "accepted",
+    "units": 34,
+    "operations": 100,
+    "compensationUnits": 33,
+    "plannedCredits": 2097,
+    "remoteCalls": 0,
+    "productionReplay": false
+  },
+  "runtimeId": "2.4.0:27a5a96d6dc629a2621999040db40b289967e1dedc1ac1f2131625df39fd185f",
+  "runtimeHashesVerified": 26,
+  "sourceHashes": {
+    "agent/mongodb-bulk-runtime.js": "2119eaecea4d87bd316dde8384c471849e4d937d329108222137c98cf6897294",
+    "agent/mongodb-bulk.js": "6192be9e3541b5b3055ae07342b887a5e16f24adf24f337be28f71fc3f3813c7",
+    "agent/privacy-service.js": "d71a15810e676e5f7dcc3df30c0e37ba21a97243b6320043930ef508f747c6fe",
+    "agent/privacy-store.js": "0cc6a38db187285b8dc31fe775b9f2d591d71768a659565b9569375204ad24d0",
+    "agent/server.js": "4797e76bb6cff22a78a8c6e584ac0edd0f654967617528b9cfc1b7562ebf648b",
+    "agent/test/mongodb-bulk-replica-set.test.js": "757e0f1625b0cf4e29611d6e3fa12fb59884badd97cda3155d1ea437d8067741",
+    "agent/test/mongodb-bulk.test.js": "eb1d2ac20e1a35c45a004909bff6e1b77ce88903540f77ae571037d108342a80",
+    "agent/test/privacy-store.test.js": "97fb8a65b9c9ad1a85c04752f579e8e9160f84b82c9a2783c24c316b6e1e4c53",
+    "plugins/remote-debug-agent/business-storage.js": "c1e8d57796154d48bbe734c3b946fa6efed4bc099378c644547fd8bdc401c045",
+    "plugins/remote-debug-agent/mcp-server.js": "94e2601471c585cdb2fc26a6c4d11a58d022c0911966f12522f2be758357a2f5",
+    "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs": "c5a452e242265f818785962ec14f31b7ffa5bef1fb095b4287f609b6348432d6",
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json": "a2a91306b08097e82b7e8c19ec9b3f1dcdfa6f3092671e240cc12dbb0809563d",
+    "plugins/remote-debug-agent/runtime/agent/server.cjs": "dd1b97ece79343fd28ed2e9715202cf4fd0de3a3a7f4d04099f8f69431b4bc3f",
+    "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs": "db336e2a0efd5c9c0e34464ebfe9a3aad469572f9bf950c2f4725e2f7d1d3cce",
+    "plugins/remote-debug-agent/skills/database-mutations/SKILL.md": "eb319faabe27b94119ffc54cf34d01a122fe0275555cef399a8a9d1e230c4897",
+    "plugins/remote-debug-agent/skills/database-mutations/references/mongodb-bulk.md": "f41c0c262c663822fca0dee6d8ce98d2ba491dfbed5282c1b2122e0d352bb8ec",
+    "plugins/remote-debug-agent/test/helpers/local-mcp.js": "425b0e95e81a7d59d620da285b920dda85e26204bdd946b75fb9fdbd85de5c13",
+    "plugins/remote-debug-agent/test/mcp-smoke.test.js": "0bb47042b13c266a99071b2c06072b960223b742de7be9d736c4970954569d94",
+    "plugins/remote-debug-agent/test/bulk-prepare-recovery.test.js": "4b190fedd127a57615385c1cf91a99fcf29626a00b955b5fa1f3d6a76e4dc445"
+  },
+  "testflow": {
+    "projectId": "remote-debug-agent",
+    "workspaceFile": "/Users/zhengchenchen/od-projects/ssl-debug-output/mongodb-bulk-recovery-20261026/workspace.json",
+    "snapshotId": "d997148c3ff00069e4543c22a15378bd0f0649f585069505f157ea67827c035f",
+    "workflowId": "d997148c3ff00069e4543c22a15378bd0f0649f585069505f157ea67827c035f",
+    "runId": "b3f817a8-8630-4225-aeb5-7a7af5130be6",
+    "flowId": "1f87bc10-2c44-4d38-9f83-b0341140d8e7",
+    "fixedInputVerified": true,
+    "stage": "impact-analyzed",
+    "completeness": "partial-static",
+    "directSymbols": 196,
+    "impactedSymbols": 3823,
+    "diagnostics": 12058,
+    "diagnosticKinds": [
+      "non-source-impact-unknown",
+      "unresolved-call",
+      "ambiguous-symbol-identity",
+      "cgb-not-configured",
+      "broad-impact"
+    ],
+    "executed": false,
+    "blockers": [
+      "No supported node:test execution adapter or versioned Jest test assets/configuration for this project",
+      "No execution bindings, lifecycle or assertions connected to a TestFlow executable plan",
+      "No runner/dependency image configured for this project; available BE images do not establish this plugin dependency contract"
+    ],
+    "coverage": "unknown; no TestFlow execution or per-block/branch coverage evidence"
+  },
+  "attemptsNotCountedAsSuccess": [
+    {
+      "log": "native-full-initial.tap",
+      "failures": 3,
+      "resolution": "Two tests required the documented agent cwd; one MCP fixture lacked the new bulk protocol policy/hash. Full suites were rerun from their package directories with the fixture updated."
+    },
+    {
+      "log": "targeted-final.tap",
+      "failures": 2,
+      "resolution": "Source and bundled Manager synthetic 570 KiB repeated-text probes were blocked by the existing output guard; capacity remains unaccepted. Focused protocol tests use representative bounded documents."
+    },
+    {
+      "log": "manager-diagnostic.tap",
+      "failures": 1,
+      "resolution": "A synthetic repeated-text 570 KiB capacity probe hit the existing OUTPUT_GUARD_BLOCKED budget. Capacity was not accepted; focused Manager protocol cases use bounded representative documents."
+    }
+  ],
+  "production": {
+    "calls": 0,
+    "intentRecovered": false,
+    "replay": false,
+    "configurationChanged": false,
+    "installedPluginChanged": false,
+    "publishedOrDeployed": false,
+    "gitCommitPushOrPr": false
+  },
+  "historicalIntent": {
+    "intentId": "f16dbcb7a1990113e38051e1aeb9d3fca9f46af4dcd5c7ae2f1ba8b3ec4e5b6d",
+    "jobId": "37265270-8912-48c0-8c4d-2947a1cc6e41",
+    "resolution": "not performed; original legacy bulk envelope lacks a verifiable dispatch identity; no trusted migration/attachment interface is provided by this patch"
+  }
+}

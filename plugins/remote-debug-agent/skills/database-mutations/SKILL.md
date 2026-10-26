@@ -31,7 +31,16 @@ or fence a provably unprepared attempt in the technical journal. Only after it
 reports `rejected_before_dispatch` may the identical prepare be retried within
 the same intent; do not change its parameters or create a replacement plan.
 `prepared` returns the existing plan and still requires the normal commit
-confirmation. Legacy intents without a verifiable identity remain protected
+confirmation. Bulk prepare now records the exact request/attempt and accepted
+chunk hash through the Manager. A verified pre-SSH rejection is
+`rejected_before_dispatch`; an unclaimed attempt can be atomically fenced.
+Positive chunk/manifest evidence (and the exact sealed plan for an end marker)
+can recover a lost reply as `complete`; this means preparation delivery only,
+never business execution. A dispatched attempt without that evidence stays
+`uncertain` with `bulk_prepare_evidence_required`. Historical bulk envelopes
+without this protocol return `legacy=true` and `bulk_prepare_identity_required`;
+do not invent an identity from an error shown in chat or a missing job.
+Legacy ordinary intents without a verifiable identity remain protected
 with `legacy_evidence_required`; missing lists/indexes and elapsed lock age are
 not recovery proof. Never clear a journal, local record or lock to bypass this.
 

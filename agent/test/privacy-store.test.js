@@ -253,3 +253,65 @@ test("public privacy RPC rejects caller-supplied reconciliation evidence", async
   await assert.rejects(privacyRequest({}, { action: "reconcile", auth: f.auth, scope, result: { ok: true } },
     { instance: () => instance, origin }), { code: "BUSINESS_STORAGE_ACTION_DENIED" });
 });
+
+test("bulk legacy envelopes and modern missing evidence are distinguished without accepting caller proof", async (t) => {
+  const f = fixture(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: { database: "business" } }, origin = "http://127.0.0.1:4343";
+  const scope = businessTargetScope(origin, instance, "business");
+  const old = f.store.execute("intent", { auth: f.auth, scope, route: "/mongodb/bulk/prepare", request: { jobId: "old-job" }, identity: { instanceId: instance.id, jobId: "old-job" } });
+  const service = { call: (action, input) => f.store.execute(action, input) };
+  const options = { instance: () => instance, origin, dispatch: () => assert.fail("unbound legacy recovery must not dispatch") };
+  const recovered = await privacyRequest(service, { action: "recover_operation", auth: f.auth, scope, id: old.id, mode: "reconcile", result: { ok: true }, notDispatched: true }, options);
+  assert.equal(recovered.state, "uncertain"); assert.equal(recovered.legacy, true); assert.equal(recovered.reason, "bulk_prepare_identity_required");
+  for (const action of ["claim_bulk_prepare", "bulk_prepare_result", "outcome"]) {
+    await assert.rejects(privacyRequest(service, { action, auth: f.auth, scope, id: old.id, result: { ok: true }, notDispatched: true }, options), { code: action === "outcome" ? "BUSINESS_OPERATION_DENIED" : "BUSINESS_STORAGE_ACTION_DENIED" });
+  }
+});
+
+test("bulk intent interrupted before claim can be atomically fenced, preserving identity and blocking a delayed dispatch", async (t) => {
+  const f = fixture(t), instance = { id: "isolated", host: "fixture.invalid", mongodb: { database: "business" } }, origin = "http://127.0.0.1:4343";
+  const scope = businessTargetScope(origin, instance, "business");
+  const args = { auth: f.auth, scope, route: "/mongodb/bulk/prepare", request: { jobId: "fixed-job" }, identity: { instanceId: instance.id, jobId: "fixed-job" }, dispatchDigest: "e".repeat(64) };
+  const intent = f.store.execute("intent", args); f.reopen();
+  const recovered = await privacyRequest({ call: (action, input) => f.store.execute(action, input) },
+    { action: "recover_operation", auth: f.auth, scope, id: intent.id, mode: "reconcile" },
+    { instance: () => instance, origin, dispatch: () => assert.fail("unclaimed intent recovery must not dispatch") });
+  assert.equal(recovered.state, "rejected_before_dispatch"); assert.equal(recovered.reason, "old_attempt_fenced"); assert.equal(recovered.legacy, false);
+  assert.throws(() => f.store.execute("claim_bulk_prepare", { auth: f.auth, scope, id: intent.id, attempt: 1, dispatchDigest: args.dispatchDigest }), { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED" });
+  const next = f.store.execute("intent", args);
+  assert.equal(next.id, intent.id); assert.equal(next.bulkPrepare.attempt, 2);
+  assert.throws(() => f.store.execute("bulk_prepare_result", { auth: f.auth, scope, id: intent.id, bulkPrepare: intent.bulkPrepare, notDispatched: true }), { code: "BUSINESS_OPERATION_DENIED" });
+});
+
+test("bulk recovery cannot fence a claimed attempt using a stale unclaimed observation", (t) => {
+  const f = fixture(t), args = { route: "/mongodb/bulk/prepare", request: {}, dispatchDigest: "a".repeat(64) };
+  const intent = f.call("intent", args);
+  f.call("claim_bulk_prepare", { id: intent.id, attempt: 1, dispatchDigest: args.dispatchDigest, bulkChunk: { jobId: "job", chunkIndex: 0, chunkHash: "b".repeat(64), endOfUpload: false } });
+  const saved = f.call("bulk_prepare_result", { id: intent.id, bulkPrepare: intent.bulkPrepare, unclaimed: true, result: { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } } });
+  assert.equal(saved.state, "uncertain");
+  assert.equal(f.call("intent", args).state, "uncertain");
+});
+
+test("bulk local receipt commit failure remains pinned until exact positive evidence is persisted", (t) => {
+  let fail = false;
+  const f = fixture(t, { fault: (boundary) => { if (fail && boundary === "beforeCommit") throw Error("injected commit failure"); } });
+  const intent = f.call("intent", { route: "/mongodb/bulk/prepare", request: {}, dispatchDigest: "a".repeat(64) });
+  const bulkChunk = { jobId: "job", chunkIndex: 0, chunkHash: "b".repeat(64), endOfUpload: false };
+  f.call("claim_bulk_prepare", { id: intent.id, attempt: 1, dispatchDigest: "a".repeat(64), bulkChunk });
+  const receipt = { id: intent.id, bulkPrepare: intent.bulkPrepare, result: { ok: true, jobId: bulkChunk.jobId, chunkIndex: 0, chunkHash: bulkChunk.chunkHash, status: "uploading" } };
+  fail = true;
+  assert.throws(() => f.call("bulk_prepare_result", receipt));
+  fail = false; f.reopen();
+  assert.equal(f.call("inspect_operation", { id: intent.id }).state, "uncertain");
+  assert.equal(f.call("bulk_prepare_result", { ...receipt, unclaimed: true, result: { ok: false } }).state, "uncertain");
+  assert.equal(f.call("bulk_prepare_result", receipt).state, "complete");
+  f.reopen(); assert.equal(f.call("inspect_operation", { id: intent.id }).result.chunkHash, bulkChunk.chunkHash);
+});
+
+test("redacted bulk request collisions cannot return a receipt for different original bytes", (t) => {
+  const f = fixture(t), args = { route: "/mongodb/bulk/prepare", request: { jobId: "fixed-job", secret: "[REDACTED]" }, dispatchDigest: "a".repeat(64) };
+  const intent = f.call("intent", args);
+  f.call("claim_bulk_prepare", { id: intent.id, attempt: 1, dispatchDigest: args.dispatchDigest, bulkChunk: { jobId: "fixed-job", chunkIndex: 0, chunkHash: "b".repeat(64), endOfUpload: false } });
+  f.call("bulk_prepare_result", { id: intent.id, bulkPrepare: intent.bulkPrepare, result: { ok: true, jobId: "fixed-job", chunkIndex: 0, chunkHash: "b".repeat(64) } });
+  assert.throws(() => f.call("intent", { ...args, dispatchDigest: "c".repeat(64) }), { code: "BUSINESS_OPERATION_CONTENT_CONFLICT" });
+  assert.equal(f.call("intent", args).state, "complete");
+});

@@ -108,7 +108,7 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
 
   const memberId = `member-${token}`;
   const privateId = `private-${token}`;
-  await db.collection("members").insertOne({ _id: memberId, field: null, protected: "keep" });
+  await db.collection("members").insertOne({ _id: memberId, field: null, protected: "keep", integrals: [{ group_string_id: "fixture-group", value: 0 }], integral_record: [] });
   let loseCommitReply = false;
   const requestCounts = Object.create(null);
   const countedMethods = new Set(["find", "findOne", "bulkWrite", "insertOne", "updateOne", "deleteOne", "replaceOne"]);
@@ -174,7 +174,7 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
     const marker = stdout.split(/\r?\n/).findLast((line) => line.startsWith("__REMOTE_DEBUG_MONGODB_RESULT__BULK:"));
     assert.ok(marker, "remote helper returned its structured response");
     const result = JSON.parse(marker.slice("__REMOTE_DEBUG_MONGODB_RESULT__BULK:".length));
-    assert.equal(result.ok, true, result.error?.message);
+    if (result.ok !== true) throw Object.assign(new Error(result.error?.message), { code: result.error?.code });
     return result.data;
   };
 
@@ -182,7 +182,9 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   const units = [{
     unitId: "member-private-link",
     operations: [
-      { operation: "updateOne", collection: "members", id: memberId, expected: { field: { exists: true, value: null } }, update: { $set: { field: "updated" } } },
+      { operation: "updateOne", collection: "members", id: memberId, expected: { field: { exists: true, value: null },
+        "integrals.0.group_string_id": { exists: true, value: "fixture-group" }, "integrals.0.value": { exists: true, value: 0 }, "integral_record.0": { exists: false } },
+        update: { $set: { field: "updated", "integral_record.0": { _id: "fixture-credit", value: 142 } }, $inc: { "integrals.0.value": 142 } } },
       { operation: "insertOne", collection: "private", document: { _id: privateId, owner: memberId } },
     ],
   }];
@@ -196,6 +198,9 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   assert.equal(prepared.status, "prepared");
   assert.equal(prepared.operationCount, 2);
   assert.equal(concurrentRetry.planHash, prepared.planHash);
+  const sealIdentity = normalizeMongoBulkChunk(endChunk, config);
+  const recoveredPrepare = await emit({ action: "recoverUpload", jobId, database: "testdb", chunkIndex: 1, chunkHash: sealIdentity.chunkHash, endOfUpload: true });
+  assert.equal(recoveredPrepare.planHash, prepared.planHash);
   assert.equal((await emit({ action: "upload", chunk: { jobId, database: "testdb", chunkIndex: 1, purpose: "replica-set integration", units: [], endOfUpload: true } })).duplicate, true);
 
   const leaseId = crypto.randomBytes(32).toString("hex");
@@ -213,6 +218,10 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   const memberAfter = await db.collection("members").findOne({ _id: memberId });
   assert.deepEqual({ field: memberAfter.field, protected: memberAfter.protected }, { field: "updated", protected: "keep" });
   assert.equal((await db.collection("private").findOne({ _id: privateId })).owner, memberId);
+  assert.equal(memberAfter.integrals[0].value, 142);
+  assert.deepEqual(memberAfter.integral_record, [{ _id: "fixture-credit", value: 142 }]);
+  await emit({ action: "executeBatch", jobId, planHash: prepared.planHash, leaseId, batchIndex: 0 });
+  assert.equal((await db.collection("members").findOne({ _id: memberId })).integrals[0].value, 142, "repeating a committed batch cannot double credit");
 
   await emit({ action: "verifyBatch", jobId, planHash: prepared.planHash, leaseId, batchIndex: 0 });
   const complete = await emit({ action: "finish", jobId, planHash: prepared.planHash, leaseId, mode: "execute" });
@@ -225,6 +234,18 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   const memberRestored = await db.collection("members").findOne({ _id: memberId });
   assert.deepEqual({ field: memberRestored.field, protected: memberRestored.protected }, { field: null, protected: "keep" });
   assert.equal(await db.collection("private").findOne({ _id: privateId }), null);
+  assert.equal(memberRestored.integrals[0].value, 0);
+  assert.deepEqual(memberRestored.integral_record, []);
+
+  const conflictJob = `conflict-${token}`;
+  await emit({ action: "upload", chunk: { jobId: conflictJob, chunkIndex: 0, units } });
+  const conflictPlan = await emit({ action: "upload", chunk: { jobId: conflictJob, chunkIndex: 1, units: [], endOfUpload: true } });
+  await db.collection("members").updateOne({ _id: memberId }, { $push: { integral_record: { _id: "concurrent-credit", value: 2 } } });
+  const conflictLease = crypto.randomBytes(32).toString("hex");
+  await emit({ action: "executeStart", jobId: conflictJob, planHash: conflictPlan.planHash, leaseId: conflictLease, confirmation: "确认执行" });
+  await assert.rejects(emit({ action: "executeBatch", jobId: conflictJob, planHash: conflictPlan.planHash, leaseId: conflictLease, batchIndex: 0 }), { code: "MONGODB_BULK_CONFLICT" });
+  assert.equal((await db.collection("members").findOne({ _id: memberId })).integrals[0].value, 0);
+  assert.equal(await db.collection("private").findOne({ _id: privateId }), null, "failed unit must not leave a sibling write");
 
   if (process.env.MONGODB_SANDBOX_AUTH_TEST === "1") {
     const sandbox = client.db(config.sandboxDatabase);

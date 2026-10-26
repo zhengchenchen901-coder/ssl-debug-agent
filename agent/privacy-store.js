@@ -152,12 +152,18 @@ export class PrivacyStore {
     if (action === "intent") return this.transaction(() => {
       const id = this.hash("operation", ctx, input.scope, input.route, input.request);
       const previous = this.get("operation", id, ctx, scope);
-      const retryPrepare = previous?.state === "rejected_before_dispatch" && previous.prepare && input.dispatchDigest === previous.prepare.requestDigest;
+      // Redacted request identity can collide when only a protected value
+      // changes. Never serve an old chunk acknowledgement for different bytes.
+      if (previous?.bulkPrepare && previous.bulkPrepare.requestDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
+      const retryPrepare = previous?.state === "rejected_before_dispatch" && (previous.prepare || previous.bulkPrepare) &&
+        input.dispatchDigest === (previous.prepare || previous.bulkPrepare).requestDigest;
       if (previous && !retryPrepare && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
       const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "")
         ? { mutationId: previous?.prepare?.mutationId || randomUUID(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : undefined;
       const record = { state: "uncertain", route: input.route, identity: input.identity, started: this.now(),
-        ...(prepare ? { prepare, previousRejection: previous?.rejection } : {}) };
+        ...(prepare ? { prepare, previousRejection: previous?.rejection } : {}),
+        ...(input.route === "/mongodb/bulk/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "")
+          ? { bulkPrepare: { binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.bulkPrepare?.attempt || 0) + 1 }, previousRejection: previous?.rejection } : {}) };
       this.put("operation", id, ctx, scope, record, Number.MAX_SAFE_INTEGER, true);
       const task = this.hash("task", ctx, input.scope, "operation:" + id);
       const retention = this.now() + 90 * DAY;
@@ -168,7 +174,7 @@ export class PrivacyStore {
         this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, task, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND id=?").run(ref);
       }
-      return { id, state: "new", ...(prepare ? { prepare } : {}) };
+      return { id, state: "new", ...(prepare ? { prepare } : {}), ...(record.bulkPrepare ? { bulkPrepare: record.bulkPrepare } : {}) };
     });
     // Internal Manager actions. They are deliberately absent from privacyRequest's
     // public action allowlist: callers cannot submit their own recovery proof.
@@ -184,6 +190,34 @@ export class PrivacyStore {
           record.prepare.requestDigest !== input.dispatchDigest || record.prepare.attempt !== input.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
       this.put("operation", input.id, ctx, scope, { ...record, dispatched: true, operationId: input.operationId }, Number.MAX_SAFE_INTEGER, true);
       return { ...record, dispatched: true };
+    });
+    if (action === "claim_bulk_prepare") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record?.bulkPrepare || record.state !== "uncertain" || record.dispatched ||
+          record.bulkPrepare.requestDigest !== input.dispatchDigest || record.bulkPrepare.attempt !== input.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      this.put("operation", input.id, ctx, scope, { ...record, dispatched: true, operationId: input.operationId, bulkChunk: input.bulkChunk }, Number.MAX_SAFE_INTEGER, true);
+      return { ...record, dispatched: true, bulkChunk: input.bulkChunk };
+    });
+    if (action === "bulk_prepare_result") return this.transaction(() => {
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record?.bulkPrepare || JSON.stringify(record.bulkPrepare) !== JSON.stringify(input.bulkPrepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
+      if (record.state !== "uncertain") return { id: input.id, ...record };
+      const result = input.result, chunk = record.bulkChunk;
+      const proven = result?.ok === true && chunk && result.jobId === chunk.jobId && result.chunkIndex === chunk.chunkIndex &&
+        result.chunkHash === chunk.chunkHash && (!chunk.endOfUpload || result.status === "prepared" && /^[a-f0-9]{64}$/.test(result.planHash || ""));
+      const value = proven ? { ...record, state: "complete", result, reconciliation: undefined } : input.notDispatched === true || input.unclaimed === true && !record.dispatched
+        ? { ...record, state: "rejected_before_dispatch", rejection: { attempt: record.bulkPrepare.attempt, code: result?.error?.code,
+          at: this.now(), evidence: input.unclaimed ? "unclaimed_attempt_fence" : "preflight_before_ssh" }, result, reconciliation: undefined }
+        : { ...record, reconciliation: { code: result?.ok === true ? "MONGODB_BULK_RECEIPT_CONFLICT" : result?.error?.code } };
+      const resolved = value.state !== "uncertain";
+      this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY : Number.MAX_SAFE_INTEGER, !resolved);
+      this.put("event", randomUUID(), ctx, scope, { type: "bulk_prepare_state", operation: input.id, state: value.state,
+        attempt: record.bulkPrepare.attempt, operationId: record.operationId || input.operationId, code: value.rejection?.code || value.reconciliation?.code, evidence: value.rejection?.evidence }, this.now() + 90 * DAY);
+      if (resolved) {
+        const taskId = this.hash("task", ctx, input.scope, "operation:" + input.id), task = this.get("task", taskId, ctx, scope);
+        if (task) this.put("task", taskId, ctx, scope, { ...task, active: false }, task.expires, false);
+      }
+      return { id: input.id, ...value };
     });
     if (action === "claim_execution") return this.transaction(() => {
       const record = this.get("operation", input.id, ctx, scope);
@@ -221,6 +255,7 @@ export class PrivacyStore {
     if (action === "outcome" || action === "reconcile") return this.transaction(() => {
       const previous = this.get("operation", input.id, ctx, scope);
       if (!previous) throw privacyError("BUSINESS_OPERATION_DENIED");
+      if (previous.route === "/mongodb/bulk/prepare") throw privacyError("BUSINESS_OPERATION_DENIED");
       let proof;
       const identity = previous.identity || {};
       if (action === "reconcile" && input.result?.ok === true && /^[a-f0-9]{64}$/.test(identity.planHash || "")) {

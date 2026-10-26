@@ -350,3 +350,96 @@ test("job runner pauses only after the other in-flight batch settles", async () 
   await runner.tasks.get("job-2");
   assert.equal(pauseObservedCompleted, 2);
 });
+
+function arrayOperation(overrides = {}) {
+  return { operation: "updateOne", collection: "orders", id: "order-1",
+    expected: { "integrals.0.value": { exists: true, value: 0 }, "integrals.0.group_string_id": { exists: true, value: "group-fixture" }, "integral_record.0": { exists: false } },
+    update: { $inc: { "integrals.0.value": 142 }, $set: { "integral_record.0": { _id: "credit-1", value: 142 } } }, ...overrides };
+}
+function normalizeArray(operation, policy = { ...config, allowedCollections: ["orders"] }) {
+  return normalizeMongoBulkChunk({ jobId: "array-job", chunkIndex: 0, units: [{ unitId: "unit-1", operations: [operation] }] }, policy);
+}
+
+test("bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements", () => {
+  assert.equal(normalizeArray(arrayOperation()).operationCount, 1);
+  for (const field of ["rows.$.value", "rows.$[].value", "rows.$[r].value", "rows.01.value", "rows.-1.value", "rows.100000.value", "rows.constructor.value", "rows.__proto__.value"]) {
+    assert.throws(() => normalizeArray(arrayOperation({ update: { $set: { [field]: 1 } } })), { code: "MONGODB_BULK_FIELD_REJECTED" }, field);
+  }
+  for (const patch of [
+    { expected: { "integrals.0.value": { exists: true, value: 0 }, "integral_record.0": { exists: false } } },
+    { expected: { "integrals.0.value": { exists: true, value: 0 }, "integrals.0.group_string_id": { exists: true, value: null }, "integral_record.0": { exists: false } } },
+    { update: { $set: { "integral_record.0": 142 } } },
+    { update: { $set: { "integral_record.0": { value: 142 } } } },
+    { update: { $set: { "integral_record.0": { _id: null, id: "credit-1" } } } },
+    { expected: { "integrals.0.value": { exists: true, value: 0 }, "integrals.0.group_string_id": { exists: true, value: "group-fixture" } }, update: { $inc: { "integrals.0.value": 1 }, $set: { "integrals.0.group_string_id": "changed" } } },
+  ]) assert.throws(() => normalizeArray(arrayOperation(patch)), { code: "MONGODB_BULK_ARRAY_GUARD_REQUIRED" });
+  assert.throws(() => normalizeArray(arrayOperation({ expected: { "integrals.0": { exists: false }, ...arrayOperation().expected } })), { code: "MONGODB_BULK_EXPECTED_INVALID" });
+  assert.throws(() => normalizeArray(arrayOperation({ expected: { "integrals.0.group_string_id": { exists: true, value: "group-fixture" } } })), { code: "MONGODB_BULK_EXPECTED_INCOMPLETE" });
+  assert.throws(() => normalizeArray(arrayOperation({ update: { $inc: { "integrals.0.value": 1 }, $set: { integrals: [] } } })), { code: "MONGODB_BULK_UPDATE_INVALID" });
+  const nested = { ...arrayOperation(), expected: { "rows.0.id": { exists: true, value: "row-1" }, "rows.0.parts.1.id": { exists: true, value: "part-1" }, "rows.0.parts.1.value": { exists: true, value: 0 } }, update: { $inc: { "rows.0.parts.1.value": 1 } } };
+  assert.equal(normalizeArray(nested).operationCount, 1);
+  delete nested.expected["rows.0.id"];
+  assert.throws(() => normalizeArray(nested), { code: "MONGODB_BULK_ARRAY_GUARD_REQUIRED" });
+});
+
+for (const scenario of ["tail", "sparse", "hole", "object-index", "identity-conflict", "tail-conflict", "duplicate-identity"]) test(`bulk array runtime checks actual preimage: ${scenario}`, async (t) => {
+  const f = bulkSandboxFixture(t); await f.initialize();
+  const document = { _id: "order-1", integrals: [{ group_string_id: "group-fixture", value: 0 }], integral_record: [], protected: "unchanged" };
+  if (scenario === "object-index") document.integrals = { 0: document.integrals[0] };
+  if (scenario === "hole") document.integrals = new Array(1);
+  if (scenario === "identity-conflict") document.integrals[0].group_string_id = "another-group";
+  if (scenario === "tail-conflict") document.integral_record.push({ _id: "concurrent-credit" });
+  f.rows("business", "orders").set(document._id, document);
+  const operation = arrayOperation();
+  if (scenario === "duplicate-identity") {
+    document.integral_record.push({ _id: "credit-1", value: 142 });
+    operation.update.$set = { "integral_record.1": { _id: "credit-1", value: 142 } };
+    delete operation.expected["integral_record.0"]; operation.expected["integral_record.1"] = { exists: false };
+  }
+  if (scenario === "sparse") { operation.update.$set = { "integral_record.2": { _id: "credit-1" } }; delete operation.expected["integral_record.0"]; operation.expected["integral_record.2"] = { exists: false }; }
+  const chunk = { jobId: "guarded-array", chunkIndex: 0, units: [{ unitId: "unit-1", operations: [operation] }] };
+  await f.run({ action: "upload", chunk });
+  const prepare = f.run({ action: "upload", chunk: { jobId: chunk.jobId, chunkIndex: 1, units: [], endOfUpload: true } });
+  if (scenario !== "tail") {
+    await assert.rejects(prepare, { code: ["sparse", "hole", "object-index"].includes(scenario) ? "MONGODB_BULK_ARRAY_INDEX_INVALID" : scenario === "duplicate-identity" ? "MONGODB_BULK_ARRAY_IDENTITY_CONFLICT" : "MONGODB_BULK_ORIGINAL_VALUE_MISMATCH" });
+    assert.equal(f.state.events.some((e) => e.action === "businessWrite"), false);
+  } else {
+    const plan = await prepare;
+    // A later unrelated edit must still fail the complete before-image check.
+    f.rows("business", "orders").get("order-1").protected = "concurrent-edit";
+    const leaseId = "a".repeat(64);
+    await f.run({ action: "executeStart", jobId: chunk.jobId, planHash: plan.planHash, leaseId, confirmation: "确认执行" });
+    await assert.rejects(f.run({ action: "executeBatch", jobId: chunk.jobId, planHash: plan.planHash, leaseId, batchIndex: 0 }), { code: "MONGODB_BULK_CONFLICT" });
+    assert.equal(f.rows("business", "orders").get("order-1").integrals[0].value, 0);
+    assert.equal(f.state.events.some((e) => e.action === "businessWrite"), false);
+  }
+});
+
+test("bulk preflight attests no dispatch only before SSH invocation", async () => {
+  let calls = 0;
+  await assert.rejects(runMongoBulk({ action: "upload", chunk: { jobId: "bad", chunkIndex: 0, units: [{ unitId: "x", operations: [{ operation: "updateOne", collection: "members", id: "x", update: { $set: { "a.$.x": 1 } } }] }] } },
+    { config, runSSH: () => { calls++; } }), { code: "MONGODB_BULK_FIELD_REJECTED", dispatchState: "not_dispatched" });
+  assert.equal(calls, 0);
+  const chunk = normalizeMongoBulkChunk({ jobId: "valid", chunkIndex: 0, units: [unitUpdate("x", "x", { exists: false })] }, config);
+  await assert.rejects(runMongoBulk({ action: "upload", chunk: { jobId: chunk.jobId, chunkIndex: 0, units: chunk.units } }, { config, runSSH: () => { calls++; throw Object.assign(Error("disconnected"), { code: "ECONNRESET" }); } }), (error) => error.dispatchState === undefined && error.code === "ECONNRESET");
+  assert.equal(calls, 1);
+});
+
+test("bulk chunk and seal retries keep hashes and plans immutable and reject changed content", async (t) => {
+  const f = bulkSandboxFixture(t); await f.initialize();
+  const chunk = { jobId: "immutable-job", chunkIndex: 0, units: [{ unitId: "unit-1", operations: [{ operation: "updateOne", collection: "orders", id: "order-1", expected: { count: { exists: true, value: 0 } }, update: { $inc: { count: 1 } } }] }] };
+  const first = await f.run({ action: "upload", chunk });
+  const duplicate = await f.run({ action: "upload", chunk });
+  assert.equal(duplicate.duplicate, true); assert.equal(duplicate.chunkHash, first.chunkHash);
+  const changed = structuredClone(chunk); changed.units[0].operations[0].update.$inc.count = 2;
+  await assert.rejects(f.run({ action: "upload", chunk: changed }), { code: "MONGODB_BULK_CHUNK_CONFLICT" });
+  await assert.rejects(f.run({ action: "upload", chunk: { ...chunk, purpose: "changed" } }), { code: "MONGODB_BULK_JOB_CONFLICT" });
+  const seal = { jobId: chunk.jobId, chunkIndex: 1, units: [], endOfUpload: true };
+  const prepared = await f.run({ action: "upload", chunk: seal });
+  const again = await f.run({ action: "upload", chunk: seal });
+  assert.equal(again.duplicate, true); assert.equal(again.planHash, prepared.planHash);
+  const sealIdentity = normalizeMongoBulkChunk(seal, f.config);
+  const recovered = await f.run({ action: "recoverUpload", jobId: chunk.jobId, database: "business", chunkIndex: 1, chunkHash: sealIdentity.chunkHash, endOfUpload: true });
+  assert.equal(recovered.planHash, prepared.planHash);
+  assert.equal(f.rows("business", "orders").get("order-1").count, 0);
+});

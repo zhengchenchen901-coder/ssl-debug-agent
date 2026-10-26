@@ -1559,6 +1559,8 @@ export function createApp(options = {}) {
       let result;
       if (action === "upload") {
         result = await runMongoBulk({ action: "upload", chunk: raw }, { operation: requestOperation });
+      } else if (action === "recoverUpload") {
+        result = await runMongoBulk({ ...raw, action }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk({ action, ...raw }, { operation: requestOperation });
       } else if (action.startsWith("sandbox")) {
@@ -1661,6 +1663,7 @@ export function createApp(options = {}) {
   app.post("/mongodb/mutations/recover-execution", (request, response) =>
     handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
+  app.post("/mongodb/bulk/recover-prepare", (request, response) => handleMongoBulk(request, response, "recoverUpload", "/mongodb/bulk/recover-prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
   app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
   app.post("/mongodb/bulk/jobs", (request, response) => handleMongoBulk(request, response, "list", "/mongodb/bulk/jobs"));

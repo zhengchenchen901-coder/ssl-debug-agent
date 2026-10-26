@@ -2989,7 +2989,7 @@ async function requestAgent(pathName, payload, options = {}) {
     operation.privacyInput = payload;
     operation.privacyIntent = await businessStorage.intent(settings, pathName, payload, scope, operation.privacyRefs, operation.signal);
     if (["complete", "prepared"].includes(operation.privacyIntent?.state)) return operation.privacyIntent.result;
-    if (operation.privacyIntent?.prepare) {
+    if (operation.privacyIntent?.prepare || operation.privacyIntent?.bulkPrepare) {
       const prepared = await businessStorage.dispatchPrepare(settings, operation.privacyIntent, scope, payload, operation);
       if (prepared.ok !== true) throw Object.assign(new Error(prepared.error?.message || "MongoDB preparation failed"), prepared.error,
         { intentId: prepared.intentId || operation.privacyIntent.id });

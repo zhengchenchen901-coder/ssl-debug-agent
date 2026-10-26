@@ -39,7 +39,7 @@ export async function localMcp(t, { instance, handler, framing = "json-line", na
             requests.push({ path: route, input: { ...request, instanceId: id } });
             return { ok: true, instanceId: id, ...await handler(route, request) };
           } });
-        if (input.action === "dispatch_prepare" && dropReply === "/mongodb/mutations/prepare") { dropReply = undefined; req.socket.destroy(); return; }
+        if (input.action === "dispatch_prepare" && ["/mongodb/mutations/prepare", "/mongodb/bulk/prepare"].includes(dropReply)) { dropReply = undefined; req.socket.destroy(); return; }
         return res.end(JSON.stringify({ ok: true, result }));
       }
       catch (error) { res.statusCode = 409; return res.end(JSON.stringify({ ok: false, error: { code: error.code, message: "Protected fixture state unavailable" } })); }

@@ -32,7 +32,7 @@ const DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 const COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
 const JOB_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const UNIT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
-const FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+const FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const UPDATE_OPERATORS = new Set(["$set", "$unset", "$inc"]);
 const EJSON_KEYS = new Set([
@@ -208,7 +208,7 @@ function normalizeUpdate(value) {
     }
     output[operator] = {};
     for (const [field, fieldValue] of Object.entries(fields)) {
-      if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
+      if (!safeBulkPath(field) || field === "_id" || field.startsWith("_id.")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
       if (paths.some((path) => path === field || path.startsWith(`${field}.`) || field.startsWith(`${path}.`))) {
@@ -228,13 +228,50 @@ function normalizeUpdate(value) {
   return { update: output, paths };
 }
 
+function safeBulkPath(field) {
+  return FIELD_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS.has(part));
+}
+
+function overlaps(left, right) {
+  return left === right || left.startsWith(right + ".") || right.startsWith(left + ".");
+}
+
+function bulkIdentity(value) {
+  return typeof value === "string" && value.length > 0 || Number.isSafeInteger(value) ||
+    value && typeof value === "object" && Object.keys(value).length === 1 && (typeof value.$oid === "string" || typeof value.$numberLong === "string");
+}
+
+// A value precondition is not an element identity. Indexed edits require an
+// unchanged, non-null identity sibling; missing full-element $set is checked
+// against the actual immediate tail by the remote preimage verifier.
+function assertArrayGuards(expected, update, paths) {
+  for (const [operator, fields] of Object.entries(update)) for (const field of Object.keys(fields)) {
+    const parts = field.split(".");
+    for (let i = 0; i < parts.length; i++) {
+      if (!/^[0-9]+$/.test(parts[i])) continue;
+      const prefix = parts.slice(0, i + 1).join(".");
+      if (i === parts.length - 1 && operator === "$set" && expected[field]?.exists === false &&
+          fields[field] && typeof fields[field] === "object" && !Array.isArray(fields[field]) &&
+          !Object.keys(fields[field]).some((key) => key.startsWith("$")) &&
+          bulkIdentity(Object.prototype.hasOwnProperty.call(fields[field], "_id") ? fields[field]._id : fields[field].id)) continue;
+      const guard = Object.entries(expected).some(([key, condition]) => {
+        const suffix = key.slice(prefix.length + 1);
+        return key.startsWith(prefix + ".") && /^(?:_id|id|[A-Za-z_][A-Za-z0-9_]*_id)$/.test(suffix) &&
+          condition.exists === true && bulkIdentity(condition.value) && !paths.some((path) => overlaps(path, key));
+      });
+      if (!guard || i === parts.length - 1) throw bulkError("indexed edits require an unchanged element identity; only a missing full-element $set may append", "MONGODB_BULK_ARRAY_GUARD_REQUIRED");
+    }
+  }
+}
+
 function normalizeExpected(value, changedPaths) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) {
     throw bulkError("updateOne requires original values in expected", "MONGODB_BULK_EXPECTED_REQUIRED");
   }
   const expected = {};
   for (const [field, condition] of Object.entries(value)) {
-    if (!FIELD_PATTERN.test(field) || !condition || typeof condition !== "object" || Array.isArray(condition)) {
+    if (!safeBulkPath(field) || !condition || typeof condition !== "object" || Array.isArray(condition) ||
+        Object.keys(expected).some((path) => overlaps(path, field))) {
       throw bulkError("expected must map safe field paths to existence/value conditions", "MONGODB_BULK_EXPECTED_INVALID");
     }
     const exists = condition.exists;
@@ -271,11 +308,13 @@ function normalizeOperation(value, config, database, unitId, index) {
   if (value.operation !== "updateOne") throw bulkError("bulk V1 supports only insertOne and updateOne", "MONGODB_BULK_OPERATION_UNSUPPORTED");
   assertKnownFields(value, ["operation", "collection", "id", "expected", "update"], "updateOne");
   const updatePlan = normalizeUpdate(value.update);
+  const expected = normalizeExpected(value.expected, updatePlan.paths);
+  assertArrayGuards(expected, updatePlan.update, updatePlan.paths);
   return {
     collection,
     operation: "updateOne",
     id: normalizeId(value.id, `unit ${unitId} operation ${index}.id`),
-    expected: normalizeExpected(value.expected, updatePlan.paths),
+    expected,
     update: updatePlan.update,
   };
 }
@@ -389,6 +428,7 @@ function parseMarker(stdout) {
 function normalizeActionRequest(input, config) {
   const action = input.action;
   const fields = {
+    recoverUpload: ["jobId", "database", "chunkIndex", "chunkHash", "endOfUpload"],
     sandboxStatus: ["offset", "limit"], sandboxExport: ["jobId", "limit"], sandboxPrepareCleanup: ["jobId"], sandboxCleanup: ["jobId", "cleanupHash", "confirmation"],
     upload: input.chunk ? ["chunk"] : ["jobId", "database", "chunkIndex", "purpose", "rollbackTtlMs", "units", "chunkHash", "endOfUpload"],
     get: ["jobId", "includePlan", "includeDifferences", "offset", "limit", "query"], list: ["offset", "limit"],
@@ -398,6 +438,13 @@ function normalizeActionRequest(input, config) {
     rollbackStart: ["jobId", "planHash", "leaseId", "confirmation"], executeStart: ["jobId", "planHash", "leaseId", "confirmation"],
   };
   if (fields[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields[action]], "bulk action");
+  if (action === "recoverUpload") {
+    if (!JOB_ID_PATTERN.test(input.jobId || "") || input.database !== config.database || !Number.isInteger(input.chunkIndex) ||
+        input.chunkIndex < 0 || input.chunkIndex > 9999 || !HASH_PATTERN.test(input.chunkHash || "") || typeof input.endOfUpload !== "boolean") {
+      throw bulkError("exact bulk chunk recovery identity is required", "MONGODB_BULK_RECOVERY_IDENTITY_INVALID");
+    }
+    return { ...input };
+  }
   if (action === "get" && input.query) assertKnownFields(input.query, ["includeDifferences", "offset", "limit"], "bulk query");
   if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
     const jobId = input.jobId;
@@ -472,16 +519,23 @@ function normalizeActionRequest(input, config) {
 
 export async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
-  const recoveryAction = input.action === "get" || input.action === "list" || input.action === "heartbeat" ||
+  const recoveryAction = input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" ||
     input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" ||
     input.action === "control" && input.command === "pause" ||
     input.action === "dispatch" && input.phase === "rollback" ||
     input.action === "finish" && input.mode === "rollback";
   const management = typeof input.action === "string" && input.action.startsWith("sandbox");
   if (management && rawConfig.enabled === false) throw bulkError("MongoDB sandbox access is disabled for this instance", "SANDBOX_MANAGEMENT_NOT_CONFIGURED", 403);
-  const config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
-  const request = normalizeActionRequest(input, config);
-  if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+  let config, request, script;
+  try {
+    config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
+    request = normalizeActionRequest(input, config);
+    if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
+  } catch (error) {
+    if (input.action === "upload") error.dispatchState = "not_dispatched";
+    throw error;
+  }
   let remoteResult;
   try {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
@@ -491,7 +545,7 @@ export async function runMongoBulk(input = {}, options = {}) {
       priority: options.priority || "interactive",
       resourceTaskId: options.resourceTaskId,
       taskType: options.priority === "control" ? "control" : "mongo_read",
-      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management }),
+      stdin: script,
     });
   } catch (error) {
     throw operationError(redactMongoSecrets(error.message || "MongoDB bulk helper could not be executed"), {

@@ -50730,6 +50730,31 @@ function __bulkCheckExpected(document, operation) {
   return true;
 }
 
+function __bulkCheckArrayPaths(document, operation) {
+  Object.keys(operation.update || {}).forEach(function (operator) {
+    Object.keys(operation.update[operator]).forEach(function (field) {
+      var parts = field.split("."), value = document;
+      parts.forEach(function (part, position) {
+        if (/^[0-9]+$/.test(part)) {
+          var index = Number(part);
+          var tail = Array.isArray(value) && index === value.length && position === parts.length - 1 &&
+            operator === "$set" && operation.expected[field].exists === false;
+          if (!Array.isArray(value) || !tail && (index >= value.length || !Object.prototype.hasOwnProperty.call(value, part))) {
+            __bulkFail("MONGODB_BULK_ARRAY_INDEX_INVALID", "indexed edits require an existing array element or its immediate tail");
+          }
+          if (tail) {
+            var element = operation.update[operator][field], identity = Object.prototype.hasOwnProperty.call(element, "_id") ? "_id" : "id";
+            if (value.some(function (item) { return item && Object.prototype.hasOwnProperty.call(item, identity) && __bulkEqual(item[identity], __decode(element[identity])); })) {
+              __bulkFail("MONGODB_BULK_ARRAY_IDENTITY_CONFLICT", "the appended element identity already exists");
+            }
+          }
+        }
+        value = value == null ? undefined : value[part];
+      });
+    });
+  });
+}
+
 function __bulkUpdateSelector(operation) {
   var filter = { _id: __decode(operation.id) };
   var expected = operation.expected || {};
@@ -50800,6 +50825,7 @@ function __bulkVerifyPreimages(operations, snapshots) {
       before.push({ operationIndex: index, document: null });
     } else {
       if (!found) __bulkFail("MONGODB_BULK_TARGET_NOT_FOUND", "an update target does not exist");
+      __bulkCheckArrayPaths(found, operation);
       if (!__bulkCheckExpected(found, operation)) __bulkFail("MONGODB_BULK_ORIGINAL_VALUE_MISMATCH", "an update original value does not match");
       before.push({ operationIndex: index, document: __encode(found) });
     }
@@ -51101,6 +51127,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
             writeOperations.push({ insertOne: { document: __decode(operation.document) } });
             summary.inserted += 1;
           } else {
+            __bulkCheckArrayPaths(current, operation);
             if (!__bulkCheckExpected(current, operation)) __bulkFail("MONGODB_BULK_CONFLICT", "an original field value changed before commit", { batchIndex: batch.index, collection: collectionName });
             writeOperations.push({ updateOne: { filter: __decode(__bulkUpdateSelector(operation)), update: __decode(operation.update), upsert: false } });
           }
@@ -51247,7 +51274,40 @@ async function __bulkUpload() {
     if (!chunk.endOfUpload) return { result: { jobId: jobId, status: "uploading", chunkIndex: chunk.chunkIndex, chunkHash: chunkHash, nextChunkIndex: manifest.chunks.length, unitCount: manifest.unitCount, operationCount: manifest.operationCount, inputBytes: manifest.inputBytes } };
     return { finalize: true };
   });
-  return accepted.finalize ? await __bulkFinalize(jobId) : accepted.result;
+  if (!accepted.finalize) return accepted.result;
+  var prepared = await __bulkFinalize(jobId);
+  prepared.chunkIndex = chunk.chunkIndex;
+  prepared.chunkHash = chunk.chunkHash;
+  return prepared;
+}
+
+// Exact positive evidence only. Absence does not fence an in-flight helper.
+// Recovery never uploads chunks, rebuilds a plan, or executes business writes.
+function __bulkRecoverUpload() {
+  var jobId = __request.jobId;
+  __bulkEnsureRoot();
+  return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var manifest = __bulkManifest(jobId, false);
+    var chunk = __bulkReadJson(__bulkChunkPath(jobId, __request.chunkIndex), 4 * 1024 * 1024);
+    if (!chunk || manifest.database !== __request.database || chunk.hash !== __request.chunkHash ||
+        manifest.chunks[__request.chunkIndex] !== chunk.hash || chunk.body.endOfUpload !== __request.endOfUpload ||
+        __bulkHash({ jobId: chunk.body.jobId, database: chunk.body.database, chunkIndex: chunk.body.chunkIndex,
+          purpose: chunk.body.purpose, rollbackTtlMs: chunk.body.rollbackTtlMs, units: chunk.body.units }) !== chunk.hash) {
+      __bulkFail("MONGODB_BULK_RECOVERY_EVIDENCE_MISMATCH", "exact chunk and manifest evidence is required");
+    }
+    if (__request.endOfUpload && manifest.status !== "prepared") __bulkFail("MONGODB_BULK_PREPARE_UNRESOLVED", "the exact sealed plan is not confirmed prepared");
+    var result;
+    if (__request.endOfUpload) {
+      var plan = __bulkLoadPlan(jobId, manifest);
+      if (plan.database !== manifest.database || __bulkHash(plan.chunks) !== __bulkHash(manifest.chunks)) {
+        __bulkFail("MONGODB_BULK_RECOVERY_EVIDENCE_MISMATCH", "the sealed plan must bind the exact accepted chunks");
+      }
+      result = __bulkPlanSummary(manifest, plan);
+    } else result = { jobId: jobId, status: manifest.status, nextChunkIndex: manifest.chunks.length, unitCount: manifest.unitCount, operationCount: manifest.operationCount };
+    result.chunkIndex = __request.chunkIndex;
+    result.chunkHash = __request.chunkHash;
+    return result;
+  });
 }
 
 async function __bulkPrepareSlice(client, jobId, units, offset, allIds, allUnitIds, batches) {
@@ -51599,6 +51659,7 @@ async function __bulkMain() {
     }
     var jobId = __bulkJobId();
     if (action === "upload") data = await __bulkUpload();
+    else if (action === "recoverUpload") data = __bulkRecoverUpload();
     else if (action === "get") data = __bulkGet(jobId);
     else if (action === "executeStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "execute");
     else if (action === "rollbackStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "rollback");
@@ -51802,7 +51863,7 @@ var DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 var COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
 var JOB_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 var UNIT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
-var FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+var FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
 var HASH_PATTERN = /^[a-f0-9]{64}$/;
 var UPDATE_OPERATORS = /* @__PURE__ */ new Set(["$set", "$unset", "$inc"]);
 var EJSON_KEYS = /* @__PURE__ */ new Set([
@@ -51980,7 +52041,7 @@ function normalizeUpdate(value) {
     }
     output[operator] = {};
     for (const [field, fieldValue] of Object.entries(fields3)) {
-      if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
+      if (!safeBulkPath(field) || field === "_id" || field.startsWith("_id.")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
       if (paths.some((path21) => path21 === field || path21.startsWith(`${field}.`) || field.startsWith(`${path21}.`))) {
@@ -51999,13 +52060,37 @@ function normalizeUpdate(value) {
   }
   return { update: output, paths };
 }
+function safeBulkPath(field) {
+  return FIELD_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS.has(part));
+}
+function overlaps(left, right) {
+  return left === right || left.startsWith(right + ".") || right.startsWith(left + ".");
+}
+function bulkIdentity(value) {
+  return typeof value === "string" && value.length > 0 || Number.isSafeInteger(value) || value && typeof value === "object" && Object.keys(value).length === 1 && (typeof value.$oid === "string" || typeof value.$numberLong === "string");
+}
+function assertArrayGuards(expected, update, paths) {
+  for (const [operator, fields3] of Object.entries(update)) for (const field of Object.keys(fields3)) {
+    const parts = field.split(".");
+    for (let i = 0; i < parts.length; i++) {
+      if (!/^[0-9]+$/.test(parts[i])) continue;
+      const prefix = parts.slice(0, i + 1).join(".");
+      if (i === parts.length - 1 && operator === "$set" && expected[field]?.exists === false && fields3[field] && typeof fields3[field] === "object" && !Array.isArray(fields3[field]) && !Object.keys(fields3[field]).some((key) => key.startsWith("$")) && bulkIdentity(Object.prototype.hasOwnProperty.call(fields3[field], "_id") ? fields3[field]._id : fields3[field].id)) continue;
+      const guard = Object.entries(expected).some(([key, condition]) => {
+        const suffix = key.slice(prefix.length + 1);
+        return key.startsWith(prefix + ".") && /^(?:_id|id|[A-Za-z_][A-Za-z0-9_]*_id)$/.test(suffix) && condition.exists === true && bulkIdentity(condition.value) && !paths.some((path21) => overlaps(path21, key));
+      });
+      if (!guard || i === parts.length - 1) throw bulkError("indexed edits require an unchanged element identity; only a missing full-element $set may append", "MONGODB_BULK_ARRAY_GUARD_REQUIRED");
+    }
+  }
+}
 function normalizeExpected(value, changedPaths) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) {
     throw bulkError("updateOne requires original values in expected", "MONGODB_BULK_EXPECTED_REQUIRED");
   }
   const expected = {};
   for (const [field, condition] of Object.entries(value)) {
-    if (!FIELD_PATTERN.test(field) || !condition || typeof condition !== "object" || Array.isArray(condition)) {
+    if (!safeBulkPath(field) || !condition || typeof condition !== "object" || Array.isArray(condition) || Object.keys(expected).some((path21) => overlaps(path21, field))) {
       throw bulkError("expected must map safe field paths to existence/value conditions", "MONGODB_BULK_EXPECTED_INVALID");
     }
     const exists = condition.exists;
@@ -52041,11 +52126,13 @@ function normalizeOperation(value, config, database, unitId, index) {
   if (value.operation !== "updateOne") throw bulkError("bulk V1 supports only insertOne and updateOne", "MONGODB_BULK_OPERATION_UNSUPPORTED");
   assertKnownFields(value, ["operation", "collection", "id", "expected", "update"], "updateOne");
   const updatePlan = normalizeUpdate(value.update);
+  const expected = normalizeExpected(value.expected, updatePlan.paths);
+  assertArrayGuards(expected, updatePlan.update, updatePlan.paths);
   return {
     collection,
     operation: "updateOne",
     id: normalizeId(value.id, `unit ${unitId} operation ${index}.id`),
-    expected: normalizeExpected(value.expected, updatePlan.paths),
+    expected,
     update: updatePlan.update
   };
 }
@@ -52152,6 +52239,7 @@ function parseMarker(stdout) {
 function normalizeActionRequest(input, config) {
   const action = input.action;
   const fields3 = {
+    recoverUpload: ["jobId", "database", "chunkIndex", "chunkHash", "endOfUpload"],
     sandboxStatus: ["offset", "limit"],
     sandboxExport: ["jobId", "limit"],
     sandboxPrepareCleanup: ["jobId"],
@@ -52173,6 +52261,12 @@ function normalizeActionRequest(input, config) {
     executeStart: ["jobId", "planHash", "leaseId", "confirmation"]
   };
   if (fields3[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields3[action]], "bulk action");
+  if (action === "recoverUpload") {
+    if (!JOB_ID_PATTERN.test(input.jobId || "") || input.database !== config.database || !Number.isInteger(input.chunkIndex) || input.chunkIndex < 0 || input.chunkIndex > 9999 || !HASH_PATTERN.test(input.chunkHash || "") || typeof input.endOfUpload !== "boolean") {
+      throw bulkError("exact bulk chunk recovery identity is required", "MONGODB_BULK_RECOVERY_IDENTITY_INVALID");
+    }
+    return { ...input };
+  }
   if (action === "get" && input.query) assertKnownFields(input.query, ["includeDifferences", "offset", "limit"], "bulk query");
   if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
     const jobId = input.jobId;
@@ -52244,12 +52338,19 @@ function normalizeActionRequest(input, config) {
 }
 async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
-  const recoveryAction = input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
+  const recoveryAction = input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
   const management = typeof input.action === "string" && input.action.startsWith("sandbox");
   if (management && rawConfig.enabled === false) throw bulkError("MongoDB sandbox access is disabled for this instance", "SANDBOX_MANAGEMENT_NOT_CONFIGURED", 403);
-  const config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
-  const request = normalizeActionRequest(input, config);
-  if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+  let config, request, script;
+  try {
+    config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
+    request = normalizeActionRequest(input, config);
+    if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
+  } catch (error2) {
+    if (input.action === "upload") error2.dispatchState = "not_dispatched";
+    throw error2;
+  }
   let remoteResult;
   try {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
@@ -52259,7 +52360,7 @@ async function runMongoBulk(input = {}, options = {}) {
       priority: options.priority || "interactive",
       resourceTaskId: options.resourceTaskId,
       taskType: options.priority === "control" ? "control" : "mongo_read",
-      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management })
+      stdin: script
     });
   } catch (error2) {
     throw operationError(redactMongoSecrets(error2.message || "MongoDB bulk helper could not be executed"), {
@@ -56987,6 +57088,73 @@ function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDept
 }
 
 // privacy-service.js
+async function bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view) {
+  if (!dispatch || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const recovering = input.action === "recover_operation";
+  let result, notDispatched = false, unclaimed = false;
+  try {
+    if (recovering) {
+      if (!record.dispatched) {
+        unclaimed = true;
+        result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+      } else if (!record.bulkChunk) return view(record, "bulk_prepare_evidence_required");
+      else result = await dispatch(target2.id, "/mongodb/bulk/recover-prepare", {
+        ...record.bulkChunk,
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    } else {
+      const { instanceId: instanceId2, ...request } = input.request || {};
+      if (instanceId2 !== target2.id || request.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      let chunk, preflightError;
+      try {
+        chunk = normalizeMongoBulkChunk(request, instance2(target2.id).mongodb);
+      } catch (error2) {
+        preflightError = error2;
+      }
+      const bulkChunk = chunk && {
+        jobId: chunk.jobId,
+        database: chunk.database,
+        chunkIndex: chunk.chunkIndex,
+        chunkHash: chunk.chunkHash,
+        endOfUpload: chunk.endOfUpload
+      };
+      await service.call("claim_bulk_prepare", { ...input, dispatchDigest: prepareRequestDigest(input.request), bulkChunk });
+      if (preflightError) {
+        notDispatched = true;
+        throw preflightError;
+      }
+      result = await dispatch(target2.id, record.route, {
+        ...request,
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    }
+    result = createOutputGuard().sanitize(result).value;
+  } catch (error2) {
+    notDispatched ||= !recovering && error2.dispatchState === "not_dispatched";
+    result = { ok: false, error: {
+      code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_BULK_FAILED",
+      message: "Structured bulk preparation failed; inspect this exact protected intent.",
+      operationId: input.operationId,
+      layer: error2.layer,
+      phase: error2.phase,
+      retriable: error2.retriable
+    } };
+  }
+  const saved = await service.call("bulk_prepare_result", { ...input, bulkPrepare: record.bulkPrepare, result, notDispatched, unclaimed });
+  if (!recovering && result?.ok === true && saved.state !== "complete") {
+    result = { ok: false, error: {
+      code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED",
+      message: "Bulk preparation acknowledgement did not prove the exact chunk identity.",
+      operationId: input.operationId,
+      retriable: false
+    } };
+  }
+  return recovering ? view(saved, saved.state === "uncertain" ? "bulk_prepare_evidence_required" : unclaimed ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
+}
 var here = typeof __dirname === "string" ? __dirname : import_node_path3.default.dirname((0, import_node_url.fileURLToPath)(void 0));
 var PrivacyService = class {
   constructor({ directory, key, maxQueue = 32, workerPath } = {}) {
@@ -57076,9 +57244,9 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       intentId: input.id,
       state: value.state,
       route: value.route,
-      attempt: value.prepare?.attempt,
+      attempt: (value.prepare || value.bulkPrepare)?.attempt,
       mutationId: value.prepare?.mutationId,
-      legacy: !value.prepare && value.route === "/mongodb/mutations/prepare",
+      legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason,
       recoveryCode: value.reconciliation?.code,
       ...value.result ? { result: value.result } : {}
@@ -57086,6 +57254,10 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
     if (input.action === "recover_operation") {
       if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (record.route === "/mongodb/bulk/prepare") {
+        if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
+        return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
+      }
       if (!record.prepare) {
         const identity2 = record.identity || {};
         if (dispatch && /^[a-f0-9]{64}$/.test(identity2.planHash || "") && (identity2.mutationId || identity2.jobId)) {
@@ -57112,6 +57284,9 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         }
         return view(record, "legacy_evidence_required");
       }
+    }
+    if (input.action === "dispatch_prepare" && record.route === "/mongodb/bulk/prepare" && record.bulkPrepare) {
+      return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
     }
     if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
     if (input.action === "dispatch_prepare") {
@@ -68625,6 +68800,8 @@ function createApp(options = {}) {
       let result;
       if (action === "upload") {
         result = await runMongoBulk2({ action: "upload", chunk: raw }, { operation: requestOperation });
+      } else if (action === "recoverUpload") {
+        result = await runMongoBulk2({ ...raw, action }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk2({ action, ...raw }, { operation: requestOperation });
       } else if (action.startsWith("sandbox")) {
@@ -68717,6 +68894,7 @@ function createApp(options = {}) {
   app.post("/mongodb/mutations/get", (request, response) => handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
   app.post("/mongodb/mutations/recover-execution", (request, response) => handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
+  app.post("/mongodb/bulk/recover-prepare", (request, response) => handleMongoBulk(request, response, "recoverUpload", "/mongodb/bulk/recover-prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
   app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
   app.post("/mongodb/bulk/jobs", (request, response) => handleMongoBulk(request, response, "list", "/mongodb/bulk/jobs"));

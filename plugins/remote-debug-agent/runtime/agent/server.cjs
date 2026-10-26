@@ -48971,2234 +48971,9 @@ function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDept
   return { remember, sanitize, toolResult, serialize };
 }
 
-// privacy-service.js
-var here = typeof __dirname === "string" ? __dirname : import_node_path.default.dirname((0, import_node_url.fileURLToPath)(void 0));
-var PrivacyService = class {
-  constructor({ directory, key, maxQueue = 32, workerPath } = {}) {
-    this.options = { directory, key };
-    this.maxQueue = maxQueue;
-    this.pending = /* @__PURE__ */ new Map();
-    this.sequence = 0;
-    this.workerPath = workerPath || import_node_path.default.join(here, typeof __filename === "string" ? "privacy-worker.cjs" : "privacy-worker.js");
-  }
-  start() {
-    if (this.ready) return this.ready;
-    this.ready = new Promise((resolve, reject) => {
-      this.worker = new import_node_worker_threads.Worker(this.workerPath, { workerData: this.options, execArgv: process.execArgv.filter((arg) => !arg.startsWith("--input-type")) });
-      const fail4 = () => {
-        this.failed = true;
-        reject(privacyError());
-        for (const item of this.pending.values()) item.reject(privacyError());
-        this.pending.clear();
-        this.worker?.unref();
-      };
-      this.worker.on("error", fail4);
-      this.worker.on("exit", fail4);
-      this.worker.on("message", (message) => {
-        if (message.ready) {
-          if (!this.pending.size) this.worker.unref();
-          resolve();
-          return;
-        }
-        if (message.failed) {
-          this.failed = true;
-          reject(privacyError(message.failed));
-          this.worker.terminate();
-          return;
-        }
-        const item = this.pending.get(message.id);
-        if (!item) return;
-        this.pending.delete(message.id);
-        if (!this.pending.size) this.worker.unref();
-        if (message.error) item.reject(privacyError(message.error));
-        else item.resolve(message.result);
-      });
-    });
-    return this.ready;
-  }
-  async call(action, input) {
-    if (this.failed) throw privacyError();
-    if ((this.waiting || 0) + this.pending.size >= this.maxQueue) throw privacyError("BUSINESS_STORAGE_BUSY");
-    this.waiting = (this.waiting || 0) + 1;
-    try {
-      await this.start();
-    } finally {
-      this.waiting--;
-    }
-    if (this.failed) throw privacyError();
-    return new Promise((resolve, reject) => {
-      const id = ++this.sequence;
-      this.pending.set(id, { resolve, reject });
-      this.worker.ref();
-      this.worker.postMessage({ id, action, input });
-    });
-  }
-  async close() {
-    this.failed = true;
-    await this.worker?.terminate();
-  }
-};
-async function privacyRequest(service, input, { instance: instance2, origin, dispatch } = {}) {
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
-  if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
-  const validate2 = (scope2) => {
-    if (typeof scope2 !== "string" || scope2.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
-    let target2;
-    try {
-      target2 = JSON.parse(scope2);
-    } catch {
-      throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
-    }
-    const current = instance2(target2.id);
-    if (!current || current.enabled === false || target2.endpoint !== origin || scope2 !== businessTargetScope(origin, current, target2.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
-  };
-  if (!["create", "attach", "cleanup"].includes(input.action)) validate2(input.scope);
-  if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
-    const record = await service.call("inspect_operation", input);
-    const target2 = JSON.parse(input.scope);
-    const view = (value, reason) => ({
-      ok: true,
-      intentId: input.id,
-      state: value.state,
-      route: value.route,
-      attempt: value.prepare?.attempt,
-      mutationId: value.prepare?.mutationId,
-      legacy: !value.prepare && value.route === "/mongodb/mutations/prepare",
-      reason,
-      recoveryCode: value.reconciliation?.code,
-      ...value.result ? { result: value.result } : {}
-    });
-    if (input.action === "recover_operation") {
-      if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
-      if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
-      if (!record.prepare) {
-        const identity2 = record.identity || {};
-        if (dispatch && /^[a-f0-9]{64}$/.test(identity2.planHash || "") && (identity2.mutationId || identity2.jobId)) {
-          try {
-            const receipt = await dispatch(
-              target2.id,
-              identity2.mutationId && record.execution ? "/mongodb/mutations/recover-execution" : identity2.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
-              {
-                ...identity2.mutationId ? { mutationId: identity2.mutationId } : { jobId: identity2.jobId },
-                planHash: identity2.planHash,
-                database: target2.database,
-                ...record.execution ? { _businessExecution: record.execution } : {},
-                operationId: input.operationId,
-                timeoutMs: input.timeoutMs,
-                deadlineAt: input.deadlineAt
-              }
-            );
-            const evidence = identity2.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
-            const saved2 = await service.call("reconcile", { ...input, result: createOutputGuard().sanitize(evidence).value });
-            return view({ ...record, ...saved2 }, saved2.state === "uncertain" ? receipt.indexRecovery?.reason || (receipt.status === "commit_failed" && !record.execution ? "legacy_execution_evidence_required" : "remote_outcome_unproven") : void 0);
-          } catch (error2) {
-            return { ...view(record, "remote_evidence_unavailable"), recoveryCode: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_RECOVERY_UNAVAILABLE" };
-          }
-        }
-        return view(record, "legacy_evidence_required");
-      }
-    }
-    if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
-    if (input.action === "dispatch_prepare") {
-      const digest3 = prepareRequestDigest(input.request || {});
-      if (input.request?.instanceId !== target2.id || input.request?.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
-      await service.call("claim_prepare", { ...input, dispatchDigest: digest3 });
-    }
-    const recovering = input.action === "recover_operation";
-    let result, notDispatched = false, fenced = false;
-    try {
-      const { instanceId: instanceId2, ...request } = input.request || {};
-      result = await dispatch(
-        target2.id,
-        recovering ? "/mongodb/mutations/recover-prepare" : record.route,
-        {
-          ...recovering ? { database: target2.database } : request,
-          _businessPrepare: record.prepare,
-          operationId: input.operationId,
-          timeoutMs: input.timeoutMs,
-          deadlineAt: input.deadlineAt
-        }
-      );
-      if (result?.ok !== true) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
-      if (recovering) {
-        if (JSON.stringify(result.prepare) !== JSON.stringify(record.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
-        fenced = result.recovery === "fenced";
-        if (fenced) result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
-        else {
-          const { prepare, recovery, ...receipt } = result;
-          result = receipt;
-        }
-      }
-      if (!fenced && (result.mutationId !== record.prepare.mutationId || !/^[a-f0-9]{64}$/.test(result.planHash || ""))) throw privacyError("BUSINESS_OPERATION_DENIED");
-      result = createOutputGuard().sanitize(result).value;
-    } catch (error2) {
-      notDispatched = !recovering && error2.dispatchState === "not_dispatched";
-      result = { ok: false, error: {
-        code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_OPERATION_FAILED",
-        message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
-        operationId: input.operationId,
-        layer: error2.layer,
-        phase: error2.phase,
-        retriable: error2.retriable
-      } };
-    }
-    const saved = await service.call("prepare_result", { ...input, prepare: record.prepare, result, notDispatched, fenced });
-    return recovering ? view(saved, saved.state === "uncertain" ? "remote_evidence_unavailable" : fenced ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
-  }
-  if (input.action === "commit") {
-    for (const record of input.records || []) validate2(record.scope);
-    const current = instance2(JSON.parse(input.scope).id);
-    input.retentionMs = Math.max(30 * 864e5, current.mongodb?.rollbackTtlMs || 0, current.mongodb?.bulkRollbackTtlMs || 0);
-  }
-  return service.call(input.action, input);
-}
-function installPrivacyRoutes(app, { directory, registry, service, dispatch } = {}) {
-  const storage = service || new PrivacyService({ directory });
-  app.locals.privacyService = storage;
-  app.post("/api/private/business-storage", async (request, response) => {
-    try {
-      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch });
-      response.json({ ok: true, result });
-    } catch (error2) {
-      response.status(409).json({ ok: false, error: { code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
-    }
-  });
-}
-
-// service-start-runtime.js
-async function serviceStartRuntime(request, profile, dependencies) {
-  const fs14 = dependencies?.fs || require("fs");
-  const path20 = require("path").posix;
-  const execFile2 = dependencies?.execFile || require("child_process").execFile;
-  const now = dependencies?.now || Date.now;
-  const sleep2 = dependencies?.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
-  const baseEnv = { ...dependencies?.env || process.env, PM2_HOME: profile.pm2Home };
-  delete baseEnv.NODE_OPTIONS;
-  delete baseEnv.NODE_PATH;
-  const started = [], attempted = [], verified = [];
-  let phase = "preflight", locked = false, cwd, script, interpreter;
-  const lock = path20.join(profile.pm2Home, ".remote-debug-service-start.lock");
-  const deadline = Math.min(request.deadlineAt, now() + profile.startupTimeoutMs);
-  const fail4 = (code) => {
-    throw Object.assign(new Error(code), { serviceCode: code });
-  };
-  const remaining = () => {
-    const ms = deadline - now();
-    if (ms < 50) fail4("SERVICE_START_TIMEOUT");
-    return ms;
-  };
-  const real = (file) => fs14.realpathSync(file);
-  const inside = (file, root) => file.startsWith(`${root}/`);
-  const bounded2 = (file, max = 262144) => {
-    const fd = fs14.openSync(file, "r");
-    try {
-      const buffer = Buffer.alloc(max + 1);
-      let n = 0, read;
-      do {
-        read = fs14.readSync(fd, buffer, n, buffer.length - n, n);
-        n += read;
-      } while (read && n < buffer.length);
-      if (n > max) fail4("SERVICE_EVIDENCE_TOO_LARGE");
-      return buffer.subarray(0, n).toString("utf8");
-    } finally {
-      fs14.closeSync(fd);
-    }
-  };
-  const run = (file, args, env = baseEnv) => new Promise((resolve, reject) => {
-    execFile2(file, args, {
-      env,
-      cwd: profile.pm2Home,
-      shell: false,
-      timeout: Math.min(1e4, remaining()),
-      maxBuffer: 1024 * 1024,
-      encoding: "utf8"
-    }, (error2, stdout) => {
-      if (error2) reject(Object.assign(new Error("SERVICE_PM2_COMMAND_FAILED"), { serviceCode: "SERVICE_PM2_COMMAND_FAILED" }));
-      else resolve(String(stdout));
-    });
-  });
-  const pm2 = (args, env) => run(profile.pm2Path, args, env);
-  const list = async () => {
-    const output2 = await pm2(["jlist"]);
-    let entries;
-    try {
-      entries = JSON.parse(output2);
-    } catch {
-      fail4("SERVICE_PM2_RESPONSE_INVALID");
-    }
-    if (!Array.isArray(entries) || entries.length > 512) fail4("SERVICE_PM2_RESPONSE_INVALID");
-    return entries;
-  };
-  const resolveRelease = () => {
-    const current = real(profile.cwd);
-    if (profile.releaseRoot) {
-      const root = real(profile.releaseRoot);
-      if (root !== profile.releaseRoot || !inside(current, `${root}/releases`) || !/^\/[A-Za-z0-9_.+-]+$/.test(current.slice(`${root}/releases`.length))) fail4("SERVICE_RELEASE_PATH_INVALID");
-    } else if (current !== profile.cwd) fail4("SERVICE_CWD_SYMLINK_REQUIRES_RELEASE_ROOT");
-    return current;
-  };
-  const approved = (file) => {
-    const resolved = real(file);
-    if (!request.allowedRoots.some((root) => resolved === root || inside(resolved, root))) fail4("SERVICE_CANONICAL_PATH_DENIED");
-    return resolved;
-  };
-  const find = (entries, proc) => {
-    const matches = entries.filter((entry2) => entry2.name === proc.name || entry2.pm2_env?.name === proc.name);
-    if (matches.length > 1) fail4("SERVICE_DUPLICATE_PROCESS");
-    return matches[0];
-  };
-  const nodeArgs = profile.envFiles.map((file) => `--env-file=${file}`);
-  const checkIdentity = (entry2, proc) => {
-    const e = entry2.pm2_env || {};
-    if (e.exec_mode !== "fork_mode") fail4("SERVICE_MODE_MISMATCH");
-    if (real(e.pm_cwd) !== cwd || real(e.pm_exec_path) !== script || real(e.exec_interpreter) !== interpreter) fail4("SERVICE_PROCESS_PATH_CONFLICT");
-    const args = Array.isArray(e.node_args) ? e.node_args : typeof e.node_args === "string" ? e.node_args.split(/\s+/).filter(Boolean) : [];
-    if (JSON.stringify(args) !== JSON.stringify(nodeArgs)) fail4("SERVICE_NODE_ARGS_MISMATCH");
-    if (e.node_version !== profile.nodeVersion) fail4("SERVICE_NODE_VERSION_MISMATCH");
-    for (const [key, value] of Object.entries(proc.env)) {
-      if (String(e[key] ?? e.env?.[key]) !== value) fail4("SERVICE_ENV_MISMATCH");
-    }
-    if (!Number.isSafeInteger(entry2.pid) || entry2.pid < 1) fail4("SERVICE_PROCESS_NOT_RUNNING");
-    if (!Number.isSafeInteger(e.restart_time) || e.restart_time < 0 || !Number.isSafeInteger(e.pm_uptime) || e.pm_uptime < 1) fail4("SERVICE_PROCESS_METADATA_INVALID");
-    if (real(`/proc/${entry2.pid}/exe`) !== interpreter || real(`/proc/${entry2.pid}/cwd`) !== cwd) fail4("SERVICE_ACTUAL_PROCESS_MISMATCH");
-    const actualArgs = bounded2(`/proc/${entry2.pid}/cmdline`).split("\0").filter(Boolean);
-    if (nodeArgs.some((arg) => !actualArgs.includes(arg))) fail4("SERVICE_NODE_ARGS_MISMATCH");
-    const actualEnv = bounded2(`/proc/${entry2.pid}/environ`).split("\0");
-    for (const [key, value] of Object.entries(proc.env)) if (!actualEnv.includes(`${key}=${value}`)) fail4("SERVICE_ACTUAL_ENV_MISMATCH");
-    if (actualEnv.some((item) => item.startsWith("NODE_OPTIONS=") && item !== "NODE_OPTIONS=")) fail4("SERVICE_UNEXPECTED_NODE_OPTIONS");
-    return { pid: entry2.pid, restarts: e.restart_time, uptime: e.pm_uptime };
-  };
-  const sockets = () => {
-    const result = [];
-    for (const file of ["/proc/net/tcp", "/proc/net/tcp6"]) {
-      let text2;
-      try {
-        text2 = bounded2(file, 1024 * 1024);
-      } catch (error2) {
-        if (file.endsWith("tcp6") && error2.code === "ENOENT") continue;
-        throw error2;
-      }
-      for (const line of text2.trim().split("\n").slice(1)) {
-        const columns = line.trim().split(/\s+/);
-        if (columns[3] === "0A") result.push({ port: parseInt(columns[1].split(":")[1], 16), inode: columns[9] });
-      }
-    }
-    return result;
-  };
-  const portEvidence = (proc, pid, listeners) => {
-    const owned = /* @__PURE__ */ new Set();
-    if (pid) {
-      const files = fs14.readdirSync(`/proc/${pid}/fd`);
-      if (files.length > 16384) fail4("SERVICE_EVIDENCE_TOO_LARGE");
-      for (const file of files) {
-        try {
-          const match = /^socket:\[(\d+)\]$/.exec(fs14.readlinkSync(`/proc/${pid}/fd/${file}`));
-          if (match) owned.add(match[1]);
-        } catch (error2) {
-          if (error2.code !== "ENOENT") throw error2;
-        }
-      }
-    }
-    return proc.ports.map((port) => {
-      const matches = listeners.filter((listener) => listener.port === port);
-      return { port, listening: matches.length > 0, owned: matches.length > 0 && matches.every((listener) => owned.has(listener.inode)) };
-    });
-  };
-  const logPosition = (entry2) => {
-    const logPath = entry2.pm2_env?.pm_out_log_path;
-    if (typeof logPath !== "string") return null;
-    let file;
-    try {
-      file = real(logPath);
-    } catch (error2) {
-      if (error2.code === "ENOENT") return null;
-      throw error2;
-    }
-    const root = real(path20.join(profile.pm2Home, "logs"));
-    if (!inside(file, root)) fail4("SERVICE_LOG_PATH_CONFLICT");
-    const stat = fs14.statSync(file);
-    if (!stat.isFile()) fail4("SERVICE_LOG_PATH_CONFLICT");
-    return { file, size: stat.size, ino: stat.ino };
-  };
-  const markerSeen = (entry2, offset) => {
-    const log = logPosition(entry2);
-    if (!log) return false;
-    if (offset && (log.ino !== offset.ino || log.size < offset.size)) return false;
-    const start = Math.max(offset ? offset.size : 0, log.size - 65536);
-    const fd = fs14.openSync(log.file, "r");
-    try {
-      const buffer = Buffer.alloc(Math.min(65536, Math.max(0, log.size - start)));
-      const count = fs14.readSync(fd, buffer, 0, buffer.length, start);
-      return buffer.subarray(0, count).toString("utf8").includes(profile.startupMarker);
-    } finally {
-      fs14.closeSync(fd);
-    }
-  };
-  const output = (status, extra = {}) => ({
-    status,
-    phase,
-    started: [...started],
-    attempted: [...attempted],
-    verified: [...verified],
-    resolvedCwd: cwd,
-    nodeVersion: profile.nodeVersion,
-    mode: "fork",
-    persisted: false,
-    ...extra
-  });
-  try {
-    remaining();
-    phase = "paths";
-    cwd = resolveRelease();
-    if (!fs14.statSync(cwd).isDirectory()) fail4("SERVICE_CWD_INVALID");
-    script = real(path20.join(cwd, profile.entry));
-    if (!inside(script, cwd) || !fs14.statSync(script).isFile()) fail4("SERVICE_ENTRY_PATH_INVALID");
-    if (!/\.m?js$/.test(script) || /\.config\.m?js$/i.test(script) || /^ecosystem(?:\.|$)/i.test(path20.basename(script))) fail4("SERVICE_ENTRY_PATH_INVALID");
-    interpreter = approved(profile.interpreter);
-    if (real(profile.pm2Home) !== profile.pm2Home) fail4("SERVICE_PM2_HOME_SYMLINK");
-    fs14.accessSync(interpreter, fs14.constants.X_OK);
-    fs14.accessSync(profile.pm2Path, fs14.constants.X_OK);
-    phase = "runtime";
-    const version = (await run(interpreter, ["--version"])).trim();
-    if (version !== `v${profile.nodeVersion}`) fail4("SERVICE_NODE_VERSION_MISMATCH");
-    phase = "env-files";
-    for (const file of profile.envFiles) {
-      approved(file);
-      if (!fs14.statSync(file).isFile()) fail4("SERVICE_ENV_FILE_INVALID");
-      fs14.accessSync(file, fs14.constants.R_OK);
-    }
-    phase = "pm2-daemon";
-    const daemon = Number(bounded2(path20.join(profile.pm2Home, "pm2.pid"), 32).trim());
-    if (!Number.isSafeInteger(daemon) || daemon < 1 || !bounded2(`/proc/${daemon}/cmdline`).includes("PM2")) fail4("SERVICE_PM2_DAEMON_UNAVAILABLE");
-    if (request.action === "start") {
-      phase = "lock";
-      try {
-        fs14.mkdirSync(lock, { mode: 448 });
-        locked = true;
-      } catch (error2) {
-        if (error2.code === "EEXIST") fail4("SERVICE_START_BUSY");
-        throw error2;
-      }
-    }
-    phase = "process-preflight";
-    let entries = await list();
-    const missing = [], initial = /* @__PURE__ */ new Map(), offsets = /* @__PURE__ */ new Map();
-    const listeners = sockets();
-    for (const proc of profile.processes) {
-      const entry2 = find(entries, proc);
-      if (entry2) {
-        const identity2 = checkIdentity(entry2, proc);
-        if (entry2.pm2_env.status !== "online") fail4("SERVICE_EXISTING_PROCESS_UNHEALTHY");
-        const evidence = portEvidence(proc, entry2.pid, listeners);
-        if (evidence.some((item) => !item.owned)) fail4("SERVICE_PORT_OWNER_MISMATCH");
-        initial.set(proc.name, identity2);
-      } else {
-        if (portEvidence(proc, null, listeners).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
-        if (entries.some((item) => {
-          if (profile.processes.some((p) => p.name === item.name)) return false;
-          try {
-            return real(item.pm2_env.pm_cwd) === cwd && real(item.pm2_env.pm_exec_path) === script;
-          } catch {
-            return false;
-          }
-        })) fail4("SERVICE_UNEXPECTED_REGISTRATION");
-        missing.push(proc);
-      }
-    }
-    if (request.action === "inspect" && missing.length) return output("missing", { missing: missing.map((proc) => proc.name) });
-    phase = "start";
-    for (const proc of missing) {
-      remaining();
-      if (resolveRelease() !== cwd) fail4("SERVICE_RELEASE_CHANGED");
-      entries = await list();
-      if (find(entries, proc)) fail4("SERVICE_CONCURRENT_PROCESS_CHANGE");
-      if (portEvidence(proc, null, sockets()).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
-      const logName = proc.name.replace(/_/g, "-");
-      const guessedLog = path20.join(profile.pm2Home, "logs", `${logName}-out.log`);
-      if (fs14.existsSync(guessedLog)) offsets.set(proc.name, { size: fs14.statSync(guessedLog).size, ino: fs14.statSync(guessedLog).ino });
-      else offsets.set(proc.name, { size: 0 });
-      attempted.push(proc.name);
-      await pm2([
-        "start",
-        script,
-        "--name",
-        proc.name,
-        "--cwd",
-        cwd,
-        "--interpreter",
-        interpreter,
-        ...nodeArgs.length ? ["--node-args", nodeArgs.join(" ")] : [],
-        "--max-memory-restart",
-        profile.maxMemoryRestart,
-        "--restart-delay",
-        String(profile.restartDelayMs),
-        "--time"
-      ], { ...baseEnv, ...proc.env });
-      started.push(proc.name);
-    }
-    phase = "verify";
-    let healthySince = null;
-    const identities = new Map(initial);
-    while (true) {
-      remaining();
-      if (resolveRelease() !== cwd) fail4("SERVICE_RELEASE_CHANGED");
-      entries = await list();
-      const listenersNow = sockets();
-      let ready = true;
-      verified.length = 0;
-      for (const proc of profile.processes) {
-        const entry2 = find(entries, proc);
-        if (!entry2) fail4("SERVICE_PROCESS_DISAPPEARED");
-        if (["errored", "stopped", "stopping"].includes(entry2.pm2_env?.status)) fail4("SERVICE_PROCESS_EXITED");
-        if (entry2.pm2_env?.status !== "online") {
-          ready = false;
-          continue;
-        }
-        if (!entry2.pm2_env.node_version && started.includes(proc.name)) {
-          ready = false;
-          continue;
-        }
-        const identity2 = checkIdentity(entry2, proc);
-        const previous = identities.get(proc.name);
-        if (previous && (previous.pid !== identity2.pid || previous.restarts !== identity2.restarts || previous.uptime !== identity2.uptime)) fail4("SERVICE_PROCESS_UNSTABLE");
-        identities.set(proc.name, identity2);
-        if (!previous && identity2.restarts !== 0) fail4("SERVICE_PROCESS_UNSTABLE");
-        const ports = portEvidence(proc, entry2.pid, listenersNow);
-        if (ports.some((item) => item.listening && !item.owned)) fail4("SERVICE_PORT_OWNER_MISMATCH");
-        const offset = offsets.get(proc.name);
-        if (offset && offset.ino === void 0) {
-          const log = logPosition(entry2);
-          if (log) offset.ino = log.ino;
-        }
-        const marker = markerSeen(entry2, offset);
-        const healthy = ports.every((item) => item.owned) && marker;
-        if (healthy) verified.push({
-          name: proc.name,
-          pid: entry2.pid,
-          status: "online",
-          restarts: identity2.restarts,
-          ports: ports.map((item) => item.port),
-          startupMarkerSeen: true,
-          interpreterVerified: true,
-          environmentVerified: true
-        });
-        else ready = false;
-      }
-      if (ready) {
-        if (healthySince === null) healthySince = now();
-        if (now() - healthySince >= profile.stableMs) break;
-      } else healthySince = null;
-      await sleep2(Math.min(500, remaining()));
-    }
-    phase = "complete";
-    if (request.action === "start" && started.length && profile.persist) {
-      if (entries.some((entry2) => entry2.pm2_env?.status !== "online")) return output("healthy", { persistenceWarning: "SERVICE_PM2_SAVE_SKIPPED_UNHEALTHY_NAMESPACE" });
-      phase = "persist";
-      await pm2(["save"]);
-      phase = "complete";
-      return output("healthy", { persisted: true });
-    }
-    return output("healthy", { unchanged: started.length === 0 });
-  } catch (error2) {
-    const code = error2.serviceCode || (["ENOENT", "EACCES", "EPERM", "ENOTDIR", "ELOOP"].includes(error2.code) ? `SERVICE_FILESYSTEM_${error2.code}` : "SERVICE_START_FAILED");
-    return output(started.length ? "partial" : attempted.length ? "unknown" : "blocked", { error: { code }, recovery: "Inspect this exact instance before retrying. No processes were deleted or restarted; recovery requires separate authorization." });
-  } finally {
-    if (locked) {
-      try {
-        fs14.rmdirSync(lock);
-      } catch {
-      }
-    }
-  }
-}
-
-// service-profiles.js
-var import_posix = __toESM(require("node:path/posix"), 1);
-var import_node_crypto2 = require("node:crypto");
-var SERVICE_START_CONFIRMATION = "启动服务";
-var SERVICE_ENV_KEYS = ["NODE_ENV", "PORT", "WS_PORT", "CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED", "ORDER_AI_ALLOWED_RESTAURANTS"];
-var SERVICE_CAPABILITIES = Object.freeze({
-  version: 1,
-  modes: ["fork"],
-  actions: ["inspect", "start"],
-  explicitInstance: true,
-  savedProfileRequired: true,
-  confirmation: SERVICE_START_CONFIRMATION,
-  arbitraryCommands: false,
-  restart: false,
-  delete: false,
-  envFileContentsReturned: false,
-  maxProfiles: 8,
-  maxProcesses: 8,
-  environmentKeys: SERVICE_ENV_KEYS
-});
-function serviceError(code, message = code) {
-  return Object.assign(new Error(message), { code, statusCode: 400, retriable: false });
-}
-function invalid(message) {
-  throw serviceError("INVALID_SERVICE_PROFILE", message);
-}
-function assertServiceId(id) {
-  if (typeof id !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(id)) invalid("invalid serviceId");
-}
-function object(value, fields3, field) {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields3.includes(key))) invalid(`invalid ${field} fields`);
-}
-function integer(value, min, max, field) {
-  if (!Number.isSafeInteger(value) || value < min || value > max) invalid(`invalid ${field}`);
-  return value;
-}
-function absolute(value, roots, field) {
-  if (typeof value !== "string" || value.length > 1024 || !/^\/[A-Za-z0-9_./+-]+$/.test(value) || import_posix.default.normalize(value) !== value || value === "/") invalid(`invalid absolute ${field}`);
-  if (roots && !roots.some((root) => value === root || value.startsWith(`${root}/`))) invalid(`${field} is outside approved roots`);
-  return value;
-}
-function normalizeServiceProfiles(value, context) {
-  if (typeof value === "string") {
-    try {
-      value = JSON.parse(value);
-    } catch {
-      invalid("serviceProfiles must be JSON");
-    }
-  }
-  value ??= {};
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 8) invalid("serviceProfiles must contain at most eight profiles");
-  const result = {}, names = /* @__PURE__ */ new Set(), ports = /* @__PURE__ */ new Set();
-  for (const [id, p] of Object.entries(value)) {
-    assertServiceId(id);
-    object(p, ["instanceId", "target", "enabled", "cwd", "releaseRoot", "entry", "mode", "interpreter", "nodeVersion", "pm2Path", "pm2Home", "envFiles", "processes", "maxMemoryRestart", "restartDelayMs", "stableMs", "startupTimeoutMs", "startupMarker", "persist"], id);
-    object(p.target, ["host", "port", "username"], "target");
-    if (p.instanceId !== context.id || p.target.host !== context.host || p.target.username !== context.username || p.target.port !== context.port) invalid("service profile target must match this exact instance, host, SSH port and user");
-    if (typeof p.enabled !== "boolean" || typeof p.persist !== "boolean") invalid("enabled and persist must be explicit booleans");
-    if (p.mode !== "fork") invalid("only explicit fork mode is supported; ecosystem/cluster startup is not supported");
-    if (typeof p.nodeVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(p.nodeVersion) || Number(p.nodeVersion.split(".")[0]) < 20) invalid("exact Node version >=20 is required");
-    if (typeof p.entry !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_./-]*\.m?js$/.test(p.entry) || import_posix.default.normalize(p.entry) !== p.entry || p.entry.split("/").includes("..")) invalid("entry must be a relative JavaScript file");
-    if (/\.config\.m?js$/i.test(p.entry) || /^ecosystem(?:\.|$)/i.test(import_posix.default.basename(p.entry))) invalid("PM2 ecosystem/config entries are not supported");
-    if (!["/usr/local/bin/pm2", "/usr/bin/pm2"].includes(p.pm2Path)) invalid("pm2Path must be /usr/local/bin/pm2 or /usr/bin/pm2");
-    const roots = context.allowedPaths;
-    const cwd = absolute(p.cwd, roots, "cwd");
-    const releaseRoot = p.releaseRoot ? absolute(p.releaseRoot, roots, "releaseRoot") : void 0;
-    if (releaseRoot && cwd !== `${releaseRoot}/current`) invalid("release profiles must use releaseRoot/current as cwd");
-    const interpreter = absolute(p.interpreter, roots, "interpreter");
-    if (import_posix.default.basename(interpreter) !== "node") invalid("interpreter must name an absolute node binary");
-    const pm2Home = absolute(p.pm2Home, roots, "pm2Home");
-    if (!Array.isArray(p.envFiles) || p.envFiles.length > 4) invalid("envFiles must contain 0–4 paths, never secret values");
-    const envFiles = p.envFiles.map((file) => absolute(file, roots, "envFiles"));
-    if (new Set(envFiles).size !== envFiles.length) invalid("duplicate env file");
-    if (!Array.isArray(p.processes) || !p.processes.length || p.processes.length > 8) invalid("processes must contain 1–8 entries");
-    const processes = p.processes.map((proc) => {
-      object(proc, ["name", "env", "ports"], "process");
-      if (typeof proc.name !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(proc.name) || names.has(proc.name)) invalid("process names must be unique within an instance");
-      names.add(proc.name);
-      object(proc.env, SERVICE_ENV_KEYS, "environment (only non-secret allowlisted values are accepted)");
-      const env = {};
-      for (const [key, val] of Object.entries(proc.env).sort(([a], [b]) => a.localeCompare(b))) {
-        if (typeof val !== "string" || val.length > 256) invalid("environment values must be bounded strings");
-        if (key === "NODE_ENV" && !["development", "test", "production", "staging"].includes(val)) invalid("invalid NODE_ENV");
-        if (["CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED"].includes(key) && !["true", "false"].includes(val)) invalid(`invalid ${key}`);
-        if (key === "ORDER_AI_ALLOWED_RESTAURANTS" && !/^(?:\*|[A-Za-z0-9_-]+(?:,[A-Za-z0-9_-]+)*)$/.test(val)) invalid("invalid ORDER_AI_ALLOWED_RESTAURANTS");
-        if (["PORT", "WS_PORT"].includes(key) && (!/^\d{1,5}$/.test(val) || +val < 1 || +val > 65535)) invalid(`invalid ${key}`);
-        env[key] = val;
-      }
-      if (!env.NODE_ENV) invalid("NODE_ENV is required");
-      if (!Array.isArray(proc.ports) || !proc.ports.length || proc.ports.length > 8) invalid("expected TCP ports are required");
-      const expected = proc.ports.map((port) => integer(port, 1, 65535, "port"));
-      for (const port of expected) {
-        if (ports.has(port)) invalid("ports must be unique within an instance");
-        ports.add(port);
-      }
-      for (const key of ["PORT", "WS_PORT"]) if (env[key] && !expected.includes(+env[key])) invalid(`${key} must be an expected port`);
-      return { name: proc.name, env, ports: expected };
-    });
-    if (!/^[1-9]\d{0,3}[MG]$/.test(p.maxMemoryRestart || "")) invalid("maxMemoryRestart must be a bounded M/G value");
-    if (typeof p.startupMarker !== "string" || !p.startupMarker.length || p.startupMarker.length > 128 || /[^\x20-\x7e]/.test(p.startupMarker)) invalid("a bounded literal startupMarker is required");
-    const stableMs = integer(p.stableMs ?? 5e3, 3e3, 3e4, "stableMs");
-    const startupTimeoutMs = integer(p.startupTimeoutMs ?? 6e4, stableMs + 1e3, 9e4, "startupTimeoutMs");
-    result[id] = {
-      instanceId: p.instanceId,
-      target: { host: p.target.host, port: p.target.port, username: p.target.username },
-      enabled: p.enabled,
-      cwd,
-      ...releaseRoot ? { releaseRoot } : {},
-      entry: p.entry,
-      mode: "fork",
-      interpreter,
-      nodeVersion: p.nodeVersion,
-      pm2Path: p.pm2Path,
-      pm2Home,
-      envFiles,
-      processes,
-      maxMemoryRestart: p.maxMemoryRestart,
-      restartDelayMs: integer(p.restartDelayMs ?? 5e3, 1e3, 6e4, "restartDelayMs"),
-      stableMs,
-      startupTimeoutMs,
-      startupMarker: p.startupMarker,
-      persist: p.persist
-    };
-  }
-  return result;
-}
-function serviceProfileHash(profile) {
-  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
-}
-function serviceTargetHash(target2, allowedPaths) {
-  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify({
-    host: target2.host,
-    port: target2.port,
-    username: target2.username,
-    hostKeyFingerprints: [...target2.hostKeyFingerprints || []].sort(),
-    allowedPaths: [...allowedPaths].sort()
-  })).digest("hex");
-}
-function serviceAuditFields(input = {}) {
-  return {
-    serviceId: typeof input.serviceId === "string" && /^[a-z][a-z0-9_-]{0,31}$/.test(input.serviceId) ? input.serviceId : void 0,
-    profileHash: typeof input.profileHash === "string" && /^[a-f0-9]{64}$/.test(input.profileHash) ? input.profileHash : void 0
-  };
-}
-function selectServiceProfile(profiles, input) {
-  assertServiceId(input.serviceId);
-  const profile = profiles?.[input.serviceId];
-  if (!profile) throw serviceError("SERVICE_PROFILE_NOT_FOUND", "Configure a verified service profile for this instance first; no defaults are inferred");
-  if (!profile.enabled) throw serviceError("SERVICE_START_DISABLED", "This instance service profile is disabled");
-  if (input.profileHash !== serviceProfileHash(profile)) throw serviceError("SERVICE_PROFILE_STALE", "List service profiles again and use the current profileHash");
-  return profile;
-}
-
-// services.js
-var SERVICE_RESULT_MARKER = "__REMOTE_DEBUG_SERVICE__";
-var RESULT_CODES = /* @__PURE__ */ new Set([
-  "SERVICE_START_TIMEOUT",
-  "SERVICE_EVIDENCE_TOO_LARGE",
-  "SERVICE_PM2_COMMAND_FAILED",
-  "SERVICE_PM2_RESPONSE_INVALID",
-  "SERVICE_RELEASE_PATH_INVALID",
-  "SERVICE_CWD_SYMLINK_REQUIRES_RELEASE_ROOT",
-  "SERVICE_CANONICAL_PATH_DENIED",
-  "SERVICE_PM2_HOME_SYMLINK",
-  "SERVICE_DUPLICATE_PROCESS",
-  "SERVICE_MODE_MISMATCH",
-  "SERVICE_PROCESS_PATH_CONFLICT",
-  "SERVICE_NODE_ARGS_MISMATCH",
-  "SERVICE_NODE_VERSION_MISMATCH",
-  "SERVICE_ENV_MISMATCH",
-  "SERVICE_PROCESS_NOT_RUNNING",
-  "SERVICE_PROCESS_METADATA_INVALID",
-  "SERVICE_ACTUAL_PROCESS_MISMATCH",
-  "SERVICE_ACTUAL_ENV_MISMATCH",
-  "SERVICE_UNEXPECTED_NODE_OPTIONS",
-  "SERVICE_LOG_PATH_CONFLICT",
-  "SERVICE_CWD_INVALID",
-  "SERVICE_ENTRY_PATH_INVALID",
-  "SERVICE_ENV_FILE_INVALID",
-  "SERVICE_PM2_DAEMON_UNAVAILABLE",
-  "SERVICE_START_BUSY",
-  "SERVICE_EXISTING_PROCESS_UNHEALTHY",
-  "SERVICE_PORT_OWNER_MISMATCH",
-  "SERVICE_PORT_CONFLICT",
-  "SERVICE_UNEXPECTED_REGISTRATION",
-  "SERVICE_RELEASE_CHANGED",
-  "SERVICE_CONCURRENT_PROCESS_CHANGE",
-  "SERVICE_PROCESS_DISAPPEARED",
-  "SERVICE_PROCESS_EXITED",
-  "SERVICE_PROCESS_UNSTABLE",
-  ...["ENOENT", "EACCES", "EPERM", "ENOTDIR", "ELOOP"].map((code) => `SERVICE_FILESYSTEM_${code}`),
-  "SERVICE_START_FAILED"
-]);
-function safeReceipt(payload, profile) {
-  const invalid5 = () => {
-    throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Invalid service evidence; inspect this instance before retrying");
-  };
-  const names = new Set(profile.processes.map((p) => p.name));
-  const nameList = (value) => {
-    if (value === void 0) return [];
-    if (!Array.isArray(value) || value.length > names.size || value.some((name2) => !names.has(name2)) || new Set(value).size !== value.length) invalid5();
-    return value;
-  };
-  if (!["healthy", "missing", "blocked", "partial", "unknown"].includes(payload.status)) invalid5();
-  const verified = (payload.verified || []).map((item) => {
-    const proc = profile.processes.find((p) => p.name === item.name);
-    if (!proc || !Number.isSafeInteger(item.pid) || item.pid < 1 || item.status !== "online" || !Number.isSafeInteger(item.restarts) || item.restarts < 0 || JSON.stringify(proc.ports) !== JSON.stringify(item.ports) || item.startupMarkerSeen !== true || item.interpreterVerified !== true || item.environmentVerified !== true) invalid5();
-    return {
-      name: item.name,
-      pid: item.pid,
-      status: "online",
-      restarts: item.restarts,
-      ports: proc.ports,
-      startupMarkerSeen: true,
-      interpreterVerified: true,
-      environmentVerified: true
-    };
-  });
-  if (new Set(verified.map((item) => item.name)).size !== verified.length) invalid5();
-  if (payload.status === "healthy" && verified.length !== profile.processes.length) invalid5();
-  const result = {
-    status: payload.status,
-    phase: ["preflight", "paths", "runtime", "env-files", "pm2-daemon", "lock", "process-preflight", "start", "verify", "persist", "complete"].includes(payload.phase) ? payload.phase : "unknown",
-    started: nameList(payload.started),
-    attempted: nameList(payload.attempted),
-    verified,
-    nodeVersion: profile.nodeVersion,
-    mode: "fork",
-    persisted: payload.status === "healthy" && payload.persisted === true
-  };
-  if (payload.resolvedCwd) {
-    const prefix = `${profile.releaseRoot}/releases/`;
-    if (typeof payload.resolvedCwd !== "string" || (profile.releaseRoot ? !payload.resolvedCwd.startsWith(prefix) || !/^[A-Za-z0-9_.+-]+$/.test(payload.resolvedCwd.slice(prefix.length)) : payload.resolvedCwd !== profile.cwd)) invalid5();
-    result.resolvedCwd = payload.resolvedCwd;
-  }
-  if (payload.missing) result.missing = nameList(payload.missing);
-  if (payload.unchanged === true) result.unchanged = true;
-  if (payload.persistenceWarning === "SERVICE_PM2_SAVE_SKIPPED_UNHEALTHY_NAMESPACE") result.persistenceWarning = payload.persistenceWarning;
-  if (payload.error) result.error = { code: RESULT_CODES.has(payload.error.code) ? payload.error.code : "SERVICE_START_FAILED" };
-  if (!["healthy", "missing"].includes(payload.status)) result.recovery = "Inspect this instance before retrying; destructive recovery requires separate authorization";
-  return result;
-}
-function validateServiceRequest(input, action) {
-  const allowed = ["serviceId", "profileHash", "operationId", "deadlineAt", "timeoutMs", ...action === "start" ? ["confirmation"] : []];
-  if (!["start", "inspect"].includes(action) || !input || Object.keys(input).some((key) => !allowed.includes(key))) throw serviceError("SERVICE_INPUT_INVALID", "Only a saved serviceId and current profileHash are accepted");
-  if (action === "start" && input.confirmation !== SERVICE_START_CONFIRMATION) throw serviceError("SERVICE_START_AUTHORIZATION_REQUIRED", "An explicit user request to start this instance service is required");
-}
-function buildServiceScript(action, profile, deadlineAt, allowedRoots) {
-  const request = { action, deadlineAt, allowedRoots };
-  return `(${serviceStartRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(profile)}).then(result => console.log(${JSON.stringify(SERVICE_RESULT_MARKER)} + JSON.stringify(result))).catch(() => { process.exitCode = 1; });`;
-}
-async function runService(input, { action, config, operation, runSSH: runSSH2 }) {
-  validateServiceRequest(input, action);
-  const profile = selectServiceProfile(config.serviceProfiles, input);
-  if (profile.instanceId !== config.instanceId || profile.target.host !== config.ssh.host || profile.target.port !== config.ssh.port || profile.target.username !== config.ssh.username) throw serviceError("SERVICE_INSTANCE_MISMATCH");
-  let remote;
-  try {
-    remote = await runSSH2("node", {
-      config,
-      operation,
-      stdin: buildServiceScript(action, profile, operation.deadlineAt - 1e3, config.security.allowedPaths)
-    });
-  } catch {
-    throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Transport interrupted; inspect this instance before retrying. A start may have partially completed; no automatic cleanup or replay is performed");
-  }
-  if (remote.exitCode !== 0 || remote.timedOut || remote.stdoutTruncated || Buffer.byteLength(remote.stdout || "") > 65536) throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Incomplete service receipt; inspect this instance before retrying");
-  let payload;
-  try {
-    const lines = String(remote.stdout || "").split(/\r?\n/).filter((line) => line.startsWith(SERVICE_RESULT_MARKER));
-    if (lines.length !== 1) throw new Error();
-    payload = JSON.parse(lines[0].slice(SERVICE_RESULT_MARKER.length));
-    payload = safeReceipt(payload, profile);
-  } catch {
-    throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Invalid service receipt; inspect this instance before retrying");
-  }
-  return { serviceId: input.serviceId, profileHash: input.profileHash, ...payload };
-}
-
-// http-auth.js
-var import_node_path2 = __toESM(require("node:path"), 1);
-var import_local_auth = __toESM(require_local_auth(), 1);
-var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/ui.css", "/ui.js", "/workspace.js", "/dashboard.js", "/instance-tasks.js", "/final-results.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
-function publicHealth(request, token, identity2) {
-  const nonce = request.headers["x-remote-debug-challenge"];
-  return {
-    ...identity2,
-    .../^[a-f0-9]{64}$/.test(nonce || "") ? { authProof: import_local_auth.default.healthProof(token, nonce, new URL(`http://${request.headers.host}`).origin) } : {}
-  };
-}
-function installHttpAuth(app, config, options = {}) {
-  const dataDir = import_node_path2.default.dirname(import_node_path2.default.dirname(config.runtime?.statePath || import_node_path2.default.join(process.cwd(), ".runtime", "agent-state.json")));
-  const filePath = config.auth?.filePath || import_local_auth.default.resolveAuthFile(dataDir);
-  const token = options.authToken || (options.initializeAuth ? import_local_auth.default.ensureAuthToken(filePath) : import_local_auth.default.readAuthToken(filePath));
-  if (!/^[a-f0-9]{64}$/.test(token)) throw import_local_auth.default.authError("valid HTTP authentication credentials are required");
-  app.locals.authToken = token;
-  app.use((request, response, next) => {
-    response.set("Cache-Control", "no-store");
-    response.set("X-Content-Type-Options", "nosniff");
-    response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
-    const fail4 = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
-    const port = request.socket.localPort;
-    const host = request.headers.host;
-    const listener = config.agent.host || "127.0.0.1";
-    const allowedHosts = [`${listener.includes(":") ? `[${listener}]` : listener}:${port}`, `127.0.0.1:${port}`, `localhost:${port}`];
-    if (port === 80) allowedHosts.push(listener.includes(":") ? `[${listener}]` : listener, "127.0.0.1", "localhost");
-    if (!allowedHosts.includes(host)) {
-      return fail4(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
-    }
-    const origin = request.headers.origin;
-    if (origin !== void 0 && origin !== new URL(`http://${host}`).origin) {
-      return fail4(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
-    }
-    if ((request.method === "GET" || request.method === "HEAD") && (request.path === "/health" || PUBLIC_ASSETS.has(request.path))) return next();
-    const header = request.headers.authorization;
-    if (!header) return fail4(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
-    if (!import_local_auth.default.tokenMatches(header.startsWith("Bearer ") ? header.slice(7) : "", token)) {
-      return fail4(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
-    }
-    next();
-  });
-}
-
-// manual-workbench.js
-var import_express = __toESM(require_express2(), 1);
-var import_node_http = __toESM(require("node:http"), 1);
-var import_node_fs5 = __toESM(require("node:fs"), 1);
-var import_node_path8 = __toESM(require("node:path"), 1);
-var import_node_url3 = require("node:url");
-var import_node_crypto14 = require("node:crypto");
-
-// node_modules/ws/wrapper.mjs
-var import_stream = __toESM(require_stream(), 1);
-var import_extension = __toESM(require_extension(), 1);
-var import_permessage_deflate = __toESM(require_permessage_deflate(), 1);
-var import_receiver = __toESM(require_receiver(), 1);
-var import_sender = __toESM(require_sender(), 1);
-var import_subprotocol = __toESM(require_subprotocol(), 1);
-var import_websocket = __toESM(require_websocket(), 1);
-var import_websocket_server = __toESM(require_websocket_server(), 1);
-
-// manual-workbench.js
-var import_local_auth4 = __toESM(require_local_auth(), 1);
-
-// manual-auth.js
-var import_node_fs = __toESM(require("node:fs"), 1);
-var import_node_path3 = __toESM(require("node:path"), 1);
+// mongodb-bulk.js
 var import_node_crypto3 = require("node:crypto");
-var import_node_util = require("node:util");
-var import_local_auth2 = __toESM(require_local_auth(), 1);
-var scrypt = (0, import_node_util.promisify)(import_node_crypto3.scrypt);
-var USERNAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$/;
-var HEX64 = /^[a-f0-9]{64}$/;
-var HASH_OPTIONS = { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
-function manualError(code, message, statusCode = 400) {
-  return Object.assign(new Error(message), { code, statusCode });
-}
-function validateAdminCredentials(username, password) {
-  if (typeof username !== "string" || !USERNAME.test(username)) {
-    throw manualError("ADMIN_USERNAME_INVALID", "账号须为 3–64 位字母、数字、下划线、点或短横线，并以字母或数字开头。");
-  }
-  if (typeof password !== "string" || password.length < 12 || Buffer.byteLength(password) > 256) {
-    throw manualError("ADMIN_PASSWORD_INVALID", "管理员密码至少 12 个字符，最多 256 字节。");
-  }
-}
-var ManualAdminStore = class {
-  constructor(directory) {
-    this.directory = directory;
-    this.filePath = import_node_path3.default.join(directory, "accounts.json");
-  }
-  protectDirectory() {
-    import_node_fs.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
-    import_local_auth2.default.protectOrCheck(this.directory, true, true);
-  }
-  read() {
-    if (!import_node_fs.default.existsSync(this.directory)) return [];
-    import_local_auth2.default.protectOrCheck(this.directory, true, false);
-    if (!import_node_fs.default.existsSync(this.filePath)) return [];
-    import_local_auth2.default.protectOrCheck(this.filePath, false, false);
-    const stat = import_node_fs.default.lstatSync(this.filePath);
-    if (stat.nlink !== 1 || stat.size > 64 * 1024) throw manualError("ADMIN_STORAGE_INVALID", "管理员存储无效。", 503);
-    const value = JSON.parse(import_node_fs.default.readFileSync(this.filePath, "utf8"));
-    if (value.version !== 1 || !Array.isArray(value.accounts) || value.accounts.length > 10 || new Set(value.accounts.map((a) => a?.username)).size !== value.accounts.length || value.accounts.some((a) => !USERNAME.test(a?.username || "") || !HEX64.test(a.salt || "") || !/^[a-f0-9]{128}$/.test(a.hash || ""))) {
-      throw manualError("ADMIN_STORAGE_INVALID", "管理员存储无效。", 503);
-    }
-    return value.accounts;
-  }
-  async verify(username, password) {
-    if (typeof username !== "string" || typeof password !== "string" || Buffer.byteLength(password) > 256) return false;
-    const account = this.read().find((item) => item.username === username);
-    const actual = await scrypt(password, account?.salt || "0".repeat(64), 64, HASH_OPTIONS);
-    const expected = Buffer.from(account?.hash || "0".repeat(128), "hex");
-    return (0, import_node_crypto3.timingSafeEqual)(actual, expected) && Boolean(account);
-  }
-  async register(username, password) {
-    validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto3.randomBytes)(32).toString("hex");
-    const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
-    const accounts = this.read();
-    if (accounts.some((account) => account.username === username)) throw manualError("ADMIN_EXISTS", "管理员账号已存在。", 409);
-    if (accounts.length >= 10) throw manualError("ADMIN_LIMIT", "最多注册 10 个管理员。", 409);
-    this.save([...accounts, { username, salt, hash, createdAt: (/* @__PURE__ */ new Date()).toISOString() }]);
-  }
-  async reset(username, password) {
-    validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto3.randomBytes)(32).toString("hex");
-    const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
-    const accounts = this.read();
-    if (!accounts.some((account) => account.username === username)) throw manualError("ADMIN_NOT_FOUND", "管理员账号不存在。", 404);
-    this.save(accounts.map((account) => account.username === username ? { ...account, salt, hash, updatedAt: (/* @__PURE__ */ new Date()).toISOString() } : account));
-  }
-  save(accounts) {
-    this.protectDirectory();
-    const temporaryPath = import_node_path3.default.join(this.directory, `.accounts-${(0, import_node_crypto3.randomBytes)(16).toString("hex")}.tmp`);
-    try {
-      import_node_fs.default.writeFileSync(temporaryPath, JSON.stringify({ version: 1, accounts }) + "\n", { flag: "wx", mode: 384 });
-      import_local_auth2.default.protectOrCheck(temporaryPath, false, true);
-      import_node_fs.default.renameSync(temporaryPath, this.filePath);
-    } finally {
-      import_node_fs.default.rmSync(temporaryPath, { force: true });
-    }
-  }
-};
-var ManualLoginLimiter = class {
-  constructor(now = Date.now) {
-    this.now = now;
-    this.failures = 0;
-    this.windowStart = now();
-    this.inFlight = 0;
-  }
-  async run(action) {
-    if (this.now() - this.windowStart >= 5 * 6e4) {
-      this.failures = 0;
-      this.windowStart = this.now();
-    }
-    if (this.failures >= 5 || this.inFlight >= 2) throw manualError("ADMIN_LOGIN_LIMITED", "尝试过于频繁，请稍后重试。", 429);
-    this.inFlight++;
-    try {
-      const result = await action();
-      if (!result) this.failures++;
-      return result;
-    } finally {
-      this.inFlight--;
-    }
-  }
-};
-
-// manual-owner-verification.js
-var import_node_fs2 = __toESM(require("node:fs"), 1);
-var import_node_path5 = __toESM(require("node:path"), 1);
-var import_node_url2 = require("node:url");
-var import_node_crypto4 = require("node:crypto");
-var import_node_child_process = require("node:child_process");
-var import_node_util2 = require("node:util");
-var import_local_auth3 = __toESM(require_local_auth(), 1);
-
-// manual-windows-owner.js
-var import_node_path4 = __toESM(require("node:path"), 1);
-function proofFrom(stdout, nonce) {
-  try {
-    const proof = JSON.parse(stdout.trim());
-    return proof?.nonce === nonce ? proof : null;
-  } catch {
-    return null;
-  }
-}
-function verificationError(proof) {
-  const nativeCode = Number.isInteger(proof?.nativeError) && proof.nativeError > 0 ? `（Windows 错误 ${proof.nativeError}）` : "";
-  switch (proof?.reason) {
-    case "cancelled":
-      return manualError("OWNER_VERIFICATION_CANCELLED", "已取消 Windows 身份验证，请重试。", 403);
-    case "prompt-error":
-      return manualError("OWNER_WINDOWS_PROMPT_FAILED", `无法打开 Windows 身份验证窗口${nativeCode}，请在已登录的本机桌面重试。`, 503);
-    case "unpack-error":
-      return manualError("OWNER_WINDOWS_UNPACK_FAILED", `无法解析 Windows 返回的凭据${nativeCode}，请选择当前 Windows 账户的密码登录方式后重试。`, 503);
-    case "logon-error":
-      return manualError("OWNER_WINDOWS_LOGON_FAILED", `Windows 拒绝了账户登录${nativeCode}。请确认系统窗口中的账户是当前 Windows 用户，并输入该账户的登录密码（不是 PIN 或新管理员密码）。`, 403);
-    case "identity-mismatch":
-      return manualError("OWNER_WINDOWS_IDENTITY_MISMATCH", "验证的账户与运行插件的 Windows 用户不一致，请使用当前 Windows 用户的账户。", 403);
-    case "unavailable":
-      return manualError("OWNER_WINDOWS_DESKTOP_UNAVAILABLE", "Windows 本机验证需要已登录的交互式桌面，请从当前用户的桌面启动插件。", 503);
-    default:
-      return manualError("OWNER_VERIFICATION_FAILED", "Windows 系统身份验证未通过，请重试。", 403);
-  }
-}
-async function invoke(execute2, nativeDirectory, args, signal, timeout) {
-  const root = process.env.SystemRoot || "C:\\Windows";
-  return execute2(
-    import_node_path4.default.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
-    ["-NoProfile", "-NonInteractive", "-STA", "-ExecutionPolicy", "Bypass", "-File", import_node_path4.default.join(nativeDirectory, "verify-owner.ps1"), ...args],
-    { timeout, maxBuffer: 4096, windowsHide: true, signal }
-  );
-}
-async function prepareWindowsOwner(execute2, nativeDirectory, signal) {
-  let result;
-  try {
-    result = JSON.parse((await invoke(execute2, nativeDirectory, ["-Check"], signal, 2e4)).stdout.trim());
-  } catch {
-    throw manualError("OWNER_WINDOWS_HELPER_UNAVAILABLE", "Windows 身份验证组件无法启动，请检查系统 Windows PowerShell 和本机桌面环境。", 503);
-  }
-  if (result?.available !== true || result?.verified === true) throw manualError("OWNER_WINDOWS_HELPER_UNAVAILABLE", "Windows 身份验证组件不可用，请在已登录的本机桌面重试。", 503);
-}
-async function verifyWindowsOwner(execute2, nativeDirectory, nonce, signal) {
-  let result;
-  try {
-    result = await invoke(execute2, nativeDirectory, ["-Nonce", nonce], signal, 12e4);
-  } catch (error2) {
-    if (error2.name === "AbortError") throw manualError("OWNER_VERIFICATION_CANCELLED", "已取消 Windows 身份验证，请重试。", 403);
-    if (error2.killed) throw manualError("OWNER_VERIFICATION_TIMEOUT", "Windows 身份验证超时，请重试。", 403);
-    const proof2 = proofFrom(error2.stdout || "", nonce);
-    if (proof2?.verified === false) throw verificationError(proof2);
-    throw manualError("OWNER_WINDOWS_HELPER_FAILED", "Windows 身份验证组件执行失败，请关闭注册窗口后重试。", 503);
-  }
-  const proof = proofFrom(result.stdout, nonce);
-  if (proof?.verified !== true) throw verificationError(proof);
-  return result;
-}
-
-// manual-owner-verification.js
-var execute = (0, import_node_util2.promisify)(import_node_child_process.execFile);
-var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path5.default.dirname((0, import_node_url2.fileURLToPath)(void 0));
-var ManualOwnerVerification = class {
-  constructor(directory, options = {}) {
-    this.directory = directory;
-    this.platform = options.platform || process.platform;
-    this.execute = options.execute || execute;
-    this.nativeDirectory = options.nativeDirectory || import_node_path5.default.join(moduleDirectory, "native");
-    this.preparing = null;
-    this.architecture = options.architecture || process.arch;
-    this.nativeArchitecture = null;
-  }
-  status() {
-    const supported = ["darwin", "win32"].includes(this.platform);
-    return {
-      supported,
-      method: this.platform === "darwin" ? "macos-local-authentication" : this.platform === "win32" ? "windows-credentials" : "unavailable",
-      message: this.platform === "win32" ? "注册时会弹出 Windows 系统身份验证窗口，请使用当前 Windows 账户的登录密码（不是 PIN）；电脑密码不会提交到网页。" : supported ? "注册时会弹出系统身份验证窗口；电脑密码不会提交到网页。" : "此平台暂未接入本机身份验证，暂不能注册管理员。"
-    };
-  }
-  async macArchitecture() {
-    if (this.nativeArchitecture) return this.nativeArchitecture;
-    if (this.architecture === "arm64") return this.nativeArchitecture = "arm64";
-    try {
-      const result = await this.execute("/usr/sbin/sysctl", ["-n", "hw.optional.arm64"], { timeout: 5e3, maxBuffer: 4096, signal: this.controller?.signal });
-      this.nativeArchitecture = result.stdout.trim() === "1" ? "arm64" : "x86_64";
-    } catch (error2) {
-      if (error2.name === "AbortError") throw error2;
-      this.nativeArchitecture = "x86_64";
-    }
-    return this.nativeArchitecture;
-  }
-  async executeMac(command, args, options) {
-    if (await this.macArchitecture() === "arm64") {
-      return this.execute("/usr/bin/arch", ["-arm64", command, ...args], options);
-    }
-    return this.execute(command, args, options);
-  }
-  async macHelper() {
-    const source = import_node_path5.default.join(this.nativeDirectory, "verify-owner.swift");
-    const hash = (0, import_node_crypto4.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
-    import_node_fs2.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
-    import_local_auth3.default.protectOrCheck(this.directory, true, true);
-    const helper = import_node_path5.default.join(this.directory, `verify-owner-${hash}`);
-    if (!import_node_fs2.default.existsSync(helper)) {
-      const temporary = `${helper}-${(0, import_node_crypto4.randomBytes)(8).toString("hex")}`;
-      let stage = "compiler";
-      try {
-        await this.executeMac("/usr/bin/xcrun", ["--find", "swiftc"], { timeout: 1e4, maxBuffer: 4096, signal: this.controller?.signal });
-        stage = "compile";
-        await this.executeMac("/usr/bin/xcrun", ["swiftc", source, "-O", "-o", temporary], { timeout: 6e4, maxBuffer: 64 * 1024, signal: this.controller?.signal });
-        stage = "install";
-        import_node_fs2.default.chmodSync(temporary, 448);
-        import_node_fs2.default.renameSync(temporary, helper);
-      } catch (error2) {
-        if (error2.name === "AbortError") throw manualError("OWNER_HELPER_CANCELLED", "系统认证组件准备已取消，请重试。", 503);
-        if (stage === "compiler") {
-          const code = Number.isInteger(error2.code) || typeof error2.code === "string" && /^[A-Z_]{1,64}$/.test(error2.code) ? String(error2.code) : "UNKNOWN";
-          throw manualError("OWNER_COMPILER_UNAVAILABLE", `无法启动 Swift 编译器检查（${code}）。请检查 Xcode Command Line Tools、xcode-select 配置和插件进程权限。`, 503);
-        }
-        if (stage === "install") throw manualError("OWNER_HELPER_INSTALL_FAILED", "认证组件已编译，但无法写入缓存。请检查本地认证目录的所有权与权限。", 503);
-        if (error2.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") throw manualError("OWNER_HELPER_COMPILE_FAILED", "Swift 编译器返回过多诊断信息，认证组件未生成。", 503);
-        if (error2.killed) throw manualError("OWNER_HELPER_COMPILE_TIMEOUT", "Swift 编译认证组件超时，请稍后重试。", 503);
-        const exit = Number.isInteger(error2.code) ? `（退出码 ${error2.code}）` : "";
-        throw manualError("OWNER_HELPER_COMPILE_FAILED", `Swift 编译认证组件失败${exit}。编译器已找到，请检查系统 SDK 与命令行工具是否匹配。`, 503);
-      } finally {
-        import_node_fs2.default.rmSync(temporary, { force: true });
-      }
-    }
-    const stat = import_node_fs2.default.lstatSync(helper);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.uid !== process.getuid() || (stat.mode & 511) !== 448) {
-      throw manualError("OWNER_HELPER_UNSAFE", "系统认证组件的权限无效。", 503);
-    }
-    return helper;
-  }
-  async prepare() {
-    if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
-    if (this.preparing) return this.preparing;
-    this.preparing = this.prepareOnce().finally(() => {
-      this.preparing = null;
-    });
-    return this.preparing;
-  }
-  async prepareOnce() {
-    if (this.platform === "win32") {
-      const controller2 = new AbortController();
-      this.controller = controller2;
-      try {
-        await prepareWindowsOwner(this.execute, this.nativeDirectory, controller2.signal);
-        return { ...this.status(), prepared: true };
-      } finally {
-        if (this.controller === controller2) this.controller = null;
-      }
-    }
-    if (this.platform !== "darwin") return { ...this.status(), prepared: true };
-    const controller = new AbortController();
-    this.controller = controller;
-    try {
-      const helper = await this.macHelper();
-      let result;
-      try {
-        result = JSON.parse((await this.executeMac(helper, ["--check"], { timeout: 1e4, maxBuffer: 4096, signal: controller.signal })).stdout.trim());
-      } catch {
-        throw manualError("OWNER_HELPER_CHECK_FAILED", "系统认证组件无法启动或系统身份验证暂不可用，请在已登录的本机桌面重试。", 503);
-      }
-      if (result?.available !== true) throw manualError("OWNER_HELPER_CHECK_FAILED", "系统身份验证暂不可用，请在已登录的本机桌面重试。", 503);
-      return { ...this.status(), prepared: true, processArchitecture: this.architecture, nativeArchitecture: await this.macArchitecture() };
-    } finally {
-      if (this.controller === controller) this.controller = null;
-    }
-  }
-  async verify() {
-    if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
-    const nonce = (0, import_node_crypto4.randomBytes)(32).toString("hex");
-    const controller = new AbortController();
-    if (this.preparing) await this.preparing;
-    this.controller = controller;
-    let result;
-    try {
-      if (this.platform === "darwin") {
-        result = await this.executeMac(await this.macHelper(), [nonce], { timeout: 12e4, maxBuffer: 4096, signal: controller.signal });
-      } else {
-        result = await verifyWindowsOwner(this.execute, this.nativeDirectory, nonce, controller.signal);
-      }
-    } catch (error2) {
-      if (this.platform === "win32") throw error2;
-      if (/^OWNER_(HELPER_|COMPILER_)/.test(error2.code || "")) throw error2;
-      throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过或已取消。", 403);
-    } finally {
-      if (this.controller === controller) this.controller = null;
-    }
-    let proof;
-    try {
-      proof = JSON.parse(result.stdout.trim());
-    } catch {
-    }
-    if (proof?.verified !== true || proof.nonce !== nonce || this.platform === "darwin" && proof.uid !== process.getuid()) {
-      throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过。", 403);
-    }
-  }
-  cancel() {
-    this.controller?.abort();
-  }
-};
-
-// manual-mongodb.js
-var import_ssh22 = __toESM(require_lib4(), 1);
-var import_node_crypto13 = require("node:crypto");
-
-// ssh-connection-supervisor.js
-var import_node_events = require("node:events");
-var import_promises = __toESM(require("node:fs/promises"), 1);
-var import_node_crypto12 = require("node:crypto");
-var import_ssh2 = __toESM(require_lib4(), 1);
-
-// operation.js
-var import_node_crypto5 = require("node:crypto");
-var API_VERSION = 2;
-var OPERATION_TIMEOUTS = Object.freeze({
-  run: Object.freeze({ defaultMs: 3e4, maxMs: 12e4 }),
-  file: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
-  mongodb: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
-  mongodbMutation: Object.freeze({ defaultMs: 12e4, maxMs: 6e5 }),
-  approvedExecution: Object.freeze({ defaultMs: 3e5, maxMs: 9e5 }),
-  approvedReview: Object.freeze({ defaultMs: 33e4, maxMs: 93e4 }),
-  manager: Object.freeze({ defaultMs: 3e4, maxMs: 3e5 })
-});
-function errorCause(cause) {
-  if (!cause) {
-    return void 0;
-  }
-  if (typeof cause === "string") {
-    return { message: cause };
-  }
-  return {
-    code: cause.code,
-    message: cause.message || String(cause),
-    layer: cause.layer,
-    phase: cause.phase
-  };
-}
-var OperationError = class extends Error {
-  constructor(message, options = {}) {
-    super(message);
-    this.name = "OperationError";
-    this.code = options.code || "OPERATION_FAILED";
-    this.statusCode = options.statusCode || 500;
-    this.operationId = options.operationId;
-    this.layer = options.layer;
-    this.phase = options.phase;
-    this.retriable = Boolean(options.retriable);
-    this.details = options.details;
-    this.cause = errorCause(options.cause);
-  }
-};
-function operationError(message, options = {}) {
-  return new OperationError(message, options);
-}
-function normalizeTimeoutMs(value, policy) {
-  if (value === void 0 || value === null || value === "") {
-    return policy.defaultMs;
-  }
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw operationError("timeoutMs must be a positive integer", {
-      code: "INVALID_OPERATION_TIMEOUT",
-      statusCode: 400,
-      layer: "operation",
-      phase: "validation"
-    });
-  }
-  return Math.min(parsed, policy.maxMs);
-}
-function operationPolicy(pathName, config = {}) {
-  if (pathName.startsWith("/services/")) return { defaultMs: 11e4, maxMs: 12e4 };
-  if (pathName === "/run") {
-    return {
-      defaultMs: config.security?.defaultTimeoutMs || OPERATION_TIMEOUTS.run.defaultMs,
-      maxMs: config.security?.maxTimeoutMs || OPERATION_TIMEOUTS.run.maxMs
-    };
-  }
-  if (pathName === "/read-file" || pathName === "/list-dir" || pathName === "/logs/list" || pathName === "/logs/archive-members" || pathName === "/logs/read" || pathName === "/logs/query") {
-    return {
-      defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
-      maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs
-    };
-  }
-  if (pathName === "/mongodb/query" || pathName.startsWith("/sandbox/")) {
-    return {
-      defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
-      maxMs: OPERATION_TIMEOUTS.mongodb.maxMs
-    };
-  }
-  if (pathName.startsWith("/mongodb/mutations/") || pathName.startsWith("/mongodb/bulk/") || pathName.startsWith("/mongodb/sandbox/access/") || pathName === "/mongodb/imports/prepare") {
-    return {
-      defaultMs: OPERATION_TIMEOUTS.mongodbMutation.defaultMs,
-      maxMs: OPERATION_TIMEOUTS.mongodbMutation.maxMs
-    };
-  }
-  if (pathName === "/approved-command-drafts/execute") {
-    return {
-      defaultMs: config.approvedCommands?.executionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.defaultMs,
-      maxMs: config.approvedCommands?.maxExecutionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.maxMs
-    };
-  }
-  if (pathName === "/approved-command-drafts/review") {
-    const reviewTimeoutMs = config.commandReview?.reviewTimeoutMs || OPERATION_TIMEOUTS.approvedReview.defaultMs - OPERATION_TIMEOUTS.approvedExecution.defaultMs;
-    const executionDefaultMs = config.approvedCommands?.executionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.defaultMs;
-    const executionMaxMs = config.approvedCommands?.maxExecutionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.maxMs;
-    return {
-      defaultMs: reviewTimeoutMs + executionDefaultMs,
-      maxMs: reviewTimeoutMs + executionMaxMs
-    };
-  }
-  return OPERATION_TIMEOUTS.manager;
-}
-function normalizeOperationEnvelope(payload = {}, policy, options = {}) {
-  const nowMs = options.nowMs ?? Date.now();
-  const timeoutMs = normalizeTimeoutMs(payload.timeoutMs, policy);
-  const suppliedDeadline = Number.parseInt(payload.deadlineAt, 10);
-  const maximumDeadline = nowMs + policy.maxMs;
-  const deadlineAt = Number.isInteger(suppliedDeadline) ? Math.min(suppliedDeadline, maximumDeadline) : nowMs + timeoutMs;
-  const suppliedOperationId = typeof payload.operationId === "string" ? payload.operationId.trim() : "";
-  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto5.randomUUID)();
-  return {
-    operationId,
-    timeoutMs,
-    deadlineAt
-  };
-}
-function remainingOperationMs(operation, nowMs = Date.now()) {
-  return Math.max(0, Number(operation?.deadlineAt || 0) - nowMs);
-}
-function assertOperationActive(operation, signal, options = {}) {
-  if (signal?.aborted) {
-    throw operationErrorForSignal(signal, operation, options);
-  }
-  if (remainingOperationMs(operation) <= 0) {
-    throw operationError("operation deadline exceeded", {
-      code: "OPERATION_DEADLINE_EXCEEDED",
-      statusCode: 408,
-      operationId: operation?.operationId,
-      layer: options.layer || "operation",
-      phase: options.phase || "deadline",
-      retriable: false
-    });
-  }
-}
-function operationErrorForSignal(signal, operation, options = {}) {
-  const reason = signal?.reason;
-  if (reason?.code === "OPERATION_DEADLINE_EXCEEDED") {
-    return reason;
-  }
-  if (reason?.code === "OPERATION_CANCELLED") {
-    return reason;
-  }
-  return operationError(reason?.message || "operation cancelled", {
-    code: "OPERATION_CANCELLED",
-    statusCode: 499,
-    operationId: operation?.operationId,
-    layer: options.layer || "operation",
-    phase: options.phase || "cancel",
-    retriable: false,
-    cause: reason
-  });
-}
-function createOperationController(operation, parentSignal, options = {}) {
-  const controller = new AbortController();
-  const layer = options.layer || "operation";
-  const abortFromParent = () => {
-    if (!controller.signal.aborted) {
-      controller.abort(operationErrorForSignal(parentSignal, operation, {
-        layer,
-        phase: options.cancelPhase || "upstream-cancel"
-      }));
-    }
-  };
-  if (parentSignal?.aborted) {
-    abortFromParent();
-  } else {
-    parentSignal?.addEventListener("abort", abortFromParent, { once: true });
-  }
-  const remainingMs = remainingOperationMs(operation);
-  const deadlineTimer = setTimeout(() => {
-    if (!controller.signal.aborted) {
-      controller.abort(operationError("operation deadline exceeded", {
-        code: "OPERATION_DEADLINE_EXCEEDED",
-        statusCode: 408,
-        operationId: operation.operationId,
-        layer,
-        phase: options.deadlinePhase || "deadline",
-        retriable: false
-      }));
-    }
-  }, remainingMs);
-  deadlineTimer.unref?.();
-  return {
-    controller,
-    signal: controller.signal,
-    cleanup() {
-      clearTimeout(deadlineTimer);
-      parentSignal?.removeEventListener("abort", abortFromParent);
-    }
-  };
-}
-function operationErrorPayload(error2, fallback = {}) {
-  return {
-    code: error2?.code || fallback.code || "REMOTE_DEBUG_ERROR",
-    message: error2?.message || fallback.message || "remote debug operation failed",
-    operationId: error2?.operationId || fallback.operationId,
-    layer: error2?.layer || fallback.layer,
-    phase: error2?.phase || fallback.phase,
-    retriable: Boolean(error2?.retriable),
-    cause: error2?.cause
-  };
-}
-
-// channel-scheduler.js
-var BACKGROUND_PRIORITIES = /* @__PURE__ */ new Set(["background", "bulk"]);
-function queuedCountByPriority(queue) {
-  const result = { control: 0, interactive: 0, background: 0, bulk: 0 };
-  for (const item of queue) {
-    result[item.priority] = (result[item.priority] || 0) + 1;
-  }
-  return result;
-}
-var ChannelScheduler = class {
-  constructor(options = {}) {
-    this.maxBusiness = options.maxBusiness || 4;
-    this.maxControl = options.maxControl || 1;
-    this.maxBackground = options.maxBackground || 1;
-    this.maxBulk = options.maxBulk === void 0 ? 2 : options.maxBulk;
-    this.maxQueue = options.maxQueue || 100;
-    this.backgroundStarvationMs = options.backgroundStarvationMs || 1e4;
-    this.now = options.now || (() => Date.now());
-    this.queue = [];
-    this.activeBusiness = 0;
-    this.activeControl = 0;
-    this.activeBackground = 0;
-    this.activeBulk = 0;
-    this.activeOperations = /* @__PURE__ */ new Map();
-    this.closed = false;
-  }
-  schedule(operation, task, options = {}) {
-    const priority = options.priority || "interactive";
-    assertOperationActive(operation, operation.signal, {
-      layer: "scheduler",
-      phase: "enqueue"
-    });
-    if (this.closed) {
-      return Promise.reject(operationError("SSH operation scheduler is closed", {
-        code: "OPERATION_CANCELLED",
-        statusCode: 499,
-        operationId: operation.operationId,
-        layer: "scheduler",
-        phase: "enqueue"
-      }));
-    }
-    if (this.queue.length >= this.maxQueue) {
-      return Promise.reject(operationError("SSH operation queue is full", {
-        code: "OPERATION_QUEUE_FULL",
-        statusCode: 503,
-        operationId: operation.operationId,
-        layer: "scheduler",
-        phase: "enqueue",
-        retriable: true
-      }));
-    }
-    return new Promise((resolve, reject) => {
-      const item = {
-        operation,
-        task,
-        priority,
-        enqueuedAt: this.now(),
-        resolve,
-        reject,
-        started: false,
-        timer: null,
-        onAbort: null
-      };
-      item.onAbort = () => {
-        if (item.started) {
-          return;
-        }
-        this.removeQueuedItem(item);
-        reject(operationErrorForSignal(operation.signal, operation, {
-          layer: "scheduler",
-          phase: "queue"
-        }));
-        this.pump();
-      };
-      operation.signal?.addEventListener("abort", item.onAbort, { once: true });
-      item.timer = setTimeout(() => {
-        if (item.started) {
-          return;
-        }
-        this.removeQueuedItem(item);
-        reject(operationError("operation deadline exceeded while waiting for an SSH channel", {
-          code: "OPERATION_DEADLINE_EXCEEDED",
-          statusCode: 408,
-          operationId: operation.operationId,
-          layer: "scheduler",
-          phase: "queue"
-        }));
-        this.pump();
-      }, remainingOperationMs(operation, this.now()));
-      item.timer.unref?.();
-      this.queue.push(item);
-      this.pump();
-    });
-  }
-  removeQueuedItem(item) {
-    const index = this.queue.indexOf(item);
-    if (index !== -1) {
-      this.queue.splice(index, 1);
-    }
-    clearTimeout(item.timer);
-    item.operation.signal?.removeEventListener("abort", item.onAbort);
-  }
-  canStart(item) {
-    if (item.priority === "control") {
-      return this.activeControl < this.maxControl;
-    }
-    if (this.activeBusiness >= this.maxBusiness) {
-      return false;
-    }
-    if (this.reserveInteractive && BACKGROUND_PRIORITIES.has(item.priority) && this.activeBusiness >= Math.max(1, this.maxBusiness - 1)) return false;
-    if (item.priority === "bulk") {
-      return this.activeBulk < this.maxBulk;
-    }
-    if (BACKGROUND_PRIORITIES.has(item.priority)) {
-      return this.activeBackground < this.maxBackground;
-    }
-    return true;
-  }
-  nextItem() {
-    const nowMs = this.now();
-    const control = this.queue.find((item) => item.priority === "control" && this.canStart(item));
-    if (control) {
-      return control;
-    }
-    const starvedBackground = this.queue.find(
-      (item) => BACKGROUND_PRIORITIES.has(item.priority) && nowMs - item.enqueuedAt >= this.backgroundStarvationMs && this.canStart(item)
-    );
-    if (starvedBackground) {
-      return starvedBackground;
-    }
-    const interactive = this.queue.find(
-      (item) => item.priority === "interactive" && this.canStart(item)
-    );
-    if (interactive) {
-      return interactive;
-    }
-    return this.queue.find((item) => this.canStart(item));
-  }
-  pump() {
-    if (this.closed) {
-      return;
-    }
-    while (true) {
-      const item = this.nextItem();
-      if (!item) {
-        return;
-      }
-      this.removeQueuedItem(item);
-      this.startItem(item);
-    }
-  }
-  startItem(item) {
-    item.started = true;
-    const background = item.priority === "background";
-    const bulk2 = item.priority === "bulk";
-    if (item.priority === "control") {
-      this.activeControl += 1;
-    } else {
-      this.activeBusiness += 1;
-      if (background) {
-        this.activeBackground += 1;
-      }
-      if (bulk2) this.activeBulk += 1;
-    }
-    const queueMs = Math.max(0, this.now() - item.enqueuedAt);
-    this.activeOperations.set(item.operation.operationId, {
-      priority: item.priority,
-      startedAt: this.now(),
-      deadlineAt: item.operation.deadlineAt
-    });
-    Promise.resolve().then(() => {
-      assertOperationActive(item.operation, item.operation.signal, {
-        layer: "scheduler",
-        phase: "start"
-      });
-      return item.task({ queueMs, priority: item.priority });
-    }).then(item.resolve, item.reject).finally(() => {
-      this.activeOperations.delete(item.operation.operationId);
-      if (item.priority === "control") {
-        this.activeControl -= 1;
-      } else {
-        this.activeBusiness -= 1;
-        if (background) {
-          this.activeBackground -= 1;
-        }
-        if (bulk2) this.activeBulk -= 1;
-      }
-      this.pump();
-    });
-  }
-  close(reason = "scheduler closed") {
-    this.closed = true;
-    const queued = this.queue.splice(0);
-    for (const item of queued) {
-      clearTimeout(item.timer);
-      item.operation.signal?.removeEventListener("abort", item.onAbort);
-      item.reject(operationError(reason, {
-        code: "OPERATION_CANCELLED",
-        statusCode: 499,
-        operationId: item.operation.operationId,
-        layer: "scheduler",
-        phase: "shutdown"
-      }));
-    }
-  }
-  snapshot() {
-    return {
-      active: this.activeOperations.size,
-      activeBusiness: this.activeBusiness,
-      activeControl: this.activeControl,
-      activeBackground: this.activeBackground,
-      activeBulk: this.activeBulk,
-      queued: this.queue.length,
-      queuedByPriority: queuedCountByPriority(this.queue),
-      maxBusiness: this.maxBusiness,
-      maxControl: this.maxControl,
-      maxBackground: this.maxBackground,
-      maxBulk: this.maxBulk,
-      maxQueue: this.maxQueue
-    };
-  }
-};
-
-// config.js
-var import_node_fs4 = __toESM(require("node:fs"), 1);
-var import_node_crypto11 = require("node:crypto");
-var import_node_path7 = __toESM(require("node:path"), 1);
-var import_posix8 = __toESM(require("node:path/posix"), 1);
-
-// log-projects.js
 var import_posix2 = __toESM(require("node:path/posix"), 1);
-function normalizeLogProjects(value, allowedRoots, sourceRoots = {}) {
-  if (typeof value === "string" && value) {
-    try {
-      value = JSON.parse(value);
-    } catch {
-      throw invalid2("logProjects must be valid JSON");
-    }
-  }
-  const configured = value === void 0 || value === null || value === "" ? {} : value;
-  if (typeof configured !== "object" || Array.isArray(configured)) throw invalid2("logProjects must be an object");
-  if (Object.keys(configured).length > 20) throw invalid2("at most 20 log projects are supported");
-  const result = {};
-  for (const [id, project] of Object.entries(configured)) {
-    if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id) || !project || typeof project !== "object") throw invalid2("invalid log project");
-    const directories = project.directories;
-    if (!Array.isArray(directories) || !directories.length || directories.length > 8) throw invalid2("each log project needs 1-8 directories");
-    const normalize = (value2) => {
-      if (typeof value2 !== "string" || value2.length > 4096 || !value2.startsWith("/") || value2.includes("\0")) throw invalid2("log project paths must be absolute");
-      const normalized = import_posix2.default.normalize(value2).replace(/\/$/, "");
-      if (!allowedRoots.some((root) => normalized === root || normalized.startsWith(`${root}/`))) throw invalid2("log project path is outside approved roots");
-      return normalized;
-    };
-    result[id] = {
-      ...project.root ? { root: normalize(project.root) } : {},
-      directories: [...new Set(directories.map(normalize))]
-    };
-  }
-  for (const [id, root] of Object.entries(sourceRoots)) {
-    if (!Object.hasOwn(result, id)) result[id] = { root, directories: [`${root}/logs`] };
-  }
-  return result;
-}
-function invalid2(message) {
-  const error2 = new Error(message);
-  Object.assign(error2, { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
-  return error2;
-}
-
-// log-policy.js
-var import_posix3 = __toESM(require("node:path/posix"), 1);
-var LOG_CATEGORIES = Object.freeze([
-  "system",
-  "nginx",
-  "application",
-  "pm2"
-]);
-var LOG_DEFAULT_LIMIT = 200;
-var LOG_MAX_LIMIT = 500;
-var LOG_DEFAULT_TAIL_LINES = 200;
-var LOG_MAX_TAIL_LINES = 2e3;
-var LOG_DEFAULT_MAX_BYTES = 256 * 1024;
-var LOG_MAX_BYTES = 256 * 1024;
-var LOG_MAX_CONTAINS_LENGTH = 256;
-var LOG_DEFAULT_SCAN_BYTES = 8 * 1024 * 1024;
-var LOG_MAX_SCAN_BYTES = 256 * 1024 * 1024;
-var LOG_MAX_ARCHIVE_SCAN_BYTES = 1 * 1024 * 1024 * 1024;
-var LOG_MAX_COMPRESSED_SOURCE_BYTES = 256 * 1024 * 1024;
-var LOG_MAX_SCAN_ENTRIES = 5e3;
-var LOG_MAX_ARCHIVE_MEMBERS = 5e3;
-var LOG_MAX_PAX_BYTES = 1 * 1024 * 1024;
-var LOG_MAX_MEMBER_BYTES = 256 * 1024 * 1024;
-var LOG_QUERY_CAPABILITIES = Object.freeze({
-  modes: ["latest", "search", "files", "members"],
-  remoteFiltering: true,
-  temporaryExtraction: false,
-  supportedCompression: ["none", "gzip", "tar-gzip"],
-  maxFiles: 50,
-  maxScanBytes: 256 * 1024 * 1024,
-  maxExpandedBytes: 2 * 1024 * 1024 * 1024,
-  maxDirectoryEntries: 5e3,
-  maxReturnedLines: 2e3,
-  maxReturnedBytes: 256 * 1024,
-  backgroundJobs: {
-    start: "/logs/jobs/start",
-    get: "/logs/jobs/get",
-    control: "/logs/jobs/control",
-    maxConcurrentPerInstance: 2,
-    maxQueuedPerInstance: 2,
-    maxActiveAndQueued: 4,
-    singlePassArchives: true,
-    defaultJobTimeoutMs: 18e5,
-    maxJobTimeoutMs: 72e5,
-    defaultCpuPercent: 20,
-    defaultReadBytesPerSecond: 2097152,
-    defaultProcessBytesPerSecond: 4194304,
-    rssLimitBytes: 201326592,
-    defaultBatchScanBytes: 268435456,
-    cumulativeExpandedByteLimit: null,
-    pauseTtlMs: 3e5,
-    retentionMs: 18e5,
-    maxRetainedJobs: 16,
-    survivesWorkerRestart: false,
-    perFileReceipts: true,
-    receiptAcknowledgement: true,
-    maxReceiptBytesPerJob: 8388608,
-    fileResultPagination: true,
-    controls: ["pause", "resume", "cancel", "stop_after_file", "narrow"],
-    startFileBoundary: "stopAfterFile",
-    evidencePaginationScope: "retained_evidence",
-    completeness: ["scanComplete", "countsAreComplete", "evidenceComplete"]
-  }
-});
-var LOG_SUPPORTED_COMPRESSION = Object.freeze([
-  "none",
-  "gzip",
-  "tar-gzip"
-]);
-var LOG_UNSUPPORTED_COMPRESSION = Object.freeze([
-  "bzip2",
-  "xz",
-  "zip"
-]);
-var LOG_CAPABILITIES = Object.freeze({
-  query: LOG_QUERY_CAPABILITIES,
-  categories: [...LOG_CATEGORIES],
-  supportedCompression: [...LOG_SUPPORTED_COMPRESSION],
-  unsupportedCompression: [...LOG_UNSUPPORTED_COMPRESSION],
-  archiveMemberListing: true,
-  defaultLimit: LOG_DEFAULT_LIMIT,
-  maxLimit: LOG_MAX_LIMIT,
-  defaultTailLines: LOG_DEFAULT_TAIL_LINES,
-  maxTailLines: LOG_MAX_TAIL_LINES,
-  defaultMaxBytes: LOG_DEFAULT_MAX_BYTES,
-  maxBytes: LOG_MAX_BYTES,
-  maxContainsLength: LOG_MAX_CONTAINS_LENGTH,
-  maxScanBytes: LOG_MAX_SCAN_BYTES,
-  maxArchiveScanBytes: LOG_MAX_ARCHIVE_SCAN_BYTES,
-  maxCompressedSourceBytes: LOG_MAX_COMPRESSED_SOURCE_BYTES,
-  maxMemberBytes: LOG_MAX_MEMBER_BYTES,
-  maxScanEntries: LOG_MAX_SCAN_ENTRIES,
-  maxArchiveMembers: LOG_MAX_ARCHIVE_MEMBERS,
-  pagination: "cursor"
-});
-function logInputError(message, code = "INVALID_LOG_REQUEST") {
-  const error2 = new Error(message);
-  error2.code = code;
-  error2.statusCode = 400;
-  error2.layer = "worker";
-  error2.phase = "validation";
-  error2.retriable = false;
-  return error2;
-}
-function normalizeLogJobLimits(value) {
-  if (value === void 0 || value === "") return {};
-  let parsed = value;
-  try {
-    if (typeof value === "string") parsed = JSON.parse(value);
-  } catch {
-    throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
-  }
-  const ranges = {
-    maxJobTimeoutMs: [1e3, 72e5],
-    cpuPercent: [1, 50],
-    readBytesPerSecond: [65536, 16777216],
-    processBytesPerSecond: [65536, 33554432],
-    rssLimitBytes: [64 * 1024 * 1024, 192 * 1024 * 1024]
-  };
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
-  for (const [key, number] of Object.entries(parsed)) {
-    const range = ranges[key];
-    if (!range || !Number.isInteger(number) || number < range[0] || number > range[1]) throw logInputError(`invalid log job limit: ${key}`);
-  }
-  return { ...parsed };
-}
-function positiveInteger(value, fallback, maximum, field) {
-  if (value === void 0 || value === null || value === "") {
-    return fallback;
-  }
-  if (!Number.isInteger(value) || value <= 0) {
-    throw logInputError(`${field} must be a positive integer`, `INVALID_${field.toUpperCase()}`);
-  }
-  return Math.min(value, maximum);
-}
-function normalizeLogCategory(value) {
-  if (value === void 0 || value === null || value === "") {
-    return "all";
-  }
-  if (typeof value !== "string" || !["all", ...LOG_CATEGORIES].includes(value)) {
-    throw logInputError(
-      `category must be one of all, ${LOG_CATEGORIES.join(", ")}`,
-      "INVALID_LOG_CATEGORY"
-    );
-  }
-  return value;
-}
-function normalizeLogListOptions(input = {}) {
-  const category = normalizeLogCategory(input.category);
-  const limit = positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, "limit");
-  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
-  if (typeof cursor !== "string" || cursor.length > 4096) {
-    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
-  }
-  return { category, limit, cursor };
-}
-function normalizeArchiveMemberListOptions(input = {}) {
-  const path20 = input.path;
-  if (typeof path20 !== "string" || path20.trim() === "") {
-    throw logInputError("path must be a non-empty string", "INVALID_PATH");
-  }
-  const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
-  if (typeof prefix !== "string" || prefix.length > 512) {
-    throw logInputError("prefix must be a string no longer than 512 characters", "INVALID_MEMBER_PREFIX");
-  }
-  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
-  if (typeof cursor !== "string" || cursor.length > 4096) {
-    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
-  }
-  return {
-    path: path20,
-    prefix: normalizeArchiveMemberPrefix(prefix),
-    limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
-    cursor
-  };
-}
-function normalizeLogReadOptions(input = {}) {
-  const path20 = input.path;
-  if (typeof path20 !== "string" || path20.trim() === "") {
-    throw logInputError("path must be a non-empty string", "INVALID_PATH");
-  }
-  const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
-  if (typeof memberPath !== "string" || memberPath.length > 4096) {
-    throw logInputError("memberPath must be a string no longer than 4096 characters", "INVALID_MEMBER_PATH");
-  }
-  const contains = input.contains === void 0 || input.contains === null ? "" : input.contains;
-  if (typeof contains !== "string" || contains.length > LOG_MAX_CONTAINS_LENGTH) {
-    throw logInputError(
-      `contains must be a string no longer than ${LOG_MAX_CONTAINS_LENGTH} characters`,
-      "INVALID_LOG_CONTAINS"
-    );
-  }
-  return {
-    path: path20,
-    memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
-    tailLines: positiveInteger(
-      input.tailLines,
-      LOG_DEFAULT_TAIL_LINES,
-      LOG_MAX_TAIL_LINES,
-      "tailLines"
-    ),
-    maxBytes: positiveInteger(input.maxBytes, LOG_DEFAULT_MAX_BYTES, LOG_MAX_BYTES, "maxBytes"),
-    contains,
-    caseSensitive: input.caseSensitive === true
-  };
-}
-function normalizeArchiveMemberPrefix(value) {
-  if (!value) {
-    return "";
-  }
-  const normalized = normalizeArchiveMemberPath(value);
-  return value.endsWith("/") ? `${normalized}/` : normalized;
-}
-function normalizeArchiveMemberPath(value) {
-  if (typeof value !== "string" || value.trim() === "") {
-    throw logInputError("archive member path must be a non-empty string", "INVALID_MEMBER_PATH");
-  }
-  if (value.includes("\0") || value.includes("\\")) {
-    throw logInputError("archive member path contains an unsafe character", "INVALID_MEMBER_PATH");
-  }
-  if (value.startsWith("/")) {
-    throw logInputError("archive member path must be relative", "INVALID_MEMBER_PATH");
-  }
-  const normalized = import_posix3.default.normalize(value);
-  if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
-    throw logInputError("archive member path escapes the archive", "ARCHIVE_MEMBER_PATH_NOT_ALLOWED");
-  }
-  return normalized;
-}
-function encodeLogCursor(value) {
-  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
-}
-function decodeLogCursor(value, expectedKind) {
-  if (!value) {
-    return { kind: expectedKind, sourceIndex: 0, offset: 0 };
-  }
-  if (typeof value !== "string" || value.length > 4096) {
-    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
-  }
-  try {
-    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-    if (decoded?.kind !== expectedKind || !Number.isInteger(decoded.sourceIndex) || decoded.sourceIndex < 0 || !Number.isInteger(decoded.offset) || decoded.offset < 0) {
-      throw new Error("invalid cursor fields");
-    }
-    return decoded;
-  } catch {
-    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
-  }
-}
-
-// resource-policy.js
-var RESOURCE_TERMINAL = /* @__PURE__ */ new Set(["completed", "partial", "stopped", "failed", "cancelled", "interrupted", "expired"]);
-var RESOURCE_PROFILES = Object.freeze({
-  control: { bulk: false, cpuMilliCores: 50, memoryBytes: 32 * 1048576 },
-  diagnostic: { bulk: false, cpuMilliCores: 100, memoryBytes: 64 * 1048576 },
-  file_read: { bulk: false, cpuMilliCores: 100, memoryBytes: 64 * 1048576 },
-  mongo_read: { bulk: false, cpuMilliCores: 150, memoryBytes: 128 * 1048576 },
-  mongo_write: { bulk: false, cpuMilliCores: 150, memoryBytes: 128 * 1048576 },
-  discovery: { bulk: false, cpuMilliCores: 50, memoryBytes: 64 * 1048576 },
-  log_search: { bulk: true, cpuMilliCores: 200, memoryBytes: 192 * 1048576 },
-  mongo_bulk: { bulk: true, cpuMilliCores: 400, memoryBytes: 512 * 1048576 }
-});
-var RESOURCE_DEFAULTS = Object.freeze({
-  cpuMilliCores: 1e3,
-  protectedCpuMilliCores: 200,
-  controlCpuMilliCores: 50,
-  memoryBytes: 1024 * 1048576,
-  protectedMemoryBytes: 256 * 1048576,
-  readBytesPerSecond: 8 * 1048576,
-  processBytesPerSecond: 16 * 1048576,
-  transferBytesPerSecond: 4 * 1048576,
-  protectedTransferBytesPerSecond: 2 * 1048576,
-  controlTransferBytesPerSecond: 1048576,
-  protectedReadBytesPerSecond: 1048576,
-  protectedProcessBytesPerSecond: 1048576,
-  sampleIntervalMs: 5e3,
-  sampleTtlMs: 2e4,
-  memoryHeadroomRatio: 0.1
-});
-function normalizeResourcePolicy(value) {
-  if (value === void 0 || value === "") return { ...RESOURCE_DEFAULTS, domains: {} };
-  let input;
-  try {
-    input = typeof value === "string" ? JSON.parse(value) : value;
-  } catch {
-    throw new Error("invalid REMOTE_DEBUG_RESOURCE_POLICY");
-  }
-  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid resource policy");
-  for (const [key, number] of Object.entries(input)) {
-    if (key === "domains") {
-      if (!number || typeof number !== "object" || Array.isArray(number) || Object.entries(number).some(([id, domain]) => !/^[a-z][a-z0-9_-]{0,63}$/.test(id) || typeof domain !== "string" || !/^[a-zA-Z0-9._-]{1,128}$/.test(domain))) throw new Error("invalid resource domains");
-    } else if (!Object.hasOwn(RESOURCE_DEFAULTS, key) || !Number.isFinite(number) || number <= 0 || key !== "memoryHeadroomRatio" && !Number.isInteger(number)) throw new Error(`invalid resource policy: ${key}`);
-  }
-  const result = { ...RESOURCE_DEFAULTS, ...input, domains: input.domains || {} };
-  if (result.cpuMilliCores > 64e3 || result.protectedCpuMilliCores + result.controlCpuMilliCores >= result.cpuMilliCores || result.protectedMemoryBytes >= result.memoryBytes || result.memoryBytes > 64 * 1024 ** 3 || result.protectedReadBytesPerSecond >= result.readBytesPerSecond || result.protectedProcessBytesPerSecond >= result.processBytesPerSecond || result.controlTransferBytesPerSecond >= result.protectedTransferBytesPerSecond || result.protectedTransferBytesPerSecond >= result.transferBytesPerSecond || result.sampleIntervalMs < 1e3 || result.sampleIntervalMs > 6e4 || result.sampleTtlMs < result.sampleIntervalMs * 2 || result.sampleTtlMs > 12e4 || result.memoryHeadroomRatio > 0.5) throw new Error("invalid resource policy capacity/reserves");
-  return result;
-}
-
-// approved-commands.js
-var import_node_crypto6 = require("node:crypto");
-var APPROVED_COMMAND_CONFIRMATION = "使用命令";
-var DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1e3;
-var DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 3e5;
-var MAX_APPROVED_EXECUTION_TIMEOUT_MS = 9e5;
-var MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
-var MAX_APPROVED_COMMANDS = 20;
-var DATABASE_SHELLS = /* @__PURE__ */ new Set(["mongo", "mongosh"]);
-function assertDatabaseShellIsNotUsedForMutation(command, index) {
-  const tokens = command.trim().split(/\s+/);
-  const shellIndex = tokens.findIndex((token) => DATABASE_SHELLS.has(token.split("/").pop()));
-  if (shellIndex === -1) {
-    return;
-  }
-  if (shellIndex === 0 && tokens.length === 2 && tokens[1] === "--version") {
-    return;
-  }
-  throw new ApprovedCommandError(
-    `database shell command at index ${index} must use the structured MongoDB mutation tools`,
-    "MONGODB_SHELL_MUTATION_REJECTED"
-  );
-}
-var ApprovedCommandError = class extends Error {
-  constructor(message, code = "APPROVED_COMMAND_REJECTED", statusCode = 400) {
-    super(message);
-    this.name = "ApprovedCommandError";
-    this.code = code;
-    this.statusCode = statusCode;
-  }
-};
-function hashCommands(commands) {
-  return (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
-}
-function redactCommand(command, maxChars = 512) {
-  if (typeof command !== "string" || command.length === 0) {
-    return "";
-  }
-  let redacted = command.replace(
-    /(--(?:password|pass|pwd)(?:=|\s+))("[^"]*"|'[^']*'|[^\s]+)/gi,
-    "$1[REDACTED]"
-  ).replace(
-    /((?:MONGO|MYSQL|PG|POSTGRES|REDIS)?_?PASSWORD=)("[^"]*"|'[^']*'|[^\s]+)/gi,
-    "$1[REDACTED]"
-  ).replace(
-    /(mongodb(?:\+srv)?:\/\/[^:\s/@]+:)([^@\s/]+)(@)/gi,
-    "$1[REDACTED]$3"
-  );
-  if (redacted.length <= maxChars) {
-    return redacted;
-  }
-  return `${redacted.slice(0, maxChars)}
-...[truncated ${redacted.length - maxChars} chars]`;
-}
-function assertApprovedCommandsEnabled(config) {
-  if (!config.approvedCommands?.enabled) {
-    throw new ApprovedCommandError(
-      "approved command execution is disabled; set REMOTE_DEBUG_APPROVED_COMMANDS=1 to enable it",
-      "APPROVED_COMMANDS_DISABLED",
-      403
-    );
-  }
-}
-function normalizePurpose(value) {
-  if (value === void 0 || value === null || value === "") {
-    return "未说明";
-  }
-  if (typeof value !== "string") {
-    throw new ApprovedCommandError("purpose must be a string", "INVALID_APPROVED_COMMAND_PURPOSE");
-  }
-  return value.trim().slice(0, 500) || "未说明";
-}
-function normalizeCommands(value, settings) {
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new ApprovedCommandError(
-      "commands must be a non-empty array",
-      "INVALID_APPROVED_COMMANDS"
-    );
-  }
-  const maxCommands = settings.maxCommands || MAX_APPROVED_COMMANDS;
-  const maxCommandLength = settings.maxCommandLength || MAX_APPROVED_COMMAND_LENGTH;
-  if (value.length > maxCommands) {
-    throw new ApprovedCommandError(
-      `commands cannot contain more than ${maxCommands} items`,
-      "TOO_MANY_APPROVED_COMMANDS"
-    );
-  }
-  return value.map((command, index) => {
-    if (typeof command !== "string") {
-      throw new ApprovedCommandError(
-        `command at index ${index} must be a string`,
-        "INVALID_APPROVED_COMMAND"
-      );
-    }
-    const normalized = command.trim();
-    if (!normalized) {
-      throw new ApprovedCommandError(
-        `command at index ${index} must be non-empty`,
-        "INVALID_APPROVED_COMMAND"
-      );
-    }
-    if (normalized.includes("\0")) {
-      throw new ApprovedCommandError(
-        `command at index ${index} contains a null byte`,
-        "INVALID_APPROVED_COMMAND"
-      );
-    }
-    if (normalized.length > maxCommandLength) {
-      throw new ApprovedCommandError(
-        `command at index ${index} is longer than ${maxCommandLength} characters`,
-        "APPROVED_COMMAND_TOO_LONG"
-      );
-    }
-    assertDatabaseShellIsNotUsedForMutation(normalized, index);
-    return normalized;
-  });
-}
-function nowIso(nowMs) {
-  return new Date(nowMs).toISOString();
-}
-function publicDraft(draft2) {
-  return {
-    draftId: draft2.draftId,
-    purpose: draft2.purpose,
-    commands: draft2.commands.slice(),
-    commandHash: draft2.commandHash,
-    commandCount: draft2.commands.length,
-    commandBlock: draft2.commands.join("\n\n"),
-    status: draft2.status,
-    createdAt: draft2.createdAt,
-    expiresAt: draft2.expiresAt,
-    executedAt: draft2.executedAt,
-    instructions: [
-      "选择“只生成命令，不执行”：不要调用执行工具，直接把命令交给人工执行。",
-      "选择“使用命令”：调用 remote_debug_execute_command_draft，并传入 draftId、commandHash 和确认短语“使用命令”。"
-    ]
-  };
-}
-function createCommandDraftStore(options = {}) {
-  const now = options.now || (() => Date.now());
-  const drafts = /* @__PURE__ */ new Map();
-  function cleanup(nowMs = now()) {
-    for (const [draftId, draft2] of drafts.entries()) {
-      if (draft2.expiresAtMs <= nowMs && draft2.status === "pending") {
-        drafts.delete(draftId);
-      }
-    }
-  }
-  function createDraft({ purpose, commands, settings }) {
-    const nowMs = now();
-    cleanup(nowMs);
-    const normalizedCommands = normalizeCommands(commands, settings);
-    const ttlMs = settings.ttlMs || DEFAULT_APPROVED_COMMAND_TTL_MS;
-    const draft2 = {
-      draftId: (0, import_node_crypto6.randomUUID)(),
-      purpose: normalizePurpose(purpose),
-      commands: normalizedCommands,
-      commandHash: hashCommands(normalizedCommands),
-      createdAt: nowIso(nowMs),
-      expiresAt: nowIso(nowMs + ttlMs),
-      expiresAtMs: nowMs + ttlMs,
-      executedAt: void 0,
-      status: "pending"
-    };
-    drafts.set(draft2.draftId, draft2);
-    return publicDraft(draft2);
-  }
-  function getDraft(draftId) {
-    cleanup();
-    const draft2 = drafts.get(draftId);
-    if (!draft2) {
-      throw new ApprovedCommandError(
-        "approved command draft was not found",
-        "APPROVED_COMMAND_DRAFT_NOT_FOUND",
-        404
-      );
-    }
-    return publicDraft(draft2);
-  }
-  function claimDraft({ draftId, commandHash, confirmation }) {
-    const draft2 = drafts.get(draftId);
-    if (!draft2) {
-      throw new ApprovedCommandError(
-        "approved command draft was not found",
-        "APPROVED_COMMAND_DRAFT_NOT_FOUND",
-        404
-      );
-    }
-    if (draft2.expiresAtMs <= now()) {
-      drafts.delete(draftId);
-      throw new ApprovedCommandError(
-        "approved command draft has expired",
-        "APPROVED_COMMAND_DRAFT_EXPIRED",
-        409
-      );
-    }
-    if (draft2.status !== "pending") {
-      throw new ApprovedCommandError(
-        "approved command draft has already been used",
-        "APPROVED_COMMAND_DRAFT_ALREADY_USED",
-        409
-      );
-    }
-    if (commandHash !== draft2.commandHash) {
-      throw new ApprovedCommandError(
-        "approved command hash does not match the draft",
-        "APPROVED_COMMAND_HASH_MISMATCH"
-      );
-    }
-    if (confirmation !== APPROVED_COMMAND_CONFIRMATION) {
-      throw new ApprovedCommandError(
-        `confirmation must exactly equal ${APPROVED_COMMAND_CONFIRMATION}`,
-        "APPROVED_COMMAND_CONFIRMATION_REQUIRED"
-      );
-    }
-    draft2.status = "executing";
-    return publicDraft(draft2);
-  }
-  function finishDraft(draftId, status = "executed") {
-    const draft2 = drafts.get(draftId);
-    if (!draft2) {
-      return void 0;
-    }
-    draft2.status = status;
-    draft2.executedAt = nowIso(now());
-    return publicDraft(draft2);
-  }
-  return {
-    claimDraft,
-    createDraft,
-    finishDraft,
-    getDraft
-  };
-}
-
-// command-review.js
-var import_node_child_process2 = require("node:child_process");
-var import_node_crypto10 = require("node:crypto");
-var import_node_fs3 = __toESM(require("node:fs"), 1);
-var import_node_os = __toESM(require("node:os"), 1);
-var import_node_path6 = __toESM(require("node:path"), 1);
-
-// security.js
-var import_posix7 = __toESM(require("node:path/posix"), 1);
-var import_node_crypto9 = require("node:crypto");
 
 // mongodb-codec.js
 var MONGODB_CODEC_SCRIPT = String.raw`
@@ -51401,600 +49176,6 @@ function __encode(value) {
   return JSON.parse(JSON.stringify(__fallbackEncode(value)));
 }
 `;
-
-// mongodb.js
-var import_posix4 = __toESM(require("node:path/posix"), 1);
-var MONGODB_QUERY_OPERATIONS = Object.freeze([
-  "ping",
-  "listDatabases",
-  "listCollections",
-  "find",
-  "findOne",
-  "countDocuments",
-  "aggregate"
-]);
-var MONGODB_REMOTE_COMMAND = "node";
-var MONGODB_CONFIG_ROOTS = Object.freeze(["/home/app", "/home/github"]);
-var DEFAULT_MONGODB_LIMIT = 50;
-var MAX_MONGODB_LIMIT = 500;
-var MAX_MONGODB_SKIP = 1e5;
-var MAX_MONGODB_PIPELINE_STAGES = 20;
-var MAX_MONGODB_QUERY_BYTES = 64 * 1024;
-var MAX_MONGODB_SCRIPT_BYTES = 128 * 1024;
-var MAX_MONGODB_RESULT_BYTES = 512 * 1024;
-var MAX_MONGODB_ERROR_BYTES = 4096;
-var MONGODB_RESULT_MARKER = "__REMOTE_DEBUG_MONGODB_RESULT__";
-var SAFE_CONFIG_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,127}$/;
-var SAFE_DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
-var SAFE_COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
-var BLOCKED_OPERATORS = /* @__PURE__ */ new Set([
-  "$where",
-  "$function",
-  "$accumulator",
-  "$out",
-  "$merge",
-  "$planCacheStats",
-  "$currentOp"
-]);
-function byteLength(value) {
-  return Buffer.byteLength(String(value), "utf8");
-}
-function mongoError(message, code, statusCode = 400, details = {}) {
-  const error2 = new Error(message);
-  error2.code = code;
-  error2.statusCode = statusCode;
-  error2.layer = "mongodb";
-  error2.phase = "validation";
-  error2.retriable = false;
-  Object.assign(error2, details);
-  return error2;
-}
-function normalizeString(value, fieldName, options = {}) {
-  if (typeof value !== "string") {
-    throw mongoError(`${fieldName} must be a string`, "INVALID_MONGODB_CONFIG");
-  }
-  const normalized = value.trim();
-  if (!normalized && options.allowEmpty !== true) {
-    throw mongoError(`${fieldName} must not be empty`, "INVALID_MONGODB_CONFIG");
-  }
-  if (normalized.length > (options.maxLength || 4096)) {
-    throw mongoError(`${fieldName} is too long`, "INVALID_MONGODB_CONFIG");
-  }
-  if (options.pattern && !options.pattern.test(normalized)) {
-    throw mongoError(`${fieldName} has an invalid format`, "INVALID_MONGODB_CONFIG");
-  }
-  return normalized;
-}
-function normalizeRemoteConfigPath(value, fieldName) {
-  const normalized = import_posix4.default.normalize(normalizeString(value, fieldName));
-  if (!normalized.startsWith("/")) {
-    throw mongoError(`${fieldName} must be an absolute path`, "INVALID_MONGODB_CONFIG");
-  }
-  const allowed = MONGODB_CONFIG_ROOTS.some(
-    (root) => normalized === root || normalized.startsWith(`${root}/`)
-  );
-  if (!allowed) {
-    throw mongoError(
-      `${fieldName} must be under ${MONGODB_CONFIG_ROOTS.join(", ")}`,
-      "MONGODB_CONFIG_PATH_NOT_ALLOWED",
-      400
-    );
-  }
-  return normalized;
-}
-function normalizeMongoConfig(value = {}) {
-  if (!value || value.enabled === false) {
-    throw mongoError(
-      "MongoDB access is not enabled for this instance",
-      "MONGODB_NOT_CONFIGURED",
-      503
-    );
-  }
-  const configPath = normalizeRemoteConfigPath(value.configPath, "mongodb.configPath");
-  const driverPath = normalizeRemoteConfigPath(value.driverPath, "mongodb.driverPath");
-  const configProfile = normalizeString(value.configProfile, "mongodb.configProfile", {
-    maxLength: 128,
-    pattern: SAFE_CONFIG_KEY_PATTERN
-  });
-  const uriKey = normalizeString(value.uriKey || "url", "mongodb.uriKey", {
-    maxLength: 128,
-    pattern: SAFE_CONFIG_KEY_PATTERN
-  });
-  const database = value.database === void 0 || value.database === "" ? "" : normalizeString(value.database, "mongodb.database", {
-    maxLength: 128,
-    pattern: SAFE_DATABASE_PATTERN
-  });
-  return {
-    enabled: true,
-    configPath,
-    driverPath,
-    configProfile,
-    uriKey,
-    database
-  };
-}
-function assertPlainObject(value, fieldName) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw mongoError(`${fieldName} must be an object`, "INVALID_MONGODB_QUERY");
-  }
-  const prototype = Object.getPrototypeOf(value);
-  if (prototype !== Object.prototype && prototype !== null) {
-    throw mongoError(`${fieldName} must be a plain object`, "INVALID_MONGODB_QUERY");
-  }
-}
-function assertSafeJson(value, fieldName = "$", depth = 0) {
-  if (depth > 12) {
-    throw mongoError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_QUERY");
-  }
-  if (value === null || typeof value === "string" || typeof value === "boolean") {
-    return;
-  }
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      throw mongoError(`${fieldName} contains a non-finite number`, "INVALID_MONGODB_QUERY");
-    }
-    return;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => assertSafeJson(item, `${fieldName}[${index}]`, depth + 1));
-    return;
-  }
-  if (typeof value !== "object") {
-    throw mongoError(`${fieldName} contains an unsupported value`, "INVALID_MONGODB_QUERY");
-  }
-  for (const [key, child] of Object.entries(value)) {
-    if (["__proto__", "constructor", "prototype"].includes(key)) {
-      throw mongoError(`${fieldName} contains a forbidden key`, "INVALID_MONGODB_QUERY");
-    }
-    if (BLOCKED_OPERATORS.has(key)) {
-      throw mongoError(`${key} is not allowed by the read-only MongoDB tool`, "MONGODB_OPERATOR_REJECTED");
-    }
-    assertSafeJson(child, `${fieldName}.${key}`, depth + 1);
-  }
-}
-function normalizeQueryObject(value, fieldName, fallback = {}) {
-  const normalized = value === void 0 ? fallback : value;
-  assertPlainObject(normalized, fieldName);
-  assertSafeJson(normalized, fieldName);
-  if (byteLength(JSON.stringify(normalized)) > MAX_MONGODB_QUERY_BYTES) {
-    throw mongoError(`${fieldName} is too large`, "MONGODB_QUERY_TOO_LARGE", 413);
-  }
-  return normalized;
-}
-function normalizeLimit(value) {
-  if (value === void 0 || value === null) {
-    return DEFAULT_MONGODB_LIMIT;
-  }
-  if (!Number.isInteger(value) || value <= 0) {
-    throw mongoError("limit must be a positive integer", "INVALID_MONGODB_QUERY");
-  }
-  return Math.min(value, MAX_MONGODB_LIMIT);
-}
-function normalizeSkip(value) {
-  if (value === void 0 || value === null) {
-    return 0;
-  }
-  if (!Number.isInteger(value) || value < 0) {
-    throw mongoError("skip must be a non-negative integer", "INVALID_MONGODB_QUERY");
-  }
-  return Math.min(value, MAX_MONGODB_SKIP);
-}
-function normalizeDatabase(value, fallback) {
-  const database = value === void 0 || value === "" ? fallback || "" : value;
-  if (!database) {
-    return "";
-  }
-  if (typeof database !== "string" || !SAFE_DATABASE_PATTERN.test(database)) {
-    throw mongoError("database has an invalid format", "INVALID_MONGODB_QUERY");
-  }
-  return database;
-}
-function normalizeCollection(value) {
-  if (typeof value !== "string" || !SAFE_COLLECTION_PATTERN.test(value)) {
-    throw mongoError(
-      "collection must use letters, numbers, underscore, dot, dollar, or dash",
-      "INVALID_MONGODB_QUERY"
-    );
-  }
-  return value;
-}
-function normalizeMongoQuery(input = {}, config = {}) {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    throw mongoError("MongoDB query must be an object", "INVALID_MONGODB_QUERY");
-  }
-  const mongodb = normalizeMongoConfig(config);
-  const operation = input.operation;
-  if (!MONGODB_QUERY_OPERATIONS.includes(operation)) {
-    throw mongoError(
-      `operation must be one of ${MONGODB_QUERY_OPERATIONS.join(", ")}`,
-      "INVALID_MONGODB_OPERATION"
-    );
-  }
-  const database = normalizeDatabase(input.database, mongodb.database);
-  const requiresDatabase = ["listCollections", "find", "findOne", "countDocuments", "aggregate"];
-  if (requiresDatabase.includes(operation) && !database) {
-    throw mongoError(
-      "database is required or must be configured for this instance",
-      "MONGODB_DATABASE_REQUIRED"
-    );
-  }
-  const requiresCollection = ["find", "findOne", "countDocuments", "aggregate"];
-  const collection = requiresCollection.includes(operation) ? normalizeCollection(input.collection) : input.collection === void 0 || input.collection === "" ? "" : normalizeCollection(input.collection);
-  const filter = requiresCollection.includes(operation) ? normalizeQueryObject(input.filter, "filter") : {};
-  const projection = input.projection === void 0 ? void 0 : normalizeQueryObject(input.projection, "projection");
-  const sort = input.sort === void 0 ? void 0 : normalizeQueryObject(input.sort, "sort");
-  const pipeline = input.pipeline === void 0 ? [] : input.pipeline;
-  if (!Array.isArray(pipeline)) {
-    throw mongoError("pipeline must be an array", "INVALID_MONGODB_QUERY");
-  }
-  if (pipeline.length > MAX_MONGODB_PIPELINE_STAGES) {
-    throw mongoError(
-      `pipeline cannot contain more than ${MAX_MONGODB_PIPELINE_STAGES} stages`,
-      "MONGODB_PIPELINE_TOO_LARGE"
-    );
-  }
-  assertSafeJson(pipeline, "pipeline");
-  if (byteLength(JSON.stringify(pipeline)) > MAX_MONGODB_QUERY_BYTES) {
-    throw mongoError("pipeline is too large", "MONGODB_QUERY_TOO_LARGE", 413);
-  }
-  if (operation === "aggregate" && pipeline.some((stage) => {
-    const limit = stage && typeof stage === "object" ? stage.$limit : void 0;
-    return limit !== void 0 && (!Number.isInteger(limit) || limit <= 0 || limit > MAX_MONGODB_LIMIT);
-  })) {
-    throw mongoError(
-      `aggregate $limit must be between 1 and ${MAX_MONGODB_LIMIT}`,
-      "MONGODB_LIMIT_REJECTED"
-    );
-  }
-  return {
-    operation,
-    database,
-    collection,
-    filter,
-    projection,
-    sort,
-    pipeline,
-    limit: normalizeLimit(input.limit),
-    skip: normalizeSkip(input.skip)
-  };
-}
-function summarizeMongoQuery(query = {}) {
-  const keyList = (value) => value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).slice(0, 50) : [];
-  return {
-    operation: typeof query.operation === "string" ? query.operation.slice(0, 64) : void 0,
-    database: typeof query.database === "string" ? query.database.slice(0, 128) : void 0,
-    collection: typeof query.collection === "string" ? query.collection.slice(0, 128) : void 0,
-    filterKeys: keyList(query.filter),
-    projectionKeys: keyList(query.projection),
-    sortKeys: keyList(query.sort),
-    pipelineLength: Array.isArray(query.pipeline) ? query.pipeline.length : 0,
-    limit: query.limit,
-    skip: query.skip
-  };
-}
-function safeLiteral(value) {
-  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-}
-function buildMongoScript(query, config) {
-  const normalizedConfig = normalizeMongoConfig(config);
-  const normalizedQuery = normalizeMongoQuery(query, normalizedConfig);
-  const script = `
-const __fs = require("fs");
-const __configPath = ${safeLiteral(normalizedConfig.configPath)};
-const __driverPath = ${safeLiteral(normalizedConfig.driverPath)};
-const __profileName = ${safeLiteral(normalizedConfig.configProfile)};
-const __uriKey = ${safeLiteral(normalizedConfig.uriKey)};
-const __request = ${safeLiteral(normalizedQuery)};
-const __marker = ${safeLiteral(MONGODB_RESULT_MARKER)};
-const __maxTimeMs = 15000;
-let __bson;
-try {
-  __bson = require(require.resolve("bson", { paths: [__driverPath] }));
-} catch (_error) {
-  __bson = null;
-}
-
-${MONGODB_CODEC_SCRIPT}
-
-function __getPath(value, keyPath) {
-  return keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
-}
-
-function __emit(payload) {
-  process.stdout.write(__marker + JSON.stringify(payload) + "\\n");
-}
-
-function __errorPayload(error) {
-  return {
-    name: (error && error.name) || "Error",
-    message: String((error && error.message) || error).slice(0, 2000),
-  };
-}
-
-(async () => {
-  let __client;
-  try {
-    const __fileConfig = JSON.parse(__fs.readFileSync(__configPath, "utf8"));
-    const __profile = __fileConfig && __fileConfig[__profileName];
-    if (!__profile || typeof __profile !== "object") {
-      throw new Error("MongoDB config profile was not found");
-    }
-    const __uri = __getPath(__profile, __uriKey);
-    const __database = __request.database || __profile.database || __profile.databaseName || "";
-    if (typeof __uri !== "string" || !__uri) {
-      throw new Error("MongoDB URI was not found in the configured profile");
-    }
-    if (["listCollections", "find", "findOne", "countDocuments", "aggregate"].includes(__request.operation) && !__database) {
-      throw new Error("MongoDB database is not configured");
-    }
-
-    const __driver = require(__driverPath);
-    const __MongoClient = __driver.MongoClient || (__driver.default && __driver.default.MongoClient);
-    if (!__MongoClient) {
-      throw new Error("MongoDB driver does not export MongoClient");
-    }
-    __client = new __MongoClient(__uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: __maxTimeMs,
-    });
-    await __client.connect();
-
-    let __data;
-    if (__request.operation === "ping") {
-      __data = await __client.db("admin").command({ ping: 1 });
-    } else if (__request.operation === "listDatabases") {
-      const __listed = await __client.db("admin").admin().listDatabases({ nameOnly: true });
-      __data = {
-        databases: (__listed.databases || []).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0).slice(__request.skip, __request.skip + __request.limit).map((item) => ({ name: item.name })),
-      };
-    } else if (__request.operation === "listCollections") {
-      const __db = __client.db(__database);
-      __data = (await __db.listCollections({}, { nameOnly: true }).toArray())
-        .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
-        .slice(__request.skip, __request.skip + __request.limit)
-        .map((item) => ({ name: item.name, type: item.type }));
-    } else {
-      const __collection = __client.db(__database).collection(__request.collection);
-      const __filter = __decode(__request.filter || {});
-      const __projection = __request.projection ? __decode(__request.projection) : undefined;
-      if (__request.operation === "find") {
-        const __options = __projection ? { projection: __projection } : {};
-        let __cursor = __collection.find(__filter, __options);
-        if (__request.sort) __cursor = __cursor.sort(__decode(__request.sort));
-        if (__request.skip) __cursor = __cursor.skip(__request.skip);
-        __cursor = __cursor.limit(__request.limit);
-        if (typeof __cursor.maxTimeMS === "function") __cursor.maxTimeMS(__maxTimeMs);
-        __data = await __cursor.toArray();
-      } else if (__request.operation === "findOne") {
-        const __options = { maxTimeMS: __maxTimeMs };
-        if (__projection) __options.projection = __projection;
-        __data = await __collection.findOne(__filter, __options);
-      } else if (__request.operation === "countDocuments") {
-        __data = await __collection.countDocuments(__filter, { maxTimeMS: __maxTimeMs });
-      } else if (__request.operation === "aggregate") {
-        const __pipeline = __decode(__request.pipeline || []).slice();
-        __pipeline.push({ $limit: __request.limit });
-        const __cursor = __collection.aggregate(__pipeline, { allowDiskUse: false });
-        if (typeof __cursor.maxTimeMS === "function") __cursor.maxTimeMS(__maxTimeMs);
-        __data = await __cursor.toArray();
-      }
-    }
-
-    __emit({
-      ok: true,
-      operation: __request.operation,
-      database: __database || null,
-      collection: __request.collection || null,
-      data: __encode(__data),
-    });
-  } catch (error) {
-    __emit({
-      ok: false,
-      operation: __request.operation,
-      error: __errorPayload(error),
-    });
-    process.exitCode = 1;
-  } finally {
-    if (__client) {
-      await __client.close().catch(() => {});
-    }
-  }
-})();
-`;
-  if (byteLength(script) > MAX_MONGODB_SCRIPT_BYTES) {
-    throw mongoError("MongoDB query script is too large", "MONGODB_QUERY_TOO_LARGE", 413);
-  }
-  return script;
-}
-function redactMongoSecrets(value, maxLength = MAX_MONGODB_ERROR_BYTES) {
-  const redacted = String(value || "").replace(/(mongodb(?:\+srv)?:\/\/)([^@\s]+)@/gi, "$1[REDACTED]@").replace(/((?:password|passwd|pwd|secret|token)=)[^&\s]+/gi, "$1[REDACTED]");
-  return redacted.length <= maxLength ? redacted : `${redacted.slice(0, maxLength)}
-...[truncated ${redacted.length - maxLength} chars]`;
-}
-function runtimeMongoError(message, options = {}) {
-  const error2 = operationError(message, {
-    code: options.code || "MONGODB_QUERY_FAILED",
-    statusCode: options.statusCode || 502,
-    operationId: options.operation?.operationId,
-    layer: "mongodb",
-    phase: options.phase || "query",
-    retriable: options.retriable === true,
-    cause: options.cause ? redactMongoSecrets(options.cause.message || options.cause) : void 0
-  });
-  error2.details = options.details;
-  return error2;
-}
-function resultCount(data) {
-  if (data === null || data === void 0) return 0;
-  if (Array.isArray(data)) return data.length;
-  if (typeof data === "number") return data;
-  if (Array.isArray(data.databases)) return data.databases.length;
-  return 1;
-}
-function markerPayload(stdout) {
-  const lines = String(stdout || "").split(/\r?\n/);
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
-    if (!lines[index].startsWith(MONGODB_RESULT_MARKER)) continue;
-    try {
-      return JSON.parse(lines[index].slice(MONGODB_RESULT_MARKER.length));
-    } catch {
-      throw runtimeMongoError(
-        "MongoDB helper returned invalid JSON",
-        { code: "MONGODB_INVALID_RESPONSE", phase: "response-parse" }
-      );
-    }
-  }
-  return null;
-}
-async function runMongoQuery(query, options = {}) {
-  const normalizedConfig = normalizeMongoConfig(options.config?.mongodb);
-  const normalizedQuery = normalizeMongoQuery(query, normalizedConfig);
-  if (typeof options.runSSH !== "function") {
-    throw runtimeMongoError("MongoDB SSH runner is not configured", {
-      code: "MONGODB_RUNNER_UNAVAILABLE",
-      statusCode: 500,
-      phase: "configuration",
-      operation: options.operation
-    });
-  }
-  const stdin = buildMongoScript(normalizedQuery, normalizedConfig);
-  let remoteResult;
-  try {
-    remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
-      config: options.config,
-      operation: options.operation,
-      stdin,
-      taskType: "mongo_read"
-    });
-  } catch (error2) {
-    if (options.operation?.signal?.aborted) {
-      throw operationErrorForSignal(options.operation.signal, options.operation, {
-        layer: "mongodb",
-        phase: "query"
-      });
-    }
-    throw runtimeMongoError("MongoDB remote helper could not be executed", {
-      code: error2.code || "MONGODB_QUERY_FAILED",
-      statusCode: error2.statusCode || 502,
-      phase: error2.phase || "remote-exec",
-      retriable: error2.retriable === true,
-      cause: error2,
-      operation: options.operation,
-      details: { cause: redactMongoSecrets(error2.message) }
-    });
-  }
-  if (remoteResult?.stdoutTruncated || byteLength(remoteResult?.stdout || "") > MAX_MONGODB_RESULT_BYTES) {
-    throw runtimeMongoError("MongoDB result exceeded the response limit", {
-      code: "MONGODB_RESULT_TOO_LARGE",
-      statusCode: 413,
-      phase: "response-size",
-      operation: options.operation
-    });
-  }
-  const payload = markerPayload(remoteResult?.stdout);
-  if (!payload) {
-    throw runtimeMongoError("MongoDB helper returned no structured response", {
-      code: remoteResult?.exitCode === 127 ? "MONGODB_NODE_NOT_FOUND" : "MONGODB_INVALID_RESPONSE",
-      phase: "response-parse",
-      operation: options.operation,
-      details: {
-        exitCode: remoteResult?.exitCode,
-        stderr: redactMongoSecrets(remoteResult?.stderr)
-      }
-    });
-  }
-  if (payload.ok !== true || remoteResult?.exitCode !== 0 || remoteResult?.timedOut) {
-    const helperError = payload.error?.message || redactMongoSecrets(remoteResult?.stderr) || "MongoDB query failed";
-    throw runtimeMongoError(redactMongoSecrets(helperError), {
-      code: remoteResult?.timedOut ? "MONGODB_QUERY_TIMEOUT" : "MONGODB_QUERY_FAILED",
-      phase: remoteResult?.timedOut ? "query-timeout" : "database",
-      operation: options.operation,
-      retriable: remoteResult?.timedOut === true,
-      details: {
-        exitCode: remoteResult?.exitCode,
-        stderr: redactMongoSecrets(remoteResult?.stderr)
-      }
-    });
-  }
-  return {
-    operation: normalizedQuery.operation,
-    database: payload.database || normalizedQuery.database || null,
-    collection: payload.collection || normalizedQuery.collection || null,
-    data: payload.data,
-    resultCount: resultCount(payload.data),
-    timing: remoteResult.timing
-  };
-}
-
-// mongodb-ttl-policy.js
-var MONGODB_TECHNICAL_RECEIPTS_COLLECTION = "__remote_debug_bulk_receipts";
-var MONGODB_TTL_POLICY_SCRIPT = String.raw`
-function __ttlRejectBusinessIndex(options) {
-  if (options && Object.prototype.hasOwnProperty.call(options, "expireAfterSeconds")) {
-    __ttlFail("MONGODB_TTL_INDEX_REJECTED", "business TTL indexes are not supported: automatic document deletion cannot be recovered by index rollback");
-  }
-}
-
-function __ttlAssertReceiptName(name) {
-  if (name !== "__remote_debug_bulk_receipts") {
-    __ttlFail("MONGODB_BULK_RECEIPTS_RESERVED", "TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection");
-  }
-}
-
-function __ttlValidReceiptMarker(marker, database, name) {
-  return marker && marker._id === "__remote_debug_bulk_storage_v1" && marker.schemaVersion === 1 && marker.database === database && marker.receiptsCollection === name;
-}
-
-function __ttlValidReceiptIndex(index) {
-  return index && index.name === "remote_debug_bulk_receipt_expiry" && index.key && Object.keys(index.key).length === 1 && index.key.expiresAt === 1 && index.expireAfterSeconds === 0 && !index.partialFilterExpression && !index.unique && !index.sparse;
-}
-
-async function __ttlCheckReceiptOwnership(collection, database, name, initialize) {
-  __ttlAssertReceiptName(name);
-  var markerId = "__remote_debug_bulk_storage_v1";
-  var existing = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
-  if (existing) {
-    if (!__ttlValidReceiptMarker(existing, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection has a different ownership marker");
-    return existing;
-  }
-  if (!initialize) __ttlFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "technical receipt ownership marker is missing");
-  if (await collection.findOne({}, { readPreference: "primary", maxTimeMS: 15000 })) {
-    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "cannot adopt a non-empty collection for automatic TTL cleanup");
-  }
-  var marker = { _id: markerId, schemaVersion: 1, database: database, receiptsCollection: name };
-  try { await collection.insertOne(marker); }
-  catch (error) {
-    if (error.code !== 11000) throw error;
-    var concurrent = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
-    if (!__ttlValidReceiptMarker(concurrent, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection ownership changed during initialization");
-  }
-  return marker;
-}
-
-async function __ttlInitializeReceiptCollection(client, database, name) {
-  __ttlAssertReceiptName(name);
-  var db = client.db(database);
-  var namespaces = await db.listCollections({ name: name }, { nameOnly: true }).toArray();
-  if (namespaces.some(function (item) { return item.type && item.type !== "collection"; })) {
-    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt namespace must be a regular collection");
-  }
-  var collection = db.collection(name);
-  // Verify or establish ownership before installing any automatically deleting index.
-  await __ttlCheckReceiptOwnership(collection, database, name, true);
-  var indexes = await collection.listIndexes().toArray();
-  var existing = indexes.filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
-  if (existing && !__ttlValidReceiptIndex(existing)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
-  if (!existing) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  var after = (await collection.listIndexes().toArray()).filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
-  if (!__ttlValidReceiptIndex(after)) __ttlFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
-  return { index: after.name, marker: "__remote_debug_bulk_storage_v1" };
-}
-`;
-
-// mongodb-bulk.js
-var import_node_crypto7 = require("node:crypto");
-var import_posix5 = __toESM(require("node:path/posix"), 1);
 
 // mongodb-bulk-runtime.js
 var MONGODB_BULK_RUNTIME = String.raw`
@@ -52482,6 +49663,31 @@ function __bulkCheckExpected(document, operation) {
   return true;
 }
 
+function __bulkCheckArrayPaths(document, operation) {
+  Object.keys(operation.update || {}).forEach(function (operator) {
+    Object.keys(operation.update[operator]).forEach(function (field) {
+      var parts = field.split("."), value = document;
+      parts.forEach(function (part, position) {
+        if (/^[0-9]+$/.test(part)) {
+          var index = Number(part);
+          var tail = Array.isArray(value) && index === value.length && position === parts.length - 1 &&
+            operator === "$set" && operation.expected[field].exists === false;
+          if (!Array.isArray(value) || !tail && (index >= value.length || !Object.prototype.hasOwnProperty.call(value, part))) {
+            __bulkFail("MONGODB_BULK_ARRAY_INDEX_INVALID", "indexed edits require an existing array element or its immediate tail");
+          }
+          if (tail) {
+            var element = operation.update[operator][field], identity = Object.prototype.hasOwnProperty.call(element, "_id") ? "_id" : "id";
+            if (value.some(function (item) { return item && Object.prototype.hasOwnProperty.call(item, identity) && __bulkEqual(item[identity], __decode(element[identity])); })) {
+              __bulkFail("MONGODB_BULK_ARRAY_IDENTITY_CONFLICT", "the appended element identity already exists");
+            }
+          }
+        }
+        value = value == null ? undefined : value[part];
+      });
+    });
+  });
+}
+
 function __bulkUpdateSelector(operation) {
   var filter = { _id: __decode(operation.id) };
   var expected = operation.expected || {};
@@ -52552,6 +49758,7 @@ function __bulkVerifyPreimages(operations, snapshots) {
       before.push({ operationIndex: index, document: null });
     } else {
       if (!found) __bulkFail("MONGODB_BULK_TARGET_NOT_FOUND", "an update target does not exist");
+      __bulkCheckArrayPaths(found, operation);
       if (!__bulkCheckExpected(found, operation)) __bulkFail("MONGODB_BULK_ORIGINAL_VALUE_MISMATCH", "an update original value does not match");
       before.push({ operationIndex: index, document: __encode(found) });
     }
@@ -52853,6 +50060,7 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
             writeOperations.push({ insertOne: { document: __decode(operation.document) } });
             summary.inserted += 1;
           } else {
+            __bulkCheckArrayPaths(current, operation);
             if (!__bulkCheckExpected(current, operation)) __bulkFail("MONGODB_BULK_CONFLICT", "an original field value changed before commit", { batchIndex: batch.index, collection: collectionName });
             writeOperations.push({ updateOne: { filter: __decode(__bulkUpdateSelector(operation)), update: __decode(operation.update), upsert: false } });
           }
@@ -52999,7 +50207,40 @@ async function __bulkUpload() {
     if (!chunk.endOfUpload) return { result: { jobId: jobId, status: "uploading", chunkIndex: chunk.chunkIndex, chunkHash: chunkHash, nextChunkIndex: manifest.chunks.length, unitCount: manifest.unitCount, operationCount: manifest.operationCount, inputBytes: manifest.inputBytes } };
     return { finalize: true };
   });
-  return accepted.finalize ? await __bulkFinalize(jobId) : accepted.result;
+  if (!accepted.finalize) return accepted.result;
+  var prepared = await __bulkFinalize(jobId);
+  prepared.chunkIndex = chunk.chunkIndex;
+  prepared.chunkHash = chunk.chunkHash;
+  return prepared;
+}
+
+// Exact positive evidence only. Absence does not fence an in-flight helper.
+// Recovery never uploads chunks, rebuilds a plan, or executes business writes.
+function __bulkRecoverUpload() {
+  var jobId = __request.jobId;
+  __bulkEnsureRoot();
+  return __bulkWithLock(__bulkManifestLockPath(jobId), function () {
+    var manifest = __bulkManifest(jobId, false);
+    var chunk = __bulkReadJson(__bulkChunkPath(jobId, __request.chunkIndex), 4 * 1024 * 1024);
+    if (!chunk || manifest.database !== __request.database || chunk.hash !== __request.chunkHash ||
+        manifest.chunks[__request.chunkIndex] !== chunk.hash || chunk.body.endOfUpload !== __request.endOfUpload ||
+        __bulkHash({ jobId: chunk.body.jobId, database: chunk.body.database, chunkIndex: chunk.body.chunkIndex,
+          purpose: chunk.body.purpose, rollbackTtlMs: chunk.body.rollbackTtlMs, units: chunk.body.units }) !== chunk.hash) {
+      __bulkFail("MONGODB_BULK_RECOVERY_EVIDENCE_MISMATCH", "exact chunk and manifest evidence is required");
+    }
+    if (__request.endOfUpload && manifest.status !== "prepared") __bulkFail("MONGODB_BULK_PREPARE_UNRESOLVED", "the exact sealed plan is not confirmed prepared");
+    var result;
+    if (__request.endOfUpload) {
+      var plan = __bulkLoadPlan(jobId, manifest);
+      if (plan.database !== manifest.database || __bulkHash(plan.chunks) !== __bulkHash(manifest.chunks)) {
+        __bulkFail("MONGODB_BULK_RECOVERY_EVIDENCE_MISMATCH", "the sealed plan must bind the exact accepted chunks");
+      }
+      result = __bulkPlanSummary(manifest, plan);
+    } else result = { jobId: jobId, status: manifest.status, nextChunkIndex: manifest.chunks.length, unitCount: manifest.unitCount, operationCount: manifest.operationCount };
+    result.chunkIndex = __request.chunkIndex;
+    result.chunkHash = __request.chunkHash;
+    return result;
+  });
 }
 
 async function __bulkPrepareSlice(client, jobId, units, offset, allIds, allUnitIds, batches) {
@@ -53351,6 +50592,7 @@ async function __bulkMain() {
     }
     var jobId = __bulkJobId();
     if (action === "upload") data = await __bulkUpload();
+    else if (action === "recoverUpload") data = __bulkRecoverUpload();
     else if (action === "get") data = __bulkGet(jobId);
     else if (action === "executeStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "execute");
     else if (action === "rollbackStart") data = __bulkStart(jobId, __request.planHash, __request.leaseId, "rollback");
@@ -53378,6 +50620,71 @@ async function __bulkMain() {
     process.stdout.write(__marker + JSON.stringify({ ok: false, error: { code: error.code || "MONGODB_BULK_FAILED", message: String(error.message || error).slice(0, 2000), details: error.details } }) + "\n");
     process.exitCode = 1;
   }
+}
+`;
+
+// mongodb-ttl-policy.js
+var MONGODB_TECHNICAL_RECEIPTS_COLLECTION = "__remote_debug_bulk_receipts";
+var MONGODB_TTL_POLICY_SCRIPT = String.raw`
+function __ttlRejectBusinessIndex(options) {
+  if (options && Object.prototype.hasOwnProperty.call(options, "expireAfterSeconds")) {
+    __ttlFail("MONGODB_TTL_INDEX_REJECTED", "business TTL indexes are not supported: automatic document deletion cannot be recovered by index rollback");
+  }
+}
+
+function __ttlAssertReceiptName(name) {
+  if (name !== "__remote_debug_bulk_receipts") {
+    __ttlFail("MONGODB_BULK_RECEIPTS_RESERVED", "TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection");
+  }
+}
+
+function __ttlValidReceiptMarker(marker, database, name) {
+  return marker && marker._id === "__remote_debug_bulk_storage_v1" && marker.schemaVersion === 1 && marker.database === database && marker.receiptsCollection === name;
+}
+
+function __ttlValidReceiptIndex(index) {
+  return index && index.name === "remote_debug_bulk_receipt_expiry" && index.key && Object.keys(index.key).length === 1 && index.key.expiresAt === 1 && index.expireAfterSeconds === 0 && !index.partialFilterExpression && !index.unique && !index.sparse;
+}
+
+async function __ttlCheckReceiptOwnership(collection, database, name, initialize) {
+  __ttlAssertReceiptName(name);
+  var markerId = "__remote_debug_bulk_storage_v1";
+  var existing = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
+  if (existing) {
+    if (!__ttlValidReceiptMarker(existing, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection has a different ownership marker");
+    return existing;
+  }
+  if (!initialize) __ttlFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "technical receipt ownership marker is missing");
+  if (await collection.findOne({}, { readPreference: "primary", maxTimeMS: 15000 })) {
+    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "cannot adopt a non-empty collection for automatic TTL cleanup");
+  }
+  var marker = { _id: markerId, schemaVersion: 1, database: database, receiptsCollection: name };
+  try { await collection.insertOne(marker); }
+  catch (error) {
+    if (error.code !== 11000) throw error;
+    var concurrent = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
+    if (!__ttlValidReceiptMarker(concurrent, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection ownership changed during initialization");
+  }
+  return marker;
+}
+
+async function __ttlInitializeReceiptCollection(client, database, name) {
+  __ttlAssertReceiptName(name);
+  var db = client.db(database);
+  var namespaces = await db.listCollections({ name: name }, { nameOnly: true }).toArray();
+  if (namespaces.some(function (item) { return item.type && item.type !== "collection"; })) {
+    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt namespace must be a regular collection");
+  }
+  var collection = db.collection(name);
+  // Verify or establish ownership before installing any automatically deleting index.
+  await __ttlCheckReceiptOwnership(collection, database, name, true);
+  var indexes = await collection.listIndexes().toArray();
+  var existing = indexes.filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (existing && !__ttlValidReceiptIndex(existing)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
+  if (!existing) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
+  var after = (await collection.listIndexes().toArray()).filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (!__ttlValidReceiptIndex(after)) __ttlFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
+  return { index: after.name, marker: "__remote_debug_bulk_storage_v1" };
 }
 `;
 
@@ -53533,6 +50840,735 @@ async function __sandboxManage() {
 }
 `;
 
+// mongodb.js
+var import_posix = __toESM(require("node:path/posix"), 1);
+
+// operation.js
+var import_node_crypto2 = require("node:crypto");
+var API_VERSION = 2;
+var OPERATION_TIMEOUTS = Object.freeze({
+  run: Object.freeze({ defaultMs: 3e4, maxMs: 12e4 }),
+  file: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
+  mongodb: Object.freeze({ defaultMs: 6e4, maxMs: 3e5 }),
+  mongodbMutation: Object.freeze({ defaultMs: 12e4, maxMs: 6e5 }),
+  approvedExecution: Object.freeze({ defaultMs: 3e5, maxMs: 9e5 }),
+  approvedReview: Object.freeze({ defaultMs: 33e4, maxMs: 93e4 }),
+  manager: Object.freeze({ defaultMs: 3e4, maxMs: 3e5 })
+});
+function errorCause(cause) {
+  if (!cause) {
+    return void 0;
+  }
+  if (typeof cause === "string") {
+    return { message: cause };
+  }
+  return {
+    code: cause.code,
+    message: cause.message || String(cause),
+    layer: cause.layer,
+    phase: cause.phase
+  };
+}
+var OperationError = class extends Error {
+  constructor(message, options = {}) {
+    super(message);
+    this.name = "OperationError";
+    this.code = options.code || "OPERATION_FAILED";
+    this.statusCode = options.statusCode || 500;
+    this.operationId = options.operationId;
+    this.layer = options.layer;
+    this.phase = options.phase;
+    this.retriable = Boolean(options.retriable);
+    this.details = options.details;
+    this.cause = errorCause(options.cause);
+  }
+};
+function operationError(message, options = {}) {
+  return new OperationError(message, options);
+}
+function normalizeTimeoutMs(value, policy) {
+  if (value === void 0 || value === null || value === "") {
+    return policy.defaultMs;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw operationError("timeoutMs must be a positive integer", {
+      code: "INVALID_OPERATION_TIMEOUT",
+      statusCode: 400,
+      layer: "operation",
+      phase: "validation"
+    });
+  }
+  return Math.min(parsed, policy.maxMs);
+}
+function operationPolicy(pathName, config = {}) {
+  if (pathName.startsWith("/services/")) return { defaultMs: 11e4, maxMs: 12e4 };
+  if (pathName === "/run") {
+    return {
+      defaultMs: config.security?.defaultTimeoutMs || OPERATION_TIMEOUTS.run.defaultMs,
+      maxMs: config.security?.maxTimeoutMs || OPERATION_TIMEOUTS.run.maxMs
+    };
+  }
+  if (pathName === "/read-file" || pathName === "/list-dir" || pathName === "/logs/list" || pathName === "/logs/archive-members" || pathName === "/logs/read" || pathName === "/logs/query") {
+    return {
+      defaultMs: config.security?.defaultFileTimeoutMs || OPERATION_TIMEOUTS.file.defaultMs,
+      maxMs: config.security?.maxFileTimeoutMs || OPERATION_TIMEOUTS.file.maxMs
+    };
+  }
+  if (pathName === "/mongodb/query" || pathName.startsWith("/sandbox/")) {
+    return {
+      defaultMs: OPERATION_TIMEOUTS.mongodb.defaultMs,
+      maxMs: OPERATION_TIMEOUTS.mongodb.maxMs
+    };
+  }
+  if (pathName.startsWith("/mongodb/mutations/") || pathName.startsWith("/mongodb/bulk/") || pathName.startsWith("/mongodb/sandbox/access/") || pathName === "/mongodb/imports/prepare") {
+    return {
+      defaultMs: OPERATION_TIMEOUTS.mongodbMutation.defaultMs,
+      maxMs: OPERATION_TIMEOUTS.mongodbMutation.maxMs
+    };
+  }
+  if (pathName === "/approved-command-drafts/execute") {
+    return {
+      defaultMs: config.approvedCommands?.executionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.defaultMs,
+      maxMs: config.approvedCommands?.maxExecutionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.maxMs
+    };
+  }
+  if (pathName === "/approved-command-drafts/review") {
+    const reviewTimeoutMs = config.commandReview?.reviewTimeoutMs || OPERATION_TIMEOUTS.approvedReview.defaultMs - OPERATION_TIMEOUTS.approvedExecution.defaultMs;
+    const executionDefaultMs = config.approvedCommands?.executionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.defaultMs;
+    const executionMaxMs = config.approvedCommands?.maxExecutionTimeoutMs || OPERATION_TIMEOUTS.approvedExecution.maxMs;
+    return {
+      defaultMs: reviewTimeoutMs + executionDefaultMs,
+      maxMs: reviewTimeoutMs + executionMaxMs
+    };
+  }
+  return OPERATION_TIMEOUTS.manager;
+}
+function normalizeOperationEnvelope(payload = {}, policy, options = {}) {
+  const nowMs = options.nowMs ?? Date.now();
+  const timeoutMs = normalizeTimeoutMs(payload.timeoutMs, policy);
+  const suppliedDeadline = Number.parseInt(payload.deadlineAt, 10);
+  const maximumDeadline = nowMs + policy.maxMs;
+  const deadlineAt = Number.isInteger(suppliedDeadline) ? Math.min(suppliedDeadline, maximumDeadline) : nowMs + timeoutMs;
+  const suppliedOperationId = typeof payload.operationId === "string" ? payload.operationId.trim() : "";
+  const operationId = suppliedOperationId.slice(0, 128) || (0, import_node_crypto2.randomUUID)();
+  return {
+    operationId,
+    timeoutMs,
+    deadlineAt
+  };
+}
+function remainingOperationMs(operation, nowMs = Date.now()) {
+  return Math.max(0, Number(operation?.deadlineAt || 0) - nowMs);
+}
+function assertOperationActive(operation, signal, options = {}) {
+  if (signal?.aborted) {
+    throw operationErrorForSignal(signal, operation, options);
+  }
+  if (remainingOperationMs(operation) <= 0) {
+    throw operationError("operation deadline exceeded", {
+      code: "OPERATION_DEADLINE_EXCEEDED",
+      statusCode: 408,
+      operationId: operation?.operationId,
+      layer: options.layer || "operation",
+      phase: options.phase || "deadline",
+      retriable: false
+    });
+  }
+}
+function operationErrorForSignal(signal, operation, options = {}) {
+  const reason = signal?.reason;
+  if (reason?.code === "OPERATION_DEADLINE_EXCEEDED") {
+    return reason;
+  }
+  if (reason?.code === "OPERATION_CANCELLED") {
+    return reason;
+  }
+  return operationError(reason?.message || "operation cancelled", {
+    code: "OPERATION_CANCELLED",
+    statusCode: 499,
+    operationId: operation?.operationId,
+    layer: options.layer || "operation",
+    phase: options.phase || "cancel",
+    retriable: false,
+    cause: reason
+  });
+}
+function createOperationController(operation, parentSignal, options = {}) {
+  const controller = new AbortController();
+  const layer = options.layer || "operation";
+  const abortFromParent = () => {
+    if (!controller.signal.aborted) {
+      controller.abort(operationErrorForSignal(parentSignal, operation, {
+        layer,
+        phase: options.cancelPhase || "upstream-cancel"
+      }));
+    }
+  };
+  if (parentSignal?.aborted) {
+    abortFromParent();
+  } else {
+    parentSignal?.addEventListener("abort", abortFromParent, { once: true });
+  }
+  const remainingMs = remainingOperationMs(operation);
+  const deadlineTimer = setTimeout(() => {
+    if (!controller.signal.aborted) {
+      controller.abort(operationError("operation deadline exceeded", {
+        code: "OPERATION_DEADLINE_EXCEEDED",
+        statusCode: 408,
+        operationId: operation.operationId,
+        layer,
+        phase: options.deadlinePhase || "deadline",
+        retriable: false
+      }));
+    }
+  }, remainingMs);
+  deadlineTimer.unref?.();
+  return {
+    controller,
+    signal: controller.signal,
+    cleanup() {
+      clearTimeout(deadlineTimer);
+      parentSignal?.removeEventListener("abort", abortFromParent);
+    }
+  };
+}
+function operationErrorPayload(error2, fallback = {}) {
+  return {
+    code: error2?.code || fallback.code || "REMOTE_DEBUG_ERROR",
+    message: error2?.message || fallback.message || "remote debug operation failed",
+    operationId: error2?.operationId || fallback.operationId,
+    layer: error2?.layer || fallback.layer,
+    phase: error2?.phase || fallback.phase,
+    retriable: Boolean(error2?.retriable),
+    cause: error2?.cause
+  };
+}
+
+// mongodb.js
+var MONGODB_QUERY_OPERATIONS = Object.freeze([
+  "ping",
+  "listDatabases",
+  "listCollections",
+  "find",
+  "findOne",
+  "countDocuments",
+  "aggregate"
+]);
+var MONGODB_REMOTE_COMMAND = "node";
+var MONGODB_CONFIG_ROOTS = Object.freeze(["/home/app", "/home/github"]);
+var DEFAULT_MONGODB_LIMIT = 50;
+var MAX_MONGODB_LIMIT = 500;
+var MAX_MONGODB_SKIP = 1e5;
+var MAX_MONGODB_PIPELINE_STAGES = 20;
+var MAX_MONGODB_QUERY_BYTES = 64 * 1024;
+var MAX_MONGODB_SCRIPT_BYTES = 128 * 1024;
+var MAX_MONGODB_RESULT_BYTES = 512 * 1024;
+var MAX_MONGODB_ERROR_BYTES = 4096;
+var MONGODB_RESULT_MARKER = "__REMOTE_DEBUG_MONGODB_RESULT__";
+var SAFE_CONFIG_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,127}$/;
+var SAFE_DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+var SAFE_COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
+var BLOCKED_OPERATORS = /* @__PURE__ */ new Set([
+  "$where",
+  "$function",
+  "$accumulator",
+  "$out",
+  "$merge",
+  "$planCacheStats",
+  "$currentOp"
+]);
+function byteLength(value) {
+  return Buffer.byteLength(String(value), "utf8");
+}
+function mongoError(message, code, statusCode = 400, details = {}) {
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = statusCode;
+  error2.layer = "mongodb";
+  error2.phase = "validation";
+  error2.retriable = false;
+  Object.assign(error2, details);
+  return error2;
+}
+function normalizeString(value, fieldName, options = {}) {
+  if (typeof value !== "string") {
+    throw mongoError(`${fieldName} must be a string`, "INVALID_MONGODB_CONFIG");
+  }
+  const normalized = value.trim();
+  if (!normalized && options.allowEmpty !== true) {
+    throw mongoError(`${fieldName} must not be empty`, "INVALID_MONGODB_CONFIG");
+  }
+  if (normalized.length > (options.maxLength || 4096)) {
+    throw mongoError(`${fieldName} is too long`, "INVALID_MONGODB_CONFIG");
+  }
+  if (options.pattern && !options.pattern.test(normalized)) {
+    throw mongoError(`${fieldName} has an invalid format`, "INVALID_MONGODB_CONFIG");
+  }
+  return normalized;
+}
+function normalizeRemoteConfigPath(value, fieldName) {
+  const normalized = import_posix.default.normalize(normalizeString(value, fieldName));
+  if (!normalized.startsWith("/")) {
+    throw mongoError(`${fieldName} must be an absolute path`, "INVALID_MONGODB_CONFIG");
+  }
+  const allowed = MONGODB_CONFIG_ROOTS.some(
+    (root) => normalized === root || normalized.startsWith(`${root}/`)
+  );
+  if (!allowed) {
+    throw mongoError(
+      `${fieldName} must be under ${MONGODB_CONFIG_ROOTS.join(", ")}`,
+      "MONGODB_CONFIG_PATH_NOT_ALLOWED",
+      400
+    );
+  }
+  return normalized;
+}
+function normalizeMongoConfig(value = {}) {
+  if (!value || value.enabled === false) {
+    throw mongoError(
+      "MongoDB access is not enabled for this instance",
+      "MONGODB_NOT_CONFIGURED",
+      503
+    );
+  }
+  const configPath = normalizeRemoteConfigPath(value.configPath, "mongodb.configPath");
+  const driverPath = normalizeRemoteConfigPath(value.driverPath, "mongodb.driverPath");
+  const configProfile = normalizeString(value.configProfile, "mongodb.configProfile", {
+    maxLength: 128,
+    pattern: SAFE_CONFIG_KEY_PATTERN
+  });
+  const uriKey = normalizeString(value.uriKey || "url", "mongodb.uriKey", {
+    maxLength: 128,
+    pattern: SAFE_CONFIG_KEY_PATTERN
+  });
+  const database = value.database === void 0 || value.database === "" ? "" : normalizeString(value.database, "mongodb.database", {
+    maxLength: 128,
+    pattern: SAFE_DATABASE_PATTERN
+  });
+  return {
+    enabled: true,
+    configPath,
+    driverPath,
+    configProfile,
+    uriKey,
+    database
+  };
+}
+function assertPlainObject(value, fieldName) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw mongoError(`${fieldName} must be an object`, "INVALID_MONGODB_QUERY");
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    throw mongoError(`${fieldName} must be a plain object`, "INVALID_MONGODB_QUERY");
+  }
+}
+function assertSafeJson(value, fieldName = "$", depth = 0) {
+  if (depth > 12) {
+    throw mongoError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_QUERY");
+  }
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
+    return;
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw mongoError(`${fieldName} contains a non-finite number`, "INVALID_MONGODB_QUERY");
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertSafeJson(item, `${fieldName}[${index}]`, depth + 1));
+    return;
+  }
+  if (typeof value !== "object") {
+    throw mongoError(`${fieldName} contains an unsupported value`, "INVALID_MONGODB_QUERY");
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (["__proto__", "constructor", "prototype"].includes(key)) {
+      throw mongoError(`${fieldName} contains a forbidden key`, "INVALID_MONGODB_QUERY");
+    }
+    if (BLOCKED_OPERATORS.has(key)) {
+      throw mongoError(`${key} is not allowed by the read-only MongoDB tool`, "MONGODB_OPERATOR_REJECTED");
+    }
+    assertSafeJson(child, `${fieldName}.${key}`, depth + 1);
+  }
+}
+function normalizeQueryObject(value, fieldName, fallback = {}) {
+  const normalized = value === void 0 ? fallback : value;
+  assertPlainObject(normalized, fieldName);
+  assertSafeJson(normalized, fieldName);
+  if (byteLength(JSON.stringify(normalized)) > MAX_MONGODB_QUERY_BYTES) {
+    throw mongoError(`${fieldName} is too large`, "MONGODB_QUERY_TOO_LARGE", 413);
+  }
+  return normalized;
+}
+function normalizeLimit(value) {
+  if (value === void 0 || value === null) {
+    return DEFAULT_MONGODB_LIMIT;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw mongoError("limit must be a positive integer", "INVALID_MONGODB_QUERY");
+  }
+  return Math.min(value, MAX_MONGODB_LIMIT);
+}
+function normalizeSkip(value) {
+  if (value === void 0 || value === null) {
+    return 0;
+  }
+  if (!Number.isInteger(value) || value < 0) {
+    throw mongoError("skip must be a non-negative integer", "INVALID_MONGODB_QUERY");
+  }
+  return Math.min(value, MAX_MONGODB_SKIP);
+}
+function normalizeDatabase(value, fallback) {
+  const database = value === void 0 || value === "" ? fallback || "" : value;
+  if (!database) {
+    return "";
+  }
+  if (typeof database !== "string" || !SAFE_DATABASE_PATTERN.test(database)) {
+    throw mongoError("database has an invalid format", "INVALID_MONGODB_QUERY");
+  }
+  return database;
+}
+function normalizeCollection(value) {
+  if (typeof value !== "string" || !SAFE_COLLECTION_PATTERN.test(value)) {
+    throw mongoError(
+      "collection must use letters, numbers, underscore, dot, dollar, or dash",
+      "INVALID_MONGODB_QUERY"
+    );
+  }
+  return value;
+}
+function normalizeMongoQuery(input = {}, config = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw mongoError("MongoDB query must be an object", "INVALID_MONGODB_QUERY");
+  }
+  const mongodb = normalizeMongoConfig(config);
+  const operation = input.operation;
+  if (!MONGODB_QUERY_OPERATIONS.includes(operation)) {
+    throw mongoError(
+      `operation must be one of ${MONGODB_QUERY_OPERATIONS.join(", ")}`,
+      "INVALID_MONGODB_OPERATION"
+    );
+  }
+  const database = normalizeDatabase(input.database, mongodb.database);
+  const requiresDatabase = ["listCollections", "find", "findOne", "countDocuments", "aggregate"];
+  if (requiresDatabase.includes(operation) && !database) {
+    throw mongoError(
+      "database is required or must be configured for this instance",
+      "MONGODB_DATABASE_REQUIRED"
+    );
+  }
+  const requiresCollection = ["find", "findOne", "countDocuments", "aggregate"];
+  const collection = requiresCollection.includes(operation) ? normalizeCollection(input.collection) : input.collection === void 0 || input.collection === "" ? "" : normalizeCollection(input.collection);
+  const filter = requiresCollection.includes(operation) ? normalizeQueryObject(input.filter, "filter") : {};
+  const projection = input.projection === void 0 ? void 0 : normalizeQueryObject(input.projection, "projection");
+  const sort = input.sort === void 0 ? void 0 : normalizeQueryObject(input.sort, "sort");
+  const pipeline = input.pipeline === void 0 ? [] : input.pipeline;
+  if (!Array.isArray(pipeline)) {
+    throw mongoError("pipeline must be an array", "INVALID_MONGODB_QUERY");
+  }
+  if (pipeline.length > MAX_MONGODB_PIPELINE_STAGES) {
+    throw mongoError(
+      `pipeline cannot contain more than ${MAX_MONGODB_PIPELINE_STAGES} stages`,
+      "MONGODB_PIPELINE_TOO_LARGE"
+    );
+  }
+  assertSafeJson(pipeline, "pipeline");
+  if (byteLength(JSON.stringify(pipeline)) > MAX_MONGODB_QUERY_BYTES) {
+    throw mongoError("pipeline is too large", "MONGODB_QUERY_TOO_LARGE", 413);
+  }
+  if (operation === "aggregate" && pipeline.some((stage) => {
+    const limit = stage && typeof stage === "object" ? stage.$limit : void 0;
+    return limit !== void 0 && (!Number.isInteger(limit) || limit <= 0 || limit > MAX_MONGODB_LIMIT);
+  })) {
+    throw mongoError(
+      `aggregate $limit must be between 1 and ${MAX_MONGODB_LIMIT}`,
+      "MONGODB_LIMIT_REJECTED"
+    );
+  }
+  return {
+    operation,
+    database,
+    collection,
+    filter,
+    projection,
+    sort,
+    pipeline,
+    limit: normalizeLimit(input.limit),
+    skip: normalizeSkip(input.skip)
+  };
+}
+function summarizeMongoQuery(query = {}) {
+  const keyList = (value) => value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).slice(0, 50) : [];
+  return {
+    operation: typeof query.operation === "string" ? query.operation.slice(0, 64) : void 0,
+    database: typeof query.database === "string" ? query.database.slice(0, 128) : void 0,
+    collection: typeof query.collection === "string" ? query.collection.slice(0, 128) : void 0,
+    filterKeys: keyList(query.filter),
+    projectionKeys: keyList(query.projection),
+    sortKeys: keyList(query.sort),
+    pipelineLength: Array.isArray(query.pipeline) ? query.pipeline.length : 0,
+    limit: query.limit,
+    skip: query.skip
+  };
+}
+function safeLiteral(value) {
+  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+function buildMongoScript(query, config) {
+  const normalizedConfig = normalizeMongoConfig(config);
+  const normalizedQuery = normalizeMongoQuery(query, normalizedConfig);
+  const script = `
+const __fs = require("fs");
+const __configPath = ${safeLiteral(normalizedConfig.configPath)};
+const __driverPath = ${safeLiteral(normalizedConfig.driverPath)};
+const __profileName = ${safeLiteral(normalizedConfig.configProfile)};
+const __uriKey = ${safeLiteral(normalizedConfig.uriKey)};
+const __request = ${safeLiteral(normalizedQuery)};
+const __marker = ${safeLiteral(MONGODB_RESULT_MARKER)};
+const __maxTimeMs = 15000;
+let __bson;
+try {
+  __bson = require(require.resolve("bson", { paths: [__driverPath] }));
+} catch (_error) {
+  __bson = null;
+}
+
+${MONGODB_CODEC_SCRIPT}
+
+function __getPath(value, keyPath) {
+  return keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
+}
+
+function __emit(payload) {
+  process.stdout.write(__marker + JSON.stringify(payload) + "\\n");
+}
+
+function __errorPayload(error) {
+  return {
+    name: (error && error.name) || "Error",
+    message: String((error && error.message) || error).slice(0, 2000),
+  };
+}
+
+(async () => {
+  let __client;
+  try {
+    const __fileConfig = JSON.parse(__fs.readFileSync(__configPath, "utf8"));
+    const __profile = __fileConfig && __fileConfig[__profileName];
+    if (!__profile || typeof __profile !== "object") {
+      throw new Error("MongoDB config profile was not found");
+    }
+    const __uri = __getPath(__profile, __uriKey);
+    const __database = __request.database || __profile.database || __profile.databaseName || "";
+    if (typeof __uri !== "string" || !__uri) {
+      throw new Error("MongoDB URI was not found in the configured profile");
+    }
+    if (["listCollections", "find", "findOne", "countDocuments", "aggregate"].includes(__request.operation) && !__database) {
+      throw new Error("MongoDB database is not configured");
+    }
+
+    const __driver = require(__driverPath);
+    const __MongoClient = __driver.MongoClient || (__driver.default && __driver.default.MongoClient);
+    if (!__MongoClient) {
+      throw new Error("MongoDB driver does not export MongoClient");
+    }
+    __client = new __MongoClient(__uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: __maxTimeMs,
+    });
+    await __client.connect();
+
+    let __data;
+    if (__request.operation === "ping") {
+      __data = await __client.db("admin").command({ ping: 1 });
+    } else if (__request.operation === "listDatabases") {
+      const __listed = await __client.db("admin").admin().listDatabases({ nameOnly: true });
+      __data = {
+        databases: (__listed.databases || []).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0).slice(__request.skip, __request.skip + __request.limit).map((item) => ({ name: item.name })),
+      };
+    } else if (__request.operation === "listCollections") {
+      const __db = __client.db(__database);
+      __data = (await __db.listCollections({}, { nameOnly: true }).toArray())
+        .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+        .slice(__request.skip, __request.skip + __request.limit)
+        .map((item) => ({ name: item.name, type: item.type }));
+    } else {
+      const __collection = __client.db(__database).collection(__request.collection);
+      const __filter = __decode(__request.filter || {});
+      const __projection = __request.projection ? __decode(__request.projection) : undefined;
+      if (__request.operation === "find") {
+        const __options = __projection ? { projection: __projection } : {};
+        let __cursor = __collection.find(__filter, __options);
+        if (__request.sort) __cursor = __cursor.sort(__decode(__request.sort));
+        if (__request.skip) __cursor = __cursor.skip(__request.skip);
+        __cursor = __cursor.limit(__request.limit);
+        if (typeof __cursor.maxTimeMS === "function") __cursor.maxTimeMS(__maxTimeMs);
+        __data = await __cursor.toArray();
+      } else if (__request.operation === "findOne") {
+        const __options = { maxTimeMS: __maxTimeMs };
+        if (__projection) __options.projection = __projection;
+        __data = await __collection.findOne(__filter, __options);
+      } else if (__request.operation === "countDocuments") {
+        __data = await __collection.countDocuments(__filter, { maxTimeMS: __maxTimeMs });
+      } else if (__request.operation === "aggregate") {
+        const __pipeline = __decode(__request.pipeline || []).slice();
+        __pipeline.push({ $limit: __request.limit });
+        const __cursor = __collection.aggregate(__pipeline, { allowDiskUse: false });
+        if (typeof __cursor.maxTimeMS === "function") __cursor.maxTimeMS(__maxTimeMs);
+        __data = await __cursor.toArray();
+      }
+    }
+
+    __emit({
+      ok: true,
+      operation: __request.operation,
+      database: __database || null,
+      collection: __request.collection || null,
+      data: __encode(__data),
+    });
+  } catch (error) {
+    __emit({
+      ok: false,
+      operation: __request.operation,
+      error: __errorPayload(error),
+    });
+    process.exitCode = 1;
+  } finally {
+    if (__client) {
+      await __client.close().catch(() => {});
+    }
+  }
+})();
+`;
+  if (byteLength(script) > MAX_MONGODB_SCRIPT_BYTES) {
+    throw mongoError("MongoDB query script is too large", "MONGODB_QUERY_TOO_LARGE", 413);
+  }
+  return script;
+}
+function redactMongoSecrets(value, maxLength = MAX_MONGODB_ERROR_BYTES) {
+  const redacted = String(value || "").replace(/(mongodb(?:\+srv)?:\/\/)([^@\s]+)@/gi, "$1[REDACTED]@").replace(/((?:password|passwd|pwd|secret|token)=)[^&\s]+/gi, "$1[REDACTED]");
+  return redacted.length <= maxLength ? redacted : `${redacted.slice(0, maxLength)}
+...[truncated ${redacted.length - maxLength} chars]`;
+}
+function runtimeMongoError(message, options = {}) {
+  const error2 = operationError(message, {
+    code: options.code || "MONGODB_QUERY_FAILED",
+    statusCode: options.statusCode || 502,
+    operationId: options.operation?.operationId,
+    layer: "mongodb",
+    phase: options.phase || "query",
+    retriable: options.retriable === true,
+    cause: options.cause ? redactMongoSecrets(options.cause.message || options.cause) : void 0
+  });
+  error2.details = options.details;
+  return error2;
+}
+function resultCount(data) {
+  if (data === null || data === void 0) return 0;
+  if (Array.isArray(data)) return data.length;
+  if (typeof data === "number") return data;
+  if (Array.isArray(data.databases)) return data.databases.length;
+  return 1;
+}
+function markerPayload(stdout) {
+  const lines = String(stdout || "").split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (!lines[index].startsWith(MONGODB_RESULT_MARKER)) continue;
+    try {
+      return JSON.parse(lines[index].slice(MONGODB_RESULT_MARKER.length));
+    } catch {
+      throw runtimeMongoError(
+        "MongoDB helper returned invalid JSON",
+        { code: "MONGODB_INVALID_RESPONSE", phase: "response-parse" }
+      );
+    }
+  }
+  return null;
+}
+async function runMongoQuery(query, options = {}) {
+  const normalizedConfig = normalizeMongoConfig(options.config?.mongodb);
+  const normalizedQuery = normalizeMongoQuery(query, normalizedConfig);
+  if (typeof options.runSSH !== "function") {
+    throw runtimeMongoError("MongoDB SSH runner is not configured", {
+      code: "MONGODB_RUNNER_UNAVAILABLE",
+      statusCode: 500,
+      phase: "configuration",
+      operation: options.operation
+    });
+  }
+  const stdin = buildMongoScript(normalizedQuery, normalizedConfig);
+  let remoteResult;
+  try {
+    remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
+      config: options.config,
+      operation: options.operation,
+      stdin,
+      taskType: "mongo_read"
+    });
+  } catch (error2) {
+    if (options.operation?.signal?.aborted) {
+      throw operationErrorForSignal(options.operation.signal, options.operation, {
+        layer: "mongodb",
+        phase: "query"
+      });
+    }
+    throw runtimeMongoError("MongoDB remote helper could not be executed", {
+      code: error2.code || "MONGODB_QUERY_FAILED",
+      statusCode: error2.statusCode || 502,
+      phase: error2.phase || "remote-exec",
+      retriable: error2.retriable === true,
+      cause: error2,
+      operation: options.operation,
+      details: { cause: redactMongoSecrets(error2.message) }
+    });
+  }
+  if (remoteResult?.stdoutTruncated || byteLength(remoteResult?.stdout || "") > MAX_MONGODB_RESULT_BYTES) {
+    throw runtimeMongoError("MongoDB result exceeded the response limit", {
+      code: "MONGODB_RESULT_TOO_LARGE",
+      statusCode: 413,
+      phase: "response-size",
+      operation: options.operation
+    });
+  }
+  const payload = markerPayload(remoteResult?.stdout);
+  if (!payload) {
+    throw runtimeMongoError("MongoDB helper returned no structured response", {
+      code: remoteResult?.exitCode === 127 ? "MONGODB_NODE_NOT_FOUND" : "MONGODB_INVALID_RESPONSE",
+      phase: "response-parse",
+      operation: options.operation,
+      details: {
+        exitCode: remoteResult?.exitCode,
+        stderr: redactMongoSecrets(remoteResult?.stderr)
+      }
+    });
+  }
+  if (payload.ok !== true || remoteResult?.exitCode !== 0 || remoteResult?.timedOut) {
+    const helperError = payload.error?.message || redactMongoSecrets(remoteResult?.stderr) || "MongoDB query failed";
+    throw runtimeMongoError(redactMongoSecrets(helperError), {
+      code: remoteResult?.timedOut ? "MONGODB_QUERY_TIMEOUT" : "MONGODB_QUERY_FAILED",
+      phase: remoteResult?.timedOut ? "query-timeout" : "database",
+      operation: options.operation,
+      retriable: remoteResult?.timedOut === true,
+      details: {
+        exitCode: remoteResult?.exitCode,
+        stderr: redactMongoSecrets(remoteResult?.stderr)
+      }
+    });
+  }
+  return {
+    operation: normalizedQuery.operation,
+    database: payload.database || normalizedQuery.database || null,
+    collection: payload.collection || normalizedQuery.collection || null,
+    data: payload.data,
+    resultCount: resultCount(payload.data),
+    timing: remoteResult.timing
+  };
+}
+
 // mongodb-bulk.js
 var MONGODB_BULK_CONFIRMATION = "确认执行";
 var MONGODB_BULK_ROLLBACK_CONFIRMATION = "确认回滚";
@@ -53554,7 +51590,7 @@ var DATABASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 var COLLECTION_PATTERN = /^[A-Za-z0-9_.$-]{1,128}$/;
 var JOB_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 var UNIT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
-var FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+var FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
 var HASH_PATTERN = /^[a-f0-9]{64}$/;
 var UPDATE_OPERATORS = /* @__PURE__ */ new Set(["$set", "$unset", "$inc"]);
 var EJSON_KEYS = /* @__PURE__ */ new Set([
@@ -53691,7 +51727,7 @@ function normalizeMongoBulkConfig(config = {}, options = {}) {
     throw bulkError("TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection", "MONGODB_BULK_RECEIPTS_RESERVED", 403);
   }
   const rawRoot = String(config.bulkRoot || DEFAULT_MONGODB_BULK_ROOT).trim();
-  const root = import_posix5.default.normalize(rawRoot);
+  const root = import_posix2.default.normalize(rawRoot);
   if (!root.startsWith("/") || root === "/" || root.includes("\0") || root.split("/").includes("..")) {
     throw bulkError("mongodb.bulkRoot must be a dedicated absolute directory", "MONGODB_BULK_ROOT_INVALID");
   }
@@ -53732,7 +51768,7 @@ function normalizeUpdate(value) {
     }
     output[operator] = {};
     for (const [field, fieldValue] of Object.entries(fields3)) {
-      if (!FIELD_PATTERN.test(field) || field === "_id" || field.startsWith("_id.") || field.startsWith("$") || field.includes("\0")) {
+      if (!safeBulkPath(field) || field === "_id" || field.startsWith("_id.")) {
         throw bulkError(`update contains an unsafe or immutable field: ${field}`, "MONGODB_BULK_FIELD_REJECTED");
       }
       if (paths.some((path20) => path20 === field || path20.startsWith(`${field}.`) || field.startsWith(`${path20}.`))) {
@@ -53751,13 +51787,37 @@ function normalizeUpdate(value) {
   }
   return { update: output, paths };
 }
+function safeBulkPath(field) {
+  return FIELD_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS.has(part));
+}
+function overlaps(left, right) {
+  return left === right || left.startsWith(right + ".") || right.startsWith(left + ".");
+}
+function bulkIdentity(value) {
+  return typeof value === "string" && value.length > 0 || Number.isSafeInteger(value) || value && typeof value === "object" && Object.keys(value).length === 1 && (typeof value.$oid === "string" || typeof value.$numberLong === "string");
+}
+function assertArrayGuards(expected, update, paths) {
+  for (const [operator, fields3] of Object.entries(update)) for (const field of Object.keys(fields3)) {
+    const parts = field.split(".");
+    for (let i = 0; i < parts.length; i++) {
+      if (!/^[0-9]+$/.test(parts[i])) continue;
+      const prefix = parts.slice(0, i + 1).join(".");
+      if (i === parts.length - 1 && operator === "$set" && expected[field]?.exists === false && fields3[field] && typeof fields3[field] === "object" && !Array.isArray(fields3[field]) && !Object.keys(fields3[field]).some((key) => key.startsWith("$")) && bulkIdentity(Object.prototype.hasOwnProperty.call(fields3[field], "_id") ? fields3[field]._id : fields3[field].id)) continue;
+      const guard = Object.entries(expected).some(([key, condition]) => {
+        const suffix = key.slice(prefix.length + 1);
+        return key.startsWith(prefix + ".") && /^(?:_id|id|[A-Za-z_][A-Za-z0-9_]*_id)$/.test(suffix) && condition.exists === true && bulkIdentity(condition.value) && !paths.some((path20) => overlaps(path20, key));
+      });
+      if (!guard || i === parts.length - 1) throw bulkError("indexed edits require an unchanged element identity; only a missing full-element $set may append", "MONGODB_BULK_ARRAY_GUARD_REQUIRED");
+    }
+  }
+}
 function normalizeExpected(value, changedPaths) {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) {
     throw bulkError("updateOne requires original values in expected", "MONGODB_BULK_EXPECTED_REQUIRED");
   }
   const expected = {};
   for (const [field, condition] of Object.entries(value)) {
-    if (!FIELD_PATTERN.test(field) || !condition || typeof condition !== "object" || Array.isArray(condition)) {
+    if (!safeBulkPath(field) || !condition || typeof condition !== "object" || Array.isArray(condition) || Object.keys(expected).some((path20) => overlaps(path20, field))) {
       throw bulkError("expected must map safe field paths to existence/value conditions", "MONGODB_BULK_EXPECTED_INVALID");
     }
     const exists = condition.exists;
@@ -53793,11 +51853,13 @@ function normalizeOperation(value, config, database, unitId, index) {
   if (value.operation !== "updateOne") throw bulkError("bulk V1 supports only insertOne and updateOne", "MONGODB_BULK_OPERATION_UNSUPPORTED");
   assertKnownFields(value, ["operation", "collection", "id", "expected", "update"], "updateOne");
   const updatePlan = normalizeUpdate(value.update);
+  const expected = normalizeExpected(value.expected, updatePlan.paths);
+  assertArrayGuards(expected, updatePlan.update, updatePlan.paths);
   return {
     collection,
     operation: "updateOne",
     id: normalizeId(value.id, `unit ${unitId} operation ${index}.id`),
-    expected: normalizeExpected(value.expected, updatePlan.paths),
+    expected,
     update: updatePlan.update
   };
 }
@@ -53838,7 +51900,7 @@ function normalizeMongoBulkChunk(input = {}, config = {}) {
   if (operationCount > MAX_MONGODB_BULK_CHUNK_OPERATIONS || inputBytes > MAX_MONGODB_BULK_CHUNK_BYTES) {
     throw bulkError("one upload chunk is limited to 10000 operations and 4 MiB", "MONGODB_BULK_CHUNK_SIZE_LIMIT", 413);
   }
-  const chunkHash = (0, import_node_crypto7.createHash)("sha256").update(stableStringify(body)).digest("hex");
+  const chunkHash = (0, import_node_crypto3.createHash)("sha256").update(stableStringify(body)).digest("hex");
   if (input.chunkHash !== void 0 && input.chunkHash !== chunkHash) {
     throw bulkError("chunkHash does not match the normalized chunk contents", "MONGODB_BULK_CHUNK_HASH_MISMATCH");
   }
@@ -53852,7 +51914,7 @@ function normalizeMongoBulkStorage(input = {}, config = {}, options = {}) {
   return {
     kind: "bulk_storage",
     operation: "initializeBulkStorage",
-    operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto7.randomUUID)(),
+    operationId: typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto3.randomUUID)(),
     purpose: typeof input.purpose === "string" ? input.purpose.trim().slice(0, 500) : "Initialize MongoDB bulk job storage",
     database: policy.database,
     receiptsDatabase: policy.sandboxDatabase,
@@ -53904,6 +51966,7 @@ function parseMarker(stdout) {
 function normalizeActionRequest(input, config) {
   const action = input.action;
   const fields3 = {
+    recoverUpload: ["jobId", "database", "chunkIndex", "chunkHash", "endOfUpload"],
     sandboxStatus: ["offset", "limit"],
     sandboxExport: ["jobId", "limit"],
     sandboxPrepareCleanup: ["jobId"],
@@ -53925,6 +51988,12 @@ function normalizeActionRequest(input, config) {
     executeStart: ["jobId", "planHash", "leaseId", "confirmation"]
   };
   if (fields3[action]) assertKnownFields(input, ["action", "operationId", "timeoutMs", "deadlineAt", ...fields3[action]], "bulk action");
+  if (action === "recoverUpload") {
+    if (!JOB_ID_PATTERN.test(input.jobId || "") || input.database !== config.database || !Number.isInteger(input.chunkIndex) || input.chunkIndex < 0 || input.chunkIndex > 9999 || !HASH_PATTERN.test(input.chunkHash || "") || typeof input.endOfUpload !== "boolean") {
+      throw bulkError("exact bulk chunk recovery identity is required", "MONGODB_BULK_RECOVERY_IDENTITY_INVALID");
+    }
+    return { ...input };
+  }
   if (action === "get" && input.query) assertKnownFields(input.query, ["includeDifferences", "offset", "limit"], "bulk query");
   if (["sandboxStatus", "sandboxExport", "sandboxPrepareCleanup", "sandboxCleanup"].includes(action)) {
     const jobId = input.jobId;
@@ -53990,18 +52059,25 @@ function normalizeActionRequest(input, config) {
     const jobId = String(input.jobId || "").trim();
     if (!JOB_ID_PATTERN.test(jobId) || !HASH_PATTERN.test(String(input.planHash || ""))) throw bulkError("bulk execution identity is invalid", "MONGODB_BULK_PLAN_HASH_INVALID");
     if (input.confirmation !== MONGODB_BULK_CONFIRMATION) throw bulkError(`confirmation must exactly equal ${MONGODB_BULK_CONFIRMATION}`, "MONGODB_BULK_CONFIRMATION_REQUIRED");
-    return { ...input, action: "executeStart", jobId, leaseId: input.leaseId || (0, import_node_crypto7.createHash)("sha256").update((0, import_node_crypto7.randomUUID)()).digest("hex") };
+    return { ...input, action: "executeStart", jobId, leaseId: input.leaseId || (0, import_node_crypto3.createHash)("sha256").update((0, import_node_crypto3.randomUUID)()).digest("hex") };
   }
   throw bulkError("unsupported MongoDB bulk action", "MONGODB_BULK_ACTION_INVALID");
 }
 async function runMongoBulk(input = {}, options = {}) {
   const rawConfig = options.config && options.config.mongodb ? options.config.mongodb : options.config || {};
-  const recoveryAction = input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
+  const recoveryAction = input.action === "recoverUpload" || input.action === "get" || input.action === "list" || input.action === "heartbeat" || input.action === "pause" || input.action === "rollbackStart" || input.action === "rollbackBatch" || input.action === "control" && input.command === "pause" || input.action === "dispatch" && input.phase === "rollback" || input.action === "finish" && input.mode === "rollback";
   const management = typeof input.action === "string" && input.action.startsWith("sandbox");
   if (management && rawConfig.enabled === false) throw bulkError("MongoDB sandbox access is disabled for this instance", "SANDBOX_MANAGEMENT_NOT_CONFIGURED", 403);
-  const config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
-  const request = normalizeActionRequest(input, config);
-  if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+  let config, request, script;
+  try {
+    config = normalizeMongoBulkConfig(management ? { ...rawConfig, writeEnabled: true } : rawConfig, { requireBulkEnabled: !recoveryAction && !management });
+    request = normalizeActionRequest(input, config);
+    if (typeof options.runSSH !== "function") throw bulkError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    script = buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management });
+  } catch (error2) {
+    if (input.action === "upload") error2.dispatchState = "not_dispatched";
+    throw error2;
+  }
   let remoteResult;
   try {
     remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
@@ -54011,7 +52087,7 @@ async function runMongoBulk(input = {}, options = {}) {
       priority: options.priority || "interactive",
       resourceTaskId: options.resourceTaskId,
       taskType: options.priority === "control" ? "control" : "mongo_read",
-      stdin: buildMongoBulkScript(request, config, { requireBulkEnabled: !recoveryAction && !management })
+      stdin: script
     });
   } catch (error2) {
     throw operationError(redactMongoSecrets(error2.message || "MongoDB bulk helper could not be executed"), {
@@ -54058,7 +52134,7 @@ var MongoBulkJobRunner = class {
     }
     if (this.active) throw bulkError("another bulk job is already running for this instance", "MONGODB_BULK_INSTANCE_BUSY", 409, { jobId: this.active.jobId });
     const action = mode === "rollback" ? "rollbackStart" : "executeStart";
-    const leaseId = (0, import_node_crypto7.createHash)("sha256").update((0, import_node_crypto7.randomUUID)()).digest("hex");
+    const leaseId = (0, import_node_crypto3.createHash)("sha256").update((0, import_node_crypto3.randomUUID)()).digest("hex");
     const accepted = await this.run({ ...input, action, leaseId }, { priority: "control", timeoutMs: 6e4 });
     this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode, source: metadata.source };
     this.attachResourceTask(this.active);
@@ -54084,7 +52160,7 @@ var MongoBulkJobRunner = class {
       this.active.resourceWaitController.abort(Object.assign(new Error("pause_requested"), { code: "pause_requested" }));
     }
     if (input.command === "resume" && !(this.active && this.active.jobId === input.jobId)) {
-      const leaseId = (0, import_node_crypto7.createHash)("sha256").update((0, import_node_crypto7.randomUUID)()).digest("hex");
+      const leaseId = (0, import_node_crypto3.createHash)("sha256").update((0, import_node_crypto3.randomUUID)()).digest("hex");
       const accepted = await this.run({ action: "resume", jobId: input.jobId, planHash: input.planHash, leaseId }, { priority: "control", timeoutMs: 6e4 });
       this.active = { jobId: input.jobId, planHash: input.planHash, leaseId, mode: accepted.mode || "execute" };
       this.attachResourceTask(this.active);
@@ -54264,6 +52340,2107 @@ var MongoBulkJobRunner = class {
     }
   }
 };
+
+// privacy-service.js
+async function bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view) {
+  if (!dispatch || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const recovering = input.action === "recover_operation";
+  let result, notDispatched = false, unclaimed = false;
+  try {
+    if (recovering) {
+      if (!record.dispatched) {
+        unclaimed = true;
+        result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+      } else if (!record.bulkChunk) return view(record, "bulk_prepare_evidence_required");
+      else result = await dispatch(target2.id, "/mongodb/bulk/recover-prepare", {
+        ...record.bulkChunk,
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    } else {
+      const { instanceId: instanceId2, ...request } = input.request || {};
+      if (instanceId2 !== target2.id || request.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      let chunk, preflightError;
+      try {
+        chunk = normalizeMongoBulkChunk(request, instance2(target2.id).mongodb);
+      } catch (error2) {
+        preflightError = error2;
+      }
+      const bulkChunk = chunk && {
+        jobId: chunk.jobId,
+        database: chunk.database,
+        chunkIndex: chunk.chunkIndex,
+        chunkHash: chunk.chunkHash,
+        endOfUpload: chunk.endOfUpload
+      };
+      await service.call("claim_bulk_prepare", { ...input, dispatchDigest: prepareRequestDigest(input.request), bulkChunk });
+      if (preflightError) {
+        notDispatched = true;
+        throw preflightError;
+      }
+      result = await dispatch(target2.id, record.route, {
+        ...request,
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    }
+    result = createOutputGuard().sanitize(result).value;
+  } catch (error2) {
+    notDispatched ||= !recovering && error2.dispatchState === "not_dispatched";
+    result = { ok: false, error: {
+      code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_BULK_FAILED",
+      message: "Structured bulk preparation failed; inspect this exact protected intent.",
+      operationId: input.operationId,
+      layer: error2.layer,
+      phase: error2.phase,
+      retriable: error2.retriable
+    } };
+  }
+  const saved = await service.call("bulk_prepare_result", { ...input, bulkPrepare: record.bulkPrepare, result, notDispatched, unclaimed });
+  if (!recovering && result?.ok === true && saved.state !== "complete") {
+    result = { ok: false, error: {
+      code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED",
+      message: "Bulk preparation acknowledgement did not prove the exact chunk identity.",
+      operationId: input.operationId,
+      retriable: false
+    } };
+  }
+  return recovering ? view(saved, saved.state === "uncertain" ? "bulk_prepare_evidence_required" : unclaimed ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
+}
+var here = typeof __dirname === "string" ? __dirname : import_node_path.default.dirname((0, import_node_url.fileURLToPath)(void 0));
+var PrivacyService = class {
+  constructor({ directory, key, maxQueue = 32, workerPath } = {}) {
+    this.options = { directory, key };
+    this.maxQueue = maxQueue;
+    this.pending = /* @__PURE__ */ new Map();
+    this.sequence = 0;
+    this.workerPath = workerPath || import_node_path.default.join(here, typeof __filename === "string" ? "privacy-worker.cjs" : "privacy-worker.js");
+  }
+  start() {
+    if (this.ready) return this.ready;
+    this.ready = new Promise((resolve, reject) => {
+      this.worker = new import_node_worker_threads.Worker(this.workerPath, { workerData: this.options, execArgv: process.execArgv.filter((arg) => !arg.startsWith("--input-type")) });
+      const fail4 = () => {
+        this.failed = true;
+        reject(privacyError());
+        for (const item of this.pending.values()) item.reject(privacyError());
+        this.pending.clear();
+        this.worker?.unref();
+      };
+      this.worker.on("error", fail4);
+      this.worker.on("exit", fail4);
+      this.worker.on("message", (message) => {
+        if (message.ready) {
+          if (!this.pending.size) this.worker.unref();
+          resolve();
+          return;
+        }
+        if (message.failed) {
+          this.failed = true;
+          reject(privacyError(message.failed));
+          this.worker.terminate();
+          return;
+        }
+        const item = this.pending.get(message.id);
+        if (!item) return;
+        this.pending.delete(message.id);
+        if (!this.pending.size) this.worker.unref();
+        if (message.error) item.reject(privacyError(message.error));
+        else item.resolve(message.result);
+      });
+    });
+    return this.ready;
+  }
+  async call(action, input) {
+    if (this.failed) throw privacyError();
+    if ((this.waiting || 0) + this.pending.size >= this.maxQueue) throw privacyError("BUSINESS_STORAGE_BUSY");
+    this.waiting = (this.waiting || 0) + 1;
+    try {
+      await this.start();
+    } finally {
+      this.waiting--;
+    }
+    if (this.failed) throw privacyError();
+    return new Promise((resolve, reject) => {
+      const id = ++this.sequence;
+      this.pending.set(id, { resolve, reject });
+      this.worker.ref();
+      this.worker.postMessage({ id, action, input });
+    });
+  }
+  async close() {
+    this.failed = true;
+    await this.worker?.terminate();
+  }
+};
+async function privacyRequest(service, input, { instance: instance2, origin, dispatch } = {}) {
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation"];
+  if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
+  const validate2 = (scope2) => {
+    if (typeof scope2 !== "string" || scope2.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+    let target2;
+    try {
+      target2 = JSON.parse(scope2);
+    } catch {
+      throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+    }
+    const current = instance2(target2.id);
+    if (!current || current.enabled === false || target2.endpoint !== origin || scope2 !== businessTargetScope(origin, current, target2.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
+  };
+  if (!["create", "attach", "cleanup"].includes(input.action)) validate2(input.scope);
+  if (input.action === "dispatch_prepare" || input.action === "recover_operation") {
+    const record = await service.call("inspect_operation", input);
+    const target2 = JSON.parse(input.scope);
+    const view = (value, reason) => ({
+      ok: true,
+      intentId: input.id,
+      state: value.state,
+      route: value.route,
+      attempt: (value.prepare || value.bulkPrepare)?.attempt,
+      mutationId: value.prepare?.mutationId,
+      legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
+      reason,
+      recoveryCode: value.reconciliation?.code,
+      ...value.result ? { result: value.result } : {}
+    });
+    if (input.action === "recover_operation") {
+      if (!["inspect", "reconcile"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (record.route === "/mongodb/bulk/prepare") {
+        if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
+        return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
+      }
+      if (!record.prepare) {
+        const identity2 = record.identity || {};
+        if (dispatch && /^[a-f0-9]{64}$/.test(identity2.planHash || "") && (identity2.mutationId || identity2.jobId)) {
+          try {
+            const receipt = await dispatch(
+              target2.id,
+              identity2.mutationId && record.execution ? "/mongodb/mutations/recover-execution" : identity2.mutationId ? "/mongodb/mutations/get" : "/mongodb/bulk/job",
+              {
+                ...identity2.mutationId ? { mutationId: identity2.mutationId } : { jobId: identity2.jobId },
+                planHash: identity2.planHash,
+                database: target2.database,
+                ...record.execution ? { _businessExecution: record.execution } : {},
+                operationId: input.operationId,
+                timeoutMs: input.timeoutMs,
+                deadlineAt: input.deadlineAt
+              }
+            );
+            const evidence = identity2.mutationId ? { ok: receipt.ok === true, entries: [receipt] } : receipt;
+            const saved2 = await service.call("reconcile", { ...input, result: createOutputGuard().sanitize(evidence).value });
+            return view({ ...record, ...saved2 }, saved2.state === "uncertain" ? receipt.indexRecovery?.reason || (receipt.status === "commit_failed" && !record.execution ? "legacy_execution_evidence_required" : "remote_outcome_unproven") : void 0);
+          } catch (error2) {
+            return { ...view(record, "remote_evidence_unavailable"), recoveryCode: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_RECOVERY_UNAVAILABLE" };
+          }
+        }
+        return view(record, "legacy_evidence_required");
+      }
+    }
+    if (input.action === "dispatch_prepare" && record.route === "/mongodb/bulk/prepare" && record.bulkPrepare) {
+      return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
+    }
+    if (!dispatch || record.route !== "/mongodb/mutations/prepare" || record.identity?.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+    if (input.action === "dispatch_prepare") {
+      const digest3 = prepareRequestDigest(input.request || {});
+      if (input.request?.instanceId !== target2.id || input.request?.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      await service.call("claim_prepare", { ...input, dispatchDigest: digest3 });
+    }
+    const recovering = input.action === "recover_operation";
+    let result, notDispatched = false, fenced = false;
+    try {
+      const { instanceId: instanceId2, ...request } = input.request || {};
+      result = await dispatch(
+        target2.id,
+        recovering ? "/mongodb/mutations/recover-prepare" : record.route,
+        {
+          ...recovering ? { database: target2.database } : request,
+          _businessPrepare: record.prepare,
+          operationId: input.operationId,
+          timeoutMs: input.timeoutMs,
+          deadlineAt: input.deadlineAt
+        }
+      );
+      if (result?.ok !== true) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      if (recovering) {
+        if (JSON.stringify(result.prepare) !== JSON.stringify(record.prepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
+        fenced = result.recovery === "fenced";
+        if (fenced) result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+        else {
+          const { prepare, recovery, ...receipt } = result;
+          result = receipt;
+        }
+      }
+      if (!fenced && (result.mutationId !== record.prepare.mutationId || !/^[a-f0-9]{64}$/.test(result.planHash || ""))) throw privacyError("BUSINESS_OPERATION_DENIED");
+      result = createOutputGuard().sanitize(result).value;
+    } catch (error2) {
+      notDispatched = !recovering && error2.dispatchState === "not_dispatched";
+      result = { ok: false, error: {
+        code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_OPERATION_FAILED",
+        message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
+        operationId: input.operationId,
+        layer: error2.layer,
+        phase: error2.phase,
+        retriable: error2.retriable
+      } };
+    }
+    const saved = await service.call("prepare_result", { ...input, prepare: record.prepare, result, notDispatched, fenced });
+    return recovering ? view(saved, saved.state === "uncertain" ? "remote_evidence_unavailable" : fenced ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
+  }
+  if (input.action === "commit") {
+    for (const record of input.records || []) validate2(record.scope);
+    const current = instance2(JSON.parse(input.scope).id);
+    input.retentionMs = Math.max(30 * 864e5, current.mongodb?.rollbackTtlMs || 0, current.mongodb?.bulkRollbackTtlMs || 0);
+  }
+  return service.call(input.action, input);
+}
+function installPrivacyRoutes(app, { directory, registry, service, dispatch } = {}) {
+  const storage = service || new PrivacyService({ directory });
+  app.locals.privacyService = storage;
+  app.post("/api/private/business-storage", async (request, response) => {
+    try {
+      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch });
+      response.json({ ok: true, result });
+    } catch (error2) {
+      response.status(409).json({ ok: false, error: { code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
+    }
+  });
+}
+
+// service-start-runtime.js
+async function serviceStartRuntime(request, profile, dependencies) {
+  const fs14 = dependencies?.fs || require("fs");
+  const path20 = require("path").posix;
+  const execFile2 = dependencies?.execFile || require("child_process").execFile;
+  const now = dependencies?.now || Date.now;
+  const sleep2 = dependencies?.sleep || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const baseEnv = { ...dependencies?.env || process.env, PM2_HOME: profile.pm2Home };
+  delete baseEnv.NODE_OPTIONS;
+  delete baseEnv.NODE_PATH;
+  const started = [], attempted = [], verified = [];
+  let phase = "preflight", locked = false, cwd, script, interpreter;
+  const lock = path20.join(profile.pm2Home, ".remote-debug-service-start.lock");
+  const deadline = Math.min(request.deadlineAt, now() + profile.startupTimeoutMs);
+  const fail4 = (code) => {
+    throw Object.assign(new Error(code), { serviceCode: code });
+  };
+  const remaining = () => {
+    const ms = deadline - now();
+    if (ms < 50) fail4("SERVICE_START_TIMEOUT");
+    return ms;
+  };
+  const real = (file) => fs14.realpathSync(file);
+  const inside = (file, root) => file.startsWith(`${root}/`);
+  const bounded2 = (file, max = 262144) => {
+    const fd = fs14.openSync(file, "r");
+    try {
+      const buffer = Buffer.alloc(max + 1);
+      let n = 0, read;
+      do {
+        read = fs14.readSync(fd, buffer, n, buffer.length - n, n);
+        n += read;
+      } while (read && n < buffer.length);
+      if (n > max) fail4("SERVICE_EVIDENCE_TOO_LARGE");
+      return buffer.subarray(0, n).toString("utf8");
+    } finally {
+      fs14.closeSync(fd);
+    }
+  };
+  const run = (file, args, env = baseEnv) => new Promise((resolve, reject) => {
+    execFile2(file, args, {
+      env,
+      cwd: profile.pm2Home,
+      shell: false,
+      timeout: Math.min(1e4, remaining()),
+      maxBuffer: 1024 * 1024,
+      encoding: "utf8"
+    }, (error2, stdout) => {
+      if (error2) reject(Object.assign(new Error("SERVICE_PM2_COMMAND_FAILED"), { serviceCode: "SERVICE_PM2_COMMAND_FAILED" }));
+      else resolve(String(stdout));
+    });
+  });
+  const pm2 = (args, env) => run(profile.pm2Path, args, env);
+  const list = async () => {
+    const output2 = await pm2(["jlist"]);
+    let entries;
+    try {
+      entries = JSON.parse(output2);
+    } catch {
+      fail4("SERVICE_PM2_RESPONSE_INVALID");
+    }
+    if (!Array.isArray(entries) || entries.length > 512) fail4("SERVICE_PM2_RESPONSE_INVALID");
+    return entries;
+  };
+  const resolveRelease = () => {
+    const current = real(profile.cwd);
+    if (profile.releaseRoot) {
+      const root = real(profile.releaseRoot);
+      if (root !== profile.releaseRoot || !inside(current, `${root}/releases`) || !/^\/[A-Za-z0-9_.+-]+$/.test(current.slice(`${root}/releases`.length))) fail4("SERVICE_RELEASE_PATH_INVALID");
+    } else if (current !== profile.cwd) fail4("SERVICE_CWD_SYMLINK_REQUIRES_RELEASE_ROOT");
+    return current;
+  };
+  const approved = (file) => {
+    const resolved = real(file);
+    if (!request.allowedRoots.some((root) => resolved === root || inside(resolved, root))) fail4("SERVICE_CANONICAL_PATH_DENIED");
+    return resolved;
+  };
+  const find = (entries, proc) => {
+    const matches = entries.filter((entry2) => entry2.name === proc.name || entry2.pm2_env?.name === proc.name);
+    if (matches.length > 1) fail4("SERVICE_DUPLICATE_PROCESS");
+    return matches[0];
+  };
+  const nodeArgs = profile.envFiles.map((file) => `--env-file=${file}`);
+  const checkIdentity = (entry2, proc) => {
+    const e = entry2.pm2_env || {};
+    if (e.exec_mode !== "fork_mode") fail4("SERVICE_MODE_MISMATCH");
+    if (real(e.pm_cwd) !== cwd || real(e.pm_exec_path) !== script || real(e.exec_interpreter) !== interpreter) fail4("SERVICE_PROCESS_PATH_CONFLICT");
+    const args = Array.isArray(e.node_args) ? e.node_args : typeof e.node_args === "string" ? e.node_args.split(/\s+/).filter(Boolean) : [];
+    if (JSON.stringify(args) !== JSON.stringify(nodeArgs)) fail4("SERVICE_NODE_ARGS_MISMATCH");
+    if (e.node_version !== profile.nodeVersion) fail4("SERVICE_NODE_VERSION_MISMATCH");
+    for (const [key, value] of Object.entries(proc.env)) {
+      if (String(e[key] ?? e.env?.[key]) !== value) fail4("SERVICE_ENV_MISMATCH");
+    }
+    if (!Number.isSafeInteger(entry2.pid) || entry2.pid < 1) fail4("SERVICE_PROCESS_NOT_RUNNING");
+    if (!Number.isSafeInteger(e.restart_time) || e.restart_time < 0 || !Number.isSafeInteger(e.pm_uptime) || e.pm_uptime < 1) fail4("SERVICE_PROCESS_METADATA_INVALID");
+    if (real(`/proc/${entry2.pid}/exe`) !== interpreter || real(`/proc/${entry2.pid}/cwd`) !== cwd) fail4("SERVICE_ACTUAL_PROCESS_MISMATCH");
+    const actualArgs = bounded2(`/proc/${entry2.pid}/cmdline`).split("\0").filter(Boolean);
+    if (nodeArgs.some((arg) => !actualArgs.includes(arg))) fail4("SERVICE_NODE_ARGS_MISMATCH");
+    const actualEnv = bounded2(`/proc/${entry2.pid}/environ`).split("\0");
+    for (const [key, value] of Object.entries(proc.env)) if (!actualEnv.includes(`${key}=${value}`)) fail4("SERVICE_ACTUAL_ENV_MISMATCH");
+    if (actualEnv.some((item) => item.startsWith("NODE_OPTIONS=") && item !== "NODE_OPTIONS=")) fail4("SERVICE_UNEXPECTED_NODE_OPTIONS");
+    return { pid: entry2.pid, restarts: e.restart_time, uptime: e.pm_uptime };
+  };
+  const sockets = () => {
+    const result = [];
+    for (const file of ["/proc/net/tcp", "/proc/net/tcp6"]) {
+      let text2;
+      try {
+        text2 = bounded2(file, 1024 * 1024);
+      } catch (error2) {
+        if (file.endsWith("tcp6") && error2.code === "ENOENT") continue;
+        throw error2;
+      }
+      for (const line of text2.trim().split("\n").slice(1)) {
+        const columns = line.trim().split(/\s+/);
+        if (columns[3] === "0A") result.push({ port: parseInt(columns[1].split(":")[1], 16), inode: columns[9] });
+      }
+    }
+    return result;
+  };
+  const portEvidence = (proc, pid, listeners) => {
+    const owned = /* @__PURE__ */ new Set();
+    if (pid) {
+      const files = fs14.readdirSync(`/proc/${pid}/fd`);
+      if (files.length > 16384) fail4("SERVICE_EVIDENCE_TOO_LARGE");
+      for (const file of files) {
+        try {
+          const match = /^socket:\[(\d+)\]$/.exec(fs14.readlinkSync(`/proc/${pid}/fd/${file}`));
+          if (match) owned.add(match[1]);
+        } catch (error2) {
+          if (error2.code !== "ENOENT") throw error2;
+        }
+      }
+    }
+    return proc.ports.map((port) => {
+      const matches = listeners.filter((listener) => listener.port === port);
+      return { port, listening: matches.length > 0, owned: matches.length > 0 && matches.every((listener) => owned.has(listener.inode)) };
+    });
+  };
+  const logPosition = (entry2) => {
+    const logPath = entry2.pm2_env?.pm_out_log_path;
+    if (typeof logPath !== "string") return null;
+    let file;
+    try {
+      file = real(logPath);
+    } catch (error2) {
+      if (error2.code === "ENOENT") return null;
+      throw error2;
+    }
+    const root = real(path20.join(profile.pm2Home, "logs"));
+    if (!inside(file, root)) fail4("SERVICE_LOG_PATH_CONFLICT");
+    const stat = fs14.statSync(file);
+    if (!stat.isFile()) fail4("SERVICE_LOG_PATH_CONFLICT");
+    return { file, size: stat.size, ino: stat.ino };
+  };
+  const markerSeen = (entry2, offset) => {
+    const log = logPosition(entry2);
+    if (!log) return false;
+    if (offset && (log.ino !== offset.ino || log.size < offset.size)) return false;
+    const start = Math.max(offset ? offset.size : 0, log.size - 65536);
+    const fd = fs14.openSync(log.file, "r");
+    try {
+      const buffer = Buffer.alloc(Math.min(65536, Math.max(0, log.size - start)));
+      const count = fs14.readSync(fd, buffer, 0, buffer.length, start);
+      return buffer.subarray(0, count).toString("utf8").includes(profile.startupMarker);
+    } finally {
+      fs14.closeSync(fd);
+    }
+  };
+  const output = (status, extra = {}) => ({
+    status,
+    phase,
+    started: [...started],
+    attempted: [...attempted],
+    verified: [...verified],
+    resolvedCwd: cwd,
+    nodeVersion: profile.nodeVersion,
+    mode: "fork",
+    persisted: false,
+    ...extra
+  });
+  try {
+    remaining();
+    phase = "paths";
+    cwd = resolveRelease();
+    if (!fs14.statSync(cwd).isDirectory()) fail4("SERVICE_CWD_INVALID");
+    script = real(path20.join(cwd, profile.entry));
+    if (!inside(script, cwd) || !fs14.statSync(script).isFile()) fail4("SERVICE_ENTRY_PATH_INVALID");
+    if (!/\.m?js$/.test(script) || /\.config\.m?js$/i.test(script) || /^ecosystem(?:\.|$)/i.test(path20.basename(script))) fail4("SERVICE_ENTRY_PATH_INVALID");
+    interpreter = approved(profile.interpreter);
+    if (real(profile.pm2Home) !== profile.pm2Home) fail4("SERVICE_PM2_HOME_SYMLINK");
+    fs14.accessSync(interpreter, fs14.constants.X_OK);
+    fs14.accessSync(profile.pm2Path, fs14.constants.X_OK);
+    phase = "runtime";
+    const version = (await run(interpreter, ["--version"])).trim();
+    if (version !== `v${profile.nodeVersion}`) fail4("SERVICE_NODE_VERSION_MISMATCH");
+    phase = "env-files";
+    for (const file of profile.envFiles) {
+      approved(file);
+      if (!fs14.statSync(file).isFile()) fail4("SERVICE_ENV_FILE_INVALID");
+      fs14.accessSync(file, fs14.constants.R_OK);
+    }
+    phase = "pm2-daemon";
+    const daemon = Number(bounded2(path20.join(profile.pm2Home, "pm2.pid"), 32).trim());
+    if (!Number.isSafeInteger(daemon) || daemon < 1 || !bounded2(`/proc/${daemon}/cmdline`).includes("PM2")) fail4("SERVICE_PM2_DAEMON_UNAVAILABLE");
+    if (request.action === "start") {
+      phase = "lock";
+      try {
+        fs14.mkdirSync(lock, { mode: 448 });
+        locked = true;
+      } catch (error2) {
+        if (error2.code === "EEXIST") fail4("SERVICE_START_BUSY");
+        throw error2;
+      }
+    }
+    phase = "process-preflight";
+    let entries = await list();
+    const missing = [], initial = /* @__PURE__ */ new Map(), offsets = /* @__PURE__ */ new Map();
+    const listeners = sockets();
+    for (const proc of profile.processes) {
+      const entry2 = find(entries, proc);
+      if (entry2) {
+        const identity2 = checkIdentity(entry2, proc);
+        if (entry2.pm2_env.status !== "online") fail4("SERVICE_EXISTING_PROCESS_UNHEALTHY");
+        const evidence = portEvidence(proc, entry2.pid, listeners);
+        if (evidence.some((item) => !item.owned)) fail4("SERVICE_PORT_OWNER_MISMATCH");
+        initial.set(proc.name, identity2);
+      } else {
+        if (portEvidence(proc, null, listeners).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
+        if (entries.some((item) => {
+          if (profile.processes.some((p) => p.name === item.name)) return false;
+          try {
+            return real(item.pm2_env.pm_cwd) === cwd && real(item.pm2_env.pm_exec_path) === script;
+          } catch {
+            return false;
+          }
+        })) fail4("SERVICE_UNEXPECTED_REGISTRATION");
+        missing.push(proc);
+      }
+    }
+    if (request.action === "inspect" && missing.length) return output("missing", { missing: missing.map((proc) => proc.name) });
+    phase = "start";
+    for (const proc of missing) {
+      remaining();
+      if (resolveRelease() !== cwd) fail4("SERVICE_RELEASE_CHANGED");
+      entries = await list();
+      if (find(entries, proc)) fail4("SERVICE_CONCURRENT_PROCESS_CHANGE");
+      if (portEvidence(proc, null, sockets()).some((item) => item.listening)) fail4("SERVICE_PORT_CONFLICT");
+      const logName = proc.name.replace(/_/g, "-");
+      const guessedLog = path20.join(profile.pm2Home, "logs", `${logName}-out.log`);
+      if (fs14.existsSync(guessedLog)) offsets.set(proc.name, { size: fs14.statSync(guessedLog).size, ino: fs14.statSync(guessedLog).ino });
+      else offsets.set(proc.name, { size: 0 });
+      attempted.push(proc.name);
+      await pm2([
+        "start",
+        script,
+        "--name",
+        proc.name,
+        "--cwd",
+        cwd,
+        "--interpreter",
+        interpreter,
+        ...nodeArgs.length ? ["--node-args", nodeArgs.join(" ")] : [],
+        "--max-memory-restart",
+        profile.maxMemoryRestart,
+        "--restart-delay",
+        String(profile.restartDelayMs),
+        "--time"
+      ], { ...baseEnv, ...proc.env });
+      started.push(proc.name);
+    }
+    phase = "verify";
+    let healthySince = null;
+    const identities = new Map(initial);
+    while (true) {
+      remaining();
+      if (resolveRelease() !== cwd) fail4("SERVICE_RELEASE_CHANGED");
+      entries = await list();
+      const listenersNow = sockets();
+      let ready = true;
+      verified.length = 0;
+      for (const proc of profile.processes) {
+        const entry2 = find(entries, proc);
+        if (!entry2) fail4("SERVICE_PROCESS_DISAPPEARED");
+        if (["errored", "stopped", "stopping"].includes(entry2.pm2_env?.status)) fail4("SERVICE_PROCESS_EXITED");
+        if (entry2.pm2_env?.status !== "online") {
+          ready = false;
+          continue;
+        }
+        if (!entry2.pm2_env.node_version && started.includes(proc.name)) {
+          ready = false;
+          continue;
+        }
+        const identity2 = checkIdentity(entry2, proc);
+        const previous = identities.get(proc.name);
+        if (previous && (previous.pid !== identity2.pid || previous.restarts !== identity2.restarts || previous.uptime !== identity2.uptime)) fail4("SERVICE_PROCESS_UNSTABLE");
+        identities.set(proc.name, identity2);
+        if (!previous && identity2.restarts !== 0) fail4("SERVICE_PROCESS_UNSTABLE");
+        const ports = portEvidence(proc, entry2.pid, listenersNow);
+        if (ports.some((item) => item.listening && !item.owned)) fail4("SERVICE_PORT_OWNER_MISMATCH");
+        const offset = offsets.get(proc.name);
+        if (offset && offset.ino === void 0) {
+          const log = logPosition(entry2);
+          if (log) offset.ino = log.ino;
+        }
+        const marker = markerSeen(entry2, offset);
+        const healthy = ports.every((item) => item.owned) && marker;
+        if (healthy) verified.push({
+          name: proc.name,
+          pid: entry2.pid,
+          status: "online",
+          restarts: identity2.restarts,
+          ports: ports.map((item) => item.port),
+          startupMarkerSeen: true,
+          interpreterVerified: true,
+          environmentVerified: true
+        });
+        else ready = false;
+      }
+      if (ready) {
+        if (healthySince === null) healthySince = now();
+        if (now() - healthySince >= profile.stableMs) break;
+      } else healthySince = null;
+      await sleep2(Math.min(500, remaining()));
+    }
+    phase = "complete";
+    if (request.action === "start" && started.length && profile.persist) {
+      if (entries.some((entry2) => entry2.pm2_env?.status !== "online")) return output("healthy", { persistenceWarning: "SERVICE_PM2_SAVE_SKIPPED_UNHEALTHY_NAMESPACE" });
+      phase = "persist";
+      await pm2(["save"]);
+      phase = "complete";
+      return output("healthy", { persisted: true });
+    }
+    return output("healthy", { unchanged: started.length === 0 });
+  } catch (error2) {
+    const code = error2.serviceCode || (["ENOENT", "EACCES", "EPERM", "ENOTDIR", "ELOOP"].includes(error2.code) ? `SERVICE_FILESYSTEM_${error2.code}` : "SERVICE_START_FAILED");
+    return output(started.length ? "partial" : attempted.length ? "unknown" : "blocked", { error: { code }, recovery: "Inspect this exact instance before retrying. No processes were deleted or restarted; recovery requires separate authorization." });
+  } finally {
+    if (locked) {
+      try {
+        fs14.rmdirSync(lock);
+      } catch {
+      }
+    }
+  }
+}
+
+// service-profiles.js
+var import_posix3 = __toESM(require("node:path/posix"), 1);
+var import_node_crypto4 = require("node:crypto");
+var SERVICE_START_CONFIRMATION = "启动服务";
+var SERVICE_ENV_KEYS = ["NODE_ENV", "PORT", "WS_PORT", "CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED", "ORDER_AI_ALLOWED_RESTAURANTS"];
+var SERVICE_CAPABILITIES = Object.freeze({
+  version: 1,
+  modes: ["fork"],
+  actions: ["inspect", "start"],
+  explicitInstance: true,
+  savedProfileRequired: true,
+  confirmation: SERVICE_START_CONFIRMATION,
+  arbitraryCommands: false,
+  restart: false,
+  delete: false,
+  envFileContentsReturned: false,
+  maxProfiles: 8,
+  maxProcesses: 8,
+  environmentKeys: SERVICE_ENV_KEYS
+});
+function serviceError(code, message = code) {
+  return Object.assign(new Error(message), { code, statusCode: 400, retriable: false });
+}
+function invalid(message) {
+  throw serviceError("INVALID_SERVICE_PROFILE", message);
+}
+function assertServiceId(id) {
+  if (typeof id !== "string" || !/^[a-z][a-z0-9_-]{0,31}$/.test(id)) invalid("invalid serviceId");
+}
+function object(value, fields3, field) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !fields3.includes(key))) invalid(`invalid ${field} fields`);
+}
+function integer(value, min, max, field) {
+  if (!Number.isSafeInteger(value) || value < min || value > max) invalid(`invalid ${field}`);
+  return value;
+}
+function absolute(value, roots, field) {
+  if (typeof value !== "string" || value.length > 1024 || !/^\/[A-Za-z0-9_./+-]+$/.test(value) || import_posix3.default.normalize(value) !== value || value === "/") invalid(`invalid absolute ${field}`);
+  if (roots && !roots.some((root) => value === root || value.startsWith(`${root}/`))) invalid(`${field} is outside approved roots`);
+  return value;
+}
+function normalizeServiceProfiles(value, context) {
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      invalid("serviceProfiles must be JSON");
+    }
+  }
+  value ??= {};
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 8) invalid("serviceProfiles must contain at most eight profiles");
+  const result = {}, names = /* @__PURE__ */ new Set(), ports = /* @__PURE__ */ new Set();
+  for (const [id, p] of Object.entries(value)) {
+    assertServiceId(id);
+    object(p, ["instanceId", "target", "enabled", "cwd", "releaseRoot", "entry", "mode", "interpreter", "nodeVersion", "pm2Path", "pm2Home", "envFiles", "processes", "maxMemoryRestart", "restartDelayMs", "stableMs", "startupTimeoutMs", "startupMarker", "persist"], id);
+    object(p.target, ["host", "port", "username"], "target");
+    if (p.instanceId !== context.id || p.target.host !== context.host || p.target.username !== context.username || p.target.port !== context.port) invalid("service profile target must match this exact instance, host, SSH port and user");
+    if (typeof p.enabled !== "boolean" || typeof p.persist !== "boolean") invalid("enabled and persist must be explicit booleans");
+    if (p.mode !== "fork") invalid("only explicit fork mode is supported; ecosystem/cluster startup is not supported");
+    if (typeof p.nodeVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(p.nodeVersion) || Number(p.nodeVersion.split(".")[0]) < 20) invalid("exact Node version >=20 is required");
+    if (typeof p.entry !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_./-]*\.m?js$/.test(p.entry) || import_posix3.default.normalize(p.entry) !== p.entry || p.entry.split("/").includes("..")) invalid("entry must be a relative JavaScript file");
+    if (/\.config\.m?js$/i.test(p.entry) || /^ecosystem(?:\.|$)/i.test(import_posix3.default.basename(p.entry))) invalid("PM2 ecosystem/config entries are not supported");
+    if (!["/usr/local/bin/pm2", "/usr/bin/pm2"].includes(p.pm2Path)) invalid("pm2Path must be /usr/local/bin/pm2 or /usr/bin/pm2");
+    const roots = context.allowedPaths;
+    const cwd = absolute(p.cwd, roots, "cwd");
+    const releaseRoot = p.releaseRoot ? absolute(p.releaseRoot, roots, "releaseRoot") : void 0;
+    if (releaseRoot && cwd !== `${releaseRoot}/current`) invalid("release profiles must use releaseRoot/current as cwd");
+    const interpreter = absolute(p.interpreter, roots, "interpreter");
+    if (import_posix3.default.basename(interpreter) !== "node") invalid("interpreter must name an absolute node binary");
+    const pm2Home = absolute(p.pm2Home, roots, "pm2Home");
+    if (!Array.isArray(p.envFiles) || p.envFiles.length > 4) invalid("envFiles must contain 0–4 paths, never secret values");
+    const envFiles = p.envFiles.map((file) => absolute(file, roots, "envFiles"));
+    if (new Set(envFiles).size !== envFiles.length) invalid("duplicate env file");
+    if (!Array.isArray(p.processes) || !p.processes.length || p.processes.length > 8) invalid("processes must contain 1–8 entries");
+    const processes = p.processes.map((proc) => {
+      object(proc, ["name", "env", "ports"], "process");
+      if (typeof proc.name !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(proc.name) || names.has(proc.name)) invalid("process names must be unique within an instance");
+      names.add(proc.name);
+      object(proc.env, SERVICE_ENV_KEYS, "environment (only non-secret allowlisted values are accepted)");
+      const env = {};
+      for (const [key, val] of Object.entries(proc.env).sort(([a], [b]) => a.localeCompare(b))) {
+        if (typeof val !== "string" || val.length > 256) invalid("environment values must be bounded strings");
+        if (key === "NODE_ENV" && !["development", "test", "production", "staging"].includes(val)) invalid("invalid NODE_ENV");
+        if (["CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED"].includes(key) && !["true", "false"].includes(val)) invalid(`invalid ${key}`);
+        if (key === "ORDER_AI_ALLOWED_RESTAURANTS" && !/^(?:\*|[A-Za-z0-9_-]+(?:,[A-Za-z0-9_-]+)*)$/.test(val)) invalid("invalid ORDER_AI_ALLOWED_RESTAURANTS");
+        if (["PORT", "WS_PORT"].includes(key) && (!/^\d{1,5}$/.test(val) || +val < 1 || +val > 65535)) invalid(`invalid ${key}`);
+        env[key] = val;
+      }
+      if (!env.NODE_ENV) invalid("NODE_ENV is required");
+      if (!Array.isArray(proc.ports) || !proc.ports.length || proc.ports.length > 8) invalid("expected TCP ports are required");
+      const expected = proc.ports.map((port) => integer(port, 1, 65535, "port"));
+      for (const port of expected) {
+        if (ports.has(port)) invalid("ports must be unique within an instance");
+        ports.add(port);
+      }
+      for (const key of ["PORT", "WS_PORT"]) if (env[key] && !expected.includes(+env[key])) invalid(`${key} must be an expected port`);
+      return { name: proc.name, env, ports: expected };
+    });
+    if (!/^[1-9]\d{0,3}[MG]$/.test(p.maxMemoryRestart || "")) invalid("maxMemoryRestart must be a bounded M/G value");
+    if (typeof p.startupMarker !== "string" || !p.startupMarker.length || p.startupMarker.length > 128 || /[^\x20-\x7e]/.test(p.startupMarker)) invalid("a bounded literal startupMarker is required");
+    const stableMs = integer(p.stableMs ?? 5e3, 3e3, 3e4, "stableMs");
+    const startupTimeoutMs = integer(p.startupTimeoutMs ?? 6e4, stableMs + 1e3, 9e4, "startupTimeoutMs");
+    result[id] = {
+      instanceId: p.instanceId,
+      target: { host: p.target.host, port: p.target.port, username: p.target.username },
+      enabled: p.enabled,
+      cwd,
+      ...releaseRoot ? { releaseRoot } : {},
+      entry: p.entry,
+      mode: "fork",
+      interpreter,
+      nodeVersion: p.nodeVersion,
+      pm2Path: p.pm2Path,
+      pm2Home,
+      envFiles,
+      processes,
+      maxMemoryRestart: p.maxMemoryRestart,
+      restartDelayMs: integer(p.restartDelayMs ?? 5e3, 1e3, 6e4, "restartDelayMs"),
+      stableMs,
+      startupTimeoutMs,
+      startupMarker: p.startupMarker,
+      persist: p.persist
+    };
+  }
+  return result;
+}
+function serviceProfileHash(profile) {
+  return (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
+}
+function serviceTargetHash(target2, allowedPaths) {
+  return (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify({
+    host: target2.host,
+    port: target2.port,
+    username: target2.username,
+    hostKeyFingerprints: [...target2.hostKeyFingerprints || []].sort(),
+    allowedPaths: [...allowedPaths].sort()
+  })).digest("hex");
+}
+function serviceAuditFields(input = {}) {
+  return {
+    serviceId: typeof input.serviceId === "string" && /^[a-z][a-z0-9_-]{0,31}$/.test(input.serviceId) ? input.serviceId : void 0,
+    profileHash: typeof input.profileHash === "string" && /^[a-f0-9]{64}$/.test(input.profileHash) ? input.profileHash : void 0
+  };
+}
+function selectServiceProfile(profiles, input) {
+  assertServiceId(input.serviceId);
+  const profile = profiles?.[input.serviceId];
+  if (!profile) throw serviceError("SERVICE_PROFILE_NOT_FOUND", "Configure a verified service profile for this instance first; no defaults are inferred");
+  if (!profile.enabled) throw serviceError("SERVICE_START_DISABLED", "This instance service profile is disabled");
+  if (input.profileHash !== serviceProfileHash(profile)) throw serviceError("SERVICE_PROFILE_STALE", "List service profiles again and use the current profileHash");
+  return profile;
+}
+
+// services.js
+var SERVICE_RESULT_MARKER = "__REMOTE_DEBUG_SERVICE__";
+var RESULT_CODES = /* @__PURE__ */ new Set([
+  "SERVICE_START_TIMEOUT",
+  "SERVICE_EVIDENCE_TOO_LARGE",
+  "SERVICE_PM2_COMMAND_FAILED",
+  "SERVICE_PM2_RESPONSE_INVALID",
+  "SERVICE_RELEASE_PATH_INVALID",
+  "SERVICE_CWD_SYMLINK_REQUIRES_RELEASE_ROOT",
+  "SERVICE_CANONICAL_PATH_DENIED",
+  "SERVICE_PM2_HOME_SYMLINK",
+  "SERVICE_DUPLICATE_PROCESS",
+  "SERVICE_MODE_MISMATCH",
+  "SERVICE_PROCESS_PATH_CONFLICT",
+  "SERVICE_NODE_ARGS_MISMATCH",
+  "SERVICE_NODE_VERSION_MISMATCH",
+  "SERVICE_ENV_MISMATCH",
+  "SERVICE_PROCESS_NOT_RUNNING",
+  "SERVICE_PROCESS_METADATA_INVALID",
+  "SERVICE_ACTUAL_PROCESS_MISMATCH",
+  "SERVICE_ACTUAL_ENV_MISMATCH",
+  "SERVICE_UNEXPECTED_NODE_OPTIONS",
+  "SERVICE_LOG_PATH_CONFLICT",
+  "SERVICE_CWD_INVALID",
+  "SERVICE_ENTRY_PATH_INVALID",
+  "SERVICE_ENV_FILE_INVALID",
+  "SERVICE_PM2_DAEMON_UNAVAILABLE",
+  "SERVICE_START_BUSY",
+  "SERVICE_EXISTING_PROCESS_UNHEALTHY",
+  "SERVICE_PORT_OWNER_MISMATCH",
+  "SERVICE_PORT_CONFLICT",
+  "SERVICE_UNEXPECTED_REGISTRATION",
+  "SERVICE_RELEASE_CHANGED",
+  "SERVICE_CONCURRENT_PROCESS_CHANGE",
+  "SERVICE_PROCESS_DISAPPEARED",
+  "SERVICE_PROCESS_EXITED",
+  "SERVICE_PROCESS_UNSTABLE",
+  ...["ENOENT", "EACCES", "EPERM", "ENOTDIR", "ELOOP"].map((code) => `SERVICE_FILESYSTEM_${code}`),
+  "SERVICE_START_FAILED"
+]);
+function safeReceipt(payload, profile) {
+  const invalid5 = () => {
+    throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Invalid service evidence; inspect this instance before retrying");
+  };
+  const names = new Set(profile.processes.map((p) => p.name));
+  const nameList = (value) => {
+    if (value === void 0) return [];
+    if (!Array.isArray(value) || value.length > names.size || value.some((name2) => !names.has(name2)) || new Set(value).size !== value.length) invalid5();
+    return value;
+  };
+  if (!["healthy", "missing", "blocked", "partial", "unknown"].includes(payload.status)) invalid5();
+  const verified = (payload.verified || []).map((item) => {
+    const proc = profile.processes.find((p) => p.name === item.name);
+    if (!proc || !Number.isSafeInteger(item.pid) || item.pid < 1 || item.status !== "online" || !Number.isSafeInteger(item.restarts) || item.restarts < 0 || JSON.stringify(proc.ports) !== JSON.stringify(item.ports) || item.startupMarkerSeen !== true || item.interpreterVerified !== true || item.environmentVerified !== true) invalid5();
+    return {
+      name: item.name,
+      pid: item.pid,
+      status: "online",
+      restarts: item.restarts,
+      ports: proc.ports,
+      startupMarkerSeen: true,
+      interpreterVerified: true,
+      environmentVerified: true
+    };
+  });
+  if (new Set(verified.map((item) => item.name)).size !== verified.length) invalid5();
+  if (payload.status === "healthy" && verified.length !== profile.processes.length) invalid5();
+  const result = {
+    status: payload.status,
+    phase: ["preflight", "paths", "runtime", "env-files", "pm2-daemon", "lock", "process-preflight", "start", "verify", "persist", "complete"].includes(payload.phase) ? payload.phase : "unknown",
+    started: nameList(payload.started),
+    attempted: nameList(payload.attempted),
+    verified,
+    nodeVersion: profile.nodeVersion,
+    mode: "fork",
+    persisted: payload.status === "healthy" && payload.persisted === true
+  };
+  if (payload.resolvedCwd) {
+    const prefix = `${profile.releaseRoot}/releases/`;
+    if (typeof payload.resolvedCwd !== "string" || (profile.releaseRoot ? !payload.resolvedCwd.startsWith(prefix) || !/^[A-Za-z0-9_.+-]+$/.test(payload.resolvedCwd.slice(prefix.length)) : payload.resolvedCwd !== profile.cwd)) invalid5();
+    result.resolvedCwd = payload.resolvedCwd;
+  }
+  if (payload.missing) result.missing = nameList(payload.missing);
+  if (payload.unchanged === true) result.unchanged = true;
+  if (payload.persistenceWarning === "SERVICE_PM2_SAVE_SKIPPED_UNHEALTHY_NAMESPACE") result.persistenceWarning = payload.persistenceWarning;
+  if (payload.error) result.error = { code: RESULT_CODES.has(payload.error.code) ? payload.error.code : "SERVICE_START_FAILED" };
+  if (!["healthy", "missing"].includes(payload.status)) result.recovery = "Inspect this instance before retrying; destructive recovery requires separate authorization";
+  return result;
+}
+function validateServiceRequest(input, action) {
+  const allowed = ["serviceId", "profileHash", "operationId", "deadlineAt", "timeoutMs", ...action === "start" ? ["confirmation"] : []];
+  if (!["start", "inspect"].includes(action) || !input || Object.keys(input).some((key) => !allowed.includes(key))) throw serviceError("SERVICE_INPUT_INVALID", "Only a saved serviceId and current profileHash are accepted");
+  if (action === "start" && input.confirmation !== SERVICE_START_CONFIRMATION) throw serviceError("SERVICE_START_AUTHORIZATION_REQUIRED", "An explicit user request to start this instance service is required");
+}
+function buildServiceScript(action, profile, deadlineAt, allowedRoots) {
+  const request = { action, deadlineAt, allowedRoots };
+  return `(${serviceStartRuntime.toString()})(${JSON.stringify(request)}, ${JSON.stringify(profile)}).then(result => console.log(${JSON.stringify(SERVICE_RESULT_MARKER)} + JSON.stringify(result))).catch(() => { process.exitCode = 1; });`;
+}
+async function runService(input, { action, config, operation, runSSH: runSSH2 }) {
+  validateServiceRequest(input, action);
+  const profile = selectServiceProfile(config.serviceProfiles, input);
+  if (profile.instanceId !== config.instanceId || profile.target.host !== config.ssh.host || profile.target.port !== config.ssh.port || profile.target.username !== config.ssh.username) throw serviceError("SERVICE_INSTANCE_MISMATCH");
+  let remote;
+  try {
+    remote = await runSSH2("node", {
+      config,
+      operation,
+      stdin: buildServiceScript(action, profile, operation.deadlineAt - 1e3, config.security.allowedPaths)
+    });
+  } catch {
+    throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Transport interrupted; inspect this instance before retrying. A start may have partially completed; no automatic cleanup or replay is performed");
+  }
+  if (remote.exitCode !== 0 || remote.timedOut || remote.stdoutTruncated || Buffer.byteLength(remote.stdout || "") > 65536) throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Incomplete service receipt; inspect this instance before retrying");
+  let payload;
+  try {
+    const lines = String(remote.stdout || "").split(/\r?\n/).filter((line) => line.startsWith(SERVICE_RESULT_MARKER));
+    if (lines.length !== 1) throw new Error();
+    payload = JSON.parse(lines[0].slice(SERVICE_RESULT_MARKER.length));
+    payload = safeReceipt(payload, profile);
+  } catch {
+    throw serviceError("SERVICE_START_OUTCOME_UNKNOWN", "Invalid service receipt; inspect this instance before retrying");
+  }
+  return { serviceId: input.serviceId, profileHash: input.profileHash, ...payload };
+}
+
+// http-auth.js
+var import_node_path2 = __toESM(require("node:path"), 1);
+var import_local_auth = __toESM(require_local_auth(), 1);
+var PUBLIC_ASSETS = /* @__PURE__ */ new Set(["/", "/favicon.ico", "/dashboard.html", "/dashboard.css", "/ui.css", "/ui.js", "/workspace.js", "/dashboard.js", "/instance-tasks.js", "/final-results.js", "/output-preview.js", "/environment-report.js", "/admin-registration.js"]);
+function publicHealth(request, token, identity2) {
+  const nonce = request.headers["x-remote-debug-challenge"];
+  return {
+    ...identity2,
+    .../^[a-f0-9]{64}$/.test(nonce || "") ? { authProof: import_local_auth.default.healthProof(token, nonce, new URL(`http://${request.headers.host}`).origin) } : {}
+  };
+}
+function installHttpAuth(app, config, options = {}) {
+  const dataDir = import_node_path2.default.dirname(import_node_path2.default.dirname(config.runtime?.statePath || import_node_path2.default.join(process.cwd(), ".runtime", "agent-state.json")));
+  const filePath = config.auth?.filePath || import_local_auth.default.resolveAuthFile(dataDir);
+  const token = options.authToken || (options.initializeAuth ? import_local_auth.default.ensureAuthToken(filePath) : import_local_auth.default.readAuthToken(filePath));
+  if (!/^[a-f0-9]{64}$/.test(token)) throw import_local_auth.default.authError("valid HTTP authentication credentials are required");
+  app.locals.authToken = token;
+  app.use((request, response, next) => {
+    response.set("Cache-Control", "no-store");
+    response.set("X-Content-Type-Options", "nosniff");
+    response.set("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    const fail4 = (status, code, message) => response.status(status).json({ ok: false, error: { code, message, retriable: false } });
+    const port = request.socket.localPort;
+    const host = request.headers.host;
+    const listener = config.agent.host || "127.0.0.1";
+    const allowedHosts = [`${listener.includes(":") ? `[${listener}]` : listener}:${port}`, `127.0.0.1:${port}`, `localhost:${port}`];
+    if (port === 80) allowedHosts.push(listener.includes(":") ? `[${listener}]` : listener, "127.0.0.1", "localhost");
+    if (!allowedHosts.includes(host)) {
+      return fail4(403, "LOCAL_ORIGIN_REJECTED", "request Host does not match the local listener");
+    }
+    const origin = request.headers.origin;
+    if (origin !== void 0 && origin !== new URL(`http://${host}`).origin) {
+      return fail4(403, "LOCAL_ORIGIN_REJECTED", "request Origin must match the local listener");
+    }
+    if ((request.method === "GET" || request.method === "HEAD") && (request.path === "/health" || PUBLIC_ASSETS.has(request.path))) return next();
+    const header = request.headers.authorization;
+    if (!header) return fail4(401, "LOCAL_AUTH_REQUIRED", "local access token is required");
+    if (!import_local_auth.default.tokenMatches(header.startsWith("Bearer ") ? header.slice(7) : "", token)) {
+      return fail4(401, "LOCAL_AUTH_INVALID", "local access token is invalid");
+    }
+    next();
+  });
+}
+
+// manual-workbench.js
+var import_express = __toESM(require_express2(), 1);
+var import_node_http = __toESM(require("node:http"), 1);
+var import_node_fs5 = __toESM(require("node:fs"), 1);
+var import_node_path8 = __toESM(require("node:path"), 1);
+var import_node_url3 = require("node:url");
+var import_node_crypto14 = require("node:crypto");
+
+// node_modules/ws/wrapper.mjs
+var import_stream = __toESM(require_stream(), 1);
+var import_extension = __toESM(require_extension(), 1);
+var import_permessage_deflate = __toESM(require_permessage_deflate(), 1);
+var import_receiver = __toESM(require_receiver(), 1);
+var import_sender = __toESM(require_sender(), 1);
+var import_subprotocol = __toESM(require_subprotocol(), 1);
+var import_websocket = __toESM(require_websocket(), 1);
+var import_websocket_server = __toESM(require_websocket_server(), 1);
+
+// manual-workbench.js
+var import_local_auth4 = __toESM(require_local_auth(), 1);
+
+// manual-auth.js
+var import_node_fs = __toESM(require("node:fs"), 1);
+var import_node_path3 = __toESM(require("node:path"), 1);
+var import_node_crypto5 = require("node:crypto");
+var import_node_util = require("node:util");
+var import_local_auth2 = __toESM(require_local_auth(), 1);
+var scrypt = (0, import_node_util.promisify)(import_node_crypto5.scrypt);
+var USERNAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$/;
+var HEX64 = /^[a-f0-9]{64}$/;
+var HASH_OPTIONS = { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
+function manualError(code, message, statusCode = 400) {
+  return Object.assign(new Error(message), { code, statusCode });
+}
+function validateAdminCredentials(username, password) {
+  if (typeof username !== "string" || !USERNAME.test(username)) {
+    throw manualError("ADMIN_USERNAME_INVALID", "账号须为 3–64 位字母、数字、下划线、点或短横线，并以字母或数字开头。");
+  }
+  if (typeof password !== "string" || password.length < 12 || Buffer.byteLength(password) > 256) {
+    throw manualError("ADMIN_PASSWORD_INVALID", "管理员密码至少 12 个字符，最多 256 字节。");
+  }
+}
+var ManualAdminStore = class {
+  constructor(directory) {
+    this.directory = directory;
+    this.filePath = import_node_path3.default.join(directory, "accounts.json");
+  }
+  protectDirectory() {
+    import_node_fs.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
+    import_local_auth2.default.protectOrCheck(this.directory, true, true);
+  }
+  read() {
+    if (!import_node_fs.default.existsSync(this.directory)) return [];
+    import_local_auth2.default.protectOrCheck(this.directory, true, false);
+    if (!import_node_fs.default.existsSync(this.filePath)) return [];
+    import_local_auth2.default.protectOrCheck(this.filePath, false, false);
+    const stat = import_node_fs.default.lstatSync(this.filePath);
+    if (stat.nlink !== 1 || stat.size > 64 * 1024) throw manualError("ADMIN_STORAGE_INVALID", "管理员存储无效。", 503);
+    const value = JSON.parse(import_node_fs.default.readFileSync(this.filePath, "utf8"));
+    if (value.version !== 1 || !Array.isArray(value.accounts) || value.accounts.length > 10 || new Set(value.accounts.map((a) => a?.username)).size !== value.accounts.length || value.accounts.some((a) => !USERNAME.test(a?.username || "") || !HEX64.test(a.salt || "") || !/^[a-f0-9]{128}$/.test(a.hash || ""))) {
+      throw manualError("ADMIN_STORAGE_INVALID", "管理员存储无效。", 503);
+    }
+    return value.accounts;
+  }
+  async verify(username, password) {
+    if (typeof username !== "string" || typeof password !== "string" || Buffer.byteLength(password) > 256) return false;
+    const account = this.read().find((item) => item.username === username);
+    const actual = await scrypt(password, account?.salt || "0".repeat(64), 64, HASH_OPTIONS);
+    const expected = Buffer.from(account?.hash || "0".repeat(128), "hex");
+    return (0, import_node_crypto5.timingSafeEqual)(actual, expected) && Boolean(account);
+  }
+  async register(username, password) {
+    validateAdminCredentials(username, password);
+    const salt = (0, import_node_crypto5.randomBytes)(32).toString("hex");
+    const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
+    const accounts = this.read();
+    if (accounts.some((account) => account.username === username)) throw manualError("ADMIN_EXISTS", "管理员账号已存在。", 409);
+    if (accounts.length >= 10) throw manualError("ADMIN_LIMIT", "最多注册 10 个管理员。", 409);
+    this.save([...accounts, { username, salt, hash, createdAt: (/* @__PURE__ */ new Date()).toISOString() }]);
+  }
+  async reset(username, password) {
+    validateAdminCredentials(username, password);
+    const salt = (0, import_node_crypto5.randomBytes)(32).toString("hex");
+    const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
+    const accounts = this.read();
+    if (!accounts.some((account) => account.username === username)) throw manualError("ADMIN_NOT_FOUND", "管理员账号不存在。", 404);
+    this.save(accounts.map((account) => account.username === username ? { ...account, salt, hash, updatedAt: (/* @__PURE__ */ new Date()).toISOString() } : account));
+  }
+  save(accounts) {
+    this.protectDirectory();
+    const temporaryPath = import_node_path3.default.join(this.directory, `.accounts-${(0, import_node_crypto5.randomBytes)(16).toString("hex")}.tmp`);
+    try {
+      import_node_fs.default.writeFileSync(temporaryPath, JSON.stringify({ version: 1, accounts }) + "\n", { flag: "wx", mode: 384 });
+      import_local_auth2.default.protectOrCheck(temporaryPath, false, true);
+      import_node_fs.default.renameSync(temporaryPath, this.filePath);
+    } finally {
+      import_node_fs.default.rmSync(temporaryPath, { force: true });
+    }
+  }
+};
+var ManualLoginLimiter = class {
+  constructor(now = Date.now) {
+    this.now = now;
+    this.failures = 0;
+    this.windowStart = now();
+    this.inFlight = 0;
+  }
+  async run(action) {
+    if (this.now() - this.windowStart >= 5 * 6e4) {
+      this.failures = 0;
+      this.windowStart = this.now();
+    }
+    if (this.failures >= 5 || this.inFlight >= 2) throw manualError("ADMIN_LOGIN_LIMITED", "尝试过于频繁，请稍后重试。", 429);
+    this.inFlight++;
+    try {
+      const result = await action();
+      if (!result) this.failures++;
+      return result;
+    } finally {
+      this.inFlight--;
+    }
+  }
+};
+
+// manual-owner-verification.js
+var import_node_fs2 = __toESM(require("node:fs"), 1);
+var import_node_path5 = __toESM(require("node:path"), 1);
+var import_node_url2 = require("node:url");
+var import_node_crypto6 = require("node:crypto");
+var import_node_child_process = require("node:child_process");
+var import_node_util2 = require("node:util");
+var import_local_auth3 = __toESM(require_local_auth(), 1);
+
+// manual-windows-owner.js
+var import_node_path4 = __toESM(require("node:path"), 1);
+function proofFrom(stdout, nonce) {
+  try {
+    const proof = JSON.parse(stdout.trim());
+    return proof?.nonce === nonce ? proof : null;
+  } catch {
+    return null;
+  }
+}
+function verificationError(proof) {
+  const nativeCode = Number.isInteger(proof?.nativeError) && proof.nativeError > 0 ? `（Windows 错误 ${proof.nativeError}）` : "";
+  switch (proof?.reason) {
+    case "cancelled":
+      return manualError("OWNER_VERIFICATION_CANCELLED", "已取消 Windows 身份验证，请重试。", 403);
+    case "prompt-error":
+      return manualError("OWNER_WINDOWS_PROMPT_FAILED", `无法打开 Windows 身份验证窗口${nativeCode}，请在已登录的本机桌面重试。`, 503);
+    case "unpack-error":
+      return manualError("OWNER_WINDOWS_UNPACK_FAILED", `无法解析 Windows 返回的凭据${nativeCode}，请选择当前 Windows 账户的密码登录方式后重试。`, 503);
+    case "logon-error":
+      return manualError("OWNER_WINDOWS_LOGON_FAILED", `Windows 拒绝了账户登录${nativeCode}。请确认系统窗口中的账户是当前 Windows 用户，并输入该账户的登录密码（不是 PIN 或新管理员密码）。`, 403);
+    case "identity-mismatch":
+      return manualError("OWNER_WINDOWS_IDENTITY_MISMATCH", "验证的账户与运行插件的 Windows 用户不一致，请使用当前 Windows 用户的账户。", 403);
+    case "unavailable":
+      return manualError("OWNER_WINDOWS_DESKTOP_UNAVAILABLE", "Windows 本机验证需要已登录的交互式桌面，请从当前用户的桌面启动插件。", 503);
+    default:
+      return manualError("OWNER_VERIFICATION_FAILED", "Windows 系统身份验证未通过，请重试。", 403);
+  }
+}
+async function invoke(execute2, nativeDirectory, args, signal, timeout) {
+  const root = process.env.SystemRoot || "C:\\Windows";
+  return execute2(
+    import_node_path4.default.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+    ["-NoProfile", "-NonInteractive", "-STA", "-ExecutionPolicy", "Bypass", "-File", import_node_path4.default.join(nativeDirectory, "verify-owner.ps1"), ...args],
+    { timeout, maxBuffer: 4096, windowsHide: true, signal }
+  );
+}
+async function prepareWindowsOwner(execute2, nativeDirectory, signal) {
+  let result;
+  try {
+    result = JSON.parse((await invoke(execute2, nativeDirectory, ["-Check"], signal, 2e4)).stdout.trim());
+  } catch {
+    throw manualError("OWNER_WINDOWS_HELPER_UNAVAILABLE", "Windows 身份验证组件无法启动，请检查系统 Windows PowerShell 和本机桌面环境。", 503);
+  }
+  if (result?.available !== true || result?.verified === true) throw manualError("OWNER_WINDOWS_HELPER_UNAVAILABLE", "Windows 身份验证组件不可用，请在已登录的本机桌面重试。", 503);
+}
+async function verifyWindowsOwner(execute2, nativeDirectory, nonce, signal) {
+  let result;
+  try {
+    result = await invoke(execute2, nativeDirectory, ["-Nonce", nonce], signal, 12e4);
+  } catch (error2) {
+    if (error2.name === "AbortError") throw manualError("OWNER_VERIFICATION_CANCELLED", "已取消 Windows 身份验证，请重试。", 403);
+    if (error2.killed) throw manualError("OWNER_VERIFICATION_TIMEOUT", "Windows 身份验证超时，请重试。", 403);
+    const proof2 = proofFrom(error2.stdout || "", nonce);
+    if (proof2?.verified === false) throw verificationError(proof2);
+    throw manualError("OWNER_WINDOWS_HELPER_FAILED", "Windows 身份验证组件执行失败，请关闭注册窗口后重试。", 503);
+  }
+  const proof = proofFrom(result.stdout, nonce);
+  if (proof?.verified !== true) throw verificationError(proof);
+  return result;
+}
+
+// manual-owner-verification.js
+var execute = (0, import_node_util2.promisify)(import_node_child_process.execFile);
+var moduleDirectory = typeof __dirname === "string" ? __dirname : import_node_path5.default.dirname((0, import_node_url2.fileURLToPath)(void 0));
+var ManualOwnerVerification = class {
+  constructor(directory, options = {}) {
+    this.directory = directory;
+    this.platform = options.platform || process.platform;
+    this.execute = options.execute || execute;
+    this.nativeDirectory = options.nativeDirectory || import_node_path5.default.join(moduleDirectory, "native");
+    this.preparing = null;
+    this.architecture = options.architecture || process.arch;
+    this.nativeArchitecture = null;
+  }
+  status() {
+    const supported = ["darwin", "win32"].includes(this.platform);
+    return {
+      supported,
+      method: this.platform === "darwin" ? "macos-local-authentication" : this.platform === "win32" ? "windows-credentials" : "unavailable",
+      message: this.platform === "win32" ? "注册时会弹出 Windows 系统身份验证窗口，请使用当前 Windows 账户的登录密码（不是 PIN）；电脑密码不会提交到网页。" : supported ? "注册时会弹出系统身份验证窗口；电脑密码不会提交到网页。" : "此平台暂未接入本机身份验证，暂不能注册管理员。"
+    };
+  }
+  async macArchitecture() {
+    if (this.nativeArchitecture) return this.nativeArchitecture;
+    if (this.architecture === "arm64") return this.nativeArchitecture = "arm64";
+    try {
+      const result = await this.execute("/usr/sbin/sysctl", ["-n", "hw.optional.arm64"], { timeout: 5e3, maxBuffer: 4096, signal: this.controller?.signal });
+      this.nativeArchitecture = result.stdout.trim() === "1" ? "arm64" : "x86_64";
+    } catch (error2) {
+      if (error2.name === "AbortError") throw error2;
+      this.nativeArchitecture = "x86_64";
+    }
+    return this.nativeArchitecture;
+  }
+  async executeMac(command, args, options) {
+    if (await this.macArchitecture() === "arm64") {
+      return this.execute("/usr/bin/arch", ["-arm64", command, ...args], options);
+    }
+    return this.execute(command, args, options);
+  }
+  async macHelper() {
+    const source = import_node_path5.default.join(this.nativeDirectory, "verify-owner.swift");
+    const hash = (0, import_node_crypto6.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
+    import_node_fs2.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
+    import_local_auth3.default.protectOrCheck(this.directory, true, true);
+    const helper = import_node_path5.default.join(this.directory, `verify-owner-${hash}`);
+    if (!import_node_fs2.default.existsSync(helper)) {
+      const temporary = `${helper}-${(0, import_node_crypto6.randomBytes)(8).toString("hex")}`;
+      let stage = "compiler";
+      try {
+        await this.executeMac("/usr/bin/xcrun", ["--find", "swiftc"], { timeout: 1e4, maxBuffer: 4096, signal: this.controller?.signal });
+        stage = "compile";
+        await this.executeMac("/usr/bin/xcrun", ["swiftc", source, "-O", "-o", temporary], { timeout: 6e4, maxBuffer: 64 * 1024, signal: this.controller?.signal });
+        stage = "install";
+        import_node_fs2.default.chmodSync(temporary, 448);
+        import_node_fs2.default.renameSync(temporary, helper);
+      } catch (error2) {
+        if (error2.name === "AbortError") throw manualError("OWNER_HELPER_CANCELLED", "系统认证组件准备已取消，请重试。", 503);
+        if (stage === "compiler") {
+          const code = Number.isInteger(error2.code) || typeof error2.code === "string" && /^[A-Z_]{1,64}$/.test(error2.code) ? String(error2.code) : "UNKNOWN";
+          throw manualError("OWNER_COMPILER_UNAVAILABLE", `无法启动 Swift 编译器检查（${code}）。请检查 Xcode Command Line Tools、xcode-select 配置和插件进程权限。`, 503);
+        }
+        if (stage === "install") throw manualError("OWNER_HELPER_INSTALL_FAILED", "认证组件已编译，但无法写入缓存。请检查本地认证目录的所有权与权限。", 503);
+        if (error2.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") throw manualError("OWNER_HELPER_COMPILE_FAILED", "Swift 编译器返回过多诊断信息，认证组件未生成。", 503);
+        if (error2.killed) throw manualError("OWNER_HELPER_COMPILE_TIMEOUT", "Swift 编译认证组件超时，请稍后重试。", 503);
+        const exit = Number.isInteger(error2.code) ? `（退出码 ${error2.code}）` : "";
+        throw manualError("OWNER_HELPER_COMPILE_FAILED", `Swift 编译认证组件失败${exit}。编译器已找到，请检查系统 SDK 与命令行工具是否匹配。`, 503);
+      } finally {
+        import_node_fs2.default.rmSync(temporary, { force: true });
+      }
+    }
+    const stat = import_node_fs2.default.lstatSync(helper);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.uid !== process.getuid() || (stat.mode & 511) !== 448) {
+      throw manualError("OWNER_HELPER_UNSAFE", "系统认证组件的权限无效。", 503);
+    }
+    return helper;
+  }
+  async prepare() {
+    if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
+    if (this.preparing) return this.preparing;
+    this.preparing = this.prepareOnce().finally(() => {
+      this.preparing = null;
+    });
+    return this.preparing;
+  }
+  async prepareOnce() {
+    if (this.platform === "win32") {
+      const controller2 = new AbortController();
+      this.controller = controller2;
+      try {
+        await prepareWindowsOwner(this.execute, this.nativeDirectory, controller2.signal);
+        return { ...this.status(), prepared: true };
+      } finally {
+        if (this.controller === controller2) this.controller = null;
+      }
+    }
+    if (this.platform !== "darwin") return { ...this.status(), prepared: true };
+    const controller = new AbortController();
+    this.controller = controller;
+    try {
+      const helper = await this.macHelper();
+      let result;
+      try {
+        result = JSON.parse((await this.executeMac(helper, ["--check"], { timeout: 1e4, maxBuffer: 4096, signal: controller.signal })).stdout.trim());
+      } catch {
+        throw manualError("OWNER_HELPER_CHECK_FAILED", "系统认证组件无法启动或系统身份验证暂不可用，请在已登录的本机桌面重试。", 503);
+      }
+      if (result?.available !== true) throw manualError("OWNER_HELPER_CHECK_FAILED", "系统身份验证暂不可用，请在已登录的本机桌面重试。", 503);
+      return { ...this.status(), prepared: true, processArchitecture: this.architecture, nativeArchitecture: await this.macArchitecture() };
+    } finally {
+      if (this.controller === controller) this.controller = null;
+    }
+  }
+  async verify() {
+    if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
+    const nonce = (0, import_node_crypto6.randomBytes)(32).toString("hex");
+    const controller = new AbortController();
+    if (this.preparing) await this.preparing;
+    this.controller = controller;
+    let result;
+    try {
+      if (this.platform === "darwin") {
+        result = await this.executeMac(await this.macHelper(), [nonce], { timeout: 12e4, maxBuffer: 4096, signal: controller.signal });
+      } else {
+        result = await verifyWindowsOwner(this.execute, this.nativeDirectory, nonce, controller.signal);
+      }
+    } catch (error2) {
+      if (this.platform === "win32") throw error2;
+      if (/^OWNER_(HELPER_|COMPILER_)/.test(error2.code || "")) throw error2;
+      throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过或已取消。", 403);
+    } finally {
+      if (this.controller === controller) this.controller = null;
+    }
+    let proof;
+    try {
+      proof = JSON.parse(result.stdout.trim());
+    } catch {
+    }
+    if (proof?.verified !== true || proof.nonce !== nonce || this.platform === "darwin" && proof.uid !== process.getuid()) {
+      throw manualError("OWNER_VERIFICATION_FAILED", "系统身份验证未通过。", 403);
+    }
+  }
+  cancel() {
+    this.controller?.abort();
+  }
+};
+
+// manual-mongodb.js
+var import_ssh22 = __toESM(require_lib4(), 1);
+var import_node_crypto13 = require("node:crypto");
+
+// ssh-connection-supervisor.js
+var import_node_events = require("node:events");
+var import_promises = __toESM(require("node:fs/promises"), 1);
+var import_node_crypto12 = require("node:crypto");
+var import_ssh2 = __toESM(require_lib4(), 1);
+
+// channel-scheduler.js
+var BACKGROUND_PRIORITIES = /* @__PURE__ */ new Set(["background", "bulk"]);
+function queuedCountByPriority(queue) {
+  const result = { control: 0, interactive: 0, background: 0, bulk: 0 };
+  for (const item of queue) {
+    result[item.priority] = (result[item.priority] || 0) + 1;
+  }
+  return result;
+}
+var ChannelScheduler = class {
+  constructor(options = {}) {
+    this.maxBusiness = options.maxBusiness || 4;
+    this.maxControl = options.maxControl || 1;
+    this.maxBackground = options.maxBackground || 1;
+    this.maxBulk = options.maxBulk === void 0 ? 2 : options.maxBulk;
+    this.maxQueue = options.maxQueue || 100;
+    this.backgroundStarvationMs = options.backgroundStarvationMs || 1e4;
+    this.now = options.now || (() => Date.now());
+    this.queue = [];
+    this.activeBusiness = 0;
+    this.activeControl = 0;
+    this.activeBackground = 0;
+    this.activeBulk = 0;
+    this.activeOperations = /* @__PURE__ */ new Map();
+    this.closed = false;
+  }
+  schedule(operation, task, options = {}) {
+    const priority = options.priority || "interactive";
+    assertOperationActive(operation, operation.signal, {
+      layer: "scheduler",
+      phase: "enqueue"
+    });
+    if (this.closed) {
+      return Promise.reject(operationError("SSH operation scheduler is closed", {
+        code: "OPERATION_CANCELLED",
+        statusCode: 499,
+        operationId: operation.operationId,
+        layer: "scheduler",
+        phase: "enqueue"
+      }));
+    }
+    if (this.queue.length >= this.maxQueue) {
+      return Promise.reject(operationError("SSH operation queue is full", {
+        code: "OPERATION_QUEUE_FULL",
+        statusCode: 503,
+        operationId: operation.operationId,
+        layer: "scheduler",
+        phase: "enqueue",
+        retriable: true
+      }));
+    }
+    return new Promise((resolve, reject) => {
+      const item = {
+        operation,
+        task,
+        priority,
+        enqueuedAt: this.now(),
+        resolve,
+        reject,
+        started: false,
+        timer: null,
+        onAbort: null
+      };
+      item.onAbort = () => {
+        if (item.started) {
+          return;
+        }
+        this.removeQueuedItem(item);
+        reject(operationErrorForSignal(operation.signal, operation, {
+          layer: "scheduler",
+          phase: "queue"
+        }));
+        this.pump();
+      };
+      operation.signal?.addEventListener("abort", item.onAbort, { once: true });
+      item.timer = setTimeout(() => {
+        if (item.started) {
+          return;
+        }
+        this.removeQueuedItem(item);
+        reject(operationError("operation deadline exceeded while waiting for an SSH channel", {
+          code: "OPERATION_DEADLINE_EXCEEDED",
+          statusCode: 408,
+          operationId: operation.operationId,
+          layer: "scheduler",
+          phase: "queue"
+        }));
+        this.pump();
+      }, remainingOperationMs(operation, this.now()));
+      item.timer.unref?.();
+      this.queue.push(item);
+      this.pump();
+    });
+  }
+  removeQueuedItem(item) {
+    const index = this.queue.indexOf(item);
+    if (index !== -1) {
+      this.queue.splice(index, 1);
+    }
+    clearTimeout(item.timer);
+    item.operation.signal?.removeEventListener("abort", item.onAbort);
+  }
+  canStart(item) {
+    if (item.priority === "control") {
+      return this.activeControl < this.maxControl;
+    }
+    if (this.activeBusiness >= this.maxBusiness) {
+      return false;
+    }
+    if (this.reserveInteractive && BACKGROUND_PRIORITIES.has(item.priority) && this.activeBusiness >= Math.max(1, this.maxBusiness - 1)) return false;
+    if (item.priority === "bulk") {
+      return this.activeBulk < this.maxBulk;
+    }
+    if (BACKGROUND_PRIORITIES.has(item.priority)) {
+      return this.activeBackground < this.maxBackground;
+    }
+    return true;
+  }
+  nextItem() {
+    const nowMs = this.now();
+    const control = this.queue.find((item) => item.priority === "control" && this.canStart(item));
+    if (control) {
+      return control;
+    }
+    const starvedBackground = this.queue.find(
+      (item) => BACKGROUND_PRIORITIES.has(item.priority) && nowMs - item.enqueuedAt >= this.backgroundStarvationMs && this.canStart(item)
+    );
+    if (starvedBackground) {
+      return starvedBackground;
+    }
+    const interactive = this.queue.find(
+      (item) => item.priority === "interactive" && this.canStart(item)
+    );
+    if (interactive) {
+      return interactive;
+    }
+    return this.queue.find((item) => this.canStart(item));
+  }
+  pump() {
+    if (this.closed) {
+      return;
+    }
+    while (true) {
+      const item = this.nextItem();
+      if (!item) {
+        return;
+      }
+      this.removeQueuedItem(item);
+      this.startItem(item);
+    }
+  }
+  startItem(item) {
+    item.started = true;
+    const background = item.priority === "background";
+    const bulk2 = item.priority === "bulk";
+    if (item.priority === "control") {
+      this.activeControl += 1;
+    } else {
+      this.activeBusiness += 1;
+      if (background) {
+        this.activeBackground += 1;
+      }
+      if (bulk2) this.activeBulk += 1;
+    }
+    const queueMs = Math.max(0, this.now() - item.enqueuedAt);
+    this.activeOperations.set(item.operation.operationId, {
+      priority: item.priority,
+      startedAt: this.now(),
+      deadlineAt: item.operation.deadlineAt
+    });
+    Promise.resolve().then(() => {
+      assertOperationActive(item.operation, item.operation.signal, {
+        layer: "scheduler",
+        phase: "start"
+      });
+      return item.task({ queueMs, priority: item.priority });
+    }).then(item.resolve, item.reject).finally(() => {
+      this.activeOperations.delete(item.operation.operationId);
+      if (item.priority === "control") {
+        this.activeControl -= 1;
+      } else {
+        this.activeBusiness -= 1;
+        if (background) {
+          this.activeBackground -= 1;
+        }
+        if (bulk2) this.activeBulk -= 1;
+      }
+      this.pump();
+    });
+  }
+  close(reason = "scheduler closed") {
+    this.closed = true;
+    const queued = this.queue.splice(0);
+    for (const item of queued) {
+      clearTimeout(item.timer);
+      item.operation.signal?.removeEventListener("abort", item.onAbort);
+      item.reject(operationError(reason, {
+        code: "OPERATION_CANCELLED",
+        statusCode: 499,
+        operationId: item.operation.operationId,
+        layer: "scheduler",
+        phase: "shutdown"
+      }));
+    }
+  }
+  snapshot() {
+    return {
+      active: this.activeOperations.size,
+      activeBusiness: this.activeBusiness,
+      activeControl: this.activeControl,
+      activeBackground: this.activeBackground,
+      activeBulk: this.activeBulk,
+      queued: this.queue.length,
+      queuedByPriority: queuedCountByPriority(this.queue),
+      maxBusiness: this.maxBusiness,
+      maxControl: this.maxControl,
+      maxBackground: this.maxBackground,
+      maxBulk: this.maxBulk,
+      maxQueue: this.maxQueue
+    };
+  }
+};
+
+// config.js
+var import_node_fs4 = __toESM(require("node:fs"), 1);
+var import_node_crypto11 = require("node:crypto");
+var import_node_path7 = __toESM(require("node:path"), 1);
+var import_posix8 = __toESM(require("node:path/posix"), 1);
+
+// log-projects.js
+var import_posix4 = __toESM(require("node:path/posix"), 1);
+function normalizeLogProjects(value, allowedRoots, sourceRoots = {}) {
+  if (typeof value === "string" && value) {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      throw invalid2("logProjects must be valid JSON");
+    }
+  }
+  const configured = value === void 0 || value === null || value === "" ? {} : value;
+  if (typeof configured !== "object" || Array.isArray(configured)) throw invalid2("logProjects must be an object");
+  if (Object.keys(configured).length > 20) throw invalid2("at most 20 log projects are supported");
+  const result = {};
+  for (const [id, project] of Object.entries(configured)) {
+    if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id) || !project || typeof project !== "object") throw invalid2("invalid log project");
+    const directories = project.directories;
+    if (!Array.isArray(directories) || !directories.length || directories.length > 8) throw invalid2("each log project needs 1-8 directories");
+    const normalize = (value2) => {
+      if (typeof value2 !== "string" || value2.length > 4096 || !value2.startsWith("/") || value2.includes("\0")) throw invalid2("log project paths must be absolute");
+      const normalized = import_posix4.default.normalize(value2).replace(/\/$/, "");
+      if (!allowedRoots.some((root) => normalized === root || normalized.startsWith(`${root}/`))) throw invalid2("log project path is outside approved roots");
+      return normalized;
+    };
+    result[id] = {
+      ...project.root ? { root: normalize(project.root) } : {},
+      directories: [...new Set(directories.map(normalize))]
+    };
+  }
+  for (const [id, root] of Object.entries(sourceRoots)) {
+    if (!Object.hasOwn(result, id)) result[id] = { root, directories: [`${root}/logs`] };
+  }
+  return result;
+}
+function invalid2(message) {
+  const error2 = new Error(message);
+  Object.assign(error2, { code: "INVALID_LOG_PROJECTS", statusCode: 400 });
+  return error2;
+}
+
+// log-policy.js
+var import_posix5 = __toESM(require("node:path/posix"), 1);
+var LOG_CATEGORIES = Object.freeze([
+  "system",
+  "nginx",
+  "application",
+  "pm2"
+]);
+var LOG_DEFAULT_LIMIT = 200;
+var LOG_MAX_LIMIT = 500;
+var LOG_DEFAULT_TAIL_LINES = 200;
+var LOG_MAX_TAIL_LINES = 2e3;
+var LOG_DEFAULT_MAX_BYTES = 256 * 1024;
+var LOG_MAX_BYTES = 256 * 1024;
+var LOG_MAX_CONTAINS_LENGTH = 256;
+var LOG_DEFAULT_SCAN_BYTES = 8 * 1024 * 1024;
+var LOG_MAX_SCAN_BYTES = 256 * 1024 * 1024;
+var LOG_MAX_ARCHIVE_SCAN_BYTES = 1 * 1024 * 1024 * 1024;
+var LOG_MAX_COMPRESSED_SOURCE_BYTES = 256 * 1024 * 1024;
+var LOG_MAX_SCAN_ENTRIES = 5e3;
+var LOG_MAX_ARCHIVE_MEMBERS = 5e3;
+var LOG_MAX_PAX_BYTES = 1 * 1024 * 1024;
+var LOG_MAX_MEMBER_BYTES = 256 * 1024 * 1024;
+var LOG_QUERY_CAPABILITIES = Object.freeze({
+  modes: ["latest", "search", "files", "members"],
+  remoteFiltering: true,
+  temporaryExtraction: false,
+  supportedCompression: ["none", "gzip", "tar-gzip"],
+  maxFiles: 50,
+  maxScanBytes: 256 * 1024 * 1024,
+  maxExpandedBytes: 2 * 1024 * 1024 * 1024,
+  maxDirectoryEntries: 5e3,
+  maxReturnedLines: 2e3,
+  maxReturnedBytes: 256 * 1024,
+  backgroundJobs: {
+    start: "/logs/jobs/start",
+    get: "/logs/jobs/get",
+    control: "/logs/jobs/control",
+    maxConcurrentPerInstance: 2,
+    maxQueuedPerInstance: 2,
+    maxActiveAndQueued: 4,
+    singlePassArchives: true,
+    defaultJobTimeoutMs: 18e5,
+    maxJobTimeoutMs: 72e5,
+    defaultCpuPercent: 20,
+    defaultReadBytesPerSecond: 2097152,
+    defaultProcessBytesPerSecond: 4194304,
+    rssLimitBytes: 201326592,
+    defaultBatchScanBytes: 268435456,
+    cumulativeExpandedByteLimit: null,
+    pauseTtlMs: 3e5,
+    retentionMs: 18e5,
+    maxRetainedJobs: 16,
+    survivesWorkerRestart: false,
+    perFileReceipts: true,
+    receiptAcknowledgement: true,
+    maxReceiptBytesPerJob: 8388608,
+    fileResultPagination: true,
+    controls: ["pause", "resume", "cancel", "stop_after_file", "narrow"],
+    startFileBoundary: "stopAfterFile",
+    evidencePaginationScope: "retained_evidence",
+    completeness: ["scanComplete", "countsAreComplete", "evidenceComplete"]
+  }
+});
+var LOG_SUPPORTED_COMPRESSION = Object.freeze([
+  "none",
+  "gzip",
+  "tar-gzip"
+]);
+var LOG_UNSUPPORTED_COMPRESSION = Object.freeze([
+  "bzip2",
+  "xz",
+  "zip"
+]);
+var LOG_CAPABILITIES = Object.freeze({
+  query: LOG_QUERY_CAPABILITIES,
+  categories: [...LOG_CATEGORIES],
+  supportedCompression: [...LOG_SUPPORTED_COMPRESSION],
+  unsupportedCompression: [...LOG_UNSUPPORTED_COMPRESSION],
+  archiveMemberListing: true,
+  defaultLimit: LOG_DEFAULT_LIMIT,
+  maxLimit: LOG_MAX_LIMIT,
+  defaultTailLines: LOG_DEFAULT_TAIL_LINES,
+  maxTailLines: LOG_MAX_TAIL_LINES,
+  defaultMaxBytes: LOG_DEFAULT_MAX_BYTES,
+  maxBytes: LOG_MAX_BYTES,
+  maxContainsLength: LOG_MAX_CONTAINS_LENGTH,
+  maxScanBytes: LOG_MAX_SCAN_BYTES,
+  maxArchiveScanBytes: LOG_MAX_ARCHIVE_SCAN_BYTES,
+  maxCompressedSourceBytes: LOG_MAX_COMPRESSED_SOURCE_BYTES,
+  maxMemberBytes: LOG_MAX_MEMBER_BYTES,
+  maxScanEntries: LOG_MAX_SCAN_ENTRIES,
+  maxArchiveMembers: LOG_MAX_ARCHIVE_MEMBERS,
+  pagination: "cursor"
+});
+function logInputError(message, code = "INVALID_LOG_REQUEST") {
+  const error2 = new Error(message);
+  error2.code = code;
+  error2.statusCode = 400;
+  error2.layer = "worker";
+  error2.phase = "validation";
+  error2.retriable = false;
+  return error2;
+}
+function normalizeLogJobLimits(value) {
+  if (value === void 0 || value === "") return {};
+  let parsed = value;
+  try {
+    if (typeof value === "string") parsed = JSON.parse(value);
+  } catch {
+    throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
+  }
+  const ranges = {
+    maxJobTimeoutMs: [1e3, 72e5],
+    cpuPercent: [1, 50],
+    readBytesPerSecond: [65536, 16777216],
+    processBytesPerSecond: [65536, 33554432],
+    rssLimitBytes: [64 * 1024 * 1024, 192 * 1024 * 1024]
+  };
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw logInputError("invalid REMOTE_DEBUG_LOG_JOB_LIMITS");
+  for (const [key, number] of Object.entries(parsed)) {
+    const range = ranges[key];
+    if (!range || !Number.isInteger(number) || number < range[0] || number > range[1]) throw logInputError(`invalid log job limit: ${key}`);
+  }
+  return { ...parsed };
+}
+function positiveInteger(value, fallback, maximum, field) {
+  if (value === void 0 || value === null || value === "") {
+    return fallback;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw logInputError(`${field} must be a positive integer`, `INVALID_${field.toUpperCase()}`);
+  }
+  return Math.min(value, maximum);
+}
+function normalizeLogCategory(value) {
+  if (value === void 0 || value === null || value === "") {
+    return "all";
+  }
+  if (typeof value !== "string" || !["all", ...LOG_CATEGORIES].includes(value)) {
+    throw logInputError(
+      `category must be one of all, ${LOG_CATEGORIES.join(", ")}`,
+      "INVALID_LOG_CATEGORY"
+    );
+  }
+  return value;
+}
+function normalizeLogListOptions(input = {}) {
+  const category = normalizeLogCategory(input.category);
+  const limit = positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_LIMIT, "limit");
+  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
+  if (typeof cursor !== "string" || cursor.length > 4096) {
+    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
+  }
+  return { category, limit, cursor };
+}
+function normalizeArchiveMemberListOptions(input = {}) {
+  const path20 = input.path;
+  if (typeof path20 !== "string" || path20.trim() === "") {
+    throw logInputError("path must be a non-empty string", "INVALID_PATH");
+  }
+  const prefix = input.prefix === void 0 || input.prefix === null ? "" : input.prefix;
+  if (typeof prefix !== "string" || prefix.length > 512) {
+    throw logInputError("prefix must be a string no longer than 512 characters", "INVALID_MEMBER_PREFIX");
+  }
+  const cursor = input.cursor === void 0 || input.cursor === null ? "" : input.cursor;
+  if (typeof cursor !== "string" || cursor.length > 4096) {
+    throw logInputError("cursor must be a string no longer than 4096 characters", "INVALID_LOG_CURSOR");
+  }
+  return {
+    path: path20,
+    prefix: normalizeArchiveMemberPrefix(prefix),
+    limit: positiveInteger(input.limit, LOG_DEFAULT_LIMIT, LOG_MAX_ARCHIVE_MEMBERS, "limit"),
+    cursor
+  };
+}
+function normalizeLogReadOptions(input = {}) {
+  const path20 = input.path;
+  if (typeof path20 !== "string" || path20.trim() === "") {
+    throw logInputError("path must be a non-empty string", "INVALID_PATH");
+  }
+  const memberPath = input.memberPath === void 0 || input.memberPath === null ? "" : input.memberPath;
+  if (typeof memberPath !== "string" || memberPath.length > 4096) {
+    throw logInputError("memberPath must be a string no longer than 4096 characters", "INVALID_MEMBER_PATH");
+  }
+  const contains = input.contains === void 0 || input.contains === null ? "" : input.contains;
+  if (typeof contains !== "string" || contains.length > LOG_MAX_CONTAINS_LENGTH) {
+    throw logInputError(
+      `contains must be a string no longer than ${LOG_MAX_CONTAINS_LENGTH} characters`,
+      "INVALID_LOG_CONTAINS"
+    );
+  }
+  return {
+    path: path20,
+    memberPath: memberPath ? normalizeArchiveMemberPath(memberPath) : "",
+    tailLines: positiveInteger(
+      input.tailLines,
+      LOG_DEFAULT_TAIL_LINES,
+      LOG_MAX_TAIL_LINES,
+      "tailLines"
+    ),
+    maxBytes: positiveInteger(input.maxBytes, LOG_DEFAULT_MAX_BYTES, LOG_MAX_BYTES, "maxBytes"),
+    contains,
+    caseSensitive: input.caseSensitive === true
+  };
+}
+function normalizeArchiveMemberPrefix(value) {
+  if (!value) {
+    return "";
+  }
+  const normalized = normalizeArchiveMemberPath(value);
+  return value.endsWith("/") ? `${normalized}/` : normalized;
+}
+function normalizeArchiveMemberPath(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw logInputError("archive member path must be a non-empty string", "INVALID_MEMBER_PATH");
+  }
+  if (value.includes("\0") || value.includes("\\")) {
+    throw logInputError("archive member path contains an unsafe character", "INVALID_MEMBER_PATH");
+  }
+  if (value.startsWith("/")) {
+    throw logInputError("archive member path must be relative", "INVALID_MEMBER_PATH");
+  }
+  const normalized = import_posix5.default.normalize(value);
+  if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
+    throw logInputError("archive member path escapes the archive", "ARCHIVE_MEMBER_PATH_NOT_ALLOWED");
+  }
+  return normalized;
+}
+function encodeLogCursor(value) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+function decodeLogCursor(value, expectedKind) {
+  if (!value) {
+    return { kind: expectedKind, sourceIndex: 0, offset: 0 };
+  }
+  if (typeof value !== "string" || value.length > 4096) {
+    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
+  }
+  try {
+    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    if (decoded?.kind !== expectedKind || !Number.isInteger(decoded.sourceIndex) || decoded.sourceIndex < 0 || !Number.isInteger(decoded.offset) || decoded.offset < 0) {
+      throw new Error("invalid cursor fields");
+    }
+    return decoded;
+  } catch {
+    throw logInputError("cursor is invalid", "INVALID_LOG_CURSOR");
+  }
+}
+
+// resource-policy.js
+var RESOURCE_TERMINAL = /* @__PURE__ */ new Set(["completed", "partial", "stopped", "failed", "cancelled", "interrupted", "expired"]);
+var RESOURCE_PROFILES = Object.freeze({
+  control: { bulk: false, cpuMilliCores: 50, memoryBytes: 32 * 1048576 },
+  diagnostic: { bulk: false, cpuMilliCores: 100, memoryBytes: 64 * 1048576 },
+  file_read: { bulk: false, cpuMilliCores: 100, memoryBytes: 64 * 1048576 },
+  mongo_read: { bulk: false, cpuMilliCores: 150, memoryBytes: 128 * 1048576 },
+  mongo_write: { bulk: false, cpuMilliCores: 150, memoryBytes: 128 * 1048576 },
+  discovery: { bulk: false, cpuMilliCores: 50, memoryBytes: 64 * 1048576 },
+  log_search: { bulk: true, cpuMilliCores: 200, memoryBytes: 192 * 1048576 },
+  mongo_bulk: { bulk: true, cpuMilliCores: 400, memoryBytes: 512 * 1048576 }
+});
+var RESOURCE_DEFAULTS = Object.freeze({
+  cpuMilliCores: 1e3,
+  protectedCpuMilliCores: 200,
+  controlCpuMilliCores: 50,
+  memoryBytes: 1024 * 1048576,
+  protectedMemoryBytes: 256 * 1048576,
+  readBytesPerSecond: 8 * 1048576,
+  processBytesPerSecond: 16 * 1048576,
+  transferBytesPerSecond: 4 * 1048576,
+  protectedTransferBytesPerSecond: 2 * 1048576,
+  controlTransferBytesPerSecond: 1048576,
+  protectedReadBytesPerSecond: 1048576,
+  protectedProcessBytesPerSecond: 1048576,
+  sampleIntervalMs: 5e3,
+  sampleTtlMs: 2e4,
+  memoryHeadroomRatio: 0.1
+});
+function normalizeResourcePolicy(value) {
+  if (value === void 0 || value === "") return { ...RESOURCE_DEFAULTS, domains: {} };
+  let input;
+  try {
+    input = typeof value === "string" ? JSON.parse(value) : value;
+  } catch {
+    throw new Error("invalid REMOTE_DEBUG_RESOURCE_POLICY");
+  }
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid resource policy");
+  for (const [key, number] of Object.entries(input)) {
+    if (key === "domains") {
+      if (!number || typeof number !== "object" || Array.isArray(number) || Object.entries(number).some(([id, domain]) => !/^[a-z][a-z0-9_-]{0,63}$/.test(id) || typeof domain !== "string" || !/^[a-zA-Z0-9._-]{1,128}$/.test(domain))) throw new Error("invalid resource domains");
+    } else if (!Object.hasOwn(RESOURCE_DEFAULTS, key) || !Number.isFinite(number) || number <= 0 || key !== "memoryHeadroomRatio" && !Number.isInteger(number)) throw new Error(`invalid resource policy: ${key}`);
+  }
+  const result = { ...RESOURCE_DEFAULTS, ...input, domains: input.domains || {} };
+  if (result.cpuMilliCores > 64e3 || result.protectedCpuMilliCores + result.controlCpuMilliCores >= result.cpuMilliCores || result.protectedMemoryBytes >= result.memoryBytes || result.memoryBytes > 64 * 1024 ** 3 || result.protectedReadBytesPerSecond >= result.readBytesPerSecond || result.protectedProcessBytesPerSecond >= result.processBytesPerSecond || result.controlTransferBytesPerSecond >= result.protectedTransferBytesPerSecond || result.protectedTransferBytesPerSecond >= result.transferBytesPerSecond || result.sampleIntervalMs < 1e3 || result.sampleIntervalMs > 6e4 || result.sampleTtlMs < result.sampleIntervalMs * 2 || result.sampleTtlMs > 12e4 || result.memoryHeadroomRatio > 0.5) throw new Error("invalid resource policy capacity/reserves");
+  return result;
+}
+
+// approved-commands.js
+var import_node_crypto7 = require("node:crypto");
+var APPROVED_COMMAND_CONFIRMATION = "使用命令";
+var DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1e3;
+var DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 3e5;
+var MAX_APPROVED_EXECUTION_TIMEOUT_MS = 9e5;
+var MAX_APPROVED_COMMAND_LENGTH = 16 * 1024;
+var MAX_APPROVED_COMMANDS = 20;
+var DATABASE_SHELLS = /* @__PURE__ */ new Set(["mongo", "mongosh"]);
+function assertDatabaseShellIsNotUsedForMutation(command, index) {
+  const tokens = command.trim().split(/\s+/);
+  const shellIndex = tokens.findIndex((token) => DATABASE_SHELLS.has(token.split("/").pop()));
+  if (shellIndex === -1) {
+    return;
+  }
+  if (shellIndex === 0 && tokens.length === 2 && tokens[1] === "--version") {
+    return;
+  }
+  throw new ApprovedCommandError(
+    `database shell command at index ${index} must use the structured MongoDB mutation tools`,
+    "MONGODB_SHELL_MUTATION_REJECTED"
+  );
+}
+var ApprovedCommandError = class extends Error {
+  constructor(message, code = "APPROVED_COMMAND_REJECTED", statusCode = 400) {
+    super(message);
+    this.name = "ApprovedCommandError";
+    this.code = code;
+    this.statusCode = statusCode;
+  }
+};
+function hashCommands(commands) {
+  return (0, import_node_crypto7.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
+}
+function redactCommand(command, maxChars = 512) {
+  if (typeof command !== "string" || command.length === 0) {
+    return "";
+  }
+  let redacted = command.replace(
+    /(--(?:password|pass|pwd)(?:=|\s+))("[^"]*"|'[^']*'|[^\s]+)/gi,
+    "$1[REDACTED]"
+  ).replace(
+    /((?:MONGO|MYSQL|PG|POSTGRES|REDIS)?_?PASSWORD=)("[^"]*"|'[^']*'|[^\s]+)/gi,
+    "$1[REDACTED]"
+  ).replace(
+    /(mongodb(?:\+srv)?:\/\/[^:\s/@]+:)([^@\s/]+)(@)/gi,
+    "$1[REDACTED]$3"
+  );
+  if (redacted.length <= maxChars) {
+    return redacted;
+  }
+  return `${redacted.slice(0, maxChars)}
+...[truncated ${redacted.length - maxChars} chars]`;
+}
+function assertApprovedCommandsEnabled(config) {
+  if (!config.approvedCommands?.enabled) {
+    throw new ApprovedCommandError(
+      "approved command execution is disabled; set REMOTE_DEBUG_APPROVED_COMMANDS=1 to enable it",
+      "APPROVED_COMMANDS_DISABLED",
+      403
+    );
+  }
+}
+function normalizePurpose(value) {
+  if (value === void 0 || value === null || value === "") {
+    return "未说明";
+  }
+  if (typeof value !== "string") {
+    throw new ApprovedCommandError("purpose must be a string", "INVALID_APPROVED_COMMAND_PURPOSE");
+  }
+  return value.trim().slice(0, 500) || "未说明";
+}
+function normalizeCommands(value, settings) {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new ApprovedCommandError(
+      "commands must be a non-empty array",
+      "INVALID_APPROVED_COMMANDS"
+    );
+  }
+  const maxCommands = settings.maxCommands || MAX_APPROVED_COMMANDS;
+  const maxCommandLength = settings.maxCommandLength || MAX_APPROVED_COMMAND_LENGTH;
+  if (value.length > maxCommands) {
+    throw new ApprovedCommandError(
+      `commands cannot contain more than ${maxCommands} items`,
+      "TOO_MANY_APPROVED_COMMANDS"
+    );
+  }
+  return value.map((command, index) => {
+    if (typeof command !== "string") {
+      throw new ApprovedCommandError(
+        `command at index ${index} must be a string`,
+        "INVALID_APPROVED_COMMAND"
+      );
+    }
+    const normalized = command.trim();
+    if (!normalized) {
+      throw new ApprovedCommandError(
+        `command at index ${index} must be non-empty`,
+        "INVALID_APPROVED_COMMAND"
+      );
+    }
+    if (normalized.includes("\0")) {
+      throw new ApprovedCommandError(
+        `command at index ${index} contains a null byte`,
+        "INVALID_APPROVED_COMMAND"
+      );
+    }
+    if (normalized.length > maxCommandLength) {
+      throw new ApprovedCommandError(
+        `command at index ${index} is longer than ${maxCommandLength} characters`,
+        "APPROVED_COMMAND_TOO_LONG"
+      );
+    }
+    assertDatabaseShellIsNotUsedForMutation(normalized, index);
+    return normalized;
+  });
+}
+function nowIso(nowMs) {
+  return new Date(nowMs).toISOString();
+}
+function publicDraft(draft2) {
+  return {
+    draftId: draft2.draftId,
+    purpose: draft2.purpose,
+    commands: draft2.commands.slice(),
+    commandHash: draft2.commandHash,
+    commandCount: draft2.commands.length,
+    commandBlock: draft2.commands.join("\n\n"),
+    status: draft2.status,
+    createdAt: draft2.createdAt,
+    expiresAt: draft2.expiresAt,
+    executedAt: draft2.executedAt,
+    instructions: [
+      "选择“只生成命令，不执行”：不要调用执行工具，直接把命令交给人工执行。",
+      "选择“使用命令”：调用 remote_debug_execute_command_draft，并传入 draftId、commandHash 和确认短语“使用命令”。"
+    ]
+  };
+}
+function createCommandDraftStore(options = {}) {
+  const now = options.now || (() => Date.now());
+  const drafts = /* @__PURE__ */ new Map();
+  function cleanup(nowMs = now()) {
+    for (const [draftId, draft2] of drafts.entries()) {
+      if (draft2.expiresAtMs <= nowMs && draft2.status === "pending") {
+        drafts.delete(draftId);
+      }
+    }
+  }
+  function createDraft({ purpose, commands, settings }) {
+    const nowMs = now();
+    cleanup(nowMs);
+    const normalizedCommands = normalizeCommands(commands, settings);
+    const ttlMs = settings.ttlMs || DEFAULT_APPROVED_COMMAND_TTL_MS;
+    const draft2 = {
+      draftId: (0, import_node_crypto7.randomUUID)(),
+      purpose: normalizePurpose(purpose),
+      commands: normalizedCommands,
+      commandHash: hashCommands(normalizedCommands),
+      createdAt: nowIso(nowMs),
+      expiresAt: nowIso(nowMs + ttlMs),
+      expiresAtMs: nowMs + ttlMs,
+      executedAt: void 0,
+      status: "pending"
+    };
+    drafts.set(draft2.draftId, draft2);
+    return publicDraft(draft2);
+  }
+  function getDraft(draftId) {
+    cleanup();
+    const draft2 = drafts.get(draftId);
+    if (!draft2) {
+      throw new ApprovedCommandError(
+        "approved command draft was not found",
+        "APPROVED_COMMAND_DRAFT_NOT_FOUND",
+        404
+      );
+    }
+    return publicDraft(draft2);
+  }
+  function claimDraft({ draftId, commandHash, confirmation }) {
+    const draft2 = drafts.get(draftId);
+    if (!draft2) {
+      throw new ApprovedCommandError(
+        "approved command draft was not found",
+        "APPROVED_COMMAND_DRAFT_NOT_FOUND",
+        404
+      );
+    }
+    if (draft2.expiresAtMs <= now()) {
+      drafts.delete(draftId);
+      throw new ApprovedCommandError(
+        "approved command draft has expired",
+        "APPROVED_COMMAND_DRAFT_EXPIRED",
+        409
+      );
+    }
+    if (draft2.status !== "pending") {
+      throw new ApprovedCommandError(
+        "approved command draft has already been used",
+        "APPROVED_COMMAND_DRAFT_ALREADY_USED",
+        409
+      );
+    }
+    if (commandHash !== draft2.commandHash) {
+      throw new ApprovedCommandError(
+        "approved command hash does not match the draft",
+        "APPROVED_COMMAND_HASH_MISMATCH"
+      );
+    }
+    if (confirmation !== APPROVED_COMMAND_CONFIRMATION) {
+      throw new ApprovedCommandError(
+        `confirmation must exactly equal ${APPROVED_COMMAND_CONFIRMATION}`,
+        "APPROVED_COMMAND_CONFIRMATION_REQUIRED"
+      );
+    }
+    draft2.status = "executing";
+    return publicDraft(draft2);
+  }
+  function finishDraft(draftId, status = "executed") {
+    const draft2 = drafts.get(draftId);
+    if (!draft2) {
+      return void 0;
+    }
+    draft2.status = status;
+    draft2.executedAt = nowIso(now());
+    return publicDraft(draft2);
+  }
+  return {
+    claimDraft,
+    createDraft,
+    finishDraft,
+    getDraft
+  };
+}
+
+// command-review.js
+var import_node_child_process2 = require("node:child_process");
+var import_node_crypto10 = require("node:crypto");
+var import_node_fs3 = __toESM(require("node:fs"), 1);
+var import_node_os = __toESM(require("node:os"), 1);
+var import_node_path6 = __toESM(require("node:path"), 1);
+
+// security.js
+var import_posix7 = __toESM(require("node:path/posix"), 1);
+var import_node_crypto9 = require("node:crypto");
 
 // mongodb-mutations.js
 var import_node_crypto8 = require("node:crypto");
@@ -68529,6 +68706,8 @@ function createApp(options = {}) {
       let result;
       if (action === "upload") {
         result = await runMongoBulk2({ action: "upload", chunk: raw }, { operation: requestOperation });
+      } else if (action === "recoverUpload") {
+        result = await runMongoBulk2({ ...raw, action }, { operation: requestOperation });
       } else if (action === "get" || action === "list") {
         result = await runMongoBulk2({ action, ...raw }, { operation: requestOperation });
       } else if (action.startsWith("sandbox")) {
@@ -68621,6 +68800,7 @@ function createApp(options = {}) {
   app.post("/mongodb/mutations/get", (request, response) => handleMongoMutation(request, response, "get", "/mongodb/mutations/get"));
   app.post("/mongodb/mutations/recover-execution", (request, response) => handleMongoMutation(request, response, "recover_execution", "/mongodb/mutations/recover-execution"));
   app.post("/mongodb/bulk/prepare", (request, response) => handleMongoBulk(request, response, "upload", "/mongodb/bulk/prepare"));
+  app.post("/mongodb/bulk/recover-prepare", (request, response) => handleMongoBulk(request, response, "recoverUpload", "/mongodb/bulk/recover-prepare"));
   app.post("/mongodb/bulk/execute", (request, response) => handleMongoBulk(request, response, "execute", "/mongodb/bulk/execute"));
   app.post("/mongodb/bulk/job", (request, response) => handleMongoBulk(request, response, "get", "/mongodb/bulk/job"));
   app.post("/mongodb/bulk/jobs", (request, response) => handleMongoBulk(request, response, "list", "/mongodb/bulk/jobs"));

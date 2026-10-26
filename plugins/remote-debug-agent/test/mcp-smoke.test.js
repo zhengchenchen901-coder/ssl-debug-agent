@@ -2,6 +2,7 @@ import localAuth from "../local-auth.cjs";
 import assert from "node:assert/strict";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { PrivacyService, privacyRequest } from "../../../agent/privacy-service.js";
+import { normalizeMongoBulkChunk } from "../../../agent/mongodb-bulk.js";
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -123,6 +124,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
   const drafts = new Map();
   const leaseRequests = [];
   const forwardedRequests = [];
+  const bulkPolicy = { database: "yennefer", writeEnabled: true, bulkEnabled: true, allowedCollections: ["members"] };
   const server = http.createServer((request, response) => {
     if (request.url === "/health") { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ ok: true, name: "remote-debug-agent", localAuthentication: true, apiVersion: 2, authProof: localAuth.healthProof(authToken, request.headers["x-remote-debug-challenge"], `http://${request.headers.host}`) })); return; }
     assert.equal(request.headers.authorization, `Bearer ${authToken}`);
@@ -208,7 +210,7 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
       if (request.url === "/api/private/business-storage") {
         try {
           const result = await privacyRequest(privacyService, parsed, { origin: `http://${request.headers.host}`,
-            instance: () => ({ id: "default", host: "prod.example.com", mongodb: { database: "yennefer" } }),
+            instance: () => ({ id: "default", host: "prod.example.com", mongodb: bulkPolicy }),
             dispatch: async (id, route, payload) => {
               const forwarded = await fetch(`http://127.0.0.1:${server.address().port}${route}`, { method: "POST",
                 headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, instanceId: id }) });
@@ -324,8 +326,11 @@ function startAgentStub(authFile = localAuth.resolveAuthFile(sharedTestDataDir))
       }
 
       if (request.url === "/mongodb/bulk/prepare") {
+        const { instanceId, ...chunkInput } = parsed;
+        const normalized = normalizeMongoBulkChunk(chunkInput, bulkPolicy);
         response.writeHead(200, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({ ok: true, jobId: parsed.jobId, chunkIndex: parsed.chunkIndex, unitCount: parsed.units.length, endOfUpload: parsed.endOfUpload === true }));
+        response.end(JSON.stringify({ ok: true, status: "uploading", jobId: parsed.jobId, chunkIndex: parsed.chunkIndex, chunkHash: normalized.chunkHash,
+          unitCount: parsed.units.length, endOfUpload: parsed.endOfUpload === true }));
         return;
       }
 

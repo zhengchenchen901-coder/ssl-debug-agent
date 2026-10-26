@@ -48,6 +48,22 @@ an explicit `_id`. A unit cannot be split across transactions. A collection and
 document ID may occur only once in the complete job, so plan independent units
 before upload.
 
+Guarded numeric array paths are supported. Indexes must be canonical 0–99999;
+positional operators and prototype keys are rejected. Each indexed element
+being edited requires a non-null string/integer/ObjectId/Long identity in
+`expected` under an unchanged direct `id`, `_id`, or `*_id` sibling. Every
+changed path still needs its own exact existence/value condition. Overlapping
+update paths and overlapping expected paths are rejected. Replacing or
+unsetting an entire existing indexed element is outside this contract.
+
+For an append, `$set` one complete object with a stable `_id` (or `id`) at the
+actual array length and require `expected[tail] = { exists: false }`. The remote
+preimage check rejects non-arrays, holes, out-of-range indexes and duplicate
+appended identities; it repeats these checks in the transaction. Full document
+before-image comparison still rejects any concurrent edit after preparation.
+This is not `$push`, sparse extension, or permission to omit business
+idempotency markers and companion inserts from the same unit.
+
 Upload chunks in index order with the exact same job identity, purpose, rollback
 period, and contents on retry. Repeating an identical chunk is idempotent;
 reusing its index with different contents is a conflict. Close the upload with
@@ -206,8 +222,9 @@ assuming that the IDs are interchangeable.
 }
 ```
 
-If the real schema requires upsert, array editing, or more than one write to the
-same document, stop. V1 intentionally does not infer those behaviors.
+If the real schema requires upsert, array editing beyond the guarded contract
+above, or more than one write to the same document, stop. The tool does not
+infer those behaviors.
 
 ### Reserved expiry storage (2.2.2+)
 
