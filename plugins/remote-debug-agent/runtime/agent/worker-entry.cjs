@@ -51243,7 +51243,8 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
           } else {
             __bulkCheckArrayPaths(current, operation);
             if (!__bulkCheckExpected(current, operation)) __bulkFail("MONGODB_BULK_CONFLICT", "an original field value changed before commit", { batchIndex: batch.index, collection: collectionName });
-            writeOperations.push({ updateOne: { filter: __decode(__bulkUpdateSelector(operation)), update: __decode(operation.update), upsert: false } });
+            // 选择器已逐字段解码；旧 BSON 驱动再次解码会破坏原生 ObjectId。
+            writeOperations.push({ updateOne: { filter: __bulkUpdateSelector(operation), update: __decode(operation.update), upsert: false } });
           }
         });
         if (writeOperations.length) {
@@ -52007,6 +52008,37 @@ async function __sandboxManage() {
 // mongodb-bulk-error.js
 function publicBulkFailure(error2, context = {}, messages = [], depth = 0) {
   error2 = error2 || {};
+  const read = (value, key) => {
+    try {
+      return value && value[key];
+    } catch {
+      return void 0;
+    }
+  };
+  const numericCode = (value) => Number.isSafeInteger(value) && value >= 0 && value <= 2147483647;
+  const categoryFor = (value, text2 = "") => {
+    const known = { 13: "authorization", 14: "type_mismatch", 28: "invalid_update_path", 40: "update_path_conflict", 50: "timeout", 66: "immutable_field", 112: "write_conflict", 121: "document_validation", 251: "transaction_aborted", 11e3: "duplicate_key", 11001: "duplicate_key" };
+    if (numericCode(value) && Object.prototype.hasOwnProperty.call(known, value)) return known[value];
+    if (/^Transaction numbers are only allowed/.test(text2)) return "transaction_topology";
+    if (/^Read preference in a transaction must be primary/.test(text2)) return "transaction_read_preference";
+    if (/^Cannot (?:read|set) propert(?:y|ies) of (?:undefined|null)/.test(text2)) return "javascript_property";
+    if (/is not a function/.test(text2)) return "javascript_callable";
+    if (/^object \[[\s\S]*\] is not a valid ObjectId$/.test(text2)) return "bson_object_id";
+    if (/^(?:Update document requires atomic operators|update document must contain key operators|Invalid op passed to bulkWrite)/i.test(text2)) return "invalid_bulk_operation";
+    return "unknown";
+  };
+  const metadata = (value) => {
+    const result2 = {};
+    const code2 = read(value, "code"), index = read(value, "index");
+    if (numericCode(code2)) result2.code = code2;
+    if (Number.isInteger(index) && index >= 0 && index < 1e5) result2.index = index;
+    if (!Object.keys(result2).length) return null;
+    result2.category = categoryFor(code2);
+    return result2;
+  };
+  const response = read(error2, "errorResponse"), resultObject = read(error2, "result"), legacyResult = read(resultObject, "result");
+  const writeErrors = [read(error2, "writeErrors"), read(response, "writeErrors"), read(resultObject, "writeErrors"), read(legacyResult, "writeErrors")].find(Array.isArray);
+  const concernErrors = [read(error2, "writeConcernErrors"), read(response, "writeConcernErrors"), read(resultObject, "writeConcernErrors"), read(legacyResult, "writeConcernErrors")].find(Array.isArray);
   const code = typeof error2.code === "number" && Number.isSafeInteger(error2.code) ? error2.code : typeof error2.code === "string" && /^(?:MONGODB_|SANDBOX_|SSH_|RESOURCE_|OPERATION_|ERR_|E[A-Z]+$)[A-Z0-9_]{0,95}$/.test(error2.code) ? error2.code : "MONGODB_BULK_FAILED";
   const original = String(error2.message || "MongoDB bulk request failed");
   let message = messages.indexOf(original) !== -1 ? original : "Unrecognized error text withheld; inspect code, phase and message fingerprint";
@@ -52017,7 +52049,8 @@ function publicBulkFailure(error2, context = {}, messages = [], depth = 0) {
     [/^Read preference in a transaction must be primary/, "Read preference in a transaction must be primary"],
     [/^Cannot (?:read|set) propert(?:y|ies) of (?:undefined|null)/, "Cannot access property of undefined or null; property details withheld"],
     [/^[A-Za-z_$][A-Za-z0-9_$]* is not (?:defined|a function)$/, "JavaScript reference or callable is missing; identifier withheld"],
-    [/^Document failed validation/, "Document failed MongoDB validation; document details withheld"]
+    [/^Document failed validation/, "Document failed MongoDB validation; document details withheld"],
+    [/^object \[[\s\S]*\] is not a valid ObjectId$/, "BSON ObjectId serialization rejected; value details withheld"]
   ];
   if (messages.indexOf(original) === -1) {
     for (const entry2 of categories) if (entry2[0].test(original)) {
@@ -52040,11 +52073,34 @@ function publicBulkFailure(error2, context = {}, messages = [], depth = 0) {
     recovery: "inspect_before_resume",
     retriable: error2.retriable === true
   };
+  const categoriesAllowed = ["authorization", "type_mismatch", "invalid_update_path", "update_path_conflict", "timeout", "immutable_field", "write_conflict", "document_validation", "transaction_aborted", "duplicate_key", "transaction_topology", "transaction_read_preference", "javascript_property", "javascript_callable", "bson_object_id", "invalid_bulk_operation", "unknown"];
+  result.category = categoriesAllowed.includes(error2.category) ? error2.category : categoryFor(error2.code, original);
+  if (writeErrors) {
+    result.writeErrors = writeErrors.slice(0, 5).map(metadata).filter(Boolean);
+    result.writeErrorCount = Number.isInteger(error2.writeErrorCount) && error2.writeErrorCount >= writeErrors.length && error2.writeErrorCount <= 1e5 ? error2.writeErrorCount : Math.min(writeErrors.length, 1e5);
+    result.writeErrorsTruncated = error2.writeErrorsTruncated === true || writeErrors.length > 5;
+  }
+  const singleConcern = metadata(read(error2, "writeConcernError") || read(response, "writeConcernError"));
+  if (concernErrors || singleConcern) result.writeConcernErrors = concernErrors ? concernErrors.slice(0, 3).map(metadata).filter(Boolean) : [singleConcern];
+  const nestedError = (result.writeErrors || []).concat(result.writeConcernErrors || []).find((item) => item.code !== void 0);
+  const nestedCode = nestedError && nestedError.code;
+  if (numericCode(error2.driverCode)) result.driverCode = error2.driverCode;
+  else if (numericCode(error2.code)) result.driverCode = error2.code;
+  else if (nestedCode !== void 0) result.driverCode = nestedCode;
+  if (result.category === "unknown" && result.driverCode !== void 0) result.category = categoryFor(result.driverCode);
+  const labels = read(error2, "errorLabels");
+  if (Array.isArray(labels)) result.errorLabels = [...new Set(labels.slice(0, 16).filter((label2) => ["TransientTransactionError", "UnknownTransactionCommitResult", "RetryableWriteError", "NoWritesPerformed"].includes(label2)))];
   const stackFrames = String(error2.stack || "").split("\n").slice(1, 16).map((line) => {
     const frame = /\bat (__bulk[A-Za-z0-9_$]+) .*?:(\d+):(\d+)\)?$/.exec(line);
     return frame ? { function: frame[1], line: Number(frame[2]), column: Number(frame[3]) } : null;
   }).filter(Boolean);
   result.frames = (Array.isArray(error2.frames) ? error2.frames : stackFrames).slice(0, 8).filter((frame) => frame && /^__bulk[A-Za-z0-9_$]+$/.test(frame.function) && Number.isInteger(frame.line) && Number.isInteger(frame.column)).map((frame) => ({ function: frame.function, line: frame.line, column: frame.column }));
+  const modules = ["mongodb/lib/bulk/common.js", "mongodb/lib/bulk/ordered.js", "mongodb/lib/bulk/unordered.js", "mongodb/lib/operations/bulk_write.js", "mongodb/lib/utils.js", "bson/lib/bson/parser/serializer.js"];
+  const driverFrames = String(error2.stack || "").split("\n").slice(1, 16).flatMap((line) => {
+    const frame = /node_modules\/((?:mongodb|bson)\/[A-Za-z0-9_/-]+\.js):(\d+):(\d+)\)?$/.exec(line);
+    return frame && modules.includes(frame[1]) ? [{ module: frame[1], line: Number(frame[2]), column: Number(frame[3]) }] : [];
+  });
+  result.driverFrames = (Array.isArray(error2.driverFrames) ? error2.driverFrames : driverFrames).slice(0, 8).filter((frame) => frame && modules.includes(frame.module) && Number.isSafeInteger(frame.line) && frame.line > 0 && frame.line <= 1e6 && Number.isSafeInteger(frame.column) && frame.column > 0 && frame.column <= 1e6).map((frame) => ({ module: frame.module, line: frame.line, column: frame.column }));
   if (typeof context.fingerprint === "function") result.messageFingerprint = context.fingerprint(original);
   if (/^[a-f0-9]{64}$/.test(error2.messageFingerprint || "")) result.messageFingerprint = error2.messageFingerprint;
   if (Number.isInteger(context.batchIndex) && context.batchIndex >= 0) result.batchIndex = context.batchIndex;
@@ -57000,6 +57056,11 @@ var receiptStorage = fields("database collection legacy scope schemaVersion");
 function bulkFailure(depth = 2) {
   const shape = {
     ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    ...fields("category driverCode writeErrorCount writeErrorsTruncated"),
+    errorLabels: [scalar],
+    writeErrors: [fields("code index category")],
+    writeConcernErrors: [fields("code index category")],
+    driverFrames: [fields("module line column")],
     frames: [fields("function line column")]
   };
   if (depth > 0) for (const key of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key] = bulkFailure(depth - 1);

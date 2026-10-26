@@ -69,6 +69,7 @@ export function bulkSandboxFixture(t) {
       async createIndex(key, options) { const id = db + "/" + name; const indices = state.indexes.get(id) || []; indices.push({ key: clone(key), ...clone(options) }); state.indexes.set(id, indices); return options.name; },
       async bulkWrite(operations, options) {
         state.events.push({ action: "businessWrite", db, name, session: options.session });
+        if (state.businessFailure) throw state.businessFailure;
         const store = rows(db, name, options.session); let insertedCount = 0, matchedCount = 0, modifiedCount = 0, deletedCount = 0;
         for (const op of operations) {
           if (op.insertOne) { store.set(op.insertOne.document._id, clone(op.insertOne.document)); insertedCount++; }

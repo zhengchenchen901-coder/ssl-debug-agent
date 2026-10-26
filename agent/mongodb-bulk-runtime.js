@@ -900,7 +900,8 @@ async function __bulkRunTransaction(jobId, planHash, batch, rollback) {
           } else {
             __bulkCheckArrayPaths(current, operation);
             if (!__bulkCheckExpected(current, operation)) __bulkFail("MONGODB_BULK_CONFLICT", "an original field value changed before commit", { batchIndex: batch.index, collection: collectionName });
-            writeOperations.push({ updateOne: { filter: __decode(__bulkUpdateSelector(operation)), update: __decode(operation.update), upsert: false } });
+            // 选择器已逐字段解码；旧 BSON 驱动再次解码会破坏原生 ObjectId。
+            writeOperations.push({ updateOne: { filter: __bulkUpdateSelector(operation), update: __decode(operation.update), upsert: false } });
           }
         });
         if (writeOperations.length) {

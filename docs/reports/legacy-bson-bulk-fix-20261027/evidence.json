@@ -1,0 +1,117 @@
+{
+  "evidenceId": "legacy-bson-bulk-fix-20261027",
+  "sourceSha256": {
+    "agent/mongodb-bulk-error.js": "55eca0171ba49c356adc1e6770c2fc7e8b8761b06c92416cbbfc6c154487e4b2",
+    "agent/mongodb-bulk-runtime.js": "55fb928d00fb2e3af4ed7f1d26522db8c327402ed341adcb7adbd115f40d2663",
+    "agent/test/helpers/bulk-sandbox-fixture.js": "434f2c99b98121483daab64abd9b05d154ff34594b4ab36335769c756e58ae42",
+    "agent/test/mongodb-bulk-diagnostics.test.js": "b9200bd1e7531d72592565687a08d9f28762f3c11f1c6b8bd0b1729d06f5ad4b",
+    "agent/test/mongodb-bulk-replica-set.test.js": "d6ce761fb2bc8de40126f84f7808d72ec72671d7049f1df26076e52f7783ecfb",
+    "plugins/remote-debug-agent/output-contracts.js": "32f7d2eede2a42f8cd64ecfc042646fbf3302aa644ec95e2f026ed4a648ff60a",
+    "plugins/remote-debug-agent/test/output-guard.test.js": "7a6e7aab02dbf754f82e98dae3cea5538e6a06c6a82c885116e9aa9136b76b82"
+  },
+  "nativeRegression": {
+    "passed": 79,
+    "failed": 0,
+    "skipped": 0,
+    "log": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-bulk-driver/expanded-regression.tap",
+    "sha256": "96dfa9254fed7b1727a00f6a9aeca6878c148725a5f3e70aaadf203882bde4ec"
+  },
+  "runtimeSupport": {
+    "passed": 4,
+    "failed": 0
+  },
+  "node20ReplicaSetIntegration": {
+    "node": "v20.20.2",
+    "driver": "3.3.4",
+    "mongodb": "4.4.30",
+    "members": 85,
+    "operations": 255,
+    "passed": 1,
+    "failed": 0,
+    "commit": true,
+    "idempotency": true,
+    "rollback": true,
+    "log": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-bulk-driver/node20-final-integration.tap",
+    "sha256": "671b565f68919c6a9d01d9b003748f3bfdc7e6b182d025565bbebe5b68b8ccb8"
+  },
+  "failingReproduction": {
+    "log": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-bulk-driver/node20-reproduction.tap",
+    "sha256": "4bf7191c8e43f7e393a0bb9cf66b143707712143e444faa0f503fda3fb14255c",
+    "phase": "business_write",
+    "driverModule": "bson/lib/bson/parser/serializer.js",
+    "line": 287
+  },
+  "installation": {
+    "pluginVersion": "2.4.0+codex.20261027.1",
+    "runtimeId": "2.4.0:6855f50ddcd926eea2cc5962f77c0b0a88172cd386b2c8127f608cc3dfed5705",
+    "runtimeFilesChecked": 26,
+    "mismatches": [],
+    "oldDoubleDecodeOccurrences": 1,
+    "newDoubleDecodeOccurrences": 0,
+    "runningProcesses": [
+      {
+        "pid": 13306,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.5/runtime/agent/server.cjs"
+      },
+      {
+        "pid": 26162,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/runtime/agent/server.cjs"
+      },
+      {
+        "pid": 26304,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/launch.cjs"
+      },
+      {
+        "pid": 26635,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/runtime/agent/worker-entry.cjs"
+      },
+      {
+        "pid": 26800,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/launch.cjs"
+      },
+      {
+        "pid": 27074,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/launch.cjs"
+      },
+      {
+        "pid": 27402,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/launch.cjs"
+      },
+      {
+        "pid": 27721,
+        "script": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7/launch.cjs"
+      }
+    ]
+  },
+  "cleanup": {
+    "exitCode": 0,
+    "removed": [
+      "07f6c3020babf78b95181c99a5891ecd1dddbd43e17eb5e0e5c97f00ddaf893b",
+      "bc63a136ef5229ab7c8518d52dc69cc885ec855b9b02fb2f0c2c7c1ccbb42e57"
+    ],
+    "stderr": ""
+  },
+  "testflow": {
+    "execution": "blocked",
+    "adapter": "node-test",
+    "supportedExecutionAdapters": [
+      "be-jest",
+      "jest-unit"
+    ],
+    "binding": "missing",
+    "targetCoverage": "unknown"
+  },
+  "businessTask": {
+    "jobId": "50a0f862-05c0-47ca-b787-f59abdfe2df2",
+    "planHash": "67c35506226e9f3a334ae5ccb03b2b7b8c37b5e0f71524be2bb5331a9908d3bb",
+    "status": "paused",
+    "committedBatchCount": 0,
+    "verifiedBatchCount": 0,
+    "members": 85,
+    "currentBalanceTotal": 61,
+    "balanceChanged": 0,
+    "recordLengthChanged": 0,
+    "stateOperationId": "75847fd7-2b80-48ed-8d3c-cf7b44f2c9bc",
+    "balanceOperationId": "5b8ec08d-b080-47cf-8d7c-9a225bd5fcc4"
+  }
+}

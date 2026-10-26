@@ -212,6 +212,10 @@ test("service output contracts preserve evidence and omit arbitrary environment 
 
 test("bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted", () => {
   const diagnostic = { version: 1, code: 13, phase: "receipt_write", layer: "mongodb-helper", message: "MongoDB authorization rejected; database and command details withheld", operationId: "6d16cfd5-033f-4bbf-b82e-92cc8441a1c9", batchIndex: 0, outcome: "not_committed", recovery: "inspect_before_resume", driverVersion: "3.3.4", collectionIndex: 2, collectionOperationCount: 66,
+    category: "authorization", driverCode: 13, writeErrorCount: 7, writeErrorsTruncated: true,
+    writeErrors: [{ code: 13, index: 4, category: "authorization", errmsg: "PRIVATE_DRIVER_MESSAGE", op: "PRIVATE_OPERATION" }],
+    writeConcernErrors: [{ code: 64, category: "unknown", details: "PRIVATE_CONCERN" }], errorLabels: ["TransientTransactionError"],
+    driverFrames: [{ module: "mongodb/lib/bulk/common.js", line: 908, column: 21, path: "PRIVATE_DRIVER_PATH" }],
     cause: { code: "SSH_CONNECTION_FAILED", message: "transport lost", stack: "PRIVATE_STACK" }, frames: [{ function: "__bulkRunTransaction", line: 100, column: 4 }], document: { phone: "PRIVATE_ROW" } };
   const result = payload(createOutputGuard().toolResult("remote_debug_mongodb_get_bulk_job", { ok: true, jobId: "fixture", lastFailure: diagnostic }));
   assert.equal(result.lastFailure.code, 13);
@@ -219,5 +223,13 @@ test("bulk diagnostic metadata survives MCP output contract while arbitrary nest
   assert.equal(result.lastFailure.driverVersion, "3.3.4");
   assert.equal(result.lastFailure.cause.code, "SSH_CONNECTION_FAILED");
   assert.equal(result.lastFailure.frames[0].function, "__bulkRunTransaction");
-  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_STACK|PRIVATE_ROW/);
+  assert.equal(result.lastFailure.category, "authorization");
+  assert.equal(result.lastFailure.driverCode, 13);
+  assert.equal(result.lastFailure.writeErrorCount, 7);
+  assert.equal(result.lastFailure.writeErrorsTruncated, true);
+  assert.deepEqual(result.lastFailure.writeErrors, [{ code: 13, index: 4, category: "authorization" }]);
+  assert.deepEqual(result.lastFailure.writeConcernErrors, [{ code: 64, category: "unknown" }]);
+  assert.deepEqual(result.lastFailure.errorLabels, ["TransientTransactionError"]);
+  assert.deepEqual(result.lastFailure.driverFrames, [{ module: "mongodb/lib/bulk/common.js", line: 908, column: 21 }]);
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_/);
 });

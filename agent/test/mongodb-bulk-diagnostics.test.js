@@ -118,3 +118,75 @@ test("resource scheduler failure is observable even when no helper was dispatche
   assert.equal(h.rows("business", "orders").get("order-1").count, 0);
   assert.doesNotMatch(JSON.stringify(state.lastFailure), /private scheduler metadata/);
 });
+
+test("legacy bulk results expose bounded error codes and indexes without copying documents", () => {
+  const secret = '13800000000 mongodb://u:p@private.invalid';
+  const writeErrors = Array.from({ length: 9 }, (_, index) => ({ code: 11000, index, errmsg: secret, op: { phone: secret } }));
+  const failure = publicBulkFailure({ message: secret, result: { result: { writeErrors, writeConcernErrors: [{ code: 64, errmsg: secret }] } } });
+  assert.equal(failure.code, "MONGODB_BULK_FAILED");
+  assert.equal(failure.driverCode, 11000);
+  assert.equal(failure.category, "duplicate_key");
+  assert.equal(failure.writeErrorCount, 9);
+  assert.equal(failure.writeErrorsTruncated, true);
+  assert.deepEqual(failure.writeErrors, writeErrors.slice(0, 5).map(({ code, index }) => ({ code, index, category: "duplicate_key" })));
+  assert.deepEqual(failure.writeConcernErrors, [{ code: 64, category: "unknown" }]);
+  assert.doesNotMatch(JSON.stringify(failure), /13800000000|private|errmsg|phone|mongodb:\/\//);
+  assert.equal(writeErrors.length, 9);
+  const forwarded = publicBulkFailure(publicBulkFailure(failure));
+  for (const key of ["driverCode", "category", "writeErrors", "writeConcernErrors", "writeErrorCount", "writeErrorsTruncated"]) assert.deepEqual(forwarded[key], failure[key]);
+});
+
+test("modern error responses and legacy write-error getters retain only validated metadata", () => {
+  class LegacyWriteError {
+    constructor() { this.err = { code: 121, index: 4, errmsg: "private document" }; }
+    get code() { return this.err.code; }
+    get index() { return this.err.index; }
+  }
+  const failure = publicBulkFailure({ message: "private", errorResponse: { writeErrors: [new LegacyWriteError(), { code: "secret", index: -1 }] }, errorLabels: ["TransientTransactionError", "secret", "TransientTransactionError"] });
+  assert.equal(failure.driverCode, 121);
+  assert.equal(failure.category, "document_validation");
+  assert.deepEqual(failure.writeErrors, [{ code: 121, index: 4, category: "document_validation" }]);
+  assert.deepEqual(failure.errorLabels, ["TransientTransactionError"]);
+  assert.equal(failure.outcome, "unknown");
+  assert.equal(failure.retriable, false);
+  const throwing = { get result() { throw Error("private"); }, writeErrors: [{ get code() { throw Error("private"); }, index: 2 }] };
+  assert.doesNotThrow(() => publicBulkFailure(throwing));
+  assert.equal(publicBulkFailure({ code: "constructor" }).category, "unknown");
+});
+
+test("driver stack locations and callable categories omit absolute paths and arbitrary frames", () => {
+  const failure = publicBulkFailure({ message: 'operation.update.hasOwnProperty is not a function', stack: 'Error: secret\n at execute (/home/private/node_modules/mongodb/lib/bulk/common.js:908:21)\n at private (/home/private/application.js:1:1)' });
+  assert.equal(failure.category, "javascript_callable");
+  assert.deepEqual(failure.driverFrames, [{ module: "mongodb/lib/bulk/common.js", line: 908, column: 21 }]);
+  assert.deepEqual(publicBulkFailure(failure).driverFrames, failure.driverFrames);
+  assert.doesNotMatch(JSON.stringify(failure), /home|application|hasOwnProperty|secret/);
+  const bsonFailure = publicBulkFailure({ message: 'object [{"phone":"13800000000"}] is not a valid ObjectId' });
+  assert.equal(bsonFailure.category, "bson_object_id");
+  assert.equal(bsonFailure.message, "BSON ObjectId serialization rejected; value details withheld");
+  assert.doesNotMatch(JSON.stringify(bsonFailure), /13800000000|phone/);
+});
+
+test("nested business-write errors persist through pause, events and same-plan recovery without partial writes", async t => {
+  const h = bulkSandboxFixture(t), jobId = "nested-business-failure", plan = await prepare(h, jobId), audits = [];
+  h.state.businessFailure = Object.assign(new Error("private driver failure"), { result: { result: { writeErrors: [{ code: 121, index: 0, errmsg: "13800000000", op: { private: true } }] } } });
+  let runner = new MongoBulkJobRunner({ config: h.config, runMongoBulk: input => h.run(input), onFailure: event => audits.push(event) });
+  await runner.start({ jobId, planHash: plan.planHash }, "execute", { operationId: parentOperationId });
+  await runner.tasks.get(jobId);
+  const paused = await h.run({ action: "get", jobId });
+  assert.equal(paused.status, "paused");
+  assert.equal(paused.lastFailure.phase, "business_write");
+  assert.equal(paused.lastFailure.driverCode, 121);
+  assert.equal(paused.lastFailure.outcome, "not_committed");
+  assert.equal(paused.committedBatchCount, 0);
+  assert.equal(h.rows("business", "orders").get("order-1").count, 0);
+  const events = await h.run({ action: "sandboxExport", jobId, limit: 100 });
+  assert.equal(events.records.find(event => event.event === "batch_failed").failure.driverCode, 121);
+  assert.equal(audits[0].failure.category, "document_validation");
+  assert.doesNotMatch(JSON.stringify({ paused, events, audits }), /13800000000|private driver|errmsg/);
+  h.state.businessFailure = null;
+  runner = new MongoBulkJobRunner({ config: h.config, runMongoBulk: input => h.run(input) });
+  await runner.control({ jobId, planHash: plan.planHash, command: "resume" });
+  await runner.tasks.get(jobId);
+  assert.equal((await h.run({ action: "get", jobId })).status, "completed");
+  assert.equal(h.rows("business", "orders").get("order-1").count, 1);
+});

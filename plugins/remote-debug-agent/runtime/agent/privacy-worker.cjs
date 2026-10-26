@@ -656,6 +656,11 @@ var receiptStorage = fields("database collection legacy scope schemaVersion");
 function bulkFailure(depth = 2) {
   const shape = {
     ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    ...fields("category driverCode writeErrorCount writeErrorsTruncated"),
+    errorLabels: [scalar],
+    writeErrors: [fields("code index category")],
+    writeConcernErrors: [fields("code index category")],
+    driverFrames: [fields("module line column")],
     frames: [fields("function line column")]
   };
   if (depth > 0) for (const key2 of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key2] = bulkFailure(depth - 1);

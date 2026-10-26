@@ -30,7 +30,9 @@ mutation.batches = [batch];
 const receiptStorage = fields("database collection legacy scope schemaVersion");
 function bulkFailure(depth = 2) {
   const shape = { ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
-    frames: [fields("function line column")] };
+    ...fields("category driverCode writeErrorCount writeErrorsTruncated"), errorLabels: [scalar],
+    writeErrors: [fields("code index category")], writeConcernErrors: [fields("code index category")],
+    driverFrames: [fields("module line column")], frames: [fields("function line column")] };
   if (depth > 0) for (const key of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key] = bulkFailure(depth - 1);
   return shape;
 }

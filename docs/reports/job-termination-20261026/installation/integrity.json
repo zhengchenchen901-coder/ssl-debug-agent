@@ -1,0 +1,20 @@
+{
+  "version": "2.4.0+codex.20261026.7",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7",
+  "installedFiles": 95,
+  "sourceMismatches": [],
+  "runtimeId": "2.4.0:60a0820c77ef3648de3d7d436d63b0ca4fb7760d1c6b67a408e3898b69e332a7",
+  "runtimeFiles": 26,
+  "runtimeMismatches": [],
+  "restoredProgramVersions": [
+    "2.4.0+codex.20261023.2",
+    "2.4.0+codex.20261026",
+    "2.4.0+codex.20261026.2",
+    "2.4.0+codex.20261026.3",
+    "2.4.0+codex.20261026.4",
+    "2.4.0+codex.20261026.5",
+    "2.4.0+codex.20261026.6"
+  ],
+  "restoredVersionHashMismatches": [],
+  "pluginEnabled": true
+}

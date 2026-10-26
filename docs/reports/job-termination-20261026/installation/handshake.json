@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-26T15:21:31.463778+00:00",
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261026.7"
+  },
+  "toolCount": 51,
+  "readOnlyToolsCalled": [
+    "remote_debug_get_capabilities",
+    "remote_debug_list_instances"
+  ],
+  "instanceStatuses": [
+    {
+      "id": "default",
+      "status": "running",
+      "pid": 22959,
+      "health": "healthy"
+    },
+    {
+      "id": "test-server",
+      "status": "stopped",
+      "pid": null,
+      "health": "stopped"
+    }
+  ],
+  "activeManagerHasTerminationCapability": false,
+  "managerReplacementRequested": false,
+  "businessContextAttached": false,
+  "businessToolsCalled": []
+}

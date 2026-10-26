@@ -1,0 +1,133 @@
+{
+  "install": {
+    "pluginId": "remote-debug-agent@remote-debug-local",
+    "name": "remote-debug-agent",
+    "marketplaceName": "remote-debug-local",
+    "version": "2.4.0+codex.20261026.7",
+    "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7",
+    "authPolicy": "ON_INSTALL"
+  },
+  "integrity": {
+    "version": "2.4.0+codex.20261026.7",
+    "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261026.7",
+    "installedFiles": 95,
+    "sourceMismatches": [],
+    "runtimeId": "2.4.0:60a0820c77ef3648de3d7d436d63b0ca4fb7760d1c6b67a408e3898b69e332a7",
+    "runtimeFiles": 26,
+    "runtimeMismatches": [],
+    "restoredProgramVersions": [
+      "2.4.0+codex.20261023.2",
+      "2.4.0+codex.20261026",
+      "2.4.0+codex.20261026.2",
+      "2.4.0+codex.20261026.3",
+      "2.4.0+codex.20261026.4",
+      "2.4.0+codex.20261026.5",
+      "2.4.0+codex.20261026.6"
+    ],
+    "restoredVersionHashMismatches": [],
+    "pluginEnabled": true
+  },
+  "before": {
+    "pid": 21499,
+    "runtimeId": "2.4.0:40ba35f35da267d1293d79ae028382f2e671419a3b9aa4821a185323d8d689e1",
+    "startedAt": "2026-10-26T14:26:22.036Z",
+    "port": 4343
+  },
+  "after": {
+    "pid": 21499,
+    "runtimeId": "2.4.0:40ba35f35da267d1293d79ae028382f2e671419a3b9aa4821a185323d8d689e1",
+    "startedAt": "2026-10-26T14:26:22.036Z",
+    "port": 4343
+  },
+  "handshake": {
+    "checkedAt": "2026-10-26T15:21:31.463778+00:00",
+    "serverInfo": {
+      "name": "remote-debug-agent",
+      "version": "2.4.0+codex.20261026.7"
+    },
+    "toolCount": 51,
+    "readOnlyToolsCalled": [
+      "remote_debug_get_capabilities",
+      "remote_debug_list_instances"
+    ],
+    "instanceStatuses": [
+      {
+        "id": "default",
+        "status": "running",
+        "pid": 22959,
+        "health": "healthy"
+      },
+      {
+        "id": "test-server",
+        "status": "stopped",
+        "pid": null,
+        "health": "stopped"
+      }
+    ],
+    "activeManagerHasTerminationCapability": false,
+    "managerReplacementRequested": false,
+    "businessContextAttached": false,
+    "businessToolsCalled": []
+  },
+  "testflow-freeze": {
+    "snapshotId": "335b5fae04c764816394b8b72db46c4b9e205948cc795921f894b3bf2181af76",
+    "workflowId": "335b5fae04c764816394b8b72db46c4b9e205948cc795921f894b3bf2181af76",
+    "projectId": "ssl-debug-agent",
+    "stage": "input-frozen",
+    "base": {
+      "projectId": "ssl-debug-agent",
+      "kind": "git",
+      "revision": "b3e1c349f5aff9a7455408f32120e7d271547f4f",
+      "tree": "6d3c059167f4085b1900548d9b9f9dabc507b2cc",
+      "contentHash": "4238aee71d759a28afb8620e0c1452ae9d308ab28788c85efb4e47a4676c073f"
+    },
+    "target": {
+      "projectId": "ssl-debug-agent",
+      "kind": "workspace",
+      "revision": "b3e1c349f5aff9a7455408f32120e7d271547f4f",
+      "tree": "6d3c059167f4085b1900548d9b9f9dabc507b2cc",
+      "contentHash": "333ccb4a57c6bd66cdc6c0b3344611539e510bc51f98e306f06420a20a41fc27"
+    },
+    "captureVerified": true,
+    "attempts": 1,
+    "captureMs": 403,
+    "modelCalls": 0,
+    "artifact": ".testflow/frozen/335b5fae04c764816394b8b72db46c4b9e205948cc795921f894b3bf2181af76.json"
+  },
+  "environmentChecks": [
+    {
+      "id": "platform",
+      "status": "pass"
+    },
+    {
+      "id": "node",
+      "status": "pass"
+    },
+    {
+      "id": "node-selection",
+      "status": "pass"
+    },
+    {
+      "id": "manifest",
+      "status": "pass"
+    },
+    {
+      "id": "artifacts",
+      "status": "pass"
+    },
+    {
+      "id": "config",
+      "status": "pass"
+    },
+    {
+      "id": "storage",
+      "status": "pass"
+    },
+    {
+      "id": "private-storage",
+      "status": "pass"
+    }
+  ],
+  "businessOperationsExecuted": false,
+  "runtimeActivation": "requires Codex restart; existing Manager and healthy Worker unchanged"
+}

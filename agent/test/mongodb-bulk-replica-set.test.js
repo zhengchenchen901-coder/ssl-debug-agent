@@ -157,7 +157,7 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
       remoteDriver.MongoClient = CommitReplyLossMongoClient;
     }
     let stdout = "";
-    const remoteProcess = { pid: process.pid, getuid: process.getuid, exitCode: 0, stdout: { write(value) { stdout += value; } } };
+    const remoteProcess = { pid: process.pid, version: process.version, getuid: process.getuid, exitCode: 0, stdout: { write(value) { stdout += value; } } };
     const remoteRequire = (specifier) => {
       if (specifier === "fs") return remoteFs;
       if (specifier === "path") return path.posix;
@@ -174,7 +174,10 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
     const marker = stdout.split(/\r?\n/).findLast((line) => line.startsWith("__REMOTE_DEBUG_MONGODB_RESULT__BULK:"));
     assert.ok(marker, "remote helper returned its structured response");
     const result = JSON.parse(marker.slice("__REMOTE_DEBUG_MONGODB_RESULT__BULK:".length));
-    if (result.ok !== true) throw Object.assign(new Error(result.error?.message), { code: result.error?.code });
+    if (result.ok !== true) {
+      if (process.env.MONGODB_BULK_POINTS_SHAPE === "1") console.log(`BULK_FAILURE ${JSON.stringify(result.error)}`);
+      throw Object.assign(new Error(result.error?.message), { code: result.error?.code, failure: result.error });
+    }
     return result.data;
   };
 
@@ -236,6 +239,56 @@ test("MongoDB bulk executes and rolls back a cross-collection transaction on a r
   assert.equal(await db.collection("private").findOne({ _id: privateId }), null);
   assert.equal(memberRestored.integrals[0].value, 0);
   assert.deepEqual(memberRestored.integral_record, []);
+
+  if (process.env.MONGODB_BULK_POINTS_SHAPE === "1") {
+    // 使用虚构会员复现 85 人补分的三个写操作，验证余额、流水和幂等回执。
+    const shapeJobId = `points-${token}`;
+    const shapeUnits = [];
+    const shapeMembers = [], shapeSources = [];
+    for (let index = 0; index < 85; index++) {
+      const member = new driver.ObjectId(), source = new driver.ObjectId(), credit = new driver.ObjectId();
+      const initial = index === 1 ? 61 : 0, points = index + 1;
+      const tail = index === 0 ? 6 : index === 1 ? 3 : 2;
+      const record = { _id: credit, type: "4", value: `+${points}`, date: new Date("2026-10-26T15:48:00Z"), group_string_id: "fixture-group", res_string_id: "fixture-restaurant", restored_from_record_id: source, remediation_job_id: shapeJobId };
+      shapeMembers.push({ _id: member, protected: "keep", integrals: [{ group_string_id: "fixture-group", value: initial }], integral_record: Array.from({ length: tail }, () => ({ type: "1", value: "+1" })) });
+      shapeSources.push({ _id: source, type: "17", value: `-${points}` });
+      const ejson = value => JSON.parse(JSON.stringify(value, function (key, item) { return this[key]?._bsontype === "ObjectID" ? { $oid: this[key].toHexString() } : this[key] instanceof Date ? { $date: this[key].toISOString() } : item; }));
+      shapeUnits.push({ unitId: `synthetic-${index}`, operations: [
+        { operation: "updateOne", collection: "members", id: ejson(member), expected: { "integrals.0.group_string_id": { exists: true, value: "fixture-group" }, "integrals.0.value": { exists: true, value: initial }, [`integral_record.${tail}`]: { exists: false } }, update: { $inc: { "integrals.0.value": points }, $set: { [`integral_record.${tail}`]: ejson(record) } } },
+        { operation: "insertOne", collection: "private", document: ejson({ ...record, belonged_customer: member }) },
+        { operation: "updateOne", collection: "private", id: ejson(source), expected: { type: { exists: true, value: "17" }, value: { exists: true, value: `-${points}` }, compensation_record_id: { exists: false }, remediation_job_id: { exists: false } }, update: { $set: { compensation_record_id: ejson(credit), remediation_job_id: shapeJobId } } },
+      ] });
+    }
+    await db.collection("members").insertMany(shapeMembers);
+    await db.collection("private").insertMany(shapeSources);
+    await emit({ action: "upload", chunk: { jobId: shapeJobId, chunkIndex: 0, units: shapeUnits } });
+    const shapePlan = await emit({ action: "upload", chunk: { jobId: shapeJobId, chunkIndex: 1, units: [], endOfUpload: true } });
+    assert.equal(shapePlan.unitCount, 85); assert.equal(shapePlan.operationCount, 255); assert.equal(shapePlan.batchCount, 1);
+    const shapeLease = crypto.randomBytes(32).toString("hex");
+    await emit({ action: "executeStart", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeLease, confirmation: "确认执行" });
+    await emit({ action: "executeBatch", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeLease, batchIndex: 0 });
+    await emit({ action: "executeBatch", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeLease, batchIndex: 0 });
+    await emit({ action: "verifyBatch", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeLease, batchIndex: 0 });
+    assert.equal((await emit({ action: "finish", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeLease, mode: "execute" })).status, "completed");
+    for (let index = 0; index < shapeMembers.length; index++) {
+      const actual = await db.collection("members").findOne({ _id: shapeMembers[index]._id });
+      assert.equal(actual.integrals[0].value, shapeMembers[index].integrals[0].value + index + 1);
+      assert.equal(actual.integral_record.length, shapeMembers[index].integral_record.length + 1);
+      assert.equal(actual.protected, "keep");
+    }
+    assert.equal(await db.collection("private").countDocuments({ remediation_job_id: shapeJobId, type: "4" }), 85);
+    assert.equal(await db.collection("private").countDocuments({ remediation_job_id: shapeJobId, type: "17" }), 85);
+    const shapeRollbackLease = crypto.randomBytes(32).toString("hex");
+    await emit({ action: "rollbackStart", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeRollbackLease, confirmation: "确认回滚" });
+    await emit({ action: "rollbackBatch", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeRollbackLease, batchIndex: 0 });
+    assert.equal((await emit({ action: "finish", jobId: shapeJobId, planHash: shapePlan.planHash, leaseId: shapeRollbackLease, mode: "rollback" })).status, "rolled_back");
+    for (const member of shapeMembers) {
+      const restored = await db.collection("members").findOne({ _id: member._id });
+      assert.deepEqual(restored, member);
+    }
+    assert.equal(await db.collection("private").countDocuments({ remediation_job_id: shapeJobId }), 0);
+    console.log(`POINTS_SHAPE_RESULT ${JSON.stringify({ node: process.version, driver: driverRequire(path.join(driverPath, "package.json")).version, members: 85, operations: 255, committed: true, duplicateCredit: false, rolledBack: true })}`);
+  }
 
   const conflictJob = `conflict-${token}`;
   await emit({ action: "upload", chunk: { jobId: conflictJob, chunkIndex: 0, units } });
