@@ -1,0 +1,119 @@
+TAP version 13
+# Subtest: sanitized insert documents retain exact chunk identity and normalized content
+not ok 1 - sanitized insert documents retain exact chunk identity and normalized content
+  ---
+  duration_ms: 2.752708
+  type: 'test'
+  location: '/Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/mongodb-bulk-sanitized-input.test.js:10:1'
+  failureType: 'testCodeFailure'
+  error: 'unit fixture-unit operation 0.document must be a plain object'
+  code: 'MONGODB_BULK_DOCUMENT_INVALID'
+  name: 'OperationError'
+  stack: |-
+    operationError (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/operation.js:46:10)
+    bulkError (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:46:17)
+    normalizeDocument (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:131:11)
+    normalizeOperation (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:306:60)
+    file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:330:60
+    Array.map (<anonymous>)
+    normalizeUnit (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:330:39)
+    file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:353:47
+    Array.map (<anonymous>)
+    normalizeMongoBulkChunk (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:353:33)
+  ...
+# Subtest: null-prototype compatibility retains document shape, dangerous-key and BSON bounds
+not ok 2 - null-prototype compatibility retains document shape, dangerous-key and BSON bounds
+  ---
+  duration_ms: 1.563584
+  type: 'test'
+  location: '/Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/mongodb-bulk-sanitized-input.test.js:18:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      Comparison {
+    +   code: 'MONGODB_BULK_DOCUMENT_INVALID'
+    -   code: 'MONGODB_BULK_ID_REQUIRED'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'MONGODB_BULK_ID_REQUIRED'
+  actual:
+  error: 'unit fixture-unit operation 0.document must be a plain object'
+  stack: |-
+    operationError (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/operation.js:46:10)
+    bulkError (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:46:17)
+    normalizeDocument (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:131:11)
+    normalizeOperation (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:306:60)
+    file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:330:60
+    Array.map (<anonymous>)
+    normalizeUnit (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:330:39)
+    file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:353:47
+    Array.map (<anonymous>)
+    normalizeMongoBulkChunk (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/mongodb-bulk.js:353:33)
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/agent/test/mongodb-bulk-sanitized-input.test.js:27:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# (node:83252) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:83252) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and source Manager
+not ok 3 - full insertOne first chunk admits risk review through public stdio MCP and source Manager
+  ---
+  duration_ms: 179.748792
+  type: 'test'
+  location: '/Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/test/risk-input-admission.test.js:32:38'
+  failureType: 'testCodeFailure'
+  error: '{"isError":true,"content":[{"type":"text","text":"{\\n  \\"ok\\": false,\\n  \\"error\\": {\\n    \\"operationId\\": \\"a2262452-31d2-4467-9cf4-ca568a172590\\",\\n    \\"code\\": \\"BUSINESS_STORAGE_UNAVAILABLE\\",\\n    \\"message\\": \\"Protected local state requires recovery or reconciliation. No uncertain write was replayed.\\",\\n    \\"retriable\\": false\\n  },\\n  \\"outputGuard\\": {\\n    \\"policyVersion\\": 1,\\n    \\"replacements\\": 0,\\n    \\"omittedFields\\": 0,\\n    \\"businessPrivacy\\": {\\n      \\"contextId\\": \\"fd98058f-0c61-4457-a3ba-8e1cb4ecf3db\\",\\n      \\"storage\\": \\"encrypted_sqlite\\",\\n      \\"policyVersion\\": 1\\n    }\\n  }\\n}"}],"payload":{"ok":false,"error":{"operationId":"a2262452-31d2-4467-9cf4-ca568a172590","code":"BUSINESS_STORAGE_UNAVAILABLE","message":"Protected local state requires recovery or reconciliation. No uncertain write was replayed.","retriable":false},"outputGuard":{"policyVersion":1,"replacements":0,"omittedFields":0,"businessPrivacy":{"contextId":"fd98058f-0c61-4457-a3ba-8e1cb4ecf3db","storage":"encrypted_sqlite","policyVersion":1}}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: true
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/test/risk-input-admission.test.js:60:44)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# (node:83252) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+not ok 4 - full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+  ---
+  duration_ms: 184.009208
+  type: 'test'
+  location: '/Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/test/risk-input-admission.test.js:32:38'
+  failureType: 'testCodeFailure'
+  error: '{"isError":true,"content":[{"type":"text","text":"{\\n  \\"ok\\": false,\\n  \\"error\\": {\\n    \\"operationId\\": \\"b478c28a-e1e0-408d-8f92-2907b3a2695e\\",\\n    \\"code\\": \\"BUSINESS_STORAGE_UNAVAILABLE\\",\\n    \\"message\\": \\"Protected local state requires recovery or reconciliation. No uncertain write was replayed.\\",\\n    \\"retriable\\": false\\n  },\\n  \\"outputGuard\\": {\\n    \\"policyVersion\\": 1,\\n    \\"replacements\\": 0,\\n    \\"omittedFields\\": 0,\\n    \\"businessPrivacy\\": {\\n      \\"contextId\\": \\"8dcb9e9a-d0a5-4e17-97bc-1563e1278e29\\",\\n      \\"storage\\": \\"encrypted_sqlite\\",\\n      \\"policyVersion\\": 1\\n    }\\n  }\\n}"}],"payload":{"ok":false,"error":{"operationId":"b478c28a-e1e0-408d-8f92-2907b3a2695e","code":"BUSINESS_STORAGE_UNAVAILABLE","message":"Protected local state requires recovery or reconciliation. No uncertain write was replayed.","retriable":false},"outputGuard":{"policyVersion":1,"replacements":0,"omittedFields":0,"businessPrivacy":{"contextId":"8dcb9e9a-d0a5-4e17-97bc-1563e1278e29","storage":"encrypted_sqlite","policyVersion":1}}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: true
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent/test/risk-input-admission.test.js:60:44)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 507.934791

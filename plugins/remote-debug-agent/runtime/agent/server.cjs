@@ -51715,7 +51715,7 @@ function normalizeId(value, fieldName) {
   throw bulkError(`${fieldName} must be a string, safe integer, ObjectId, or Long`, "MONGODB_BULK_ID_INVALID");
 }
 function normalizeDocument(value, fieldName) {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
     throw bulkError(`${fieldName} must be a plain object`, "MONGODB_BULK_DOCUMENT_INVALID");
   }
   assertWireValue(value, fieldName);
@@ -52709,7 +52709,12 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
         if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
         const { instanceId: instanceId2, ...chunk } = request;
-        normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
+        try {
+          normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
+        } catch (error2) {
+          if (error2.layer === "mongodb-bulk" && error2.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+          throw error2;
+        }
         requests[name2] = request;
       }
       return service.call("prepare_risk_replacement", { ...input, ...requests });
@@ -52871,7 +52876,11 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, dat
       });
       response.json({ ok: true, result });
     } catch (error2) {
-      response.status(409).json({ ok: false, error: { code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
+      response.status(409).json({ ok: false, error: {
+        code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE",
+        message: error2.code === "BUSINESS_DISPOSITION_INPUT_INVALID" ? "Risk replacement input failed bulk validation; inspect the exact original and proposed first chunks. No request was dispatched." : privacyError().message,
+        retriable: false
+      } });
     }
   });
 }

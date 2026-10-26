@@ -127,7 +127,9 @@ function normalizeId(value, fieldName) {
 }
 
 function normalizeDocument(value, fieldName) {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) {
+  // The output guard deliberately returns null-prototype JSON dictionaries.
+  // Match assertWireValue's supported prototypes, retaining all key/id bounds.
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
     throw bulkError(`${fieldName} must be a plain object`, "MONGODB_BULK_DOCUMENT_INVALID");
   }
   assertWireValue(value, fieldName);

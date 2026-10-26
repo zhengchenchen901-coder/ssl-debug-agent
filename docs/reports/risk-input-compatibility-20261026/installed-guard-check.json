@@ -1,0 +1,12 @@
+{
+  "scope": "pure synthetic input, no protected context or business input",
+  "installedGuardSha256": "92680bcaa86cd86f8982bcd425c954a4aa970f2a1664a749a61edc65ff7d3c41",
+  "sourceGuardSha256": "92680bcaa86cd86f8982bcd425c954a4aa970f2a1664a749a61edc65ff7d3c41",
+  "installedRuntimeId": "2.4.0:42785d14f3e328fca822145024b85997c2032451e7d9e18b18115c94c02b1742",
+  "nullPrototype": true,
+  "digestUnchanged": true,
+  "rawAcceptedOperations": 1,
+  "sanitizedAcceptedOperations": 1,
+  "candidateRuntimeId": "2.4.0:0ef2c783a0df192d05c10e95e5444e5704acf2e97595d7d964e698645f11731f",
+  "candidateRuntimeHashMismatches": []
+}

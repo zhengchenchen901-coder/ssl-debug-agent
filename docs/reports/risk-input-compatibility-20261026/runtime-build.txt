@@ -1,0 +1,17 @@
+
+> remote-debug-agent-local-agent@2.4.0 build:runtime
+> node scripts/build-runtime.mjs
+
+
+  ../plugins/remote-debug-agent/runtime/agent/server.cjs  2.7mb ⚠️
+
+⚡ Done in 47ms
+
+  ../plugins/remote-debug-agent/runtime/agent/worker-entry.cjs  2.8mb ⚠️
+
+⚡ Done in 28ms
+
+  ../plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs  67.6kb
+
+⚡ Done in 4ms
+Built Remote Debug Agent runtime 2.4.0:0ef2c783a0df192d05c10e95e5444e5704acf2e97595d7d964e698645f11731f

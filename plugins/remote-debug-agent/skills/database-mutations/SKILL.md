@@ -219,6 +219,13 @@ can change. Identity/absence guards, payload changes or extra units are rejected
 Changed guards produce a different exact review. Do not put the unauthorized
 52 records into this case's proposal or reset original batch dates.
 
+`BUSINESS_DISPOSITION_INPUT_INVALID` means the original or proposed first chunk
+failed local bulk validation before risk-plan storage or remote dispatch. Check
+the exact chunk's document shape, IDs, allowed collections, value limits and
+identity/array guards. It is not a storage outage or permission to upload a
+different job. Credential redaction that changes the exact input still requires
+`BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED`; never reconstruct lost bytes.
+
 inspect_risk exposes the riskPlanId, exact input/effect digests, expiry, missing
 fence prerequisites and a signed-migration challenge. historicalOutcome stays
 unknown; current business balances or matching ledgers do not change it.

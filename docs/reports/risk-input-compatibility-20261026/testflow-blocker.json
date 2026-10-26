@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-26T06:50:30.268Z",
+  "workspaceFile": "/Users/zhengchenchen/Documents/Codex/2026-10-26/ssl-debug-agent-risk-input-fix/workspace.json",
+  "projectId": "ssl-debug-agent",
+  "declaredTestFramework": "node:test",
+  "supportedExecutionAdapters": [
+    "be-jest",
+    "jest-unit"
+  ],
+  "check": "installed TestFlow executionWorkspace configuration guard",
+  "status": "blocked",
+  "error": "缺少匹配的 be-jest/jest-unit 执行适配器",
+  "prepareExecuted": false,
+  "executeExecuted": false,
+  "testPassed": false,
+  "missing": [
+    "node:test execution adapter",
+    "versioned test asset/input/state/assertion bindings",
+    "immutable dependency image and isolated execution contract"
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "evidenceId": "risk-input-compatibility-20261026",
+  "checkedAt": "2026-10-26T06:53:59.261037+00:00",
+  "scope": "local software repair; disposable synthetic fixtures only",
+  "baseHead": "4ae3ea9a89702264e67c60a9b22f4703dc71985e",
+  "testflow": {
+    "snapshotId": "b15b4cf1d2a15146885d235c9ca2334f78dc13739ea35d9400b844ccd03f2e39",
+    "workflowId": "b15b4cf1d2a15146885d235c9ca2334f78dc13739ea35d9400b844ccd03f2e39",
+    "flowId": "b9382727-7564-402b-ae82-fc5e5de2a8c3",
+    "impactRunId": "fc4200ff-571e-4b72-8995-865399a1c853",
+    "scopeId": "8e0d71f59e1f0509966ef73b49992f790fbcf8e1d86c53adff2a6c7405c6a50b",
+    "graphRunId": "06be0138-63c7-41bc-b610-022b2b070fbd",
+    "captureVerified": true,
+    "impactCompleteness": "partial-static",
+    "fullImpactSymbols": 468,
+    "scopeFunctions": 54,
+    "graphFunctionSides": 108,
+    "graphTruncated": true,
+    "graphInitialBudgetRejectionDiagnosticId": "73b879d2-d0a2-471e-bed7-a62d557f33d4",
+    "executionStatus": "blocked",
+    "prepareExecuted": false,
+    "executeExecuted": false,
+    "testCoverage": "unknown; no TestFlow execution evidence",
+    "workspaceStateUnchangedAtAnalyze": false,
+    "codeAndRuntimeStillMatchFrozenBytes": true
+  },
+  "nativeRegression": {
+    "before.tap": {
+      "tests": 4,
+      "pass": 0,
+      "fail": 4,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "regression.tap": {
+      "tests": 79,
+      "pass": 79,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "protection-regression.tap": {
+      "tests": 55,
+      "pass": 55,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  },
+  "publicMcpFixturePlans": [
+    {
+      "riskPlanId": "811abfb49d471ff8fce8b663f0ad00595b2fd61ec3954093ca231d487d6fa4c3",
+      "unitCount": 34,
+      "operationCount": 100,
+      "fenceReason": "executor_fence_authority_not_configured",
+      "canApprove": false,
+      "replacementAllowed": false,
+      "remoteDispatches": 0
+    },
+    {
+      "riskPlanId": "0e6f937e2ebd39868fe7542c57cd0e32defb0287c410fa32c2cb2b47987af36f",
+      "unitCount": 34,
+      "operationCount": 100,
+      "fenceReason": "executor_fence_authority_not_configured",
+      "canApprove": false,
+      "replacementAllowed": false,
+      "remoteDispatches": 0
+    }
+  ],
+  "codeSnapshotChecks": [
+    {
+      "file": "agent/mongodb-bulk.js",
+      "sha256": "6e8f6135d15f3b3be3e6efaa766f5bbf963ec49e9f13fb1aab23cb5c2d306fa5",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "agent/privacy-service.js",
+      "sha256": "9f2319f24761dd37b1959855fcee96cad209f54eedcf8fb29c22dfcb9817fd3a",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "agent/test/mongodb-bulk-sanitized-input.test.js",
+      "sha256": "7d0967814095af36a16aa797a8ecd10c6d823b10be87792682d03c25400af761",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/test/risk-input-admission.test.js",
+      "sha256": "a2ca6be75f1337c469d793cf0e7f796a5267237ebf6f8cdf09c76cd8a404d239",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/skills/database-mutations/SKILL.md",
+      "sha256": "e1da433aa95d01b178584312840ccf42ba7a14a39b6030ccb5bd7721b2cb7289",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/server.cjs",
+      "sha256": "3b9732f403eb2de10d5701439442581693c72029001fd63e02307839426544d8",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs",
+      "sha256": "5fa66f3c9b74027b97614229139cec17492a7fd38856bfce615ddc2ab69782e3",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs",
+      "sha256": "c02dbcb46d635472d1b227ce5d956c02d2c335b2642f808ba2ccf58b3ef3b84c",
+      "matchesFrozenBytes": true
+    },
+    {
+      "file": "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json",
+      "sha256": "a29037ece5d07ac27692e9baeb1b5cb4c36a73f677be34d9cbd1a6d0ab44a4ec",
+      "matchesFrozenBytes": true
+    }
+  ],
+  "notVerified": [
+    "live installed Manager effect",
+    "real case risk preparation",
+    "real executor migration/trust/receipt",
+    "real native owner verification",
+    "real MongoDB business data",
+    "Windows/macOS multi-platform matrix",
+    "TestFlow executed target/block/branch/path coverage"
+  ],
+  "constraints": {
+    "realBusinessWrites": 0,
+    "realRiskPlansCreated": 0,
+    "installOrRestart": false,
+    "commitPushPrDeploy": false,
+    "crossThreadMessages": 0
+  },
+  "artifacts": [
+    {
+      "file": "before.tap",
+      "sha256": "4b4bd8e6a4aa66619568741ec09e41338d12de6469e542cceed3e8cd23111229"
+    },
+    {
+      "file": "installed-guard-check.json",
+      "sha256": "a61838cc5b8f047af07e00b668415091c5c70a200ffe58a5c12c028daf0cf37c"
+    },
+    {
+      "file": "protection-regression.tap",
+      "sha256": "6041e99013ff2280808b4aa4803126b02c99f2f78e122b361c983427c63cde4b"
+    },
+    {
+      "file": "regression.tap",
+      "sha256": "52a065a23c40bacb6ad5bbb3f5179fc6440b87d29204dbb99faa02f62d8dd3e4"
+    },
+    {
+      "file": "runtime-build.txt",
+      "sha256": "4a2b73f434764d58c790a35340a0a1092cdf5ae7891b52cf0453cce1f644b595"
+    },
+    {
+      "file": "testflow-blocker.json",
+      "sha256": "f6165f0d56ce82fd75307ce99d6cf27bb6d0de571eb5ae39af9d4cd0a005c304"
+    }
+  ]
+}

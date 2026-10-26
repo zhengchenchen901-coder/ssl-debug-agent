@@ -165,7 +165,14 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
         if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
         const { instanceId, ...chunk } = request;
-        normalizeMongoBulkChunk(chunk, { ...instance(target.id).mongodb, bulkEnabled: true });
+        try {
+          normalizeMongoBulkChunk(chunk, { ...instance(target.id).mongodb, bulkEnabled: true });
+        } catch (error) {
+          // Public callers need to distinguish invalid proposals from storage
+          // failures. Never forward validator messages containing business data.
+          if (error.layer === "mongodb-bulk" && error.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+          throw error;
+        }
         requests[name] = request;
       }
       return service.call("prepare_risk_replacement", { ...input, ...requests });
@@ -283,7 +290,9 @@ export function installPrivacyRoutes(app, { directory, registry, service, dispat
         historicalEvidence: historicalEvidence || (dataDirectory ? createBulkHistoryReader({ dataDirectory, instance: (id) => registry.getInternal(id) }) : undefined) });
       response.json({ ok: true, result });
     } catch (error) {
-      response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE", message: privacyError().message, retriable: false } });
+      response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE",
+        message: error.code === "BUSINESS_DISPOSITION_INPUT_INVALID" ? "Risk replacement input failed bulk validation; inspect the exact original and proposed first chunks. No request was dispatched." : privacyError().message,
+        retriable: false } });
     }
   });
 }
