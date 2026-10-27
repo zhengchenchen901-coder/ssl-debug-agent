@@ -943,3 +943,46 @@ test("worker manager rejects stop for missing instances", async () => {
     await manager.shutdownAll();
   }
 });
+
+test('Mongo admissions reject new registry / old worker without interrupting in-flight requests; failed refresh never admits', async t => {
+  const dir = await tempDir('remote-debug-config-version-');
+  const registry = new InstanceRegistry({ cwd: dir, registryPath: path.join(dir, 'instances.json'), env: {} });
+  registry.create({ id: 'fixture', host: 'fixture.invalid', username: 'app', privateKeyPath: '/synthetic/key', mongodb: { enabled: true, configPath: '/synthetic/config.json', driverPath: '/synthetic/node_modules/mongodb', configProfile: 'test', uriKey: 'url', database: 'test', allowedCollections: ['old'] } });
+  let failSpawn = false, release, calls = 0, child;
+  const manager = new WorkerManager({ registry, managerPort: 4343, cwd: dir, canBindPort: async () => true,
+    forkWorker: () => { if (failSpawn) throw Error('synthetic refresh failure'); child = new FakeWorkerProcess(4321); setImmediate(() => child.emit('message', { type: 'ready', ok: true, localAuthentication: true, protocolVersion: 2 })); return child; },
+    fetchImpl: async () => { calls++; return new Promise(resolve => { release = () => resolve(new Response(JSON.stringify({ ok: true, status: 'prepared' }))); }); } });
+  t.after(async () => { await manager.shutdownAll(); await fs.rm(dir, { recursive: true, force: true }); });
+  await manager.startInstance('fixture'); assert.equal(manager.runtimeFor('fixture').configuration, 'current');
+  const running = manager.callInstance('fixture', '/mongodb/imports/prepare', {});
+  registry.update('fixture', { mongodb: { ...registry.getInternal('fixture').mongodb, allowedCollections: ['old', 'new'] } });
+  assert.equal(manager.runtimeFor('fixture').configuration, 'refresh_required');
+  await assert.rejects(manager.callInstance('fixture', '/mongodb/imports/prepare', {}), { code: 'WORKER_CONFIGURATION_STALE', dispatchState: 'not_dispatched' });
+  assert.equal(calls, 1); assert.equal(child.sent.some(m => m.type === 'shutdown'), false);
+  release(); assert.equal((await running).status, 'prepared');
+  failSpawn = true; await assert.rejects(manager.refreshInstance('fixture'), { code: 'WORKER_SPAWN_FAILED' });
+  await assert.rejects(manager.callInstance('fixture', '/mongodb/imports/prepare', {}), { code: 'INSTANCE_NOT_RUNNING' });
+  failSpawn = false; await manager.startInstance('fixture'); assert.equal(manager.runtimeFor('fixture').configuration, 'current');
+  const retry = manager.callInstance('fixture', '/mongodb/imports/prepare', {}); release(); await retry; assert.equal(calls, 2);
+  manager.fetchImpl = async () => {
+    registry.update('fixture', { mongodb: { ...registry.getInternal('fixture').mongodb, allowedCollections: ['old', 'new', 'later'] } });
+    throw Error('lost admitted worker response');
+  };
+  await assert.rejects(manager.callInstance('fixture', '/mongodb/imports/prepare', {}), error => error.code === 'WORKER_UNAVAILABLE' && error.dispatchState === undefined);
+});
+
+test('configuration changed during worker startup is not advertised as effective', async t => {
+  const dir = await tempDir('remote-debug-start-config-');
+  const registry = new InstanceRegistry({ cwd: dir, registryPath: path.join(dir, 'instances.json'), env: {} });
+  registry.create({ id: 'fixture', host: 'old.invalid', username: 'app', privateKeyPath: '/synthetic/key' });
+  let env, calls = 0;
+  const manager = new WorkerManager({ registry, managerPort: 4343, cwd: dir,
+    canBindPort: async () => { registry.update('fixture', { host: 'new.invalid' }); return true; },
+    forkWorker: (_entry, options) => { env = options.env; const child = new FakeWorkerProcess(4321); setImmediate(() => child.emit('message', { type: 'ready', ok: true, localAuthentication: true, protocolVersion: 2 })); return child; },
+    fetchImpl: async () => { calls++; return new Response('{"ok":true}'); } });
+  t.after(async () => { await manager.shutdownAll(); await fs.rm(dir, { recursive: true, force: true }); });
+  await manager.startInstance('fixture'); assert.equal(env.REMOTE_DEBUG_HOST, 'old.invalid');
+  assert.equal(manager.runtimeFor('fixture').configuration, 'refresh_required');
+  await assert.rejects(manager.callInstance('fixture', '/mongodb/imports/prepare', {}), { code: 'WORKER_CONFIGURATION_STALE', dispatchState: 'not_dispatched' });
+  assert.equal(calls, 0);
+});

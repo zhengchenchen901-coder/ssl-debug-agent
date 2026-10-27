@@ -38,3 +38,79 @@ prepare_risk 仍须在原受保护上下文中匹配原请求身份，验证候�
 在候选软件另获安装/启用授权后，可用原受保护context路径（仅交给启动环境，不打开文件）和精确原输入、原proposal，通过公开prepare_risk生成新的v2计划，附带上述事实、证据时点和剩余风险说明。由管理员独立审核；通过后再调用同一计划的create_replacement。原33笔33人2097分、36原批次不扩大，范围外52笔4488分、正常兑换80分不纳入。旧15:06的plan属于旧策略且到16:06过期，不能沿用其批准或hash。
 
 本轮只开发本地代码、同步候选runtime并测试合成夹具；没有安装/启用插件、修改真实任务状态、执行真实终止/替代/业务上传/补分或管理员批准。上一轮新增的libvirt冷退役执行器、root签发接入和探测helper已移除，旧测试/报告仅作历史材料。现有外部fence核验模块保留用于兼容旧策略，不作为v2准入前提。
+
+
+## Import 原意图的人工重试审核
+
+`/mongodb/imports/prepare` 使用独立 import 协议与命名空间，不转成 bulk。
+公开 disposition 的 originalRequest / replacementRequest 接受严格 bulk 或
+import 联合 schema；历史 import 仍按原路由、原上下文、精确 keyed JSON
+身份核验。旧信封缺少 importId 元数据时，以原 keyed 请求验证，不补造历史
+operationId、planHash、dispatch 回执，不修改原 uncertain 字节或恢复证据。
+
+Import 候选仅可更换 importId。目标实例/数据库/集合、文档内容及 BSON 字段
+顺序、文档顺序、batchSize、purpose、rollbackTtlMs 必须完全相同。审核计划
+保存加密的原始与候选输入，绑定当前配置归一化后的原/新批次 mutationId、
+文档数和有序请求摘要。配置或拆批变化会拒绝旧审核。Manager 通过只读固定
+helper 检查每批 manifest 的精确请求摘要和 planHash，展示 committed、
+commit_unknown 等状态，以及 missing、identity_conflict、unavailable；这些
+观测均带来源/时点，不能消除原意图的未知结果。
+
+独立工作台沿用同一登录会话读取、五分钟审阅窗口、固定确认短语与每次重新
+执行的本机所有者身份验证。MCP、Manager token、actor/proof 或聊天确认均
+不能批准。工作台展示 importId、集合、文档数、原/新批次身份、回执观测和
+剩余风险，业务文档不出现在审核详情中。
+
+批准事务固定唯一关联，关闭原 import 和已绑定原批次的后续准入，保留原
+uncertain 记录及引用 pin。建立阶段先调用仅限内部的 `/mongodb/imports/retire`，
+在既有 rollbackRoot 下写入 fsync+rename 的 import 控制目录、原批次定向
+关闭标记和新批次 lineage 预留，再读取终止回执；不创建旧业务 manifest，
+不把 missing 视为历史未执行。普通 Manager HTTP 代理不暴露这些控制路由。
+原生验证取消、回执失败或到期均不能建立替代；相同审核可在重启/回包丢失后
+接续，不能占用另一个已有 import 或建立第二个替代。
+
+替代身份登记后使用独立 importPrepare 回执准备原生 import 批次，manifest
+包含与不可变 planHash 绑定的 riskLineage。新 import prepare 也使用精确回执；
+同步预检确证未派发时允许同意图重试。派发后结果丢失只读取精确终态 prepare
+回执并核对批次，缺失证据保持 uncertain，不重派。prepare_partial 保留已准备
+批次与失败批次，不能报告全量准备成功。完整终态 partial 回执允许使用同一
+输入、同一意图继续准备下一 attempt，先归档完整前缀证据；远端不完整回执
+绝不允许这样重派。原批次 journal/planHash 复用，不重复业务提交。每批仍须现有 `确认执行` / `确认回滚`
+及精确 mutationId/planHash；幂等、已有文档拒绝、事务未知保护和回滚冲突检查
+不变。控制记录不属于业务 manifest，不进入自动清理。
+
+新版 helper 在 prepare、commit/rollback 入口和事务提交前检查原 import
+定向关闭。该检查不能召回旧 helper 或证明已派发事务未执行；批准接受的正是
+迟到提交、重复导入和部分批次成功等剩余风险。本功能未改变 bulk 的首块、
+守卫等价、封口和执行校验。开发仅使用可丢弃本地夹具；真实审核、安装启用和
+业务迁移均需独立处理。
+
+## Import dispatch safety (2026-10-27 follow-up)
+
+MongoDB admissions compare the worker's captured startup configuration against
+current Manager instance/worker settings immediately before transport. A stale
+or unknown worker configuration returns `WORKER_CONFIGURATION_STALE` with a
+Manager-generated `not_dispatched` attestation. Updating registry never restarts
+or cancels existing work. Later updates affect subsequent admissions; already
+admitted requests retain their original configuration and unknown-result
+protection. The Dashboard update response and instance runtime show whether an
+explicit refresh is required. Inspect in-flight work before refreshing; failed
+refresh/start does not permit dispatch.
+
+For new import envelopes, reconcile can atomically close an unclaimed attempt
+as `rejected_before_dispatch` / `unclaimed_attempt_fence`. SQLite rechecks the
+current attempt and dispatched bit under the same write transaction. A delayed
+claim cannot run after closure; a claim winning first preserves uncertainty.
+The identical intent may reserve the next attempt, preserving the complete
+closed envelope in pinned `import_prepare_evidence`. Late old results cannot
+mutate a newer attempt. Missing batches, missing remote files or lost replies
+never close an already claimed attempt; historical envelopes still require
+trusted legacy evidence or the independent human risk workflow.
+
+Remote import control writes sync file, containing directory, journal root and
+its parent, then read back the exact value before acknowledging each reservation.
+Partial I/O failure keeps completed closure/lineage records and can be completed
+only with the same handoff identity. A process killed while holding the global
+exclusive lock remains blocked; there is no age-based lock reclaim, cancellation
+proof or automatic replacement. Actual power-loss durability and legacy helper
+in-flight outcomes are not certified by the isolated process-crash tests.

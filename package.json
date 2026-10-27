@@ -1,0 +1,17 @@
+{
+  "name": "ssl-debug-agent-verification",
+  "private": true,
+  "scripts": {
+    "test:testflow": "jest --config verification/jest.config.cjs --runInBand"
+  },
+  "devDependencies": {
+    "jest": "29.7.0",
+    "esbuild": "0.28.1",
+    "typescript": "5.9.3",
+    "istanbul-lib-coverage": "3.2.2",
+    "istanbul-lib-source-maps": "5.0.6"
+  },
+  "engines": {
+    "node": ">=22.18 <23"
+  }
+}

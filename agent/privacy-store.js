@@ -1,3 +1,4 @@
+import { recordImportPrepared, continuePartialImport } from "./mongodb-import-risk.js";
 import { DatabaseSync } from "node:sqlite";
 import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
@@ -174,14 +175,29 @@ export class PrivacyStore {
       const previous = this.get("operation", id, ctx, scope);
       // Redacted request identity can collide when only a protected value
       // changes. Never serve an old chunk acknowledgement for different bytes.
-      const boundDigest = previous?.bulkPrepare?.requestDigest || previous?.historicalRecovery?.requestDigest;
+      const boundDigest = previous?.importPrepare?.requestDigest || previous?.bulkPrepare?.requestDigest || previous?.historicalRecovery?.requestDigest;
       if (boundDigest && boundDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
-      const retryPrepare = previous?.state === "rejected_before_dispatch" && (previous.prepare || previous.bulkPrepare) &&
-        input.dispatchDigest === (previous.prepare || previous.bulkPrepare).requestDigest;
+      if (input.route === "/mongodb/imports/prepare" && previous?.importPrepare && previous.state === "complete" && previous.result?.status === "prepare_partial") {
+        const record = continuePartialImport(this, id, previous, ctx, scope);
+        this.put("operation", id, ctx, scope, record, Number.MAX_SAFE_INTEGER, true);
+        const taskId = this.hash("task", ctx, input.scope, "operation:" + id), task = this.get("task", taskId, ctx, scope);
+        if (task) this.put("task", taskId, ctx, scope, { ...task, active: true }, Number.MAX_SAFE_INTEGER, true);
+        return { id, state: "new", importPrepare: record.importPrepare };
+      }
+      const retryPrepare = previous?.state === "rejected_before_dispatch" && (previous.prepare || previous.bulkPrepare || previous.importPrepare) &&
+        input.dispatchDigest === (previous.prepare || previous.bulkPrepare || previous.importPrepare).requestDigest;
       if (previous && !retryPrepare && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
+      if (retryPrepare && previous.importPrepare) {
+        // Keep the complete closed envelope, not only the latest rejection.
+        // Archival and reservation of the next attempt share this transaction.
+        const evidenceId = this.hash("import-attempt", ctx, input.scope, id, previous.importPrepare.attempt);
+        if (!this.get("import_prepare_evidence", evidenceId, ctx, scope)) this.put("import_prepare_evidence", evidenceId, ctx, scope,
+          { intentId: id, ...previous }, Number.MAX_SAFE_INTEGER, true);
+      }
       const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "")
         ? { mutationId: previous?.prepare?.mutationId || randomUUID(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : undefined;
       const record = { state: "uncertain", route: input.route, identity: input.identity, started: this.now(),
+        ...(input.route === "/mongodb/imports/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { importPrepare: { binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.importPrepare?.attempt || 0) + 1 }, previousRejection: previous?.rejection } : {}),
         ...(prepare ? { prepare, previousRejection: previous?.rejection } : {}),
         ...(input.route === "/mongodb/bulk/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "")
           ? { bulkPrepare: { binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.bulkPrepare?.attempt || 0) + 1 }, previousRejection: previous?.rejection } : {}) };
@@ -195,7 +211,7 @@ export class PrivacyStore {
         this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, task, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND id=?").run(ref);
       }
-      return { id, state: "new", ...(prepare ? { prepare } : {}), ...(record.bulkPrepare ? { bulkPrepare: record.bulkPrepare } : {}) };
+      return { id, state: "new", ...(prepare ? { prepare } : {}), ...(record.bulkPrepare ? { bulkPrepare: record.bulkPrepare } : {}), ...(record.importPrepare ? { importPrepare: record.importPrepare } : {}) };
     });
     // Internal Manager actions. They are deliberately absent from privacyRequest's
     // public action allowlist: callers cannot submit their own recovery proof.
@@ -230,6 +246,39 @@ export class PrivacyStore {
       const taskId = this.hash("task", ctx, input.scope, "operation:" + input.id), task = this.get("task", taskId, ctx, scope);
       if (task) this.put("task", taskId, ctx, scope, { ...task, active: false }, task.expires, false);
       return { id: input.id, ...value };
+    });
+    if (action === "claim_import_prepare") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
+      const record = this.get("operation", input.id, ctx, scope);
+      if (!record?.importPrepare || record.state !== "uncertain" || record.dispatched ||
+          record.importPrepare.requestDigest !== input.dispatchDigest || record.importPrepare.attempt !== input.attempt ||
+          !input.importBatches?.length || record.importBatches && JSON.stringify(record.importBatches) !== JSON.stringify(input.importBatches)) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      const saved = { ...record, dispatched: true, operationId: input.operationId, importBatches: input.importBatches };
+      this.put("operation", input.id, ctx, scope, saved, Number.MAX_SAFE_INTEGER, true);
+      return saved;
+    });
+    if (action === "import_prepare_result") return this.transaction(() => {
+      this.assertOperationAdmission(input.id, ctx, scope);
+      const record = this.get("operation", input.id, ctx, scope), result = input.result;
+      if (!record?.importPrepare || JSON.stringify(record.importPrepare) !== JSON.stringify(input.importPrepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
+      if (record.state !== "uncertain") return { id: input.id, ...record };
+      const batches = record.importBatches || [];
+      const proven = result?.ok === true && result.importReceipt?.binding === input.id && result.importReceipt.requestDigest === record.importPrepare.requestDigest && result.importReceipt.attempt === record.importPrepare.attempt &&
+        result.importId === record.identity.importId && result.kind === "import_plan" &&
+        result.importReceipt.riskPlanId === record.riskPlanId && result.collection === record.identity.collection &&
+        result.affectedCount === batches.reduce((n, b) => n + b.documentCount, 0) && result.batchCount === batches.length &&
+        result.importReceipt.batchesDigest === prepareRequestDigest({ batches }) && result.database === JSON.parse(input.scope).database &&
+        ["prepared", "prepare_partial"].includes(result.status) && Array.isArray(result.batches) && result.batches.length > 0 &&
+        result.batches.every((batch, index) => batch.mutationId === batches[index]?.mutationId && batch.batchIndex === index && /^[a-f0-9]{64}$/.test(batch.planHash || "")) &&
+        (result.status !== "prepared" || result.batches.length === batches.length);
+      const saved = proven ? { ...record, state: "complete", result, reconciliation: undefined } : input.notDispatched === true || input.unclaimed === true && !record.dispatched
+        ? { ...record, state: "rejected_before_dispatch", result, reconciliation: undefined, rejection: { attempt: record.importPrepare.attempt, code: result.error?.code, at: this.now(),
+          evidence: input.unclaimed ? "unclaimed_attempt_fence" : "preflight_before_ssh" } }
+        : { ...record, reconciliation: { code: result?.error?.code || "MONGODB_IMPORT_EVIDENCE_REQUIRED" } };
+      if (proven) recordImportPrepared(this, record, result);
+      this.put("operation", input.id, ctx, scope, saved, Number.MAX_SAFE_INTEGER, true);
+      this.put("event", randomUUID(), ctx, scope, { type: "import_prepare_state", operation: input.id, state: saved.state, code: saved.rejection?.code || saved.reconciliation?.code, evidence: saved.rejection?.evidence, at: this.now() }, Number.MAX_SAFE_INTEGER, true);
+      return { id: input.id, ...saved };
     });
     if (action === "claim_prepare") return this.transaction(() => {
       this.assertOperationAdmission(input.id, ctx, scope);
@@ -344,7 +393,7 @@ export class PrivacyStore {
     // Must run under the same BEGIN IMMEDIATE as the state transition: a
     // concurrent Manager cannot install a hold between this check and commit.
     const original = this.get("operation", id, ctx, scope);
-    if (original?.identity?.instanceId) assertInstanceAdmission(this, original.identity.instanceId, { route: original.route, identity: original.identity, dispatchDigest: original.bulkPrepare?.requestDigest, ctx });
+    if (original?.identity?.instanceId) assertInstanceAdmission(this, original.identity.instanceId, { route: original.route, identity: original.identity, dispatchDigest: original.importPrepare?.requestDigest || original.bulkPrepare?.requestDigest, ctx });
   }
   cleanup(ctx, limit) {
     return this.transaction(() => {

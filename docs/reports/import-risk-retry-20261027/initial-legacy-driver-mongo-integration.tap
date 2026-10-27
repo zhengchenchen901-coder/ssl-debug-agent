@@ -1,0 +1,30 @@
+TAP version 13
+# (node:79132) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real isolated MongoDB import review, native-helper retirement, lost reply reconciliation, transaction idempotency and rollback
+not ok 1 - real isolated MongoDB import review, native-helper retirement, lost reply reconciliation, transaction idempotency and rollback
+  ---
+  duration_ms: 76.945166
+  type: 'test'
+  location: '/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-risk/.testflow/snapshots/581fc2665166b5bcdfcb4894f4995218908ba05a1fdc9a6f4494b78f81e6e1f1/files/agent/test/import-risk-mongo.e2e.mjs:24:1'
+  failureType: 'testCodeFailure'
+  error: 'bulk import requires BSON EJSON support from the configured driver'
+  code: 'MONGODB_IMPORT_BSON_REQUIRED'
+  name: 'OperationError'
+  stack: |-
+    operationError (file:///Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-risk/.testflow/snapshots/581fc2665166b5bcdfcb4894f4995218908ba05a1fdc9a6f4494b78f81e6e1f1/files/agent/operation.js:46:10)
+    runMongoMutation (file:///Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-risk/.testflow/snapshots/581fc2665166b5bcdfcb4894f4995218908ba05a1fdc9a6f4494b78f81e6e1f1/files/agent/mongodb-mutations.js:2118:11)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (file:///Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-risk/.testflow/snapshots/581fc2665166b5bcdfcb4894f4995218908ba05a1fdc9a6f4494b78f81e6e1f1/files/agent/test/import-risk-mongo.e2e.mjs:27:22)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 122.745125

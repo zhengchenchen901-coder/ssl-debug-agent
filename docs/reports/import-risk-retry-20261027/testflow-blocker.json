@@ -1,0 +1,13 @@
+{
+  "snapshotId": "7bbad0227f029556eb239e792b684e9b8798aab6c33a52c1e98326b23c272f43",
+  "check": "installed executionWorkspace guard",
+  "error": "缺少匹配的 be-jest/jest-unit 执行适配器",
+  "prepareExecuted": false,
+  "executeExecuted": false,
+  "testPassed": false,
+  "missing": [
+    "node:test execution adapter",
+    "versioned test asset/input/state/assertion bindings",
+    "compatible isolated execution contract and immutable dependency image binding"
+  ]
+}

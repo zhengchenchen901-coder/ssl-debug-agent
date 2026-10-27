@@ -186,15 +186,15 @@ function resetRiskReview() {
 }
 function renderRiskReview(plan) {
     element("riskDetails").textContent = JSON.stringify({
-      实例: plan.binding.instanceId, 数据库: plan.binding.database, 原意图: plan.binding.intentId, 原任务: plan.binding.jobId,
+      实例: plan.binding.instanceId, 数据库: plan.binding.database, 原意图: plan.binding.intentId, 任务类型: plan.kind || "bulk", 原任务: plan.binding.importId || plan.binding.jobId,
       原请求摘要: plan.binding.requestDigest, 原操作身份: plan.binding.originalOperationId,
-      原计划哈希: plan.binding.planHash, 替代任务: plan.replacementJobId, 替代请求摘要: plan.replacementRequestDigest,
-      业务效果摘要: plan.effectDigest, 单元数: plan.unitCount, 操作数: plan.operationCount, 集合: plan.collections,
+      原计划哈希: plan.binding.planHash, 替代任务: plan.replacementImportId || plan.replacementJobId, 替代请求摘要: plan.replacementRequestDigest,
+      业务效果摘要: plan.effectDigest, 文档数: plan.documentCount, 批次原子性: plan.atomicity, 原批次身份: plan.originalBatches, 重试批次身份: plan.replacementBatches, 单元数: plan.unitCount, 操作数: plan.operationCount, 集合: plan.collections,
       状态: plan.state, 历史结果: "未知", 全局撤权已有证明: plan.remoteFenceConfirmed,
       外部证明是否为批准前提: plan.approvalPolicy !== "human-risk-acceptance-v2",
       外部证明状态: plan.approvalPolicy === "human-risk-acceptance-v2" ? "不作为本次人工裁决的前提" : plan.fenceReason || null, 阻断回执: plan.fenceReceiptId || null,
       审核策略: plan.approvalPolicy, 审核说明: plan.reviewMemo, 说明来源: "调用者说明，未经独立验证",
-      系统观测: plan.observations, 剩余风险: plan.warning, 旧任务状态: plan.originalTaskState,
+      系统观测: plan.observations, 历史证据缺口: plan.historicalEvidenceGaps, 剩余风险: plan.warning, 旧任务状态: plan.originalTaskState,
       远端终止记录: plan.remoteTermination, 终止范围: "本系统后续调度及新版执行器；不保证召回历史已派发进程", 已派发旧进程结果: plan.legacyInFlightOutcome,
       人工批准: plan.humanApproved, 审阅哈希: plan.reviewHash, 到期时间: new Date(plan.expiresAt).toLocaleString()
     }, null, 2);

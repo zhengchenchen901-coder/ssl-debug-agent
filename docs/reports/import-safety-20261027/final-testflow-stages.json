@@ -1,0 +1,220 @@
+{
+  "freeze": {
+    "snapshotId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+    "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+    "projectId": "ssl-debug-agent",
+    "stage": "input-frozen",
+    "base": {
+      "projectId": "ssl-debug-agent",
+      "kind": "git",
+      "revision": "d03a5fc82e78a92e5e73556ecab1b3f5df66f769",
+      "tree": "b2433e351029eed448044e9a67b69e0dd033a8e5",
+      "contentHash": "198cb8b716981efef57746c94fc1d25271a60b4cc99e7a75ca148339efd29b5d"
+    },
+    "target": {
+      "projectId": "ssl-debug-agent",
+      "kind": "workspace",
+      "revision": "d03a5fc82e78a92e5e73556ecab1b3f5df66f769",
+      "tree": "b2433e351029eed448044e9a67b69e0dd033a8e5",
+      "contentHash": "18c0f9456ce67e87f8c343eacd0aeff7eff08402a687894c4c7b532a6728953f"
+    },
+    "captureVerified": true,
+    "attempts": 1,
+    "captureMs": 413,
+    "modelCalls": 0,
+    "artifact": ".testflow/frozen/80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668.json"
+  },
+  "pilotPrepare": {
+    "jobId": "e45c8c46-2c6e-40bc-8b8c-d8d25c7b9240",
+    "kind": "prepare",
+    "status": "ready",
+    "phase": "completed",
+    "completedFiles": null,
+    "totalFiles": null,
+    "completedCases": null,
+    "totalCases": null,
+    "workerAlive": false,
+    "failure": null,
+    "result": {
+      "stage": "execution-prepared",
+      "flowId": "b11d418a-a00b-4fa5-9b8c-954281a62d15",
+      "runId": "ec873755-a693-49ce-bcf7-8391739caa86",
+      "purpose": "pilot",
+      "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+      "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+      "selectionHash": "b22de4680ad7233e9ce8bc43e01c20096a283bcb690fbd449211a3aeb28a4605",
+      "reuse": {
+        "build": "核验有效构建键后复用；生命周期独立执行",
+        "invalidation": [
+          "源码或补充资产变化需新计划并重验构建键",
+          "依赖、配置或执行器变化需重新预检"
+        ]
+      },
+      "projectId": "ssl-debug-agent",
+      "executable": true,
+      "files": 1,
+      "preflight": {
+        "runId": "e31eea4b-3dde-4705-871b-59dc96db050f",
+        "status": "ready",
+        "evidenceHash": "bdfca376174762937e9fca34af73cf5a90f740bf3cde42c659efb7a2af33bb8f",
+        "businessChecks": "not-declared",
+        "businessServiceDoubles": []
+      },
+      "environment": {
+        "isolation": "network-none-no-services",
+        "images": [
+          "sha256:f285f1a29f9bff2da01186c7c0bc190ac0050d0a66dc8769915331a813098e9b"
+        ],
+        "dependencies": {
+          "package:jest": "29.7.0",
+          "package:esbuild": "0.28.1",
+          "package:typescript": "5.9.3",
+          "package:istanbul-lib-coverage": "3.2.2",
+          "package:istanbul-lib-source-maps": "5.0.6",
+          "node": "v22.23.3",
+          "jest": "29.7.0",
+          "typescript": "5.9.3",
+          "sourceMaps": "5.0.6",
+          "coverage": "3.2.2",
+          "dependencyLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0"
+        },
+        "sourceLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0",
+        "lockMatch": true
+      },
+      "pathValidation": "binding-declared-runtime-pending",
+      "artifacts": {
+        "executablePlan": ".testflow/runs/ec873755-a693-49ce-bcf7-8391739caa86/executable-plan.json"
+      },
+      "manifestHash": "d9a0ec4a1c945d1559623146e0adee84a73c87c5f3ea4c1aa9b6aa5130550221"
+    },
+    "progress": null,
+    "activeProgress": [],
+    "failureSummary": null,
+    "diagnostic": null,
+    "revision": "2f1bb66a7026e72fb143b9ec35805cbb4a6692464fff03e3bfef03703f7ec0e2",
+    "changed": true,
+    "waitedMs": 2839
+  },
+  "pilotExecute": {
+    "flowId": "b11d418a-a00b-4fa5-9b8c-954281a62d15",
+    "jobId": "fbf7eb12-b4a9-469b-9c72-9b2e8785aacb",
+    "status": "queued",
+    "purpose": "pilot",
+    "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+    "projectId": "ssl-debug-agent",
+    "totalFiles": 1
+  },
+  "regressionPrepare": {
+    "jobId": "6fcf55ac-ad78-4fcd-8f0a-815e82c73ea1",
+    "kind": "prepare",
+    "status": "ready",
+    "phase": "completed",
+    "completedFiles": null,
+    "totalFiles": null,
+    "completedCases": null,
+    "totalCases": null,
+    "workerAlive": false,
+    "failure": null,
+    "result": {
+      "stage": "execution-prepared",
+      "flowId": "951f9edc-24d6-48be-a13d-3fca886db7b1",
+      "runId": "16a60e1e-3377-4617-9d46-82fccb1220a7",
+      "purpose": "regression",
+      "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+      "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+      "selectionHash": "487f90de831bc899e58f1422fbbc3ac2b45cb7d3df684e7a07b3c3db664f9bc1",
+      "reuse": {
+        "build": "核验有效构建键后复用；生命周期独立执行",
+        "invalidation": [
+          "源码或补充资产变化需新计划并重验构建键",
+          "依赖、配置或执行器变化需重新预检"
+        ]
+      },
+      "projectId": "ssl-debug-agent",
+      "executable": true,
+      "files": 1,
+      "preflight": {
+        "runId": "751600b6-6cbe-4a81-8d37-ae2a1974fd2a",
+        "status": "ready",
+        "evidenceHash": "68a31963f45948e12c6f705fb215bcb8d42ac42dd0c75ec062ce547e5ce9a7e9",
+        "businessChecks": "not-declared",
+        "businessServiceDoubles": []
+      },
+      "environment": {
+        "isolation": "network-none-no-services",
+        "images": [
+          "sha256:f285f1a29f9bff2da01186c7c0bc190ac0050d0a66dc8769915331a813098e9b"
+        ],
+        "dependencies": {
+          "package:jest": "29.7.0",
+          "package:esbuild": "0.28.1",
+          "package:typescript": "5.9.3",
+          "package:istanbul-lib-coverage": "3.2.2",
+          "package:istanbul-lib-source-maps": "5.0.6",
+          "node": "v22.23.3",
+          "jest": "29.7.0",
+          "typescript": "5.9.3",
+          "sourceMaps": "5.0.6",
+          "coverage": "3.2.2",
+          "dependencyLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0"
+        },
+        "sourceLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0",
+        "lockMatch": true
+      },
+      "pathValidation": "binding-declared-runtime-pending",
+      "artifacts": {
+        "executablePlan": ".testflow/runs/16a60e1e-3377-4617-9d46-82fccb1220a7/executable-plan.json"
+      },
+      "manifestHash": "e8e72c8450affee8c0ea0beef64b6054da175cd2a3c4549558c33927cc118d60"
+    },
+    "progress": null,
+    "activeProgress": [],
+    "failureSummary": null,
+    "diagnostic": null,
+    "revision": "90a26c6a6b4f0f1f4e9887d1451eac6b3d1abbbcf62dd35396ed3df902877d3a",
+    "changed": true,
+    "waitedMs": 2568
+  },
+  "regressionExecute": {
+    "flowId": "951f9edc-24d6-48be-a13d-3fca886db7b1",
+    "jobId": "639e4712-2b9e-4e58-8653-2b68e4a1b342",
+    "status": "queued",
+    "purpose": "regression",
+    "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+    "projectId": "ssl-debug-agent",
+    "totalFiles": 1
+  },
+  "regressionStatus": {
+    "jobId": "639e4712-2b9e-4e58-8653-2b68e4a1b342",
+    "projectId": "ssl-debug-agent",
+    "kind": "execution",
+    "status": "passed",
+    "phase": "completed",
+    "completedFiles": 1,
+    "totalFiles": 1,
+    "completedCases": null,
+    "totalCases": null,
+    "workerAlive": false,
+    "failure": null,
+    "result": null,
+    "progress": null,
+    "activeProgress": [],
+    "failureSummary": {
+      "totalFailedCases": 0,
+      "files": [],
+      "omittedFiles": 0,
+      "limits": {
+        "files": 10,
+        "casesPerFile": 10
+      },
+      "faults": [],
+      "scope": "last-10-verified-attempts-including-historical-failures",
+      "unavailableAttempts": 0,
+      "omittedAttempts": 0
+    },
+    "diagnostic": null,
+    "revision": "34c31296d1117b7f65adbdaeb395f94fc418f7801d944f2d26c470616c99d452",
+    "changed": true,
+    "waitedMs": 264
+  }
+}

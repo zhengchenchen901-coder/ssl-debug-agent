@@ -1,0 +1,2421 @@
+TAP version 13
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk validation rejection is durable, preserves exact intent, and never dispatches
+ok 1 - bulk validation rejection is durable, preserves exact intent, and never dispatches
+  ---
+  duration_ms: 795.93425
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk pre-SSH worker rejection survives Manager config drift without being confused with a remote error
+ok 2 - bulk pre-SSH worker rejection survives Manager config drift without being confused with a remote error
+  ---
+  duration_ms: 287.698459
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk chunk success lost between Manager and MCP survives restart without reupload
+ok 3 - bulk chunk success lost between Manager and MCP survives restart without reupload
+  ---
+  duration_ms: 371.493417
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk seal success lost between Manager and MCP survives restart without reupload
+ok 4 - bulk seal success lost between Manager and MCP survives restart without reupload
+  ---
+  duration_ms: 301.433916
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost worker chunk reply recovers exact durable evidence without replay
+ok 5 - lost worker chunk reply recovers exact durable evidence without replay
+  ---
+  duration_ms: 263.500709
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost worker seal reply recovers exact durable evidence without replay
+ok 6 - lost worker seal reply recovers exact durable evidence without replay
+  ---
+  duration_ms: 291.426833
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: disconnect after dispatch with no remote receipt stays uncertain, never inferred from missing job
+ok 7 - disconnect after dispatch with no remote receipt stays uncertain, never inferred from missing job
+  ---
+  duration_ms: 141.209333
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: wrong chunk evidence and partial seal cannot complete an exact bulk intent
+ok 8 - wrong chunk evidence and partial seal cannot complete an exact bulk intent
+  ---
+  duration_ms: 145.166001
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk preparation uses audited source Manager with exact receipts and durable rejection
+ok 9 - bulk preparation uses audited source Manager with exact receipts and durable rejection
+  ---
+  duration_ms: 193.121875
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: bulk preparation uses audited bundled Manager with exact receipts and durable rejection
+ok 10 - bulk preparation uses audited bundled Manager with exact receipts and durable rejection
+  ---
+  duration_ms: 204.263292
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: partial seal keeps exact job and uncertain protection without rebuilding or executing
+ok 11 - partial seal keeps exact job and uncertain protection without rebuilding or executing
+  ---
+  duration_ms: 140.617416
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a mismatched initial acknowledgement cannot be delivered as prepare success
+ok 12 - a mismatched initial acknowledgement cannot be delivered as prepare success
+  ---
+  duration_ms: 145.773209
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+ok 13 - persistent references across MCP + actual source Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 2234.778168
+  type: 'test'
+  ...
+# Subtest: persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+ok 14 - persistent references across MCP + actual bundled Manager SIGKILL and lost remote acknowledgment
+  ---
+  duration_ms: 1346.865459
+  type: 'test'
+  ...
+# (node:23) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+ok 15 - real MCP json-line restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 520.656625
+  type: 'test'
+  ...
+# (node:23) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+ok 16 - real MCP content-length restores typed arguments before HTTP and rejects invalid references before execution
+  ---
+  duration_ms: 481.541959
+  type: 'test'
+  ...
+# Subtest: business field policy distinguishes identifier words from BSON tags, flags and index definitions
+ok 17 - business field policy distinguishes identifier words from BSON tags, flags and index definitions
+  ---
+  duration_ms: 0.797542
+  type: 'test'
+  ...
+# Subtest: typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+ok 18 - typed aliases round trip strings, numeric widths, ObjectIds, compound IDs and arrays without leaking credentials
+  ---
+  duration_ms: 6.143709
+  type: 'test'
+  ...
+# Subtest: aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+ok 19 - aliases work in queries, transactions, imports and bulk expected values but never in control arguments
+  ---
+  duration_ms: 0.621583
+  type: 'test'
+  ...
+# Subtest: references cannot cross processes, instances, endpoints, databases or changed target profiles
+ok 20 - references cannot cross processes, instances, endpoints, databases or changed target profiles
+  ---
+  duration_ms: 0.449125
+  type: 'test'
+  ...
+# Subtest: known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+ok 21 - known identifier echoes are scrubbed from errors, encoded text, object keys and final transport
+  ---
+  duration_ms: 1.373417
+  type: 'test'
+  ...
+# Subtest: index definitions, plugin identifiers, plan hashes and counts retain their contracts
+ok 22 - index definitions, plugin identifiers, plan hashes and counts retain their contracts
+  ---
+  duration_ms: 0.435958
+  type: 'test'
+  ...
+# Subtest: privacy capacity fails closed and leaves existing references valid
+ok 23 - privacy capacity fails closed and leaves existing references valid
+  ---
+  duration_ms: 1.34275
+  type: 'test'
+  ...
+# Subtest: business substrings never alter import/job IDs or database metadata
+ok 24 - business substrings never alter import/job IDs or database metadata
+  ---
+  duration_ms: 0.794959
+  type: 'test'
+  ...
+# Subtest: aggregation aliases and derived identifier values remain private while counts remain numeric
+ok 25 - aggregation aliases and derived identifier values remain private while counts remain numeric
+  ---
+  duration_ms: 0.683417
+  type: 'test'
+  ...
+# Subtest: historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+ok 26 - historical bulk acceptance plan masks all 128 sample IDs and preserves the immutable execution identity
+  ---
+  duration_ms: 47.534042
+  type: 'test'
+  ...
+# Subtest: local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+ok 27 - local sandbox bulk completes, reuses protected IDs, preserves chunk hashes and rolls back without replay
+  ---
+  duration_ms: 180.239875
+  type: 'test'
+  ...
+# Subtest: historical candidate restores typed references only within original bulk business surfaces
+ok 28 - historical candidate restores typed references only within original bulk business surfaces
+  ---
+  duration_ms: 0.339375
+  type: 'test'
+  ...
+# Subtest: disposition protocol remains intact when private business IDs equal its metadata values
+ok 29 - disposition protocol remains intact when private business IDs equal its metadata values
+  ---
+  duration_ms: 0.371958
+  type: 'test'
+  ...
+# (node:31) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:31) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: import public MCP and source Manager require native admin review and preserve per-batch confirmation
+ok 30 - import public MCP and source Manager require native admin review and preserve per-batch confirmation
+  ---
+  duration_ms: 1194.511376
+  type: 'test'
+  ...
+# (node:31) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: import public MCP and bundled Manager require native admin review and preserve per-batch confirmation
+ok 31 - import public MCP and bundled Manager require native admin review and preserve per-batch confirmation
+  ---
+  duration_ms: 612.888125
+  type: 'test'
+  ...
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP source store quarantines exact typed legacy input without replay or replacement
+ok 32 - public MCP source store quarantines exact typed legacy input without replay or replacement
+  ---
+  duration_ms: 1017.163251
+  type: 'test'
+  ...
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP bundled store quarantines exact typed legacy input without replay or replacement
+ok 33 - public MCP bundled store quarantines exact typed legacy input without replay or replacement
+  ---
+  duration_ms: 526.233792
+  type: 'test'
+  ...
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP rejects invented proof, risk override, wrong confirmation, and extra identity fields
+ok 34 - public MCP rejects invented proof, risk override, wrong confirmation, and extra identity fields
+  ---
+  duration_ms: 133.503458
+  type: 'test'
+  ...
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real source Manager guards direct requests but never certifies an already queued old execution
+ok 35 - real source Manager guards direct requests but never certifies an already queued old execution
+  ---
+  duration_ms: 192.80525
+  type: 'test'
+  ...
+# (node:38) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real bundled Manager guards direct requests but never certifies an already queued old execution
+ok 36 - real bundled Manager guards direct requests but never certifies an already queued old execution
+  ---
+  duration_ms: 209.570375
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + source Manager
+ok 37 - index allowlist rejection is durable and retryable with source MCP + source Manager
+  ---
+  duration_ms: 932.294
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: index allowlist rejection is durable and retryable with source MCP + bundled Manager
+ok 38 - index allowlist rejection is durable and retryable with source MCP + bundled Manager
+  ---
+  duration_ms: 566.720875
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: prepare success lost on delivery is cached across restart, never dispatched twice
+ok 39 - prepare success lost on delivery is cached across restart, never dispatched twice
+  ---
+  duration_ms: 259.558167
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost remote prepare reply recovers by exact identity without a second prepare
+ok 40 - lost remote prepare reply recovers by exact identity without a second prepare
+  ---
+  duration_ms: 259.375375
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: no-plan recovery fences the old attempt before the same intent can retry
+ok 41 - no-plan recovery fences the old attempt before the same intent can retry
+  ---
+  duration_ms: 169.676167
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: validation rejection lost on delivery stays retryable after restart
+ok 42 - validation rejection lost on delivery stays retryable after restart
+  ---
+  duration_ms: 226.781375
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: committed index with a lost response reconciles without repeating createIndex
+ok 43 - committed index with a lost response reconciles without repeating createIndex
+  ---
+  duration_ms: 287.254292
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+ok 44 - MCP recovery repairs post-ack metadata failure and survives restart without replaying DDL
+  ---
+  duration_ms: 548.552667
+  type: 'test'
+  ...
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:42) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MCP recovery reports missing execution evidence and never adopts a same-spec index
+ok 45 - MCP recovery reports missing execution evidence and never adopts a same-spec index
+  ---
+  duration_ms: 233.822208
+  type: 'test'
+  ...
+# (node:48) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:48) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and source Manager
+ok 46 - full insertOne first chunk admits risk review through public stdio MCP and source Manager
+  ---
+  duration_ms: 1353.247668
+  type: 'test'
+  ...
+# {"riskPlanId":"64fb309c2b14b6b8f4bdcd00ad7d7d68b217818bc6de129eda925be0032650de","unitCount":34,"operationCount":100,"fenceReason":"human_risk_acceptance_no_external_attestation","canApprove":true,"replacementAllowed":false,"remoteDispatches":0}
+# (node:48) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+ok 47 - full insertOne first chunk admits risk review through public stdio MCP and candidate runtime Manager
+  ---
+  duration_ms: 653.640084
+  type: 'test'
+  ...
+# {"riskPlanId":"d18f39beab00bedab72c35b3efeb667bebb62d3c342fa0ea76c4ef2f1747464e","unitCount":34,"operationCount":100,"fenceReason":"human_risk_acceptance_no_external_attestation","canApprove":true,"replacementAllowed":false,"remoteDispatches":0}
+# (node:59) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:59) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and source Manager require human approval before any replacement upload
+ok 48 - public MCP and source Manager require human approval before any replacement upload
+  ---
+  duration_ms: 1248.329459
+  type: 'test'
+  ...
+# (node:59) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and bundled Manager require human approval before any replacement upload
+ok 49 - public MCP and bundled Manager require human approval before any replacement upload
+  ---
+  duration_ms: 619.671917
+  type: 'test'
+  ...
+# (node:60) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: independent human review accepts unknown history with no receipt or instance quarantine
+ok 50 - independent human review accepts unknown history with no receipt or instance quarantine
+  ---
+  duration_ms: 210.306291
+  type: 'test'
+  ...
+# Subtest: proposal cannot upload before review; approval closes only the original job across contexts
+ok 51 - proposal cannot upload before review; approval closes only the original job across contexts
+  ---
+  duration_ms: 24.219417
+  type: 'test'
+  ...
+# Subtest: remote retirement failure keeps original closed and creates no replacement intent or upload
+ok 52 - remote retirement failure keeps original closed and creates no replacement intent or upload
+  ---
+  duration_ms: 27.240542
+  type: 'test'
+  ...
+# Subtest: lost remote retirement response resumes the same termination and unique replacement after restart
+ok 53 - lost remote retirement response resumes the same termination and unique replacement after restart
+  ---
+  duration_ms: 82.840542
+  type: 'test'
+  ...
+# Subtest: remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+ok 54 - remote retirement binds exact lineage, rejects conflict and persists across helper restarts
+  ---
+  duration_ms: 97.583584
+  type: 'test'
+  ...
+# Subtest: remote acknowledgment is mandatory; public caller cannot inject a termination result
+ok 55 - remote acknowledgment is mandatory; public caller cannot inject a termination result
+  ---
+  duration_ms: 33.78075
+  type: 'test'
+  ...
+# Subtest: human-created replacement seals normally, admits only its immutable plan, never reopens original
+ok 56 - human-created replacement seals normally, admits only its immutable plan, never reopens original
+  ---
+  duration_ms: 53.533625
+  type: 'test'
+  ...
+# Subtest: two proposals cannot both be human-approved for one original; expiry requires fresh review
+ok 57 - two proposals cannot both be human-approved for one original; expiry requires fresh review
+  ---
+  duration_ms: 24.917125
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL human_risk_approve beforeCommit preserves atomic termination and one lineage
+ok 58 - v2 actual SIGKILL human_risk_approve beforeCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 116.514834
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL human_risk_approve afterCommit preserves atomic termination and one lineage
+ok 59 - v2 actual SIGKILL human_risk_approve afterCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 81.0475
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL create_risk_replacement beforeCommit preserves atomic termination and one lineage
+ok 60 - v2 actual SIGKILL create_risk_replacement beforeCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 68.044625
+  type: 'test'
+  ...
+# Subtest: v2 actual SIGKILL create_risk_replacement afterCommit preserves atomic termination and one lineage
+ok 61 - v2 actual SIGKILL create_risk_replacement afterCommit preserves atomic termination and one lineage
+  ---
+  duration_ms: 80.937625
+  type: 'test'
+  ...
+# Subtest: review memo is hash-bound, remote read failures are facts and public input cannot masquerade as evidence
+ok 62 - review memo is hash-bound, remote read failures are facts and public input cannot masquerade as evidence
+  ---
+  duration_ms: 28.503959
+  type: 'test'
+  ...
+# Subtest: existing remote replacement jobs are not silently adopted by a handoff
+ok 63 - existing remote replacement jobs are not silently adopted by a handoff
+  ---
+  duration_ms: 37.854583
+  type: 'test'
+  ...
+# Subtest: cooperative helper aborts a transaction if retirement arrives before its commit
+ok 64 - cooperative helper aborts a transaction if retirement arrives before its commit
+  ---
+  duration_ms: 61.699542
+  type: 'test'
+  ...
+# Subtest: concurrent approved creators cannot establish a second replacement
+ok 65 - concurrent approved creators cannot establish a second replacement
+  ---
+  duration_ms: 57.210791
+  type: 'test'
+  ...
+# (node:72) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: remote control I/O interruption retirement.json before-rename is exact-retryable and preserves closure
+ok 66 - remote control I/O interruption retirement.json before-rename is exact-retryable and preserves closure
+  ---
+  duration_ms: 256.584375
+  type: 'test'
+  ...
+# Subtest: remote control I/O interruption retirement.json after-rename is exact-retryable and preserves closure
+ok 67 - remote control I/O interruption retirement.json after-rename is exact-retryable and preserves closure
+  ---
+  duration_ms: 138.239708
+  type: 'test'
+  ...
+# Subtest: remote control I/O interruption import-retirement.json after-rename is exact-retryable and preserves closure
+ok 68 - remote control I/O interruption import-retirement.json after-rename is exact-retryable and preserves closure
+  ---
+  duration_ms: 174.302792
+  type: 'test'
+  ...
+# Subtest: remote control I/O interruption lineage.json after-rename is exact-retryable and preserves closure
+ok 69 - remote control I/O interruption lineage.json after-rename is exact-retryable and preserves closure
+  ---
+  duration_ms: 181.595959
+  type: 'test'
+  ...
+# Subtest: remote control I/O interruption import-lineage.json after-rename is exact-retryable and preserves closure
+ok 70 - remote control I/O interruption import-lineage.json after-rename is exact-retryable and preserves closure
+  ---
+  duration_ms: 100.763292
+  type: 'test'
+  ...
+# Subtest: remote control I/O interruption parent parent-sync is exact-retryable and preserves closure
+ok 71 - remote control I/O interruption parent parent-sync is exact-retryable and preserves closure
+  ---
+  duration_ms: 115.071709
+  type: 'test'
+  ...
+# Subtest: remote SIGKILL after retirement.json retains files and lock; no age-based unlock or replacement
+ok 72 - remote SIGKILL after retirement.json retains files and lock; no age-based unlock or replacement
+  ---
+  duration_ms: 74.150417
+  type: 'test'
+  ...
+# Subtest: remote SIGKILL after lineage.json retains files and lock; no age-based unlock or replacement
+ok 73 - remote SIGKILL after lineage.json retains files and lock; no age-based unlock or replacement
+  ---
+  duration_ms: 66.13675
+  type: 'test'
+  ...
+# Subtest: remote SIGKILL after import-lineage.json retains files and lock; no age-based unlock or replacement
+ok 74 - remote SIGKILL after import-lineage.json retains files and lock; no age-based unlock or replacement
+  ---
+  duration_ms: 79.861667
+  type: 'test'
+  ...
+# (node:74) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: unclaimed import closes atomically across concurrent recovery, restart and lost closure reply; exact retry keeps every old attempt
+ok 75 - unclaimed import closes atomically across concurrent recovery, restart and lost closure reply; exact retry keeps every old attempt
+  ---
+  duration_ms: 20.294583
+  type: 'test'
+  ...
+# Subtest: claim winning the recovery race preserves uncertain even when no reply or remote files exist
+ok 76 - claim winning the recovery race preserves uncertain even when no reply or remote files exist
+  ---
+  duration_ms: 5.517167
+  type: 'test'
+  ...
+# Subtest: preflight failure cannot close a concurrent already claimed import
+ok 77 - preflight failure cannot close a concurrent already claimed import
+  ---
+  duration_ms: 3.511666
+  type: 'test'
+  ...
+# Subtest: SIGKILL import intent beforeCommit never reuses a dispatched or fenced attempt
+ok 78 - SIGKILL import intent beforeCommit never reuses a dispatched or fenced attempt
+  ---
+  duration_ms: 53.302667
+  type: 'test'
+  ...
+# Subtest: SIGKILL import intent afterCommit never reuses a dispatched or fenced attempt
+ok 79 - SIGKILL import intent afterCommit never reuses a dispatched or fenced attempt
+  ---
+  duration_ms: 52.291958
+  type: 'test'
+  ...
+# Subtest: SIGKILL import claim_import_prepare beforeCommit never reuses a dispatched or fenced attempt
+ok 80 - SIGKILL import claim_import_prepare beforeCommit never reuses a dispatched or fenced attempt
+  ---
+  duration_ms: 171.075334
+  type: 'test'
+  ...
+# Subtest: SIGKILL import claim_import_prepare afterCommit never reuses a dispatched or fenced attempt
+ok 81 - SIGKILL import claim_import_prepare afterCommit never reuses a dispatched or fenced attempt
+  ---
+  duration_ms: 71.988542
+  type: 'test'
+  ...
+# Subtest: SIGKILL import import_prepare_result beforeCommit never reuses a dispatched or fenced attempt
+ok 82 - SIGKILL import import_prepare_result beforeCommit never reuses a dispatched or fenced attempt
+  ---
+  duration_ms: 50.076375
+  type: 'test'
+  ...
+# Subtest: SIGKILL import import_prepare_result afterCommit never reuses a dispatched or fenced attempt
+ok 83 - SIGKILL import import_prepare_result afterCommit never reuses a dispatched or fenced attempt
+  ---
+  duration_ms: 93.044958
+  type: 'test'
+  ...
+# Subtest: independent SQLite processes serialize delayed claim against atomic unclaimed closure
+ok 84 - independent SQLite processes serialize delayed claim against atomic unclaimed closure
+  ---
+  duration_ms: 87.870417
+  type: 'test'
+  ...
+# Subtest: configuration changing after preclaim check is rechecked before transport, without relying on worker error text
+ok 85 - configuration changing after preclaim check is rechecked before transport, without relying on worker error text
+  ---
+  duration_ms: 23.23725
+  type: 'test'
+  ...
+# (node:78) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: import human risk review binds historical bytes, exact batches, observations and preserves original uncertainty
+ok 86 - import human risk review binds historical bytes, exact batches, observations and preserves original uncertainty
+  ---
+  duration_ms: 111.861041
+  type: 'test'
+  ...
+# Subtest: import proposal rejects payload, order, BSON field order, collection, target and batching changes
+ok 87 - import proposal rejects payload, order, BSON field order, collection, target and batching changes
+  ---
+  duration_ms: 47.624125
+  type: 'test'
+  ...
+# Subtest: import candidates and originals are gated across contexts; human approval creates no replacement
+ok 88 - import candidates and originals are gated across contexts; human approval creates no replacement
+  ---
+  duration_ms: 21.281416
+  type: 'test'
+  ...
+# Subtest: import retirement and lost preparation replies resume only the one replacement after restart
+ok 89 - import retirement and lost preparation replies resume only the one replacement after restart
+  ---
+  duration_ms: 103.729875
+  type: 'test'
+  ...
+# Subtest: missing terminal import receipt stays uncertain and cannot replay preparation
+ok 90 - missing terminal import receipt stays uncertain and cannot replay preparation
+  ---
+  duration_ms: 27.807542
+  type: 'test'
+  ...
+# Subtest: import approval expires, competing proposal is rejected, exact identity can be reviewed again
+ok 91 - import approval expires, competing proposal is rejected, exact identity can be reviewed again
+  ---
+  duration_ms: 52.226583
+  type: 'test'
+  ...
+# Subtest: import public API cannot supply approval, evidence or direct store actions
+ok 92 - import public API cannot supply approval, evidence or direct store actions
+  ---
+  duration_ms: 5.408292
+  type: 'test'
+  ...
+# Subtest: independent import workbench requires same-session review and fresh native verification; cancellation is not approval
+ok 93 - independent import workbench requires same-session review and fresh native verification; cancellation is not approval
+  ---
+  duration_ms: 560.978875
+  type: 'test'
+  ...
+# Subtest: import approval renewal after creation retains exact lineage and terminal receipt
+ok 94 - import approval renewal after creation retains exact lineage and terminal receipt
+  ---
+  duration_ms: 24.118417
+  type: 'test'
+  ...
+# Subtest: import batch review reports committed and unknown receipts without discharging historical intent
+ok 95 - import batch review reports committed and unknown receipts without discharging historical intent
+  ---
+  duration_ms: 34.65875
+  type: 'test'
+  ...
+# Subtest: existing remote replacement manifests cannot be adopted, even with identical documents
+ok 96 - existing remote replacement manifests cannot be adopted, even with identical documents
+  ---
+  duration_ms: 16.517417
+  type: 'test'
+  ...
+# Subtest: import receipt target mismatch, corruption or a partial batch list cannot be reported as complete preparation
+ok 97 - import receipt target mismatch, corruption or a partial batch list cannot be reported as complete preparation
+  ---
+  duration_ms: 46.662583
+  type: 'test'
+  ...
+# Subtest: import SIGKILL human_risk_approve beforeCommit preserves one lineage and historical bytes
+ok 98 - import SIGKILL human_risk_approve beforeCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 49.93025
+  type: 'test'
+  ...
+# Subtest: import SIGKILL human_risk_approve afterCommit preserves one lineage and historical bytes
+ok 99 - import SIGKILL human_risk_approve afterCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 56.049125
+  type: 'test'
+  ...
+# Subtest: import SIGKILL create_risk_replacement beforeCommit preserves one lineage and historical bytes
+ok 100 - import SIGKILL create_risk_replacement beforeCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 66.196625
+  type: 'test'
+  ...
+# Subtest: import SIGKILL create_risk_replacement afterCommit preserves one lineage and historical bytes
+ok 101 - import SIGKILL create_risk_replacement afterCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 55.810542
+  type: 'test'
+  ...
+# Subtest: new import protocol can retry exact pre-SSH rejection without a human risk override
+ok 102 - new import protocol can retry exact pre-SSH rejection without a human risk override
+  ---
+  duration_ms: 6.765083
+  type: 'test'
+  ...
+# Subtest: partial import preparation continues the same batches and archives its terminal prefix evidence
+ok 103 - partial import preparation continues the same batches and archives its terminal prefix evidence
+  ---
+  duration_ms: 30.571417
+  type: 'test'
+  ...
+# Subtest: registry migrates v1 instance records to v4 manager config
+ok 104 - registry migrates v1 instance records to v4 manager config
+  ---
+  duration_ms: 11.124791
+  type: 'test'
+  ...
+# Subtest: registry creates a default instance from env when no registry exists
+ok 105 - registry creates a default instance from env when no registry exists
+  ---
+  duration_ms: 0.60975
+  type: 'test'
+  ...
+# Subtest: sandbox passwords persist privately per instance and never appear in public registry responses
+ok 106 - sandbox passwords persist privately per instance and never appear in public registry responses
+  ---
+  duration_ms: 13.118083
+  type: 'test'
+  ...
+# Subtest: registry preserves per-instance MongoDB profile metadata
+ok 107 - registry preserves per-instance MongoDB profile metadata
+  ---
+  duration_ms: 3.245792
+  type: 'test'
+  ...
+# Subtest: registry preserves labeled per-instance source roots
+ok 108 - registry preserves labeled per-instance source roots
+  ---
+  duration_ms: 1.148208
+  type: 'test'
+  ...
+# Subtest: worker manager forwards MongoDB profile metadata to the selected worker
+ok 109 - worker manager forwards MongoDB profile metadata to the selected worker
+  ---
+  duration_ms: 36.254833
+  type: 'test'
+  ...
+# Subtest: registry drops preferred worker ports outside the manager range
+ok 110 - registry drops preferred worker ports outside the manager range
+  ---
+  duration_ms: 6.792916
+  type: 'test'
+  ...
+# Subtest: registry does not persist manager port as an instance worker port
+ok 111 - registry does not persist manager port as an instance worker port
+  ---
+  duration_ms: 1.096417
+  type: 'test'
+  ...
+# Subtest: worker manager requires instanceId only when multiple instances are configured
+ok 112 - worker manager requires instanceId only when multiple instances are configured
+  ---
+  duration_ms: 4.001791
+  type: 'test'
+  ...
+# Subtest: worker manager rejects a worker without protocolVersion 2
+ok 113 - worker manager rejects a worker without protocolVersion 2
+  ---
+  duration_ms: 10.569916
+  type: 'test'
+  ...
+# Subtest: worker manager restart recovers stopped instances without disrupting running ones
+ok 114 - worker manager restart recovers stopped instances without disrupting running ones
+  ---
+  duration_ms: 13.8205
+  type: 'test'
+  ...
+# Subtest: worker manager preserves bounded stderr when a worker exits
+ok 115 - worker manager preserves bounded stderr when a worker exits
+  ---
+  duration_ms: 2.423041
+  type: 'test'
+  ...
+# Subtest: worker manager allocates only from the manager range and excludes manager port
+ok 116 - worker manager allocates only from the manager range and excludes manager port
+  ---
+  duration_ms: 80.946792
+  type: 'test'
+  ...
+# Subtest: worker manager ignores preferred worker ports outside the manager range
+ok 117 - worker manager ignores preferred worker ports outside the manager range
+  ---
+  duration_ms: 0.975417
+  type: 'test'
+  ...
+# manager restore snapshot missing {
+#   path: '/tmp/remote-debug-worker-stop-KtCZSC/.remote-debug/manager-runtime.json'
+# }
+# Subtest: worker manager stops workers after stopped health and reuses released ports
+ok 118 - worker manager stops workers after stopped health and reuses released ports
+  ---
+  duration_ms: 12.268292
+  type: 'test'
+  ...
+# manager restore snapshot processed {
+#   restored: [ 'a' ],
+#   skipped: [],
+#   failed: [],
+#   diagnostic: {
+#     status: 'processed',
+#     path: '/tmp/remote-debug-worker-restore-lOO6bK/.remote-debug/manager-runtime.json',
+#     reason: 'active-runtime',
+#     instanceCount: 1,
+#     createdAt: '2026-10-27T04:21:39.614Z',
+#     updatedAt: '2026-10-27T04:21:39.614Z',
+#     ownerPid: 109,
+#     sourcePid: 109,
+#     lastAction: 'running',
+#     lastReason: 'active-runtime'
+#   }
+# }
+# Subtest: worker manager restores running workers from a maintained runtime snapshot
+ok 119 - worker manager restores running workers from a maintained runtime snapshot
+  ---
+  duration_ms: 9.311125
+  type: 'test'
+  ...
+# Subtest: worker manager preserves lease-expiry snapshots while stopping workers
+ok 120 - worker manager preserves lease-expiry snapshots while stopping workers
+  ---
+  duration_ms: 2.444709
+  type: 'test'
+  ...
+# Subtest: worker manager does not restore instances stopped before lease expiry
+ok 121 - worker manager does not restore instances stopped before lease expiry
+  ---
+  duration_ms: 9.740292
+  type: 'test'
+  ...
+# Subtest: worker manager rejects stop for missing instances
+ok 122 - worker manager rejects stop for missing instances
+  ---
+  duration_ms: 0.728083
+  type: 'test'
+  ...
+# Subtest: Mongo admissions reject new registry / old worker without interrupting in-flight requests; failed refresh never admits
+ok 123 - Mongo admissions reject new registry / old worker without interrupting in-flight requests; failed refresh never admits
+  ---
+  duration_ms: 38.359667
+  type: 'test'
+  ...
+# Subtest: configuration changed during worker startup is not advertised as effective
+ok 124 - configuration changed during worker startup is not advertised as effective
+  ---
+  duration_ms: 20.386583
+  type: 'test'
+  ...
+# (node:115) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: final risk approval requires independent admin login, same-origin review and fresh native owner verification
+ok 125 - final risk approval requires independent admin login, same-origin review and fresh native owner verification
+  ---
+  duration_ms: 496.199
+  type: 'test'
+  ...
+# Subtest: knowing an MCP plan hash without reading it in the human session cannot approve
+ok 126 - knowing an MCP plan hash without reading it in the human session cannot approve
+  ---
+  duration_ms: 238.765125
+  type: 'test'
+  ...
+# Subtest: cancelled native approval, session logout during prompt and changed evidence create no replacement
+ok 127 - cancelled native approval, session logout during prompt and changed evidence create no replacement
+  ---
+  duration_ms: 299.052125
+  type: 'test'
+  ...
+# Subtest: risk review displays exact immutable plan and never exposes business preimages or authority key
+ok 128 - risk review displays exact immutable plan and never exposes business preimages or authority key
+  ---
+  duration_ms: 216.034792
+  type: 'test'
+  ...
+# Subtest: v2 human workbench can approve without an external receipt or whole-instance quarantine
+ok 129 - v2 human workbench can approve without an external receipt or whole-instance quarantine
+  ---
+  duration_ms: 148.297958
+  type: 'test'
+  ...
+# Subtest: v2 native prompt cannot approve after the enrolled target changes
+ok 130 - v2 native prompt cannot approve after the enrolled target changes
+  ---
+  duration_ms: 141.775583
+  type: 'test'
+  ...
+# Subtest: indexed patches support guarded EJSON ids and remain small for large arrays
+ok 131 - indexed patches support guarded EJSON ids and remain small for large arrays
+  ---
+  duration_ms: 5.3845
+  type: 'test'
+  ...
+# Subtest: indexed patches reject unguarded, positional, unsafe and unbounded paths
+ok 132 - indexed patches reject unguarded, positional, unsafe and unbounded paths
+  ---
+  duration_ms: 1.517417
+  type: 'test'
+  ...
+# Subtest: append uses a guarded immediate tail and optional bounded absence check
+ok 133 - append uses a guarded immediate tail and optional bounded absence check
+  ---
+  duration_ms: 0.950875
+  type: 'test'
+  ...
+# Subtest: nested arrays require guards at each level and validate actual array shape
+ok 134 - nested arrays require guards at each level and validate actual array shape
+  ---
+  duration_ms: 0.120417
+  type: 'test'
+  ...
+# Subtest: remote commit preserves neighbouring data, blocks reordering, and rolls back guarded patches
+ok 135 - remote commit preserves neighbouring data, blocks reordering, and rolls back guarded patches
+  ---
+  duration_ms: 42.097375
+  type: 'test'
+  ...
+# Subtest: helper failure survives paused get, event export, audit callback and a new runner with the exact plan
+ok 136 - helper failure survives paused get, event export, audit callback and a new runner with the exact plan
+  ---
+  duration_ms: 360.077084
+  type: 'test'
+  ...
+# Subtest: lost commit reply with inaccessible receipt remains unknown and same-plan resume never reapplies increment
+ok 137 - lost commit reply with inaccessible receipt remains unknown and same-plan resume never reapplies increment
+  ---
+  duration_ms: 217.999667
+  type: 'test'
+  ...
+# Subtest: dispatch error releases wave bookkeeping and emits the original sanitized error
+ok 138 - dispatch error releases wave bookkeeping and emits the original sanitized error
+  ---
+  duration_ms: 88.369042
+  type: 'test'
+  ...
+# Subtest: public diagnostic schema never copies arbitrary messages, details, stack or metadata
+ok 139 - public diagnostic schema never copies arbitrary messages, details, stack or metadata
+  ---
+  duration_ms: 0.422041
+  type: 'test'
+  ...
+# Subtest: transport errors have independent operation identities and cannot publish raw SSH cause
+ok 140 - transport errors have independent operation identities and cannot publish raw SSH cause
+  ---
+  duration_ms: 3.939
+  type: 'test'
+  ...
+# Subtest: resource scheduler failure is observable even when no helper was dispatched
+ok 141 - resource scheduler failure is observable even when no helper was dispatched
+  ---
+  duration_ms: 45.696417
+  type: 'test'
+  ...
+# Subtest: legacy bulk results expose bounded error codes and indexes without copying documents
+ok 142 - legacy bulk results expose bounded error codes and indexes without copying documents
+  ---
+  duration_ms: 1.065916
+  type: 'test'
+  ...
+# Subtest: modern error responses and legacy write-error getters retain only validated metadata
+ok 143 - modern error responses and legacy write-error getters retain only validated metadata
+  ---
+  duration_ms: 0.470209
+  type: 'test'
+  ...
+# Subtest: driver stack locations and callable categories omit absolute paths and arbitrary frames
+ok 144 - driver stack locations and callable categories omit absolute paths and arbitrary frames
+  ---
+  duration_ms: 0.381625
+  type: 'test'
+  ...
+# Subtest: nested business-write errors persist through pause, events and same-plan recovery without partial writes
+ok 145 - nested business-write errors persist through pause, events and same-plan recovery without partial writes
+  ---
+  duration_ms: 161.428042
+  type: 'test'
+  ...
+# Subtest: old MCP/worker records remain diagnostic and never fabricate intent or digest proof
+ok 146 - old MCP/worker records remain diagnostic and never fabricate intent or digest proof
+  ---
+  duration_ms: 11.605291
+  type: 'test'
+  ...
+# Subtest: historical logs for another jobId are not attached to this intent
+ok 147 - historical logs for another jobId are not attached to this intent
+  ---
+  duration_ms: 14.140916
+  type: 'test'
+  ...
+# Subtest: historical logs for another chunkIndex are not attached to this intent
+ok 148 - historical logs for another chunkIndex are not attached to this intent
+  ---
+  duration_ms: 7.918583
+  type: 'test'
+  ...
+# Subtest: historical logs for another instanceId are not attached to this intent
+ok 149 - historical logs for another instanceId are not attached to this intent
+  ---
+  duration_ms: 74.338708
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports missing without releasing protection
+ok 150 - bounded historical log reader reports missing without releasing protection
+  ---
+  duration_ms: 2.89275
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports malformed without releasing protection
+ok 151 - bounded historical log reader reports malformed without releasing protection
+  ---
+  duration_ms: 12.577541
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports partial-tail without releasing protection
+ok 152 - bounded historical log reader reports partial-tail without releasing protection
+  ---
+  duration_ms: 18.788917
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports long-line without releasing protection
+ok 153 - bounded historical log reader reports long-line without releasing protection
+  ---
+  duration_ms: 8.621292
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports oversized without releasing protection
+ok 154 - bounded historical log reader reports oversized without releasing protection
+  ---
+  duration_ms: 3.447625
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports symlink without releasing protection
+ok 155 - bounded historical log reader reports symlink without releasing protection
+  ---
+  duration_ms: 6.030042
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports hardlink without releasing protection
+ok 156 - bounded historical log reader reports hardlink without releasing protection
+  ---
+  duration_ms: 12.746833
+  type: 'test'
+  ...
+# Subtest: bounded historical log reader reports writable without releasing protection
+ok 157 - bounded historical log reader reports writable without releasing protection
+  ---
+  duration_ms: 4.86325
+  type: 'test'
+  ...
+# Subtest: sanitized insert documents retain exact chunk identity and normalized content
+ok 158 - sanitized insert documents retain exact chunk identity and normalized content
+  ---
+  duration_ms: 12.76275
+  type: 'test'
+  ...
+# Subtest: null-prototype compatibility retains document shape, dangerous-key and BSON bounds
+ok 159 - null-prototype compatibility retains document shape, dangerous-key and BSON bounds
+  ---
+  duration_ms: 3.998167
+  type: 'test'
+  ...
+# Subtest: rollback starts directly from a user-paused job without inheriting its pause control
+ok 160 - rollback starts directly from a user-paused job without inheriting its pause control
+  ---
+  duration_ms: 158.540542
+  type: 'test'
+  ...
+# Subtest: pausing a resource-waiting bulk job preserves the user pause reason
+ok 161 - pausing a resource-waiting bulk job preserves the user pause reason
+  ---
+  duration_ms: 1.7915
+  type: 'test'
+  ...
+# Subtest: a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+ok 162 - a user pause racing dispatch cleanup preserves intent without hiding transaction conflicts
+  ---
+  duration_ms: 1.066792
+  type: 'test'
+  ...
+# Subtest: bulk policy is opt-in and keeps sandbox storage outside business allowlists
+ok 163 - bulk policy is opt-in and keeps sandbox storage outside business allowlists
+  ---
+  duration_ms: 0.415542
+  type: 'test'
+  ...
+# Subtest: disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+ok 164 - disabling bulk blocks new jobs and resume but preserves inspection, pause, and rollback
+  ---
+  duration_ms: 4.286584
+  type: 'test'
+  ...
+# Subtest: bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+ok 165 - bulk chunk normalization preserves missing versus null preconditions and hashes stable content
+  ---
+  duration_ms: 0.679958
+  type: 'test'
+  ...
+# Subtest: bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+ok 166 - bulk validator rejects unapproved targets, incomplete originals, duplicate update paths, and unsafe operators
+  ---
+  duration_ms: 0.542542
+  type: 'test'
+  ...
+# Subtest: bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+ok 167 - bulk helper is fixed Node code, bounded, and parses with legacy target syntax
+  ---
+  duration_ms: 1.875291
+  type: 'test'
+  ...
+# Subtest: generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+ok 168 - generated bulk helper decodes ObjectIds and original values with legacy BSON drivers
+  ---
+  duration_ms: 3.814584
+  type: 'test'
+  ...
+# Subtest: runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+ok 169 - runMongoBulk forwards a fixed helper with the exact confirmation and uses the bulk channel
+  ---
+  duration_ms: 0.741709
+  type: 'test'
+  ...
+# Subtest: job runner runs bounded concurrent waves and waits for every started transaction
+ok 170 - job runner runs bounded concurrent waves and waits for every started transaction
+  ---
+  duration_ms: 59.04175
+  type: 'test'
+  ...
+# Subtest: job runner pauses only after the other in-flight batch settles
+ok 171 - job runner pauses only after the other in-flight batch settles
+  ---
+  duration_ms: 26.39825
+  type: 'test'
+  ...
+# Subtest: bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+ok 172 - bulk arrays require canonical paths, exact originals, unchanged identities and full tail elements
+  ---
+  duration_ms: 3.257625
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail
+ok 173 - bulk array runtime checks actual preimage: tail
+  ---
+  duration_ms: 81.543666
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: sparse
+ok 174 - bulk array runtime checks actual preimage: sparse
+  ---
+  duration_ms: 22.133166
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: hole
+ok 175 - bulk array runtime checks actual preimage: hole
+  ---
+  duration_ms: 19.62325
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: object-index
+ok 176 - bulk array runtime checks actual preimage: object-index
+  ---
+  duration_ms: 19.519292
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: identity-conflict
+ok 177 - bulk array runtime checks actual preimage: identity-conflict
+  ---
+  duration_ms: 16.026125
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: tail-conflict
+ok 178 - bulk array runtime checks actual preimage: tail-conflict
+  ---
+  duration_ms: 21.666916
+  type: 'test'
+  ...
+# Subtest: bulk array runtime checks actual preimage: duplicate-identity
+ok 179 - bulk array runtime checks actual preimage: duplicate-identity
+  ---
+  duration_ms: 13.187791
+  type: 'test'
+  ...
+# Subtest: bulk preflight attests no dispatch only before SSH invocation
+ok 180 - bulk preflight attests no dispatch only before SSH invocation
+  ---
+  duration_ms: 0.716875
+  type: 'test'
+  ...
+# Subtest: bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+ok 181 - bulk chunk and seal retries keep hashes and plans immutable and reject changed content
+  ---
+  duration_ms: 50.059166
+  type: 'test'
+  ...
+# Subtest: legacy codec converts nested ObjectIds using BSON or MongoDB driver aliases
+ok 182 - legacy codec converts nested ObjectIds using BSON or MongoDB driver aliases
+  ---
+  duration_ms: 3.770834
+  type: 'test'
+  ...
+# Subtest: legacy codec rejects malformed ObjectIds and unsupported BSON without silently losing types
+ok 183 - legacy codec rejects malformed ObjectIds and unsupported BSON without silently losing types
+  ---
+  duration_ms: 0.870459
+  type: 'test'
+  ...
+# Subtest: legacy codec round-trips numeric widths, binary, timestamps, and BSON key sentinels
+ok 184 - legacy codec round-trips numeric widths, binary, timestamps, and BSON key sentinels
+  ---
+  duration_ms: 0.724416
+  type: 'test'
+  ...
+# Subtest: legacy codec rejects malformed binary, timestamp, and out-of-range Int32 values
+ok 185 - legacy codec rejects malformed binary, timestamp, and out-of-range Int32 values
+  ---
+  duration_ms: 0.464333
+  type: 'test'
+  ...
+# Subtest: codec continues to use native EJSON when available
+ok 186 - codec continues to use native EJSON when available
+  ---
+  duration_ms: 0.562083
+  type: 'test'
+  ...
+# Subtest: native codec preserves explicit Long precision and already decoded BSON without promoting ordinary JSON numbers
+ok 187 - native codec preserves explicit Long precision and already decoded BSON without promoting ordinary JSON numbers
+  ---
+  duration_ms: 0.575375
+  type: 'test'
+  ...
+# (node:345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real legacy envelope has an auditable review without invented operation, chunk or plan proof
+ok 188 - real legacy envelope has an auditable review without invented operation, chunk or plan proof
+  ---
+  duration_ms: 7.828125
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged amount binding
+ok 189 - disposition refuses forged amount binding
+  ---
+  duration_ms: 3.21975
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged job binding
+ok 190 - disposition refuses forged job binding
+  ---
+  duration_ms: 1.84075
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged chunk binding
+ok 191 - disposition refuses forged chunk binding
+  ---
+  duration_ms: 1.334916
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged purpose binding
+ok 192 - disposition refuses forged purpose binding
+  ---
+  duration_ms: 3.311917
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged database binding
+ok 193 - disposition refuses forged database binding
+  ---
+  duration_ms: 1.623916
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged instance binding
+ok 194 - disposition refuses forged instance binding
+  ---
+  duration_ms: 2.705791
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged digest binding
+ok 195 - disposition refuses forged digest binding
+  ---
+  duration_ms: 1.545625
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged context binding
+ok 196 - disposition refuses forged context binding
+  ---
+  duration_ms: 2.526584
+  type: 'test'
+  ...
+# Subtest: disposition refuses forged scope binding
+ok 197 - disposition refuses forged scope binding
+  ---
+  duration_ms: 2.106292
+  type: 'test'
+  ...
+# Subtest: quarantine needs exact review and confirmation; stale and expired reviews fail closed
+ok 198 - quarantine needs exact review and confirmation; stale and expired reviews fail closed
+  ---
+  duration_ms: 2.896916
+  type: 'test'
+  ...
+# Subtest: recovery racing a reviewed quarantine invalidates the review instead of modifying resolved evidence
+ok 199 - recovery racing a reviewed quarantine invalidates the review instead of modifying resolved evidence
+  ---
+  duration_ms: 3.518583
+  type: 'test'
+  ...
+# Subtest: quarantine is durable and idempotent, preserving the exact original record and all pins
+ok 200 - quarantine is durable and idempotent, preserving the exact original record and all pins
+  ---
+  duration_ms: 3.350584
+  type: 'test'
+  ...
+# Subtest: quarantine closes new jobs, other contexts/databases/tools and delayed claims/results
+ok 201 - quarantine closes new jobs, other contexts/databases/tools and delayed claims/results
+  ---
+  duration_ms: 4.573541
+  type: 'test'
+  ...
+# Subtest: actual SIGKILL at quarantine beforeCommit preserves atomic hold/audit and allows exact retry
+ok 202 - actual SIGKILL at quarantine beforeCommit preserves atomic hold/audit and allows exact retry
+  ---
+  duration_ms: 87.187167
+  type: 'test'
+  ...
+# Subtest: actual SIGKILL at quarantine afterCommit preserves atomic hold/audit and allows exact retry
+ok 203 - actual SIGKILL at quarantine afterCommit preserves atomic hold/audit and allows exact retry
+  ---
+  duration_ms: 70.213583
+  type: 'test'
+  ...
+# (node:345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent Managers apply one quarantine and one audit; denied admission is also idempotent
+ok 204 - concurrent Managers apply one quarantine and one audit; denied admission is also idempotent
+  ---
+  duration_ms: 112.444708
+  type: 'test'
+  ...
+# Subtest: storage failure before commit leaves no partial quarantine, receipt or new admission permission
+ok 205 - storage failure before commit leaves no partial quarantine, receipt or new admission permission
+  ---
+  duration_ms: 5.629417
+  type: 'test'
+  ...
+# Subtest: public storage cannot submit proof, risk takeover, internal gate commands or reconstructed credential bytes
+ok 206 - public storage cannot submit proof, risk takeover, internal gate commands or reconstructed credential bytes
+  ---
+  duration_ms: 15.780333
+  type: 'test'
+  ...
+# (node:345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:345) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: cross-process positive receipt versus quarantine race has one atomic winner
+ok 207 - cross-process positive receipt versus quarantine race has one atomic winner
+  ---
+  duration_ms: 89.708125
+  type: 'test'
+  ...
+# Subtest: import splits at 2000 independently of ordinary transaction limits and applies instance policy
+ok 208 - import splits at 2000 independently of ordinary transaction limits and applies instance policy
+  ---
+  duration_ms: 35.273042
+  type: 'test'
+  ...
+# Subtest: import enforces allowlists, explicit unique ids, count/byte limits, and UTF-8 byte splitting
+ok 209 - import enforces allowlists, explicit unique ids, count/byte limits, and UTF-8 byte splitting
+  ---
+  duration_ms: 90.621917
+  type: 'test'
+  ...
+# Subtest: document preserves commit, rollback and idempotency with void cleanup
+ok 210 - document preserves commit, rollback and idempotency with void cleanup
+  ---
+  duration_ms: 21.970084
+  type: 'test'
+  ...
+# Subtest: document retains the original transaction error with void cleanup
+ok 211 - document retains the original transaction error with void cleanup
+  ---
+  duration_ms: 7.475875
+  type: 'test'
+  ...
+# Subtest: transaction preserves commit, rollback and idempotency with void cleanup
+ok 212 - transaction preserves commit, rollback and idempotency with void cleanup
+  ---
+  duration_ms: 11.714166
+  type: 'test'
+  ...
+# Subtest: transaction retains the original transaction error with void cleanup
+ok 213 - transaction retains the original transaction error with void cleanup
+  ---
+  duration_ms: 5.959209
+  type: 'test'
+  ...
+# Subtest: import preserves commit, rollback and idempotency with void cleanup
+ok 214 - import preserves commit, rollback and idempotency with void cleanup
+  ---
+  duration_ms: 19.459167
+  type: 'test'
+  ...
+# Subtest: import retains the original transaction error with void cleanup
+ok 215 - import retains the original transaction error with void cleanup
+  ---
+  duration_ms: 6.626958
+  type: 'test'
+  ...
+# Subtest: document preserves commit, rollback and idempotency with synchronous throw cleanup
+ok 216 - document preserves commit, rollback and idempotency with synchronous throw cleanup
+  ---
+  duration_ms: 18.360625
+  type: 'test'
+  ...
+# Subtest: document retains the original transaction error with synchronous throw cleanup
+ok 217 - document retains the original transaction error with synchronous throw cleanup
+  ---
+  duration_ms: 47.769083
+  type: 'test'
+  ...
+# Subtest: transaction preserves commit, rollback and idempotency with synchronous throw cleanup
+ok 218 - transaction preserves commit, rollback and idempotency with synchronous throw cleanup
+  ---
+  duration_ms: 13.689417
+  type: 'test'
+  ...
+# Subtest: transaction retains the original transaction error with synchronous throw cleanup
+ok 219 - transaction retains the original transaction error with synchronous throw cleanup
+  ---
+  duration_ms: 5.049792
+  type: 'test'
+  ...
+# Subtest: import preserves commit, rollback and idempotency with synchronous throw cleanup
+ok 220 - import preserves commit, rollback and idempotency with synchronous throw cleanup
+  ---
+  duration_ms: 15.450417
+  type: 'test'
+  ...
+# Subtest: import retains the original transaction error with synchronous throw cleanup
+ok 221 - import retains the original transaction error with synchronous throw cleanup
+  ---
+  duration_ms: 7.906875
+  type: 'test'
+  ...
+# Subtest: document preserves commit, rollback and idempotency with rejected promise cleanup
+ok 222 - document preserves commit, rollback and idempotency with rejected promise cleanup
+  ---
+  duration_ms: 16.103417
+  type: 'test'
+  ...
+# Subtest: document retains the original transaction error with rejected promise cleanup
+ok 223 - document retains the original transaction error with rejected promise cleanup
+  ---
+  duration_ms: 4.877417
+  type: 'test'
+  ...
+# Subtest: transaction preserves commit, rollback and idempotency with rejected promise cleanup
+ok 224 - transaction preserves commit, rollback and idempotency with rejected promise cleanup
+  ---
+  duration_ms: 14.539
+  type: 'test'
+  ...
+# Subtest: transaction retains the original transaction error with rejected promise cleanup
+ok 225 - transaction retains the original transaction error with rejected promise cleanup
+  ---
+  duration_ms: 7.046875
+  type: 'test'
+  ...
+# Subtest: import preserves commit, rollback and idempotency with rejected promise cleanup
+ok 226 - import preserves commit, rollback and idempotency with rejected promise cleanup
+  ---
+  duration_ms: 10.571125
+  type: 'test'
+  ...
+# Subtest: import retains the original transaction error with rejected promise cleanup
+ok 227 - import retains the original transaction error with rejected promise cleanup
+  ---
+  duration_ms: 5.645167
+  type: 'test'
+  ...
+# Subtest: legacy BSON without EJSON preserves ObjectId through transaction preview, commit and rollback
+ok 228 - legacy BSON without EJSON preserves ObjectId through transaction preview, commit and rollback
+  ---
+  duration_ms: 33.366792
+  type: 'test'
+  ...
+# Subtest: legacy ObjectId menu updates retain typed references and restore original snapshots
+ok 229 - legacy ObjectId menu updates retain typed references and restore original snapshots
+  ---
+  duration_ms: 36.080625
+  type: 'test'
+  ...
+# Subtest: legacy ObjectId rollback still rejects externally changed documents
+ok 230 - legacy ObjectId rollback still rejects externally changed documents
+  ---
+  duration_ms: 6.110875
+  type: 'test'
+  ...
+# Subtest: import commit retry and rollback override secondaryPreferred without changing the plan
+ok 231 - import commit retry and rollback override secondaryPreferred without changing the plan
+  ---
+  duration_ms: 16.104084
+  type: 'test'
+  ...
+# Subtest: single and combined mutation commits and rollbacks override secondaryPreferred
+ok 232 - single and combined mutation commits and rollbacks override secondaryPreferred
+  ---
+  duration_ms: 13.242416
+  type: 'test'
+  ...
+# Subtest: import journals support remote crypto without randomUUID through prepare, commit and rollback
+ok 233 - import journals support remote crypto without randomUUID through prepare, commit and rollback
+  ---
+  duration_ms: 8.786042
+  type: 'test'
+  ...
+# Subtest: 2000-document import uses bulk operations, stable journals, idempotent commit and atomic rollback
+ok 234 - 2000-document import uses bulk operations, stable journals, idempotent commit and atomic rollback
+  ---
+  duration_ms: 293.190042
+  type: 'test'
+  ...
+# Subtest: failed batch aborts atomically and retries without repeating completed batches
+ok 235 - failed batch aborts atomically and retries without repeating completed batches
+  ---
+  duration_ms: 18.870958
+  type: 'test'
+  ...
+# Subtest: lost commit reply remains unknown and blocks unsafe retries or rollback
+ok 236 - lost commit reply remains unknown and blocks unsafe retries or rollback
+  ---
+  duration_ms: 11.684041
+  type: 'test'
+  ...
+# Subtest: connection failures before a transaction can retry the same import plan
+ok 237 - connection failures before a transaction can retry the same import plan
+  ---
+  duration_ms: 7.590917
+  type: 'test'
+  ...
+# Subtest: partial preparation exposes completed plans and an explicit failed batch
+ok 238 - partial preparation exposes completed plans and an explicit failed batch
+  ---
+  duration_ms: 2.551875
+  type: 'test'
+  ...
+# Subtest: rollback detects external changes and batch scope/plan confirmation is enforced
+ok 239 - rollback detects external changes and batch scope/plan confirmation is enforced
+  ---
+  duration_ms: 11.655625
+  type: 'test'
+  ...
+# Subtest: ObjectId import stays BSON typed through prepare, commit, duplicate checks and rollback
+ok 240 - ObjectId import stays BSON typed through prepare, commit, duplicate checks and rollback
+  ---
+  duration_ms: 8.933583
+  type: 'test'
+  ...
+# Subtest: lost rollback reply blocks deletion retries and preserves the uncertain state
+ok 241 - lost rollback reply blocks deletion retries and preserves the uncertain state
+  ---
+  duration_ms: 9.344667
+  type: 'test'
+  ...
+# Subtest: large import script parses and fits the dedicated bounded transport
+ok 242 - large import script parses and fits the dedicated bounded transport
+  ---
+  duration_ms: 64.272251
+  type: 'test'
+  ...
+# (node:550) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: native-reviewed standalone termination closes only this job, retains unknown history and creates no replacement
+ok 243 - native-reviewed standalone termination closes only this job, retains unknown history and creates no replacement
+  ---
+  duration_ms: 90.397083
+  type: 'test'
+  ...
+# Subtest: expired risk approval does not obstruct terminating its established replacement
+ok 244 - expired risk approval does not obstruct terminating its established replacement
+  ---
+  duration_ms: 50.069875
+  type: 'test'
+  ...
+# Subtest: changed state, wrong hash, expired review and forged caller evidence cannot terminate
+ok 245 - changed state, wrong hash, expired review and forged caller evidence cannot terminate
+  ---
+  duration_ms: 20.265
+  type: 'test'
+  ...
+# Subtest: lost remote reply retains permanent gate and same termination can finish after restart
+ok 246 - lost remote reply retains permanent gate and same termination can finish after restart
+  ---
+  duration_ms: 61.309
+  type: 'test'
+  ...
+# Subtest: remote failure before tombstone never reopens the approved local gate
+ok 247 - remote failure before tombstone never reopens the approved local gate
+  ---
+  duration_ms: 24.930708
+  type: 'test'
+  ...
+# Subtest: a successful command reply without matching independent readback stays pending
+ok 248 - a successful command reply without matching independent readback stays pending
+  ---
+  duration_ms: 25.378667
+  type: 'test'
+  ...
+# Subtest: target configuration changes and foreign instances cannot consume a termination review
+ok 249 - target configuration changes and foreign instances cannot consume a termination review
+  ---
+  duration_ms: 14.905417
+  type: 'test'
+  ...
+# Subtest: SIGKILL beforeCommit preserves atomic permanent admission and restart recovery
+ok 250 - SIGKILL beforeCommit preserves atomic permanent admission and restart recovery
+  ---
+  duration_ms: 77.363125
+  type: 'test'
+  ...
+# Subtest: SIGKILL afterCommit preserves atomic permanent admission and restart recovery
+ok 251 - SIGKILL afterCommit preserves atomic permanent admission and restart recovery
+  ---
+  duration_ms: 70.400459
+  type: 'test'
+  ...
+# Subtest: permanent gate marks existing tasks inactive and read-only observations cannot reactivate them
+ok 252 - permanent gate marks existing tasks inactive and read-only observations cannot reactivate them
+  ---
+  duration_ms: 23.811625
+  type: 'test'
+  ...
+# Subtest: MongoDB mutations are disabled unless explicitly enabled and scoped
+ok 253 - MongoDB mutations are disabled unless explicitly enabled and scoped
+  ---
+  duration_ms: 2.290208
+  type: 'test'
+  ...
+# Subtest: MongoDB document and index mutation normalization is bounded
+ok 254 - MongoDB document and index mutation normalization is bounded
+  ---
+  duration_ms: 4.439166
+  type: 'test'
+  ...
+# Subtest: MongoDB mutation helper has no URI and uses the protected temporary journal
+ok 255 - MongoDB mutation helper has no URI and uses the protected temporary journal
+  ---
+  duration_ms: 3.573333
+  type: 'test'
+  ...
+# Subtest: remote mutation helper avoids unsupported Node 12 operators and preserves zero counts
+ok 256 - remote mutation helper avoids unsupported Node 12 operators and preserves zero counts
+  ---
+  duration_ms: 5.1265
+  type: 'test'
+  ...
+# Subtest: MongoDB mutation runner forwards fixed node helper and confirmation requirements
+ok 257 - MongoDB mutation runner forwards fixed node helper and confirmation requirements
+  ---
+  duration_ms: 0.722958
+  type: 'test'
+  ...
+# Subtest: prepare reply loss recovers the same hashed plan, with zero business writes
+ok 258 - prepare reply loss recovers the same hashed plan, with zero business writes
+  ---
+  duration_ms: 12.521083
+  type: 'test'
+  ...
+# Subtest: absence is fenced before retry; delayed original prepare cannot create a plan
+ok 259 - absence is fenced before retry; delayed original prepare cannot create a plan
+  ---
+  duration_ms: 9.64975
+  type: 'test'
+  ...
+# Subtest: a missing remote receipt is never taken as proof that preparation did not run
+ok 260 - a missing remote receipt is never taken as proof that preparation did not run
+  ---
+  duration_ms: 1.097584
+  type: 'test'
+  ...
+# Subtest: a deleted manifest after plan reservation is not reported as an unprepared attempt
+ok 261 - a deleted manifest after plan reservation is not reported as an unprepared attempt
+  ---
+  duration_ms: 5.206209
+  type: 'test'
+  ...
+# Subtest: recovery never ages out a live or crashed prepare lock
+ok 262 - recovery never ages out a live or crashed prepare lock
+  ---
+  duration_ms: 1.394625
+  type: 'test'
+  ...
+# Subtest: running prepare and recovery serialize; recovery cannot report false absence
+ok 263 - running prepare and recovery serialize; recovery cannot report false absence
+  ---
+  duration_ms: 4.220083
+  type: 'test'
+  ...
+# Subtest: index created with an uncertain result is not executed again or inferred from its name
+ok 264 - index created with an uncertain result is not executed again or inferred from its name
+  ---
+  duration_ms: 9.300959
+  type: 'test'
+  ...
+# Subtest: corrupt or missing receipts and changed policy fail closed
+ok 265 - corrupt or missing receipts and changed policy fail closed
+  ---
+  duration_ms: 6.195791
+  type: 'test'
+  ...
+# Subtest: new prepare hashes preserve compound index field order and connection identity
+ok 266 - new prepare hashes preserve compound index field order and connection identity
+  ---
+  duration_ms: 6.939333
+  type: 'test'
+  ...
+# Subtest: worker transport preserves an explicit preflight rejection instead of making it an uncertain transport failure
+ok 267 - worker transport preserves an explicit preflight rejection instead of making it an uncertain transport failure
+  ---
+  duration_ms: 10.65925
+  type: 'test'
+  ...
+# (node:640) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: risk review retains real legacy uncertainty and creates no replacement without human confirmation
+ok 268 - risk review retains real legacy uncertainty and creates no replacement without human confirmation
+  ---
+  duration_ms: 13.747916
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge amount
+ok 269 - risk review cannot expand original effects or forge amount
+  ---
+  duration_ms: 3.722917
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge recipient
+ok 270 - risk review cannot expand original effects or forge recipient
+  ---
+  duration_ms: 3.123875
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge batch_date
+ok 271 - risk review cannot expand original effects or forge batch_date
+  ---
+  duration_ms: 3.371625
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge new_unit
+ok 272 - risk review cannot expand original effects or forge new_unit
+  ---
+  duration_ms: 2.543375
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge append_preimage
+ok 273 - risk review cannot expand original effects or forge append_preimage
+  ---
+  duration_ms: 4.533958
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge database
+ok 274 - risk review cannot expand original effects or forge database
+  ---
+  duration_ms: 2.537292
+  type: 'test'
+  ...
+# Subtest: risk review cannot expand original effects or forge original_job
+ok 275 - risk review cannot expand original effects or forge original_job
+  ---
+  duration_ms: 3.083
+  type: 'test'
+  ...
+# Subtest: identity guards cannot be refreshed while changed scalar preimages need a new exact review
+ok 276 - identity guards cannot be refreshed while changed scalar preimages need a new exact review
+  ---
+  duration_ms: 4.787542
+  type: 'test'
+  ...
+# Subtest: fence receipt signature failure cannot be overridden by human confirmation
+ok 277 - fence receipt signature failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 4.473666
+  type: 'test'
+  ...
+# Subtest: fence receipt issuer failure cannot be overridden by human confirmation
+ok 278 - fence receipt issuer failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.897542
+  type: 'test'
+  ...
+# Subtest: fence receipt challenge failure cannot be overridden by human confirmation
+ok 279 - fence receipt challenge failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.146916
+  type: 'test'
+  ...
+# Subtest: fence receipt coverage failure cannot be overridden by human confirmation
+ok 280 - fence receipt coverage failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.150417
+  type: 'test'
+  ...
+# Subtest: fence receipt credentials failure cannot be overridden by human confirmation
+ok 281 - fence receipt credentials failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 2.915084
+  type: 'test'
+  ...
+# Subtest: fence receipt sessions failure cannot be overridden by human confirmation
+ok 282 - fence receipt sessions failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 2.906459
+  type: 'test'
+  ...
+# Subtest: fence receipt inflight failure cannot be overridden by human confirmation
+ok 283 - fence receipt inflight failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.797541
+  type: 'test'
+  ...
+# Subtest: fence receipt restart failure cannot be overridden by human confirmation
+ok 284 - fence receipt restart failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.134583
+  type: 'test'
+  ...
+# Subtest: fence receipt expired failure cannot be overridden by human confirmation
+ok 285 - fence receipt expired failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 5.579834
+  type: 'test'
+  ...
+# Subtest: fence receipt symlink failure cannot be overridden by human confirmation
+ok 286 - fence receipt symlink failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.265667
+  type: 'test'
+  ...
+# Subtest: fence receipt permissions failure cannot be overridden by human confirmation
+ok 287 - fence receipt permissions failure cannot be overridden by human confirmation
+  ---
+  duration_ms: 3.441459
+  type: 'test'
+  ...
+# Subtest: verified external authority plus native approval only creates the exact replacement, never executes
+ok 288 - verified external authority plus native approval only creates the exact replacement, never executes
+  ---
+  duration_ms: 49.019416
+  type: 'test'
+  ...
+# Subtest: changed authority evidence, stale review, foreign context and expired approval prevent creation
+ok 289 - changed authority evidence, stale review, foreign context and expired approval prevent creation
+  ---
+  duration_ms: 6.987209
+  type: 'test'
+  ...
+# Subtest: MCP/storage cannot grant native approval, submit evidence or forge an actor
+ok 290 - MCP/storage cannot grant native approval, submit evidence or forge an actor
+  ---
+  duration_ms: 3.646375
+  type: 'test'
+  ...
+# Subtest: actual crash at replacement creation beforeCommit is atomic and recoverable
+ok 291 - actual crash at replacement creation beforeCommit is atomic and recoverable
+  ---
+  duration_ms: 50.564917
+  type: 'test'
+  ...
+# Subtest: actual crash at replacement creation afterCommit is atomic and recoverable
+ok 292 - actual crash at replacement creation afterCommit is atomic and recoverable
+  ---
+  duration_ms: 64.090208
+  type: 'test'
+  ...
+# (node:640) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:640) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent creators share one intent, gate and audit across store workers and restart
+ok 293 - concurrent creators share one intent, gate and audit across store workers and restart
+  ---
+  duration_ms: 91.575125
+  type: 'test'
+  ...
+# Subtest: two approved proposals for one original intent cannot create two replacement jobs
+ok 294 - two approved proposals for one original intent cannot create two replacement jobs
+  ---
+  duration_ms: 6.803834
+  type: 'test'
+  ...
+# Subtest: approval renewal after creation preserves the one replacement identity and its audit lineage
+ok 295 - approval renewal after creation preserves the one replacement identity and its audit lineage
+  ---
+  duration_ms: 11.45525
+  type: 'test'
+  ...
+# Subtest: loss of a replacement upload reply reconciles the same intent without another upload
+ok 296 - loss of a replacement upload reply reconciles the same intent without another upload
+  ---
+  duration_ms: 23.388
+  type: 'test'
+  ...
+# Subtest: job association rebinding cannot change job_id inside a compound recipient identity
+ok 297 - job association rebinding cannot change job_id inside a compound recipient identity
+  ---
+  duration_ms: 7.962958
+  type: 'test'
+  ...
+# Subtest: generic index preparation rejects every TTL value before opening SSH
+ok 298 - generic index preparation rejects every TTL value before opening SSH
+  ---
+  duration_ms: 3.865458
+  type: 'test'
+  ...
+# Subtest: remote prepare and commit recheck TTL policy even for old validly hashed plans
+ok 299 - remote prepare and commit recheck TTL policy even for old validly hashed plans
+  ---
+  duration_ms: 4.39175
+  type: 'test'
+  ...
+# Subtest: TTL drops cannot create a new misleading rollback promise or restore a legacy deleted TTL index
+ok 300 - TTL drops cannot create a new misleading rollback promise or restore a legacy deleted TTL index
+  ---
+  duration_ms: 5.741
+  type: 'test'
+  ...
+# Subtest: rollback of an old TTL creation can still remove the index and never claims document recovery
+ok 301 - rollback of an old TTL creation can still remove the index and never claims document recovery
+  ---
+  duration_ms: 2.447958
+  type: 'test'
+  ...
+# Subtest: ordinary indexes can still prepare, commit and roll back
+ok 302 - ordinary indexes can still prepare, commit and roll back
+  ---
+  duration_ms: 6.267791
+  type: 'test'
+  ...
+# Subtest: technical TTL targets cannot be redirected to a business collection
+ok 303 - technical TTL targets cannot be redirected to a business collection
+  ---
+  duration_ms: 1.784208
+  type: 'test'
+  ...
+# Subtest: ordinary writes and indexes cannot pollute the reserved technical receipt collection
+ok 304 - ordinary writes and indexes cannot pollute the reserved technical receipt collection
+  ---
+  duration_ms: 0.409459
+  type: 'test'
+  ...
+# Subtest: both technical initialization helpers check ownership before creating the fixed TTL index
+ok 305 - both technical initialization helpers check ownership before creating the fixed TTL index
+  ---
+  duration_ms: 7.823833
+  type: 'test'
+  ...
+# Subtest: technical TTL initialization refuses non-empty unowned collections and foreign markers
+ok 306 - technical TTL initialization refuses non-empty unowned collections and foreign markers
+  ---
+  duration_ms: 10.877
+  type: 'test'
+  ...
+# Subtest: technical cleanup rejects views, missing markers and altered TTL index definitions
+ok 307 - technical cleanup rejects views, missing markers and altered TTL index definitions
+  ---
+  duration_ms: 7.533708
+  type: 'test'
+  ...
+# (node:702) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+ok 308 - encrypted persistence restores every BSON/EJSON width and preserves compound field order after reopen
+  ---
+  duration_ms: 13.103625
+  type: 'test'
+  ...
+# Subtest: context capability, target database and AAD stop cross-scope resolution and record swapping
+ok 309 - context capability, target database and AAD stop cross-scope resolution and record swapping
+  ---
+  duration_ms: 1.704916
+  type: 'test'
+  ...
+# Subtest: tampered ciphertext, wrong key and missing OS credential fail without exporting data
+ok 310 - tampered ciphertext, wrong key and missing OS credential fail without exporting data
+  ---
+  duration_ms: 2.646958
+  type: 'test'
+  ...
+# Subtest: reverse-index tampering cannot redirect an alias to a different valid ciphertext
+ok 311 - reverse-index tampering cannot redirect an alias to a different valid ciphertext
+  ---
+  duration_ms: 1.83375
+  type: 'test'
+  ...
+# (node:702) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent MCP clients get one committed reference through the unique HMAC index
+ok 312 - concurrent MCP clients get one committed reference through the unique HMAC index
+  ---
+  duration_ms: 58.09525
+  type: 'test'
+  ...
+# Subtest: mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+ok 313 - mapping commit is atomic across both crash boundaries and emits no uncommitted aliases
+  ---
+  duration_ms: 4.137375
+  type: 'test'
+  ...
+# Subtest: intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+ok 314 - intent-before-dispatch survives restart; uncertain writes stay pinned and are never replayable
+  ---
+  duration_ms: 3.341875
+  type: 'test'
+  ...
+# Subtest: reconciliation accepts only the same remote job, immutable plan and matching terminal state
+ok 315 - reconciliation accepts only the same remote job, immutable plan and matching terminal state
+  ---
+  duration_ms: 2.381584
+  type: 'test'
+  ...
+# Subtest: prepare attempts survive restart, reject stale responses and retain the same mutation identity
+ok 316 - prepare attempts survive restart, reject stale responses and retain the same mutation identity
+  ---
+  duration_ms: 3.141333
+  type: 'test'
+  ...
+# Subtest: execute response loss accepts only the same mutation and terminal plan without replay
+ok 317 - execute response loss accepts only the same mutation and terminal plan without replay
+  ---
+  duration_ms: 4.5485
+  type: 'test'
+  ...
+# Subtest: formal recovery inspects legacy intents without accepting caller supplied proof
+ok 318 - formal recovery inspects legacy intents without accepting caller supplied proof
+  ---
+  duration_ms: 1.489209
+  type: 'test'
+  ...
+# Subtest: failed local prepare outcome commit leaves a recoverable uncertain intent
+ok 319 - failed local prepare outcome commit leaves a recoverable uncertain intent
+  ---
+  duration_ms: 2.087541
+  type: 'test'
+  ...
+# Subtest: active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+ok 320 - active jobs pin mappings beyond cache and expiry; terminal rollback retention and cleanup are bounded
+  ---
+  duration_ms: 10.0425
+  type: 'test'
+  ...
+# (node:702) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: private service validates current instance/profile and refuses arbitrary actions
+ok 321 - private service validates current instance/profile and refuses arbitrary actions
+  ---
+  duration_ms: 36.8945
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL beforeCommit
+ok 322 - SQLite recovers atomically after actual process SIGKILL beforeCommit
+  ---
+  duration_ms: 70.697667
+  type: 'test'
+  ...
+# Subtest: SQLite recovers atomically after actual process SIGKILL afterCommit
+ok 323 - SQLite recovers atomically after actual process SIGKILL afterCommit
+  ---
+  duration_ms: 40.92475
+  type: 'test'
+  ...
+# (node:702) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: worker queue overload is bounded and returns a redacted busy error
+ok 324 - worker queue overload is bounded and returns a redacted busy error
+  ---
+  duration_ms: 40.136292
+  type: 'test'
+  ...
+# Subtest: claimed executions reconcile only the exact original intent and operation
+ok 325 - claimed executions reconcile only the exact original intent and operation
+  ---
+  duration_ms: 10.662083
+  type: 'test'
+  ...
+# Subtest: public privacy RPC rejects caller-supplied reconciliation evidence
+ok 326 - public privacy RPC rejects caller-supplied reconciliation evidence
+  ---
+  duration_ms: 1.10925
+  type: 'test'
+  ...
+# Subtest: bulk legacy envelopes and modern missing evidence are distinguished without accepting caller proof
+ok 327 - bulk legacy envelopes and modern missing evidence are distinguished without accepting caller proof
+  ---
+  duration_ms: 3.444042
+  type: 'test'
+  ...
+# Subtest: bulk intent interrupted before claim can be atomically fenced, preserving identity and blocking a delayed dispatch
+ok 328 - bulk intent interrupted before claim can be atomically fenced, preserving identity and blocking a delayed dispatch
+  ---
+  duration_ms: 6.134625
+  type: 'test'
+  ...
+# Subtest: bulk recovery cannot fence a claimed attempt using a stale unclaimed observation
+ok 329 - bulk recovery cannot fence a claimed attempt using a stale unclaimed observation
+  ---
+  duration_ms: 1.23475
+  type: 'test'
+  ...
+# Subtest: bulk local receipt commit failure remains pinned until exact positive evidence is persisted
+ok 330 - bulk local receipt commit failure remains pinned until exact positive evidence is persisted
+  ---
+  duration_ms: 3.700459
+  type: 'test'
+  ...
+# Subtest: redacted bulk request collisions cannot return a receipt for different original bytes
+ok 331 - redacted bulk request collisions cannot return a receipt for different original bytes
+  ---
+  duration_ms: 2.177417
+  type: 'test'
+  ...
+# Subtest: historical bulk internal actions cannot be invoked with caller-supplied proof
+ok 332 - historical bulk internal actions cannot be invoked with caller-supplied proof
+  ---
+  duration_ms: 0.982541
+  type: 'test'
+  ...
+# Subtest: historical result commit is atomic, preserves old identity, and cannot be replayed or replaced
+ok 333 - historical result commit is atomic, preserves old identity, and cannot be replayed or replaced
+  ---
+  duration_ms: 7.2825
+  type: 'test'
+  ...
+# Subtest: HTTP authentication and origin checks precede parsing and remote side effects
+ok 334 - HTTP authentication and origin checks precede parsing and remote side effects
+  ---
+  duration_ms: 76.520084
+  type: 'test'
+  ...
+# Subtest: unauthenticated Manager requests cannot modify policies or stop instances
+ok 335 - unauthenticated Manager requests cannot modify policies or stop instances
+  ---
+  duration_ms: 19.299292
+  type: 'test'
+  ...
+# Subtest: credential initialization is atomic across processes and protected
+ok 336 - credential initialization is atomic across processes and protected
+  ---
+  duration_ms: 48.675625
+  type: 'test'
+  ...
+# Subtest: unsafe credentials and remote HTTP URLs fail closed
+ok 337 - unsafe credentials and remote HTTP URLs fail closed
+  ---
+  duration_ms: 5.981916
+  type: 'test'
+  ...
+# Subtest: file arguments, hidden file options and follow variants cannot bypass read boundaries
+ok 338 - file arguments, hidden file options and follow variants cannot bypass read boundaries
+  ---
+  duration_ms: 1.252791
+  type: 'test'
+  ...
+# Subtest: canonical execution quotes real paths and does not read relative secrets
+ok 339 - canonical execution quotes real paths and does not read relative secrets
+  ---
+  duration_ms: 8.226459
+  type: 'test'
+  ...
+# Subtest: instance migration and target changes preserve only explicitly configured trusted keys
+ok 340 - instance migration and target changes preserve only explicitly configured trusted keys
+  ---
+  duration_ms: 2.920917
+  type: 'test'
+  ...
+# Subtest: worker token arrives only through private IPC and rejects missing or invalid credentials
+ok 341 - worker token arrives only through private IPC and rejects missing or invalid credentials
+  ---
+  duration_ms: 2.670375
+  type: 'test'
+  ...
+# Subtest: real local SSH verifies host identity before authentication
+ok 342 - real local SSH verifies host identity before authentication
+  ---
+  duration_ms: 196.985375
+  type: 'test'
+  ...
+# Subtest: a changed host key during reconnect blocks further automatic retries
+ok 343 - a changed host key during reconnect blocks further automatic retries
+  ---
+  duration_ms: 2.291125
+  type: 'test'
+  ...
+# Subtest: isolated bundled Workers receive private IPC tokens and rotate them on restart
+ok 344 - isolated bundled Workers receive private IPC tokens and rotate them on restart
+  ---
+  duration_ms: 804.283417
+  type: 'test'
+  ...
+# Subtest: job termination worker route dispatches fixed action and retains termination audit identity
+ok 345 - job termination worker route dispatches fixed action and retains termination audit identity
+  ---
+  duration_ms: 170.301042
+  type: 'test'
+  ...
+# Subtest: job termination cannot be approved or dispatched through the Manager bearer API
+ok 346 - job termination cannot be approved or dispatched through the Manager bearer API
+  ---
+  duration_ms: 25.7415
+  type: 'test'
+  ...
+# Subtest: sandbox account routes require auth, keep passwords out of audit and use structured runner only
+ok 347 - sandbox account routes require auth, keep passwords out of audit and use structured runner only
+  ---
+  duration_ms: 28.700083
+  type: 'test'
+  ...
+# Subtest: server entrypoint is disabled inside worker mode
+ok 348 - server entrypoint is disabled inside worker mode
+  ---
+  duration_ms: 0.350208
+  type: 'test'
+  ...
+# Subtest: HTTP log query executes a bounded helper and rejects unknown projects
+ok 349 - HTTP log query executes a bounded helper and rejects unknown projects
+  ---
+  duration_ms: 54.705708
+  type: 'test'
+  ...
+# Subtest: manager log mappings persist and override stale worker mappings immediately
+ok 350 - manager log mappings persist and override stale worker mappings immediately
+  ---
+  duration_ms: 19.358208
+  type: 'test'
+  ...
+# Subtest: background log HTTP endpoints authenticate, validate scope, and keep jobs separate from requests
+ok 351 - background log HTTP endpoints authenticate, validate scope, and keep jobs separate from requests
+  ---
+  duration_ms: 52.136917
+  type: 'test'
+  ...
+# Subtest: dashboard task APIs authenticate, isolate instances, and enforce manual mode revisions
+ok 352 - dashboard task APIs authenticate, isolate instances, and enforce manual mode revisions
+  ---
+  duration_ms: 14.07675
+  type: 'test'
+  ...
+# Subtest: HTTP API works with mocked SSH
+ok 353 - HTTP API works with mocked SSH
+  ---
+  duration_ms: 21.778917
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB query endpoint is instance-scoped and read-only
+ok 354 - HTTP MongoDB query endpoint is instance-scoped and read-only
+  ---
+  duration_ms: 11.049834
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and list
+ok 355 - HTTP MongoDB mutation endpoints expose prepare, execute, rollback, and list
+  ---
+  duration_ms: 42.791833
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler
+ok 356 - HTTP MongoDB bulk endpoints forward uploads and job controls through the audited handler
+  ---
+  duration_ms: 10.079458
+  type: 'test'
+  ...
+# Subtest: HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled
+ok 357 - HTTP MongoDB bulk rollback remains available when new bulk jobs are disabled
+  ---
+  duration_ms: 7.084333
+  type: 'test'
+  ...
+# Subtest: dashboard serves status and streams remote interaction activity
+ok 358 - dashboard serves status and streams remote interaction activity
+  ---
+  duration_ms: 9.310708
+  type: 'test'
+  ...
+# Subtest: manager API creates, lists, updates, and deletes instances
+ok 359 - manager API creates, lists, updates, and deletes instances
+  ---
+  duration_ms: 20.229042
+  type: 'test'
+  ...
+# (node:734) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: manager API includes memory and updates it from proxied tool results
+ok 360 - manager API includes memory and updates it from proxied tool results
+  ---
+  duration_ms: 58.889666
+  type: 'test'
+  ...
+# Subtest: manager lease registration schedules instance restore
+ok 361 - manager lease registration schedules instance restore
+  ---
+  duration_ms: 3.190291
+  type: 'test'
+  ...
+# Subtest: manager lease restore check publishes missing snapshot diagnostics
+ok 362 - manager lease restore check publishes missing snapshot diagnostics
+  ---
+  duration_ms: 3.765416
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":734,"host":"127.0.0.1","port":44027,"target":{"host":"","username":""},"startedAt":"2026-10-27T04:21:41.093Z"}
+# Subtest: manual manager lifetime does not shut down when no lease exists
+ok 363 - manual manager lifetime does not shut down when no lease exists
+  ---
+  duration_ms: 82.3515
+  type: 'test'
+  ...
+# Subtest: desktop manager lifetime shuts down when no lease arrives
+ok 364 - desktop manager lifetime shuts down when no lease arrives
+  ---
+  duration_ms: 26.681542
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":734,"host":"127.0.0.1","port":33189,"target":{"host":"","username":""},"startedAt":"2026-10-27T04:21:41.176Z"}
+# {"name":"remote-debug-agent","role":"manager","pid":734,"host":"127.0.0.1","port":37875,"target":{"host":"","username":""},"startedAt":"2026-10-27T04:21:41.203Z"}
+# Subtest: desktop manager lifetime shuts down after lease expiry
+ok 365 - desktop manager lifetime shuts down after lease expiry
+  ---
+  duration_ms: 58.035458
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":734,"host":"127.0.0.1","port":41407,"target":{"host":"","username":""},"startedAt":"2026-10-27T04:21:41.261Z"}
+# Subtest: manual manager shutdown API triggers graceful shutdown
+ok 366 - manual manager shutdown API triggers graceful shutdown
+  ---
+  duration_ms: 28.626542
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":734,"host":"127.0.0.1","port":38567,"target":{"host":"","username":""},"startedAt":"2026-10-27T04:21:41.289Z"}
+# Subtest: desktop manager shutdown API is rejected
+ok 367 - desktop manager shutdown API is rejected
+  ---
+  duration_ms: 28.075
+  type: 'test'
+  ...
+# Subtest: manager signal handlers perform graceful shutdown
+ok 368 - manager signal handlers perform graceful shutdown
+  ---
+  duration_ms: 26.867417
+  type: 'test'
+  ...
+# {"name":"remote-debug-agent","role":"manager","pid":734,"host":"127.0.0.1","port":44379,"target":{"host":"","username":""},"startedAt":"2026-10-27T04:21:41.317Z"}
+# Error: listen EADDRINUSE: address already in use 127.0.0.1:38011
+#     at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+#     at listenInCluster (node:net:1998:12)
+#     at node:net:2207:7
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'EADDRINUSE',
+#   errno: -98,
+#   syscall: 'listen',
+#   address: '127.0.0.1',
+#   port: 38011
+# }
+# Subtest: startServer records port binding errors in runtime state
+ok 369 - startServer records port binding errors in runtime state
+  ---
+  duration_ms: 53.974709
+  type: 'test'
+  ...
+# Subtest: HTTP /run rejects canonical path escape detected before command execution
+ok 370 - HTTP /run rejects canonical path escape detected before command execution
+  ---
+  duration_ms: 3.1645
+  type: 'test'
+  ...
+# Subtest: MongoDB driver errors expose codes without business values in HTTP, activity or audit
+ok 371 - MongoDB driver errors expose codes without business values in HTTP, activity or audit
+  ---
+  duration_ms: 7.839833
+  type: 'test'
+  ...
+# Subtest: background bulk failure is correlated in HTTP job detail and audit after accepting execute
+ok 372 - background bulk failure is correlated in HTTP job detail and audit after accepting execute
+  ---
+  duration_ms: 66.48825
+  type: 'test'
+  ...
+1..372
+# tests 372
+# suites 0
+# pass 372
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3746.822668

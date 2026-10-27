@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "bde11982-a0ea-4f8f-8d79-03456b521388",
+  "projectId": "ssl-debug-agent",
+  "stage": "candidate-plan",
+  "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+  "outOfScopeChanges": 361,
+  "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+  "metrics": {
+    "phasesMs": {
+      "load-graph": 113.7285410000477,
+      "targets-assets": 101.73762499983422,
+      "search": 24.51175000006333,
+      "bindings": 0.12958399998024106,
+      "persist": 23.449207999976352
+    },
+    "totalMs": 263.57462499989197,
+    "peakRssBytes": 1653604352,
+    "heapUsedBytes": 113395688
+  },
+  "sourceGraphRunId": "ff38bbcf-c39e-467a-9a55-21df996117cf",
+  "modelCalls": 0,
+  "executable": false,
+  "bounded": true,
+  "counts": {
+    "targets": 1000,
+    "paths": 2,
+    "assets": 773,
+    "confirmedAssociations": 0,
+    "importedEvidence": 0,
+    "unplannedTargets": 998,
+    "uncoveredTargets": 1000,
+    "unboundPaths": 2,
+    "verifiedPaths": 0,
+    "searchStates": 3829
+  },
+  "artifacts": {
+    "testPlan": ".testflow/runs/bde11982-a0ea-4f8f-8d79-03456b521388/test-plan.json",
+    "testAssets": ".testflow/runs/bde11982-a0ea-4f8f-8d79-03456b521388/test-assets.json",
+    "coverageGaps": ".testflow/runs/bde11982-a0ea-4f8f-8d79-03456b521388/coverage-gaps.json",
+    "missingCases": ".testflow/runs/bde11982-a0ea-4f8f-8d79-03456b521388/missing-cases.json",
+    "manifest": ".testflow/runs/bde11982-a0ea-4f8f-8d79-03456b521388/manifest.json"
+  },
+  "flowId": "b11d418a-a00b-4fa5-9b8c-954281a62d15"
+}

@@ -24154,7 +24154,7 @@ var require_windows_privacy = __commonJS({
     "use strict";
     var fs15 = require("fs");
     var path22 = require("path");
-    var { createHash: createHash15 } = require("crypto");
+    var { createHash: createHash16 } = require("crypto");
     var { execFileSync } = require("child_process");
     function fail4(code = "BUSINESS_STORAGE_UNAVAILABLE") {
       return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
@@ -24167,7 +24167,7 @@ var require_windows_privacy = __commonJS({
         const helper = path22.join(__dirname, "native/windows-privacy.ps1");
         const manifestPath = fs15.existsSync(path22.join(__dirname, "runtime-manifest.json")) ? path22.join(__dirname, "runtime-manifest.json") : path22.join(__dirname, "runtime/agent/runtime-manifest.json");
         const expected = JSON.parse(fs15.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
-        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash15("sha256").update(fs15.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash16("sha256").update(fs15.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
         const raw = run(
           path22.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
           ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
@@ -24189,7 +24189,7 @@ var require_windows_privacy = __commonJS({
       }
     }
     function targetFor(directory) {
-      return "RemoteDebugAgent/business-privacy/v1/" + createHash15("sha256").update(fs15.realpathSync.native(directory)).digest("hex");
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash16("sha256").update(fs15.realpathSync.native(directory)).digest("hex");
     }
     function prepareStore(directory) {
       return native("prepare-store", { directory });
@@ -26626,7 +26626,7 @@ var require_websocket = __commonJS({
     var http2 = require("http");
     var net2 = require("net");
     var tls = require("tls");
-    var { randomBytes: randomBytes6, createHash: createHash15 } = require("crypto");
+    var { randomBytes: randomBytes6, createHash: createHash16 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -27307,7 +27307,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest4 = createHash15("sha1").update(key + GUID).digest("base64");
+        const digest4 = createHash16("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest4) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -27676,7 +27676,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter5 = require("events");
     var http2 = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash15 } = require("crypto");
+    var { createHash: createHash16 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -27983,7 +27983,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest4 = createHash15("sha1").update(key + GUID).digest("base64");
+        const digest4 = createHash16("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -34509,7 +34509,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv: createDecipheriv2,
       createECDH,
-      createHash: createHash15,
+      createHash: createHash16,
       createHmac,
       createSign,
       createVerify,
@@ -35197,11 +35197,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash15("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash16("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash15("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash16("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -35366,8 +35366,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash15("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash15("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash16("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash16("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -35407,7 +35407,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash15("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash16("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -37729,7 +37729,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash15,
+      createHash: createHash16,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -38155,7 +38155,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash15(this.hashName);
+          const hash = createHash16(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -39163,9 +39163,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest4 = createHash15(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest4 = createHash16(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest4.length < len) {
-          const chunk = createHash15(hashName).update(secret).update(exchangeHash).update(digest4).digest();
+          const chunk = createHash16(hashName).update(secret).update(exchangeHash).update(digest4).digest();
           const extended = Buffer.allocUnsafe(digest4.length + chunk.length);
           extended.set(digest4, 0);
           extended.set(chunk, digest4.length);
@@ -44600,7 +44600,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash15,
+      createHash: createHash16,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -44822,7 +44822,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash15(hashAlgo).update(key).digest("hex");
+              key = createHash16(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -50165,6 +50165,158 @@ async function runMongoQuery(query, options = {}) {
   };
 }
 
+// mongodb-import-control-runtime.js
+var IMPORT_CONTROL_SCRIPT = String.raw`
+function __importControlId(database, importId) { return "import-control-" + __hash({ database, importId }); }
+function __importDirectory(id, callback) {
+  const previous = __request.mutationId;
+  __request.mutationId = id;
+  try { return callback(); } finally { __request.mutationId = previous; }
+}
+function __readImportFile(id, name) {
+  return __importDirectory(id, () => {
+    const directory = __journalDir(), file = __path.join(directory, name);
+    for (const item of [__journalRoot, directory, file]) if (__fs.existsSync(item) && __fs.lstatSync(item).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "unsafe import control path");
+    if (!__fs.existsSync(file)) return null;
+    const value = __fs.readFileSync(file, "utf8");
+    if (Buffer.byteLength(value) > 8 * 1024 * 1024) __fail("MONGODB_IMPORT_RECEIPT_INVALID", "import control exceeds bounds");
+    return JSON.parse(value);
+  });
+}
+function __writeImportFile(id, name, value) {
+  return __importDirectory(id, () => {
+    __writeJsonAtomic(name, value);
+    // The atomic writer syncs the file and its immediate directory. New
+    // control/batch directories also need their parent entry made durable.
+    for (const directory of [__journalRoot, __path.dirname(__journalRoot)]) {
+      const fd = __fs.openSync(directory, "r");
+      try { __fs.fsyncSync(fd); } finally { __fs.closeSync(fd); }
+    }
+    if (__importOrderedDigest(__readImportFile(id, name)) !== __importOrderedDigest(value)) __fail("MONGODB_IMPORT_RECEIPT_INVALID", "import control readback mismatch");
+  });
+}
+function __importGlobalLock() { return __importDirectory("import-control-lock", () => __acquireMutationLock(false)); }
+function __importBatchIdentity(plan) {
+  return plan.batches.map(batch => {
+    const { operationId, ...identity } = batch;
+    return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, documentCount: batch.documents.length,
+      requestDigest: __createHash("sha256").update(JSON.stringify(identity)).digest("hex") };
+  });
+}
+function __importOrderedDigest(value) { return __createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
+function __assertImportLive(request, mutationId) {
+  if (__readImportFile(__importControlId(request.database, request.importId), "retirement.json") ||
+      mutationId && __readImportFile(mutationId, "import-retirement.json")) __fail("MONGODB_IMPORT_RETIRED", "original import is closed; historical outcome remains unknown");
+}
+function __reviewImportBatches(request) {
+  return request.batches.map(batch => {
+    let manifest;
+    try { manifest = __readImportFile(batch.mutationId, "manifest.json"); }
+    catch (error) { return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, status: "unavailable", code: error.code || "MONGODB_IMPORT_MANIFEST_INVALID" }; }
+    if (!manifest) return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, status: "missing", historicalOutcome: "unknown" };
+    const { operationId, ...identity } = manifest.request || {};
+    const matching = manifest.kind === "import" && manifest.mutationId === batch.mutationId && manifest.request.database === request.database &&
+      manifest.request.importId === request.importId && manifest.request.batchIndex === batch.batchIndex &&
+      __importOrderedDigest(identity) === batch.requestDigest && __planHash(manifest) === manifest.planHash;
+    return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, status: matching ? manifest.status : "identity_conflict",
+      planHash: matching ? manifest.planHash : undefined, rollbackExpiresAt: matching ? manifest.rollbackExpiresAt : undefined,
+      execution: matching ? manifest.execution : undefined, historicalOutcome: "unknown" };
+  });
+}
+function __importRetirementIdentity(value) { const { approvalAuditId, ...identity } = value; return __importOrderedDigest(identity); }
+function __retireImport(request) {
+  const release = __importGlobalLock();
+  try {
+    const original = __importControlId(request.database, request.importId), replacement = __importControlId(request.database, request.replacementImportId);
+    const previous = __readImportFile(original, "retirement.json"), lineage = __readImportFile(replacement, "lineage.json");
+    const { operationId, ...identity } = request;
+    if (previous && __importRetirementIdentity(previous.identity) !== __importRetirementIdentity(identity) ||
+        lineage && __importRetirementIdentity(lineage.identity) !== __importRetirementIdentity(identity)) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "import is already linked to another review");
+    if (__readImportFile(replacement, "prepare.json") && !lineage) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "replacement import already exists");
+    for (const batch of request.replacementBatches) {
+      if (__readImportFile(batch.mutationId, "manifest.json") && !lineage) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "replacement batch already exists");
+      const reserved = __readImportFile(batch.mutationId, "import-lineage.json");
+      if (reserved && __importRetirementIdentity(reserved.identity) !== __importRetirementIdentity(identity)) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "replacement batch is already reserved");
+    }
+    const record = previous || { version: 1, identity, historicalOutcome: "unknown", legacyInFlightOutcome: "unknown", recordedAt: new Date().toISOString() };
+    // Original closure is durable first. Interruption leaves it closed and the
+    // identical handoff can finish the remaining exact reservations on retry.
+    __writeImportFile(original, "retirement.json", record);
+    for (const batch of request.originalBatches) {
+      const old = __readImportFile(batch.mutationId, "import-retirement.json");
+      if (old && __importRetirementIdentity(old.identity) !== __importRetirementIdentity(identity)) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "original batch belongs to another handoff");
+      __writeImportFile(batch.mutationId, "import-retirement.json", record);
+    }
+    __writeImportFile(replacement, "lineage.json", record);
+    for (const batch of request.replacementBatches) __writeImportFile(batch.mutationId, "import-lineage.json", record);
+    const readback = __readImportFile(original, "retirement.json");
+    if (__importOrderedDigest(readback) !== __importOrderedDigest(record)) __fail("MONGODB_IMPORT_RECEIPT_INVALID", "retirement readback mismatch");
+    return { ...request, status: "terminated_unknown", managedAdmissionClosed: true, historicalOutcome: "unknown", controlRecordDigest: __importOrderedDigest(readback) };
+  } finally { release(); }
+}
+async function __guardedImportPrepare(recover) {
+  const plan = __request.mutation, receipt = __request.importReceipt;
+  const database = recover ? __request.database : plan.database, importId = recover ? __request.importId : plan.importId;
+  const controlId = __importControlId(database, importId), release = __importGlobalLock();
+  try {
+    __assertImportLive({ database, importId });
+    let prior = __readImportFile(controlId, "prepare.json");
+    const lineage = __readImportFile(controlId, "lineage.json");
+    if (lineage && (!receipt || receipt.riskPlanId !== lineage.identity.riskPlanId || receipt.requestDigest !== lineage.identity.replacementRequestDigest)) __fail("MONGODB_IMPORT_LINEAGE_REQUIRED", "exact approved import identity required");
+    if (!receipt) return await __prepareImportPlan();
+    if (prior && __hash(prior.receipt) !== __hash(receipt)) {
+      const { attempt: oldAttempt, ...oldBinding } = prior.receipt, { attempt: newAttempt, ...newBinding } = receipt;
+      if (recover || prior.result && prior.result.status !== "prepare_partial" || !prior.result || newAttempt !== oldAttempt + 1 || __hash(oldBinding) !== __hash(newBinding)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "import belongs to another protected intent or an unknown attempt");
+      // Persist the new attempt before doing any work. A lost reply must now
+      // reconcile this attempt, never infer completion from the old prefix.
+      prior = { version: 1, receipt, batches: prior.batches };
+      __writeImportFile(controlId, "prepare.json", prior);
+    }
+    if (recover) {
+      if (!prior || !prior.result) __fail("MONGODB_IMPORT_EVIDENCE_REQUIRED", "positive terminal preparation receipt required");
+      const reviewed = __reviewImportBatches({ database, importId, batches: prior.batches });
+      if (prior.result.batches.some((batch, index) => reviewed[index].planHash !== batch.planHash)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "batch receipt mismatch");
+      // Return current statuses, retaining the immutable preparation receipt.
+      return { ...prior.result, batches: prior.result.batches.map((batch, index) => ({ ...batch, status: reviewed[index].status })) };
+    }
+    const batches = __importBatchIdentity(plan);
+    if (receipt.batchesDigest !== __importOrderedDigest({ batches }) || lineage && __importOrderedDigest(batches) !== __importOrderedDigest(lineage.identity.replacementBatches)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "normalized import batch identity changed");
+    if (prior && prior.result) return prior.result;
+    if (!prior) {
+      // A risk replacement cannot adopt pre-existing journals, even with equal
+      // documents. Reservation was made before this new preparation began.
+      if (lineage && batches.some(batch => __readImportFile(batch.mutationId, "manifest.json"))) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "replacement batch exists without this prepare receipt");
+      __writeImportFile(controlId, "prepare.json", { version: 1, receipt, batches });
+    }
+    __request.importLineage = lineage ? { originalImportId: lineage.identity.importId, riskPlanId: lineage.identity.riskPlanId,
+      dispositionId: lineage.identity.dispositionId, originalRequestDigest: lineage.identity.originalRequestDigest, replacementRequestDigest: lineage.identity.replacementRequestDigest } : undefined;
+    const result = { ...await __prepareImportPlan(), importReceipt: receipt };
+    __writeImportFile(controlId, "prepare.json", { version: 1, receipt, batches, result });
+    return result;
+  } finally { release(); }
+}
+`;
+
+// ../plugins/remote-debug-agent/prepare-protocol.js
+var import_node_crypto4 = require("node:crypto");
+function prepareRequestDigest(input) {
+  const { operationId, deadlineAt, timeoutMs, _businessPrepare, _businessImport, ...request } = input;
+  return (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
+}
+function isPrepareTicket(value) {
+  return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
+}
+var IMPORT_PREPARE_ROUTE = "/mongodb/imports/prepare";
+var isImportRequest = (value) => value && Object.hasOwn(value, "importId") && !Object.hasOwn(value, "jobId");
+function importBatchIdentity(plan) {
+  return plan.batches.map(({ operationId, ...batch2 }) => ({
+    mutationId: batch2.mutationId,
+    batchIndex: batch2.batchIndex,
+    documentCount: batch2.documents.length,
+    requestDigest: prepareRequestDigest(batch2)
+  }));
+}
+
 // mongodb-ttl-policy.js
 var MONGODB_TECHNICAL_RECEIPTS_COLLECTION = "__remote_debug_bulk_receipts";
 var MONGODB_TTL_POLICY_SCRIPT = String.raw`
@@ -50229,16 +50381,6 @@ async function __ttlInitializeReceiptCollection(client, database, name) {
   return { index: after.name, marker: "__remote_debug_bulk_storage_v1" };
 }
 `;
-
-// ../plugins/remote-debug-agent/prepare-protocol.js
-var import_node_crypto4 = require("node:crypto");
-function prepareRequestDigest(input) {
-  const { operationId, deadlineAt, timeoutMs, _businessPrepare, ...request } = input;
-  return (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
-}
-function isPrepareTicket(value) {
-  return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
-}
 
 // mongodb-bulk.js
 var import_node_crypto5 = require("node:crypto");
@@ -53671,6 +53813,8 @@ function __hash(value) {
   return __createHash("sha256").update(JSON.stringify(__stable(value))).digest("hex");
 }
 
+${IMPORT_CONTROL_SCRIPT}
+
 ${MONGODB_CODEC_SCRIPT}
 
 const __assertIndexedMutationDocument = ${assertIndexedMutationDocument.toString()};
@@ -53987,6 +54131,7 @@ function __planHash(manifest) {
     before: manifest.before,
     beforeIndex: manifest.beforeIndex,
     beforeOperations: manifest.beforeOperations,
+    ...(manifest.riskLineage ? { riskLineage: manifest.riskLineage, orderedRequest: JSON.stringify(manifest.request) } : {}),
     ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
   });
 }
@@ -54032,6 +54177,7 @@ async function __prepare() {
       : null;
     const now = Date.now();
     const manifest = {
+      ...(__request.importLineage ? { riskLineage: __request.importLineage } : {}),
       schemaVersion: __schemaVersion,
       mutationId: __request.mutationId,
       ...(__request.prepare ? { prepare: __request.prepare, prepareSource: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } } : {}),
@@ -54164,8 +54310,10 @@ async function __prepare() {
 async function __prepareImportPlan() {
   if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
   const plan = __request.mutation;
+  __assertImportLive(plan);
   const results = [];
   for (const batch of plan.batches) {
+    __assertImportLive(batch, batch.mutationId);
     __request.mutationId = batch.mutationId;
     __request.mutation = batch;
     __request.kind = "import";
@@ -54278,6 +54426,7 @@ async function __runImportTransaction(manifest, client, collection, rollback) {
       // Reserve journal capacity and durably save rollback hashes BEFORE commit.
       __writeJsonAtomic("manifest.json", manifest);
     }
+    __assertImportLive(manifest.request, manifest.mutationId);
     committing = true;
     await session.commitTransaction();
     manifest.status = rollback ? "rolled_back" : "committed";
@@ -54496,6 +54645,7 @@ async function __commit() {
   const releaseLock = __acquireMutationLock(false);
   try {
     const manifest = __loadManifest();
+    if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
     if (manifest.status === "committed") return __summary(manifest);
     if (manifest.status === "rolled_back") __fail("MONGODB_MUTATION_ALREADY_ROLLED_BACK", "mutation was already rolled back");
     if (manifest.status !== "planned" && !(manifest.kind === "import" && manifest.status === "commit_retryable") && !(manifest.kind === "bulk_storage" && manifest.status === "commit_retryable")) __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit; inspect uncertain outcomes before retrying");
@@ -54509,6 +54659,7 @@ async function __commit() {
       const collection = manifest.request.collection
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
+      if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
       if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
       else if (manifest.kind === "index") await __commitIndex(manifest, collection, client.db(manifest.request.database));
       else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
@@ -54627,6 +54778,7 @@ async function __rollback() {
   const releaseLock = __acquireMutationLock(false);
   try {
     const manifest = __loadManifest();
+    if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
     if (manifest.status === "rolled_back") return __summary(manifest);
     if (manifest.kind === "bulk_storage") __fail("MONGODB_BULK_STORAGE_NOT_ROLLBACKABLE", "bulk storage initialization is retained; disable bulk capability instead of deleting its records");
     if (manifest.status !== "committed" && !(manifest.kind === "import" && manifest.status === "rollback_retryable")) __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
@@ -54641,6 +54793,7 @@ async function __rollback() {
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
       if (manifest.kind === "import") {
+        __assertImportLive(manifest.request, manifest.mutationId);
         await __runImportTransaction(manifest, client, collection, true);
         return __summary(manifest);
       } else if (manifest.kind === "index") {
@@ -54743,7 +54896,13 @@ async function __guardedPrepare(recover) {
   let client;
   try {
     let data;
-    if (__request.mode === "list") {
+    if (__request.mode === "import_review") {
+      data = { importId: __request.importId, database: __request.database, batches: __reviewImportBatches(__request), historicalOutcome: "unknown" };
+    } else if (__request.mode === "import_retire") {
+      data = __retireImport(__request);
+    } else if (__request.mode === "import_recover") {
+      data = await __guardedImportPrepare(true);
+    } else if (__request.mode === "list") {
       data = __list();
     } else if (__request.mode === "recover_execution") {
       data = await __recoverExecution();
@@ -54752,7 +54911,7 @@ async function __guardedPrepare(recover) {
     } else if (__request.mode === "recover_prepare") {
       data = await __guardedPrepare(true);
     } else if (__request.mode === "prepare") {
-      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
+      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __guardedImportPrepare(false) : await __prepare();
     } else if (__request.mode === "commit") {
       data = await __commit();
     } else if (__request.mode === "rollback") {
@@ -54809,6 +54968,8 @@ async function runMongoMutation(input = {}, options = {}) {
     if (execution2 !== void 0 && (!execution2 || !/^[a-f0-9]{64}$/.test(execution2.intentId || "") || typeof execution2.operationId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(execution2.operationId) || Object.keys(execution2).some((key) => !["intentId", "operationId"].includes(key)))) {
       throw mutationError("invalid execution identity", "MONGODB_EXECUTION_IDENTITY_INVALID");
     }
+    const importReceipt = input._businessImport || input.importReceipt;
+    if (importReceipt !== void 0 && (!importReceipt || !["binding", "requestDigest", "batchesDigest"].every((field) => /^[a-f0-9]{64}$/.test(importReceipt[field] || "")) || (!Number.isSafeInteger(importReceipt.attempt) || importReceipt.attempt < 1) || Object.keys(importReceipt).some((field) => !["binding", "requestDigest", "batchesDigest", "attempt", "riskPlanId"].includes(field)) || importReceipt.riskPlanId !== void 0 && !/^[a-f0-9]{64}$/.test(importReceipt.riskPlanId))) throw mutationError("invalid import prepare receipt", "MONGODB_IMPORT_RECEIPT_INVALID");
     const ticket = input._businessPrepare;
     if (ticket !== void 0 && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
     if (mode === "prepare") {
@@ -54820,9 +54981,30 @@ async function runMongoMutation(input = {}, options = {}) {
         operationId: options.operation?.operationId || mutation2.operationId,
         mutationId: ticket?.mutationId || (0, import_node_crypto6.randomUUID)(),
         ...ticket ? { prepare: ticket, database: mutation2.database } : {},
-        mutation: mutation2
+        mutation: mutation2,
+        ...kind === "import_plan" && input._businessImport ? { importReceipt: input._businessImport } : {}
       };
       if (ticket && ["import_plan", "bulk_storage"].includes(kind)) throw mutationError("unsupported prepare identity kind", "MONGODB_PREPARE_IDENTITY_INVALID");
+    } else if (["import_review", "import_retire", "import_recover"].includes(mode)) {
+      const database = assertDatabaseAllowed(input.database, config);
+      const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+      const validateBatches = (batches) => {
+        if (!Array.isArray(batches) || !batches.length || batches.length > 100 || batches.some((b, i) => !/^import-[a-f0-9]{64}$/.test(b.mutationId || "") || b.batchIndex !== i || !Number.isSafeInteger(b.documentCount) || b.documentCount < 1 || b.documentCount > 2e3 || !/^[a-f0-9]{64}$/.test(b.requestDigest || ""))) throw mutationError("invalid import batch identity", "MONGODB_IMPORT_RECEIPT_INVALID");
+        return batches;
+      };
+      request = { mode, database, importId };
+      if (mode === "import_review") request.batches = validateBatches(input.batches);
+      if (mode === "import_recover") request.importReceipt = input.importReceipt;
+      if (mode === "import_retire") {
+        request.replacementImportId = normalizeName(input.replacementImportId, "replacementImportId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+        if (request.replacementImportId === importId) throw mutationError("distinct import identity required", "MONGODB_IMPORT_RECEIPT_INVALID");
+        for (const field of ["riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest", "approvalAuditId"]) {
+          if (!/^[a-f0-9]{64}$/.test(input[field] || "")) throw mutationError("invalid import review identity", "MONGODB_IMPORT_RECEIPT_INVALID");
+          request[field] = input[field];
+        }
+        request.originalBatches = validateBatches(input.originalBatches);
+        request.replacementBatches = validateBatches(input.replacementBatches);
+      }
     } else if (mode === "recover_prepare") {
       if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
       request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };
@@ -57021,7 +57203,7 @@ var json = "json";
 var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
 var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 var warning = fields("code message path source phase");
-var error = { ...fields("operationId code message layer phase retriable cause intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+var error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
 var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 var instance = {
@@ -57178,20 +57360,23 @@ var contracts = {
     replacementAllowed: "boolean",
     missingRequirements: [scalar],
     historicalEvidenceGaps: [scalar],
-    ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
+    ...fields("kind replacementImportId batchCount documentCount atomicity riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
     humanConfirmationRequired: "boolean",
     humanApproved: "boolean",
     canApprove: "boolean",
     collections: [scalar],
     ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
     acceptedResidualRisk: "boolean",
-    observations: { ...fields("source observedAt status code historicalOutcome") },
-    binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
+    originalBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    replacementBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    batches: [fields("mutationId planHash batchIndex status")],
+    observations: { ...fields("source observedAt status code historicalOutcome"), batches: [fields("mutationId batchIndex status code planHash rollbackExpiresAt historicalOutcome")] },
+    binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
     fenceChallenge: {
       ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
-      binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
+      binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
     },
-    result: { ...common, ...bulk, ...fields("intentId intentState state"), result: { ...common, ...bulk } }
+    result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } }
   },
   remote_debug_mongodb_prepare_write: mutation,
   remote_debug_mongodb_prepare_index: mutation,
@@ -57603,14 +57788,17 @@ function createBulkHistoryReader({ dataDirectory, instance: instance2 } = {}) {
   };
 }
 
+// mongodb-import-risk.js
+var MAX = Number.MAX_SAFE_INTEGER;
+
 // mongodb-fence-authority.js
 var FENCE_COVERAGE = Object.freeze(["dispatch", "upload", "execute", "resume", "replay", "old_processes", "queues", "leases", "restart", "authenticated_sessions", "inflight_transactions", "legacy_credentials"]);
 
 // mongodb-risk-replacement.js
-var MAX = Number.MAX_SAFE_INTEGER;
+var MAX2 = Number.MAX_SAFE_INTEGER;
 
 // mongodb-job-termination.js
-var MAX2 = Number.MAX_SAFE_INTEGER;
+var MAX3 = Number.MAX_SAFE_INTEGER;
 var HASH = /^[a-f0-9]{64}$/;
 var JOB = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 var deny = (code = "BUSINESS_TERMINATION_REVIEW_REQUIRED") => {
@@ -57666,6 +57854,8 @@ async function humanJobTerminationRequest(service, action, input, { instance: in
 // mongodb-disposition.js
 var READ_ROUTES = /* @__PURE__ */ new Set([
   "/mongodb/query",
+  "/mongodb/imports/review",
+  "/mongodb/imports/recover-prepare",
   "/mongodb/bulk/job",
   "/mongodb/bulk/jobs",
   "/mongodb/mutations/list",
@@ -57794,6 +57984,61 @@ async function bulkPrepareRequest(service, input, record, target2, { instance: i
   }
   return recovering ? view(saved, saved.state === "uncertain" ? "bulk_prepare_evidence_required" : unclaimed ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
 }
+async function importPrepareRequest(service, input, record, target2, { instance: instance2, dispatch, preflight }, view) {
+  if (!dispatch || record.identity.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const recovering = input.action === "recover_operation";
+  if (!recovering && input.attempt !== record.importPrepare.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+  let result, notDispatched = false, unclaimed = false, claimed = false;
+  try {
+    if (recovering) {
+      if (!record.dispatched) {
+        unclaimed = true;
+        result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+      } else if (!record.importBatches?.length) return view(record, "import_prepare_evidence_required");
+      else result = await dispatch(target2.id, "/mongodb/imports/recover-prepare", {
+        database: target2.database,
+        importId: record.identity.importId,
+        importReceipt: { ...record.importPrepare, ...record.riskPlanId ? { riskPlanId: record.riskPlanId } : {}, batchesDigest: prepareRequestDigest({ batches: record.importBatches }) },
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    } else {
+      const request = input.request;
+      if (request?.instanceId !== target2.id || request.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      let plan;
+      try {
+        plan = normalizeMongoImport(request, instance2(target2.id).mongodb);
+        await preflight?.(target2.id);
+      } catch (error2) {
+        unclaimed = true;
+        throw error2;
+      }
+      const batches = importBatchIdentity(plan);
+      await service.call("claim_import_prepare", { ...input, dispatchDigest: prepareRequestDigest(request), importBatches: batches });
+      claimed = true;
+      result = await dispatch(target2.id, IMPORT_PREPARE_ROUTE, {
+        ...request,
+        _businessImport: { ...record.importPrepare, batchesDigest: prepareRequestDigest({ batches }), ...record.riskPlanId ? { riskPlanId: record.riskPlanId } : {} },
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    }
+    result = createOutputGuard().sanitize(result).value;
+  } catch (error2) {
+    notDispatched = claimed && error2.dispatchState === "not_dispatched";
+    result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_IMPORT_PREPARE_FAILED" } };
+  }
+  const saved = await service.call("import_prepare_result", { ...input, importPrepare: record.importPrepare, result, notDispatched, unclaimed });
+  if (recovering) return view(saved, saved.state === "uncertain" ? "import_prepare_evidence_required" : void 0);
+  return ["complete", "rejected_before_dispatch"].includes(saved.state) ? { ...result, intentId: input.id, intentState: saved.state } : {
+    ok: false,
+    intentId: input.id,
+    intentState: saved.state,
+    error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED", causeCode: result.error?.code }
+  };
+}
 var here = typeof __dirname === "string" ? __dirname : import_node_path4.default.dirname((0, import_node_url.fileURLToPath)(void 0));
 var PrivacyService = class {
   constructor({ directory, key, maxQueue = 32, workerPath, fenceAuthority } = {}) {
@@ -57860,7 +58105,7 @@ var PrivacyService = class {
     await this.worker?.terminate();
   }
 };
-async function privacyRequest(service, input, { instance: instance2, origin, dispatch, historicalEvidence } = {}) {
+async function privacyRequest(service, input, { instance: instance2, origin, dispatch, preflight, historicalEvidence } = {}) {
   const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "disposition"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate2 = (scope2) => {
@@ -57888,9 +58133,10 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
         const { instanceId: instanceId2, ...chunk } = request;
         try {
-          normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
+          if (isImportRequest(request)) normalizeMongoImport(chunk, instance2(target2.id).mongodb);
+          else normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
         } catch (error2) {
-          if (error2.layer === "mongodb-bulk" && error2.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+          if (["mongodb-bulk", "mongodb-mutation"].includes(error2.layer) && error2.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
           throw error2;
         }
         requests[name2] = request;
@@ -57898,6 +58144,33 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       if (input.reviewMemo !== void 0 && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4e3)) throw privacyError("BUSINESS_DISPOSITION_DENIED");
       const reviewMemo = input.reviewMemo === void 0 ? "" : createOutputGuard().sanitize({ reviewMemo: input.reviewMemo }).value.reviewMemo;
       let observations2;
+      if (isImportRequest(requests.originalRequest)) {
+        if (!isImportRequest(requests.replacementRequest)) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+        const originalBatches = importBatchIdentity(normalizeMongoImport(requests.originalRequest, instance2(target2.id).mongodb));
+        const replacementBatches = importBatchIdentity(normalizeMongoImport(requests.replacementRequest, instance2(target2.id).mongodb));
+        try {
+          const observed = await dispatch(target2.id, "/mongodb/imports/review", {
+            database: target2.database,
+            importId: requests.originalRequest.importId,
+            batches: originalBatches,
+            operationId: input.operationId,
+            timeoutMs: input.timeoutMs,
+            deadlineAt: input.deadlineAt
+          });
+          observations2 = {
+            source: "manager_remote_import_batch_read",
+            observedAt: Date.now(),
+            status: observed.ok === true ? "observed" : "unavailable",
+            batches: observed.ok === true ? observed.batches : void 0,
+            code: observed.error?.code,
+            historicalOutcome: "unknown"
+          };
+        } catch {
+          observations2 = { source: "manager_remote_import_batch_read", observedAt: Date.now(), status: "unavailable", historicalOutcome: "unknown" };
+        }
+        return service.call("prepare_risk_replacement", { ...input, ...requests, reviewMemo, observations: observations2, originalBatches, replacementBatches });
+      }
+      if (isImportRequest(requests.replacementRequest)) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
       try {
         const observed = await dispatch(target2.id, "/mongodb/bulk/job", { jobId: requests.originalRequest.jobId, includeDifferences: false, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt, operationId: input.operationId });
         observations2 = { source: "manager_remote_job_read", observedAt: Date.now(), status: observed.ok === false ? "unavailable" : observed.status || "unknown", code: observed.error?.code, historicalOutcome: "unknown" };
@@ -57911,7 +58184,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       const target2 = JSON.parse(input.scope);
       const handoff = await service.call("risk_handoff_context", input);
       if (handoff.required) {
-        const result2 = createOutputGuard().sanitize(await dispatch(target2.id, "/mongodb/bulk/retire", {
+        const result2 = createOutputGuard().sanitize(await dispatch(target2.id, handoff.route || "/mongodb/bulk/retire", {
           ...handoff.request,
           operationId: input.operationId,
           timeoutMs: input.timeoutMs,
@@ -57922,18 +58195,18 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       const reserved = await service.call("create_risk_replacement", input);
       if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
       const record = reserved.intent;
-      const result = await bulkPrepareRequest(
+      const result = await (record.importPrepare ? importPrepareRequest : bulkPrepareRequest)(
         service,
         {
           ...input,
           id: record.id,
-          attempt: record.bulkPrepare.attempt,
+          attempt: (record.importPrepare || record.bulkPrepare).attempt,
           action: record.dispatched ? "recover_operation" : "dispatch_prepare",
           request: reserved.request
         },
         record,
         target2,
-        { instance: instance2, dispatch },
+        { instance: instance2, dispatch, preflight },
         (saved) => ({ ok: true, intentId: record.id, state: saved.state, ...saved.result ? { result: saved.result } : {} })
       );
       return { ...reserved.risk, result };
@@ -57959,7 +58232,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       intentId: input.id,
       state: value.state,
       route: value.route,
-      attempt: (value.prepare || value.bulkPrepare)?.attempt,
+      attempt: (value.prepare || value.bulkPrepare || value.importPrepare)?.attempt,
       mutationId: value.prepare?.mutationId,
       legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason,
@@ -57973,6 +58246,10 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         return historicalBulkRequest(service, input, record, target2, { instance: instance2, dispatch, historicalEvidence }, view);
       }
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (record.route === IMPORT_PREPARE_ROUTE) {
+        if (!record.importPrepare) return view(record, "legacy_evidence_required");
+        return importPrepareRequest(service, input, record, target2, { instance: instance2, dispatch, preflight }, view);
+      }
       if (record.route === "/mongodb/bulk/prepare") {
         if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
         return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
@@ -58004,6 +58281,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         return view(record, "legacy_evidence_required");
       }
     }
+    if (input.action === "dispatch_prepare" && record.route === IMPORT_PREPARE_ROUTE && record.importPrepare) return importPrepareRequest(service, input, record, target2, { instance: instance2, dispatch, preflight }, view);
     if (input.action === "dispatch_prepare" && record.route === "/mongodb/bulk/prepare" && record.bulkPrepare) {
       return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
     }
@@ -58061,7 +58339,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
   }
   return service.call(input.action, input);
 }
-function installPrivacyRoutes(app, { directory, registry, service, dispatch, dataDirectory, historicalEvidence } = {}) {
+function installPrivacyRoutes(app, { directory, registry, service, dispatch, preflight, dataDirectory, historicalEvidence } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
@@ -58070,6 +58348,7 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, dat
         instance: (id) => registry.getInternal(id),
         origin: new URL(`http://${request.headers.host}`).origin,
         dispatch,
+        preflight,
         historicalEvidence: historicalEvidence || (dataDirectory ? createBulkHistoryReader({ dataDirectory, instance: (id) => registry.getInternal(id) }) : void 0)
       });
       response.json({ ok: true, result });
@@ -58082,8 +58361,8 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, dat
     }
   });
 }
-async function assertMongoDispatchAdmission(service, instanceId2, route2, request) {
-  if (isMongoAdmissionRoute(route2)) await service.call("assert_instance_admission", { instanceId: instanceId2, route: route2, request });
+async function assertMongoDispatchAdmission(service, instanceId2, route2, request, defaultDatabase) {
+  if (isMongoAdmissionRoute(route2)) await service.call("assert_instance_admission", { instanceId: instanceId2, route: route2, request: route2.startsWith("/mongodb/imports/") ? { ...request, database: request.database || defaultDatabase } : request });
 }
 async function humanRiskRequest(service, action, input, instance2) {
   const context = await service.call("human_risk_context", input);
@@ -66883,6 +67162,26 @@ function configEnv(instance2, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0"
   };
 }
+function workerConfigFingerprint(instance2, manager, cwd) {
+  return (0, import_node_crypto23.createHash)("sha256").update(JSON.stringify(configEnv(instance2, 0, manager, cwd, false))).digest("hex");
+}
+function assertMongoConfigurationCurrent(manager, id) {
+  const runtime2 = manager.runtime.get(id), instance2 = manager.registry.getInternal(id);
+  if (!runtime2 || runtime2.status !== "running" || !runtime2.workerPort) throw managerError(
+    "Instance worker is not running",
+    "INSTANCE_NOT_RUNNING",
+    409,
+    { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" }
+  );
+  if (!instance2 || !runtime2.configFingerprint || runtime2.configFingerprint !== workerConfigFingerprint(instance2, manager.managerConfig(), manager.cwd)) {
+    throw managerError(
+      "Worker configuration is not current; inspect in-flight work before explicitly refreshing this instance",
+      "WORKER_CONFIGURATION_STALE",
+      409,
+      { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" }
+    );
+  }
+}
 var WorkerManager = class {
   constructor(options = {}) {
     this.registry = options.registry;
@@ -66925,12 +67224,13 @@ var WorkerManager = class {
   publicInstances() {
     return this.registry.list().map((instance2) => ({
       ...instance2,
-      runtime: publicRuntime(this.runtime.get(instance2.id)),
+      runtime: this.runtimeFor(instance2.id),
       memory: this.memoryStore.summary(instance2)
     }));
   }
   runtimeFor(id) {
-    return publicRuntime(this.runtime.get(id));
+    const runtime2 = this.runtime.get(id), instance2 = this.registry.getInternal(id);
+    return { ...publicRuntime(runtime2), configuration: !runtime2?.configFingerprint ? "unknown" : instance2 && runtime2.configFingerprint === workerConfigFingerprint(instance2, this.managerConfig(), this.cwd) ? "current" : "refresh_required" };
   }
   restoreCandidates() {
     const instances = [];
@@ -67288,7 +67588,7 @@ var WorkerManager = class {
     }
   }
   async startInstance(id) {
-    const instance2 = this.registry.getInternal(id);
+    const instance2 = structuredClone(this.registry.getInternal(id));
     if (!instance2) {
       throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
     }
@@ -67301,11 +67601,12 @@ var WorkerManager = class {
         runtime: publicRuntime(current)
       };
     }
-    const manager = this.managerConfig();
+    const manager = structuredClone(this.managerConfig());
     const workerPort = await this.allocatePort(instance2);
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance2);
     const runtime2 = {
       status: "starting",
+      configFingerprint: workerConfigFingerprint(instance2, manager, this.cwd),
       authToken: (0, import_node_crypto23.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
@@ -67760,6 +68061,9 @@ var WorkerManager = class {
   resolveInstanceId(instanceId2) {
     return this.registry.resolveId(instanceId2);
   }
+  assertMongoConfigurationCurrent(instanceId2) {
+    assertMongoConfigurationCurrent(this, this.resolveInstanceId(instanceId2));
+  }
   async callInstance(instanceId2, pathName, payload, headers = {}, options = {}) {
     const resolvedId = this.resolveInstanceId(instanceId2);
     const runtime2 = this.runtime.get(resolvedId);
@@ -67769,12 +68073,23 @@ var WorkerManager = class {
         "INSTANCE_NOT_RUNNING",
         409,
         {
-          instances: this.publicInstances()
+          instances: this.publicInstances(),
+          layer: "manager",
+          phase: "worker-admission",
+          dispatchState: "not_dispatched"
         }
       );
     }
     if (!/^[a-f0-9]{64}$/.test(runtime2.authToken || "")) {
-      throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401);
+      throw managerError(
+        "worker authentication credentials are missing; refresh the instance",
+        "LOCAL_AUTH_REQUIRED",
+        401,
+        { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" }
+      );
+    }
+    if (pathName.startsWith("/mongodb/")) {
+      assertMongoConfigurationCurrent(this, resolvedId);
     }
     const url = `http://${this.managerConfig().host}:${runtime2.workerPort}${pathName}`;
     const operation = {
@@ -69743,6 +70058,9 @@ function createApp(options = {}) {
     app.post(`/sandbox/${route2}`, (request, response) => handleMongoBulk(request, response, action, `/sandbox/${route2}`));
   }
   app.post("/mongodb/imports/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
+  for (const [suffix, mode] of [["review", "import_review"], ["retire", "import_retire"], ["recover-prepare", "import_recover"]]) {
+    app.post(`/mongodb/imports/${suffix}`, (request, response) => handleMongoMutation(request, response, mode, `/mongodb/imports/${suffix}`));
+  }
   app.post("/mongodb/mutations/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
   app.post("/mongodb/mutations/execute", (request, response) => handleMongoMutation(request, response, "commit", "/mongodb/mutations/execute"));
   app.post("/mongodb/mutations/rollback", (request, response) => handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
@@ -70052,9 +70370,10 @@ function createManagerApp(options = {}) {
   installPrivacyRoutes(app, {
     registry,
     service: options.privacyService,
+    preflight: (id) => workerManager.assertMongoConfigurationCurrent?.(id),
     dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: async (id, route2, payload) => {
-      if (route2 !== "/mongodb/bulk/retire") await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload);
+      if (!["/mongodb/bulk/retire", "/mongodb/imports/retire"].includes(route2)) await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload, registry.getInternal(id)?.mongodb?.database);
       return workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" });
     },
     directory: import_node_path17.default.join(import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
@@ -70227,7 +70546,8 @@ function createManagerApp(options = {}) {
     response.json({
       ok: true,
       instance: instance2,
-      runtime: workerManager.runtimeFor(instance2.id)
+      runtime: workerManager.runtimeFor(instance2.id),
+      workerRefreshRequired: workerManager.runtimeFor(instance2.id).configuration !== "current"
     });
   }));
   app.get("/api/service-profiles", managerAsync(async (_request, response) => {
@@ -70701,7 +71021,7 @@ function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId2);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
-      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload);
+      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload, registry.getInternal(resolvedId)?.mongodb?.database);
       if (pathName.startsWith("/services/")) {
         if (!instanceId2) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
         const instance3 = registry.getInternal(resolvedId);

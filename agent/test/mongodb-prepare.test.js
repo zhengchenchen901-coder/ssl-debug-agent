@@ -3,7 +3,7 @@ import test from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { mutationPrepareHarness } from "./helpers/mutation-prepare-harness.js";
-import { WorkerManager } from "../worker-manager.js";
+import { WorkerManager, workerConfigFingerprint } from "../worker-manager.js";
 
 const ticket = { mutationId: "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa", binding: "b".repeat(64), requestDigest: "c".repeat(64), attempt: 1 };
 const input = { mode: "prepare", kind: "index", database: "business", collection: "orders", operation: "createIndex",
@@ -99,10 +99,12 @@ test("new prepare hashes preserve compound index field order and connection iden
 });
 
 test("worker transport preserves an explicit preflight rejection instead of making it an uncertain transport failure", async () => {
+  const instance = { id: "isolated" }, policy = { host: "127.0.0.1", sshNetwork: {} };
   const manager = {
+    cwd: "/isolated", registry: { getInternal: () => instance },
     resolveInstanceId: (id) => id,
-    runtime: new Map([["isolated", { status: "running", workerPort: 4400, authToken: "a".repeat(64) }]]),
-    managerConfig: () => ({ host: "127.0.0.1" }),
+    runtime: new Map([["isolated", { status: "running", workerPort: 4400, authToken: "a".repeat(64), configFingerprint: workerConfigFingerprint(instance, policy, "/isolated") }]]),
+    managerConfig: () => policy,
     fetchImpl: async () => new Response(JSON.stringify({ ok: false, error: { code: "MONGODB_COLLECTION_NOT_ALLOWED",
       message: "Structured MongoDB operation failed", layer: "mongodb-mutation", phase: "validation", retriable: false, dispatchState: "not_dispatched" } }), { status: 403 }),
   };

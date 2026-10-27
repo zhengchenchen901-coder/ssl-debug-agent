@@ -1,0 +1,11 @@
+{
+  "regression": 0,
+  "mongo": 0,
+  "browserImport": 0,
+  "browserBulk": 0,
+  "snapshotId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+  "sourceMatchesFrozenFiles": true,
+  "changedFrozenFiles": [],
+  "runtimeManifestVerified": true,
+  "runtimeId": "2.4.0:11ac560dec7bef1fc01e6c3ef3e160d342cb28a46dae7d1c138df1568584e3c6"
+}

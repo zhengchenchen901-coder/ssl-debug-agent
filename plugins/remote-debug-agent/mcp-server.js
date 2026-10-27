@@ -10,7 +10,7 @@ import localAuth from "./local-auth.cjs";
 import { createOutputGuard, GUARD_BLOCKED, isSensitiveKey } from "./output-guard.js";
 import { createBusinessPrivacy } from "./business-privacy.js";
 import { createBusinessStorage } from "./business-storage.js";
-import { bulkPreparePayload } from "./prepare-protocol.js";
+import { importPreparePayload, isImportRequest, bulkPreparePayload } from "./prepare-protocol.js";
 import { createOutputPreviewPublisher, outputPreviewMetadata } from "./output-preview.js";
 import { FINAL_RESULT_TOOLS, callFinalResultTool } from "./final-results.js";
 import {
@@ -566,7 +566,7 @@ const tools = [
   },
   {
     name: "remote_debug_mongodb_disposition",
-    description: "Review/quarantine an exact uncertain bulk intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Creation never executes business writes; sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
+    description: "Review/quarantine an exact uncertain bulk or import intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Import proposals preserve exact documents, order, collection and options; only importId changes. Import batch receipts and per-batch rollback boundaries are reviewed independently. Creation never executes business writes; imports use normal mutation confirmation, bulk sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
     inputSchema: {
       type: "object", additionalProperties: false, required: ["instanceId", "database", "mode"],
       oneOf: [
@@ -1268,9 +1268,9 @@ const tools = [
 tools.find((tool) => tool.name === "remote_debug_mongodb_recover_operation").inputSchema.properties.originalRequest =
   structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
 tools.find((tool) => tool.name === "remote_debug_mongodb_disposition").inputSchema.properties.originalRequest =
-  structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
+  { oneOf: ["remote_debug_mongodb_prepare_bulk", "remote_debug_mongodb_prepare_import"].map(name => structuredClone(tools.find(tool => tool.name === name).inputSchema)) };
 tools.find((tool) => tool.name === "remote_debug_mongodb_disposition").inputSchema.properties.replacementRequest =
-  structuredClone(tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema);
+  { oneOf: ["remote_debug_mongodb_prepare_bulk", "remote_debug_mongodb_prepare_import"].map(name => structuredClone(tools.find(tool => tool.name === name).inputSchema)) };
 
 const synchronousLogSchema = tools.find((tool) => tool.name === "remote_debug_query_logs").inputSchema;
 tools.push({
@@ -3020,13 +3020,14 @@ async function requestAgent(pathName, payload, options = {}) {
     operation.privacyRefs = await businessStorage.prepare(settings, payload, scope, operation.signal);
     for (const requestField of ["originalRequest", "replacementRequest"]) if (["/mongodb/operations/recover", "/mongodb/operations/disposition"].includes(pathName) && payload[requestField] !== undefined) {
       const candidate = payload[requestField];
-      const allowed = tools.find((tool) => tool.name === "remote_debug_mongodb_prepare_bulk").inputSchema.properties;
+      const importCandidate = pathName.endsWith("disposition") && isImportRequest(candidate);
+      const allowed = tools.find((tool) => tool.name === (importCandidate ? "remote_debug_mongodb_prepare_import" : "remote_debug_mongodb_prepare_bulk")).inputSchema.properties;
       if (!(pathName.endsWith("disposition") ? ["prepare", "prepare_risk"].includes(payload.mode) : payload.mode === "historical") || !candidate || typeof candidate !== "object" || Array.isArray(candidate) ||
           Object.keys(candidate).some((key) => !Object.hasOwn(allowed, key)) ||
           candidate.instanceId !== undefined && candidate.instanceId !== instanceId || candidate.database !== undefined && candidate.database !== database) {
         throw Object.assign(new Error("Historical recovery requires an exact original bulk request in the same target."), { code: "BUSINESS_OPERATION_DENIED" });
       }
-      payload = { ...payload, [requestField]: bulkPreparePayload({ ...candidate, instanceId, database }) };
+      payload = { ...payload, [requestField]: (importCandidate ? importPreparePayload : bulkPreparePayload)({ ...candidate, instanceId, database }) };
     }
     payload = businessPrivacy.resolve(operation.toolName, payload, scope);
     const acceptsDatabase = tools.find((tool) => tool.name === operation.toolName)?.inputSchema.properties.database;
@@ -3038,7 +3039,7 @@ async function requestAgent(pathName, payload, options = {}) {
     operation.privacyInput = payload;
     operation.privacyIntent = await businessStorage.intent(settings, pathName, payload, scope, operation.privacyRefs, operation.signal);
     if (["complete", "prepared"].includes(operation.privacyIntent?.state)) return operation.privacyIntent.result;
-    if (operation.privacyIntent?.prepare || operation.privacyIntent?.bulkPrepare) {
+    if (operation.privacyIntent?.prepare || operation.privacyIntent?.bulkPrepare || operation.privacyIntent?.importPrepare) {
       const prepared = await businessStorage.dispatchPrepare(settings, operation.privacyIntent, scope, payload, operation);
       if (prepared.ok !== true) throw Object.assign(new Error(prepared.error?.message || "MongoDB preparation failed"), prepared.error,
         { intentId: prepared.intentId || operation.privacyIntent.id });

@@ -7,7 +7,7 @@ export const DISPOSITION_CONFIRMATION = "确认隔离原意图";
 const HASH = /^[a-f0-9]{64}$/;
 const DAY = 86400000;
 const READ_ROUTES = new Set([
-  "/mongodb/query", "/mongodb/bulk/job", "/mongodb/bulk/jobs",
+  "/mongodb/query", "/mongodb/imports/review", "/mongodb/imports/recover-prepare", "/mongodb/bulk/job", "/mongodb/bulk/jobs",
   "/mongodb/mutations/list", "/mongodb/mutations/get",
   "/mongodb/bulk/recover-prepare", "/mongodb/mutations/recover-prepare", "/mongodb/mutations/recover-execution",
 ]);
@@ -47,20 +47,25 @@ function view(store, record) {
 export function dispositionStoreAction(store, action, input, ctx, scope) {
   if (action === "prepare_disposition") return store.transaction(() => {
     const target = targetOf(input), original = store.get("operation", input.id, ctx, scope), request = input.request;
-    if (!HASH.test(input.id || "") || !original || original.state !== "uncertain" || original.route !== "/mongodb/bulk/prepare" ||
+    if (!HASH.test(input.id || "") || !original || original.state !== "uncertain" || !["/mongodb/bulk/prepare", "/mongodb/imports/prepare"].includes(original.route) ||
         original.identity?.instanceId !== target.id || !request || request.instanceId !== target.id || request.database !== target.database ||
         store.hash("operation", ctx, input.scope, original.route, request) !== input.id ||
-        typeof original.identity.jobId !== "string" || original.identity.jobId !== request.jobId ||
-        !Number.isSafeInteger(original.identity.chunkIndex) || original.identity.chunkIndex !== request.chunkIndex ||
+        (original.route === "/mongodb/bulk/prepare" ? typeof original.identity.jobId !== "string" || original.identity.jobId !== request.jobId ||
+        !Number.isSafeInteger(original.identity.chunkIndex) || original.identity.chunkIndex !== request.chunkIndex :
+        typeof request.importId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(request.importId) || request.jobId !== undefined ||
+        original.identity.importId !== undefined && original.identity.importId !== request.importId) ||
         input.requestDigest !== prepareRequestDigest(request)) denied();
+    if (original.importPrepare && original.importPrepare.requestDigest !== input.requestDigest) denied();
     if (original.bulkPrepare && original.bulkPrepare.requestDigest !== input.requestDigest) denied();
     const fingerprint = store.hash("operation-record", ctx, input.scope, input.id, original);
-    const binding = { contextId: ctx, instanceId: target.id, database: target.database, intentId: input.id,
+    const binding = { ...(original.route === "/mongodb/imports/prepare" ? { kind: "import", route: original.route, importId: request.importId, collection: request.collection } : {}), contextId: ctx, instanceId: target.id, database: target.database, intentId: input.id,
       requestDigest: input.requestDigest, originalOperationId: original.operationId || null,
       jobId: original.identity.jobId, chunkIndex: original.identity.chunkIndex,
       chunkHash: original.bulkChunk?.chunkHash || null, planHash: original.identity.planHash || null };
-    const missingRequirements = [...requirements];
-    for (const [field, reason] of [["originalOperationId", "original_operation_identity_unbound"], ["chunkHash", "original_chunk_hash_unbound"], ["planHash", "original_plan_hash_unbound"]]) {
+    const missingRequirements = binding.kind === "import" ? ["historical_import_batch_receipts_required", "historical_in_flight_outcomes_unknown"] : [...requirements];
+    const identityGaps = binding.kind === "import" ? [["originalOperationId", "original_operation_identity_unbound"]]
+      : [["originalOperationId", "original_operation_identity_unbound"], ["chunkHash", "original_chunk_hash_unbound"], ["planHash", "original_plan_hash_unbound"]];
+    for (const [field, reason] of identityGaps) {
       if (!binding[field]) missingRequirements.push(reason);
     }
     const id = store.hash("disposition", ctx, input.scope, binding, fingerprint);

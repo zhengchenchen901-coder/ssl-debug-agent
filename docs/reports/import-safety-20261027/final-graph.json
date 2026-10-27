@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "projectId": "ssl-debug-agent",
+  "runId": "ff38bbcf-c39e-467a-9a55-21df996117cf",
+  "sourceRunId": "516803d9-e878-4ac7-85da-f0a017c3d858",
+  "stage": "graph-built",
+  "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+  "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+  "modelCalls": 0,
+  "completeness": "partial-static",
+  "truncated": true,
+  "counts": {
+    "functions": 38,
+    "blocks": 2763,
+    "callSites": 278,
+    "interproceduralEdges": 231,
+    "diagnostics": 271
+  },
+  "cacheStats": {
+    "builtFunctions": 1,
+    "reusedFunctions": 37
+  },
+  "metrics": {
+    "phasesMs": {
+      "load-inputs": 683.5457500000484,
+      "functions": 136.51820899988525,
+      "link-evidence": 2.0317079999949783,
+      "persist": 54.03912500012666
+    },
+    "totalMs": 876.1511249998584,
+    "peakRssBytes": 1653604352,
+    "heapUsedBytes": 331070040
+  },
+  "artifacts": {
+    "impactGraph": ".testflow/runs/ff38bbcf-c39e-467a-9a55-21df996117cf/impact-graph.json",
+    "manifest": ".testflow/runs/ff38bbcf-c39e-467a-9a55-21df996117cf/manifest.json"
+  },
+  "flowId": "b11d418a-a00b-4fa5-9b8c-954281a62d15"
+}

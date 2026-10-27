@@ -10,7 +10,7 @@ export function bulkPreparePayload(args) {
 
 // Preserve BSON/index document field order. Transport deadlines are not identity.
 export function prepareRequestDigest(input) {
-  const { operationId, deadlineAt, timeoutMs, _businessPrepare, ...request } = input;
+  const { operationId, deadlineAt, timeoutMs, _businessPrepare, _businessImport, ...request } = input;
   return createHash("sha256").update(JSON.stringify(request)).digest("hex");
 }
 
@@ -18,4 +18,19 @@ export function isPrepareTicket(value) {
   return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") &&
     /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") &&
     Number.isSafeInteger(value.attempt) && value.attempt > 0;
+}
+
+// Keep the public import wire identity identical to prepare_import, including
+// document field order. This is a distinct protocol, never a bulk envelope.
+export function importPreparePayload(args) {
+  return { instanceId: args.instanceId, importId: args.importId, database: args.database,
+    collection: args.collection, documents: args.documents, batchSize: args.batchSize,
+    rollbackTtlMs: args.rollbackTtlMs, purpose: args.purpose, timeoutMs: args.timeoutMs };
+}
+export const IMPORT_PREPARE_ROUTE = "/mongodb/imports/prepare";
+export const isImportRequest = value => value && Object.hasOwn(value, "importId") && !Object.hasOwn(value, "jobId");
+export function importBatchIdentity(plan) {
+  return plan.batches.map(({ operationId, ...batch }) => ({ mutationId: batch.mutationId,
+    batchIndex: batch.batchIndex, documentCount: batch.documents.length,
+    requestDigest: prepareRequestDigest(batch) }));
 }

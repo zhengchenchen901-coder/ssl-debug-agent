@@ -1,0 +1,9 @@
+{
+  "snapshotId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+  "image": "sha256:61a0b3c3fa5e261a6600fc549814dffa70f96936374435151bb3765c7aa423dc",
+  "network": "none",
+  "exitCode": 0,
+  "supplementalEvidence": true,
+  "testflowExecution": false,
+  "keystore": "explicit synthetic PrivacyService key in memory proxy fixture; production Linux unsupported gate unchanged"
+}

@@ -1,3 +1,4 @@
+import { prepareImportRisk, importRiskView, importHumanAction, importRiskAction, importReplacementAdmission, assertImportAdmission } from "./mongodb-import-risk.js";
 import { privacyError } from "./privacy-key.js";
 import { bulkPreparePayload, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { digest, fenceChallenge, inspectFenceAuthority, requireFenceAuthority } from "./mongodb-fence-authority.js";
@@ -39,6 +40,7 @@ function humanHash(store, plan, proof) {
   return store.hash("risk-human-review", plan.id, plan.requestDigest, plan.sealDigest, plan.recordFingerprint, plan.expiresAt, proof.fingerprint || null);
 }
 export function riskView(store, plan) {
+  if (plan.kind === "import") return importRiskView(store, plan);
   const proof = humanPolicy(plan) ? { confirmed: false, reason: "human_risk_acceptance_no_external_attestation" } : inspectFenceAuthority(plan, store.fenceAuthority, store.now());
   const approved = !!plan.approval;
   const human = humanPolicy(plan);
@@ -85,6 +87,7 @@ function audit(store, type, plan, ctx, scope, extra = {}) {
   return id;
 }
 export function riskStoreAction(store, action, input, ctx, scope) {
+  if (action === "prepare_risk_replacement" && input.originalRequest?.importId !== undefined) return prepareImportRisk(store, input, ctx, scope);
   if (action === "prepare_risk_replacement") return store.transaction(() => {
     const parent = store.get("disposition", input.dispositionId, ctx, scope), original = input.originalRequest, replacement = input.replacementRequest;
     if (!parent || input.reviewHash !== parent.reviewHash || !original || !replacement ||
@@ -126,7 +129,8 @@ export function riskStoreAction(store, action, input, ctx, scope) {
     return riskView(store, plan);
   });
   if (["inspect_risk_replacement", "create_risk_replacement", "risk_handoff_context", "record_risk_retirement"].includes(action)) return store.transaction(() => {
-    const { plan } = load(store, input.riskPlanId, ctx, scope);
+    const found = load(store, input.riskPlanId, ctx, scope), { plan } = found;
+    if (plan.kind === "import") return importRiskAction(store, action, input, found);
     if (plan.targetScope !== input.scope) denied();
     if (action === "inspect_risk_replacement") return riskView(store, plan);
     if (action === "risk_handoff_context" || action === "record_risk_retirement") {
@@ -156,6 +160,7 @@ export function riskStoreAction(store, action, input, ctx, scope) {
 export function humanRiskStoreAction(store, action, input) {
   if (!["human_risk_context", "human_risk_view", "human_risk_approve"].includes(action)) return undefined;
   const found = load(store, input.riskPlanId);
+  if (found.plan.kind === "import") return importHumanAction(store, action, input, found);
   if (found.plan.binding.instanceId !== input.instanceId) denied();
   if (action === "human_risk_context") return { targetScope: found.plan.targetScope, database: found.plan.binding.database };
   return store.transaction(() => {
@@ -248,6 +253,7 @@ export function riskRetirementStatus(store, parent) {
   if (!parent.retirement) return {};
   const { plan, ctx } = load(store, parent.retirement.riskPlanId);
   if (ctx !== parent.binding.contextId || plan.dispositionId !== parent.id || plan.binding.intentId !== parent.binding.intentId) denied();
+  if (plan.kind === "import") return { riskPlanId: plan.id, replacementImportId: plan.replacementRequest.importId, historicalOutcome: "unknown", approvalPolicy: plan.approvalPolicy, acceptedResidualRisk: !!plan.approval, replacementAllowed: false, missingRequirements: plan.remoteRetirement ? [] : ["remote_managed_import_termination_pending"] };
   const proof = humanPolicy(plan) ? { confirmed: false, reason: "human_risk_acceptance_no_external_attestation" } : inspectFenceAuthority(plan, store.fenceAuthority, store.now());
   return { riskPlanId: plan.id, replacementJobId: parent.retirement.replacementJobId, replacementIntentId: parent.retirement.replacementIntentId,
     remoteFenceConfirmed: proof.confirmed, historicalOutcome: "unknown", replacementAllowed: false,
@@ -257,6 +263,7 @@ export function riskRetirementStatus(store, parent) {
 }
 
 export function replacementAdmission(store, instanceId, admission = {}) {
+  if (importReplacementAdmission(store, instanceId, admission) || assertImportAdmission(store, instanceId, admission)) return true;
   const request = admission.request || {}, identity = admission.identity || request;
   if (!identity.jobId || typeof identity.jobId !== "string") return false;
   const gate = store.get("replacement_gate", store.hash("replacement-gate", instanceId, identity.jobId), "", "");
@@ -291,6 +298,7 @@ export function recordReplacementPrepared(store, record, result) {
 }
 
 export function assertRiskJobAdmission(store, instanceId, admission = {}) {
+  assertImportAdmission(store, instanceId, admission);
   const identity = admission.identity || admission.request || {};
   if (typeof identity.jobId !== "string") return;
   const retired = store.get("risk_job_retirement", store.hash("risk-job-retirement", instanceId, identity.jobId), "", "");

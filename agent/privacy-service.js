@@ -1,9 +1,10 @@
+import { normalizeMongoImport } from "./mongodb-mutations.js";
 import { Worker } from "node:worker_threads";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { privacyError } from "./privacy-key.js";
 import { businessTargetScope } from "../plugins/remote-debug-agent/business-privacy.js";
-import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { prepareRequestDigest, importBatchIdentity, IMPORT_PREPARE_ROUTE, isImportRequest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { createOutputGuard } from "../plugins/remote-debug-agent/output-guard.js";
 import { normalizeMongoBulkChunk } from "./mongodb-bulk.js";
 import { createBulkHistoryReader } from "./mongodb-bulk-history.js";
@@ -94,6 +95,48 @@ async function bulkPrepareRequest(service, input, record, target, { instance, di
     : { ...result, intentId: input.id, intentState: saved.state };
 }
 
+async function importPrepareRequest(service, input, record, target, { instance, dispatch, preflight }, view) {
+  if (!dispatch || record.identity.instanceId !== target.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const recovering = input.action === "recover_operation";
+  if (!recovering && input.attempt !== record.importPrepare.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+  let result, notDispatched = false, unclaimed = false, claimed = false;
+  try {
+    if (recovering) {
+      if (!record.dispatched) {
+        // The store rechecks this in the same transaction that closes the
+        // attempt. A delayed claim either wins first or can never run later.
+        unclaimed = true;
+        result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+      } else if (!record.importBatches?.length) return view(record, "import_prepare_evidence_required");
+      else result = await dispatch(target.id, "/mongodb/imports/recover-prepare", { database: target.database,
+        importId: record.identity.importId, importReceipt: { ...record.importPrepare, ...(record.riskPlanId ? { riskPlanId: record.riskPlanId } : {}), batchesDigest: prepareRequestDigest({ batches: record.importBatches }) },
+        operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+    } else {
+      const request = input.request;
+      if (request?.instanceId !== target.id || request.database !== target.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      let plan;
+      try {
+        plan = normalizeMongoImport(request, instance(target.id).mongodb);
+        // Reject known stale policy before acquiring a dispatch claim. The
+        // transport checks again after the asynchronous claim to cover changes
+        // that race with this check or queued SQLite work.
+        await preflight?.(target.id);
+      } catch (error) { unclaimed = true; throw error; }
+      const batches = importBatchIdentity(plan);
+      await service.call("claim_import_prepare", { ...input, dispatchDigest: prepareRequestDigest(request), importBatches: batches });
+      claimed = true;
+      result = await dispatch(target.id, IMPORT_PREPARE_ROUTE, { ...request,
+        _businessImport: { ...record.importPrepare, batchesDigest: prepareRequestDigest({ batches }), ...(record.riskPlanId ? { riskPlanId: record.riskPlanId } : {}) },
+        operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+    }
+    result = createOutputGuard().sanitize(result).value;
+  } catch (error) { notDispatched = claimed && error.dispatchState === "not_dispatched"; result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_IMPORT_PREPARE_FAILED" } }; }
+  const saved = await service.call("import_prepare_result", { ...input, importPrepare: record.importPrepare, result, notDispatched, unclaimed });
+  if (recovering) return view(saved, saved.state === "uncertain" ? "import_prepare_evidence_required" : undefined);
+  return ["complete", "rejected_before_dispatch"].includes(saved.state) ? { ...result, intentId: input.id, intentState: saved.state } : {
+    ok: false, intentId: input.id, intentState: saved.state, error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED", causeCode: result.error?.code } };
+}
+
 const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 export class PrivacyService {
   constructor({ directory, key, maxQueue = 32, workerPath, fenceAuthority } = {}) {
@@ -138,7 +181,7 @@ export class PrivacyService {
 
 // This authenticated protocol exposes only bounded operations. The recovery MCP
 // tool delegates here; it never receives capabilities or supplies remote proof.
-export async function privacyRequest(service, input, { instance, origin, dispatch, historicalEvidence } = {}) {
+export async function privacyRequest(service, input, { instance, origin, dispatch, preflight, historicalEvidence } = {}) {
   // Reconciliation proof is fetched below by the Manager, never accepted from
   // an MCP caller's result object. The store action remains internal.
   const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "disposition"];
@@ -166,11 +209,12 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
         const { instanceId, ...chunk } = request;
         try {
-          normalizeMongoBulkChunk(chunk, { ...instance(target.id).mongodb, bulkEnabled: true });
+          if (isImportRequest(request)) normalizeMongoImport(chunk, instance(target.id).mongodb);
+          else normalizeMongoBulkChunk(chunk, { ...instance(target.id).mongodb, bulkEnabled: true });
         } catch (error) {
           // Public callers need to distinguish invalid proposals from storage
           // failures. Never forward validator messages containing business data.
-          if (error.layer === "mongodb-bulk" && error.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+          if (["mongodb-bulk", "mongodb-mutation"].includes(error.layer) && error.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
           throw error;
         }
         requests[name] = request;
@@ -178,6 +222,21 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
       if (input.reviewMemo !== undefined && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4000)) throw privacyError("BUSINESS_DISPOSITION_DENIED");
       const reviewMemo = input.reviewMemo === undefined ? "" : createOutputGuard().sanitize({ reviewMemo: input.reviewMemo }).value.reviewMemo;
       let observations;
+      if (isImportRequest(requests.originalRequest)) {
+        if (!isImportRequest(requests.replacementRequest)) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+        const originalBatches = importBatchIdentity(normalizeMongoImport(requests.originalRequest, instance(target.id).mongodb));
+        const replacementBatches = importBatchIdentity(normalizeMongoImport(requests.replacementRequest, instance(target.id).mongodb));
+        try {
+          const observed = await dispatch(target.id, "/mongodb/imports/review", { database: target.database,
+            importId: requests.originalRequest.importId, batches: originalBatches, operationId: input.operationId,
+            timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+          observations = { source: "manager_remote_import_batch_read", observedAt: Date.now(),
+            status: observed.ok === true ? "observed" : "unavailable", batches: observed.ok === true ? observed.batches : undefined,
+            code: observed.error?.code, historicalOutcome: "unknown" };
+        } catch { observations = { source: "manager_remote_import_batch_read", observedAt: Date.now(), status: "unavailable", historicalOutcome: "unknown" }; }
+        return service.call("prepare_risk_replacement", { ...input, ...requests, reviewMemo, observations, originalBatches, replacementBatches });
+      }
+      if (isImportRequest(requests.replacementRequest)) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
       try {
         const observed = await dispatch(target.id, "/mongodb/bulk/job", { jobId: requests.originalRequest.jobId, includeDifferences: false, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt, operationId: input.operationId });
         observations = { source: "manager_remote_job_read", observedAt: Date.now(), status: observed.ok === false ? "unavailable" : observed.status || "unknown", code: observed.error?.code, historicalOutcome: "unknown" };
@@ -189,15 +248,15 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
       const target = JSON.parse(input.scope);
       const handoff = await service.call("risk_handoff_context", input);
       if (handoff.required) {
-        const result = createOutputGuard().sanitize(await dispatch(target.id, "/mongodb/bulk/retire", {
+        const result = createOutputGuard().sanitize(await dispatch(target.id, handoff.route || "/mongodb/bulk/retire", {
           ...handoff.request, operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt })).value;
         await service.call("record_risk_retirement", { ...input, result });
       }
       const reserved = await service.call("create_risk_replacement", input);
       if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
       const record = reserved.intent;
-      const result = await bulkPrepareRequest(service, { ...input, id: record.id, attempt: record.bulkPrepare.attempt,
-        action: record.dispatched ? "recover_operation" : "dispatch_prepare", request: reserved.request }, record, target, { instance, dispatch },
+      const result = await (record.importPrepare ? importPrepareRequest : bulkPrepareRequest)(service, { ...input, id: record.id, attempt: (record.importPrepare || record.bulkPrepare).attempt,
+        action: record.dispatched ? "recover_operation" : "dispatch_prepare", request: reserved.request }, record, target, { instance, dispatch, preflight },
         saved => ({ ok: true, intentId: record.id, state: saved.state, ...(saved.result ? { result: saved.result } : {}) }));
       return { ...reserved.risk, result };
     }
@@ -218,7 +277,7 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     const record = await service.call("inspect_operation", input);
     const target = JSON.parse(input.scope);
     const view = (value, reason) => ({ ok: true, intentId: input.id, state: value.state, route: value.route,
-      attempt: (value.prepare || value.bulkPrepare)?.attempt, mutationId: value.prepare?.mutationId,
+      attempt: (value.prepare || value.bulkPrepare || value.importPrepare)?.attempt, mutationId: value.prepare?.mutationId,
       legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason, recoveryCode: value.reconciliation?.code, ...(value.result ? { result: value.result } : {}) });
     if (input.action === "recover_operation") {
@@ -228,6 +287,10 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         return historicalBulkRequest(service, input, record, target, { instance, dispatch, historicalEvidence }, view);
       }
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (record.route === IMPORT_PREPARE_ROUTE) {
+        if (!record.importPrepare) return view(record, "legacy_evidence_required");
+        return importPrepareRequest(service, input, record, target, { instance, dispatch, preflight }, view);
+      }
       if (record.route === "/mongodb/bulk/prepare") {
         if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
         return bulkPrepareRequest(service, input, record, target, { instance, dispatch }, view);
@@ -251,6 +314,7 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
         return view(record, "legacy_evidence_required");
       }
     }
+    if (input.action === "dispatch_prepare" && record.route === IMPORT_PREPARE_ROUTE && record.importPrepare) return importPrepareRequest(service, input, record, target, { instance, dispatch, preflight }, view);
     if (input.action === "dispatch_prepare" && record.route === "/mongodb/bulk/prepare" && record.bulkPrepare) {
       return bulkPrepareRequest(service, input, record, target, { instance, dispatch }, view);
     }
@@ -295,12 +359,12 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
   return service.call(input.action, input);
 }
 
-export function installPrivacyRoutes(app, { directory, registry, service, dispatch, dataDirectory, historicalEvidence } = {}) {
+export function installPrivacyRoutes(app, { directory, registry, service, dispatch, preflight, dataDirectory, historicalEvidence } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
     try {
-      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch,
+      const result = await privacyRequest(storage, request.body, { instance: (id) => registry.getInternal(id), origin: new URL(`http://${request.headers.host}`).origin, dispatch, preflight,
         historicalEvidence: historicalEvidence || (dataDirectory ? createBulkHistoryReader({ dataDirectory, instance: (id) => registry.getInternal(id) }) : undefined) });
       response.json({ ok: true, result });
     } catch (error) {
@@ -314,8 +378,8 @@ export function installPrivacyRoutes(app, { directory, registry, service, dispat
 // Apply to Manager proxy calls as well as protected dispatch. This gate makes
 // new local admissions fail closed; it cannot recall a request already handed
 // to an old worker, SSH queue, helper or MongoDB transaction.
-export async function assertMongoDispatchAdmission(service, instanceId, route, request) {
-  if (isMongoAdmissionRoute(route)) await service.call("assert_instance_admission", { instanceId, route, request });
+export async function assertMongoDispatchAdmission(service, instanceId, route, request, defaultDatabase) {
+  if (isMongoAdmissionRoute(route)) await service.call("assert_instance_admission", { instanceId, route, request: route.startsWith("/mongodb/imports/") ? { ...request, database: request.database || defaultDatabase } : request });
 }
 
 export async function humanRiskRequest(service, action, input, instance) {

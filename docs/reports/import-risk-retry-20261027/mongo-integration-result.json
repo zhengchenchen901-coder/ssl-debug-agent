@@ -1,0 +1,28 @@
+{
+  "snapshotId": "7bbad0227f029556eb239e792b684e9b8798aab6c33a52c1e98326b23c272f43",
+  "nativeOwnerDialog": "mocked",
+  "realMongo": true,
+  "helperImage": "sha256:2183345feff0a0c8c25640fdc8d2e3b111c5baf50d5a1ddb50a43ac5d9cb3dd4",
+  "databaseImage": "sha256:9ef36ccfdfb42c68dbc7757af3d1e732eaca253ed0cc529a6dd4d728ea97fd44",
+  "network": "internal, no published ports",
+  "container": "rda-import-risk-a3c5c1f283c6",
+  "cleaned": true,
+  "exitCode": 0,
+  "cleanup": [
+    {
+      "type": "container",
+      "name": "rda-import-risk-a3c5c1f283c6",
+      "exitCode": 0
+    },
+    {
+      "type": "container",
+      "name": "rda-import-risk-db-a3c5c1f283c6",
+      "exitCode": 0
+    },
+    {
+      "type": "network",
+      "name": "rda-import-risk-net-a3c5c1f283c6",
+      "exitCode": 0
+    }
+  ]
+}

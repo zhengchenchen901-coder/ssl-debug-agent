@@ -1,3 +1,5 @@
+import { IMPORT_CONTROL_SCRIPT } from "./mongodb-import-control-runtime.js";
+import { importBatchIdentity, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
 import { MONGODB_TECHNICAL_RECEIPTS_COLLECTION, MONGODB_TTL_POLICY_SCRIPT } from "./mongodb-ttl-policy.js";
 import { isPrepareTicket } from "../plugins/remote-debug-agent/prepare-protocol.js";
@@ -800,6 +802,8 @@ function __hash(value) {
   return __createHash("sha256").update(JSON.stringify(__stable(value))).digest("hex");
 }
 
+${IMPORT_CONTROL_SCRIPT}
+
 ${MONGODB_CODEC_SCRIPT}
 
 const __assertIndexedMutationDocument = ${assertIndexedMutationDocument.toString()};
@@ -1116,6 +1120,7 @@ function __planHash(manifest) {
     before: manifest.before,
     beforeIndex: manifest.beforeIndex,
     beforeOperations: manifest.beforeOperations,
+    ...(manifest.riskLineage ? { riskLineage: manifest.riskLineage, orderedRequest: JSON.stringify(manifest.request) } : {}),
     ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
   });
 }
@@ -1161,6 +1166,7 @@ async function __prepare() {
       : null;
     const now = Date.now();
     const manifest = {
+      ...(__request.importLineage ? { riskLineage: __request.importLineage } : {}),
       schemaVersion: __schemaVersion,
       mutationId: __request.mutationId,
       ...(__request.prepare ? { prepare: __request.prepare, prepareSource: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } } : {}),
@@ -1293,8 +1299,10 @@ async function __prepare() {
 async function __prepareImportPlan() {
   if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
   const plan = __request.mutation;
+  __assertImportLive(plan);
   const results = [];
   for (const batch of plan.batches) {
+    __assertImportLive(batch, batch.mutationId);
     __request.mutationId = batch.mutationId;
     __request.mutation = batch;
     __request.kind = "import";
@@ -1407,6 +1415,7 @@ async function __runImportTransaction(manifest, client, collection, rollback) {
       // Reserve journal capacity and durably save rollback hashes BEFORE commit.
       __writeJsonAtomic("manifest.json", manifest);
     }
+    __assertImportLive(manifest.request, manifest.mutationId);
     committing = true;
     await session.commitTransaction();
     manifest.status = rollback ? "rolled_back" : "committed";
@@ -1625,6 +1634,7 @@ async function __commit() {
   const releaseLock = __acquireMutationLock(false);
   try {
     const manifest = __loadManifest();
+    if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
     if (manifest.status === "committed") return __summary(manifest);
     if (manifest.status === "rolled_back") __fail("MONGODB_MUTATION_ALREADY_ROLLED_BACK", "mutation was already rolled back");
     if (manifest.status !== "planned" && !(manifest.kind === "import" && manifest.status === "commit_retryable") && !(manifest.kind === "bulk_storage" && manifest.status === "commit_retryable")) __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit; inspect uncertain outcomes before retrying");
@@ -1638,6 +1648,7 @@ async function __commit() {
       const collection = manifest.request.collection
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
+      if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
       if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
       else if (manifest.kind === "index") await __commitIndex(manifest, collection, client.db(manifest.request.database));
       else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
@@ -1756,6 +1767,7 @@ async function __rollback() {
   const releaseLock = __acquireMutationLock(false);
   try {
     const manifest = __loadManifest();
+    if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
     if (manifest.status === "rolled_back") return __summary(manifest);
     if (manifest.kind === "bulk_storage") __fail("MONGODB_BULK_STORAGE_NOT_ROLLBACKABLE", "bulk storage initialization is retained; disable bulk capability instead of deleting its records");
     if (manifest.status !== "committed" && !(manifest.kind === "import" && manifest.status === "rollback_retryable")) __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
@@ -1770,6 +1782,7 @@ async function __rollback() {
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
       if (manifest.kind === "import") {
+        __assertImportLive(manifest.request, manifest.mutationId);
         await __runImportTransaction(manifest, client, collection, true);
         return __summary(manifest);
       } else if (manifest.kind === "index") {
@@ -1872,7 +1885,13 @@ async function __guardedPrepare(recover) {
   let client;
   try {
     let data;
-    if (__request.mode === "list") {
+    if (__request.mode === "import_review") {
+      data = { importId: __request.importId, database: __request.database, batches: __reviewImportBatches(__request), historicalOutcome: "unknown" };
+    } else if (__request.mode === "import_retire") {
+      data = __retireImport(__request);
+    } else if (__request.mode === "import_recover") {
+      data = await __guardedImportPrepare(true);
+    } else if (__request.mode === "list") {
       data = __list();
     } else if (__request.mode === "recover_execution") {
       data = await __recoverExecution();
@@ -1881,7 +1900,7 @@ async function __guardedPrepare(recover) {
     } else if (__request.mode === "recover_prepare") {
       data = await __guardedPrepare(true);
     } else if (__request.mode === "prepare") {
-      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
+      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __guardedImportPrepare(false) : await __prepare();
     } else if (__request.mode === "commit") {
       data = await __commit();
     } else if (__request.mode === "rollback") {
@@ -1945,6 +1964,10 @@ export async function runMongoMutation(input = {}, options = {}) {
         Object.keys(execution).some((key) => !["intentId", "operationId"].includes(key)))) {
       throw mutationError("invalid execution identity", "MONGODB_EXECUTION_IDENTITY_INVALID");
     }
+    const importReceipt = input._businessImport || input.importReceipt;
+    if (importReceipt !== undefined && (!importReceipt || !["binding", "requestDigest", "batchesDigest"].every(field => /^[a-f0-9]{64}$/.test(importReceipt[field] || "")) ||
+        (!Number.isSafeInteger(importReceipt.attempt) || importReceipt.attempt < 1) || Object.keys(importReceipt).some(field => !["binding", "requestDigest", "batchesDigest", "attempt", "riskPlanId"].includes(field)) ||
+        importReceipt.riskPlanId !== undefined && !/^[a-f0-9]{64}$/.test(importReceipt.riskPlanId))) throw mutationError("invalid import prepare receipt", "MONGODB_IMPORT_RECEIPT_INVALID");
     const ticket = input._businessPrepare;
     if (ticket !== undefined && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
 
@@ -1974,8 +1997,30 @@ export async function runMongoMutation(input = {}, options = {}) {
         mutationId: ticket?.mutationId || randomUUID(),
         ...(ticket ? { prepare: ticket, database: mutation.database } : {}),
         mutation,
+        ...(kind === "import_plan" && input._businessImport ? { importReceipt: input._businessImport } : {}),
       };
       if (ticket && ["import_plan", "bulk_storage"].includes(kind)) throw mutationError("unsupported prepare identity kind", "MONGODB_PREPARE_IDENTITY_INVALID");
+    } else if (["import_review", "import_retire", "import_recover"].includes(mode)) {
+      const database = assertDatabaseAllowed(input.database, config);
+      const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+      const validateBatches = batches => {
+        if (!Array.isArray(batches) || !batches.length || batches.length > 100 || batches.some((b, i) =>
+          !/^import-[a-f0-9]{64}$/.test(b.mutationId || "") || b.batchIndex !== i || !Number.isSafeInteger(b.documentCount) || b.documentCount < 1 || b.documentCount > 2000 || !/^[a-f0-9]{64}$/.test(b.requestDigest || ""))) throw mutationError("invalid import batch identity", "MONGODB_IMPORT_RECEIPT_INVALID");
+        return batches;
+      };
+      request = { mode, database, importId };
+      if (mode === "import_review") request.batches = validateBatches(input.batches);
+      if (mode === "import_recover") request.importReceipt = input.importReceipt;
+      if (mode === "import_retire") {
+        request.replacementImportId = normalizeName(input.replacementImportId, "replacementImportId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+        if (request.replacementImportId === importId) throw mutationError("distinct import identity required", "MONGODB_IMPORT_RECEIPT_INVALID");
+        for (const field of ["riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest", "approvalAuditId"]) {
+          if (!/^[a-f0-9]{64}$/.test(input[field] || "")) throw mutationError("invalid import review identity", "MONGODB_IMPORT_RECEIPT_INVALID");
+          request[field] = input[field];
+        }
+        request.originalBatches = validateBatches(input.originalBatches);
+        request.replacementBatches = validateBatches(input.replacementBatches);
+      }
     } else if (mode === "recover_prepare") {
       if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
       request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };

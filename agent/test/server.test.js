@@ -911,6 +911,10 @@ test("manager API includes memory and updates it from proxied tool results", { s
     privateKeyPath: "C:\\a",
   });
   const memoryStore = new MemoryStore({ memoryRoot: path.join(dir, "memory") });
+  // This proxy/memory fixture tests neither native keystore enrollment nor OS
+  // owner verification. Use an explicit isolated key on every platform.
+  const { PrivacyService } = await import("../privacy-service.js");
+  const privacyService = new PrivacyService({ directory: path.join(dir, "private"), key: Buffer.alloc(32, 7) });
   const workerManager = {
     memoryStore,
     publicInstances: () =>
@@ -955,6 +959,7 @@ test("manager API includes memory and updates it from proxied tool results", { s
     cwd: dir,
     registry,
     workerManager,
+    privacyService,
   });
   const server = await listen(app);
 
@@ -1005,6 +1010,8 @@ test("manager API includes memory and updates it from proxied tool results", { s
     assert.equal(after.body.instances[0].memory.summary.notes[0].topic, "database");
   } finally {
     await close(server);
+    await privacyService.close();
+    await fsPromises.rm(dir, { recursive: true, force: true });
   }
 });
 

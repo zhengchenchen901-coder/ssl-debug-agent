@@ -1654,6 +1654,10 @@ export function createApp(options = {}) {
   }
   app.post("/mongodb/imports/prepare", (request, response) =>
     handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
+  // Worker-only fixed import controls. The Manager exposes no proxy for these.
+  for (const [suffix, mode] of [["review", "import_review"], ["retire", "import_retire"], ["recover-prepare", "import_recover"]]) {
+    app.post(`/mongodb/imports/${suffix}`, (request, response) => handleMongoMutation(request, response, mode, `/mongodb/imports/${suffix}`));
+  }
   app.post("/mongodb/mutations/prepare", (request, response) =>
     handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
   app.post("/mongodb/mutations/execute", (request, response) =>
@@ -2004,11 +2008,12 @@ export function createManagerApp(options = {}) {
   let restoreCheckScheduled = false;
 
   installPrivacyRoutes(app, { registry, service: options.privacyService,
+    preflight: id => workerManager.assertMongoConfigurationCurrent?.(id),
     dataDirectory: path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: async (id, route, payload) => {
       // Internal to the already-approved handoff. Ordinary admissions for this
       // old job are now closed; no Manager proxy or MCP tool exposes retire.
-      if (route !== "/mongodb/bulk/retire") await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload);
+      if (!["/mongodb/bulk/retire", "/mongodb/imports/retire"].includes(route)) await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload, registry.getInternal(id)?.mongodb?.database);
       return workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" });
     },
     directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });
@@ -2202,6 +2207,7 @@ export function createManagerApp(options = {}) {
       ok: true,
       instance,
       runtime: workerManager.runtimeFor(instance.id),
+      workerRefreshRequired: workerManager.runtimeFor(instance.id).configuration !== "current",
     });
   }));
 
@@ -2698,7 +2704,7 @@ export function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
-      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload);
+      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload, registry.getInternal(resolvedId)?.mongodb?.database);
       if (pathName.startsWith("/services/")) {
         if (!instanceId) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
         const instance = registry.getInternal(resolvedId);

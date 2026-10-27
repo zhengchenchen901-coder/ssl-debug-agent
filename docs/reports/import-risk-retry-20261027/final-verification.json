@@ -1,0 +1,12 @@
+{
+  "regression": 0,
+  "mongo": 0,
+  "browserImport": 0,
+  "browserBulk": 0,
+  "snapshotId": "7bbad0227f029556eb239e792b684e9b8798aab6c33a52c1e98326b23c272f43",
+  "sourceMatchesFrozenFiles": true,
+  "changedFrozenFiles": [],
+  "runtimeManifestVerified": true,
+  "runtimeId": "2.4.0:0b723d8270a72ac19eb312b65e29a425eee4d5c07179583c880e5c8a830d11dc",
+  "testflowPrepareExecute": "not executed: node:test adapter unavailable"
+}

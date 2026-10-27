@@ -1,0 +1,387 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Shanghai",
+  "delivery": "local uncommitted changes and rebuilt candidate runtime only; no install, PR, publishing or deployment",
+  "snapshotId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+  "sourceContentHash": "18c0f9456ce67e87f8c343eacd0aeff7eff08402a687894c4c7b532a6728953f",
+  "baseRevision": "d03a5fc82e78a92e5e73556ecab1b3f5df66f769",
+  "runtimeId": "2.4.0:11ac560dec7bef1fc01e6c3ef3e160d342cb28a46dae7d1c138df1568584e3c6",
+  "sourceMatchesFrozenFiles": true,
+  "runtimeManifestVerified": true,
+  "priorEvidence": {
+    "artifacts": 22,
+    "mismatch": [],
+    "priorSnapshotId": "7bbad0227f029556eb239e792b684e9b8798aab6c33a52c1e98326b23c272f43"
+  },
+  "changes": [
+    "preclaim and immediate pretransport Manager/worker configuration checks; no automatic restart",
+    "atomic unclaimed import fencing, same-intent/new-attempt retry and pinned closed-envelope history",
+    "remote control ancestor-directory sync and per-file exact readback",
+    "genuine Jest unit integration with locked dependencies and versioned bindings; portable synthetic-key proxy fixture",
+    "stale dispatch attempt rejected before any state update; resolved import records clear stale reconciliation diagnostics",
+    "standalone Jest root resolution and transform instrumentation cache identity verified"
+  ],
+  "formalTestflow": {
+    "adapter": "jest-unit",
+    "pilot": {
+      "prepareJobId": "e45c8c46-2c6e-40bc-8b8c-d8d25c7b9240",
+      "executeJobId": "fbf7eb12-b4a9-469b-9c72-9b2e8785aacb",
+      "result": {
+        "selectedAssets": 1,
+        "completedAssetResults": 1,
+        "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+        "executedCases": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "excludedByPattern": 3
+      }
+    },
+    "regression": {
+      "prepareJobId": "6fcf55ac-ad78-4fcd-8f0a-815e82c73ea1",
+      "prepareRunId": "16a60e1e-3377-4617-9d46-82fccb1220a7",
+      "executeJobId": "639e4712-2b9e-4e58-8653-2b68e4a1b342",
+      "runId": "b2c71909-2ba7-4ef3-9cce-38542e09ec63",
+      "result": {
+        "selectedAssets": 1,
+        "completedAssetResults": 1,
+        "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+        "executedCases": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "excludedByPattern": 0
+      },
+      "status": "passed",
+      "reportHash": "067935fa3356a46ae073aeed2d4d98878146c12d511e61abef811e80d7c73b9e",
+      "evidenceHash": "128f8873204a82418b2404140e6b982443116a239026bf0b9fef3f943f58d977"
+    },
+    "dependencyImage": "sha256:f285f1a29f9bff2da01186c7c0bc190ac0050d0a66dc8769915331a813098e9b",
+    "dependencyLockMatch": true,
+    "coverage": {
+      "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+      "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+      "total": 1000,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 1000,
+      "byKind": {
+        "modified-block": {
+          "total": 803,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 803
+        },
+        "condition-outcome": {
+          "total": 166,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 166
+        },
+        "impacted-entry": {
+          "total": 2,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 2
+        },
+        "symbol-reference": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "unexpanded-change": {
+          "total": 29,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 29
+        }
+      },
+      "outOfScopeChanges": [
+        {
+          "changeId": "agent/mongodb-disposition.js::fn:dispositionStoreAction/fn:callback:transaction:0:e3b0c44298fc",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "agent/mongodb-disposition.js::symbol:READ_ROUTES",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "agent/mongodb-import-control-runtime.js::symbol:IMPORT_CONTROL_SCRIPT",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "file:agent/mongodb-import-control-runtime.js",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "agent/mongodb-import-risk.js::fn:assertImportAdmission",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        }
+      ],
+      "excludedEntryIds": [
+        "agent/activity.js::fn:previewText",
+        "agent/activity.js::fn:byteLength",
+        "agent/activity.js::fn:createActivityLog",
+        "agent/approved-commands.js::fn:hashCommands",
+        "agent/approved-commands.js::fn:redactCommand"
+      ],
+      "outOfScopeChangeCount": 361,
+      "excludedEntryCount": 225
+    },
+    "coverageUnknownReasons": {
+      "source-coverage-missing": 1000
+    },
+    "orderedPaths": "unknown, no ordered trace",
+    "apiE2E": "not executed by unit adapter",
+    "pageOrDeployment": "not executed by unit adapter"
+  },
+  "supplemental": {
+    "native": {
+      "files": 31,
+      "passed": 372,
+      "failed": 0,
+      "skipped": 0,
+      "network": "none",
+      "image": "sha256:61a0b3c3fa5e261a6600fc549814dffa70f96936374435151bb3765c7aa423dc",
+      "sameFinalSnapshot": true,
+      "includes": {
+        "newImportSafetyCases": 11,
+        "remoteControlFaultCases": 9,
+        "localImportSIGKILLBoundaries": 6,
+        "remoteControlSIGKILLBoundaries": 3
+      }
+    },
+    "mongo": {
+      "passed": 1,
+      "failed": 0,
+      "realMongo": true,
+      "database": "MongoDB 4.4.30",
+      "driver": "mongodb 6.20.0",
+      "syntheticDocuments": 3,
+      "batches": 2,
+      "remainingAfterRollback": 0,
+      "cleaned": true
+    },
+    "browser": {
+      "import": "passed",
+      "bulk": "passed",
+      "nativeOwnerVerification": "test double",
+      "businessWrites": 0,
+      "replacementTasksCreated": 0
+    }
+  },
+  "earlierFailures": {
+    "nativeFirstExpandedRun": "368 pass / 3 fail: two cwd-sensitive fixtures invoked from wrong directory and Linux native keystore unavailable in a memory proxy fixture",
+    "nativeBeforePortableKeyFixture": "370 pass / 1 fail: Linux keystore boundary; assertion retained and explicit synthetic PrivacyService key injected",
+    "jestInitialTrial": "2 pass / 2 fail: stale-attempt response expectation and host-realm structuredClone input rejected by existing plain-object guard; final tests require exact stale-attempt denial and unchanged new record, and JSON-normalize only the synthetic transport boundary",
+    "finalFailedTests": 0,
+    "rawAvailability": "initial-container-regression.tap and linux-keystore-diagnostic.tap preserve the observed failures; repeated pre-portable log filenames were overwritten by later successful reruns and are not treated as original failure evidence"
+  },
+  "externalGaps": [
+    {
+      "component": "TestFlow",
+      "file": "dist/execution/execute.js",
+      "line": 174,
+      "sha256": "3ea8a5da1f9e75a5cebfe67218960f47eb853f7b569180fc0b304488835cc52a",
+      "issue": "hard-coded src/ coverage filter excludes agent/ and plugins/ despite unit.testRoots",
+      "required": "generalize target collection to validated unit.testRoots; rerun fixed snapshot/plan/prepare/execute and independently verify source maps"
+    },
+    {
+      "component": "TestFlow",
+      "file": "dist/execution/prepare.js",
+      "line": 27,
+      "issue": "native node:test execution remains unsupported; this task used actual supported Jest tests",
+      "required": "native node:test inventory, dispatch, assertions, per-case reporting, source-map coverage and immutable isolated execution contract before existing native suite can be counted as formal TestFlow"
+    },
+    {
+      "component": "TestFlow build_dependencies",
+      "file": "dist/execution/dependencies.js",
+      "issue": "removing the temporary base tag made a previously untagged base image unavailable by its old ID",
+      "mitigation": "rebuilt the native regression image from the prior fixed Dockerfile/lock; new immutable ID is recorded; no prune"
+    }
+  ],
+  "remainingWindows": [
+    "after a successful claim, a crash before durable non-dispatch attestation or after unknown transport keeps uncertain; no replay",
+    "remote helper SIGKILL leaves an exclusive lock; retries fail MONGODB_MUTATION_BUSY without age-based reclaim; a supported liveness/fencing recovery protocol is not implemented",
+    "actual power-loss filesystem durability and old helper/late in-flight transaction outcomes remain unverified",
+    "real native owner dialogs, real test-server and deployed worker behavior, all repository files and other OS platforms were not tested"
+  ],
+  "authorization": {
+    "realTestServerTouched": false,
+    "originalIntentModified": false,
+    "realRiskApproved": false,
+    "realReplacementCreated": false,
+    "installedPluginCacheModified": false,
+    "gitCommitPushPr": false,
+    "deployment": false
+  },
+  "artifactRoot": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "e0e7559c1ebef5f6faf7433995e14b26e77e5570e3e6469c5fdfce8ae803a5f2",
+      "bytes": 10419
+    },
+    {
+      "path": "testflow-freeze.json",
+      "sha256": "0038d570507eec3b5977d38de6b3ed8a28d6064dccfffd7baa1a0305d8c8e318",
+      "bytes": 974
+    },
+    {
+      "path": "bindings-release.json",
+      "sha256": "e096c410ac77b08fc34f0b5006142c98e233a2d23f2190152d0e877dca4fe51b",
+      "bytes": 3591
+    },
+    {
+      "path": "final-testflow-stages.json",
+      "sha256": "48324e9f0a7f23dacece4ceec9edf1d1b65ffb4a0c4ca3f94451d57bdc0a19c9",
+      "bytes": 8063
+    },
+    {
+      "path": "final-pilot-evidence.json",
+      "sha256": "73eef5dc6ca746c274e4427b43048f59bdcd7725ea6d05ea5ecdbf1947215218",
+      "bytes": 60797
+    },
+    {
+      "path": "final-regression-evidence.json",
+      "sha256": "b5f4ce1fa4c33a15ae2260fc5bb1e93d2fd48d953c7336615fa547da6ee2a5b9",
+      "bytes": 61182
+    },
+    {
+      "path": "final-verification.json",
+      "sha256": "43665b2ee43b361e4895694b2bebf88508de0e195ce4b3e04b0027904ca474d8",
+      "bytes": 349
+    },
+    {
+      "path": "container-regression-result.json",
+      "sha256": "78fdcc55c5d2d874750dfc263cca0f7b6074bbe1d364529d5355705ef465a282",
+      "bytes": 396
+    },
+    {
+      "path": "container-regression.tap",
+      "sha256": "090961d8700717418a73d1972319ff86e0e33899526b470219573d45e298d926",
+      "bytes": 101426
+    },
+    {
+      "path": "mongo-integration-result.json",
+      "sha256": "27aee3f3cc749f5852f090213589c3379d784cef1a3ae203d6dbb7fe981cbf84",
+      "bytes": 796
+    },
+    {
+      "path": "mongo-integration.tap",
+      "sha256": "f9c39ffc347a9825328c3176a1830cc54ca5bf917a71d3bacd087ee0a9b700f4",
+      "bytes": 809
+    },
+    {
+      "path": "browser-import.json",
+      "sha256": "91b910e894f22aab740d6b77b73e9e60b755af33d23c6e76d4651db804a87033",
+      "bytes": 290
+    },
+    {
+      "path": "browser-bulk.json",
+      "sha256": "9b05704704d7ea12e3e04e6d12a99c045eac0d2b8856df44ee05cca7fec29918",
+      "bytes": 286
+    },
+    {
+      "path": "prior-evidence-verification.json",
+      "sha256": "62ac1f2f2f1c4ce3ccfd9316685cebb6d4b0ab8690af4063d81f7ff0b9894f54",
+      "bytes": 128
+    },
+    {
+      "path": "final-analyze.json",
+      "sha256": "b4b2edb18108de1e02ecd82d589991b7cbcf0ad09e0853d2741e8a127f5318e2",
+      "bytes": 2245
+    },
+    {
+      "path": "final-scope.json",
+      "sha256": "a3a1b504ff80747de7035cac6b15e76a353027fcd6f006733401a72d8d24cffa",
+      "bytes": 3202
+    },
+    {
+      "path": "final-graph.json",
+      "sha256": "2174be8d77ad27c25b4c8270c1ccc2b13b6f59051f9d60bc2c80a590b525cff9",
+      "bytes": 1194
+    },
+    {
+      "path": "final-plan.json",
+      "sha256": "2a9ba4e97aaf23d9a65caf20fca4077065e18100b326e7ceed30a8b729cec2c6",
+      "bytes": 1577
+    },
+    {
+      "path": "run-regression.sh",
+      "sha256": "2a4a5c7387033b3be8e2c643ba48b794b2aa6001fe5a97b0b60587e96db2a55f",
+      "bytes": 1397
+    },
+    {
+      "path": "run-final.py",
+      "sha256": "cb73840fb095a045606298f60b16a758fcfb8f30e23d9bedb19389beda44fb19",
+      "bytes": 3139
+    },
+    {
+      "path": "run-mongo.py",
+      "sha256": "99d39d7a3ca863b1986155e520b94a1e53476c1eb0154c8b2324cc60c47d2dcd",
+      "bytes": 3329
+    },
+    {
+      "externalPath": "workspace.json",
+      "sha256": "8776c9bdef2bb957163ed4ba58f73353ba85a829a6f2402ef1518287da93d5af",
+      "bytes": 1542
+    },
+    {
+      "externalPath": "initial-container-regression.tap",
+      "sha256": "b8dfa2bb99115d069cd020eaf4fbd09e89341fbaa96ca97286ef2599fcfa4a1c",
+      "bytes": 104229
+    },
+    {
+      "externalPath": "linux-keystore-diagnostic.tap",
+      "sha256": "7103e39e0f39d4bce5829bf5d4cb8919b0bc91fbdb46f99d5f0964f6c98e56ab",
+      "bytes": 937
+    },
+    {
+      "externalPath": "initial-jest.log",
+      "sha256": "41087f5010851f5bbe2cd69c0adebefe183263db90d03c8b39c34c418298279f",
+      "bytes": 3098
+    },
+    {
+      "externalPath": "standalone-jest.log",
+      "sha256": "e401b641248874ecea1aeaa257ec23d49036ae8af5e17b345a38d2231db57592",
+      "bytes": 849
+    },
+    {
+      "externalPath": "native-image-build.log",
+      "sha256": "eb2968f76ad4668129fa912d94725801da6f7ca3b02c4f4da57bf46095df4099",
+      "bytes": 1680
+    },
+    {
+      "externalPath": "native-image-id.txt",
+      "sha256": "1bd6695bb0e75b440cd1540a819bbd885153dc942c042af4015f306a2baf54a6",
+      "bytes": 71
+    },
+    {
+      "externalPath": "browser-import/human-review.png",
+      "sha256": "d4d88bbe2db10cbc95486fe52a3dbdf608b9796c30bf4d0db9cc3cc93d3b2355",
+      "bytes": 441561
+    },
+    {
+      "externalPath": "browser-import/human-approved-no-job.png",
+      "sha256": "d31783986c5948881a35c2bf512f43f1fdd7daebbbe64ac5e13fd1ff879fe592",
+      "bytes": 445764
+    },
+    {
+      "externalPath": "browser-bulk/human-review.png",
+      "sha256": "6758310c3325f5c4ddc5f370e7d89ecc743c60d998d89684c98bdaeb32230bc8",
+      "bytes": 312170
+    },
+    {
+      "externalPath": "browser-bulk/human-approved-no-job.png",
+      "sha256": "98c6426663964d6184c520ec3ba6cc4383a889dec6c1cca4fa62e73654b22433",
+      "bytes": 316458
+    }
+  ]
+}

@@ -1,0 +1,1713 @@
+{
+  "schemaVersion": 1,
+  "selection": {
+    "failurePolicy": "stop",
+    "selected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "unexecutedAssetIds": []
+  },
+  "summary": {
+    "purpose": "pilot",
+    "selection": {
+      "selectedAssets": 1,
+      "completedAssetResults": 1,
+      "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+      "executedCases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "excludedByPattern": 3
+    },
+    "targetCoverage": {
+      "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+      "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+      "total": 1000,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 1000,
+      "byKind": {
+        "modified-block": {
+          "total": 803,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 803
+        },
+        "condition-outcome": {
+          "total": 166,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 166
+        },
+        "impacted-entry": {
+          "total": 2,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 2
+        },
+        "symbol-reference": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "unexpanded-change": {
+          "total": 29,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 29
+        }
+      },
+      "outOfScopeChanges": [
+        {
+          "changeId": "agent/mongodb-disposition.js::fn:dispositionStoreAction/fn:callback:transaction:0:e3b0c44298fc",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "agent/mongodb-disposition.js::symbol:READ_ROUTES",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "agent/mongodb-import-control-runtime.js::symbol:IMPORT_CONTROL_SCRIPT",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "file:agent/mongodb-import-control-runtime.js",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        },
+        {
+          "changeId": "agent/mongodb-import-risk.js::fn:assertImportAdmission",
+          "status": "out-of-scope",
+          "reason": "显式范围外待验，未作为未覆盖计数"
+        }
+      ],
+      "excludedEntryIds": [
+        "agent/activity.js::fn:previewText",
+        "agent/activity.js::fn:byteLength",
+        "agent/activity.js::fn:createActivityLog",
+        "agent/approved-commands.js::fn:hashCommands",
+        "agent/approved-commands.js::fn:redactCommand"
+      ],
+      "outOfScopeChangeCount": 361,
+      "excludedEntryCount": 225
+    },
+    "operationCompletion": {
+      "total": 803,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 803,
+      "basis": "精确操作目标证据；函数/语句入口和测试通过不替代完成"
+    },
+    "relatedEntries": {
+      "total": 2,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 2,
+      "basis": "仅表示精确入口观测，不证明复杂操作完成"
+    },
+    "directModifiedFunctionEntries": {
+      "total": 0,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 0,
+      "modifiedFunctions": 3,
+      "basis": "直接修改函数中已规划的入口目标；没有入口目标的函数不冒认已观察"
+    },
+    "coverageInterpretation": {
+      "sourceCounters": "顶层 sourceCounters 分列源码语句/函数/分支，含失败尝试的独立观测；缺失文件不补零",
+      "strictTargets": "targetCoverage 保留完整计划分母及范围外/排除入口；成功检查点决定最终严格覆盖",
+      "whyCountersCanHitWhileUnknown": "源码计数只证明计数位置执行；非唯一映射、短路子操作、调用/await 完成或不支持语义仍 unknown",
+      "orderedPaths": "未采集有序 trace，入口或分支命中不能替代有序路径"
+    },
+    "unknownReasons": [
+      {
+        "reasonCode": "source-coverage-missing",
+        "count": 1000,
+        "category": "binding-or-collection",
+        "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例",
+        "targetIds": [
+          "33a7e75820f7d7afa3d860f5b61130d8dda98e07befbc2d695860a2d0e8516ae",
+          "9999a2e035e59b64eec2d3795b773eb76c415b6edf0b8fcb9744d8bbf4757cd2",
+          "6fe09ddf7fa8db3fff91b7990a7512aab275650c6544aaf7a66c0571702cd98f",
+          "2918aeec39a08613d83f28c059f9af9c900aae8485a25c516fab4fd8c52cbb88",
+          "6d16e7501d5e356260c4166a6a206d47fefc02c8b9122c1e6ec76cfce2fb98da"
+        ]
+      }
+    ],
+    "environment": {
+      "dependencyPolicy": "exact-lock",
+      "lockMatch": true,
+      "serviceDoubles": [
+        {
+          "name": "synthetic-mongo-vm",
+          "verifies": "serialized helper protocol, exact batch identity, commit idempotency and rollback guards",
+          "doesNotVerify": "real MongoDB topology/driver, SSH transport, native OS owner verification or deployed worker"
+        }
+      ],
+      "serviceDoubleInventory": "declared-not-runtime-attested",
+      "runtimeCheckedServiceDoubles": [],
+      "businessPreflight": "not-declared",
+      "externalServices": "existing-test-doubles-and-network-egress-denied",
+      "notificationDelivery": "not-verified"
+    },
+    "pageValidation": "not-run-by-unit-adapter",
+    "deploymentValidation": "not-verified",
+    "orderedPathValidation": "not-observed-no-ordered-trace"
+  },
+  "timingSummary": {
+    "sessions": [
+      {
+        "runId": "2ee34551-5d80-468a-9a9c-8ee04b75eda5",
+        "scope": "attempt-session-including-failed-and-reused-files",
+        "timing": {
+          "hostWallMs": 3477,
+          "phases": [
+            {
+              "name": "fixed-input-validation",
+              "ms": 254,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "input-materialization",
+              "ms": 92,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "test-compile-cache-acquisition",
+              "ms": null,
+              "scope": "host",
+              "availability": "not-observed"
+            },
+            {
+              "name": "transform-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "resource-queue",
+              "ms": 2120,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "environment-startup",
+              "ms": 24,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build",
+              "ms": 11,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "supplemental-test-compile",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-config-preflight",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-execution",
+              "ms": 434,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "source-map-mapping",
+              "ms": 22,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "target-mapping",
+              "ms": 36,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "cleanup",
+              "ms": 101,
+              "scope": "host",
+              "availability": "observed"
+            }
+          ],
+          "files": [
+            {
+              "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+              "jestWallMs": 419,
+              "jestInitializationMs": 171,
+              "frameworkSetupMs": 65,
+              "testCollectionMs": 143,
+              "observedCaseWallMs": 17.500249999999994
+            }
+          ],
+          "additive": false,
+          "overlaps": [
+            {
+              "parent": "hostWallMs",
+              "children": "所有 host/runner 阶段"
+            },
+            {
+              "parent": "jest-execution",
+              "children": "Jest 初始化、setup、收集、用例事件及转换"
+            },
+            {
+              "parent": "observedCaseWallMs",
+              "children": "生命周期钩子、HTTP；并行/嵌套区间可能重叠"
+            }
+          ],
+          "meaning": "文件 Jest 墙钟之和不含完整准备/分析/排队成本；缓存锁获取含完整字节核验，不能全算作资源排队；null 不等于零，不相加估算端到端耗时"
+        },
+        "cache": {
+          "identity": {
+            "fullInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+            "buildInput": "source-jest-no-business-build-v1",
+            "testInput": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "transformInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+            "config": "b76e5bed964fd1f99e063255843f50b5fd0c17ec6b36b67666b3c7738fa96ea6",
+            "dependencies": "52a0898fb02358501ab5321fcade1a6acb85555b0b2b3f09c3f84a665b3289aa",
+            "runner": "f4f15d7f442d726d1baccd53d72173f03260d239976f0fc7014c8e1afae433e9",
+            "executor": "bd584b043fc64c122d4de09232b9cf53920897fb0ae74ce1f5f9b0a15a323e14",
+            "selection": "b22de4680ad7233e9ce8bc43e01c20096a283bcb690fbd449211a3aeb28a4605"
+          },
+          "buildKey": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+          "testCompileKey": null,
+          "transformKey": "cd02de33c86dde753bd702c21635492310160a6f634285c97a061ec691435223",
+          "transformSeedKey": null,
+          "buildCacheHit": true,
+          "testCompileCacheHit": null,
+          "transformCacheHit": false,
+          "transformSeedReused": false,
+          "build": {
+            "key": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+            "hit": true,
+            "reason": "verified-key-and-complete-bytes"
+          },
+          "testCompile": {
+            "key": null,
+            "hit": null,
+            "reason": "disabled-or-not-applicable"
+          },
+          "transform": {
+            "key": "cd02de33c86dde753bd702c21635492310160a6f634285c97a061ec691435223",
+            "hit": false,
+            "reason": "key-changed-matching-cache-unavailable"
+          },
+          "transformSeed": {
+            "key": null,
+            "reused": false,
+            "basis": "not-reused"
+          },
+          "comparison": {
+            "sourceRunId": "f4123798-96a6-4384-a57d-f134d4c4e05c",
+            "sourceKind": "jest-unit-evidence",
+            "changedComponents": [
+              "fullInput",
+              "transformInput"
+            ],
+            "basis": "verified-receipt"
+          },
+          "meaning": "key 固定实际输入、依赖/配置和执行器；miss 不单独证明首次冷启动；变化列表仅为身份差异，不推断全部重建原因"
+        },
+        "phaseTimings": {
+          "validationMs": 254,
+          "materializeMs": 92,
+          "buildWaitMs": 1,
+          "testCompileWaitMs": null,
+          "transformWaitMs": 1,
+          "targetMappingMs": 36,
+          "resourceWaitMs": 2120,
+          "environmentMs": 24,
+          "cleanupMs": 101,
+          "hostWallMs": 3477,
+          "materialize": 60,
+          "build": 11,
+          "test": 434,
+          "mapping": 22,
+          "file-completed": 60
+        }
+      }
+    ],
+    "preflight": {
+      "runId": "e31eea4b-3dde-4705-871b-59dc96db050f",
+      "timing": {
+        "hostWallMs": 3239,
+        "phases": [
+          {
+            "name": "fixed-input-validation",
+            "ms": 267,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "input-materialization",
+            "ms": 141,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "build-cache-acquisition",
+            "ms": 1,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "test-compile-cache-acquisition",
+            "ms": null,
+            "scope": "host",
+            "availability": "not-observed"
+          },
+          {
+            "name": "transform-cache-acquisition",
+            "ms": 0,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "resource-queue",
+            "ms": 2360,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "environment-startup",
+            "ms": 22,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "build",
+            "ms": 10,
+            "scope": "runner",
+            "availability": "observed"
+          },
+          {
+            "name": "supplemental-test-compile",
+            "ms": null,
+            "scope": "runner",
+            "availability": "not-observed"
+          },
+          {
+            "name": "jest-config-preflight",
+            "ms": 52,
+            "scope": "runner",
+            "availability": "observed"
+          },
+          {
+            "name": "jest-execution",
+            "ms": null,
+            "scope": "runner",
+            "availability": "not-observed"
+          },
+          {
+            "name": "source-map-mapping",
+            "ms": null,
+            "scope": "runner",
+            "availability": "not-observed"
+          },
+          {
+            "name": "target-mapping",
+            "ms": 0,
+            "scope": "host",
+            "availability": "observed"
+          },
+          {
+            "name": "cleanup",
+            "ms": 94,
+            "scope": "host",
+            "availability": "observed"
+          }
+        ],
+        "files": [],
+        "additive": false,
+        "overlaps": [
+          {
+            "parent": "hostWallMs",
+            "children": "所有 host/runner 阶段"
+          },
+          {
+            "parent": "jest-execution",
+            "children": "Jest 初始化、setup、收集、用例事件及转换"
+          },
+          {
+            "parent": "observedCaseWallMs",
+            "children": "生命周期钩子、HTTP；并行/嵌套区间可能重叠"
+          }
+        ],
+        "meaning": "文件 Jest 墙钟之和不含完整准备/分析/排队成本；缓存锁获取含完整字节核验，不能全算作资源排队；null 不等于零，不相加估算端到端耗时"
+      },
+      "cache": {
+        "identity": {
+          "fullInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+          "buildInput": "source-jest-no-business-build-v1",
+          "testInput": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+          "config": "b76e5bed964fd1f99e063255843f50b5fd0c17ec6b36b67666b3c7738fa96ea6",
+          "dependencies": "52a0898fb02358501ab5321fcade1a6acb85555b0b2b3f09c3f84a665b3289aa",
+          "runner": "f4f15d7f442d726d1baccd53d72173f03260d239976f0fc7014c8e1afae433e9",
+          "executor": "bd584b043fc64c122d4de09232b9cf53920897fb0ae74ce1f5f9b0a15a323e14",
+          "selection": "b22de4680ad7233e9ce8bc43e01c20096a283bcb690fbd449211a3aeb28a4605"
+        },
+        "buildKey": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+        "testCompileKey": null,
+        "transformKey": null,
+        "transformSeedKey": null,
+        "buildCacheHit": true,
+        "testCompileCacheHit": null,
+        "transformCacheHit": null,
+        "transformSeedReused": null,
+        "build": {
+          "key": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+          "hit": true,
+          "reason": "verified-key-and-complete-bytes"
+        },
+        "testCompile": {
+          "key": null,
+          "hit": null,
+          "reason": "disabled-or-not-applicable"
+        },
+        "transform": {
+          "key": null,
+          "hit": null,
+          "reason": "disabled-or-not-applicable"
+        },
+        "transformSeed": {
+          "key": null,
+          "reused": null,
+          "basis": "not-reused"
+        },
+        "comparison": {
+          "sourceRunId": null,
+          "sourceKind": null,
+          "changedComponents": null,
+          "basis": "no-comparable-identity"
+        },
+        "meaning": "key 固定实际输入、依赖/配置和执行器；miss 不单独证明首次冷启动；变化列表仅为身份差异，不推断全部重建原因"
+      }
+    },
+    "staticPhases": [
+      {
+        "stage": "analysis",
+        "runId": "516803d9-e878-4ac7-85da-f0a017c3d858",
+        "metrics": {
+          "phasesMs": {
+            "snapshot": 145.8984159999527,
+            "indexes": 6541.703750000102,
+            "historical-changes": 292.1519169998355,
+            "impact": 502.68458300014026
+          },
+          "totalMs": 10556.97645800002,
+          "peakRssBytes": 1653604352,
+          "heapUsedBytes": 934348224
+        },
+        "basis": "stage-manifest-observation-excludes-final-manifest-write",
+        "usage": "输入来源成本；复用输入不等于本次重新分析"
+      },
+      {
+        "stage": "graph",
+        "runId": "ff38bbcf-c39e-467a-9a55-21df996117cf",
+        "metrics": {
+          "phasesMs": {
+            "load-inputs": 683.5457500000484,
+            "functions": 136.51820899988525,
+            "link-evidence": 2.0317079999949783
+          },
+          "totalMs": 875.7378749998752,
+          "peakRssBytes": 1653604352,
+          "heapUsedBytes": 330945528
+        },
+        "basis": "stage-manifest-observation-excludes-final-manifest-write",
+        "usage": "输入来源成本；复用输入不等于本次重新分析"
+      },
+      {
+        "stage": "planning",
+        "runId": "bde11982-a0ea-4f8f-8d79-03456b521388",
+        "metrics": {
+          "phasesMs": {
+            "load-graph": 113.7285410000477,
+            "targets-assets": 101.73762499983422,
+            "search": 24.51175000006333,
+            "bindings": 0.12958399998024106
+          },
+          "totalMs": 263.203125,
+          "peakRssBytes": 1653604352,
+          "heapUsedBytes": 113285976
+        },
+        "basis": "stage-manifest-observation-excludes-final-manifest-write",
+        "usage": "输入来源成本；复用输入不等于本次重新分析"
+      }
+    ],
+    "taskEndToEndMs": null,
+    "files": [
+      {
+        "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+        "runId": "2ee34551-5d80-468a-9a9c-8ee04b75eda5",
+        "file": "verification/import-safety.test.js",
+        "jestWallMs": 419,
+        "caseDurationMs": 17,
+        "observedCaseWallMs": 17.500249999999994,
+        "caseTimingCompleteness": "complete",
+        "collectionUntilFirstCaseMs": 208,
+        "jestInitializationMs": 171,
+        "frameworkSetupMs": 65,
+        "testCollectionMs": 143,
+        "runtimeArchitecture": "arm64",
+        "transformCalls": 41,
+        "seedPasswordCache": null,
+        "detailedTimingsObserved": false
+      }
+    ],
+    "jestWallMs": 419,
+    "observedCaseWallMs": 17.500249999999994,
+    "actualTransformCalls": 41,
+    "meaning": "逐文件墙钟之和；并行时不等于任务墙钟。事件墙钟包含钩子，细分区间可能重叠。",
+    "totalSessions": 1,
+    "sessionPagination": {
+      "offset": 0,
+      "limit": 5,
+      "hasMore": false
+    }
+  },
+  "failureSummary": {
+    "totalFailedCases": 0,
+    "files": [],
+    "omittedFiles": 0,
+    "limits": {
+      "files": 10,
+      "casesPerFile": 10
+    },
+    "scope": "all-verified-attempts-including-historical-failures"
+  },
+  "sourceCounters": {
+    "files": [
+      {
+        "file": "agent/privacy-service.js",
+        "status": "source-coverage-missing",
+        "statements": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        },
+        "functions": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        },
+        "branches": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        }
+      },
+      {
+        "file": "agent/privacy-store.js",
+        "status": "source-coverage-missing",
+        "statements": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        },
+        "functions": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        },
+        "branches": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        }
+      },
+      {
+        "file": "agent/worker-manager.js",
+        "status": "source-coverage-missing",
+        "statements": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        },
+        "functions": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        },
+        "branches": {
+          "total": null,
+          "covered": null,
+          "notCovered": null,
+          "unknown": null
+        }
+      }
+    ],
+    "mappedFiles": 0,
+    "missingFiles": 3,
+    "conflictingFiles": 0,
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 0
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 0
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 0
+    },
+    "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖",
+    "observationBasis": "latest-file-evidence-including-failed-attempts"
+  },
+  "coverageTasks": {
+    "total": 1000,
+    "unknown": 1000,
+    "notCovered": 0,
+    "artifact": ".testflow/jobs/fbf7eb12-b4a9-469b-9c72-9b2e8785aacb/coverage-tasks.json",
+    "hash": "8b920f493739960a7bfeb7b74f49526d0d6b4dfb8016079cba744174ae04a087",
+    "byAction": {
+      "add-test": 0,
+      "binding-or-collection": 1000,
+      "instrumentation-or-semantics": 0,
+      "inspect-evidence": 0
+    }
+  },
+  "attempts": [
+    {
+      "suiteTimings": [
+        {
+          "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+          "jestWallMs": 419,
+          "jestInitializationMs": 171,
+          "frameworkSetupMs": 65,
+          "testCollectionMs": 143,
+          "runtimeArchitecture": "arm64",
+          "caseDurationMs": 17,
+          "nonCaseWallMs": 402,
+          "observedCaseWallMs": 17.500249999999994,
+          "timedCases": 1,
+          "caseTimingCompleteness": "complete",
+          "nonCaseObservedWallMs": 401.49975,
+          "seedPasswordCache": null,
+          "lifecycleTimings": null,
+          "caseTimingArtifact": "raw/case-timings-0.json",
+          "collectionUntilFirstCaseMs": 208,
+          "transforms": {
+            "calls": 41,
+            "milliseconds": 87,
+            "meaning": "项目原转换器实际调用，时间包含在 Jest wall 内"
+          },
+          "meaning": "observedCase 是 runner 事件间墙钟，包含钩子；生命周期和转换区间可能重叠，不与 wall 相加"
+        }
+      ],
+      "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+      "runId": "2ee34551-5d80-468a-9a9c-8ee04b75eda5",
+      "status": "passed",
+      "evidenceHash": "c6f776fec20ff47d486e4bad7c553a0e0a8f6a2c88ecb1ec0c7ad5f3a3488e2b",
+      "resultHash": "4dddea0c3b26b93595a4cd97c95f6fe65fe1639c7c3ee896339780abeacb71b9",
+      "result": {
+        "flowId": "b11d418a-a00b-4fa5-9b8c-954281a62d15",
+        "runId": "2ee34551-5d80-468a-9a9c-8ee04b75eda5",
+        "status": "passed",
+        "stoppedAtBoundary": false,
+        "failurePolicy": "stop",
+        "unexecutedAssetIds": [],
+        "purpose": "pilot",
+        "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+        "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+        "failureCategory": null,
+        "sourceCounters": {
+          "files": [],
+          "mappedFiles": 0,
+          "missingFiles": 0,
+          "conflictingFiles": 0,
+          "statements": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0
+          },
+          "functions": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0
+          },
+          "branches": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0
+          },
+          "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖"
+        },
+        "failureDetail": null,
+        "phaseTimings": {
+          "validationMs": 254,
+          "materializeMs": 92,
+          "buildWaitMs": 1,
+          "testCompileWaitMs": null,
+          "transformWaitMs": 1,
+          "targetMappingMs": 36,
+          "resourceWaitMs": 2120,
+          "environmentMs": 24,
+          "cleanupMs": 101,
+          "hostWallMs": 3477,
+          "materialize": 60,
+          "build": 11,
+          "test": 434,
+          "mapping": 22,
+          "file-completed": 60
+        },
+        "unknownReasons": {
+          "source-coverage-missing": 1000
+        },
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "coveredTargets": 0,
+        "uncoveredTargets": 0,
+        "unknownTargets": 1000,
+        "fixedInputVerified": true,
+        "sourceUnchanged": null,
+        "workspaceStateUnchanged": true,
+        "executionSourceUnchanged": true,
+        "cleanup": "completed",
+        "files": [
+          {
+            "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+            "file": "verification/import-safety.test.js",
+            "status": "passed",
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "excludedByPattern": 3,
+            "coveredTargets": 0,
+            "uncoveredTargets": 0,
+            "unknownTargets": 1000
+          }
+        ],
+        "failureSummary": {
+          "totalFailedCases": 0,
+          "files": [],
+          "omittedFiles": 0,
+          "limits": {
+            "files": 10,
+            "casesPerFile": 10
+          }
+        },
+        "failureClassification": {
+          "category": null,
+          "basis": "execution-status-and-explicit-stage-code",
+          "httpContract": "only-explicit-httpExpectations-can-establish-contract-conflict"
+        },
+        "cacheExplanation": {
+          "identity": {
+            "fullInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+            "buildInput": "source-jest-no-business-build-v1",
+            "testInput": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "transformInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+            "config": "b76e5bed964fd1f99e063255843f50b5fd0c17ec6b36b67666b3c7738fa96ea6",
+            "dependencies": "52a0898fb02358501ab5321fcade1a6acb85555b0b2b3f09c3f84a665b3289aa",
+            "runner": "f4f15d7f442d726d1baccd53d72173f03260d239976f0fc7014c8e1afae433e9",
+            "executor": "bd584b043fc64c122d4de09232b9cf53920897fb0ae74ce1f5f9b0a15a323e14",
+            "selection": "b22de4680ad7233e9ce8bc43e01c20096a283bcb690fbd449211a3aeb28a4605"
+          },
+          "buildKey": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+          "testCompileKey": null,
+          "transformKey": "cd02de33c86dde753bd702c21635492310160a6f634285c97a061ec691435223",
+          "transformSeedKey": null,
+          "buildCacheHit": true,
+          "testCompileCacheHit": null,
+          "transformCacheHit": false,
+          "transformSeedReused": false,
+          "build": {
+            "key": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+            "hit": true,
+            "reason": "verified-key-and-complete-bytes"
+          },
+          "testCompile": {
+            "key": null,
+            "hit": null,
+            "reason": "disabled-or-not-applicable"
+          },
+          "transform": {
+            "key": "cd02de33c86dde753bd702c21635492310160a6f634285c97a061ec691435223",
+            "hit": false,
+            "reason": "key-changed-matching-cache-unavailable"
+          },
+          "transformSeed": {
+            "key": null,
+            "reused": false,
+            "basis": "not-reused"
+          },
+          "comparison": {
+            "sourceRunId": "f4123798-96a6-4384-a57d-f134d4c4e05c",
+            "sourceKind": "jest-unit-evidence",
+            "changedComponents": [
+              "fullInput",
+              "transformInput"
+            ],
+            "basis": "verified-receipt"
+          },
+          "meaning": "key 固定实际输入、依赖/配置和执行器；miss 不单独证明首次冷启动；变化列表仅为身份差异，不推断全部重建原因"
+        },
+        "timingExplanation": {
+          "hostWallMs": 3477,
+          "phases": [
+            {
+              "name": "fixed-input-validation",
+              "ms": 254,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "input-materialization",
+              "ms": 92,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "test-compile-cache-acquisition",
+              "ms": null,
+              "scope": "host",
+              "availability": "not-observed"
+            },
+            {
+              "name": "transform-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "resource-queue",
+              "ms": 2120,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "environment-startup",
+              "ms": 24,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build",
+              "ms": 11,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "supplemental-test-compile",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-config-preflight",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-execution",
+              "ms": 434,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "source-map-mapping",
+              "ms": 22,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "target-mapping",
+              "ms": 36,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "cleanup",
+              "ms": 101,
+              "scope": "host",
+              "availability": "observed"
+            }
+          ],
+          "files": [
+            {
+              "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+              "jestWallMs": 419,
+              "jestInitializationMs": 171,
+              "frameworkSetupMs": 65,
+              "testCollectionMs": 143,
+              "observedCaseWallMs": 17.500249999999994
+            }
+          ],
+          "additive": false,
+          "overlaps": [
+            {
+              "parent": "hostWallMs",
+              "children": "所有 host/runner 阶段"
+            },
+            {
+              "parent": "jest-execution",
+              "children": "Jest 初始化、setup、收集、用例事件及转换"
+            },
+            {
+              "parent": "observedCaseWallMs",
+              "children": "生命周期钩子、HTTP；并行/嵌套区间可能重叠"
+            }
+          ],
+          "meaning": "文件 Jest 墙钟之和不含完整准备/分析/排队成本；缓存锁获取含完整字节核验，不能全算作资源排队；null 不等于零，不相加估算端到端耗时"
+        },
+        "summary": {
+          "purpose": "pilot",
+          "selection": {
+            "selectedAssets": 1,
+            "completedAssetResults": 1,
+            "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+            "executedCases": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "excludedByPattern": 3
+          },
+          "targetCoverage": {
+            "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+            "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+            "total": 1000,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 1000,
+            "byKind": {
+              "modified-block": {
+                "total": 803,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 803
+              },
+              "condition-outcome": {
+                "total": 166,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 166
+              },
+              "impacted-entry": {
+                "total": 2,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 2
+              },
+              "symbol-reference": {
+                "total": 0,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 0
+              },
+              "unexpanded-change": {
+                "total": 29,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 29
+              }
+            },
+            "outOfScopeChanges": [
+              {
+                "changeId": "agent/mongodb-disposition.js::fn:dispositionStoreAction/fn:callback:transaction:0:e3b0c44298fc",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "agent/mongodb-disposition.js::symbol:READ_ROUTES",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "agent/mongodb-import-control-runtime.js::symbol:IMPORT_CONTROL_SCRIPT",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "file:agent/mongodb-import-control-runtime.js",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "agent/mongodb-import-risk.js::fn:assertImportAdmission",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              }
+            ],
+            "excludedEntryIds": [
+              "agent/activity.js::fn:previewText",
+              "agent/activity.js::fn:byteLength",
+              "agent/activity.js::fn:createActivityLog",
+              "agent/approved-commands.js::fn:hashCommands",
+              "agent/approved-commands.js::fn:redactCommand"
+            ],
+            "outOfScopeChangeCount": 361,
+            "excludedEntryCount": 225
+          },
+          "operationCompletion": {
+            "total": 803,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 803,
+            "basis": "精确操作目标证据；函数/语句入口和测试通过不替代完成"
+          },
+          "relatedEntries": {
+            "total": 2,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 2,
+            "basis": "仅表示精确入口观测，不证明复杂操作完成"
+          },
+          "directModifiedFunctionEntries": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0,
+            "modifiedFunctions": 3,
+            "basis": "直接修改函数中已规划的入口目标；没有入口目标的函数不冒认已观察"
+          },
+          "coverageInterpretation": {
+            "sourceCounters": "顶层 sourceCounters 分列源码语句/函数/分支，含失败尝试的独立观测；缺失文件不补零",
+            "strictTargets": "targetCoverage 保留完整计划分母及范围外/排除入口；成功检查点决定最终严格覆盖",
+            "whyCountersCanHitWhileUnknown": "源码计数只证明计数位置执行；非唯一映射、短路子操作、调用/await 完成或不支持语义仍 unknown",
+            "orderedPaths": "未采集有序 trace，入口或分支命中不能替代有序路径"
+          },
+          "unknownReasons": [
+            {
+              "reasonCode": "source-coverage-missing",
+              "count": 1000,
+              "category": "binding-or-collection",
+              "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例",
+              "targetIds": [
+                "33a7e75820f7d7afa3d860f5b61130d8dda98e07befbc2d695860a2d0e8516ae",
+                "9999a2e035e59b64eec2d3795b773eb76c415b6edf0b8fcb9744d8bbf4757cd2",
+                "6fe09ddf7fa8db3fff91b7990a7512aab275650c6544aaf7a66c0571702cd98f",
+                "2918aeec39a08613d83f28c059f9af9c900aae8485a25c516fab4fd8c52cbb88",
+                "6d16e7501d5e356260c4166a6a206d47fefc02c8b9122c1e6ec76cfce2fb98da"
+              ]
+            }
+          ],
+          "environment": {
+            "dependencyPolicy": "exact-lock",
+            "lockMatch": true,
+            "serviceDoubles": [
+              {
+                "name": "synthetic-mongo-vm",
+                "verifies": "serialized helper protocol, exact batch identity, commit idempotency and rollback guards",
+                "doesNotVerify": "real MongoDB topology/driver, SSH transport, native OS owner verification or deployed worker"
+              }
+            ],
+            "serviceDoubleInventory": "declared-not-runtime-attested",
+            "runtimeCheckedServiceDoubles": [],
+            "businessPreflight": "not-declared",
+            "externalServices": "existing-test-doubles-and-network-egress-denied",
+            "notificationDelivery": "not-verified"
+          },
+          "pageValidation": "not-run-by-unit-adapter",
+          "deploymentValidation": "not-verified",
+          "orderedPathValidation": "not-observed-no-ordered-trace"
+        }
+      },
+      "observedCoverage": [
+        {
+          "targetId": "33a7e75820f7d7afa3d860f5b61130d8dda98e07befbc2d695860a2d0e8516ae",
+          "status": "unknown",
+          "reasonCodes": [
+            "source-coverage-missing"
+          ]
+        },
+        {
+          "targetId": "9999a2e035e59b64eec2d3795b773eb76c415b6edf0b8fcb9744d8bbf4757cd2",
+          "status": "unknown",
+          "reasonCodes": [
+            "source-coverage-missing"
+          ]
+        },
+        {
+          "targetId": "6fe09ddf7fa8db3fff91b7990a7512aab275650c6544aaf7a66c0571702cd98f",
+          "status": "unknown",
+          "reasonCodes": [
+            "source-coverage-missing"
+          ]
+        },
+        {
+          "targetId": "2918aeec39a08613d83f28c059f9af9c900aae8485a25c516fab4fd8c52cbb88",
+          "status": "unknown",
+          "reasonCodes": [
+            "source-coverage-missing"
+          ]
+        },
+        {
+          "targetId": "6d16e7501d5e356260c4166a6a206d47fefc02c8b9122c1e6ec76cfce2fb98da",
+          "status": "unknown",
+          "reasonCodes": [
+            "source-coverage-missing"
+          ]
+        }
+      ],
+      "evidenceStatus": "verified-attempt",
+      "usage": "该尝试独立展示，不合并为最终成功选择集",
+      "totalObservedTargets": 1000
+    }
+  ],
+  "jobId": "fbf7eb12-b4a9-469b-9c72-9b2e8785aacb",
+  "projectId": "ssl-debug-agent",
+  "status": "passed",
+  "completedFiles": 1,
+  "totalFiles": 1,
+  "passed": 1,
+  "failed": 0,
+  "coveredTargetIds": [],
+  "targetCoverage": [
+    {
+      "targetId": "33a7e75820f7d7afa3d860f5b61130d8dda98e07befbc2d695860a2d0e8516ae",
+      "status": "unknown",
+      "reasonCodes": [
+        "source-coverage-missing"
+      ]
+    },
+    {
+      "targetId": "9999a2e035e59b64eec2d3795b773eb76c415b6edf0b8fcb9744d8bbf4757cd2",
+      "status": "unknown",
+      "reasonCodes": [
+        "source-coverage-missing"
+      ]
+    },
+    {
+      "targetId": "6fe09ddf7fa8db3fff91b7990a7512aab275650c6544aaf7a66c0571702cd98f",
+      "status": "unknown",
+      "reasonCodes": [
+        "source-coverage-missing"
+      ]
+    },
+    {
+      "targetId": "2918aeec39a08613d83f28c059f9af9c900aae8485a25c516fab4fd8c52cbb88",
+      "status": "unknown",
+      "reasonCodes": [
+        "source-coverage-missing"
+      ]
+    },
+    {
+      "targetId": "6d16e7501d5e356260c4166a6a206d47fefc02c8b9122c1e6ec76cfce2fb98da",
+      "status": "unknown",
+      "reasonCodes": [
+        "source-coverage-missing"
+      ]
+    }
+  ],
+  "unknownReasons": {
+    "source-coverage-missing": 1000
+  },
+  "unknownTargets": 1000,
+  "uncoveredTargets": 0,
+  "pathValidation": "not-observed-no-ordered-trace",
+  "evidence": [
+    {
+      "runId": "2ee34551-5d80-468a-9a9c-8ee04b75eda5",
+      "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+      "evidenceHash": "c6f776fec20ff47d486e4bad7c553a0e0a8f6a2c88ecb1ec0c7ad5f3a3488e2b",
+      "suiteTimings": [
+        {
+          "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+          "jestWallMs": 419,
+          "jestInitializationMs": 171,
+          "frameworkSetupMs": 65,
+          "testCollectionMs": 143,
+          "runtimeArchitecture": "arm64",
+          "caseDurationMs": 17,
+          "nonCaseWallMs": 402,
+          "observedCaseWallMs": 17.500249999999994,
+          "timedCases": 1,
+          "caseTimingCompleteness": "complete",
+          "nonCaseObservedWallMs": 401.49975,
+          "seedPasswordCache": null,
+          "lifecycleTimings": null,
+          "caseTimingArtifact": "raw/case-timings-0.json",
+          "collectionUntilFirstCaseMs": 208,
+          "transforms": {
+            "calls": 41,
+            "milliseconds": 87,
+            "meaning": "项目原转换器实际调用，时间包含在 Jest wall 内"
+          },
+          "meaning": "observedCase 是 runner 事件间墙钟，包含钩子；生命周期和转换区间可能重叠，不与 wall 相加"
+        }
+      ],
+      "result": {
+        "flowId": "b11d418a-a00b-4fa5-9b8c-954281a62d15",
+        "runId": "2ee34551-5d80-468a-9a9c-8ee04b75eda5",
+        "status": "passed",
+        "stoppedAtBoundary": false,
+        "failurePolicy": "stop",
+        "unexecutedAssetIds": [],
+        "purpose": "pilot",
+        "workflowId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+        "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+        "failureCategory": null,
+        "sourceCounters": {
+          "files": [],
+          "mappedFiles": 0,
+          "missingFiles": 0,
+          "conflictingFiles": 0,
+          "statements": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0
+          },
+          "functions": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0
+          },
+          "branches": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0
+          },
+          "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖"
+        },
+        "failureDetail": null,
+        "phaseTimings": {
+          "validationMs": 254,
+          "materializeMs": 92,
+          "buildWaitMs": 1,
+          "testCompileWaitMs": null,
+          "transformWaitMs": 1,
+          "targetMappingMs": 36,
+          "resourceWaitMs": 2120,
+          "environmentMs": 24,
+          "cleanupMs": 101,
+          "hostWallMs": 3477,
+          "materialize": 60,
+          "build": 11,
+          "test": 434,
+          "mapping": 22,
+          "file-completed": 60
+        },
+        "unknownReasons": {
+          "source-coverage-missing": 1000
+        },
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "coveredTargets": 0,
+        "uncoveredTargets": 0,
+        "unknownTargets": 1000,
+        "fixedInputVerified": true,
+        "sourceUnchanged": null,
+        "workspaceStateUnchanged": true,
+        "executionSourceUnchanged": true,
+        "cleanup": "completed",
+        "files": [
+          {
+            "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+            "file": "verification/import-safety.test.js",
+            "status": "passed",
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "excludedByPattern": 3,
+            "coveredTargets": 0,
+            "uncoveredTargets": 0,
+            "unknownTargets": 1000
+          }
+        ],
+        "failureSummary": {
+          "totalFailedCases": 0,
+          "files": [],
+          "omittedFiles": 0,
+          "limits": {
+            "files": 10,
+            "casesPerFile": 10
+          }
+        },
+        "failureClassification": {
+          "category": null,
+          "basis": "execution-status-and-explicit-stage-code",
+          "httpContract": "only-explicit-httpExpectations-can-establish-contract-conflict"
+        },
+        "cacheExplanation": {
+          "identity": {
+            "fullInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+            "buildInput": "source-jest-no-business-build-v1",
+            "testInput": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "transformInput": "a49b204b332faffde6485d1952f8183e6abb0891ed9f1f60ea3df2250fd88d7d",
+            "config": "b76e5bed964fd1f99e063255843f50b5fd0c17ec6b36b67666b3c7738fa96ea6",
+            "dependencies": "52a0898fb02358501ab5321fcade1a6acb85555b0b2b3f09c3f84a665b3289aa",
+            "runner": "f4f15d7f442d726d1baccd53d72173f03260d239976f0fc7014c8e1afae433e9",
+            "executor": "bd584b043fc64c122d4de09232b9cf53920897fb0ae74ce1f5f9b0a15a323e14",
+            "selection": "b22de4680ad7233e9ce8bc43e01c20096a283bcb690fbd449211a3aeb28a4605"
+          },
+          "buildKey": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+          "testCompileKey": null,
+          "transformKey": "cd02de33c86dde753bd702c21635492310160a6f634285c97a061ec691435223",
+          "transformSeedKey": null,
+          "buildCacheHit": true,
+          "testCompileCacheHit": null,
+          "transformCacheHit": false,
+          "transformSeedReused": false,
+          "build": {
+            "key": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+            "hit": true,
+            "reason": "verified-key-and-complete-bytes"
+          },
+          "testCompile": {
+            "key": null,
+            "hit": null,
+            "reason": "disabled-or-not-applicable"
+          },
+          "transform": {
+            "key": "cd02de33c86dde753bd702c21635492310160a6f634285c97a061ec691435223",
+            "hit": false,
+            "reason": "key-changed-matching-cache-unavailable"
+          },
+          "transformSeed": {
+            "key": null,
+            "reused": false,
+            "basis": "not-reused"
+          },
+          "comparison": {
+            "sourceRunId": "f4123798-96a6-4384-a57d-f134d4c4e05c",
+            "sourceKind": "jest-unit-evidence",
+            "changedComponents": [
+              "fullInput",
+              "transformInput"
+            ],
+            "basis": "verified-receipt"
+          },
+          "meaning": "key 固定实际输入、依赖/配置和执行器；miss 不单独证明首次冷启动；变化列表仅为身份差异，不推断全部重建原因"
+        },
+        "timingExplanation": {
+          "hostWallMs": 3477,
+          "phases": [
+            {
+              "name": "fixed-input-validation",
+              "ms": 254,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "input-materialization",
+              "ms": 92,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "test-compile-cache-acquisition",
+              "ms": null,
+              "scope": "host",
+              "availability": "not-observed"
+            },
+            {
+              "name": "transform-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "resource-queue",
+              "ms": 2120,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "environment-startup",
+              "ms": 24,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build",
+              "ms": 11,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "supplemental-test-compile",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-config-preflight",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-execution",
+              "ms": 434,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "source-map-mapping",
+              "ms": 22,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "target-mapping",
+              "ms": 36,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "cleanup",
+              "ms": 101,
+              "scope": "host",
+              "availability": "observed"
+            }
+          ],
+          "files": [
+            {
+              "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+              "jestWallMs": 419,
+              "jestInitializationMs": 171,
+              "frameworkSetupMs": 65,
+              "testCollectionMs": 143,
+              "observedCaseWallMs": 17.500249999999994
+            }
+          ],
+          "additive": false,
+          "overlaps": [
+            {
+              "parent": "hostWallMs",
+              "children": "所有 host/runner 阶段"
+            },
+            {
+              "parent": "jest-execution",
+              "children": "Jest 初始化、setup、收集、用例事件及转换"
+            },
+            {
+              "parent": "observedCaseWallMs",
+              "children": "生命周期钩子、HTTP；并行/嵌套区间可能重叠"
+            }
+          ],
+          "meaning": "文件 Jest 墙钟之和不含完整准备/分析/排队成本；缓存锁获取含完整字节核验，不能全算作资源排队；null 不等于零，不相加估算端到端耗时"
+        },
+        "summary": {
+          "purpose": "pilot",
+          "selection": {
+            "selectedAssets": 1,
+            "completedAssetResults": 1,
+            "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+            "executedCases": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "excludedByPattern": 3
+          },
+          "targetCoverage": {
+            "scopeId": "db48150bbbaa2aa74431c9fd46b9e1b873ced46f2dd26706320ffb68081b7c10",
+            "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+            "total": 1000,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 1000,
+            "byKind": {
+              "modified-block": {
+                "total": 803,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 803
+              },
+              "condition-outcome": {
+                "total": 166,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 166
+              },
+              "impacted-entry": {
+                "total": 2,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 2
+              },
+              "symbol-reference": {
+                "total": 0,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 0
+              },
+              "unexpanded-change": {
+                "total": 29,
+                "covered": 0,
+                "notCovered": 0,
+                "unknown": 29
+              }
+            },
+            "outOfScopeChanges": [
+              {
+                "changeId": "agent/mongodb-disposition.js::fn:dispositionStoreAction/fn:callback:transaction:0:e3b0c44298fc",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "agent/mongodb-disposition.js::symbol:READ_ROUTES",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "agent/mongodb-import-control-runtime.js::symbol:IMPORT_CONTROL_SCRIPT",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "file:agent/mongodb-import-control-runtime.js",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              },
+              {
+                "changeId": "agent/mongodb-import-risk.js::fn:assertImportAdmission",
+                "status": "out-of-scope",
+                "reason": "显式范围外待验，未作为未覆盖计数"
+              }
+            ],
+            "excludedEntryIds": [
+              "agent/activity.js::fn:previewText",
+              "agent/activity.js::fn:byteLength",
+              "agent/activity.js::fn:createActivityLog",
+              "agent/approved-commands.js::fn:hashCommands",
+              "agent/approved-commands.js::fn:redactCommand"
+            ],
+            "outOfScopeChangeCount": 361,
+            "excludedEntryCount": 225
+          },
+          "operationCompletion": {
+            "total": 803,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 803,
+            "basis": "精确操作目标证据；函数/语句入口和测试通过不替代完成"
+          },
+          "relatedEntries": {
+            "total": 2,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 2,
+            "basis": "仅表示精确入口观测，不证明复杂操作完成"
+          },
+          "directModifiedFunctionEntries": {
+            "total": 0,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 0,
+            "modifiedFunctions": 3,
+            "basis": "直接修改函数中已规划的入口目标；没有入口目标的函数不冒认已观察"
+          },
+          "coverageInterpretation": {
+            "sourceCounters": "顶层 sourceCounters 分列源码语句/函数/分支，含失败尝试的独立观测；缺失文件不补零",
+            "strictTargets": "targetCoverage 保留完整计划分母及范围外/排除入口；成功检查点决定最终严格覆盖",
+            "whyCountersCanHitWhileUnknown": "源码计数只证明计数位置执行；非唯一映射、短路子操作、调用/await 完成或不支持语义仍 unknown",
+            "orderedPaths": "未采集有序 trace，入口或分支命中不能替代有序路径"
+          },
+          "unknownReasons": [
+            {
+              "reasonCode": "source-coverage-missing",
+              "count": 1000,
+              "category": "binding-or-collection",
+              "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例",
+              "targetIds": [
+                "33a7e75820f7d7afa3d860f5b61130d8dda98e07befbc2d695860a2d0e8516ae",
+                "9999a2e035e59b64eec2d3795b773eb76c415b6edf0b8fcb9744d8bbf4757cd2",
+                "6fe09ddf7fa8db3fff91b7990a7512aab275650c6544aaf7a66c0571702cd98f",
+                "2918aeec39a08613d83f28c059f9af9c900aae8485a25c516fab4fd8c52cbb88",
+                "6d16e7501d5e356260c4166a6a206d47fefc02c8b9122c1e6ec76cfce2fb98da"
+              ]
+            }
+          ],
+          "environment": {
+            "dependencyPolicy": "exact-lock",
+            "lockMatch": true,
+            "serviceDoubles": [
+              {
+                "name": "synthetic-mongo-vm",
+                "verifies": "serialized helper protocol, exact batch identity, commit idempotency and rollback guards",
+                "doesNotVerify": "real MongoDB topology/driver, SSH transport, native OS owner verification or deployed worker"
+              }
+            ],
+            "serviceDoubleInventory": "declared-not-runtime-attested",
+            "runtimeCheckedServiceDoubles": [],
+            "businessPreflight": "not-declared",
+            "externalServices": "existing-test-doubles-and-network-egress-denied",
+            "notificationDelivery": "not-verified"
+          },
+          "pageValidation": "not-run-by-unit-adapter",
+          "deploymentValidation": "not-verified",
+          "orderedPathValidation": "not-observed-no-ordered-trace"
+        }
+      }
+    }
+  ],
+  "attemptSummary": {
+    "total": 1,
+    "failed": 0,
+    "blocked": 0
+  },
+  "pagination": {
+    "offset": 0,
+    "limit": 5,
+    "totalTargets": 1000,
+    "totalEvidence": 1,
+    "totalAttempts": 1,
+    "hasMore": true
+  },
+  "reportHash": "b5574a95e0d4268bbfca067d578baa03bafe34bb6fee8a6b46ca0adae81a35ab",
+  "artifact": ".testflow/jobs/fbf7eb12-b4a9-469b-9c72-9b2e8785aacb/job-evidence.json"
+}

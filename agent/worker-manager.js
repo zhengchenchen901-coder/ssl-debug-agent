@@ -1,5 +1,5 @@
 import { fork } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import fsp from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
@@ -175,6 +175,22 @@ function configEnv(instance, port, manager, cwd, memoryInit) {
   };
 }
 
+// Internal only: covers the actual instance/Manager inputs sent to the child,
+// including trust and policy. Never publish this digest (it includes secrets).
+export function workerConfigFingerprint(instance, manager, cwd) {
+  return createHash("sha256").update(JSON.stringify(configEnv(instance, 0, manager, cwd, false))).digest("hex");
+}
+
+function assertMongoConfigurationCurrent(manager, id) {
+  const runtime = manager.runtime.get(id), instance = manager.registry.getInternal(id);
+  if (!runtime || runtime.status !== "running" || !runtime.workerPort) throw managerError("Instance worker is not running", "INSTANCE_NOT_RUNNING", 409,
+    { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" });
+  if (!instance || !runtime.configFingerprint || runtime.configFingerprint !== workerConfigFingerprint(instance, manager.managerConfig(), manager.cwd)) {
+    throw managerError("Worker configuration is not current; inspect in-flight work before explicitly refreshing this instance", "WORKER_CONFIGURATION_STALE", 409,
+      { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" });
+  }
+}
+
 export class WorkerManager {
   constructor(options = {}) {
     this.registry = options.registry;
@@ -224,13 +240,15 @@ export class WorkerManager {
   publicInstances() {
     return this.registry.list().map((instance) => ({
       ...instance,
-      runtime: publicRuntime(this.runtime.get(instance.id)),
+      runtime: this.runtimeFor(instance.id),
       memory: this.memoryStore.summary(instance),
     }));
   }
 
   runtimeFor(id) {
-    return publicRuntime(this.runtime.get(id));
+    const runtime = this.runtime.get(id), instance = this.registry.getInternal(id);
+    return { ...publicRuntime(runtime), configuration: !runtime?.configFingerprint ? "unknown"
+      : instance && runtime.configFingerprint === workerConfigFingerprint(instance, this.managerConfig(), this.cwd) ? "current" : "refresh_required" };
   }
 
   restoreCandidates() {
@@ -634,7 +652,7 @@ export class WorkerManager {
   }
 
   async startInstance(id) {
-    const instance = this.registry.getInternal(id);
+    const instance = structuredClone(this.registry.getInternal(id));
     if (!instance) {
       throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
     }
@@ -649,11 +667,12 @@ export class WorkerManager {
       };
     }
 
-    const manager = this.managerConfig();
+    const manager = structuredClone(this.managerConfig());
     const workerPort = await this.allocatePort(instance);
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance);
     const runtime = {
       status: "starting",
+      configFingerprint: workerConfigFingerprint(instance, manager, this.cwd),
       authToken: randomBytes(32).toString("hex"),
       child: null,
       pid: null,
@@ -1140,6 +1159,10 @@ export class WorkerManager {
     return this.registry.resolveId(instanceId);
   }
 
+  assertMongoConfigurationCurrent(instanceId) {
+    assertMongoConfigurationCurrent(this, this.resolveInstanceId(instanceId));
+  }
+
   async callInstance(instanceId, pathName, payload, headers = {}, options = {}) {
     const resolvedId = this.resolveInstanceId(instanceId);
     const runtime = this.runtime.get(resolvedId);
@@ -1150,12 +1173,21 @@ export class WorkerManager {
         409,
         {
           instances: this.publicInstances(),
+          layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched",
         },
       );
     }
     if (!/^[a-f0-9]{64}$/.test(runtime.authToken || "")) {
-      throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401);
+      throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401,
+        { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" });
     }
+
+    if (pathName.startsWith("/mongodb/")) {
+      assertMongoConfigurationCurrent(this, resolvedId);
+    }
+    // There is no await between the configuration check and fetch invocation.
+    // A later registry update affects subsequent admissions, never cancels this
+    // already admitted request or turns its lost response into non-execution.
 
     const url = `http://${this.managerConfig().host}:${runtime.workerPort}${pathName}`;
     const operation = {

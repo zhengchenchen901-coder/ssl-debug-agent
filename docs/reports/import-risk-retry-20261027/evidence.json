@@ -1,0 +1,167 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Shanghai",
+  "delivery": "local source, tests, design/skill documentation and rebuilt candidate runtime; not installed",
+  "snapshotId": "7bbad0227f029556eb239e792b684e9b8798aab6c33a52c1e98326b23c272f43",
+  "sourceContentHash": "9caf08d4ec6b426086f5f8017988e28d5aee98aec1229e1b9985ecbe3689daf3",
+  "baseRevision": "d03a5fc82e78a92e5e73556ecab1b3f5df66f769",
+  "runtimeId": "2.4.0:0b723d8270a72ac19eb312b65e29a425eee4d5c07179583c880e5c8a830d11dc",
+  "testflow": {
+    "freezeVerified": true,
+    "prepareExecuted": false,
+    "executeExecuted": false,
+    "testPassed": false,
+    "coverage": "unknown",
+    "blocker": "installed executionWorkspace rejects node-test; compatible adapter, versioned bindings and execution contract missing"
+  },
+  "supplemental": {
+    "containerRegression": {
+      "passed": 292,
+      "failed": 0,
+      "skipped": 0,
+      "selectedFiles": 26,
+      "network": "none"
+    },
+    "realMongoIntegration": {
+      "passed": 1,
+      "failed": 0,
+      "mongodb": "4.4.30",
+      "driver": "6.20.0",
+      "documents": 3,
+      "batches": 2,
+      "rollbackRemainingDocuments": 0,
+      "resourcesCleaned": true
+    },
+    "browser": {
+      "import": "passed",
+      "bulk": "passed",
+      "nativeOwnerDialog": "test double; no real approval"
+    },
+    "coverage": "behavioral assertions only; AST/CFG/branch/ordered-path unknown"
+  },
+  "initialFailure": {
+    "driver": "3.3.4",
+    "code": "MONGODB_IMPORT_BSON_REQUIRED",
+    "gatePreserved": true
+  },
+  "notExecuted": [
+    "real test-server disposition, approval, replacement or migration",
+    "real native owner dialog",
+    "real SSH/legacy in-flight cancellation",
+    "all repository tests and other OS platforms",
+    "TestFlow prepare/execute and coverage collection"
+  ],
+  "artifactRoot": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-risk",
+  "artifacts": [
+    {
+      "path": "testflow-freeze.json",
+      "sha256": "0e2498b196112a43b1fa146bdaba2b36076ef957da365716688ee1c70c467caf",
+      "bytes": 975
+    },
+    {
+      "path": "testflow-blocker.json",
+      "sha256": "515db599fd3ee248d5d724e3a9993fba1b8bbaab55ff453bf022a5e98beb62be",
+      "bytes": 476
+    },
+    {
+      "path": "container-regression.tap",
+      "sha256": "7294f559859c8a665d5e6ec1ccdd280b64f9fc354466f9e0a036aa4e71003cb1",
+      "bytes": 80914
+    },
+    {
+      "path": "mongo-integration.tap",
+      "sha256": "376ddadefc74ca2fbd5bdc225ca644393194c79a8514fc2868f10bd5be96215e",
+      "bytes": 812
+    },
+    {
+      "path": "final-verification.json",
+      "sha256": "93d8cd1370a425aaf3218c1556dae1ef36ecf27e0f21a39394f961f1ce675b5a",
+      "bytes": 424
+    },
+    {
+      "path": "browser-import.json",
+      "sha256": "e80da7ddc2277dcddbcf28de12de44f0dde2a799386925c7aed77776087efbfa",
+      "bytes": 288
+    },
+    {
+      "path": "browser-bulk.json",
+      "sha256": "b275e706eb525d113ed8b705764a515c8c30406ae40909c88257619d56c571dd",
+      "bytes": 284
+    },
+    {
+      "path": "mongo-integration-result.json",
+      "sha256": "43c451f57656c918b771e5e6316aca33689d17847c82f49f2da961331c4ecbc7",
+      "bytes": 796
+    },
+    {
+      "path": "container-regression-result.json",
+      "sha256": "55e525f49867093ff57f4d37a5606021e1a9e5605a0679fa99a14f7e5b2785ec",
+      "bytes": 272
+    },
+    {
+      "path": "initial-legacy-driver-mongo-integration.tap",
+      "sha256": "236036862daa354eee0a4891b13c2a0c3ce9b6195791a2e351a385741c253c22",
+      "bytes": 1953
+    },
+    {
+      "path": "snapshot-verification.json",
+      "sha256": "0065f4b318e28080536b0304539617294609c1c989ec39ed1e6cf0ce5bd24154",
+      "bytes": 207
+    },
+    {
+      "path": "run-regression.sh",
+      "sha256": "8b36c2143d846a5e32cb802828c90b1ede29785c42223d0adcd750cd6b4b1535",
+      "bytes": 1321
+    },
+    {
+      "path": "run-mongo.py",
+      "sha256": "c9ada3975332199867711e4d238294a571884c45b4dee0ae951a465fa5767d8b",
+      "bytes": 3189
+    },
+    {
+      "path": "final-verify.py",
+      "sha256": "2d72ae994e38a4288c3490402de62a0fdf6382dedcf3ba65650153b52a132f5e",
+      "bytes": 2997
+    },
+    {
+      "path": "dependencies/Dockerfile",
+      "sha256": "bf48489484f883fcba2013ad7ade507a46a8d6cc1fb28edadf79c304b6b3f9a9",
+      "bytes": 214
+    },
+    {
+      "path": "dependencies/Dockerfile.mongo",
+      "sha256": "62bca0ca939d373b022918f03b2b8a617cbbbbf021295dab61713ab98638aaa3",
+      "bytes": 390
+    },
+    {
+      "path": "dependencies/image-id.txt",
+      "sha256": "4b7911338d43bb4c7435c3e8b2f0f7548af008da3d83195e4a2e7260eebeee4c",
+      "bytes": 71
+    },
+    {
+      "path": "dependencies/mongo-image-id.txt",
+      "sha256": "fa5defa8121c709e48cc2b8cac220073ed64643d6d6bb3c14f0a2872cc722f55",
+      "bytes": 71
+    },
+    {
+      "path": "browser-import/human-review.png",
+      "sha256": "de234e0caa9ac8e56df7a35213aad34a0cbd528a783d05019186532e9300a46f",
+      "bytes": 441900
+    },
+    {
+      "path": "browser-import/human-approved-no-job.png",
+      "sha256": "c2fbfb6a3bf2b4eabe4061e5f2a9713d2dd2a13ac6e97343334280a5dfcc0d65",
+      "bytes": 446105
+    },
+    {
+      "path": "browser-bulk/human-review.png",
+      "sha256": "7f3023230d04d0a3df2a682fa9c9b782b7917ecac0f1c005f8c85546489d022f",
+      "bytes": 314238
+    },
+    {
+      "path": "browser-bulk/human-approved-no-job.png",
+      "sha256": "3f3c092fe1f46c475a7e00cda88bf0b18a1de05e1046ecbd3aa2273630201cbb",
+      "bytes": 318428
+    }
+  ]
+}

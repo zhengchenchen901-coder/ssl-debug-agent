@@ -5,7 +5,7 @@ const json = "json";
 const fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
 const timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 const warning = fields("code message path source phase");
-const error = { ...fields("operationId code message layer phase retriable cause intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+const error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
 const memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 const runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 const instance = {
@@ -107,14 +107,17 @@ const contracts = {
   remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
   remote_debug_mongodb_disposition: { ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"), requiresConfirmation: "boolean",
     localContainment: "boolean", remoteFenceConfirmed: "boolean", replacementAllowed: "boolean", missingRequirements: [scalar], historicalEvidenceGaps: [scalar],
-    ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
+    ...fields("kind replacementImportId batchCount documentCount atomicity riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
     humanConfirmationRequired: "boolean", humanApproved: "boolean", canApprove: "boolean", collections: [scalar],
     ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
-    acceptedResidualRisk: "boolean", observations: { ...fields("source observedAt status code historicalOutcome") },
-    binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
+    acceptedResidualRisk: "boolean",
+    originalBatches: [fields("mutationId batchIndex documentCount requestDigest")], replacementBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    batches: [fields("mutationId planHash batchIndex status")],
+    observations: { ...fields("source observedAt status code historicalOutcome"), batches: [fields("mutationId batchIndex status code planHash rollbackExpiresAt historicalOutcome")] },
+    binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
     fenceChallenge: { ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
-      binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash") },
-    result: { ...common, ...bulk, ...fields("intentId intentState state"), result: { ...common, ...bulk } } },
+      binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash") },
+    result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } } },
   remote_debug_mongodb_prepare_write: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,

@@ -24154,7 +24154,7 @@ var require_windows_privacy = __commonJS({
     "use strict";
     var fs15 = require("fs");
     var path21 = require("path");
-    var { createHash: createHash15 } = require("crypto");
+    var { createHash: createHash16 } = require("crypto");
     var { execFileSync } = require("child_process");
     function fail4(code = "BUSINESS_STORAGE_UNAVAILABLE") {
       return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
@@ -24167,7 +24167,7 @@ var require_windows_privacy = __commonJS({
         const helper = path21.join(__dirname, "native/windows-privacy.ps1");
         const manifestPath = fs15.existsSync(path21.join(__dirname, "runtime-manifest.json")) ? path21.join(__dirname, "runtime-manifest.json") : path21.join(__dirname, "runtime/agent/runtime-manifest.json");
         const expected = JSON.parse(fs15.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
-        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash15("sha256").update(fs15.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash16("sha256").update(fs15.readFileSync(helper)).digest("hex") !== expected) throw fail4("BUSINESS_STORAGE_INTEGRITY_INVALID");
         const raw = run(
           path21.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
           ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
@@ -24189,7 +24189,7 @@ var require_windows_privacy = __commonJS({
       }
     }
     function targetFor(directory) {
-      return "RemoteDebugAgent/business-privacy/v1/" + createHash15("sha256").update(fs15.realpathSync.native(directory)).digest("hex");
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash16("sha256").update(fs15.realpathSync.native(directory)).digest("hex");
     }
     function prepareStore(directory) {
       return native("prepare-store", { directory });
@@ -26626,7 +26626,7 @@ var require_websocket = __commonJS({
     var http2 = require("http");
     var net2 = require("net");
     var tls = require("tls");
-    var { randomBytes: randomBytes6, createHash: createHash15 } = require("crypto");
+    var { randomBytes: randomBytes6, createHash: createHash16 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -27307,7 +27307,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest4 = createHash15("sha1").update(key + GUID).digest("base64");
+        const digest4 = createHash16("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest4) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -27676,7 +27676,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter4 = require("events");
     var http2 = require("http");
     var { Duplex } = require("stream");
-    var { createHash: createHash15 } = require("crypto");
+    var { createHash: createHash16 } = require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -27983,7 +27983,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest4 = createHash15("sha1").update(key + GUID).digest("base64");
+        const digest4 = createHash16("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -34509,7 +34509,7 @@ var require_keyParser = __commonJS({
     var {
       createDecipheriv: createDecipheriv2,
       createECDH,
-      createHash: createHash15,
+      createHash: createHash16,
       createHmac,
       createSign,
       createVerify,
@@ -35197,11 +35197,11 @@ ${formatted}-----END ${type} KEY-----`;
                 );
               }
               const ivSlice = bufferSlice(cipherIV, 0, 8);
-              let cipherKey = createHash15("md5").update(passphrase).update(ivSlice).digest();
+              let cipherKey = createHash16("md5").update(passphrase).update(ivSlice).digest();
               while (cipherKey.length < encInfo.keyLen) {
                 cipherKey = combineBuffers(
                   cipherKey,
-                  createHash15("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
+                  createHash16("md5").update(cipherKey).update(passphrase).update(ivSlice).digest()
                 );
               }
               if (cipherKey.length > encInfo.keyLen)
@@ -35366,8 +35366,8 @@ ${formatted}-----END ${type} KEY-----`;
         if (encrypted) {
           const encInfo = CIPHER_INFO[cipherName];
           let cipherKey = combineBuffers(
-            createHash15("sha1").update(PPK_PP1).update(passphrase).digest(),
-            createHash15("sha1").update(PPK_PP2).update(passphrase).digest()
+            createHash16("sha1").update(PPK_PP1).update(passphrase).digest(),
+            createHash16("sha1").update(PPK_PP2).update(passphrase).digest()
           );
           if (cipherKey.length > encInfo.keyLen)
             cipherKey = bufferSlice(cipherKey, 0, encInfo.keyLen);
@@ -35407,7 +35407,7 @@ ${formatted}-----END ${type} KEY-----`;
           passphrase = EMPTY_PASSPHRASE;
         const calcMAC = createHmac(
           "sha1",
-          createHash15("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
+          createHash16("sha1").update("putty-private-key-file-mac-key").update(passphrase).digest()
         ).update(macData).digest("hex");
         if (calcMAC !== mac) {
           if (encrypted) {
@@ -37729,7 +37729,7 @@ var require_kex = __commonJS({
       createDiffieHellman,
       createDiffieHellmanGroup,
       createECDH,
-      createHash: createHash15,
+      createHash: createHash16,
       createPublicKey,
       diffieHellman,
       generateKeyPairSync,
@@ -38155,7 +38155,7 @@ var require_kex = __commonJS({
               DISCONNECT_REASON.KEY_EXCHANGE_FAILED
             );
           }
-          const hash = createHash15(this.hashName);
+          const hash = createHash16(this.hashName);
           hashString(hash, isServer ? this._remoteIdentRaw : this._identRaw);
           hashString(hash, isServer ? this._identRaw : this._remoteIdentRaw);
           hashString(hash, isServer ? this._remoteKexinit : this._kexinit);
@@ -39163,9 +39163,9 @@ var require_kex = __commonJS({
     function generateKEXVal(len, hashName, secret, exchangeHash, sessionID, char) {
       let ret;
       if (len) {
-        let digest4 = createHash15(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
+        let digest4 = createHash16(hashName).update(secret).update(exchangeHash).update(char).update(sessionID).digest();
         while (digest4.length < len) {
-          const chunk = createHash15(hashName).update(secret).update(exchangeHash).update(digest4).digest();
+          const chunk = createHash16(hashName).update(secret).update(exchangeHash).update(digest4).digest();
           const extended = Buffer.allocUnsafe(digest4.length + chunk.length);
           extended.set(digest4, 0);
           extended.set(chunk, digest4.length);
@@ -44600,7 +44600,7 @@ var require_client = __commonJS({
   "node_modules/ssh2/lib/client.js"(exports2, module2) {
     "use strict";
     var {
-      createHash: createHash15,
+      createHash: createHash16,
       getHashes,
       randomFillSync
     } = require("crypto");
@@ -44822,7 +44822,7 @@ var require_client = __commonJS({
           }
           hostVerifier = (key, verify) => {
             if (hashAlgo)
-              key = createHash15(hashAlgo).update(key).digest("hex");
+              key = createHash16(hashAlgo).update(key).digest("hex");
             const ret = hashCb(key, verify);
             if (ret !== void 0)
               verify(ret);
@@ -48492,535 +48492,157 @@ __export(server_exports, {
 module.exports = __toCommonJS(server_exports);
 var import_express3 = __toESM(require_express2(), 1);
 
-// privacy-service.js
-var import_node_worker_threads = require("node:worker_threads");
-var import_node_path2 = __toESM(require("node:path"), 1);
-var import_node_url = require("node:url");
-
-// privacy-key.js
-var import_windows_privacy = __toESM(require_windows_privacy(), 1);
-function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
-  return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
+// mongodb-import-control-runtime.js
+var IMPORT_CONTROL_SCRIPT = String.raw`
+function __importControlId(database, importId) { return "import-control-" + __hash({ database, importId }); }
+function __importDirectory(id, callback) {
+  const previous = __request.mutationId;
+  __request.mutationId = id;
+  try { return callback(); } finally { __request.mutationId = previous; }
 }
-
-// ../plugins/remote-debug-agent/business-privacy.js
-function fail(code = "BUSINESS_REFERENCE_INVALID") {
-  throw Object.assign(new Error("Business reference is unavailable or is not valid for this target or argument. Re-query the data in this MCP session."), { code, retriable: false });
-}
-function stable(value) {
-  if (Array.isArray(value)) return value.map(stable);
-  if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
-  return value;
-}
-function encoded(value) {
-  return JSON.stringify(stable(value));
-}
-function businessTargetScope(endpoint, instance2, database) {
-  if (!instance2?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
-  return encoded({
-    endpoint,
-    id: instance2.id,
-    host: instance2.host,
-    port: instance2.port,
-    username: instance2.username,
-    createdAt: instance2.createdAt,
-    configPath: instance2.mongodb?.configPath,
-    driverPath: instance2.mongodb?.driverPath,
-    configProfile: instance2.mongodb?.configProfile,
-    uriKey: instance2.mongodb?.uriKey,
-    database
+function __readImportFile(id, name) {
+  return __importDirectory(id, () => {
+    const directory = __journalDir(), file = __path.join(directory, name);
+    for (const item of [__journalRoot, directory, file]) if (__fs.existsSync(item) && __fs.lstatSync(item).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "unsafe import control path");
+    if (!__fs.existsSync(file)) return null;
+    const value = __fs.readFileSync(file, "utf8");
+    if (Buffer.byteLength(value) > 8 * 1024 * 1024) __fail("MONGODB_IMPORT_RECEIPT_INVALID", "import control exceeds bounds");
+    return JSON.parse(value);
   });
 }
+function __writeImportFile(id, name, value) {
+  return __importDirectory(id, () => {
+    __writeJsonAtomic(name, value);
+    // The atomic writer syncs the file and its immediate directory. New
+    // control/batch directories also need their parent entry made durable.
+    for (const directory of [__journalRoot, __path.dirname(__journalRoot)]) {
+      const fd = __fs.openSync(directory, "r");
+      try { __fs.fsyncSync(fd); } finally { __fs.closeSync(fd); }
+    }
+    if (__importOrderedDigest(__readImportFile(id, name)) !== __importOrderedDigest(value)) __fail("MONGODB_IMPORT_RECEIPT_INVALID", "import control readback mismatch");
+  });
+}
+function __importGlobalLock() { return __importDirectory("import-control-lock", () => __acquireMutationLock(false)); }
+function __importBatchIdentity(plan) {
+  return plan.batches.map(batch => {
+    const { operationId, ...identity } = batch;
+    return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, documentCount: batch.documents.length,
+      requestDigest: __createHash("sha256").update(JSON.stringify(identity)).digest("hex") };
+  });
+}
+function __importOrderedDigest(value) { return __createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
+function __assertImportLive(request, mutationId) {
+  if (__readImportFile(__importControlId(request.database, request.importId), "retirement.json") ||
+      mutationId && __readImportFile(mutationId, "import-retirement.json")) __fail("MONGODB_IMPORT_RETIRED", "original import is closed; historical outcome remains unknown");
+}
+function __reviewImportBatches(request) {
+  return request.batches.map(batch => {
+    let manifest;
+    try { manifest = __readImportFile(batch.mutationId, "manifest.json"); }
+    catch (error) { return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, status: "unavailable", code: error.code || "MONGODB_IMPORT_MANIFEST_INVALID" }; }
+    if (!manifest) return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, status: "missing", historicalOutcome: "unknown" };
+    const { operationId, ...identity } = manifest.request || {};
+    const matching = manifest.kind === "import" && manifest.mutationId === batch.mutationId && manifest.request.database === request.database &&
+      manifest.request.importId === request.importId && manifest.request.batchIndex === batch.batchIndex &&
+      __importOrderedDigest(identity) === batch.requestDigest && __planHash(manifest) === manifest.planHash;
+    return { mutationId: batch.mutationId, batchIndex: batch.batchIndex, status: matching ? manifest.status : "identity_conflict",
+      planHash: matching ? manifest.planHash : undefined, rollbackExpiresAt: matching ? manifest.rollbackExpiresAt : undefined,
+      execution: matching ? manifest.execution : undefined, historicalOutcome: "unknown" };
+  });
+}
+function __importRetirementIdentity(value) { const { approvalAuditId, ...identity } = value; return __importOrderedDigest(identity); }
+function __retireImport(request) {
+  const release = __importGlobalLock();
+  try {
+    const original = __importControlId(request.database, request.importId), replacement = __importControlId(request.database, request.replacementImportId);
+    const previous = __readImportFile(original, "retirement.json"), lineage = __readImportFile(replacement, "lineage.json");
+    const { operationId, ...identity } = request;
+    if (previous && __importRetirementIdentity(previous.identity) !== __importRetirementIdentity(identity) ||
+        lineage && __importRetirementIdentity(lineage.identity) !== __importRetirementIdentity(identity)) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "import is already linked to another review");
+    if (__readImportFile(replacement, "prepare.json") && !lineage) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "replacement import already exists");
+    for (const batch of request.replacementBatches) {
+      if (__readImportFile(batch.mutationId, "manifest.json") && !lineage) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "replacement batch already exists");
+      const reserved = __readImportFile(batch.mutationId, "import-lineage.json");
+      if (reserved && __importRetirementIdentity(reserved.identity) !== __importRetirementIdentity(identity)) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "replacement batch is already reserved");
+    }
+    const record = previous || { version: 1, identity, historicalOutcome: "unknown", legacyInFlightOutcome: "unknown", recordedAt: new Date().toISOString() };
+    // Original closure is durable first. Interruption leaves it closed and the
+    // identical handoff can finish the remaining exact reservations on retry.
+    __writeImportFile(original, "retirement.json", record);
+    for (const batch of request.originalBatches) {
+      const old = __readImportFile(batch.mutationId, "import-retirement.json");
+      if (old && __importRetirementIdentity(old.identity) !== __importRetirementIdentity(identity)) __fail("MONGODB_IMPORT_RETIREMENT_CONFLICT", "original batch belongs to another handoff");
+      __writeImportFile(batch.mutationId, "import-retirement.json", record);
+    }
+    __writeImportFile(replacement, "lineage.json", record);
+    for (const batch of request.replacementBatches) __writeImportFile(batch.mutationId, "import-lineage.json", record);
+    const readback = __readImportFile(original, "retirement.json");
+    if (__importOrderedDigest(readback) !== __importOrderedDigest(record)) __fail("MONGODB_IMPORT_RECEIPT_INVALID", "retirement readback mismatch");
+    return { ...request, status: "terminated_unknown", managedAdmissionClosed: true, historicalOutcome: "unknown", controlRecordDigest: __importOrderedDigest(readback) };
+  } finally { release(); }
+}
+async function __guardedImportPrepare(recover) {
+  const plan = __request.mutation, receipt = __request.importReceipt;
+  const database = recover ? __request.database : plan.database, importId = recover ? __request.importId : plan.importId;
+  const controlId = __importControlId(database, importId), release = __importGlobalLock();
+  try {
+    __assertImportLive({ database, importId });
+    let prior = __readImportFile(controlId, "prepare.json");
+    const lineage = __readImportFile(controlId, "lineage.json");
+    if (lineage && (!receipt || receipt.riskPlanId !== lineage.identity.riskPlanId || receipt.requestDigest !== lineage.identity.replacementRequestDigest)) __fail("MONGODB_IMPORT_LINEAGE_REQUIRED", "exact approved import identity required");
+    if (!receipt) return await __prepareImportPlan();
+    if (prior && __hash(prior.receipt) !== __hash(receipt)) {
+      const { attempt: oldAttempt, ...oldBinding } = prior.receipt, { attempt: newAttempt, ...newBinding } = receipt;
+      if (recover || prior.result && prior.result.status !== "prepare_partial" || !prior.result || newAttempt !== oldAttempt + 1 || __hash(oldBinding) !== __hash(newBinding)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "import belongs to another protected intent or an unknown attempt");
+      // Persist the new attempt before doing any work. A lost reply must now
+      // reconcile this attempt, never infer completion from the old prefix.
+      prior = { version: 1, receipt, batches: prior.batches };
+      __writeImportFile(controlId, "prepare.json", prior);
+    }
+    if (recover) {
+      if (!prior || !prior.result) __fail("MONGODB_IMPORT_EVIDENCE_REQUIRED", "positive terminal preparation receipt required");
+      const reviewed = __reviewImportBatches({ database, importId, batches: prior.batches });
+      if (prior.result.batches.some((batch, index) => reviewed[index].planHash !== batch.planHash)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "batch receipt mismatch");
+      // Return current statuses, retaining the immutable preparation receipt.
+      return { ...prior.result, batches: prior.result.batches.map((batch, index) => ({ ...batch, status: reviewed[index].status })) };
+    }
+    const batches = __importBatchIdentity(plan);
+    if (receipt.batchesDigest !== __importOrderedDigest({ batches }) || lineage && __importOrderedDigest(batches) !== __importOrderedDigest(lineage.identity.replacementBatches)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "normalized import batch identity changed");
+    if (prior && prior.result) return prior.result;
+    if (!prior) {
+      // A risk replacement cannot adopt pre-existing journals, even with equal
+      // documents. Reservation was made before this new preparation began.
+      if (lineage && batches.some(batch => __readImportFile(batch.mutationId, "manifest.json"))) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "replacement batch exists without this prepare receipt");
+      __writeImportFile(controlId, "prepare.json", { version: 1, receipt, batches });
+    }
+    __request.importLineage = lineage ? { originalImportId: lineage.identity.importId, riskPlanId: lineage.identity.riskPlanId,
+      dispositionId: lineage.identity.dispositionId, originalRequestDigest: lineage.identity.originalRequestDigest, replacementRequestDigest: lineage.identity.replacementRequestDigest } : undefined;
+    const result = { ...await __prepareImportPlan(), importReceipt: receipt };
+    __writeImportFile(controlId, "prepare.json", { version: 1, receipt, batches, result });
+    return result;
+  } finally { release(); }
+}
+`;
 
 // ../plugins/remote-debug-agent/prepare-protocol.js
 var import_node_crypto = require("node:crypto");
 function prepareRequestDigest(input) {
-  const { operationId, deadlineAt, timeoutMs, _businessPrepare, ...request } = input;
+  const { operationId, deadlineAt, timeoutMs, _businessPrepare, _businessImport, ...request } = input;
   return (0, import_node_crypto.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
 }
 function isPrepareTicket(value) {
   return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
 }
-
-// ../plugins/remote-debug-agent/output-contracts.js
-var scalar = "scalar";
-var json = "json";
-var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
-var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
-var warning = fields("code message path source phase");
-var error = { ...fields("operationId code message layer phase retriable cause intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
-var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
-var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
-var instance = {
-  ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
-  sourceRoots: json,
-  logProjects: json,
-  serviceProfiles: json,
-  approvedCommands: json,
-  commandReview: json,
-  mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
-  runtime,
-  memory,
-  hasPassphrase: "boolean"
-};
-instance.mongodb.hasSandboxManagementPassword = "boolean";
-var common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
-var entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
-var mutation = {
-  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
-  collections: [scalar],
-  changedFields: [scalar],
-  affectedIds: json,
-  storageStatus: json,
-  rollbackRestoresDocuments: scalar,
-  atomicity: scalar,
-  failedBatch: fields("batchIndex mutationId code"),
-  preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
-};
-var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
-mutation.batches = [batch];
-var receiptStorage = fields("database collection legacy scope schemaVersion");
-function bulkFailure(depth = 2) {
-  const shape = {
-    ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
-    ...fields("category driverCode writeErrorCount writeErrorsTruncated"),
-    errorLabels: [scalar],
-    writeErrors: [fields("code index category")],
-    writeConcernErrors: [fields("code index category")],
-    driverFrames: [fields("module line column")],
-    frames: [fields("function line column")]
-  };
-  if (depth > 0) for (const key of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key] = bulkFailure(depth - 1);
-  return shape;
+var IMPORT_PREPARE_ROUTE = "/mongodb/imports/prepare";
+var isImportRequest = (value) => value && Object.hasOwn(value, "importId") && !Object.hasOwn(value, "jobId");
+function importBatchIdentity(plan) {
+  return plan.batches.map(({ operationId, ...batch2 }) => ({
+    mutationId: batch2.mutationId,
+    batchIndex: batch2.batchIndex,
+    documentCount: batch2.documents.length,
+    requestDigest: prepareRequestDigest(batch2)
+  }));
 }
-var bulk = {
-  ...fields("terminationId reviewHash previousStatus"),
-  lastFailure: bulkFailure(),
-  ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
-  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
-  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
-  managedAdmissionClosed: "boolean",
-  originalJobFound: "boolean",
-  receiptStorage,
-  activeBatchIndexes: [scalar],
-  committed: fields("matched modified inserted unchanged"),
-  differences: json,
-  changedFields: [scalar],
-  planPreview: [batch],
-  batches: [batch]
-};
-var historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
-var bulkHistory = {
-  ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
-  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan }
-};
-var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
-var execution = {
-  ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
-  results: [{ ...fields("commandIndex command commandPreview cmd ok stdout stderr exitCode durationMs timedOut"), timing }],
-  stopped: fields("commandIndex reason exitCode")
-};
-var violation = fields("commandIndex code severity rule reason message");
-var model = { ...fields("status errorCode attempts durationMs decision isReadOnly riskLevel summary"), violations: [violation] };
-var review = { ...fields("reason reviewedAt"), staticViolations: [violation], violations: [violation], model };
-var sandbox = {
-  ...fields("sandboxDatabase storageRoot jobCount bytes initialized activeFilesRetained jobId scannedBytes truncated cleanupHash fileCount retainedUntil removedFiles removedBytes removedReceipts"),
-  receiptStorage,
-  files: [fields("name bytes modified")],
-  records: json,
-  jobs: [{ ...fields("jobId status rollbackExpiresAt"), receiptStorage }],
-  hasMore: scalar
-};
-var access = {
-  ...fields("setupId planHash status expiresAt instanceId sandboxDatabase collection managerUser managerRole executorRole managementProfile configPath configModeAfter backupMode collectionsInitialized passwordReset requiresConfirmation confirmation rollbackMode"),
-  executionUser: fields("user db"),
-  environment: json,
-  managerPrivileges: json,
-  executorPrivileges: json,
-  existing: { ...fields("manager profile executorGranted"), roles: json }
-};
-var logResources = {
-  ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
-  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason")
-};
-var fileReceipt = {
-  ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
-  source: fields("size modifyTime changeTime inode device"),
-  error,
-  warnings: [fields("code message memberPath lineNumber")]
-};
-var logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
-var logJob = {
-  ...logProgress,
-  ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
-  resourceTaskId: scalar,
-  evidenceLimits: fields("count bytes"),
-  fileResults: [fileReceipt],
-  scopeControls: fields("dateFrom dateTo stopAfterFile"),
-  progress: logProgress,
-  resources: logResources,
-  error,
-  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
-  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
-  groups: [fields("level route method code message count")],
-  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
-};
-var finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
-var finalResult = {
-  ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"),
-  final: "boolean",
-  privacy: fields("credentials binary policyVersion"),
-  references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") },
-  files: [finalFile]
-};
-var contracts = {
-  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
-  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
-  remote_debug_get_final_result: { result: finalResult },
-  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
-  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
-    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
-    target: fields("host port username"),
-    envFiles: [scalar],
-    processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }]
-  } }] }] },
-  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
-  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map((name2) => [name2, {
-    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
-    started: [scalar],
-    attempted: [scalar],
-    missing: [scalar],
-    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }],
-    error
-  }])),
-  remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
-  remote_debug_get_capabilities: { capabilities: json },
-  remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
-  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
-  remote_debug_mongodb_disposition: {
-    ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
-    requiresConfirmation: "boolean",
-    localContainment: "boolean",
-    remoteFenceConfirmed: "boolean",
-    replacementAllowed: "boolean",
-    missingRequirements: [scalar],
-    historicalEvidenceGaps: [scalar],
-    ...fields("riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
-    humanConfirmationRequired: "boolean",
-    humanApproved: "boolean",
-    canApprove: "boolean",
-    collections: [scalar],
-    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
-    acceptedResidualRisk: "boolean",
-    observations: { ...fields("source observedAt status code historicalOutcome") },
-    binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
-    fenceChallenge: {
-      ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
-      binding: fields("contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
-    },
-    result: { ...common, ...bulk, ...fields("intentId intentState state"), result: { ...common, ...bulk } }
-  },
-  remote_debug_mongodb_prepare_write: mutation,
-  remote_debug_mongodb_prepare_index: mutation,
-  remote_debug_mongodb_prepare_transaction: mutation,
-  remote_debug_mongodb_prepare_import: mutation,
-  remote_debug_mongodb_prepare_bulk_storage: mutation,
-  remote_debug_mongodb_execute_mutation: mutation,
-  remote_debug_mongodb_rollback_mutation: mutation,
-  remote_debug_mongodb_list_mutations: { entries: [mutation] },
-  remote_debug_mongodb_prepare_bulk: bulk,
-  remote_debug_mongodb_execute_bulk: bulk,
-  remote_debug_mongodb_get_bulk_job: bulk,
-  remote_debug_mongodb_control_bulk_job: bulk,
-  remote_debug_mongodb_rollback_bulk_job: bulk,
-  remote_debug_mongodb_list_bulk_jobs: { ...fields("offset limit total hasMore"), jobs: [bulk] },
-  remote_debug_prepare_sandbox_access: access,
-  remote_debug_configure_sandbox_access: access,
-  remote_debug_get_sandbox: sandbox,
-  remote_debug_export_sandbox_log: sandbox,
-  remote_debug_prepare_sandbox_cleanup: sandbox,
-  remote_debug_cleanup_sandbox: sandbox,
-  remote_debug_restart_instance: { ...fields("restarted action previousStatus"), instance, runtime },
-  remote_debug_update_memory: { note: { ...fields("topic summary updatedAt"), facts: [scalar] } },
-  remote_debug_run_command: fields("stdout stderr exitCode timedOut"),
-  remote_debug_read_file: fields("path content truncated"),
-  remote_debug_list_dir: { path: scalar, entries: [entry] },
-  remote_debug_list_logs: { ...fields("category nextCursor hasMore truncated scannedEntries sourceCount"), entries: [entry], warnings: [warning] },
-  remote_debug_list_log_archive_members: { ...fields("path compression nextCursor hasMore truncated scannedBytes"), members: [entry] },
-  remote_debug_read_log: fields("path memberPath compression content truncated scannedTruncated scannedBytes archiveScannedBytes totalLines matchedLines"),
-  remote_debug_query_logs: {
-    ...fields("mode projectId content returnedLines matchedLines scannedLines scannedBytes expandedBytes outputBytes outputTruncated scanTruncated complete coverage countsAreComplete hasMoreFiles nextFileOffset hasMoreMembers nextMemberOffset memberBytes directoryListingTruncated warningsTruncated"),
-    files: [entry],
-    scannedFiles: [fields("path scannedBytes startByte endByte")],
-    records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
-    members: [entry],
-    warnings: [warning]
-  },
-  remote_debug_start_log_query: logJob,
-  remote_debug_get_log_query: logJob,
-  remote_debug_control_log_query: logJob,
-  remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
-  remote_debug_set_log_project: { projects: json },
-  remote_debug_prepare_command_draft: draft,
-  remote_debug_get_command_draft: draft,
-  remote_debug_execute_command_draft: execution,
-  remote_debug_review_command_draft: { ...draft, draft, decision: scalar, review, execution }
-};
-var OUTPUT_CONTRACTS = Object.freeze(Object.fromEntries(
-  Object.entries(contracts).map(([name2, shape]) => [name2, { ...common, ...shape }])
-));
-var ERROR_CONTRACT = {
-  ...common,
-  error,
-  details: { ...fields("ok operationId code layer phase retriable cause agentUrl port manifestPath"), error }
-};
-
-// ../plugins/remote-debug-agent/output-guard.js
-var REDACTED = "[REDACTED]";
-var GUARD_BLOCKED = Object.freeze({
-  ok: false,
-  error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
-});
-var MAX_BYTES = 8 * 1024 * 1024;
-var MAX_NODES = 1e5;
-var MAX_DEPTH = 40;
-var MAX_SECRETS = 2048;
-var SECRET_NAME = /(?:password|passwd|passphrase|pwd|secret|token|apikey|privatekey|authorization|cookie|credentials?|connectionstring|dsn|accesskey(?:id)?|signingkey|encryptionkey)(?:s|hash|digest)?$/i;
-var ASSIGNMENT_NAME = String.raw`[\w.-]*(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key(?:[_-]?id)?|connection[_-]?string|dsn)`;
-var ASSIGNMENT = new RegExp(String.raw`(\b${ASSIGNMENT_NAME}["']?\s*[=:]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}&]+)`, "gi");
-var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pass|token|secret|api[-_]?key|client[-_]?secret)(?:=|\s+))("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s;]+)`, "gi");
-function isSensitiveKey(key) {
-  const normalized = key.replace(/[^a-z0-9]/gi, "");
-  return SECRET_NAME.test(normalized) || /^(?:auth|authentication)$/i.test(normalized);
-}
-function blocked() {
-  throw new Error("OUTPUT_GUARD_BLOCKED");
-}
-function decodeEscapes(value) {
-  return value.replace(
-    /\\u([0-9a-f]{4})|\\x([0-9a-f]{2})|\\([\\"'/=:])/gi,
-    (_, unicode, hex, literal) => literal || String.fromCharCode(parseInt(unicode || hex, 16))
-  );
-}
-function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1e3, businessPrivacy } = {}) {
-  const secrets = /* @__PURE__ */ new Set();
-  let unavailable = false;
-  function remember(value) {
-    if (typeof value !== "string" || !value || value === REDACTED) return;
-    if (value.length > maxBytes || secrets.size >= MAX_SECRETS && !secrets.has(value)) {
-      unavailable = true;
-      return;
-    }
-    secrets.add(value);
-  }
-  function context() {
-    if (unavailable) blocked();
-    const deadline = performance.now() + budgetMs;
-    let nodes = 0, bytes = 0;
-    const localSecrets = new Set(secrets);
-    return { secrets: localSecrets, replacements: 0, omittedFields: 0, remember(value) {
-      if (typeof value !== "string" || !value || value === REDACTED) return;
-      if (value.length > maxBytes || localSecrets.size >= MAX_SECRETS && !localSecrets.has(value)) blocked();
-      localSecrets.add(value);
-    }, check(value, depth) {
-      if (++nodes > maxNodes || depth > maxDepth || performance.now() > deadline) blocked();
-      if (typeof value === "string") bytes += Buffer.byteLength(value);
-      if (bytes > maxBytes * 8) blocked();
-    } };
-  }
-  function learn(value, ctx, depth = 0) {
-    ctx.check(value, depth);
-    if (typeof value === "string") {
-      const decoded = decodeEscapes(value);
-      if (decoded !== value) learn(decoded, ctx, depth + 1);
-      if (/^[\[{"]/.test(value.trim())) {
-        let parsed;
-        try {
-          parsed = JSON.parse(value);
-        } catch {
-        }
-        if (parsed !== void 0 && parsed !== value) learn(parsed, ctx, depth + 1);
-      }
-      for (const pattern of [ASSIGNMENT, CLI_SECRET]) {
-        for (const match of value.matchAll(pattern)) {
-          const secret = match[2].replace(/^["']|["']$/g, "");
-          ctx.remember(secret);
-        }
-      }
-      for (const match of value.matchAll(/\b(?:Bearer|Basic)\s+([a-z0-9._~+/=-]+)/gi)) ctx.remember(match[1]);
-    } else if (Array.isArray(value)) {
-      for (const item of value) learn(item, ctx, depth + 1);
-    } else if (value && typeof value === "object") {
-      if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) blocked();
-      for (const [key, child] of Object.entries(value)) {
-        learn(key, ctx, depth + 1);
-        if (isSensitiveKey(key)) learnSecret(child, ctx, depth + 1);
-        else learn(child, ctx, depth + 1);
-      }
-    } else if (!["string", "number", "boolean", "undefined"].includes(typeof value) && value !== null) blocked();
-  }
-  function learnSecret(value, ctx, depth) {
-    if (typeof value === "string") {
-      ctx.check(value, depth);
-      ctx.remember(value);
-    } else if (typeof value === "number") {
-      ctx.check(value, depth);
-      ctx.remember(String(value));
-    } else if (Array.isArray(value)) {
-      for (const item of value) learnSecret(item, ctx, depth + 1);
-    } else if (value && typeof value === "object") {
-      ctx.check(value, depth);
-      for (const child of Object.values(value)) learnSecret(child, ctx, depth + 1);
-    } else ctx.check(value, depth);
-  }
-  function replacePatterns(text3, ctx) {
-    let result = text3.replace(/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----|$)/g, REDACTED).replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s"'<>]*@/gi, `$1${REDACTED}@`).replace(/\b(?:Bearer|Basic)\s+[a-z0-9._~+/=-]+/gi, REDACTED).replace(/\b(?:authorization|proxy-authorization|cookie|set-cookie)\s*:\s*[^\r\n]+/gi, REDACTED).replace(CLI_SECRET, `$1${REDACTED}`).replace(ASSIGNMENT, `$1${REDACTED}`).replace(/\b(?:sk-(?:proj-|svcacct-)?[a-z0-9_-]{16,}|gh[pousr]_[a-z0-9]{20,}|github_pat_[a-z0-9_]{20,}|xox[baprs]-[a-z0-9-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16})\b/gi, REDACTED).replace(/\beyJ[a-z0-9_-]{5,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\b/gi, REDACTED);
-    for (const secret of [...ctx.secrets].sort((left, right) => right.length - left.length)) {
-      ctx.check?.(void 0, 0);
-      const variants = [.../* @__PURE__ */ new Set([secret, encodeURIComponent(secret), JSON.stringify(secret).slice(1, -1)])].sort((left, right) => right.length - left.length);
-      for (const variant of variants) {
-        result = variant.includes(REDACTED) ? result.split(variant).join(REDACTED) : result.split(REDACTED).map((part) => part.split(variant).join(REDACTED)).join(REDACTED);
-      }
-    }
-    return result;
-  }
-  function text2(value, ctx, depth) {
-    const trimmed = value.trim();
-    if (/^[\[{"]/.test(trimmed)) {
-      let parsed;
-      try {
-        parsed = JSON.parse(trimmed);
-      } catch {
-      }
-      if (parsed !== void 0 && parsed !== value) {
-        learn(parsed, ctx, depth + 1);
-        const safe = walk(parsed, "json", ctx, depth + 1);
-        if (JSON.stringify(parsed) !== JSON.stringify(safe)) return JSON.stringify(safe);
-        return value;
-      }
-    }
-    let result = replacePatterns(value, ctx);
-    let decoded = value;
-    for (let round = 0; round < 3 && decoded.includes("\\"); round++) {
-      decoded = decodeEscapes(decoded);
-      if (replacePatterns(decoded, ctx) !== decoded) {
-        result = REDACTED;
-        break;
-      }
-    }
-    if (result !== value) ctx.replacements++;
-    ctx.check(void 0, depth);
-    return result;
-  }
-  function walk(value, shape, ctx, depth = 0) {
-    ctx.check(value, depth);
-    if (value === void 0 || value === null) return value;
-    if (shape === "boolean") {
-      if (typeof value !== "boolean") blocked();
-      return value;
-    }
-    if (shape === "scalar" && typeof value === "object") blocked();
-    if (shape !== "scalar" && shape !== "json" && typeof value !== "object") blocked();
-    if (typeof value === "string") return text2(value, ctx, depth);
-    if (typeof value === "boolean") return value;
-    if (typeof value === "number") {
-      if (!Number.isFinite(value)) blocked();
-      if (ctx.secrets.has(String(value))) {
-        ctx.replacements++;
-        return REDACTED;
-      }
-      return value;
-    }
-    if (Array.isArray(value)) {
-      if (shape !== "json" && !Array.isArray(shape)) blocked();
-      return value.map((item) => walk(item, shape === "json" ? "json" : shape[0], ctx, depth + 1));
-    }
-    if (!value || typeof value !== "object" || Array.isArray(shape) || shape === "scalar") blocked();
-    const output = /* @__PURE__ */ Object.create(null);
-    for (const [key, child] of Object.entries(value)) {
-      ctx.check(key, depth);
-      if (shape !== "json" && !Object.hasOwn(shape, key)) {
-        ctx.omittedFields++;
-        continue;
-      }
-      const safeKey = text2(key, ctx, depth + 1);
-      if (Object.hasOwn(output, safeKey)) blocked();
-      if (shape !== "json" && shape[key] === "boolean" || typeof child === "boolean" && /^has[A-Z]/.test(key)) output[safeKey] = walk(child, "boolean", ctx, depth + 1);
-      else if (isSensitiveKey(key)) {
-        output[safeKey] = REDACTED;
-        if (child !== REDACTED) ctx.replacements++;
-      } else output[safeKey] = walk(child, shape === "json" ? "json" : shape[key], ctx, depth + 1);
-    }
-    return output;
-  }
-  function sanitize(value, shape = "json") {
-    const ctx = context();
-    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
-    learn(value, ctx);
-    if (unavailable) blocked();
-    const safe = walk(value, shape, ctx);
-    const checked = walk(safe, shape, ctx);
-    return { value: checked, stats: { policyVersion: 1, replacements: ctx.replacements, omittedFields: ctx.omittedFields } };
-  }
-  function toolResult(name2, payload, isError = false, privacyContext) {
-    try {
-      const shape = isError ? ERROR_CONTRACT : Object.hasOwn(OUTPUT_CONTRACTS, name2) ? OUTPUT_CONTRACTS[name2] : void 0;
-      if (!shape || !payload || typeof payload !== "object" || Array.isArray(payload)) blocked();
-      const safe = sanitize(payload, shape);
-      if (businessPrivacy) {
-        const protectedBusiness = businessPrivacy.protect(name2, safe.value, privacyContext);
-        safe.value = protectedBusiness.value;
-        safe.stats.replacements += protectedBusiness.replacements;
-        safe.value = businessPrivacy.scrubKnown(safe.value, shape);
-        safe.stats.businessPrivacy = businessPrivacy.metadata();
-      }
-      safe.value.outputGuard = safe.stats;
-      return { ...isError ? { isError: true } : {}, content: [{ type: "text", text: JSON.stringify(safe.value, null, 2) }] };
-    } catch {
-      return { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] };
-    }
-  }
-  function serialize(message, { staticResult = false } = {}) {
-    try {
-      const safeId = businessPrivacy ? businessPrivacy.scrubKnown(sanitize(message.id).value) : sanitize(message.id).value;
-      if (safeId !== message.id) blocked();
-      const result = message.result;
-      if (result && (Object.hasOwn(result, "content") || Object.hasOwn(result, "structuredContent"))) {
-        if (Object.keys(message.result).some((key) => !["content", "isError"].includes(key))) blocked();
-        if (!Array.isArray(message.result.content) || message.result.content.length !== 1) blocked();
-        const content = message.result.content[0];
-        if (content.type !== "text" || typeof content.text !== "string" || Object.keys(content).some((key) => !["type", "text"].includes(key))) blocked();
-        const payload = JSON.parse(content.text);
-        if (payload?.outputGuard?.policyVersion !== 1 && payload?.error?.code !== "OUTPUT_GUARD_BLOCKED") blocked();
-      } else if (result !== void 0 && !staticResult) {
-        if (!result || typeof result !== "object" || Array.isArray(result)) blocked();
-        const keys = Object.keys(result);
-        const initialized = keys.length === 3 && keys.every((key) => ["protocolVersion", "capabilities", "serverInfo"].includes(key));
-        const resources = keys.length === 1 && Array.isArray(result.resources) && result.resources.length === 0;
-        if (keys.length && !initialized && !resources) blocked();
-      }
-      if (staticResult && (!Array.isArray(message.result?.tools) || Object.keys(message.result).length !== 1)) blocked();
-      let safe = staticResult ? message : sanitize(message).value;
-      if (businessPrivacy && !staticResult && !result?.content) safe = businessPrivacy.scrubKnown(safe);
-      const body = JSON.stringify(safe);
-      if (Buffer.byteLength(body) > maxBytes) blocked();
-      return Buffer.from(body, "utf8");
-    } catch {
-      let id = typeof message.id === "number" && Number.isSafeInteger(message.id) ? message.id : null;
-      if (secrets.has(String(id))) id = null;
-      if (typeof message.id === "string" && message.id.length <= 128) {
-        const ctx = { secrets };
-        if (replacePatterns(message.id, ctx) === message.id) id = message.id;
-      }
-      return Buffer.from(JSON.stringify({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] } }));
-    }
-  }
-  return { remember, sanitize, toolResult, serialize };
-}
-
-// mongodb-bulk.js
-var import_node_crypto3 = require("node:crypto");
-var import_posix2 = __toESM(require("node:path/posix"), 1);
 
 // mongodb-codec.js
 var MONGODB_CODEC_SCRIPT = String.raw`
@@ -49223,6 +48845,75 @@ function __encode(value) {
   return JSON.parse(JSON.stringify(__fallbackEncode(value)));
 }
 `;
+
+// mongodb-ttl-policy.js
+var MONGODB_TECHNICAL_RECEIPTS_COLLECTION = "__remote_debug_bulk_receipts";
+var MONGODB_TTL_POLICY_SCRIPT = String.raw`
+function __ttlRejectBusinessIndex(options) {
+  if (options && Object.prototype.hasOwnProperty.call(options, "expireAfterSeconds")) {
+    __ttlFail("MONGODB_TTL_INDEX_REJECTED", "business TTL indexes are not supported: automatic document deletion cannot be recovered by index rollback");
+  }
+}
+
+function __ttlAssertReceiptName(name) {
+  if (name !== "__remote_debug_bulk_receipts") {
+    __ttlFail("MONGODB_BULK_RECEIPTS_RESERVED", "TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection");
+  }
+}
+
+function __ttlValidReceiptMarker(marker, database, name) {
+  return marker && marker._id === "__remote_debug_bulk_storage_v1" && marker.schemaVersion === 1 && marker.database === database && marker.receiptsCollection === name;
+}
+
+function __ttlValidReceiptIndex(index) {
+  return index && index.name === "remote_debug_bulk_receipt_expiry" && index.key && Object.keys(index.key).length === 1 && index.key.expiresAt === 1 && index.expireAfterSeconds === 0 && !index.partialFilterExpression && !index.unique && !index.sparse;
+}
+
+async function __ttlCheckReceiptOwnership(collection, database, name, initialize) {
+  __ttlAssertReceiptName(name);
+  var markerId = "__remote_debug_bulk_storage_v1";
+  var existing = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
+  if (existing) {
+    if (!__ttlValidReceiptMarker(existing, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection has a different ownership marker");
+    return existing;
+  }
+  if (!initialize) __ttlFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "technical receipt ownership marker is missing");
+  if (await collection.findOne({}, { readPreference: "primary", maxTimeMS: 15000 })) {
+    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "cannot adopt a non-empty collection for automatic TTL cleanup");
+  }
+  var marker = { _id: markerId, schemaVersion: 1, database: database, receiptsCollection: name };
+  try { await collection.insertOne(marker); }
+  catch (error) {
+    if (error.code !== 11000) throw error;
+    var concurrent = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
+    if (!__ttlValidReceiptMarker(concurrent, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection ownership changed during initialization");
+  }
+  return marker;
+}
+
+async function __ttlInitializeReceiptCollection(client, database, name) {
+  __ttlAssertReceiptName(name);
+  var db = client.db(database);
+  var namespaces = await db.listCollections({ name: name }, { nameOnly: true }).toArray();
+  if (namespaces.some(function (item) { return item.type && item.type !== "collection"; })) {
+    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt namespace must be a regular collection");
+  }
+  var collection = db.collection(name);
+  // Verify or establish ownership before installing any automatically deleting index.
+  await __ttlCheckReceiptOwnership(collection, database, name, true);
+  var indexes = await collection.listIndexes().toArray();
+  var existing = indexes.filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (existing && !__ttlValidReceiptIndex(existing)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
+  if (!existing) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
+  var after = (await collection.listIndexes().toArray()).filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
+  if (!__ttlValidReceiptIndex(after)) __ttlFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
+  return { index: after.name, marker: "__remote_debug_bulk_storage_v1" };
+}
+`;
+
+// mongodb-bulk.js
+var import_node_crypto3 = require("node:crypto");
+var import_posix2 = __toESM(require("node:path/posix"), 1);
 
 // mongodb-job-retirement-runtime.js
 var MONGODB_JOB_RETIREMENT_RUNTIME = String.raw`
@@ -50829,71 +50520,6 @@ async function __bulkMain() {
     process.stdout.write(__marker + JSON.stringify({ ok: false, error: failure }) + "\n");
     process.exitCode = 1;
   }
-}
-`;
-
-// mongodb-ttl-policy.js
-var MONGODB_TECHNICAL_RECEIPTS_COLLECTION = "__remote_debug_bulk_receipts";
-var MONGODB_TTL_POLICY_SCRIPT = String.raw`
-function __ttlRejectBusinessIndex(options) {
-  if (options && Object.prototype.hasOwnProperty.call(options, "expireAfterSeconds")) {
-    __ttlFail("MONGODB_TTL_INDEX_REJECTED", "business TTL indexes are not supported: automatic document deletion cannot be recovered by index rollback");
-  }
-}
-
-function __ttlAssertReceiptName(name) {
-  if (name !== "__remote_debug_bulk_receipts") {
-    __ttlFail("MONGODB_BULK_RECEIPTS_RESERVED", "TTL cleanup is restricted to the reserved __remote_debug_bulk_receipts collection");
-  }
-}
-
-function __ttlValidReceiptMarker(marker, database, name) {
-  return marker && marker._id === "__remote_debug_bulk_storage_v1" && marker.schemaVersion === 1 && marker.database === database && marker.receiptsCollection === name;
-}
-
-function __ttlValidReceiptIndex(index) {
-  return index && index.name === "remote_debug_bulk_receipt_expiry" && index.key && Object.keys(index.key).length === 1 && index.key.expiresAt === 1 && index.expireAfterSeconds === 0 && !index.partialFilterExpression && !index.unique && !index.sparse;
-}
-
-async function __ttlCheckReceiptOwnership(collection, database, name, initialize) {
-  __ttlAssertReceiptName(name);
-  var markerId = "__remote_debug_bulk_storage_v1";
-  var existing = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
-  if (existing) {
-    if (!__ttlValidReceiptMarker(existing, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection has a different ownership marker");
-    return existing;
-  }
-  if (!initialize) __ttlFail("MONGODB_BULK_STORAGE_NOT_INITIALIZED", "technical receipt ownership marker is missing");
-  if (await collection.findOne({}, { readPreference: "primary", maxTimeMS: 15000 })) {
-    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "cannot adopt a non-empty collection for automatic TTL cleanup");
-  }
-  var marker = { _id: markerId, schemaVersion: 1, database: database, receiptsCollection: name };
-  try { await collection.insertOne(marker); }
-  catch (error) {
-    if (error.code !== 11000) throw error;
-    var concurrent = await collection.findOne({ _id: markerId }, { readPreference: "primary", maxTimeMS: 15000 });
-    if (!__ttlValidReceiptMarker(concurrent, database, name)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt collection ownership changed during initialization");
-  }
-  return marker;
-}
-
-async function __ttlInitializeReceiptCollection(client, database, name) {
-  __ttlAssertReceiptName(name);
-  var db = client.db(database);
-  var namespaces = await db.listCollections({ name: name }, { nameOnly: true }).toArray();
-  if (namespaces.some(function (item) { return item.type && item.type !== "collection"; })) {
-    __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt namespace must be a regular collection");
-  }
-  var collection = db.collection(name);
-  // Verify or establish ownership before installing any automatically deleting index.
-  await __ttlCheckReceiptOwnership(collection, database, name, true);
-  var indexes = await collection.listIndexes().toArray();
-  var existing = indexes.filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
-  if (existing && !__ttlValidReceiptIndex(existing)) __ttlFail("MONGODB_BULK_STORAGE_CONFLICT", "technical receipt expiry index has a different definition");
-  if (!existing) await collection.createIndex({ expiresAt: 1 }, { name: "remote_debug_bulk_receipt_expiry", expireAfterSeconds: 0 });
-  var after = (await collection.listIndexes().toArray()).filter(function (index) { return index.name === "remote_debug_bulk_receipt_expiry"; })[0];
-  if (!__ttlValidReceiptIndex(after)) __ttlFail("MONGODB_BULK_STORAGE_INDEX_FAILED", "technical receipt expiry index could not be verified");
-  return { index: after.name, marker: "__remote_debug_bulk_storage_v1" };
 }
 `;
 
@@ -52727,10 +52353,2550 @@ var MongoBulkJobRunner = class {
   }
 };
 
+// mongodb-mutations.js
+var import_node_crypto4 = require("node:crypto");
+var import_posix3 = __toESM(require("node:path/posix"), 1);
+var MONGODB_MUTATION_SCHEMA_VERSION = 1;
+var MONGODB_MUTATION_OPERATIONS = Object.freeze([
+  "insertOne",
+  "updateOne",
+  "updateMany",
+  "softDeleteOne"
+]);
+var MONGODB_INDEX_OPERATIONS = Object.freeze(["createIndex", "dropIndex"]);
+var MONGODB_MUTATION_CONFIRMATION = "确认执行";
+var MONGODB_ROLLBACK_CONFIRMATION = "确认回滚";
+var DEFAULT_MONGODB_MUTATION_ROLLBACK_TTL_MS = 24 * 60 * 60 * 1e3;
+var MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS = 7 * 24 * 60 * 60 * 1e3;
+var DEFAULT_MONGODB_MUTATION_MAX_AFFECTED = 100;
+var MAX_MONGODB_MUTATION_MAX_AFFECTED = 1e3;
+var MAX_MONGODB_MUTATION_DOCUMENT_BYTES = 256 * 1024;
+var MAX_MONGODB_MUTATION_RESULT_BYTES = 512 * 1024;
+var MAX_MONGODB_MUTATION_JOURNAL_BYTES = 8 * 1024 * 1024;
+var DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT = "/tmp/remote-debug-agent/mutations";
+var MAX_MONGODB_MUTATION_LIST_ITEMS = 100;
+var MAX_MONGODB_TRANSACTION_OPERATIONS = 20;
+var MAX_MONGODB_IMPORT_BATCH_DOCUMENTS = 2e3;
+var MAX_MONGODB_IMPORT_DOCUMENTS = 1e4;
+var MAX_MONGODB_IMPORT_BYTES = 4 * 1024 * 1024;
+var MAX_MONGODB_IMPORT_BATCH_BYTES = 512 * 1024;
+var MAX_MONGODB_MUTATION_LOCK_AGE_MS = 15 * 60 * 1e3;
+var SAFE_DATABASE_PATTERN2 = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+var SAFE_COLLECTION_PATTERN2 = /^[A-Za-z0-9_.$-]{1,128}$/;
+var SAFE_FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+var SAFE_MUTATION_PATH_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
+var SAFE_INDEX_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
+var SAFE_MUTATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+var SAFE_INDEX_DIRECTIONS = /* @__PURE__ */ new Set([-1, 1]);
+var ALLOWED_UPDATE_OPERATORS = /* @__PURE__ */ new Set(["$set", "$unset", "$inc"]);
+var ALLOWED_EJSON_KEYS = /* @__PURE__ */ new Set([
+  "$binary",
+  "$date",
+  "$numberDecimal",
+  "$numberInt",
+  "$numberLong",
+  "$numberDouble",
+  "$oid",
+  "$regularExpression",
+  "$timestamp"
+]);
+var BLOCKED_KEYS2 = /* @__PURE__ */ new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+  "$accumulator",
+  "$currentOp",
+  "$function",
+  "$merge",
+  "$out",
+  "$planCacheStats",
+  "$where"
+]);
+function riskForDocumentOperation(operation) {
+  if (operation === "updateMany") return "high";
+  if (operation === "softDeleteOne") return "high";
+  return "medium";
+}
+function riskForIndexOperation(operation, options = {}) {
+  return operation === "dropIndex" || options.unique === true ? "high" : "medium";
+}
+function byteLength3(value) {
+  return Buffer.byteLength(String(value), "utf8");
+}
+function clampText(value, maxChars = 2e3) {
+  const text2 = redactMongoSecrets(value, maxChars);
+  return text2.length <= maxChars ? text2 : `${text2.slice(0, maxChars)}...`;
+}
+function mutationError(message, code, statusCode = 400, details = {}) {
+  const error2 = operationError(message, {
+    code,
+    statusCode,
+    layer: "mongodb-mutation",
+    phase: "validation",
+    retriable: false
+  });
+  error2.details = details;
+  return error2;
+}
+function assertPlainObject2(value, fieldName) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw mutationError(`${fieldName} must be an object`, "INVALID_MONGODB_MUTATION");
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    throw mutationError(`${fieldName} must be a plain object`, "INVALID_MONGODB_MUTATION");
+  }
+}
+function assertSafeJson2(value, fieldName = "$", depth = 0, allowNin = false) {
+  if (depth > 12) {
+    throw mutationError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_MUTATION");
+  }
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
+    return;
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw mutationError(`${fieldName} contains a non-finite number`, "INVALID_MONGODB_MUTATION");
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertSafeJson2(item, `${fieldName}[${index}]`, depth + 1, allowNin));
+    return;
+  }
+  if (typeof value !== "object") {
+    throw mutationError(`${fieldName} contains an unsupported value`, "INVALID_MONGODB_MUTATION");
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (BLOCKED_KEYS2.has(key)) {
+      throw mutationError(`${fieldName} contains a forbidden key`, "MONGODB_OPERATOR_REJECTED");
+    }
+    if (key.startsWith("$") && !ALLOWED_EJSON_KEYS.has(key) && !ALLOWED_UPDATE_OPERATORS.has(key) && key !== "$in" && !(allowNin && key === "$nin")) {
+      throw mutationError(`${key} is not allowed by the MongoDB mutation tool`, "MONGODB_OPERATOR_REJECTED");
+    }
+    if (key === "$nin" && (!Array.isArray(child) || child.length === 0 || child.length > 1e3)) {
+      throw mutationError("$nin requires between 1 and 1000 values", "MONGODB_FILTER_REJECTED");
+    }
+    assertSafeJson2(child, `${fieldName}.${key}`, depth + 1, allowNin);
+  }
+}
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+function normalizeName(value, fieldName, pattern) {
+  if (typeof value !== "string" || !pattern.test(value.trim())) {
+    throw mutationError(`${fieldName} has an invalid format`, "INVALID_MONGODB_MUTATION");
+  }
+  return value.trim();
+}
+function normalizePositiveInt(value, fieldName, fallback, max) {
+  if (value === void 0 || value === null || value === "") {
+    return fallback;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw mutationError(`${fieldName} must be a positive integer`, "INVALID_MONGODB_MUTATION");
+  }
+  return Math.min(value, max);
+}
+function normalizeAllowedNames(value, fieldName, pattern, fallback = []) {
+  if (value === void 0 || value === null) {
+    return [...fallback];
+  }
+  if (!Array.isArray(value) || value.length === 0) {
+    throw mutationError(`${fieldName} must be a non-empty array`, "INVALID_MONGODB_MUTATION_CONFIG");
+  }
+  return [...new Set(value.map((item) => normalizeName(item, `${fieldName} item`, pattern)))];
+}
+function normalizeJournalRoot(value) {
+  const raw = typeof value === "string" && value.trim() ? value.trim() : DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT;
+  const normalized = import_posix3.default.normalize(raw);
+  if (!normalized.startsWith("/tmp/remote-debug-agent/") || normalized === "/tmp" || normalized === "/tmp/" || normalized.includes("\0")) {
+    throw mutationError(
+      "mongodb mutation journal root must be a dedicated directory under /tmp",
+      "MONGODB_JOURNAL_ROOT_INVALID"
+    );
+  }
+  return normalized.replace(/\/$/, "");
+}
+function normalizeMongoMutationConfig(config = {}) {
+  const base = normalizeMongoConfig(config);
+  if (config.writeEnabled !== true && config.mutationsEnabled !== true) {
+    throw mutationError(
+      "MongoDB mutations are disabled; set mongodb.writeEnabled=true explicitly",
+      "MONGODB_MUTATIONS_DISABLED",
+      403
+    );
+  }
+  const allowedDatabases = normalizeAllowedNames(
+    config.allowedDatabases,
+    "mongodb.allowedDatabases",
+    SAFE_DATABASE_PATTERN2,
+    base.database ? [base.database] : []
+  );
+  const allowedCollections = normalizeAllowedNames(
+    config.allowedCollections,
+    "mongodb.allowedCollections",
+    SAFE_COLLECTION_PATTERN2
+  );
+  if (allowedDatabases.length === 0) {
+    throw mutationError(
+      "mongodb.allowedDatabases must contain at least one database",
+      "MONGODB_DATABASE_ALLOWLIST_EMPTY",
+      503
+    );
+  }
+  if (allowedCollections.length === 0) {
+    throw mutationError(
+      "mongodb.allowedCollections must contain at least one collection",
+      "MONGODB_COLLECTION_ALLOWLIST_EMPTY",
+      503
+    );
+  }
+  return {
+    ...base,
+    writeEnabled: true,
+    rollbackRoot: normalizeJournalRoot(config.rollbackRoot),
+    rollbackTtlMs: normalizePositiveInt(
+      config.rollbackTtlMs,
+      "mongodb.rollbackTtlMs",
+      DEFAULT_MONGODB_MUTATION_ROLLBACK_TTL_MS,
+      MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS
+    ),
+    maxAffectedDocuments: normalizePositiveInt(
+      config.maxAffectedDocuments,
+      "mongodb.maxAffectedDocuments",
+      DEFAULT_MONGODB_MUTATION_MAX_AFFECTED,
+      MAX_MONGODB_MUTATION_MAX_AFFECTED
+    ),
+    maxImportBatchDocuments: normalizePositiveInt(
+      config.maxImportBatchDocuments,
+      "mongodb.maxImportBatchDocuments",
+      MAX_MONGODB_IMPORT_BATCH_DOCUMENTS,
+      MAX_MONGODB_IMPORT_BATCH_DOCUMENTS
+    ),
+    bulkEnabled: config.bulkEnabled === true,
+    bulkRoot: config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs",
+    sandboxDatabase: normalizeName(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE, "sandboxDatabase", SAFE_DATABASE_PATTERN2),
+    bulkReceiptsCollection: config.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
+    allowedDatabases,
+    allowedCollections
+  };
+}
+function assertDatabaseAllowed(database, config) {
+  const normalized = normalizeName(database, "database", SAFE_DATABASE_PATTERN2);
+  if (normalized === config.sandboxDatabase) throw mutationError("sandbox database is reserved for plugin management", "SANDBOX_DATABASE_RESERVED", 403);
+  if (!config.allowedDatabases.includes(normalized)) {
+    throw mutationError(
+      `database is not allowed for mutations: ${normalized}`,
+      "MONGODB_DATABASE_NOT_ALLOWED",
+      403
+    );
+  }
+  return normalized;
+}
+function assertCollectionAllowed(collection, config) {
+  const normalized = normalizeName(collection, "collection", SAFE_COLLECTION_PATTERN2);
+  if (!config.allowedCollections.includes(normalized)) {
+    throw mutationError(
+      `collection is not allowed for mutations: ${normalized}`,
+      "MONGODB_COLLECTION_NOT_ALLOWED",
+      403
+    );
+  }
+  return normalized;
+}
+function normalizeDocument2(value, fieldName = "document") {
+  assertPlainObject2(value, fieldName);
+  assertSafeJson2(value, fieldName);
+  if (!Object.prototype.hasOwnProperty.call(value, "_id") || value._id === null) {
+    throw mutationError(`${fieldName} must contain an explicit _id`, "MONGODB_MUTATION_ID_REQUIRED");
+  }
+  for (const key of Object.keys(value)) {
+    if (key.startsWith("$") || key.includes("\0") || key.includes(".")) {
+      throw mutationError(`${fieldName} contains an unsafe field name`, "MONGODB_FIELD_REJECTED");
+    }
+  }
+  const normalized = cloneJson(value);
+  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
+    throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
+  }
+  return normalized;
+}
+function normalizeFilter(value, fieldName = "filter") {
+  assertPlainObject2(value, fieldName);
+  assertSafeJson2(value, fieldName, 0, true);
+  const keys = Object.keys(value);
+  if (keys.length === 0) {
+    throw mutationError(`${fieldName} must not be empty`, "MONGODB_EMPTY_FILTER");
+  }
+  for (const key of keys) {
+    if (key.startsWith("$")) {
+      throw mutationError(`${fieldName} cannot use logical operators`, "MONGODB_FILTER_REJECTED");
+    }
+    if (!isSafeMutationPath(key) || key.startsWith("_id.")) {
+      throw mutationError(`${fieldName} contains an unsafe field`, "MONGODB_FILTER_REJECTED");
+    }
+  }
+  const normalized = cloneJson(value);
+  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
+    throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
+  }
+  return normalized;
+}
+function assertScopedFilter(filter, operation) {
+  if (!Object.prototype.hasOwnProperty.call(filter, "_id")) {
+    throw mutationError(
+      operation === "updateMany" ? "updateMany requires filter._id.$in with an explicit bounded id list" : `${operation} requires an _id-scoped filter`,
+      operation === "updateMany" ? "MONGODB_BATCH_SCOPE_REQUIRED" : "MONGODB_FILTER_SCOPE_REQUIRED"
+    );
+  }
+  if (operation !== "updateMany") {
+    if (filter._id && typeof filter._id === "object" && Object.prototype.hasOwnProperty.call(filter._id, "$nin")) {
+      throw mutationError("document _id scope cannot use an exclusion filter", "MONGODB_FILTER_SCOPE_REQUIRED");
+    }
+    return;
+  }
+  const id = filter._id;
+  if (!id || typeof id !== "object" || Array.isArray(id) || Object.keys(id).length !== 1 || !Array.isArray(id.$in)) {
+    throw mutationError(
+      "updateMany requires filter._id.$in with an explicit bounded id list",
+      "MONGODB_BATCH_SCOPE_REQUIRED"
+    );
+  }
+}
+function normalizeUpdate2(value, fieldName = "update") {
+  assertPlainObject2(value, fieldName);
+  assertSafeJson2(value, fieldName);
+  const operators = Object.keys(value);
+  if (operators.length === 0) {
+    throw mutationError(`${fieldName} must not be empty`, "MONGODB_UPDATE_EMPTY");
+  }
+  for (const operator of operators) {
+    if (!ALLOWED_UPDATE_OPERATORS.has(operator)) {
+      throw mutationError(
+        `${operator} is not allowed by the MongoDB mutation tool`,
+        "MONGODB_UPDATE_OPERATOR_REJECTED"
+      );
+    }
+    assertPlainObject2(value[operator], `${fieldName}.${operator}`);
+    for (const field of Object.keys(value[operator])) {
+      if (!isSafeMutationPath(field) || field === "_id" || field.startsWith("_id.")) {
+        throw mutationError(
+          `${fieldName}.${operator} contains an unsafe or immutable field`,
+          "MONGODB_FIELD_REJECTED"
+        );
+      }
+      if (operator === "$inc" && (typeof value[operator][field] !== "number" || !Number.isFinite(value[operator][field]))) {
+        throw mutationError(
+          `${fieldName}.$inc values must be finite numbers`,
+          "MONGODB_UPDATE_VALUE_REJECTED"
+        );
+      }
+    }
+  }
+  const normalized = cloneJson(value);
+  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
+    throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
+  }
+  return normalized;
+}
+function isSafeMutationPath(field) {
+  return SAFE_MUTATION_PATH_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS2.has(part));
+}
+function assertIndexedMutationGuards(filter, update) {
+  for (const fields3 of Object.values(update)) {
+    for (const field of Object.keys(fields3)) {
+      const parts = field.split(".");
+      for (let index = 0; index < parts.length; index += 1) {
+        if (!/^[0-9]+$/.test(parts[index])) continue;
+        const prefix = parts.slice(0, index + 1).join(".");
+        if (!Object.keys(filter).some((key) => key === prefix || key.startsWith(`${prefix}.`))) {
+          throw mutationError("indexed updates require a filter guard for each array element", "MONGODB_ARRAY_GUARD_REQUIRED");
+        }
+      }
+    }
+  }
+}
+function assertIndexedMutationDocument(request, document2) {
+  for (const operator of Object.keys(request.update || {})) {
+    for (const field of Object.keys(request.update[operator])) {
+      const parts = field.split(".");
+      let value = document2;
+      for (let position = 0; position < parts.length; position += 1) {
+        const part = parts[position];
+        if (/^[0-9]+$/.test(part)) {
+          const index = Number(part);
+          const append = Array.isArray(value) && index === value.length && position === parts.length - 1 && operator === "$set";
+          if (!Array.isArray(value) || index > value.length || index === value.length && !append) {
+            const error2 = new Error("indexed mutation must target an existing array element or set its immediate tail");
+            error2.code = "MONGODB_ARRAY_INDEX_INVALID";
+            throw error2;
+          }
+        }
+        value = value == null ? void 0 : value[part];
+      }
+    }
+  }
+}
+function normalizeCommonMutation(input, config, operationId, kind = "document") {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw mutationError("MongoDB mutation must be an object", "INVALID_MONGODB_MUTATION");
+  }
+  const database = assertDatabaseAllowed(
+    input.database || config.database,
+    config
+  );
+  const collection = assertCollectionAllowed(input.collection, config);
+  if (collection === MONGODB_TECHNICAL_RECEIPTS_COLLECTION && kind !== "bulk_storage") {
+    throw mutationError("the technical receipt collection is reserved for internal bulk storage operations", "MONGODB_BULK_RESERVED_COLLECTION", 403);
+  }
+  const rollbackTtlMs = normalizePositiveInt(
+    input.rollbackTtlMs,
+    "rollbackTtlMs",
+    config.rollbackTtlMs,
+    MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS
+  );
+  return {
+    kind,
+    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto4.randomUUID)(),
+    purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
+    database,
+    collection,
+    rollbackTtlMs
+  };
+}
+function normalizeMongoMutation(input = {}, config = {}, options = {}) {
+  const normalizedConfig = normalizeMongoMutationConfig(config);
+  const operation = input.operation;
+  if (!MONGODB_MUTATION_OPERATIONS.includes(operation)) {
+    throw mutationError(
+      `operation must be one of ${MONGODB_MUTATION_OPERATIONS.join(", ")}`,
+      "INVALID_MONGODB_MUTATION_OPERATION"
+    );
+  }
+  const common2 = normalizeCommonMutation(input, normalizedConfig, options.operationId);
+  const maxAffected = normalizePositiveInt(
+    input.maxAffected,
+    "maxAffected",
+    normalizedConfig.maxAffectedDocuments,
+    normalizedConfig.maxAffectedDocuments
+  );
+  if (operation === "insertOne") {
+    return {
+      ...common2,
+      operation,
+      document: normalizeDocument2(input.document),
+      maxAffected: 1,
+      riskLevel: riskForDocumentOperation(operation)
+    };
+  }
+  const filter = normalizeFilter(input.filter);
+  assertScopedFilter(filter, operation);
+  if (operation === "updateMany" && (filter._id.$in.length === 0 || filter._id.$in.length > maxAffected)) {
+    throw mutationError(
+      "updateMany filter._id.$in must contain between 1 and maxAffected ids",
+      "MONGODB_BATCH_SCOPE_INVALID"
+    );
+  }
+  const update = operation === "softDeleteOne" ? {
+    $set: {
+      [normalizeName(input.deletedField || "deletedAt", "deletedField", SAFE_FIELD_PATTERN)]: typeof input.deletedValue === "string" && input.deletedValue.trim() ? input.deletedValue.trim().slice(0, 128) : (/* @__PURE__ */ new Date()).toISOString()
+    }
+  } : normalizeUpdate2(input.update);
+  assertIndexedMutationGuards(filter, update);
+  const expectedCount = input.expectedCount === void 0 ? void 0 : normalizePositiveInt(input.expectedCount, "expectedCount", 1, maxAffected);
+  return {
+    ...common2,
+    operation,
+    filter,
+    update,
+    maxAffected: operation === "updateOne" || operation === "softDeleteOne" ? 1 : maxAffected,
+    expectedCount,
+    riskLevel: riskForDocumentOperation(operation)
+  };
+}
+function normalizeMongoImport(input = {}, config = {}, options = {}) {
+  const policy = normalizeMongoMutationConfig(config);
+  const common2 = normalizeCommonMutation(input, policy, options.operationId, "import");
+  const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+  if (!Array.isArray(input.documents) || !input.documents.length || input.documents.length > MAX_MONGODB_IMPORT_DOCUMENTS) {
+    throw mutationError("documents must contain between 1 and 10000 documents", "MONGODB_IMPORT_COUNT_LIMIT");
+  }
+  if (byteLength3(JSON.stringify(input.documents)) > MAX_MONGODB_IMPORT_BYTES) {
+    throw mutationError("import documents exceed 4 MiB; send smaller input chunks", "MONGODB_IMPORT_SIZE_LIMIT", 413);
+  }
+  const batchSize = normalizePositiveInt(input.batchSize, "batchSize", policy.maxImportBatchDocuments, policy.maxImportBatchDocuments);
+  const batches = [];
+  const seen = /* @__PURE__ */ new Set();
+  let documents = [];
+  let bytes = 2;
+  const flush = () => {
+    if (!documents.length) return;
+    const batch2 = {
+      ...common2,
+      operation: "insertMany",
+      importId,
+      batchIndex: batches.length,
+      source: { configPath: policy.configPath, configProfile: policy.configProfile, uriKey: policy.uriKey, driverPath: policy.driverPath },
+      documents,
+      maxAffected: documents.length,
+      riskLevel: "high"
+    };
+    const { operationId: _operationId, ...identity2 } = batch2;
+    batch2.mutationId = "import-" + (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(identity2)).digest("hex");
+    batches.push(batch2);
+    documents = [];
+    bytes = 2;
+  };
+  for (const value of input.documents) {
+    const document2 = normalizeDocument2(value);
+    const id = document2._id;
+    const oid = id && typeof id === "object" && Object.keys(id).length === 1 && typeof id.$oid === "string" && /^[a-f0-9]{24}$/i.test(id.$oid);
+    if (!(typeof id === "string" && id.length > 0 && id.length <= 256) && !Number.isSafeInteger(id) && !oid) {
+      throw mutationError("import _id must be a non-empty string (up to 256 characters), safe integer or $oid", "MONGODB_IMPORT_ID_INVALID");
+    }
+    if (oid) document2._id.$oid = id.$oid.toLowerCase();
+    const key = JSON.stringify(document2._id);
+    if (seen.has(key)) throw mutationError("import contains duplicate _id values", "MONGODB_IMPORT_DUPLICATE_ID");
+    seen.add(key);
+    const size = byteLength3(JSON.stringify(document2)) + 1;
+    if (documents.length >= batchSize || bytes + size > MAX_MONGODB_IMPORT_BATCH_BYTES) flush();
+    documents.push(document2);
+    bytes += size;
+  }
+  flush();
+  if (batches.length > 100) throw mutationError("import exceeds 100 batches; send smaller input chunks", "MONGODB_IMPORT_BATCH_LIMIT");
+  return {
+    kind: "import_plan",
+    importId,
+    database: common2.database,
+    collection: common2.collection,
+    operationId: common2.operationId,
+    affectedCount: input.documents.length,
+    batches
+  };
+}
+function normalizeMongoTransaction(input = {}, config = {}, options = {}) {
+  const normalizedConfig = normalizeMongoMutationConfig(config);
+  if (!Array.isArray(input.operations) || input.operations.length === 0) {
+    throw mutationError(
+      "operations must be a non-empty array",
+      "INVALID_MONGODB_TRANSACTION"
+    );
+  }
+  if (input.operations.length > MAX_MONGODB_TRANSACTION_OPERATIONS) {
+    throw mutationError(
+      `transactions cannot contain more than ${MAX_MONGODB_TRANSACTION_OPERATIONS} operations`,
+      "MONGODB_TRANSACTION_TOO_LARGE"
+    );
+  }
+  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto4.randomUUID)();
+  const database = input.database || input.operations[0]?.database || normalizedConfig.database;
+  const operations = input.operations.map((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item) || item.kind === "index") {
+      throw mutationError(`transaction operation at index ${index} must be a document mutation`, "INVALID_MONGODB_TRANSACTION");
+    }
+    const normalized = normalizeMongoMutation(
+      { ...item, database },
+      normalizedConfig,
+      { operationId: `${operationId}:${index}` }
+    );
+    if (normalized.database !== database) {
+      throw mutationError("all transaction operations must use the same database", "MONGODB_TRANSACTION_DATABASE_MISMATCH");
+    }
+    return normalized;
+  });
+  const totalMaxAffected = operations.reduce((total, item) => total + item.maxAffected, 0);
+  if (totalMaxAffected > normalizedConfig.maxAffectedDocuments) {
+    throw mutationError(
+      "transaction operations exceed the instance affected-document limit",
+      "MONGODB_TRANSACTION_AFFECTED_LIMIT"
+    );
+  }
+  return {
+    kind: "transaction",
+    operation: "transaction",
+    operationId,
+    purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
+    database,
+    collections: [...new Set(operations.map((item) => item.collection))],
+    operations,
+    rollbackTtlMs: normalizePositiveInt(
+      input.rollbackTtlMs,
+      "rollbackTtlMs",
+      normalizedConfig.rollbackTtlMs,
+      MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS
+    ),
+    maxAffected: normalizedConfig.maxAffectedDocuments,
+    riskLevel: operations.some((item) => item.riskLevel === "high") || operations.length > 1 ? "high" : "medium"
+  };
+}
+function normalizeIndexKey(value) {
+  assertPlainObject2(value, "key");
+  const keys = Object.keys(value);
+  if (keys.length === 0 || keys.length > 8) {
+    throw mutationError("index key must contain between 1 and 8 fields", "INVALID_MONGODB_INDEX");
+  }
+  const normalized = {};
+  for (const field of keys) {
+    if (!SAFE_FIELD_PATTERN.test(field) || field.startsWith("_id.")) {
+      throw mutationError(`index key contains an unsafe field: ${field}`, "MONGODB_INDEX_FIELD_REJECTED");
+    }
+    if (!SAFE_INDEX_DIRECTIONS.has(value[field])) {
+      throw mutationError("index key directions must be 1 or -1", "MONGODB_INDEX_KEY_REJECTED");
+    }
+    normalized[field] = value[field];
+  }
+  return normalized;
+}
+function normalizeIndexOptions(value = {}) {
+  assertPlainObject2(value, "options");
+  if (Object.prototype.hasOwnProperty.call(value, "expireAfterSeconds")) {
+    throw mutationError("business TTL indexes are not supported: index rollback cannot recover automatically deleted documents", "MONGODB_TTL_INDEX_REJECTED", 403);
+  }
+  const allowed = /* @__PURE__ */ new Set(["unique", "sparse"]);
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) {
+      throw mutationError(`index option is not allowed: ${key}`, "MONGODB_INDEX_OPTION_REJECTED");
+    }
+  }
+  const options = {};
+  if (value.unique !== void 0) {
+    if (typeof value.unique !== "boolean") throw mutationError("options.unique must be boolean", "INVALID_MONGODB_INDEX");
+    options.unique = value.unique;
+  }
+  if (value.sparse !== void 0) {
+    if (typeof value.sparse !== "boolean") throw mutationError("options.sparse must be boolean", "INVALID_MONGODB_INDEX");
+    options.sparse = value.sparse;
+  }
+  return options;
+}
+function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
+  const normalizedConfig = normalizeMongoMutationConfig(config);
+  const indexOptions = normalizeIndexOptions(input.options);
+  if (!MONGODB_INDEX_OPERATIONS.includes(input.operation)) {
+    throw mutationError(
+      `operation must be one of ${MONGODB_INDEX_OPERATIONS.join(", ")}`,
+      "INVALID_MONGODB_INDEX_OPERATION"
+    );
+  }
+  const common2 = normalizeCommonMutation(input, normalizedConfig, options.operationId, "index");
+  const name2 = normalizeName(input.name, "name", SAFE_INDEX_NAME_PATTERN);
+  if (name2 === "_id_") {
+    throw mutationError("the _id_ index cannot be changed", "MONGODB_INDEX_IMMUTABLE");
+  }
+  return {
+    ...common2,
+    operation: input.operation,
+    name: name2,
+    ...input.operation === "createIndex" ? {
+      key: normalizeIndexKey(input.key),
+      options: indexOptions
+    } : {},
+    riskLevel: riskForIndexOperation(input.operation, input.options)
+  };
+}
+function summarizeMongoMutation(input = {}) {
+  const updateFields = input.update && typeof input.update === "object" ? Object.values(input.update).flatMap((value) => value && typeof value === "object" ? Object.keys(value) : []) : [];
+  return {
+    kind: input.kind,
+    operation: typeof input.operation === "string" ? input.operation.slice(0, 64) : void 0,
+    database: typeof input.database === "string" ? input.database.slice(0, 128) : void 0,
+    collection: typeof input.collection === "string" ? input.collection.slice(0, 128) : void 0,
+    name: typeof input.name === "string" ? input.name.slice(0, 128) : void 0,
+    filterKeys: input.filter && typeof input.filter === "object" && !Array.isArray(input.filter) ? Object.keys(input.filter).slice(0, 20) : [],
+    documentKeys: input.document && typeof input.document === "object" && !Array.isArray(input.document) ? Object.keys(input.document).slice(0, 50) : [],
+    updateFields: [...new Set(updateFields)].slice(0, 50),
+    riskLevel: input.riskLevel,
+    requiresConfirmation: input.requiresConfirmation !== false,
+    maxAffected: input.maxAffected,
+    expectedCount: input.expectedCount,
+    importId: typeof input.importId === "string" ? input.importId.slice(0, 64) : void 0,
+    documentCount: Array.isArray(input.documents) ? input.documents.length : void 0
+  };
+}
+function safeLiteral3(value) {
+  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+function buildMongoMutationScript(request, config) {
+  const normalizedConfig = normalizeMongoMutationConfig(config);
+  const script = `
+const __fs = require("fs");
+const __path = require("path");
+const { createHash: __createHash, randomBytes: __randomBytes } = require("crypto");
+const __configPath = ${safeLiteral3(normalizedConfig.configPath)};
+const __driverPath = ${safeLiteral3(normalizedConfig.driverPath)};
+const __profileName = ${safeLiteral3(normalizedConfig.configProfile)};
+const __uriKey = ${safeLiteral3(normalizedConfig.uriKey)};
+const __journalRoot = ${safeLiteral3(normalizedConfig.rollbackRoot)};
+const __allowedDatabases = ${safeLiteral3(normalizedConfig.allowedDatabases)};
+const __allowedCollections = ${safeLiteral3(normalizedConfig.allowedCollections)};
+const __bulkEnabled = ${safeLiteral3(config.bulkEnabled === true)};
+const __bulkRoot = ${safeLiteral3(config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs")};
+const __sandboxDatabase = ${safeLiteral3(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE)};
+const __bulkReceiptsCollection = ${safeLiteral3(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts")};
+const __importBatchLimit = ${normalizedConfig.maxImportBatchDocuments};
+const __request = ${safeLiteral3(request)};
+const __marker = ${safeLiteral3(MONGODB_RESULT_MARKER)};
+const __schemaVersion = ${MONGODB_MUTATION_SCHEMA_VERSION};
+const __maxTimeMs = 15000;
+let __bson;
+try {
+  __bson = require(require.resolve("bson", { paths: [__driverPath] }));
+} catch (_error) {
+  __bson = null;
+}
+
+function __fail(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  throw error;
+}
+
+const __ttlFail = __fail;
+${MONGODB_TTL_POLICY_SCRIPT}
+
+function __stable(value) {
+  if (Array.isArray(value)) return value.map(__stable);
+  if (value && typeof value === "object") {
+    return Object.keys(value).sort().reduce((result, key) => {
+      result[key] = __stable(value[key]);
+      return result;
+    }, {});
+  }
+  return value;
+}
+
+function __hash(value) {
+  return __createHash("sha256").update(JSON.stringify(__stable(value))).digest("hex");
+}
+
+${IMPORT_CONTROL_SCRIPT}
+
+${MONGODB_CODEC_SCRIPT}
+
+const __assertIndexedMutationDocument = ${assertIndexedMutationDocument.toString()};
+
+function __documentHash(value) {
+  return __hash(__encode(value));
+}
+
+function __documentHashes(documents) {
+  return (documents || []).map((document) => ({
+    id: __encode(document._id),
+    hash: __documentHash(document),
+  }));
+}
+
+function __journalDir() {
+  if (!__request.mutationId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(__request.mutationId)) {
+    __fail("MONGODB_MUTATION_ID_INVALID", "mutationId has an invalid format");
+  }
+  return __path.join(__journalRoot, __request.mutationId);
+}
+
+function __ensureJournalDir() {
+  const directory = __journalDir();
+  if (__fs.existsSync(__journalRoot) && __fs.lstatSync(__journalRoot).isSymbolicLink()) {
+    __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal root cannot be a symbolic link");
+  }
+  __fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const rootStat = __fs.lstatSync(__journalRoot);
+  const directoryStat = __fs.lstatSync(directory);
+  if (rootStat.isSymbolicLink() || directoryStat.isSymbolicLink()) {
+    __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal path cannot be a symbolic link");
+  }
+  try { __fs.chmodSync(__journalRoot, 0o700); } catch (_error) {}
+  try { __fs.chmodSync(directory, 0o700); } catch (_error) {}
+  return directory;
+}
+
+function __writeJsonAtomic(fileName, value) {
+  const directory = __ensureJournalDir();
+  const filePath = __path.join(directory, fileName);
+  const temporaryPath = filePath + "." + process.pid + "." + __randomBytes(16).toString("hex") + ".tmp";
+  const body = JSON.stringify(value, null, 2) + "\\n";
+  if (Buffer.byteLength(body, "utf8") > ${MAX_MONGODB_MUTATION_JOURNAL_BYTES}) {
+    __fail("MONGODB_JOURNAL_TOO_LARGE", "mutation journal exceeds the size limit");
+  }
+  const fd = __fs.openSync(temporaryPath, "w", 0o600);
+  try {
+    __fs.writeFileSync(fd, body, "utf8");
+    __fs.fsyncSync(fd);
+  } finally {
+    __fs.closeSync(fd);
+  }
+  __fs.renameSync(temporaryPath, filePath);
+  try { __fs.chmodSync(filePath, 0o600); } catch (_error) {}
+  const parentFd = __fs.openSync(directory, "r");
+  try { __fs.fsyncSync(parentFd); } finally { __fs.closeSync(parentFd); }
+}
+
+function __appendJournal(event, details = {}) {
+  const directory = __ensureJournalDir();
+  const filePath = __path.join(directory, "journal.jsonl");
+  if (__fs.existsSync(filePath) && __fs.lstatSync(filePath).isSymbolicLink()) {
+    __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal cannot be a symbolic link");
+  }
+  const fd = __fs.openSync(filePath, __fs.constants.O_CREAT | __fs.constants.O_APPEND | __fs.constants.O_WRONLY, 0o600);
+  try {
+    __fs.writeFileSync(fd, JSON.stringify({ at: new Date().toISOString(), event, ...details }) + "\\n", "utf8");
+    __fs.fsyncSync(fd);
+  } finally {
+    __fs.closeSync(fd);
+  }
+}
+
+function __loadManifest() {
+  const filePath = __path.join(__journalDir(), "manifest.json");
+  if (!__fs.existsSync(filePath)) __fail("MONGODB_MUTATION_NOT_FOUND", "mutation manifest was not found");
+  if (__fs.lstatSync(filePath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
+  let manifest;
+  try {
+    manifest = JSON.parse(__fs.readFileSync(filePath, "utf8"));
+  } catch (_error) {
+    __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest is invalid");
+  }
+  if (!manifest || manifest.schemaVersion !== __schemaVersion || manifest.mutationId !== __request.mutationId) {
+    __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest does not match the request");
+  }
+  if (manifest.planHash !== __request.planHash) {
+    __fail("MONGODB_MUTATION_PLAN_HASH_MISMATCH", "mutation plan hash does not match the manifest");
+  }
+  if (__planHash(manifest) !== manifest.planHash) {
+    __fail("MONGODB_MUTATION_MANIFEST_TAMPERED", "mutation manifest integrity check failed");
+  }
+  __assertManifestScope(manifest);
+  return manifest;
+}
+
+function __acquireMutationLock(reclaimStale = true) {
+  const directory = __ensureJournalDir();
+  const lockPath = __path.join(directory, ".lock");
+  let fd;
+  try {
+    fd = __fs.openSync(lockPath, "wx", 0o600);
+    __fs.writeFileSync(fd, String(process.pid), "utf8");
+    __fs.fsyncSync(fd);
+    __fs.closeSync(fd);
+  } catch (error) {
+    try { if (fd !== undefined) __fs.closeSync(fd); } catch (_closeError) {}
+    if (error.code === "EEXIST") {
+      try {
+        const lockStat = __fs.statSync(lockPath);
+        if (reclaimStale && Date.now() - lockStat.mtimeMs > ${MAX_MONGODB_MUTATION_LOCK_AGE_MS}) {
+          __fs.unlinkSync(lockPath);
+          return __acquireMutationLock(reclaimStale);
+        }
+      } catch (_lockError) {}
+      __fail("MONGODB_MUTATION_BUSY", "another mutation operation is using this journal");
+    }
+    throw error;
+  }
+  return () => {
+    try { __fs.unlinkSync(lockPath); } catch (_error) {}
+  };
+}
+
+function __summary(manifest) {
+  const isTransaction = manifest.kind === "transaction";
+  return {
+    mutationId: manifest.mutationId,
+    operationId: manifest.operationId,
+    kind: manifest.kind,
+    operation: isTransaction ? "transaction" : manifest.request.operation,
+    database: manifest.request.database,
+    collection: isTransaction ? undefined : manifest.request.collection,
+    collections: isTransaction ? manifest.request.collections : undefined,
+    name: manifest.request.name,
+    status: manifest.status,
+    rollbackMode: manifest.rollbackMode,
+    riskLevel: manifest.riskLevel,
+    requiresConfirmation: manifest.requiresConfirmation !== false,
+    purpose: manifest.request.purpose,
+    createdAt: manifest.createdAt,
+    committedAt: manifest.committedAt,
+    rolledBackAt: manifest.rolledBackAt,
+    rollbackExpiresAt: manifest.rollbackExpiresAt,
+    planHash: manifest.planHash,
+    affectedCount: manifest.affectedCount,
+    changedFields: manifest.changedFields,
+    affectedIds: manifest.affectedIds,
+    storageRoot: manifest.request.storageRoot,
+    ...(manifest.kind === "bulk_storage" ? { receiptsDatabase: manifest.request.receiptsDatabase || manifest.request.database } : {}),
+    storageStatus: manifest.storageStatus,
+    execution: manifest.execution,
+    indexRecovery: manifest.indexRecovery,
+    ...(manifest.kind === "index" ? { rollbackRestoresDocuments: false } : {}),
+    ...(manifest.kind === "import" ? {
+      importId: manifest.request.importId,
+      batchIndex: manifest.request.batchIndex,
+      retryable: manifest.status === "commit_retryable" || manifest.status === "rollback_retryable",
+    } : {}),
+    journalPath: __path.join(__journalRoot, manifest.mutationId),
+  };
+}
+
+function __assertManifestScope(manifest) {
+  if (manifest.prepare && __hash(manifest.prepareSource) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey })) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "preparation belongs to a different connection profile");
+  }
+  if (manifest.kind === "import" && manifest.request.documents.length > __importBatchLimit) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "import batch exceeds the current instance limit");
+  }
+  if (manifest.kind === "import" && __hash(manifest.request.source) !== __hash({
+    configPath: __configPath, configProfile: __profileName, uriKey: __uriKey, driverPath: __driverPath,
+  })) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "import belongs to a different database connection profile");
+  }
+  const requests = manifest.kind === "transaction"
+    ? (manifest.request.operations || [])
+    : [manifest.request];
+  for (const request of requests) {
+    if (!__allowedDatabases.includes(request.database) || manifest.kind !== "bulk_storage" && !__allowedCollections.includes(request.collection)) {
+      __fail("MONGODB_MUTATION_POLICY_CHANGED", "the mutation is no longer within the current database policy");
+    }
+    if (manifest.kind !== "bulk_storage" && request.collection === ${safeLiteral3(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
+      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
+    }
+    if (manifest.kind !== "bulk_storage" && request.database === __sandboxDatabase) __fail("SANDBOX_DATABASE_RESERVED", "sandbox database is reserved for plugin management");
+  }
+  if (manifest.kind === "index") {
+    if (__request.mode === "commit" && manifest.request.operation === "createIndex") __ttlRejectBusinessIndex(manifest.request.options);
+    if (__request.mode === "rollback" && manifest.request.operation === "dropIndex") __ttlRejectBusinessIndex(manifest.beforeIndex);
+  }
+  if (manifest.kind === "bulk_storage") {
+    __ttlAssertReceiptName(manifest.request.collection);
+    if (manifest.request.receiptsDatabase && manifest.request.receiptsDatabase !== __sandboxDatabase) __fail("SANDBOX_DATABASE_CHANGED", "the prepared sandbox database no longer matches configuration");
+  }
+  if (manifest.kind === "bulk_storage" && (!manifest.request.storageRoot || !manifest.request.storageRoot.startsWith("/"))) {
+    __fail("MONGODB_MUTATION_POLICY_CHANGED", "bulk storage root is missing from the prepared plan");
+  }
+}
+
+function __idSummary(value) {
+  const encoded = __encode(value);
+  if (typeof encoded === "string") return encoded.slice(0, 256);
+  return encoded;
+}
+
+function __changedFields(update) {
+  return [...new Set(Object.values(update || {}).flatMap((value) => value && typeof value === "object" ? Object.keys(value) : []))].slice(0, 100);
+}
+
+// Driver cleanup can return void, reject, or throw synchronously. It must never
+// replace the transaction outcome or prevent saving rollback metadata.
+async function __cleanup(action) {
+  try { await action(); } catch (_cleanupError) {}
+}
+
+async function __loadClient() {
+  const fileConfig = JSON.parse(__fs.readFileSync(__configPath, "utf8"));
+  const profile = fileConfig && fileConfig[__profileName];
+  if (!profile || typeof profile !== "object") __fail("MONGODB_PROFILE_NOT_FOUND", "MongoDB config profile was not found");
+  const getPath = (value, keyPath) => keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
+  const uri = getPath(profile, __uriKey);
+  if (typeof uri !== "string" || !uri) __fail("MONGODB_URI_NOT_FOUND", "MongoDB URI was not found in the configured profile");
+  const driver = require(__driverPath);
+  const MongoClient = driver.MongoClient || (driver.default && driver.default.MongoClient);
+  if (!MongoClient) __fail("MONGODB_DRIVER_INVALID", "MongoDB driver does not export MongoClient");
+  const client = new MongoClient(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    readPreference: "primary",
+    serverSelectionTimeoutMS: __maxTimeMs,
+  });
+  try {
+    await client.connect();
+  } catch (error) {
+    await __cleanup(() => client.close());
+    throw error;
+  }
+  return { client };
+}
+
+function __findOptions(session) {
+  return session ? { session } : {};
+}
+
+async function __findDocs(collection, filter, limit, session) {
+  const cursor = collection.find(__decode(filter), __findOptions(session)).limit(limit);
+  if (typeof cursor.maxTimeMS === "function") cursor.maxTimeMS(__maxTimeMs);
+  return cursor.toArray();
+}
+
+async function __findByIds(collection, documents, session) {
+  const result = [];
+  for (const document of documents) {
+    const current = await collection.findOne({ _id: document._id }, __findOptions(session));
+    if (current) result.push(current);
+  }
+  return result;
+}
+
+function __indexComparable(index) {
+  const result = { name: index.name, key: index.key };
+  for (const field of ["unique", "sparse", "expireAfterSeconds", "partialFilterExpression", "collation"]) {
+    if (index[field] !== undefined) result[field] = index[field];
+  }
+  return result;
+}
+
+function __indexHash(index) {
+  const comparable = __indexComparable(index);
+  comparable.unique = Boolean(comparable.unique);
+  comparable.sparse = Boolean(comparable.sparse);
+  // Compound index field order is semantic; __stable would otherwise sort it.
+  comparable.key = Object.entries(comparable.key || {});
+  return __hash(__encode(comparable));
+}
+
+function __indexMatches(index, expected) {
+  return __indexHash(index) === __indexHash(expected);
+}
+
+function __indexByName(indexes, name) {
+  return indexes.find((index) => index.name === name);
+}
+
+async function __readIndexes(collection) {
+  return collection.listIndexes({ readPreference: "primary", maxTimeMS: __maxTimeMs }).toArray();
+}
+
+async function __verifyIndex(manifest, collection, dropped, original) {
+  const expected = original || { name: manifest.request.name, key: __decode(manifest.request.key), ...__decode(manifest.request.options) };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const current = __indexByName(await __readIndexes(collection), manifest.request.name);
+      if (dropped ? !current : current && __indexMatches(current, expected)) return current || null;
+      if (!dropped && current) __fail("MONGODB_INDEX_DEFINITION_CONFLICT", "index name exists with a different definition");
+    } catch (error) {
+      if (error.code === "MONGODB_INDEX_DEFINITION_CONFLICT") throw error;
+      if (attempt === 2) throw error;
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+  }
+  __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index command outcome could not be verified on primary");
+}
+
+function __planHash(manifest) {
+  return __hash({
+    schemaVersion: manifest.schemaVersion,
+    mutationId: manifest.mutationId,
+    operationId: manifest.operationId,
+    kind: manifest.kind,
+    request: manifest.request,
+    before: manifest.before,
+    beforeIndex: manifest.beforeIndex,
+    beforeOperations: manifest.beforeOperations,
+    ...(manifest.riskLineage ? { riskLineage: manifest.riskLineage, orderedRequest: JSON.stringify(manifest.request) } : {}),
+    ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
+  });
+}
+
+async function __prepareDocumentRequest(request, collection) {
+  if (request.operation === "insertOne") {
+    const document = __decode(request.document);
+    const existing = await collection.findOne({ _id: document._id });
+    if (existing) __fail("MONGODB_MUTATION_TARGET_EXISTS", "a document with the requested _id already exists");
+    return {
+      before: [],
+      affectedCount: 1,
+      affectedIds: [__idSummary(document._id)],
+      changedFields: Object.keys(request.document),
+    };
+  }
+
+  const limit = request.operation === "updateMany" ? request.maxAffected + 1 : 2;
+  const documents = await __findDocs(collection, request.filter, limit);
+  if (documents.length === 0) __fail("MONGODB_MUTATION_TARGET_NOT_FOUND", "no document matched the mutation filter");
+  if (documents.length > request.maxAffected) __fail("MONGODB_MUTATION_AFFECTED_LIMIT", "mutation matched more documents than allowed");
+  if (request.operation !== "updateMany" && documents.length !== 1) __fail("MONGODB_MUTATION_TARGET_AMBIGUOUS", "mutation filter did not identify exactly one document");
+  if (request.expectedCount !== undefined && documents.length !== request.expectedCount) __fail("MONGODB_EXPECTED_COUNT_MISMATCH", "mutation matched a different number of documents than expected");
+  documents.forEach((document) => __assertIndexedMutationDocument(request, document));
+  return {
+    before: __encode(documents),
+    affectedCount: documents.length,
+    affectedIds: documents.map((document) => __idSummary(document._id)),
+    changedFields: __changedFields(request.update),
+  };
+}
+
+async function __prepare() {
+  const { client } = await __loadClient();
+  try {
+    const request = __request.mutation;
+    if (__request.kind !== "bulk_storage" && request.collection === ${safeLiteral3(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
+      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
+    }
+    const database = request.database;
+    const collection = request.collection
+      ? client.db(__request.kind === "bulk_storage" ? request.receiptsDatabase || database : database).collection(request.collection)
+      : null;
+    const now = Date.now();
+    const manifest = {
+      ...(__request.importLineage ? { riskLineage: __request.importLineage } : {}),
+      schemaVersion: __schemaVersion,
+      mutationId: __request.mutationId,
+      ...(__request.prepare ? { prepare: __request.prepare, prepareSource: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } } : {}),
+      operationId: __request.operationId,
+      kind: __request.kind,
+      request,
+      status: "planned",
+      rollbackMode: __request.kind === "index"
+        ? "compensating"
+        : __request.kind === "bulk_storage"
+          ? "retained_non_rollbackable"
+          : "transactional",
+      riskLevel: request.riskLevel || (__request.kind === "index" ? "medium" : "high"),
+      requiresConfirmation: true,
+      createdAt: new Date(now).toISOString(),
+      rollbackExpiresAt: new Date(now + request.rollbackTtlMs).toISOString(),
+      before: [],
+      beforeIndex: null,
+      beforeOperations: [],
+      afterHashes: [],
+      afterOperations: [],
+      afterIndex: null,
+      affectedCount: 0,
+      affectedIds: [],
+      changedFields: [],
+    };
+
+    if (__request.kind === "index") {
+      const indexes = await __readIndexes(collection);
+      const existing = __indexByName(indexes, request.name);
+      if (request.operation === "createIndex") {
+        __ttlRejectBusinessIndex(request.options);
+        if (existing) __fail("MONGODB_INDEX_ALREADY_EXISTS", "the requested index already exists");
+        const equivalent = indexes.find((index) => {
+          const candidate = { name: request.name, key: __decode(request.key), ...__decode(request.options) };
+          const existingShape = __indexComparable(index);
+          const candidateShape = __indexComparable(candidate);
+          delete existingShape.name;
+          delete candidateShape.name;
+          return __hash(existingShape) === __hash(candidateShape);
+        });
+        if (equivalent) __fail("MONGODB_EQUIVALENT_INDEX_EXISTS", "an equivalent index already exists");
+        manifest.afterIndex = { name: request.name, key: request.key, ...request.options };
+        manifest.affectedCount = 1;
+        manifest.changedFields = Object.keys(request.key);
+      } else {
+        if (request.name === "_id_") __fail("MONGODB_INDEX_IMMUTABLE", "the _id_ index cannot be changed");
+        if (!existing) __fail("MONGODB_INDEX_NOT_FOUND", "the requested index was not found");
+        __ttlRejectBusinessIndex(existing);
+        manifest.beforeIndex = __encode(__indexComparable(existing));
+        manifest.affectedCount = 1;
+        manifest.changedFields = Object.keys(existing.key || {});
+      }
+    } else if (__request.kind === "bulk_storage") {
+      __ttlAssertReceiptName(request.collection);
+      if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
+        __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
+      }
+      const databaseObject = client.db(request.receiptsDatabase || database);
+      const namespaces = await databaseObject.listCollections({ name: request.collection }, { nameOnly: true }).toArray();
+      let expiryIndex = null;
+      if (namespaces.length) {
+        const indexes = await __readIndexes(collection);
+        expiryIndex = indexes.find((index) => index.name === "remote_debug_bulk_receipt_expiry") || null;
+      }
+      let rootState = "missing";
+      let rootMode;
+      try {
+        const stat = __fs.lstatSync(request.storageRoot);
+        rootState = stat.isDirectory() && !stat.isSymbolicLink() ? "directory" : "invalid";
+        rootMode = stat.mode & 0o777;
+      } catch (_error) {}
+      manifest.storageStatus = { rootState, rootMode, collectionExists: namespaces.length > 0, expiryIndexExists: Boolean(expiryIndex) };
+      manifest.affectedCount = 1;
+      manifest.changedFields = ["expiresAt"];
+    } else if (__request.kind === "import") {
+      const documents = __decode(request.documents);
+      const existing = await __findDocs(collection, { _id: { $in: request.documents.map((item) => item._id) } }, 1);
+      if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
+      manifest.affectedCount = documents.length;
+      manifest.affectedIds = documents.slice(0, 10).map((item) => __idSummary(item._id));
+      manifest.changedFields = [...new Set(request.documents.flatMap((item) => Object.keys(item)))].slice(0, 20).map((key) => key.slice(0, 128));
+    } else if (__request.kind === "transaction") {
+      const operationPlans = [];
+      for (const childRequest of request.operations) {
+        const childCollection = client.db(childRequest.database).collection(childRequest.collection);
+        operationPlans.push({
+          request: childRequest,
+          ...(await __prepareDocumentRequest(childRequest, childCollection)),
+        });
+      }
+      manifest.beforeOperations = operationPlans;
+      manifest.affectedCount = operationPlans.reduce((total, item) => total + item.affectedCount, 0);
+      manifest.affectedIds = operationPlans.flatMap((item) => item.affectedIds).slice(0, 100);
+      manifest.changedFields = [...new Set(operationPlans.flatMap((item) => item.changedFields))].slice(0, 100);
+    } else {
+      Object.assign(manifest, await __prepareDocumentRequest(request, collection));
+    }
+
+    manifest.planHash = __planHash(manifest);
+    if (__request.prepare) {
+      const control = JSON.parse(__fs.readFileSync(__path.join(__journalDir(), "prepare.json"), "utf8"));
+      // Reserve the plan durably before its manifest can be observed/executed.
+      // A subsequently missing manifest is loss of recovery state, not absence.
+      control.stage = "plan_reserved";
+      __writeJsonAtomic("prepare.json", control);
+    }
+    __writeJsonAtomic("manifest.json", manifest);
+    __appendJournal("planned", {
+      operationId: manifest.operationId,
+      kind: manifest.kind,
+      operation: request.operation,
+      planHash: manifest.planHash,
+      affectedCount: manifest.affectedCount,
+    });
+    return {
+      ...__summary(manifest),
+      preview: {
+        affectedCount: manifest.affectedCount,
+        affectedIds: manifest.affectedIds,
+        changedFields: manifest.changedFields,
+        rollbackMode: manifest.rollbackMode,
+      },
+    };
+  } finally {
+    await __cleanup(() => client.close());
+  }
+}
+
+async function __prepareImportPlan() {
+  if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
+  const plan = __request.mutation;
+  __assertImportLive(plan);
+  const results = [];
+  for (const batch of plan.batches) {
+    __assertImportLive(batch, batch.mutationId);
+    __request.mutationId = batch.mutationId;
+    __request.mutation = batch;
+    __request.kind = "import";
+    const releaseLock = __acquireMutationLock(false);
+    try {
+      const filePath = __path.join(__journalDir(), "manifest.json");
+      if (__fs.existsSync(filePath)) {
+        if (__fs.lstatSync(filePath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
+        __request.planHash = JSON.parse(__fs.readFileSync(filePath, "utf8")).planHash;
+        const manifest = __loadManifest();
+        const identity = (value) => { const { operationId, ...rest } = value; return rest; };
+        if (__hash(identity(manifest.request)) !== __hash(identity(batch))) __fail("MONGODB_IMPORT_PLAN_CONFLICT", "import journal belongs to a different request");
+        __assertNotExpired(manifest);
+        results.push(__summary(manifest));
+      } else {
+        results.push(await __prepare());
+      }
+    } catch (error) {
+      if (!results.length) throw error;
+      return { kind: "import_plan", importId: plan.importId, database: plan.database,
+        collection: plan.collection, affectedCount: plan.affectedCount, batchCount: plan.batches.length,
+        atomicity: "per_batch", status: "prepare_partial", batches: results, requiresConfirmation: true,
+        failedBatch: { batchIndex: batch.batchIndex, mutationId: batch.mutationId,
+          code: error.code || "MONGODB_IMPORT_PREPARE_FAILED" } };
+    } finally {
+      releaseLock();
+    }
+  }
+  return { kind: "import_plan", importId: plan.importId, database: plan.database,
+    collection: plan.collection, affectedCount: plan.affectedCount, batchCount: results.length,
+    atomicity: "per_batch", status: "prepared", batches: results, requiresConfirmation: true };
+}
+
+function __assertNotExpired(manifest) {
+  if (Date.parse(manifest.rollbackExpiresAt) <= Date.now()) __fail("MONGODB_ROLLBACK_EXPIRED", "mutation rollback window has expired");
+}
+
+async function __commitDocumentRequest(request, beforeValue, collection, session) {
+  const before = __decode(beforeValue || []);
+  if (request.operation === "insertOne") {
+    const document = __decode(request.document);
+    const existing = await collection.findOne({ _id: document._id }, { session });
+    if (existing) __fail("MONGODB_MUTATION_TARGET_EXISTS", "a document with the requested _id already exists");
+    await collection.insertOne(document, { session });
+    const inserted = await collection.findOne({ _id: document._id }, { session });
+    if (!inserted) __fail("MONGODB_MUTATION_COMMIT_UNKNOWN", "inserted document could not be verified in the transaction");
+    return [inserted];
+  }
+
+  const current = await __findByIds(collection, before, session);
+  if (current.length !== before.length || current.some((document) => {
+    const expected = before.find((item) => __hash(__encode(item._id)) === __hash(__encode(document._id)));
+    return !expected || __documentHash(expected) !== __documentHash(document);
+  })) {
+    __fail("MONGODB_MUTATION_CONFLICT", "mutation target changed after the plan was created");
+  }
+  const result = request.operation === "updateMany"
+    ? await collection.updateMany(__decode(request.filter), __decode(request.update), { session })
+    : await collection.updateOne(__decode(request.filter), __decode(request.update), { session });
+  const matchedCount = result.matchedCount != null ? result.matchedCount : result.n;
+  if (matchedCount !== before.length) __fail("MONGODB_MUTATION_CONFLICT", "mutation matched a different number of documents at commit time");
+  const after = await __findByIds(collection, before, session);
+  if (after.length !== before.length) __fail("MONGODB_MUTATION_CONFLICT", "a mutation target disappeared during commit");
+  return after;
+}
+
+async function __commitDocument(manifest, client, collection) {
+  const session = client.startSession();
+  let after;
+  try {
+    await session.withTransaction(async () => {
+      after = await __commitDocumentRequest(manifest.request, manifest.before, collection, session);
+    }, { readPreference: "primary" });
+  } finally {
+    await __cleanup(() => session.endSession());
+  }
+  manifest.afterHashes = __documentHashes(after || []);
+  manifest.status = "committed";
+  manifest.committedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
+}
+
+// A batch is one transaction. Never infer ownership from matching documents after
+// an uncertain commit: stop for inspection instead of risking an unsafe rollback.
+async function __runImportTransaction(manifest, client, collection, rollback) {
+  if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
+  const session = client.startSession();
+  let committing = false;
+  try {
+    session.startTransaction({ readPreference: "primary" });
+    const documents = __decode(manifest.request.documents);
+    const filter = { _id: { $in: documents.map((item) => item._id) } };
+    const encodedFilter = { _id: { $in: manifest.request.documents.map((item) => item._id) } };
+    if (rollback) {
+      const current = await __findDocs(collection, encodedFilter, documents.length + 1, session);
+      const expected = new Map((manifest.afterHashes || []).map((item) => [__hash(item.id), item.hash]));
+      if (current.length !== documents.length || current.some((item) => expected.get(__hash(__encode(item._id))) !== __documentHash(item))) {
+        __fail("MONGODB_ROLLBACK_CONFLICT", "import targets changed after commit");
+      }
+      const result = await collection.deleteMany(filter, { session });
+      if ((result.deletedCount != null ? result.deletedCount : result.n) !== documents.length) __fail("MONGODB_ROLLBACK_CONFLICT", "import targets could not all be removed");
+    } else {
+      const existing = await __findDocs(collection, encodedFilter, 1, session);
+      if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
+      await collection.insertMany(documents, { session, ordered: true });
+      const inserted = await __findDocs(collection, encodedFilter, documents.length + 1, session);
+      if (inserted.length !== documents.length) __fail("MONGODB_MUTATION_COMMIT_UNKNOWN", "import document count could not be verified");
+      manifest.afterHashes = __documentHashes(inserted);
+      // Reserve journal capacity and durably save rollback hashes BEFORE commit.
+      __writeJsonAtomic("manifest.json", manifest);
+    }
+    __assertImportLive(manifest.request, manifest.mutationId);
+    committing = true;
+    await session.commitTransaction();
+    manifest.status = rollback ? "rolled_back" : "committed";
+    manifest[rollback ? "rolledBackAt" : "committedAt"] = new Date().toISOString();
+    __writeJsonAtomic("manifest.json", manifest);
+    __appendJournal(manifest.status, { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
+  } catch (error) {
+    // A failed commit command (or lost reply) is ambiguous, even if abort succeeds.
+    try { await session.abortTransaction(); } catch (_abortError) {}
+    manifest.status = committing
+      ? (rollback ? "rollback_unknown" : "commit_unknown")
+      : (rollback ? "rollback_retryable" : "commit_retryable");
+    try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+    try { __appendJournal(manifest.status, { code: error.code || "MONGODB_IMPORT_FAILED" }); } catch (_journalError) {}
+    throw error;
+  } finally {
+    await __cleanup(() => session.endSession());
+  }
+}
+
+async function __commitTransaction(manifest, client) {
+  const session = client.startSession();
+  const afterOperations = [];
+  try {
+    await session.withTransaction(async () => {
+      afterOperations.length = 0;
+      for (const item of manifest.beforeOperations || []) {
+        const collection = client.db(item.request.database).collection(item.request.collection);
+        const after = await __commitDocumentRequest(item.request, item.before, collection, session);
+        afterOperations.push({ request: item.request, before: item.before, afterHashes: __documentHashes(after) });
+      }
+    }, { readPreference: "primary" });
+  } finally {
+    await __cleanup(() => session.endSession());
+  }
+  manifest.afterOperations = afterOperations;
+  manifest.status = "committed";
+  manifest.committedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
+}
+
+// DDL is never replayed after dispatch. Keep the command acknowledgement before
+// metadata verification, so reconciliation can finish without issuing DDL again.
+async function __commitIndex(manifest, collection, database) {
+  const request = manifest.request;
+  const current = __indexByName(await __readIndexes(collection), request.name);
+  const creating = request.operation === "createIndex";
+  if (creating) {
+    __ttlRejectBusinessIndex(request.options);
+    if (current) __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
+  } else {
+    __ttlRejectBusinessIndex(current);
+    if (!current || !manifest.beforeIndex || !__indexMatches(current, __decode(manifest.beforeIndex))) {
+      __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
+    }
+  }
+  manifest.indexReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash,
+    execution: manifest.execution, database: request.database, collection: request.collection,
+    operation: request.operation, stage: "dispatching", owned: false,
+    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } };
+  __writeJsonAtomic("manifest.json", manifest);
+  try {
+    const command = creating
+      ? { createIndexes: request.collection, indexes: [{ key: __decode(request.key), name: request.name, ...__decode(request.options) }] }
+      : { dropIndexes: request.collection, index: request.name };
+    const reply = await database.command({ ...command, maxTimeMS: __maxTimeMs,
+      writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
+    if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index command did not acknowledge durable completion");
+    // createIndex's string return discards the server's no-op evidence. A same
+    // name/spec created concurrently must not become this mutation's rollback.
+    manifest.indexReceipt.stage = "acknowledged";
+    manifest.indexReceipt.numIndexesBefore = Number(reply.numIndexesBefore);
+    manifest.indexReceipt.numIndexesAfter = Number(reply.numIndexesAfter);
+    manifest.indexReceipt.noOp = Boolean(reply.note);
+    manifest.indexReceipt.owned = creating
+      ? Number.isFinite(Number(reply.numIndexesBefore)) && Number(reply.numIndexesAfter) === Number(reply.numIndexesBefore) + 1 && !reply.note
+      : true;
+    manifest.indexReceipt.acknowledgedAt = new Date().toISOString();
+    __writeJsonAtomic("manifest.json", manifest);
+  } catch (error) {
+    // Only definite server rejections prove that DDL did not commit. Network,
+    // timeout, write-concern and journal failures all remain ambiguous.
+    const rejected = error.name === "MongoServerError" || error.name === "MongoError";
+    if (rejected && [2, 13, 67, 72, 85, 86, 11000, 197].includes(Number(error.code)) && !error.writeConcernError) {
+      manifest.indexReceipt.stage = "rejected";
+    }
+    throw error;
+  }
+  if (!manifest.indexReceipt.owned) __fail("MONGODB_INDEX_OWNERSHIP_UNKNOWN", "index acknowledgement does not prove this operation created the index");
+  const after = await __verifyIndex(manifest, collection, !creating);
+  if (creating) manifest.afterIndex = __encode(__indexComparable(after));
+  manifest.status = "committed";
+  manifest.committedAt = manifest.indexReceipt.acknowledgedAt;
+  __writeJsonAtomic("manifest.json", manifest);
+  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1 });
+}
+
+async function __recoverExecution() {
+  // No lock age reclamation, business writes, or ownership inference from the
+  // live catalog. Historical helpers did not persist acknowledgements.
+  const release = __acquireMutationLock(false);
+  try {
+    const manifest = __loadManifest();
+    const ticket = __request.execution;
+    if (!ticket || !manifest.execution || __hash(ticket) !== __hash(manifest.execution)) {
+      return { ...__summary(manifest), indexRecovery: { reason: "legacy_execution_evidence_required" } };
+    }
+    if (manifest.request.database !== __request.database) __fail("MONGODB_MUTATION_SCOPE_MISMATCH", "recovery database does not match the original plan");
+    if (manifest.status === "committed" || manifest.status === "rolled_back") return __summary(manifest);
+    const rollback = manifest.status.indexOf("rollback_") === 0;
+    const receipt = rollback ? manifest.rollbackReceipt : manifest.indexReceipt;
+    if (manifest.kind !== "index" || !receipt || receipt.version !== 1 || receipt.mutationId !== manifest.mutationId ||
+        receipt.planHash !== manifest.planHash || receipt.database !== manifest.request.database || receipt.collection !== manifest.request.collection ||
+        receipt.operation !== manifest.request.operation ||
+        __hash(receipt.source) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey }) ||
+        __hash(receipt.execution) !== __hash(ticket) || receipt.stage !== "acknowledged" || !receipt.owned ||
+        !(rollback ? ["rollback_started", "rollback_unknown"] : ["commit_started", "commit_unknown"]).includes(manifest.status)) {
+      return { ...__summary(manifest), indexRecovery: { reason: "execution_acknowledgement_required" } };
+    }
+    const { client } = await __loadClient();
+    try {
+      const collection = client.db(manifest.request.database).collection(manifest.request.collection);
+      const after = await __verifyIndex(manifest, collection,
+        rollback ? manifest.request.operation === "createIndex" : manifest.request.operation === "dropIndex",
+        rollback ? __decode(manifest.beforeIndex) : null);
+      if (after && !rollback) manifest.afterIndex = __encode(__indexComparable(after));
+      manifest.status = rollback ? "rolled_back" : "committed";
+      manifest[rollback ? "rolledBackAt" : "committedAt"] = receipt.acknowledgedAt;
+      manifest.indexRecovery = { reason: "acknowledgement_and_primary_catalog_verified" };
+      __writeJsonAtomic("manifest.json", manifest);
+      __appendJournal(rollback ? "rollback_reconciled" : "commit_reconciled", { planHash: manifest.planHash, intentId: ticket.intentId });
+      return __summary(manifest);
+    } finally { await __cleanup(() => client.close()); }
+  } finally { release(); }
+}
+
+async function __commitBulkStorage(manifest, client) {
+  const request = manifest.request;
+  __ttlAssertReceiptName(request.collection);
+  if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
+    __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
+  }
+  try {
+    if (!__fs.existsSync(request.storageRoot)) __fs.mkdirSync(request.storageRoot, { recursive: true, mode: 0o700 });
+    const rootStat = __fs.lstatSync(request.storageRoot);
+    if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) __fail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
+    __fs.chmodSync(request.storageRoot, 0o700);
+    const probePath = __path.join(request.storageRoot, ".write-probe-" + process.pid + "-" + __randomBytes(8).toString("hex"));
+    const probeFd = __fs.openSync(probePath, "wx", 0o600);
+    try {
+      __fs.writeFileSync(probeFd, "ready", "utf8");
+      __fs.fsyncSync(probeFd);
+    } finally { __fs.closeSync(probeFd); }
+    __fs.unlinkSync(probePath);
+    const directoryFd = __fs.openSync(request.storageRoot, "r");
+    try { __fs.fsyncSync(directoryFd); } finally { __fs.closeSync(directoryFd); }
+  } catch (error) {
+    if (error && error.code && error.code.indexOf("MONGODB_") === 0) throw error;
+    __fail("MONGODB_BULK_STORAGE_DURABILITY_UNAVAILABLE", "bulk storage could not complete a durable owner-only write probe");
+  }
+
+  await __ttlInitializeReceiptCollection(client, request.receiptsDatabase || request.database, request.collection);
+  const storageMarker = {
+    schemaVersion: 1,
+    database: request.database,
+    receiptsCollection: request.collection,
+    receiptsDatabase: request.receiptsDatabase || request.database,
+    initializedAt: new Date().toISOString(),
+  };
+  const markerPath = __path.join(request.storageRoot, ".storage-v1.json");
+  if (__fs.existsSync(markerPath)) {
+    const existingStat = __fs.lstatSync(markerPath);
+    if (existingStat.isSymbolicLink() || !existingStat.isFile() || (existingStat.mode & 0o777) !== 0o600) {
+      __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record must be a regular 0600 file");
+    }
+    let existingStorageMarker;
+    try { existingStorageMarker = JSON.parse(__fs.readFileSync(markerPath, "utf8")); }
+    catch (_error) { __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record is damaged"); }
+    if (!existingStorageMarker || existingStorageMarker.schemaVersion !== 1 || existingStorageMarker.database !== request.database || existingStorageMarker.receiptsCollection !== request.collection) {
+      __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record belongs to a different configuration");
+    }
+    storageMarker.initializedAt = existingStorageMarker.initializedAt;
+  }
+  const markerText = JSON.stringify(storageMarker, null, 2) + "\\n";
+  const temporaryPath = markerPath + "." + process.pid + "." + __randomBytes(8).toString("hex") + ".tmp";
+  const markerFd = __fs.openSync(temporaryPath, "w", 0o600);
+  try {
+    __fs.writeFileSync(markerFd, markerText, "utf8");
+    __fs.fsyncSync(markerFd);
+  } finally { __fs.closeSync(markerFd); }
+  __fs.renameSync(temporaryPath, markerPath);
+  __fs.chmodSync(markerPath, 0o600);
+  const markerDirectoryFd = __fs.openSync(request.storageRoot, "r");
+  try { __fs.fsyncSync(markerDirectoryFd); } finally { __fs.closeSync(markerDirectoryFd); }
+  manifest.storageStatus = { rootState: "directory", rootMode: 0o700, collectionExists: true, expiryIndexExists: true };
+  manifest.status = "committed";
+  manifest.committedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1, kind: "bulk_storage" });
+}
+
+async function __loadMutationClient(manifest, rollback) {
+  try {
+    return await __loadClient();
+  } catch (error) {
+    if (manifest.kind === "import") {
+      manifest.status = rollback ? "rollback_retryable" : "commit_retryable";
+      try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+    }
+    throw error;
+  }
+}
+
+async function __commit() {
+  const releaseLock = __acquireMutationLock(false);
+  try {
+    const manifest = __loadManifest();
+    if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
+    if (manifest.status === "committed") return __summary(manifest);
+    if (manifest.status === "rolled_back") __fail("MONGODB_MUTATION_ALREADY_ROLLED_BACK", "mutation was already rolled back");
+    if (manifest.status !== "planned" && !(manifest.kind === "import" && manifest.status === "commit_retryable") && !(manifest.kind === "bulk_storage" && manifest.status === "commit_retryable")) __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit; inspect uncertain outcomes before retrying");
+    __assertNotExpired(manifest);
+    __appendJournal("commit_started", { planHash: manifest.planHash });
+    manifest.status = "commit_started";
+    manifest.execution = __request.execution;
+    __writeJsonAtomic("manifest.json", manifest);
+    const { client } = await __loadMutationClient(manifest, false);
+    try {
+      const collection = manifest.request.collection
+        ? client.db(manifest.request.database).collection(manifest.request.collection)
+        : null;
+      if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
+      if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
+      else if (manifest.kind === "index") await __commitIndex(manifest, collection, client.db(manifest.request.database));
+      else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
+      else if (manifest.kind === "transaction") await __commitTransaction(manifest, client);
+      else await __commitDocument(manifest, client, collection);
+      return __summary(manifest);
+    } catch (error) {
+      if (manifest.status !== "committed" && manifest.kind !== "import") {
+        manifest.status = manifest.kind === "bulk_storage" ? "commit_retryable"
+          : manifest.kind === "index" && manifest.indexReceipt && manifest.indexReceipt.stage !== "rejected" ? "commit_unknown" : "commit_failed";
+        try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+        try { __appendJournal(manifest.status, { code: error.code || "MONGODB_MUTATION_COMMIT_FAILED" }); } catch (_journalError) {}
+      }
+      throw error;
+    } finally {
+      await __cleanup(() => client.close());
+    }
+  } finally {
+    releaseLock();
+  }
+}
+
+async function __rollbackDocument(manifest, client, collection) {
+  const session = client.startSession();
+  try {
+    await session.withTransaction(async () => {
+      await __rollbackDocumentRequest(manifest.request, manifest.before, manifest.afterHashes, collection, session);
+    }, { readPreference: "primary" });
+  } finally {
+    await __cleanup(() => session.endSession());
+  }
+}
+
+async function __rollbackDocumentRequest(request, beforeValue, afterHashesValue, collection, session) {
+  const before = __decode(beforeValue || []);
+  const afterHashes = afterHashesValue || [];
+  const idDocuments = request.operation === "insertOne"
+    ? [{ _id: __decode(request.document._id) }]
+    : before;
+  const current = await __findByIds(collection, idDocuments, session);
+  if (current.length !== idDocuments.length || current.some((document) => {
+    const expected = afterHashes.find((item) => __hash(item.id) === __hash(__encode(document._id)));
+    return !expected || expected.hash !== __documentHash(document);
+  })) {
+    __fail("MONGODB_ROLLBACK_CONFLICT", "mutation target changed after the commit");
+  }
+  if (request.operation === "insertOne") {
+    const result = await collection.deleteOne({ _id: __decode(request.document._id) }, { session });
+    const deletedCount = result.deletedCount != null ? result.deletedCount : result.n;
+    if (deletedCount !== 1) __fail("MONGODB_ROLLBACK_CONFLICT", "inserted document could not be removed safely");
+    return;
+  }
+  for (const document of before) {
+    const result = await collection.replaceOne(
+      { _id: document._id },
+      document,
+      { session, upsert: false },
+    );
+    const matchedCount = result.matchedCount != null ? result.matchedCount : result.n;
+    if (matchedCount !== 1) __fail("MONGODB_ROLLBACK_CONFLICT", "original document could not be restored safely");
+  }
+}
+
+async function __rollbackTransaction(manifest, client) {
+  const session = client.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const operations = manifest.afterOperations || [];
+      for (let index = operations.length - 1; index >= 0; index -= 1) {
+        const item = operations[index];
+        const collection = client.db(item.request.database).collection(item.request.collection);
+        await __rollbackDocumentRequest(item.request, item.before, item.afterHashes, collection, session);
+      }
+    }, { readPreference: "primary" });
+  } finally {
+    await __cleanup(() => session.endSession());
+  }
+}
+
+async function __rollbackIndex(manifest, collection, database) {
+  const request = manifest.request;
+  const current = __indexByName(await __readIndexes(collection), request.name);
+  const dropping = request.operation === "createIndex";
+  if (dropping) {
+    if (!current || !manifest.afterIndex || !__indexMatches(current, __decode(manifest.afterIndex))) {
+      __fail("MONGODB_ROLLBACK_CONFLICT", "created index is missing or has changed");
+    }
+  } else {
+    if (current) __fail("MONGODB_ROLLBACK_CONFLICT", "dropped index was recreated by another operation");
+    if (!manifest.beforeIndex) __fail("MONGODB_ROLLBACK_MANIFEST_INVALID", "original index definition is missing");
+    __ttlRejectBusinessIndex(__decode(manifest.beforeIndex));
+  }
+  const original = __decode(manifest.beforeIndex);
+  manifest.rollbackReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash,
+    execution: manifest.execution, database: request.database, collection: request.collection,
+    operation: request.operation, stage: "dispatching", owned: false,
+    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } };
+  __writeJsonAtomic("manifest.json", manifest);
+  const command = dropping ? { dropIndexes: request.collection, index: request.name }
+    : { createIndexes: request.collection, indexes: [original] };
+  const reply = await database.command({ ...command, maxTimeMS: __maxTimeMs,
+    writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
+  if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "rollback index command did not acknowledge durable completion");
+  manifest.rollbackReceipt.stage = "acknowledged";
+  manifest.rollbackReceipt.numIndexesBefore = Number(reply.numIndexesBefore);
+  manifest.rollbackReceipt.numIndexesAfter = Number(reply.numIndexesAfter);
+  manifest.rollbackReceipt.noOp = Boolean(reply.note);
+  manifest.rollbackReceipt.owned = dropping || Number.isFinite(Number(reply.numIndexesBefore)) && Number(reply.numIndexesAfter) === Number(reply.numIndexesBefore) + 1 && !reply.note;
+  manifest.rollbackReceipt.acknowledgedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  if (!manifest.rollbackReceipt.owned) __fail("MONGODB_INDEX_OWNERSHIP_UNKNOWN", "rollback command did not prove an index change");
+  await __verifyIndex(manifest, collection, dropping, original);
+}
+
+async function __rollback() {
+  const releaseLock = __acquireMutationLock(false);
+  try {
+    const manifest = __loadManifest();
+    if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
+    if (manifest.status === "rolled_back") return __summary(manifest);
+    if (manifest.kind === "bulk_storage") __fail("MONGODB_BULK_STORAGE_NOT_ROLLBACKABLE", "bulk storage initialization is retained; disable bulk capability instead of deleting its records");
+    if (manifest.status !== "committed" && !(manifest.kind === "import" && manifest.status === "rollback_retryable")) __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
+    __assertNotExpired(manifest);
+    __appendJournal("rollback_started", { planHash: manifest.planHash });
+    manifest.status = "rollback_started";
+    manifest.execution = __request.execution;
+    __writeJsonAtomic("manifest.json", manifest);
+    const { client } = await __loadMutationClient(manifest, true);
+    try {
+      const collection = manifest.request.collection
+        ? client.db(manifest.request.database).collection(manifest.request.collection)
+        : null;
+      if (manifest.kind === "import") {
+        __assertImportLive(manifest.request, manifest.mutationId);
+        await __runImportTransaction(manifest, client, collection, true);
+        return __summary(manifest);
+      } else if (manifest.kind === "index") {
+        await __rollbackIndex(manifest, collection, client.db(manifest.request.database));
+      } else if (manifest.kind === "transaction") {
+        await __rollbackTransaction(manifest, client);
+      } else {
+        await __rollbackDocument(manifest, client, collection);
+      }
+      manifest.status = "rolled_back";
+      manifest.rolledBackAt = new Date().toISOString();
+      __writeJsonAtomic("manifest.json", manifest);
+      __appendJournal("rolled_back", { planHash: manifest.planHash });
+      return __summary(manifest);
+    } catch (error) {
+      if (manifest.kind !== "import") manifest.status = manifest.kind === "index" && manifest.rollbackReceipt ? "rollback_unknown" : "rollback_failed";
+      try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+      try { __appendJournal(manifest.status, { code: error.code || "MONGODB_ROLLBACK_FAILED" }); } catch (_journalError) {}
+      throw error;
+    } finally {
+      await __cleanup(() => client.close());
+    }
+  } finally {
+    releaseLock();
+  }
+}
+
+function __list() {
+  if (!__fs.existsSync(__journalRoot)) return { entries: [] };
+  if (__fs.lstatSync(__journalRoot).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal root cannot be a symbolic link");
+  const entries = [];
+  for (const name of __fs.readdirSync(__journalRoot)) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(name)) continue;
+    const filePath = __path.join(__journalRoot, name, "manifest.json");
+    try {
+      if (!__fs.existsSync(filePath) || __fs.lstatSync(filePath).isSymbolicLink()) continue;
+      const manifest = JSON.parse(__fs.readFileSync(filePath, "utf8"));
+      if (manifest.schemaVersion !== __schemaVersion) continue;
+      if (__request.status && manifest.status !== __request.status) continue;
+      entries.push(__summary(manifest));
+    } catch (_error) {
+      // Ignore incomplete or expired directories in a listing.
+    }
+  }
+  entries.sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || "")));
+  return { entries: entries.slice(0, ${MAX_MONGODB_MUTATION_LIST_ITEMS}) };
+}
+
+// A recovery fence and preparation share the same lock. Never age out this lock:
+// elapsed time cannot prove that a remote process has stopped using the journal.
+async function __guardedPrepare(recover) {
+  const release = __acquireMutationLock(false);
+  try {
+    const ticket = __request.prepare;
+    const controlPath = __path.join(__journalDir(), "prepare.json");
+    const manifestPath = __path.join(__journalDir(), "manifest.json");
+    const source = { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey };
+    let control;
+    if (__fs.existsSync(controlPath)) {
+      if (__fs.lstatSync(controlPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "prepare receipt cannot be a symbolic link");
+      try { control = JSON.parse(__fs.readFileSync(controlPath, "utf8")); }
+      catch (_error) { __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is invalid"); }
+      if (control.schemaVersion !== 1 || control.binding !== ticket.binding || control.requestDigest !== ticket.requestDigest ||
+          control.database !== __request.database || __hash(control.source) !== __hash(source) ||
+          !Number.isSafeInteger(control.fencedThrough) || control.fencedThrough < 0 || !["preparing", "plan_reserved"].includes(control.stage)) {
+        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "prepare identity or target does not match");
+      }
+    } else {
+      // Missing remote state may have been deleted or lost. It cannot prove that
+      // an earlier helper never ran, even when a mutation listing is empty.
+      if (recover || __fs.existsSync(manifestPath)) __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is missing");
+      control = { schemaVersion: 1, binding: ticket.binding, requestDigest: ticket.requestDigest, database: __request.database, source, fencedThrough: 0, stage: "preparing" };
+      __writeJsonAtomic("prepare.json", control);
+    }
+    if (__fs.existsSync(manifestPath)) {
+      if (__fs.lstatSync(manifestPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
+      let manifest;
+      try { manifest = JSON.parse(__fs.readFileSync(manifestPath, "utf8")); }
+      catch (_error) { __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest is invalid"); }
+      if (manifest.mutationId !== ticket.mutationId || __hash(manifest.prepare) !== __hash(ticket) ||
+          manifest.schemaVersion !== __schemaVersion || __planHash(manifest) !== manifest.planHash) {
+        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "manifest does not match this preparation attempt");
+      }
+      __assertManifestScope(manifest);
+      return { ...__summary(manifest), prepare: ticket, recovery: "prepared" };
+    }
+    if (recover) {
+      if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
+      control.fencedThrough = Math.max(control.fencedThrough, ticket.attempt);
+      __writeJsonAtomic("prepare.json", control);
+      return { prepare: ticket, recovery: "fenced" };
+    }
+    if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
+    if (ticket.attempt <= control.fencedThrough) __fail("MONGODB_PREPARE_FENCED", "this preparation attempt was fenced by recovery");
+    return await __prepare();
+  } finally { release(); }
+}
+
+(async () => {
+  let client;
+  try {
+    let data;
+    if (__request.mode === "import_review") {
+      data = { importId: __request.importId, database: __request.database, batches: __reviewImportBatches(__request), historicalOutcome: "unknown" };
+    } else if (__request.mode === "import_retire") {
+      data = __retireImport(__request);
+    } else if (__request.mode === "import_recover") {
+      data = await __guardedImportPrepare(true);
+    } else if (__request.mode === "list") {
+      data = __list();
+    } else if (__request.mode === "recover_execution") {
+      data = await __recoverExecution();
+    } else if (__request.mode === "get") {
+      data = __summary(__loadManifest());
+    } else if (__request.mode === "recover_prepare") {
+      data = await __guardedPrepare(true);
+    } else if (__request.mode === "prepare") {
+      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __guardedImportPrepare(false) : await __prepare();
+    } else if (__request.mode === "commit") {
+      data = await __commit();
+    } else if (__request.mode === "rollback") {
+      data = await __rollback();
+    } else {
+      __fail("MONGODB_MUTATION_MODE_INVALID", "unsupported mutation mode");
+    }
+    process.stdout.write(__marker + JSON.stringify({ ok: true, data }) + "\\n");
+  } catch (error) {
+    process.stdout.write(__marker + JSON.stringify({
+      ok: false,
+      error: {
+        code: error.code || "MONGODB_MUTATION_FAILED",
+        message: String(error.message || error).slice(0, 2000),
+      },
+    }) + "\\n");
+    process.exitCode = 1;
+  } finally {
+    if (client) await __cleanup(() => client.close());
+  }
+})();
+`;
+  const scriptLimit = request.kind === "import_plan" ? MAX_MONGODB_IMPORT_BYTES + 1024 * 1024 : MAX_MONGODB_MUTATION_RESULT_BYTES * 2;
+  if (byteLength3(script) > scriptLimit) {
+    throw mutationError("MongoDB mutation helper script is too large", "MONGODB_MUTATION_SCRIPT_TOO_LARGE", 413);
+  }
+  return script;
+}
+function markerPayload2(stdout) {
+  const lines = String(stdout || "").split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (!lines[index].startsWith(MONGODB_RESULT_MARKER)) continue;
+    try {
+      return JSON.parse(lines[index].slice(MONGODB_RESULT_MARKER.length));
+    } catch {
+      throw mutationError("MongoDB mutation helper returned invalid JSON", "MONGODB_MUTATION_INVALID_RESPONSE", 502);
+    }
+  }
+  return null;
+}
+function normalizeMutationId(value) {
+  return normalizeName(value, "mutationId", SAFE_MUTATION_ID_PATTERN);
+}
+function normalizePlanHash(value) {
+  return normalizeName(value, "planHash", /^[a-f0-9]{64}$/);
+}
+async function runMongoMutation(input = {}, options = {}) {
+  const rawConfig = options.config?.mongodb || options.config || {};
+  const mode = input.mode || "prepare";
+  let request, config, script;
+  try {
+    config = normalizeMongoMutationConfig(rawConfig);
+    const execution2 = input._businessExecution;
+    if (execution2 !== void 0 && (!execution2 || !/^[a-f0-9]{64}$/.test(execution2.intentId || "") || typeof execution2.operationId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(execution2.operationId) || Object.keys(execution2).some((key) => !["intentId", "operationId"].includes(key)))) {
+      throw mutationError("invalid execution identity", "MONGODB_EXECUTION_IDENTITY_INVALID");
+    }
+    const importReceipt = input._businessImport || input.importReceipt;
+    if (importReceipt !== void 0 && (!importReceipt || !["binding", "requestDigest", "batchesDigest"].every((field) => /^[a-f0-9]{64}$/.test(importReceipt[field] || "")) || (!Number.isSafeInteger(importReceipt.attempt) || importReceipt.attempt < 1) || Object.keys(importReceipt).some((field) => !["binding", "requestDigest", "batchesDigest", "attempt", "riskPlanId"].includes(field)) || importReceipt.riskPlanId !== void 0 && !/^[a-f0-9]{64}$/.test(importReceipt.riskPlanId))) throw mutationError("invalid import prepare receipt", "MONGODB_IMPORT_RECEIPT_INVALID");
+    const ticket = input._businessPrepare;
+    if (ticket !== void 0 && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
+    if (mode === "prepare") {
+      const kind = input.kind === "import_plan" ? "import_plan" : input.kind === "bulk_storage" ? "bulk_storage" : input.kind === "index" ? "index" : input.kind === "transaction" ? "transaction" : "document";
+      const mutation2 = kind === "import_plan" ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId }) : kind === "bulk_storage" ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId }) : kind === "index" ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId }) : kind === "transaction" ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId }) : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
+      request = {
+        mode: "prepare",
+        kind,
+        operationId: options.operation?.operationId || mutation2.operationId,
+        mutationId: ticket?.mutationId || (0, import_node_crypto4.randomUUID)(),
+        ...ticket ? { prepare: ticket, database: mutation2.database } : {},
+        mutation: mutation2,
+        ...kind === "import_plan" && input._businessImport ? { importReceipt: input._businessImport } : {}
+      };
+      if (ticket && ["import_plan", "bulk_storage"].includes(kind)) throw mutationError("unsupported prepare identity kind", "MONGODB_PREPARE_IDENTITY_INVALID");
+    } else if (["import_review", "import_retire", "import_recover"].includes(mode)) {
+      const database = assertDatabaseAllowed(input.database, config);
+      const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+      const validateBatches = (batches) => {
+        if (!Array.isArray(batches) || !batches.length || batches.length > 100 || batches.some((b, i) => !/^import-[a-f0-9]{64}$/.test(b.mutationId || "") || b.batchIndex !== i || !Number.isSafeInteger(b.documentCount) || b.documentCount < 1 || b.documentCount > 2e3 || !/^[a-f0-9]{64}$/.test(b.requestDigest || ""))) throw mutationError("invalid import batch identity", "MONGODB_IMPORT_RECEIPT_INVALID");
+        return batches;
+      };
+      request = { mode, database, importId };
+      if (mode === "import_review") request.batches = validateBatches(input.batches);
+      if (mode === "import_recover") request.importReceipt = input.importReceipt;
+      if (mode === "import_retire") {
+        request.replacementImportId = normalizeName(input.replacementImportId, "replacementImportId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+        if (request.replacementImportId === importId) throw mutationError("distinct import identity required", "MONGODB_IMPORT_RECEIPT_INVALID");
+        for (const field of ["riskPlanId", "dispositionId", "originalRequestDigest", "replacementRequestDigest", "approvalAuditId"]) {
+          if (!/^[a-f0-9]{64}$/.test(input[field] || "")) throw mutationError("invalid import review identity", "MONGODB_IMPORT_RECEIPT_INVALID");
+          request[field] = input[field];
+        }
+        request.originalBatches = validateBatches(input.originalBatches);
+        request.replacementBatches = validateBatches(input.replacementBatches);
+      }
+    } else if (mode === "recover_prepare") {
+      if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
+      request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };
+    } else if (mode === "recover_execution") {
+      request = {
+        mode,
+        mutationId: normalizeMutationId(input.mutationId),
+        planHash: normalizePlanHash(input.planHash),
+        database: assertDatabaseAllowed(input.database, config),
+        execution: execution2
+      };
+    } else if (mode === "get") {
+      request = { mode, mutationId: normalizeMutationId(input.mutationId), planHash: normalizePlanHash(input.planHash) };
+    } else if (mode === "commit" || mode === "rollback") {
+      request = {
+        mode,
+        execution: execution2,
+        mutationId: normalizeMutationId(input.mutationId),
+        planHash: normalizePlanHash(input.planHash),
+        operationId: options.operation?.operationId || (0, import_node_crypto4.randomUUID)()
+      };
+      const expectedConfirmation = mode === "commit" ? MONGODB_MUTATION_CONFIRMATION : MONGODB_ROLLBACK_CONFIRMATION;
+      if (input.confirmation !== expectedConfirmation) {
+        throw mutationError(
+          `confirmation must exactly equal ${expectedConfirmation}`,
+          mode === "commit" ? "MONGODB_MUTATION_CONFIRMATION_REQUIRED" : "MONGODB_ROLLBACK_CONFIRMATION_REQUIRED",
+          400
+        );
+      }
+    } else if (mode === "list") {
+      request = {
+        mode: "list",
+        status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : void 0,
+        mutationId: (0, import_node_crypto4.randomUUID)(),
+        operationId: options.operation?.operationId || (0, import_node_crypto4.randomUUID)()
+      };
+    } else {
+      throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
+    }
+    if (typeof options.runSSH !== "function") {
+      throw mutationError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
+    }
+    script = buildMongoMutationScript(request, config);
+  } catch (error2) {
+    if (mode === "prepare") error2.dispatchState = "not_dispatched";
+    throw error2;
+  }
+  let remoteResult;
+  try {
+    remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
+      config: options.config,
+      operation: options.operation,
+      stdin: script,
+      taskType: "mongo_write"
+    });
+  } catch (error2) {
+    if (options.operation?.signal?.aborted) {
+      throw operationErrorForSignal(options.operation.signal, options.operation, {
+        layer: "mongodb-mutation",
+        phase: mode
+      });
+    }
+    throw operationError(redactMongoSecrets(error2.message || "MongoDB mutation helper could not be executed"), {
+      code: error2.code || "MONGODB_MUTATION_FAILED",
+      statusCode: error2.statusCode || 502,
+      operationId: options.operation?.operationId,
+      layer: "mongodb-mutation",
+      phase: mode,
+      retriable: !["commit", "rollback"].includes(mode) && error2.retriable === true,
+      cause: error2
+    });
+  }
+  if (remoteResult?.stdoutTruncated || byteLength3(remoteResult?.stdout || "") > MAX_MONGODB_MUTATION_RESULT_BYTES) {
+    throw operationError("MongoDB mutation result exceeded the response limit", {
+      code: "MONGODB_MUTATION_RESULT_TOO_LARGE",
+      statusCode: 413,
+      operationId: options.operation?.operationId,
+      layer: "mongodb-mutation",
+      phase: "response-size",
+      retriable: false
+    });
+  }
+  const payload = markerPayload2(remoteResult?.stdout);
+  if (!payload) {
+    throw operationError("MongoDB mutation helper returned no structured response", {
+      code: "MONGODB_MUTATION_INVALID_RESPONSE",
+      statusCode: 502,
+      operationId: options.operation?.operationId,
+      layer: "mongodb-mutation",
+      phase: "response-parse",
+      retriable: false,
+      cause: redactMongoSecrets(remoteResult?.stderr)
+    });
+  }
+  if (payload.ok !== true || remoteResult?.exitCode !== 0 || remoteResult?.timedOut) {
+    throw operationError(redactMongoSecrets(payload.error?.message || remoteResult?.stderr || "MongoDB mutation failed"), {
+      code: remoteResult?.timedOut ? "MONGODB_MUTATION_TIMEOUT" : payload.error?.code || "MONGODB_MUTATION_FAILED",
+      statusCode: remoteResult?.timedOut ? 408 : 400,
+      operationId: options.operation?.operationId,
+      layer: "mongodb-mutation",
+      phase: mode,
+      retriable: !["commit", "rollback"].includes(mode) && remoteResult?.timedOut === true,
+      cause: redactMongoSecrets(remoteResult?.stderr)
+    });
+  }
+  return {
+    ...payload.data || {},
+    timing: remoteResult.timing
+  };
+}
+
+// privacy-service.js
+var import_node_worker_threads = require("node:worker_threads");
+var import_node_path2 = __toESM(require("node:path"), 1);
+var import_node_url = require("node:url");
+
+// privacy-key.js
+var import_windows_privacy = __toESM(require_windows_privacy(), 1);
+function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
+  return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
+}
+
+// ../plugins/remote-debug-agent/business-privacy.js
+function fail(code = "BUSINESS_REFERENCE_INVALID") {
+  throw Object.assign(new Error("Business reference is unavailable or is not valid for this target or argument. Re-query the data in this MCP session."), { code, retriable: false });
+}
+function stable(value) {
+  if (Array.isArray(value)) return value.map(stable);
+  if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
+  return value;
+}
+function encoded(value) {
+  return JSON.stringify(stable(value));
+}
+function businessTargetScope(endpoint, instance2, database) {
+  if (!instance2?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+  return encoded({
+    endpoint,
+    id: instance2.id,
+    host: instance2.host,
+    port: instance2.port,
+    username: instance2.username,
+    createdAt: instance2.createdAt,
+    configPath: instance2.mongodb?.configPath,
+    driverPath: instance2.mongodb?.driverPath,
+    configProfile: instance2.mongodb?.configProfile,
+    uriKey: instance2.mongodb?.uriKey,
+    database
+  });
+}
+
+// ../plugins/remote-debug-agent/output-contracts.js
+var scalar = "scalar";
+var json = "json";
+var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
+var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
+var warning = fields("code message path source phase");
+var error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
+var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
+var instance = {
+  ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
+  sourceRoots: json,
+  logProjects: json,
+  serviceProfiles: json,
+  approvedCommands: json,
+  commandReview: json,
+  mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
+  runtime,
+  memory,
+  hasPassphrase: "boolean"
+};
+instance.mongodb.hasSandboxManagementPassword = "boolean";
+var common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
+var entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
+var mutation = {
+  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
+  collections: [scalar],
+  changedFields: [scalar],
+  affectedIds: json,
+  storageStatus: json,
+  rollbackRestoresDocuments: scalar,
+  atomicity: scalar,
+  failedBatch: fields("batchIndex mutationId code"),
+  preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
+};
+var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
+mutation.batches = [batch];
+var receiptStorage = fields("database collection legacy scope schemaVersion");
+function bulkFailure(depth = 2) {
+  const shape = {
+    ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    ...fields("category driverCode writeErrorCount writeErrorsTruncated"),
+    errorLabels: [scalar],
+    writeErrors: [fields("code index category")],
+    writeConcernErrors: [fields("code index category")],
+    driverFrames: [fields("module line column")],
+    frames: [fields("function line column")]
+  };
+  if (depth > 0) for (const key of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key] = bulkFailure(depth - 1);
+  return shape;
+}
+var bulk = {
+  ...fields("terminationId reviewHash previousStatus"),
+  lastFailure: bulkFailure(),
+  ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
+  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
+  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
+  managedAdmissionClosed: "boolean",
+  originalJobFound: "boolean",
+  receiptStorage,
+  activeBatchIndexes: [scalar],
+  committed: fields("matched modified inserted unchanged"),
+  differences: json,
+  changedFields: [scalar],
+  planPreview: [batch],
+  batches: [batch]
+};
+var historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
+var bulkHistory = {
+  ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
+  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan }
+};
+var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
+var execution = {
+  ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
+  results: [{ ...fields("commandIndex command commandPreview cmd ok stdout stderr exitCode durationMs timedOut"), timing }],
+  stopped: fields("commandIndex reason exitCode")
+};
+var violation = fields("commandIndex code severity rule reason message");
+var model = { ...fields("status errorCode attempts durationMs decision isReadOnly riskLevel summary"), violations: [violation] };
+var review = { ...fields("reason reviewedAt"), staticViolations: [violation], violations: [violation], model };
+var sandbox = {
+  ...fields("sandboxDatabase storageRoot jobCount bytes initialized activeFilesRetained jobId scannedBytes truncated cleanupHash fileCount retainedUntil removedFiles removedBytes removedReceipts"),
+  receiptStorage,
+  files: [fields("name bytes modified")],
+  records: json,
+  jobs: [{ ...fields("jobId status rollbackExpiresAt"), receiptStorage }],
+  hasMore: scalar
+};
+var access = {
+  ...fields("setupId planHash status expiresAt instanceId sandboxDatabase collection managerUser managerRole executorRole managementProfile configPath configModeAfter backupMode collectionsInitialized passwordReset requiresConfirmation confirmation rollbackMode"),
+  executionUser: fields("user db"),
+  environment: json,
+  managerPrivileges: json,
+  executorPrivileges: json,
+  existing: { ...fields("manager profile executorGranted"), roles: json }
+};
+var logResources = {
+  ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
+  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason")
+};
+var fileReceipt = {
+  ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
+  source: fields("size modifyTime changeTime inode device"),
+  error,
+  warnings: [fields("code message memberPath lineNumber")]
+};
+var logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
+var logJob = {
+  ...logProgress,
+  ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
+  resourceTaskId: scalar,
+  evidenceLimits: fields("count bytes"),
+  fileResults: [fileReceipt],
+  scopeControls: fields("dateFrom dateTo stopAfterFile"),
+  progress: logProgress,
+  resources: logResources,
+  error,
+  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
+  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
+  groups: [fields("level route method code message count")],
+  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
+};
+var finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
+var finalResult = {
+  ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"),
+  final: "boolean",
+  privacy: fields("credentials binary policyVersion"),
+  references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") },
+  files: [finalFile]
+};
+var contracts = {
+  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
+  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
+  remote_debug_get_final_result: { result: finalResult },
+  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
+  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
+    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
+    target: fields("host port username"),
+    envFiles: [scalar],
+    processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }]
+  } }] }] },
+  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
+  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map((name2) => [name2, {
+    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
+    started: [scalar],
+    attempted: [scalar],
+    missing: [scalar],
+    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }],
+    error
+  }])),
+  remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
+  remote_debug_get_capabilities: { capabilities: json },
+  remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
+  remote_debug_mongodb_disposition: {
+    ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
+    requiresConfirmation: "boolean",
+    localContainment: "boolean",
+    remoteFenceConfirmed: "boolean",
+    replacementAllowed: "boolean",
+    missingRequirements: [scalar],
+    historicalEvidenceGaps: [scalar],
+    ...fields("kind replacementImportId batchCount documentCount atomicity riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
+    humanConfirmationRequired: "boolean",
+    humanApproved: "boolean",
+    canApprove: "boolean",
+    collections: [scalar],
+    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
+    acceptedResidualRisk: "boolean",
+    originalBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    replacementBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    batches: [fields("mutationId planHash batchIndex status")],
+    observations: { ...fields("source observedAt status code historicalOutcome"), batches: [fields("mutationId batchIndex status code planHash rollbackExpiresAt historicalOutcome")] },
+    binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
+    fenceChallenge: {
+      ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
+      binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
+    },
+    result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } }
+  },
+  remote_debug_mongodb_prepare_write: mutation,
+  remote_debug_mongodb_prepare_index: mutation,
+  remote_debug_mongodb_prepare_transaction: mutation,
+  remote_debug_mongodb_prepare_import: mutation,
+  remote_debug_mongodb_prepare_bulk_storage: mutation,
+  remote_debug_mongodb_execute_mutation: mutation,
+  remote_debug_mongodb_rollback_mutation: mutation,
+  remote_debug_mongodb_list_mutations: { entries: [mutation] },
+  remote_debug_mongodb_prepare_bulk: bulk,
+  remote_debug_mongodb_execute_bulk: bulk,
+  remote_debug_mongodb_get_bulk_job: bulk,
+  remote_debug_mongodb_control_bulk_job: bulk,
+  remote_debug_mongodb_rollback_bulk_job: bulk,
+  remote_debug_mongodb_list_bulk_jobs: { ...fields("offset limit total hasMore"), jobs: [bulk] },
+  remote_debug_prepare_sandbox_access: access,
+  remote_debug_configure_sandbox_access: access,
+  remote_debug_get_sandbox: sandbox,
+  remote_debug_export_sandbox_log: sandbox,
+  remote_debug_prepare_sandbox_cleanup: sandbox,
+  remote_debug_cleanup_sandbox: sandbox,
+  remote_debug_restart_instance: { ...fields("restarted action previousStatus"), instance, runtime },
+  remote_debug_update_memory: { note: { ...fields("topic summary updatedAt"), facts: [scalar] } },
+  remote_debug_run_command: fields("stdout stderr exitCode timedOut"),
+  remote_debug_read_file: fields("path content truncated"),
+  remote_debug_list_dir: { path: scalar, entries: [entry] },
+  remote_debug_list_logs: { ...fields("category nextCursor hasMore truncated scannedEntries sourceCount"), entries: [entry], warnings: [warning] },
+  remote_debug_list_log_archive_members: { ...fields("path compression nextCursor hasMore truncated scannedBytes"), members: [entry] },
+  remote_debug_read_log: fields("path memberPath compression content truncated scannedTruncated scannedBytes archiveScannedBytes totalLines matchedLines"),
+  remote_debug_query_logs: {
+    ...fields("mode projectId content returnedLines matchedLines scannedLines scannedBytes expandedBytes outputBytes outputTruncated scanTruncated complete coverage countsAreComplete hasMoreFiles nextFileOffset hasMoreMembers nextMemberOffset memberBytes directoryListingTruncated warningsTruncated"),
+    files: [entry],
+    scannedFiles: [fields("path scannedBytes startByte endByte")],
+    records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
+    members: [entry],
+    warnings: [warning]
+  },
+  remote_debug_start_log_query: logJob,
+  remote_debug_get_log_query: logJob,
+  remote_debug_control_log_query: logJob,
+  remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
+  remote_debug_set_log_project: { projects: json },
+  remote_debug_prepare_command_draft: draft,
+  remote_debug_get_command_draft: draft,
+  remote_debug_execute_command_draft: execution,
+  remote_debug_review_command_draft: { ...draft, draft, decision: scalar, review, execution }
+};
+var OUTPUT_CONTRACTS = Object.freeze(Object.fromEntries(
+  Object.entries(contracts).map(([name2, shape]) => [name2, { ...common, ...shape }])
+));
+var ERROR_CONTRACT = {
+  ...common,
+  error,
+  details: { ...fields("ok operationId code layer phase retriable cause agentUrl port manifestPath"), error }
+};
+
+// ../plugins/remote-debug-agent/output-guard.js
+var REDACTED = "[REDACTED]";
+var GUARD_BLOCKED = Object.freeze({
+  ok: false,
+  error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
+});
+var MAX_BYTES = 8 * 1024 * 1024;
+var MAX_NODES = 1e5;
+var MAX_DEPTH = 40;
+var MAX_SECRETS = 2048;
+var SECRET_NAME = /(?:password|passwd|passphrase|pwd|secret|token|apikey|privatekey|authorization|cookie|credentials?|connectionstring|dsn|accesskey(?:id)?|signingkey|encryptionkey)(?:s|hash|digest)?$/i;
+var ASSIGNMENT_NAME = String.raw`[\w.-]*(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key(?:[_-]?id)?|connection[_-]?string|dsn)`;
+var ASSIGNMENT = new RegExp(String.raw`(\b${ASSIGNMENT_NAME}["']?\s*[=:]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}&]+)`, "gi");
+var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pass|token|secret|api[-_]?key|client[-_]?secret)(?:=|\s+))("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s;]+)`, "gi");
+function isSensitiveKey(key) {
+  const normalized = key.replace(/[^a-z0-9]/gi, "");
+  return SECRET_NAME.test(normalized) || /^(?:auth|authentication)$/i.test(normalized);
+}
+function blocked() {
+  throw new Error("OUTPUT_GUARD_BLOCKED");
+}
+function decodeEscapes(value) {
+  return value.replace(
+    /\\u([0-9a-f]{4})|\\x([0-9a-f]{2})|\\([\\"'/=:])/gi,
+    (_, unicode, hex, literal) => literal || String.fromCharCode(parseInt(unicode || hex, 16))
+  );
+}
+function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1e3, businessPrivacy } = {}) {
+  const secrets = /* @__PURE__ */ new Set();
+  let unavailable = false;
+  function remember(value) {
+    if (typeof value !== "string" || !value || value === REDACTED) return;
+    if (value.length > maxBytes || secrets.size >= MAX_SECRETS && !secrets.has(value)) {
+      unavailable = true;
+      return;
+    }
+    secrets.add(value);
+  }
+  function context() {
+    if (unavailable) blocked();
+    const deadline = performance.now() + budgetMs;
+    let nodes = 0, bytes = 0;
+    const localSecrets = new Set(secrets);
+    return { secrets: localSecrets, replacements: 0, omittedFields: 0, remember(value) {
+      if (typeof value !== "string" || !value || value === REDACTED) return;
+      if (value.length > maxBytes || localSecrets.size >= MAX_SECRETS && !localSecrets.has(value)) blocked();
+      localSecrets.add(value);
+    }, check(value, depth) {
+      if (++nodes > maxNodes || depth > maxDepth || performance.now() > deadline) blocked();
+      if (typeof value === "string") bytes += Buffer.byteLength(value);
+      if (bytes > maxBytes * 8) blocked();
+    } };
+  }
+  function learn(value, ctx, depth = 0) {
+    ctx.check(value, depth);
+    if (typeof value === "string") {
+      const decoded = decodeEscapes(value);
+      if (decoded !== value) learn(decoded, ctx, depth + 1);
+      if (/^[\[{"]/.test(value.trim())) {
+        let parsed;
+        try {
+          parsed = JSON.parse(value);
+        } catch {
+        }
+        if (parsed !== void 0 && parsed !== value) learn(parsed, ctx, depth + 1);
+      }
+      for (const pattern of [ASSIGNMENT, CLI_SECRET]) {
+        for (const match of value.matchAll(pattern)) {
+          const secret = match[2].replace(/^["']|["']$/g, "");
+          ctx.remember(secret);
+        }
+      }
+      for (const match of value.matchAll(/\b(?:Bearer|Basic)\s+([a-z0-9._~+/=-]+)/gi)) ctx.remember(match[1]);
+    } else if (Array.isArray(value)) {
+      for (const item of value) learn(item, ctx, depth + 1);
+    } else if (value && typeof value === "object") {
+      if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) blocked();
+      for (const [key, child] of Object.entries(value)) {
+        learn(key, ctx, depth + 1);
+        if (isSensitiveKey(key)) learnSecret(child, ctx, depth + 1);
+        else learn(child, ctx, depth + 1);
+      }
+    } else if (!["string", "number", "boolean", "undefined"].includes(typeof value) && value !== null) blocked();
+  }
+  function learnSecret(value, ctx, depth) {
+    if (typeof value === "string") {
+      ctx.check(value, depth);
+      ctx.remember(value);
+    } else if (typeof value === "number") {
+      ctx.check(value, depth);
+      ctx.remember(String(value));
+    } else if (Array.isArray(value)) {
+      for (const item of value) learnSecret(item, ctx, depth + 1);
+    } else if (value && typeof value === "object") {
+      ctx.check(value, depth);
+      for (const child of Object.values(value)) learnSecret(child, ctx, depth + 1);
+    } else ctx.check(value, depth);
+  }
+  function replacePatterns(text3, ctx) {
+    let result = text3.replace(/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----|$)/g, REDACTED).replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s"'<>]*@/gi, `$1${REDACTED}@`).replace(/\b(?:Bearer|Basic)\s+[a-z0-9._~+/=-]+/gi, REDACTED).replace(/\b(?:authorization|proxy-authorization|cookie|set-cookie)\s*:\s*[^\r\n]+/gi, REDACTED).replace(CLI_SECRET, `$1${REDACTED}`).replace(ASSIGNMENT, `$1${REDACTED}`).replace(/\b(?:sk-(?:proj-|svcacct-)?[a-z0-9_-]{16,}|gh[pousr]_[a-z0-9]{20,}|github_pat_[a-z0-9_]{20,}|xox[baprs]-[a-z0-9-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16})\b/gi, REDACTED).replace(/\beyJ[a-z0-9_-]{5,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\b/gi, REDACTED);
+    for (const secret of [...ctx.secrets].sort((left, right) => right.length - left.length)) {
+      ctx.check?.(void 0, 0);
+      const variants = [.../* @__PURE__ */ new Set([secret, encodeURIComponent(secret), JSON.stringify(secret).slice(1, -1)])].sort((left, right) => right.length - left.length);
+      for (const variant of variants) {
+        result = variant.includes(REDACTED) ? result.split(variant).join(REDACTED) : result.split(REDACTED).map((part) => part.split(variant).join(REDACTED)).join(REDACTED);
+      }
+    }
+    return result;
+  }
+  function text2(value, ctx, depth) {
+    const trimmed = value.trim();
+    if (/^[\[{"]/.test(trimmed)) {
+      let parsed;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+      }
+      if (parsed !== void 0 && parsed !== value) {
+        learn(parsed, ctx, depth + 1);
+        const safe = walk(parsed, "json", ctx, depth + 1);
+        if (JSON.stringify(parsed) !== JSON.stringify(safe)) return JSON.stringify(safe);
+        return value;
+      }
+    }
+    let result = replacePatterns(value, ctx);
+    let decoded = value;
+    for (let round = 0; round < 3 && decoded.includes("\\"); round++) {
+      decoded = decodeEscapes(decoded);
+      if (replacePatterns(decoded, ctx) !== decoded) {
+        result = REDACTED;
+        break;
+      }
+    }
+    if (result !== value) ctx.replacements++;
+    ctx.check(void 0, depth);
+    return result;
+  }
+  function walk(value, shape, ctx, depth = 0) {
+    ctx.check(value, depth);
+    if (value === void 0 || value === null) return value;
+    if (shape === "boolean") {
+      if (typeof value !== "boolean") blocked();
+      return value;
+    }
+    if (shape === "scalar" && typeof value === "object") blocked();
+    if (shape !== "scalar" && shape !== "json" && typeof value !== "object") blocked();
+    if (typeof value === "string") return text2(value, ctx, depth);
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) blocked();
+      if (ctx.secrets.has(String(value))) {
+        ctx.replacements++;
+        return REDACTED;
+      }
+      return value;
+    }
+    if (Array.isArray(value)) {
+      if (shape !== "json" && !Array.isArray(shape)) blocked();
+      return value.map((item) => walk(item, shape === "json" ? "json" : shape[0], ctx, depth + 1));
+    }
+    if (!value || typeof value !== "object" || Array.isArray(shape) || shape === "scalar") blocked();
+    const output = /* @__PURE__ */ Object.create(null);
+    for (const [key, child] of Object.entries(value)) {
+      ctx.check(key, depth);
+      if (shape !== "json" && !Object.hasOwn(shape, key)) {
+        ctx.omittedFields++;
+        continue;
+      }
+      const safeKey = text2(key, ctx, depth + 1);
+      if (Object.hasOwn(output, safeKey)) blocked();
+      if (shape !== "json" && shape[key] === "boolean" || typeof child === "boolean" && /^has[A-Z]/.test(key)) output[safeKey] = walk(child, "boolean", ctx, depth + 1);
+      else if (isSensitiveKey(key)) {
+        output[safeKey] = REDACTED;
+        if (child !== REDACTED) ctx.replacements++;
+      } else output[safeKey] = walk(child, shape === "json" ? "json" : shape[key], ctx, depth + 1);
+    }
+    return output;
+  }
+  function sanitize(value, shape = "json") {
+    const ctx = context();
+    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
+    learn(value, ctx);
+    if (unavailable) blocked();
+    const safe = walk(value, shape, ctx);
+    const checked = walk(safe, shape, ctx);
+    return { value: checked, stats: { policyVersion: 1, replacements: ctx.replacements, omittedFields: ctx.omittedFields } };
+  }
+  function toolResult(name2, payload, isError = false, privacyContext) {
+    try {
+      const shape = isError ? ERROR_CONTRACT : Object.hasOwn(OUTPUT_CONTRACTS, name2) ? OUTPUT_CONTRACTS[name2] : void 0;
+      if (!shape || !payload || typeof payload !== "object" || Array.isArray(payload)) blocked();
+      const safe = sanitize(payload, shape);
+      if (businessPrivacy) {
+        const protectedBusiness = businessPrivacy.protect(name2, safe.value, privacyContext);
+        safe.value = protectedBusiness.value;
+        safe.stats.replacements += protectedBusiness.replacements;
+        safe.value = businessPrivacy.scrubKnown(safe.value, shape);
+        safe.stats.businessPrivacy = businessPrivacy.metadata();
+      }
+      safe.value.outputGuard = safe.stats;
+      return { ...isError ? { isError: true } : {}, content: [{ type: "text", text: JSON.stringify(safe.value, null, 2) }] };
+    } catch {
+      return { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] };
+    }
+  }
+  function serialize(message, { staticResult = false } = {}) {
+    try {
+      const safeId = businessPrivacy ? businessPrivacy.scrubKnown(sanitize(message.id).value) : sanitize(message.id).value;
+      if (safeId !== message.id) blocked();
+      const result = message.result;
+      if (result && (Object.hasOwn(result, "content") || Object.hasOwn(result, "structuredContent"))) {
+        if (Object.keys(message.result).some((key) => !["content", "isError"].includes(key))) blocked();
+        if (!Array.isArray(message.result.content) || message.result.content.length !== 1) blocked();
+        const content = message.result.content[0];
+        if (content.type !== "text" || typeof content.text !== "string" || Object.keys(content).some((key) => !["type", "text"].includes(key))) blocked();
+        const payload = JSON.parse(content.text);
+        if (payload?.outputGuard?.policyVersion !== 1 && payload?.error?.code !== "OUTPUT_GUARD_BLOCKED") blocked();
+      } else if (result !== void 0 && !staticResult) {
+        if (!result || typeof result !== "object" || Array.isArray(result)) blocked();
+        const keys = Object.keys(result);
+        const initialized = keys.length === 3 && keys.every((key) => ["protocolVersion", "capabilities", "serverInfo"].includes(key));
+        const resources = keys.length === 1 && Array.isArray(result.resources) && result.resources.length === 0;
+        if (keys.length && !initialized && !resources) blocked();
+      }
+      if (staticResult && (!Array.isArray(message.result?.tools) || Object.keys(message.result).length !== 1)) blocked();
+      let safe = staticResult ? message : sanitize(message).value;
+      if (businessPrivacy && !staticResult && !result?.content) safe = businessPrivacy.scrubKnown(safe);
+      const body = JSON.stringify(safe);
+      if (Buffer.byteLength(body) > maxBytes) blocked();
+      return Buffer.from(body, "utf8");
+    } catch {
+      let id = typeof message.id === "number" && Number.isSafeInteger(message.id) ? message.id : null;
+      if (secrets.has(String(id))) id = null;
+      if (typeof message.id === "string" && message.id.length <= 128) {
+        const ctx = { secrets };
+        if (replacePatterns(message.id, ctx) === message.id) id = message.id;
+      }
+      return Buffer.from(JSON.stringify({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] } }));
+    }
+  }
+  return { remember, sanitize, toolResult, serialize };
+}
+
 // mongodb-bulk-history.js
 var import_promises = __toESM(require("node:fs/promises"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
-var import_node_crypto4 = require("node:crypto");
+var import_node_crypto5 = require("node:crypto");
 var import_node_readline = require("node:readline");
 var MAX_BYTES2 = 64 * 1024 * 1024;
 var MAX_LINE_BYTES = 64 * 1024;
@@ -52780,7 +54946,7 @@ async function scan(filename, select) {
               result.status = "budget_exceeded";
               return result;
             }
-            result.matches.push({ ...value, line: lineNumber, sha256: (0, import_node_crypto4.createHash)("sha256").update(line).digest("hex") });
+            result.matches.push({ ...value, line: lineNumber, sha256: (0, import_node_crypto5.createHash)("sha256").update(line).digest("hex") });
           }
         }
       } finally {
@@ -52839,14 +55005,17 @@ function createBulkHistoryReader({ dataDirectory, instance: instance2 } = {}) {
   };
 }
 
+// mongodb-import-risk.js
+var MAX = Number.MAX_SAFE_INTEGER;
+
 // mongodb-fence-authority.js
 var FENCE_COVERAGE = Object.freeze(["dispatch", "upload", "execute", "resume", "replay", "old_processes", "queues", "leases", "restart", "authenticated_sessions", "inflight_transactions", "legacy_credentials"]);
 
 // mongodb-risk-replacement.js
-var MAX = Number.MAX_SAFE_INTEGER;
+var MAX2 = Number.MAX_SAFE_INTEGER;
 
 // mongodb-job-termination.js
-var MAX2 = Number.MAX_SAFE_INTEGER;
+var MAX3 = Number.MAX_SAFE_INTEGER;
 var HASH = /^[a-f0-9]{64}$/;
 var JOB = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 var deny = (code = "BUSINESS_TERMINATION_REVIEW_REQUIRED") => {
@@ -52902,6 +55071,8 @@ async function humanJobTerminationRequest(service, action, input, { instance: in
 // mongodb-disposition.js
 var READ_ROUTES = /* @__PURE__ */ new Set([
   "/mongodb/query",
+  "/mongodb/imports/review",
+  "/mongodb/imports/recover-prepare",
   "/mongodb/bulk/job",
   "/mongodb/bulk/jobs",
   "/mongodb/mutations/list",
@@ -53030,6 +55201,61 @@ async function bulkPrepareRequest(service, input, record, target2, { instance: i
   }
   return recovering ? view(saved, saved.state === "uncertain" ? "bulk_prepare_evidence_required" : unclaimed ? "old_attempt_fenced" : void 0) : { ...result, intentId: input.id, intentState: saved.state };
 }
+async function importPrepareRequest(service, input, record, target2, { instance: instance2, dispatch, preflight }, view) {
+  if (!dispatch || record.identity.instanceId !== target2.id) throw privacyError("BUSINESS_OPERATION_DENIED");
+  const recovering = input.action === "recover_operation";
+  if (!recovering && input.attempt !== record.importPrepare.attempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+  let result, notDispatched = false, unclaimed = false, claimed = false;
+  try {
+    if (recovering) {
+      if (!record.dispatched) {
+        unclaimed = true;
+        result = { ok: false, error: { code: "MONGODB_PREPARE_FENCED" } };
+      } else if (!record.importBatches?.length) return view(record, "import_prepare_evidence_required");
+      else result = await dispatch(target2.id, "/mongodb/imports/recover-prepare", {
+        database: target2.database,
+        importId: record.identity.importId,
+        importReceipt: { ...record.importPrepare, ...record.riskPlanId ? { riskPlanId: record.riskPlanId } : {}, batchesDigest: prepareRequestDigest({ batches: record.importBatches }) },
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    } else {
+      const request = input.request;
+      if (request?.instanceId !== target2.id || request.database !== target2.database) throw privacyError("BUSINESS_OPERATION_DENIED");
+      let plan;
+      try {
+        plan = normalizeMongoImport(request, instance2(target2.id).mongodb);
+        await preflight?.(target2.id);
+      } catch (error2) {
+        unclaimed = true;
+        throw error2;
+      }
+      const batches = importBatchIdentity(plan);
+      await service.call("claim_import_prepare", { ...input, dispatchDigest: prepareRequestDigest(request), importBatches: batches });
+      claimed = true;
+      result = await dispatch(target2.id, IMPORT_PREPARE_ROUTE, {
+        ...request,
+        _businessImport: { ...record.importPrepare, batchesDigest: prepareRequestDigest({ batches }), ...record.riskPlanId ? { riskPlanId: record.riskPlanId } : {} },
+        operationId: input.operationId,
+        timeoutMs: input.timeoutMs,
+        deadlineAt: input.deadlineAt
+      });
+    }
+    result = createOutputGuard().sanitize(result).value;
+  } catch (error2) {
+    notDispatched = claimed && error2.dispatchState === "not_dispatched";
+    result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error2.code || "") ? error2.code : "MONGODB_IMPORT_PREPARE_FAILED" } };
+  }
+  const saved = await service.call("import_prepare_result", { ...input, importPrepare: record.importPrepare, result, notDispatched, unclaimed });
+  if (recovering) return view(saved, saved.state === "uncertain" ? "import_prepare_evidence_required" : void 0);
+  return ["complete", "rejected_before_dispatch"].includes(saved.state) ? { ...result, intentId: input.id, intentState: saved.state } : {
+    ok: false,
+    intentId: input.id,
+    intentState: saved.state,
+    error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED", causeCode: result.error?.code }
+  };
+}
 var here = typeof __dirname === "string" ? __dirname : import_node_path2.default.dirname((0, import_node_url.fileURLToPath)(void 0));
 var PrivacyService = class {
   constructor({ directory, key, maxQueue = 32, workerPath, fenceAuthority } = {}) {
@@ -53096,7 +55322,7 @@ var PrivacyService = class {
     await this.worker?.terminate();
   }
 };
-async function privacyRequest(service, input, { instance: instance2, origin, dispatch, historicalEvidence } = {}) {
+async function privacyRequest(service, input, { instance: instance2, origin, dispatch, preflight, historicalEvidence } = {}) {
   const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "disposition"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate2 = (scope2) => {
@@ -53124,9 +55350,10 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
         const { instanceId: instanceId2, ...chunk } = request;
         try {
-          normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
+          if (isImportRequest(request)) normalizeMongoImport(chunk, instance2(target2.id).mongodb);
+          else normalizeMongoBulkChunk(chunk, { ...instance2(target2.id).mongodb, bulkEnabled: true });
         } catch (error2) {
-          if (error2.layer === "mongodb-bulk" && error2.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+          if (["mongodb-bulk", "mongodb-mutation"].includes(error2.layer) && error2.phase === "validation") throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
           throw error2;
         }
         requests[name2] = request;
@@ -53134,6 +55361,33 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       if (input.reviewMemo !== void 0 && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4e3)) throw privacyError("BUSINESS_DISPOSITION_DENIED");
       const reviewMemo = input.reviewMemo === void 0 ? "" : createOutputGuard().sanitize({ reviewMemo: input.reviewMemo }).value.reviewMemo;
       let observations2;
+      if (isImportRequest(requests.originalRequest)) {
+        if (!isImportRequest(requests.replacementRequest)) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+        const originalBatches = importBatchIdentity(normalizeMongoImport(requests.originalRequest, instance2(target2.id).mongodb));
+        const replacementBatches = importBatchIdentity(normalizeMongoImport(requests.replacementRequest, instance2(target2.id).mongodb));
+        try {
+          const observed = await dispatch(target2.id, "/mongodb/imports/review", {
+            database: target2.database,
+            importId: requests.originalRequest.importId,
+            batches: originalBatches,
+            operationId: input.operationId,
+            timeoutMs: input.timeoutMs,
+            deadlineAt: input.deadlineAt
+          });
+          observations2 = {
+            source: "manager_remote_import_batch_read",
+            observedAt: Date.now(),
+            status: observed.ok === true ? "observed" : "unavailable",
+            batches: observed.ok === true ? observed.batches : void 0,
+            code: observed.error?.code,
+            historicalOutcome: "unknown"
+          };
+        } catch {
+          observations2 = { source: "manager_remote_import_batch_read", observedAt: Date.now(), status: "unavailable", historicalOutcome: "unknown" };
+        }
+        return service.call("prepare_risk_replacement", { ...input, ...requests, reviewMemo, observations: observations2, originalBatches, replacementBatches });
+      }
+      if (isImportRequest(requests.replacementRequest)) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
       try {
         const observed = await dispatch(target2.id, "/mongodb/bulk/job", { jobId: requests.originalRequest.jobId, includeDifferences: false, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt, operationId: input.operationId });
         observations2 = { source: "manager_remote_job_read", observedAt: Date.now(), status: observed.ok === false ? "unavailable" : observed.status || "unknown", code: observed.error?.code, historicalOutcome: "unknown" };
@@ -53147,7 +55401,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       const target2 = JSON.parse(input.scope);
       const handoff = await service.call("risk_handoff_context", input);
       if (handoff.required) {
-        const result2 = createOutputGuard().sanitize(await dispatch(target2.id, "/mongodb/bulk/retire", {
+        const result2 = createOutputGuard().sanitize(await dispatch(target2.id, handoff.route || "/mongodb/bulk/retire", {
           ...handoff.request,
           operationId: input.operationId,
           timeoutMs: input.timeoutMs,
@@ -53158,18 +55412,18 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       const reserved = await service.call("create_risk_replacement", input);
       if (reserved.intent.state === "complete") return { ...reserved.risk, result: reserved.intent.result };
       const record = reserved.intent;
-      const result = await bulkPrepareRequest(
+      const result = await (record.importPrepare ? importPrepareRequest : bulkPrepareRequest)(
         service,
         {
           ...input,
           id: record.id,
-          attempt: record.bulkPrepare.attempt,
+          attempt: (record.importPrepare || record.bulkPrepare).attempt,
           action: record.dispatched ? "recover_operation" : "dispatch_prepare",
           request: reserved.request
         },
         record,
         target2,
-        { instance: instance2, dispatch },
+        { instance: instance2, dispatch, preflight },
         (saved) => ({ ok: true, intentId: record.id, state: saved.state, ...saved.result ? { result: saved.result } : {} })
       );
       return { ...reserved.risk, result };
@@ -53195,7 +55449,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       intentId: input.id,
       state: value.state,
       route: value.route,
-      attempt: (value.prepare || value.bulkPrepare)?.attempt,
+      attempt: (value.prepare || value.bulkPrepare || value.importPrepare)?.attempt,
       mutationId: value.prepare?.mutationId,
       legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason,
@@ -53209,6 +55463,10 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         return historicalBulkRequest(service, input, record, target2, { instance: instance2, dispatch, historicalEvidence }, view);
       }
       if (input.mode === "inspect" || record.state !== "uncertain") return view(record);
+      if (record.route === IMPORT_PREPARE_ROUTE) {
+        if (!record.importPrepare) return view(record, "legacy_evidence_required");
+        return importPrepareRequest(service, input, record, target2, { instance: instance2, dispatch, preflight }, view);
+      }
       if (record.route === "/mongodb/bulk/prepare") {
         if (!record.bulkPrepare) return view(record, "bulk_prepare_identity_required");
         return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
@@ -53240,6 +55498,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
         return view(record, "legacy_evidence_required");
       }
     }
+    if (input.action === "dispatch_prepare" && record.route === IMPORT_PREPARE_ROUTE && record.importPrepare) return importPrepareRequest(service, input, record, target2, { instance: instance2, dispatch, preflight }, view);
     if (input.action === "dispatch_prepare" && record.route === "/mongodb/bulk/prepare" && record.bulkPrepare) {
       return bulkPrepareRequest(service, input, record, target2, { instance: instance2, dispatch }, view);
     }
@@ -53297,7 +55556,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
   }
   return service.call(input.action, input);
 }
-function installPrivacyRoutes(app, { directory, registry, service, dispatch, dataDirectory, historicalEvidence } = {}) {
+function installPrivacyRoutes(app, { directory, registry, service, dispatch, preflight, dataDirectory, historicalEvidence } = {}) {
   const storage = service || new PrivacyService({ directory });
   app.locals.privacyService = storage;
   app.post("/api/private/business-storage", async (request, response) => {
@@ -53306,6 +55565,7 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, dat
         instance: (id) => registry.getInternal(id),
         origin: new URL(`http://${request.headers.host}`).origin,
         dispatch,
+        preflight,
         historicalEvidence: historicalEvidence || (dataDirectory ? createBulkHistoryReader({ dataDirectory, instance: (id) => registry.getInternal(id) }) : void 0)
       });
       response.json({ ok: true, result });
@@ -53318,8 +55578,8 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, dat
     }
   });
 }
-async function assertMongoDispatchAdmission(service, instanceId2, route2, request) {
-  if (isMongoAdmissionRoute(route2)) await service.call("assert_instance_admission", { instanceId: instanceId2, route: route2, request });
+async function assertMongoDispatchAdmission(service, instanceId2, route2, request, defaultDatabase) {
+  if (isMongoAdmissionRoute(route2)) await service.call("assert_instance_admission", { instanceId: instanceId2, route: route2, request: route2.startsWith("/mongodb/imports/") ? { ...request, database: request.database || defaultDatabase } : request });
 }
 async function humanRiskRequest(service, action, input, instance2) {
   const context = await service.call("human_risk_context", input);
@@ -53676,8 +55936,8 @@ async function serviceStartRuntime(request, profile, dependencies) {
 }
 
 // service-profiles.js
-var import_posix3 = __toESM(require("node:path/posix"), 1);
-var import_node_crypto5 = require("node:crypto");
+var import_posix4 = __toESM(require("node:path/posix"), 1);
+var import_node_crypto6 = require("node:crypto");
 var SERVICE_START_CONFIRMATION = "启动服务";
 var SERVICE_ENV_KEYS = ["NODE_ENV", "PORT", "WS_PORT", "CRON_PRIMARY", "TRANSLATION_ENABLED", "ORDER_AI_ENABLED", "ORDER_AI_ALLOWED_RESTAURANTS"];
 var SERVICE_CAPABILITIES = Object.freeze({
@@ -53712,7 +55972,7 @@ function integer(value, min, max, field) {
   return value;
 }
 function absolute(value, roots, field) {
-  if (typeof value !== "string" || value.length > 1024 || !/^\/[A-Za-z0-9_./+-]+$/.test(value) || import_posix3.default.normalize(value) !== value || value === "/") invalid(`invalid absolute ${field}`);
+  if (typeof value !== "string" || value.length > 1024 || !/^\/[A-Za-z0-9_./+-]+$/.test(value) || import_posix4.default.normalize(value) !== value || value === "/") invalid(`invalid absolute ${field}`);
   if (roots && !roots.some((root) => value === root || value.startsWith(`${root}/`))) invalid(`${field} is outside approved roots`);
   return value;
 }
@@ -53735,15 +55995,15 @@ function normalizeServiceProfiles(value, context) {
     if (typeof p.enabled !== "boolean" || typeof p.persist !== "boolean") invalid("enabled and persist must be explicit booleans");
     if (p.mode !== "fork") invalid("only explicit fork mode is supported; ecosystem/cluster startup is not supported");
     if (typeof p.nodeVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(p.nodeVersion) || Number(p.nodeVersion.split(".")[0]) < 20) invalid("exact Node version >=20 is required");
-    if (typeof p.entry !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_./-]*\.m?js$/.test(p.entry) || import_posix3.default.normalize(p.entry) !== p.entry || p.entry.split("/").includes("..")) invalid("entry must be a relative JavaScript file");
-    if (/\.config\.m?js$/i.test(p.entry) || /^ecosystem(?:\.|$)/i.test(import_posix3.default.basename(p.entry))) invalid("PM2 ecosystem/config entries are not supported");
+    if (typeof p.entry !== "string" || !/^[A-Za-z0-9_][A-Za-z0-9_./-]*\.m?js$/.test(p.entry) || import_posix4.default.normalize(p.entry) !== p.entry || p.entry.split("/").includes("..")) invalid("entry must be a relative JavaScript file");
+    if (/\.config\.m?js$/i.test(p.entry) || /^ecosystem(?:\.|$)/i.test(import_posix4.default.basename(p.entry))) invalid("PM2 ecosystem/config entries are not supported");
     if (!["/usr/local/bin/pm2", "/usr/bin/pm2"].includes(p.pm2Path)) invalid("pm2Path must be /usr/local/bin/pm2 or /usr/bin/pm2");
     const roots = context.allowedPaths;
     const cwd = absolute(p.cwd, roots, "cwd");
     const releaseRoot = p.releaseRoot ? absolute(p.releaseRoot, roots, "releaseRoot") : void 0;
     if (releaseRoot && cwd !== `${releaseRoot}/current`) invalid("release profiles must use releaseRoot/current as cwd");
     const interpreter = absolute(p.interpreter, roots, "interpreter");
-    if (import_posix3.default.basename(interpreter) !== "node") invalid("interpreter must name an absolute node binary");
+    if (import_posix4.default.basename(interpreter) !== "node") invalid("interpreter must name an absolute node binary");
     const pm2Home = absolute(p.pm2Home, roots, "pm2Home");
     if (!Array.isArray(p.envFiles) || p.envFiles.length > 4) invalid("envFiles must contain 0–4 paths, never secret values");
     const envFiles = p.envFiles.map((file) => absolute(file, roots, "envFiles"));
@@ -53802,10 +56062,10 @@ function normalizeServiceProfiles(value, context) {
   return result;
 }
 function serviceProfileHash(profile) {
-  return (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
+  return (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify(profile)).digest("hex");
 }
 function serviceTargetHash(target2, allowedPaths) {
-  return (0, import_node_crypto5.createHash)("sha256").update(JSON.stringify({
+  return (0, import_node_crypto6.createHash)("sha256").update(JSON.stringify({
     host: target2.host,
     port: target2.port,
     username: target2.username,
@@ -54021,10 +56281,10 @@ var import_local_auth4 = __toESM(require_local_auth(), 1);
 // manual-auth.js
 var import_node_fs = __toESM(require("node:fs"), 1);
 var import_node_path4 = __toESM(require("node:path"), 1);
-var import_node_crypto6 = require("node:crypto");
+var import_node_crypto7 = require("node:crypto");
 var import_node_util = require("node:util");
 var import_local_auth2 = __toESM(require_local_auth(), 1);
-var scrypt = (0, import_node_util.promisify)(import_node_crypto6.scrypt);
+var scrypt = (0, import_node_util.promisify)(import_node_crypto7.scrypt);
 var USERNAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$/;
 var HEX64 = /^[a-f0-9]{64}$/;
 var HASH_OPTIONS = { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
@@ -54066,11 +56326,11 @@ var ManualAdminStore = class {
     const account = this.read().find((item) => item.username === username);
     const actual = await scrypt(password, account?.salt || "0".repeat(64), 64, HASH_OPTIONS);
     const expected = Buffer.from(account?.hash || "0".repeat(128), "hex");
-    return (0, import_node_crypto6.timingSafeEqual)(actual, expected) && Boolean(account);
+    return (0, import_node_crypto7.timingSafeEqual)(actual, expected) && Boolean(account);
   }
   async register(username, password) {
     validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto6.randomBytes)(32).toString("hex");
+    const salt = (0, import_node_crypto7.randomBytes)(32).toString("hex");
     const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
     const accounts = this.read();
     if (accounts.some((account) => account.username === username)) throw manualError("ADMIN_EXISTS", "管理员账号已存在。", 409);
@@ -54079,7 +56339,7 @@ var ManualAdminStore = class {
   }
   async reset(username, password) {
     validateAdminCredentials(username, password);
-    const salt = (0, import_node_crypto6.randomBytes)(32).toString("hex");
+    const salt = (0, import_node_crypto7.randomBytes)(32).toString("hex");
     const hash = (await scrypt(password, salt, 64, HASH_OPTIONS)).toString("hex");
     const accounts = this.read();
     if (!accounts.some((account) => account.username === username)) throw manualError("ADMIN_NOT_FOUND", "管理员账号不存在。", 404);
@@ -54087,7 +56347,7 @@ var ManualAdminStore = class {
   }
   save(accounts) {
     this.protectDirectory();
-    const temporaryPath = import_node_path4.default.join(this.directory, `.accounts-${(0, import_node_crypto6.randomBytes)(16).toString("hex")}.tmp`);
+    const temporaryPath = import_node_path4.default.join(this.directory, `.accounts-${(0, import_node_crypto7.randomBytes)(16).toString("hex")}.tmp`);
     try {
       import_node_fs.default.writeFileSync(temporaryPath, JSON.stringify({ version: 1, accounts }) + "\n", { flag: "wx", mode: 384 });
       import_local_auth2.default.protectOrCheck(temporaryPath, false, true);
@@ -54125,7 +56385,7 @@ var ManualLoginLimiter = class {
 var import_node_fs2 = __toESM(require("node:fs"), 1);
 var import_node_path6 = __toESM(require("node:path"), 1);
 var import_node_url2 = require("node:url");
-var import_node_crypto7 = require("node:crypto");
+var import_node_crypto8 = require("node:crypto");
 var import_node_child_process = require("node:child_process");
 var import_node_util2 = require("node:util");
 var import_local_auth3 = __toESM(require_local_auth(), 1);
@@ -54233,12 +56493,12 @@ var ManualOwnerVerification = class {
   }
   async macHelper() {
     const source = import_node_path6.default.join(this.nativeDirectory, "verify-owner.swift");
-    const hash = (0, import_node_crypto7.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
+    const hash = (0, import_node_crypto8.createHash)("sha256").update("macos-owner-helper-v2\0").update(import_node_fs2.default.readFileSync(source)).update(await this.macArchitecture()).digest("hex").slice(0, 24);
     import_node_fs2.default.mkdirSync(this.directory, { recursive: true, mode: 448 });
     import_local_auth3.default.protectOrCheck(this.directory, true, true);
     const helper = import_node_path6.default.join(this.directory, `verify-owner-${hash}`);
     if (!import_node_fs2.default.existsSync(helper)) {
-      const temporary = `${helper}-${(0, import_node_crypto7.randomBytes)(8).toString("hex")}`;
+      const temporary = `${helper}-${(0, import_node_crypto8.randomBytes)(8).toString("hex")}`;
       let stage = "compiler";
       try {
         await this.executeMac("/usr/bin/xcrun", ["--find", "swiftc"], { timeout: 1e4, maxBuffer: 4096, signal: this.controller?.signal });
@@ -54306,7 +56566,7 @@ var ManualOwnerVerification = class {
   }
   async verify() {
     if (!this.status().supported) throw manualError("OWNER_VERIFICATION_UNSUPPORTED", this.status().message, 503);
-    const nonce = (0, import_node_crypto7.randomBytes)(32).toString("hex");
+    const nonce = (0, import_node_crypto8.randomBytes)(32).toString("hex");
     const controller = new AbortController();
     if (this.preparing) await this.preparing;
     this.controller = controller;
@@ -54578,7 +56838,7 @@ var import_node_path8 = __toESM(require("node:path"), 1);
 var import_posix8 = __toESM(require("node:path/posix"), 1);
 
 // log-projects.js
-var import_posix4 = __toESM(require("node:path/posix"), 1);
+var import_posix5 = __toESM(require("node:path/posix"), 1);
 function normalizeLogProjects(value, allowedRoots, sourceRoots = {}) {
   if (typeof value === "string" && value) {
     try {
@@ -54597,7 +56857,7 @@ function normalizeLogProjects(value, allowedRoots, sourceRoots = {}) {
     if (!Array.isArray(directories) || !directories.length || directories.length > 8) throw invalid2("each log project needs 1-8 directories");
     const normalize = (value2) => {
       if (typeof value2 !== "string" || value2.length > 4096 || !value2.startsWith("/") || value2.includes("\0")) throw invalid2("log project paths must be absolute");
-      const normalized = import_posix4.default.normalize(value2).replace(/\/$/, "");
+      const normalized = import_posix5.default.normalize(value2).replace(/\/$/, "");
       if (!allowedRoots.some((root) => normalized === root || normalized.startsWith(`${root}/`))) throw invalid2("log project path is outside approved roots");
       return normalized;
     };
@@ -54618,7 +56878,7 @@ function invalid2(message) {
 }
 
 // log-policy.js
-var import_posix5 = __toESM(require("node:path/posix"), 1);
+var import_posix6 = __toESM(require("node:path/posix"), 1);
 var LOG_CATEGORIES = Object.freeze([
   "system",
   "nginx",
@@ -54840,7 +57100,7 @@ function normalizeArchiveMemberPath(value) {
   if (value.startsWith("/")) {
     throw logInputError("archive member path must be relative", "INVALID_MEMBER_PATH");
   }
-  const normalized = import_posix5.default.normalize(value);
+  const normalized = import_posix6.default.normalize(value);
   if (normalized === "." || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../")) {
     throw logInputError("archive member path escapes the archive", "ARCHIVE_MEMBER_PATH_NOT_ALLOWED");
   }
@@ -54916,7 +57176,7 @@ function normalizeResourcePolicy(value) {
 }
 
 // approved-commands.js
-var import_node_crypto8 = require("node:crypto");
+var import_node_crypto9 = require("node:crypto");
 var APPROVED_COMMAND_CONFIRMATION = "使用命令";
 var DEFAULT_APPROVED_COMMAND_TTL_MS = 30 * 60 * 1e3;
 var DEFAULT_APPROVED_EXECUTION_TIMEOUT_MS = 3e5;
@@ -54947,7 +57207,7 @@ var ApprovedCommandError = class extends Error {
   }
 };
 function hashCommands(commands) {
-  return (0, import_node_crypto8.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
+  return (0, import_node_crypto9.createHash)("sha256").update(JSON.stringify(commands)).digest("hex");
 }
 function redactCommand(command, maxChars = 512) {
   if (typeof command !== "string" || command.length === 0) {
@@ -55069,7 +57329,7 @@ function createCommandDraftStore(options = {}) {
     const normalizedCommands = normalizeCommands(commands, settings);
     const ttlMs = settings.ttlMs || DEFAULT_APPROVED_COMMAND_TTL_MS;
     const draft2 = {
-      draftId: (0, import_node_crypto8.randomUUID)(),
+      draftId: (0, import_node_crypto9.randomUUID)(),
       purpose: normalizePurpose(purpose),
       commands: normalizedCommands,
       commandHash: hashCommands(normalizedCommands),
@@ -55160,1989 +57420,6 @@ var import_node_path7 = __toESM(require("node:path"), 1);
 // security.js
 var import_posix7 = __toESM(require("node:path/posix"), 1);
 var import_node_crypto10 = require("node:crypto");
-
-// mongodb-mutations.js
-var import_node_crypto9 = require("node:crypto");
-var import_posix6 = __toESM(require("node:path/posix"), 1);
-var MONGODB_MUTATION_SCHEMA_VERSION = 1;
-var MONGODB_MUTATION_OPERATIONS = Object.freeze([
-  "insertOne",
-  "updateOne",
-  "updateMany",
-  "softDeleteOne"
-]);
-var MONGODB_INDEX_OPERATIONS = Object.freeze(["createIndex", "dropIndex"]);
-var MONGODB_MUTATION_CONFIRMATION = "确认执行";
-var MONGODB_ROLLBACK_CONFIRMATION = "确认回滚";
-var DEFAULT_MONGODB_MUTATION_ROLLBACK_TTL_MS = 24 * 60 * 60 * 1e3;
-var MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS = 7 * 24 * 60 * 60 * 1e3;
-var DEFAULT_MONGODB_MUTATION_MAX_AFFECTED = 100;
-var MAX_MONGODB_MUTATION_MAX_AFFECTED = 1e3;
-var MAX_MONGODB_MUTATION_DOCUMENT_BYTES = 256 * 1024;
-var MAX_MONGODB_MUTATION_RESULT_BYTES = 512 * 1024;
-var MAX_MONGODB_MUTATION_JOURNAL_BYTES = 8 * 1024 * 1024;
-var DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT = "/tmp/remote-debug-agent/mutations";
-var MAX_MONGODB_MUTATION_LIST_ITEMS = 100;
-var MAX_MONGODB_TRANSACTION_OPERATIONS = 20;
-var MAX_MONGODB_IMPORT_BATCH_DOCUMENTS = 2e3;
-var MAX_MONGODB_IMPORT_DOCUMENTS = 1e4;
-var MAX_MONGODB_IMPORT_BYTES = 4 * 1024 * 1024;
-var MAX_MONGODB_IMPORT_BATCH_BYTES = 512 * 1024;
-var MAX_MONGODB_MUTATION_LOCK_AGE_MS = 15 * 60 * 1e3;
-var SAFE_DATABASE_PATTERN2 = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
-var SAFE_COLLECTION_PATTERN2 = /^[A-Za-z0-9_.$-]{1,128}$/;
-var SAFE_FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/;
-var SAFE_MUTATION_PATH_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
-var SAFE_INDEX_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
-var SAFE_MUTATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
-var SAFE_INDEX_DIRECTIONS = /* @__PURE__ */ new Set([-1, 1]);
-var ALLOWED_UPDATE_OPERATORS = /* @__PURE__ */ new Set(["$set", "$unset", "$inc"]);
-var ALLOWED_EJSON_KEYS = /* @__PURE__ */ new Set([
-  "$binary",
-  "$date",
-  "$numberDecimal",
-  "$numberInt",
-  "$numberLong",
-  "$numberDouble",
-  "$oid",
-  "$regularExpression",
-  "$timestamp"
-]);
-var BLOCKED_KEYS2 = /* @__PURE__ */ new Set([
-  "__proto__",
-  "constructor",
-  "prototype",
-  "$accumulator",
-  "$currentOp",
-  "$function",
-  "$merge",
-  "$out",
-  "$planCacheStats",
-  "$where"
-]);
-function riskForDocumentOperation(operation) {
-  if (operation === "updateMany") return "high";
-  if (operation === "softDeleteOne") return "high";
-  return "medium";
-}
-function riskForIndexOperation(operation, options = {}) {
-  return operation === "dropIndex" || options.unique === true ? "high" : "medium";
-}
-function byteLength3(value) {
-  return Buffer.byteLength(String(value), "utf8");
-}
-function clampText(value, maxChars = 2e3) {
-  const text2 = redactMongoSecrets(value, maxChars);
-  return text2.length <= maxChars ? text2 : `${text2.slice(0, maxChars)}...`;
-}
-function mutationError(message, code, statusCode = 400, details = {}) {
-  const error2 = operationError(message, {
-    code,
-    statusCode,
-    layer: "mongodb-mutation",
-    phase: "validation",
-    retriable: false
-  });
-  error2.details = details;
-  return error2;
-}
-function assertPlainObject2(value, fieldName) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw mutationError(`${fieldName} must be an object`, "INVALID_MONGODB_MUTATION");
-  }
-  const prototype = Object.getPrototypeOf(value);
-  if (prototype !== Object.prototype && prototype !== null) {
-    throw mutationError(`${fieldName} must be a plain object`, "INVALID_MONGODB_MUTATION");
-  }
-}
-function assertSafeJson2(value, fieldName = "$", depth = 0, allowNin = false) {
-  if (depth > 12) {
-    throw mutationError(`${fieldName} is too deeply nested`, "INVALID_MONGODB_MUTATION");
-  }
-  if (value === null || typeof value === "string" || typeof value === "boolean") {
-    return;
-  }
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      throw mutationError(`${fieldName} contains a non-finite number`, "INVALID_MONGODB_MUTATION");
-    }
-    return;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => assertSafeJson2(item, `${fieldName}[${index}]`, depth + 1, allowNin));
-    return;
-  }
-  if (typeof value !== "object") {
-    throw mutationError(`${fieldName} contains an unsupported value`, "INVALID_MONGODB_MUTATION");
-  }
-  for (const [key, child] of Object.entries(value)) {
-    if (BLOCKED_KEYS2.has(key)) {
-      throw mutationError(`${fieldName} contains a forbidden key`, "MONGODB_OPERATOR_REJECTED");
-    }
-    if (key.startsWith("$") && !ALLOWED_EJSON_KEYS.has(key) && !ALLOWED_UPDATE_OPERATORS.has(key) && key !== "$in" && !(allowNin && key === "$nin")) {
-      throw mutationError(`${key} is not allowed by the MongoDB mutation tool`, "MONGODB_OPERATOR_REJECTED");
-    }
-    if (key === "$nin" && (!Array.isArray(child) || child.length === 0 || child.length > 1e3)) {
-      throw mutationError("$nin requires between 1 and 1000 values", "MONGODB_FILTER_REJECTED");
-    }
-    assertSafeJson2(child, `${fieldName}.${key}`, depth + 1, allowNin);
-  }
-}
-function cloneJson(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-function normalizeName(value, fieldName, pattern) {
-  if (typeof value !== "string" || !pattern.test(value.trim())) {
-    throw mutationError(`${fieldName} has an invalid format`, "INVALID_MONGODB_MUTATION");
-  }
-  return value.trim();
-}
-function normalizePositiveInt(value, fieldName, fallback, max) {
-  if (value === void 0 || value === null || value === "") {
-    return fallback;
-  }
-  if (!Number.isInteger(value) || value <= 0) {
-    throw mutationError(`${fieldName} must be a positive integer`, "INVALID_MONGODB_MUTATION");
-  }
-  return Math.min(value, max);
-}
-function normalizeAllowedNames(value, fieldName, pattern, fallback = []) {
-  if (value === void 0 || value === null) {
-    return [...fallback];
-  }
-  if (!Array.isArray(value) || value.length === 0) {
-    throw mutationError(`${fieldName} must be a non-empty array`, "INVALID_MONGODB_MUTATION_CONFIG");
-  }
-  return [...new Set(value.map((item) => normalizeName(item, `${fieldName} item`, pattern)))];
-}
-function normalizeJournalRoot(value) {
-  const raw = typeof value === "string" && value.trim() ? value.trim() : DEFAULT_MONGODB_MUTATION_JOURNAL_ROOT;
-  const normalized = import_posix6.default.normalize(raw);
-  if (!normalized.startsWith("/tmp/remote-debug-agent/") || normalized === "/tmp" || normalized === "/tmp/" || normalized.includes("\0")) {
-    throw mutationError(
-      "mongodb mutation journal root must be a dedicated directory under /tmp",
-      "MONGODB_JOURNAL_ROOT_INVALID"
-    );
-  }
-  return normalized.replace(/\/$/, "");
-}
-function normalizeMongoMutationConfig(config = {}) {
-  const base = normalizeMongoConfig(config);
-  if (config.writeEnabled !== true && config.mutationsEnabled !== true) {
-    throw mutationError(
-      "MongoDB mutations are disabled; set mongodb.writeEnabled=true explicitly",
-      "MONGODB_MUTATIONS_DISABLED",
-      403
-    );
-  }
-  const allowedDatabases = normalizeAllowedNames(
-    config.allowedDatabases,
-    "mongodb.allowedDatabases",
-    SAFE_DATABASE_PATTERN2,
-    base.database ? [base.database] : []
-  );
-  const allowedCollections = normalizeAllowedNames(
-    config.allowedCollections,
-    "mongodb.allowedCollections",
-    SAFE_COLLECTION_PATTERN2
-  );
-  if (allowedDatabases.length === 0) {
-    throw mutationError(
-      "mongodb.allowedDatabases must contain at least one database",
-      "MONGODB_DATABASE_ALLOWLIST_EMPTY",
-      503
-    );
-  }
-  if (allowedCollections.length === 0) {
-    throw mutationError(
-      "mongodb.allowedCollections must contain at least one collection",
-      "MONGODB_COLLECTION_ALLOWLIST_EMPTY",
-      503
-    );
-  }
-  return {
-    ...base,
-    writeEnabled: true,
-    rollbackRoot: normalizeJournalRoot(config.rollbackRoot),
-    rollbackTtlMs: normalizePositiveInt(
-      config.rollbackTtlMs,
-      "mongodb.rollbackTtlMs",
-      DEFAULT_MONGODB_MUTATION_ROLLBACK_TTL_MS,
-      MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS
-    ),
-    maxAffectedDocuments: normalizePositiveInt(
-      config.maxAffectedDocuments,
-      "mongodb.maxAffectedDocuments",
-      DEFAULT_MONGODB_MUTATION_MAX_AFFECTED,
-      MAX_MONGODB_MUTATION_MAX_AFFECTED
-    ),
-    maxImportBatchDocuments: normalizePositiveInt(
-      config.maxImportBatchDocuments,
-      "mongodb.maxImportBatchDocuments",
-      MAX_MONGODB_IMPORT_BATCH_DOCUMENTS,
-      MAX_MONGODB_IMPORT_BATCH_DOCUMENTS
-    ),
-    bulkEnabled: config.bulkEnabled === true,
-    bulkRoot: config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs",
-    sandboxDatabase: normalizeName(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE, "sandboxDatabase", SAFE_DATABASE_PATTERN2),
-    bulkReceiptsCollection: config.bulkReceiptsCollection || "__remote_debug_bulk_receipts",
-    allowedDatabases,
-    allowedCollections
-  };
-}
-function assertDatabaseAllowed(database, config) {
-  const normalized = normalizeName(database, "database", SAFE_DATABASE_PATTERN2);
-  if (normalized === config.sandboxDatabase) throw mutationError("sandbox database is reserved for plugin management", "SANDBOX_DATABASE_RESERVED", 403);
-  if (!config.allowedDatabases.includes(normalized)) {
-    throw mutationError(
-      `database is not allowed for mutations: ${normalized}`,
-      "MONGODB_DATABASE_NOT_ALLOWED",
-      403
-    );
-  }
-  return normalized;
-}
-function assertCollectionAllowed(collection, config) {
-  const normalized = normalizeName(collection, "collection", SAFE_COLLECTION_PATTERN2);
-  if (!config.allowedCollections.includes(normalized)) {
-    throw mutationError(
-      `collection is not allowed for mutations: ${normalized}`,
-      "MONGODB_COLLECTION_NOT_ALLOWED",
-      403
-    );
-  }
-  return normalized;
-}
-function normalizeDocument2(value, fieldName = "document") {
-  assertPlainObject2(value, fieldName);
-  assertSafeJson2(value, fieldName);
-  if (!Object.prototype.hasOwnProperty.call(value, "_id") || value._id === null) {
-    throw mutationError(`${fieldName} must contain an explicit _id`, "MONGODB_MUTATION_ID_REQUIRED");
-  }
-  for (const key of Object.keys(value)) {
-    if (key.startsWith("$") || key.includes("\0") || key.includes(".")) {
-      throw mutationError(`${fieldName} contains an unsafe field name`, "MONGODB_FIELD_REJECTED");
-    }
-  }
-  const normalized = cloneJson(value);
-  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
-    throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
-  }
-  return normalized;
-}
-function normalizeFilter(value, fieldName = "filter") {
-  assertPlainObject2(value, fieldName);
-  assertSafeJson2(value, fieldName, 0, true);
-  const keys = Object.keys(value);
-  if (keys.length === 0) {
-    throw mutationError(`${fieldName} must not be empty`, "MONGODB_EMPTY_FILTER");
-  }
-  for (const key of keys) {
-    if (key.startsWith("$")) {
-      throw mutationError(`${fieldName} cannot use logical operators`, "MONGODB_FILTER_REJECTED");
-    }
-    if (!isSafeMutationPath(key) || key.startsWith("_id.")) {
-      throw mutationError(`${fieldName} contains an unsafe field`, "MONGODB_FILTER_REJECTED");
-    }
-  }
-  const normalized = cloneJson(value);
-  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
-    throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
-  }
-  return normalized;
-}
-function assertScopedFilter(filter, operation) {
-  if (!Object.prototype.hasOwnProperty.call(filter, "_id")) {
-    throw mutationError(
-      operation === "updateMany" ? "updateMany requires filter._id.$in with an explicit bounded id list" : `${operation} requires an _id-scoped filter`,
-      operation === "updateMany" ? "MONGODB_BATCH_SCOPE_REQUIRED" : "MONGODB_FILTER_SCOPE_REQUIRED"
-    );
-  }
-  if (operation !== "updateMany") {
-    if (filter._id && typeof filter._id === "object" && Object.prototype.hasOwnProperty.call(filter._id, "$nin")) {
-      throw mutationError("document _id scope cannot use an exclusion filter", "MONGODB_FILTER_SCOPE_REQUIRED");
-    }
-    return;
-  }
-  const id = filter._id;
-  if (!id || typeof id !== "object" || Array.isArray(id) || Object.keys(id).length !== 1 || !Array.isArray(id.$in)) {
-    throw mutationError(
-      "updateMany requires filter._id.$in with an explicit bounded id list",
-      "MONGODB_BATCH_SCOPE_REQUIRED"
-    );
-  }
-}
-function normalizeUpdate2(value, fieldName = "update") {
-  assertPlainObject2(value, fieldName);
-  assertSafeJson2(value, fieldName);
-  const operators = Object.keys(value);
-  if (operators.length === 0) {
-    throw mutationError(`${fieldName} must not be empty`, "MONGODB_UPDATE_EMPTY");
-  }
-  for (const operator of operators) {
-    if (!ALLOWED_UPDATE_OPERATORS.has(operator)) {
-      throw mutationError(
-        `${operator} is not allowed by the MongoDB mutation tool`,
-        "MONGODB_UPDATE_OPERATOR_REJECTED"
-      );
-    }
-    assertPlainObject2(value[operator], `${fieldName}.${operator}`);
-    for (const field of Object.keys(value[operator])) {
-      if (!isSafeMutationPath(field) || field === "_id" || field.startsWith("_id.")) {
-        throw mutationError(
-          `${fieldName}.${operator} contains an unsafe or immutable field`,
-          "MONGODB_FIELD_REJECTED"
-        );
-      }
-      if (operator === "$inc" && (typeof value[operator][field] !== "number" || !Number.isFinite(value[operator][field]))) {
-        throw mutationError(
-          `${fieldName}.$inc values must be finite numbers`,
-          "MONGODB_UPDATE_VALUE_REJECTED"
-        );
-      }
-    }
-  }
-  const normalized = cloneJson(value);
-  if (byteLength3(JSON.stringify(normalized)) > MAX_MONGODB_MUTATION_DOCUMENT_BYTES) {
-    throw mutationError(`${fieldName} is too large`, "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", 413);
-  }
-  return normalized;
-}
-function isSafeMutationPath(field) {
-  return SAFE_MUTATION_PATH_PATTERN.test(field) && field.split(".").every((part) => !BLOCKED_KEYS2.has(part));
-}
-function assertIndexedMutationGuards(filter, update) {
-  for (const fields3 of Object.values(update)) {
-    for (const field of Object.keys(fields3)) {
-      const parts = field.split(".");
-      for (let index = 0; index < parts.length; index += 1) {
-        if (!/^[0-9]+$/.test(parts[index])) continue;
-        const prefix = parts.slice(0, index + 1).join(".");
-        if (!Object.keys(filter).some((key) => key === prefix || key.startsWith(`${prefix}.`))) {
-          throw mutationError("indexed updates require a filter guard for each array element", "MONGODB_ARRAY_GUARD_REQUIRED");
-        }
-      }
-    }
-  }
-}
-function assertIndexedMutationDocument(request, document2) {
-  for (const operator of Object.keys(request.update || {})) {
-    for (const field of Object.keys(request.update[operator])) {
-      const parts = field.split(".");
-      let value = document2;
-      for (let position = 0; position < parts.length; position += 1) {
-        const part = parts[position];
-        if (/^[0-9]+$/.test(part)) {
-          const index = Number(part);
-          const append = Array.isArray(value) && index === value.length && position === parts.length - 1 && operator === "$set";
-          if (!Array.isArray(value) || index > value.length || index === value.length && !append) {
-            const error2 = new Error("indexed mutation must target an existing array element or set its immediate tail");
-            error2.code = "MONGODB_ARRAY_INDEX_INVALID";
-            throw error2;
-          }
-        }
-        value = value == null ? void 0 : value[part];
-      }
-    }
-  }
-}
-function normalizeCommonMutation(input, config, operationId, kind = "document") {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    throw mutationError("MongoDB mutation must be an object", "INVALID_MONGODB_MUTATION");
-  }
-  const database = assertDatabaseAllowed(
-    input.database || config.database,
-    config
-  );
-  const collection = assertCollectionAllowed(input.collection, config);
-  if (collection === MONGODB_TECHNICAL_RECEIPTS_COLLECTION && kind !== "bulk_storage") {
-    throw mutationError("the technical receipt collection is reserved for internal bulk storage operations", "MONGODB_BULK_RESERVED_COLLECTION", 403);
-  }
-  const rollbackTtlMs = normalizePositiveInt(
-    input.rollbackTtlMs,
-    "rollbackTtlMs",
-    config.rollbackTtlMs,
-    MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS
-  );
-  return {
-    kind,
-    operationId: typeof operationId === "string" && operationId.trim() ? operationId.trim().slice(0, 128) : (0, import_node_crypto9.randomUUID)(),
-    purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
-    database,
-    collection,
-    rollbackTtlMs
-  };
-}
-function normalizeMongoMutation(input = {}, config = {}, options = {}) {
-  const normalizedConfig = normalizeMongoMutationConfig(config);
-  const operation = input.operation;
-  if (!MONGODB_MUTATION_OPERATIONS.includes(operation)) {
-    throw mutationError(
-      `operation must be one of ${MONGODB_MUTATION_OPERATIONS.join(", ")}`,
-      "INVALID_MONGODB_MUTATION_OPERATION"
-    );
-  }
-  const common2 = normalizeCommonMutation(input, normalizedConfig, options.operationId);
-  const maxAffected = normalizePositiveInt(
-    input.maxAffected,
-    "maxAffected",
-    normalizedConfig.maxAffectedDocuments,
-    normalizedConfig.maxAffectedDocuments
-  );
-  if (operation === "insertOne") {
-    return {
-      ...common2,
-      operation,
-      document: normalizeDocument2(input.document),
-      maxAffected: 1,
-      riskLevel: riskForDocumentOperation(operation)
-    };
-  }
-  const filter = normalizeFilter(input.filter);
-  assertScopedFilter(filter, operation);
-  if (operation === "updateMany" && (filter._id.$in.length === 0 || filter._id.$in.length > maxAffected)) {
-    throw mutationError(
-      "updateMany filter._id.$in must contain between 1 and maxAffected ids",
-      "MONGODB_BATCH_SCOPE_INVALID"
-    );
-  }
-  const update = operation === "softDeleteOne" ? {
-    $set: {
-      [normalizeName(input.deletedField || "deletedAt", "deletedField", SAFE_FIELD_PATTERN)]: typeof input.deletedValue === "string" && input.deletedValue.trim() ? input.deletedValue.trim().slice(0, 128) : (/* @__PURE__ */ new Date()).toISOString()
-    }
-  } : normalizeUpdate2(input.update);
-  assertIndexedMutationGuards(filter, update);
-  const expectedCount = input.expectedCount === void 0 ? void 0 : normalizePositiveInt(input.expectedCount, "expectedCount", 1, maxAffected);
-  return {
-    ...common2,
-    operation,
-    filter,
-    update,
-    maxAffected: operation === "updateOne" || operation === "softDeleteOne" ? 1 : maxAffected,
-    expectedCount,
-    riskLevel: riskForDocumentOperation(operation)
-  };
-}
-function normalizeMongoImport(input = {}, config = {}, options = {}) {
-  const policy = normalizeMongoMutationConfig(config);
-  const common2 = normalizeCommonMutation(input, policy, options.operationId, "import");
-  const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
-  if (!Array.isArray(input.documents) || !input.documents.length || input.documents.length > MAX_MONGODB_IMPORT_DOCUMENTS) {
-    throw mutationError("documents must contain between 1 and 10000 documents", "MONGODB_IMPORT_COUNT_LIMIT");
-  }
-  if (byteLength3(JSON.stringify(input.documents)) > MAX_MONGODB_IMPORT_BYTES) {
-    throw mutationError("import documents exceed 4 MiB; send smaller input chunks", "MONGODB_IMPORT_SIZE_LIMIT", 413);
-  }
-  const batchSize = normalizePositiveInt(input.batchSize, "batchSize", policy.maxImportBatchDocuments, policy.maxImportBatchDocuments);
-  const batches = [];
-  const seen = /* @__PURE__ */ new Set();
-  let documents = [];
-  let bytes = 2;
-  const flush = () => {
-    if (!documents.length) return;
-    const batch2 = {
-      ...common2,
-      operation: "insertMany",
-      importId,
-      batchIndex: batches.length,
-      source: { configPath: policy.configPath, configProfile: policy.configProfile, uriKey: policy.uriKey, driverPath: policy.driverPath },
-      documents,
-      maxAffected: documents.length,
-      riskLevel: "high"
-    };
-    const { operationId: _operationId, ...identity2 } = batch2;
-    batch2.mutationId = "import-" + (0, import_node_crypto9.createHash)("sha256").update(JSON.stringify(identity2)).digest("hex");
-    batches.push(batch2);
-    documents = [];
-    bytes = 2;
-  };
-  for (const value of input.documents) {
-    const document2 = normalizeDocument2(value);
-    const id = document2._id;
-    const oid = id && typeof id === "object" && Object.keys(id).length === 1 && typeof id.$oid === "string" && /^[a-f0-9]{24}$/i.test(id.$oid);
-    if (!(typeof id === "string" && id.length > 0 && id.length <= 256) && !Number.isSafeInteger(id) && !oid) {
-      throw mutationError("import _id must be a non-empty string (up to 256 characters), safe integer or $oid", "MONGODB_IMPORT_ID_INVALID");
-    }
-    if (oid) document2._id.$oid = id.$oid.toLowerCase();
-    const key = JSON.stringify(document2._id);
-    if (seen.has(key)) throw mutationError("import contains duplicate _id values", "MONGODB_IMPORT_DUPLICATE_ID");
-    seen.add(key);
-    const size = byteLength3(JSON.stringify(document2)) + 1;
-    if (documents.length >= batchSize || bytes + size > MAX_MONGODB_IMPORT_BATCH_BYTES) flush();
-    documents.push(document2);
-    bytes += size;
-  }
-  flush();
-  if (batches.length > 100) throw mutationError("import exceeds 100 batches; send smaller input chunks", "MONGODB_IMPORT_BATCH_LIMIT");
-  return {
-    kind: "import_plan",
-    importId,
-    database: common2.database,
-    collection: common2.collection,
-    operationId: common2.operationId,
-    affectedCount: input.documents.length,
-    batches
-  };
-}
-function normalizeMongoTransaction(input = {}, config = {}, options = {}) {
-  const normalizedConfig = normalizeMongoMutationConfig(config);
-  if (!Array.isArray(input.operations) || input.operations.length === 0) {
-    throw mutationError(
-      "operations must be a non-empty array",
-      "INVALID_MONGODB_TRANSACTION"
-    );
-  }
-  if (input.operations.length > MAX_MONGODB_TRANSACTION_OPERATIONS) {
-    throw mutationError(
-      `transactions cannot contain more than ${MAX_MONGODB_TRANSACTION_OPERATIONS} operations`,
-      "MONGODB_TRANSACTION_TOO_LARGE"
-    );
-  }
-  const operationId = typeof options.operationId === "string" && options.operationId.trim() ? options.operationId.trim().slice(0, 128) : (0, import_node_crypto9.randomUUID)();
-  const database = input.database || input.operations[0]?.database || normalizedConfig.database;
-  const operations = input.operations.map((item, index) => {
-    if (!item || typeof item !== "object" || Array.isArray(item) || item.kind === "index") {
-      throw mutationError(`transaction operation at index ${index} must be a document mutation`, "INVALID_MONGODB_TRANSACTION");
-    }
-    const normalized = normalizeMongoMutation(
-      { ...item, database },
-      normalizedConfig,
-      { operationId: `${operationId}:${index}` }
-    );
-    if (normalized.database !== database) {
-      throw mutationError("all transaction operations must use the same database", "MONGODB_TRANSACTION_DATABASE_MISMATCH");
-    }
-    return normalized;
-  });
-  const totalMaxAffected = operations.reduce((total, item) => total + item.maxAffected, 0);
-  if (totalMaxAffected > normalizedConfig.maxAffectedDocuments) {
-    throw mutationError(
-      "transaction operations exceed the instance affected-document limit",
-      "MONGODB_TRANSACTION_AFFECTED_LIMIT"
-    );
-  }
-  return {
-    kind: "transaction",
-    operation: "transaction",
-    operationId,
-    purpose: typeof input.purpose === "string" ? clampText(input.purpose.trim(), 500) : void 0,
-    database,
-    collections: [...new Set(operations.map((item) => item.collection))],
-    operations,
-    rollbackTtlMs: normalizePositiveInt(
-      input.rollbackTtlMs,
-      "rollbackTtlMs",
-      normalizedConfig.rollbackTtlMs,
-      MAX_MONGODB_MUTATION_ROLLBACK_TTL_MS
-    ),
-    maxAffected: normalizedConfig.maxAffectedDocuments,
-    riskLevel: operations.some((item) => item.riskLevel === "high") || operations.length > 1 ? "high" : "medium"
-  };
-}
-function normalizeIndexKey(value) {
-  assertPlainObject2(value, "key");
-  const keys = Object.keys(value);
-  if (keys.length === 0 || keys.length > 8) {
-    throw mutationError("index key must contain between 1 and 8 fields", "INVALID_MONGODB_INDEX");
-  }
-  const normalized = {};
-  for (const field of keys) {
-    if (!SAFE_FIELD_PATTERN.test(field) || field.startsWith("_id.")) {
-      throw mutationError(`index key contains an unsafe field: ${field}`, "MONGODB_INDEX_FIELD_REJECTED");
-    }
-    if (!SAFE_INDEX_DIRECTIONS.has(value[field])) {
-      throw mutationError("index key directions must be 1 or -1", "MONGODB_INDEX_KEY_REJECTED");
-    }
-    normalized[field] = value[field];
-  }
-  return normalized;
-}
-function normalizeIndexOptions(value = {}) {
-  assertPlainObject2(value, "options");
-  if (Object.prototype.hasOwnProperty.call(value, "expireAfterSeconds")) {
-    throw mutationError("business TTL indexes are not supported: index rollback cannot recover automatically deleted documents", "MONGODB_TTL_INDEX_REJECTED", 403);
-  }
-  const allowed = /* @__PURE__ */ new Set(["unique", "sparse"]);
-  for (const key of Object.keys(value)) {
-    if (!allowed.has(key)) {
-      throw mutationError(`index option is not allowed: ${key}`, "MONGODB_INDEX_OPTION_REJECTED");
-    }
-  }
-  const options = {};
-  if (value.unique !== void 0) {
-    if (typeof value.unique !== "boolean") throw mutationError("options.unique must be boolean", "INVALID_MONGODB_INDEX");
-    options.unique = value.unique;
-  }
-  if (value.sparse !== void 0) {
-    if (typeof value.sparse !== "boolean") throw mutationError("options.sparse must be boolean", "INVALID_MONGODB_INDEX");
-    options.sparse = value.sparse;
-  }
-  return options;
-}
-function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
-  const normalizedConfig = normalizeMongoMutationConfig(config);
-  const indexOptions = normalizeIndexOptions(input.options);
-  if (!MONGODB_INDEX_OPERATIONS.includes(input.operation)) {
-    throw mutationError(
-      `operation must be one of ${MONGODB_INDEX_OPERATIONS.join(", ")}`,
-      "INVALID_MONGODB_INDEX_OPERATION"
-    );
-  }
-  const common2 = normalizeCommonMutation(input, normalizedConfig, options.operationId, "index");
-  const name2 = normalizeName(input.name, "name", SAFE_INDEX_NAME_PATTERN);
-  if (name2 === "_id_") {
-    throw mutationError("the _id_ index cannot be changed", "MONGODB_INDEX_IMMUTABLE");
-  }
-  return {
-    ...common2,
-    operation: input.operation,
-    name: name2,
-    ...input.operation === "createIndex" ? {
-      key: normalizeIndexKey(input.key),
-      options: indexOptions
-    } : {},
-    riskLevel: riskForIndexOperation(input.operation, input.options)
-  };
-}
-function summarizeMongoMutation(input = {}) {
-  const updateFields = input.update && typeof input.update === "object" ? Object.values(input.update).flatMap((value) => value && typeof value === "object" ? Object.keys(value) : []) : [];
-  return {
-    kind: input.kind,
-    operation: typeof input.operation === "string" ? input.operation.slice(0, 64) : void 0,
-    database: typeof input.database === "string" ? input.database.slice(0, 128) : void 0,
-    collection: typeof input.collection === "string" ? input.collection.slice(0, 128) : void 0,
-    name: typeof input.name === "string" ? input.name.slice(0, 128) : void 0,
-    filterKeys: input.filter && typeof input.filter === "object" && !Array.isArray(input.filter) ? Object.keys(input.filter).slice(0, 20) : [],
-    documentKeys: input.document && typeof input.document === "object" && !Array.isArray(input.document) ? Object.keys(input.document).slice(0, 50) : [],
-    updateFields: [...new Set(updateFields)].slice(0, 50),
-    riskLevel: input.riskLevel,
-    requiresConfirmation: input.requiresConfirmation !== false,
-    maxAffected: input.maxAffected,
-    expectedCount: input.expectedCount,
-    importId: typeof input.importId === "string" ? input.importId.slice(0, 64) : void 0,
-    documentCount: Array.isArray(input.documents) ? input.documents.length : void 0
-  };
-}
-function safeLiteral3(value) {
-  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-}
-function buildMongoMutationScript(request, config) {
-  const normalizedConfig = normalizeMongoMutationConfig(config);
-  const script = `
-const __fs = require("fs");
-const __path = require("path");
-const { createHash: __createHash, randomBytes: __randomBytes } = require("crypto");
-const __configPath = ${safeLiteral3(normalizedConfig.configPath)};
-const __driverPath = ${safeLiteral3(normalizedConfig.driverPath)};
-const __profileName = ${safeLiteral3(normalizedConfig.configProfile)};
-const __uriKey = ${safeLiteral3(normalizedConfig.uriKey)};
-const __journalRoot = ${safeLiteral3(normalizedConfig.rollbackRoot)};
-const __allowedDatabases = ${safeLiteral3(normalizedConfig.allowedDatabases)};
-const __allowedCollections = ${safeLiteral3(normalizedConfig.allowedCollections)};
-const __bulkEnabled = ${safeLiteral3(config.bulkEnabled === true)};
-const __bulkRoot = ${safeLiteral3(config.bulkRoot || "/var/lib/remote-debug-agent/bulk-jobs")};
-const __sandboxDatabase = ${safeLiteral3(config.sandboxDatabase || DEFAULT_SANDBOX_DATABASE)};
-const __bulkReceiptsCollection = ${safeLiteral3(config.bulkReceiptsCollection || "__remote_debug_bulk_receipts")};
-const __importBatchLimit = ${normalizedConfig.maxImportBatchDocuments};
-const __request = ${safeLiteral3(request)};
-const __marker = ${safeLiteral3(MONGODB_RESULT_MARKER)};
-const __schemaVersion = ${MONGODB_MUTATION_SCHEMA_VERSION};
-const __maxTimeMs = 15000;
-let __bson;
-try {
-  __bson = require(require.resolve("bson", { paths: [__driverPath] }));
-} catch (_error) {
-  __bson = null;
-}
-
-function __fail(code, message) {
-  const error = new Error(message);
-  error.code = code;
-  throw error;
-}
-
-const __ttlFail = __fail;
-${MONGODB_TTL_POLICY_SCRIPT}
-
-function __stable(value) {
-  if (Array.isArray(value)) return value.map(__stable);
-  if (value && typeof value === "object") {
-    return Object.keys(value).sort().reduce((result, key) => {
-      result[key] = __stable(value[key]);
-      return result;
-    }, {});
-  }
-  return value;
-}
-
-function __hash(value) {
-  return __createHash("sha256").update(JSON.stringify(__stable(value))).digest("hex");
-}
-
-${MONGODB_CODEC_SCRIPT}
-
-const __assertIndexedMutationDocument = ${assertIndexedMutationDocument.toString()};
-
-function __documentHash(value) {
-  return __hash(__encode(value));
-}
-
-function __documentHashes(documents) {
-  return (documents || []).map((document) => ({
-    id: __encode(document._id),
-    hash: __documentHash(document),
-  }));
-}
-
-function __journalDir() {
-  if (!__request.mutationId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(__request.mutationId)) {
-    __fail("MONGODB_MUTATION_ID_INVALID", "mutationId has an invalid format");
-  }
-  return __path.join(__journalRoot, __request.mutationId);
-}
-
-function __ensureJournalDir() {
-  const directory = __journalDir();
-  if (__fs.existsSync(__journalRoot) && __fs.lstatSync(__journalRoot).isSymbolicLink()) {
-    __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal root cannot be a symbolic link");
-  }
-  __fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-  const rootStat = __fs.lstatSync(__journalRoot);
-  const directoryStat = __fs.lstatSync(directory);
-  if (rootStat.isSymbolicLink() || directoryStat.isSymbolicLink()) {
-    __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal path cannot be a symbolic link");
-  }
-  try { __fs.chmodSync(__journalRoot, 0o700); } catch (_error) {}
-  try { __fs.chmodSync(directory, 0o700); } catch (_error) {}
-  return directory;
-}
-
-function __writeJsonAtomic(fileName, value) {
-  const directory = __ensureJournalDir();
-  const filePath = __path.join(directory, fileName);
-  const temporaryPath = filePath + "." + process.pid + "." + __randomBytes(16).toString("hex") + ".tmp";
-  const body = JSON.stringify(value, null, 2) + "\\n";
-  if (Buffer.byteLength(body, "utf8") > ${MAX_MONGODB_MUTATION_JOURNAL_BYTES}) {
-    __fail("MONGODB_JOURNAL_TOO_LARGE", "mutation journal exceeds the size limit");
-  }
-  const fd = __fs.openSync(temporaryPath, "w", 0o600);
-  try {
-    __fs.writeFileSync(fd, body, "utf8");
-    __fs.fsyncSync(fd);
-  } finally {
-    __fs.closeSync(fd);
-  }
-  __fs.renameSync(temporaryPath, filePath);
-  try { __fs.chmodSync(filePath, 0o600); } catch (_error) {}
-  const parentFd = __fs.openSync(directory, "r");
-  try { __fs.fsyncSync(parentFd); } finally { __fs.closeSync(parentFd); }
-}
-
-function __appendJournal(event, details = {}) {
-  const directory = __ensureJournalDir();
-  const filePath = __path.join(directory, "journal.jsonl");
-  if (__fs.existsSync(filePath) && __fs.lstatSync(filePath).isSymbolicLink()) {
-    __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal cannot be a symbolic link");
-  }
-  const fd = __fs.openSync(filePath, __fs.constants.O_CREAT | __fs.constants.O_APPEND | __fs.constants.O_WRONLY, 0o600);
-  try {
-    __fs.writeFileSync(fd, JSON.stringify({ at: new Date().toISOString(), event, ...details }) + "\\n", "utf8");
-    __fs.fsyncSync(fd);
-  } finally {
-    __fs.closeSync(fd);
-  }
-}
-
-function __loadManifest() {
-  const filePath = __path.join(__journalDir(), "manifest.json");
-  if (!__fs.existsSync(filePath)) __fail("MONGODB_MUTATION_NOT_FOUND", "mutation manifest was not found");
-  if (__fs.lstatSync(filePath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
-  let manifest;
-  try {
-    manifest = JSON.parse(__fs.readFileSync(filePath, "utf8"));
-  } catch (_error) {
-    __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest is invalid");
-  }
-  if (!manifest || manifest.schemaVersion !== __schemaVersion || manifest.mutationId !== __request.mutationId) {
-    __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest does not match the request");
-  }
-  if (manifest.planHash !== __request.planHash) {
-    __fail("MONGODB_MUTATION_PLAN_HASH_MISMATCH", "mutation plan hash does not match the manifest");
-  }
-  if (__planHash(manifest) !== manifest.planHash) {
-    __fail("MONGODB_MUTATION_MANIFEST_TAMPERED", "mutation manifest integrity check failed");
-  }
-  __assertManifestScope(manifest);
-  return manifest;
-}
-
-function __acquireMutationLock(reclaimStale = true) {
-  const directory = __ensureJournalDir();
-  const lockPath = __path.join(directory, ".lock");
-  let fd;
-  try {
-    fd = __fs.openSync(lockPath, "wx", 0o600);
-    __fs.writeFileSync(fd, String(process.pid), "utf8");
-    __fs.fsyncSync(fd);
-    __fs.closeSync(fd);
-  } catch (error) {
-    try { if (fd !== undefined) __fs.closeSync(fd); } catch (_closeError) {}
-    if (error.code === "EEXIST") {
-      try {
-        const lockStat = __fs.statSync(lockPath);
-        if (reclaimStale && Date.now() - lockStat.mtimeMs > ${MAX_MONGODB_MUTATION_LOCK_AGE_MS}) {
-          __fs.unlinkSync(lockPath);
-          return __acquireMutationLock(reclaimStale);
-        }
-      } catch (_lockError) {}
-      __fail("MONGODB_MUTATION_BUSY", "another mutation operation is using this journal");
-    }
-    throw error;
-  }
-  return () => {
-    try { __fs.unlinkSync(lockPath); } catch (_error) {}
-  };
-}
-
-function __summary(manifest) {
-  const isTransaction = manifest.kind === "transaction";
-  return {
-    mutationId: manifest.mutationId,
-    operationId: manifest.operationId,
-    kind: manifest.kind,
-    operation: isTransaction ? "transaction" : manifest.request.operation,
-    database: manifest.request.database,
-    collection: isTransaction ? undefined : manifest.request.collection,
-    collections: isTransaction ? manifest.request.collections : undefined,
-    name: manifest.request.name,
-    status: manifest.status,
-    rollbackMode: manifest.rollbackMode,
-    riskLevel: manifest.riskLevel,
-    requiresConfirmation: manifest.requiresConfirmation !== false,
-    purpose: manifest.request.purpose,
-    createdAt: manifest.createdAt,
-    committedAt: manifest.committedAt,
-    rolledBackAt: manifest.rolledBackAt,
-    rollbackExpiresAt: manifest.rollbackExpiresAt,
-    planHash: manifest.planHash,
-    affectedCount: manifest.affectedCount,
-    changedFields: manifest.changedFields,
-    affectedIds: manifest.affectedIds,
-    storageRoot: manifest.request.storageRoot,
-    ...(manifest.kind === "bulk_storage" ? { receiptsDatabase: manifest.request.receiptsDatabase || manifest.request.database } : {}),
-    storageStatus: manifest.storageStatus,
-    execution: manifest.execution,
-    indexRecovery: manifest.indexRecovery,
-    ...(manifest.kind === "index" ? { rollbackRestoresDocuments: false } : {}),
-    ...(manifest.kind === "import" ? {
-      importId: manifest.request.importId,
-      batchIndex: manifest.request.batchIndex,
-      retryable: manifest.status === "commit_retryable" || manifest.status === "rollback_retryable",
-    } : {}),
-    journalPath: __path.join(__journalRoot, manifest.mutationId),
-  };
-}
-
-function __assertManifestScope(manifest) {
-  if (manifest.prepare && __hash(manifest.prepareSource) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey })) {
-    __fail("MONGODB_MUTATION_POLICY_CHANGED", "preparation belongs to a different connection profile");
-  }
-  if (manifest.kind === "import" && manifest.request.documents.length > __importBatchLimit) {
-    __fail("MONGODB_MUTATION_POLICY_CHANGED", "import batch exceeds the current instance limit");
-  }
-  if (manifest.kind === "import" && __hash(manifest.request.source) !== __hash({
-    configPath: __configPath, configProfile: __profileName, uriKey: __uriKey, driverPath: __driverPath,
-  })) {
-    __fail("MONGODB_MUTATION_POLICY_CHANGED", "import belongs to a different database connection profile");
-  }
-  const requests = manifest.kind === "transaction"
-    ? (manifest.request.operations || [])
-    : [manifest.request];
-  for (const request of requests) {
-    if (!__allowedDatabases.includes(request.database) || manifest.kind !== "bulk_storage" && !__allowedCollections.includes(request.collection)) {
-      __fail("MONGODB_MUTATION_POLICY_CHANGED", "the mutation is no longer within the current database policy");
-    }
-    if (manifest.kind !== "bulk_storage" && request.collection === ${safeLiteral3(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
-      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
-    }
-    if (manifest.kind !== "bulk_storage" && request.database === __sandboxDatabase) __fail("SANDBOX_DATABASE_RESERVED", "sandbox database is reserved for plugin management");
-  }
-  if (manifest.kind === "index") {
-    if (__request.mode === "commit" && manifest.request.operation === "createIndex") __ttlRejectBusinessIndex(manifest.request.options);
-    if (__request.mode === "rollback" && manifest.request.operation === "dropIndex") __ttlRejectBusinessIndex(manifest.beforeIndex);
-  }
-  if (manifest.kind === "bulk_storage") {
-    __ttlAssertReceiptName(manifest.request.collection);
-    if (manifest.request.receiptsDatabase && manifest.request.receiptsDatabase !== __sandboxDatabase) __fail("SANDBOX_DATABASE_CHANGED", "the prepared sandbox database no longer matches configuration");
-  }
-  if (manifest.kind === "bulk_storage" && (!manifest.request.storageRoot || !manifest.request.storageRoot.startsWith("/"))) {
-    __fail("MONGODB_MUTATION_POLICY_CHANGED", "bulk storage root is missing from the prepared plan");
-  }
-}
-
-function __idSummary(value) {
-  const encoded = __encode(value);
-  if (typeof encoded === "string") return encoded.slice(0, 256);
-  return encoded;
-}
-
-function __changedFields(update) {
-  return [...new Set(Object.values(update || {}).flatMap((value) => value && typeof value === "object" ? Object.keys(value) : []))].slice(0, 100);
-}
-
-// Driver cleanup can return void, reject, or throw synchronously. It must never
-// replace the transaction outcome or prevent saving rollback metadata.
-async function __cleanup(action) {
-  try { await action(); } catch (_cleanupError) {}
-}
-
-async function __loadClient() {
-  const fileConfig = JSON.parse(__fs.readFileSync(__configPath, "utf8"));
-  const profile = fileConfig && fileConfig[__profileName];
-  if (!profile || typeof profile !== "object") __fail("MONGODB_PROFILE_NOT_FOUND", "MongoDB config profile was not found");
-  const getPath = (value, keyPath) => keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
-  const uri = getPath(profile, __uriKey);
-  if (typeof uri !== "string" || !uri) __fail("MONGODB_URI_NOT_FOUND", "MongoDB URI was not found in the configured profile");
-  const driver = require(__driverPath);
-  const MongoClient = driver.MongoClient || (driver.default && driver.default.MongoClient);
-  if (!MongoClient) __fail("MONGODB_DRIVER_INVALID", "MongoDB driver does not export MongoClient");
-  const client = new MongoClient(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    readPreference: "primary",
-    serverSelectionTimeoutMS: __maxTimeMs,
-  });
-  try {
-    await client.connect();
-  } catch (error) {
-    await __cleanup(() => client.close());
-    throw error;
-  }
-  return { client };
-}
-
-function __findOptions(session) {
-  return session ? { session } : {};
-}
-
-async function __findDocs(collection, filter, limit, session) {
-  const cursor = collection.find(__decode(filter), __findOptions(session)).limit(limit);
-  if (typeof cursor.maxTimeMS === "function") cursor.maxTimeMS(__maxTimeMs);
-  return cursor.toArray();
-}
-
-async function __findByIds(collection, documents, session) {
-  const result = [];
-  for (const document of documents) {
-    const current = await collection.findOne({ _id: document._id }, __findOptions(session));
-    if (current) result.push(current);
-  }
-  return result;
-}
-
-function __indexComparable(index) {
-  const result = { name: index.name, key: index.key };
-  for (const field of ["unique", "sparse", "expireAfterSeconds", "partialFilterExpression", "collation"]) {
-    if (index[field] !== undefined) result[field] = index[field];
-  }
-  return result;
-}
-
-function __indexHash(index) {
-  const comparable = __indexComparable(index);
-  comparable.unique = Boolean(comparable.unique);
-  comparable.sparse = Boolean(comparable.sparse);
-  // Compound index field order is semantic; __stable would otherwise sort it.
-  comparable.key = Object.entries(comparable.key || {});
-  return __hash(__encode(comparable));
-}
-
-function __indexMatches(index, expected) {
-  return __indexHash(index) === __indexHash(expected);
-}
-
-function __indexByName(indexes, name) {
-  return indexes.find((index) => index.name === name);
-}
-
-async function __readIndexes(collection) {
-  return collection.listIndexes({ readPreference: "primary", maxTimeMS: __maxTimeMs }).toArray();
-}
-
-async function __verifyIndex(manifest, collection, dropped, original) {
-  const expected = original || { name: manifest.request.name, key: __decode(manifest.request.key), ...__decode(manifest.request.options) };
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const current = __indexByName(await __readIndexes(collection), manifest.request.name);
-      if (dropped ? !current : current && __indexMatches(current, expected)) return current || null;
-      if (!dropped && current) __fail("MONGODB_INDEX_DEFINITION_CONFLICT", "index name exists with a different definition");
-    } catch (error) {
-      if (error.code === "MONGODB_INDEX_DEFINITION_CONFLICT") throw error;
-      if (attempt === 2) throw error;
-    }
-    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
-  }
-  __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index command outcome could not be verified on primary");
-}
-
-function __planHash(manifest) {
-  return __hash({
-    schemaVersion: manifest.schemaVersion,
-    mutationId: manifest.mutationId,
-    operationId: manifest.operationId,
-    kind: manifest.kind,
-    request: manifest.request,
-    before: manifest.before,
-    beforeIndex: manifest.beforeIndex,
-    beforeOperations: manifest.beforeOperations,
-    ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
-  });
-}
-
-async function __prepareDocumentRequest(request, collection) {
-  if (request.operation === "insertOne") {
-    const document = __decode(request.document);
-    const existing = await collection.findOne({ _id: document._id });
-    if (existing) __fail("MONGODB_MUTATION_TARGET_EXISTS", "a document with the requested _id already exists");
-    return {
-      before: [],
-      affectedCount: 1,
-      affectedIds: [__idSummary(document._id)],
-      changedFields: Object.keys(request.document),
-    };
-  }
-
-  const limit = request.operation === "updateMany" ? request.maxAffected + 1 : 2;
-  const documents = await __findDocs(collection, request.filter, limit);
-  if (documents.length === 0) __fail("MONGODB_MUTATION_TARGET_NOT_FOUND", "no document matched the mutation filter");
-  if (documents.length > request.maxAffected) __fail("MONGODB_MUTATION_AFFECTED_LIMIT", "mutation matched more documents than allowed");
-  if (request.operation !== "updateMany" && documents.length !== 1) __fail("MONGODB_MUTATION_TARGET_AMBIGUOUS", "mutation filter did not identify exactly one document");
-  if (request.expectedCount !== undefined && documents.length !== request.expectedCount) __fail("MONGODB_EXPECTED_COUNT_MISMATCH", "mutation matched a different number of documents than expected");
-  documents.forEach((document) => __assertIndexedMutationDocument(request, document));
-  return {
-    before: __encode(documents),
-    affectedCount: documents.length,
-    affectedIds: documents.map((document) => __idSummary(document._id)),
-    changedFields: __changedFields(request.update),
-  };
-}
-
-async function __prepare() {
-  const { client } = await __loadClient();
-  try {
-    const request = __request.mutation;
-    if (__request.kind !== "bulk_storage" && request.collection === ${safeLiteral3(MONGODB_TECHNICAL_RECEIPTS_COLLECTION)}) {
-      __fail("MONGODB_BULK_RESERVED_COLLECTION", "the technical receipt collection is reserved for internal bulk storage operations");
-    }
-    const database = request.database;
-    const collection = request.collection
-      ? client.db(__request.kind === "bulk_storage" ? request.receiptsDatabase || database : database).collection(request.collection)
-      : null;
-    const now = Date.now();
-    const manifest = {
-      schemaVersion: __schemaVersion,
-      mutationId: __request.mutationId,
-      ...(__request.prepare ? { prepare: __request.prepare, prepareSource: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } } : {}),
-      operationId: __request.operationId,
-      kind: __request.kind,
-      request,
-      status: "planned",
-      rollbackMode: __request.kind === "index"
-        ? "compensating"
-        : __request.kind === "bulk_storage"
-          ? "retained_non_rollbackable"
-          : "transactional",
-      riskLevel: request.riskLevel || (__request.kind === "index" ? "medium" : "high"),
-      requiresConfirmation: true,
-      createdAt: new Date(now).toISOString(),
-      rollbackExpiresAt: new Date(now + request.rollbackTtlMs).toISOString(),
-      before: [],
-      beforeIndex: null,
-      beforeOperations: [],
-      afterHashes: [],
-      afterOperations: [],
-      afterIndex: null,
-      affectedCount: 0,
-      affectedIds: [],
-      changedFields: [],
-    };
-
-    if (__request.kind === "index") {
-      const indexes = await __readIndexes(collection);
-      const existing = __indexByName(indexes, request.name);
-      if (request.operation === "createIndex") {
-        __ttlRejectBusinessIndex(request.options);
-        if (existing) __fail("MONGODB_INDEX_ALREADY_EXISTS", "the requested index already exists");
-        const equivalent = indexes.find((index) => {
-          const candidate = { name: request.name, key: __decode(request.key), ...__decode(request.options) };
-          const existingShape = __indexComparable(index);
-          const candidateShape = __indexComparable(candidate);
-          delete existingShape.name;
-          delete candidateShape.name;
-          return __hash(existingShape) === __hash(candidateShape);
-        });
-        if (equivalent) __fail("MONGODB_EQUIVALENT_INDEX_EXISTS", "an equivalent index already exists");
-        manifest.afterIndex = { name: request.name, key: request.key, ...request.options };
-        manifest.affectedCount = 1;
-        manifest.changedFields = Object.keys(request.key);
-      } else {
-        if (request.name === "_id_") __fail("MONGODB_INDEX_IMMUTABLE", "the _id_ index cannot be changed");
-        if (!existing) __fail("MONGODB_INDEX_NOT_FOUND", "the requested index was not found");
-        __ttlRejectBusinessIndex(existing);
-        manifest.beforeIndex = __encode(__indexComparable(existing));
-        manifest.affectedCount = 1;
-        manifest.changedFields = Object.keys(existing.key || {});
-      }
-    } else if (__request.kind === "bulk_storage") {
-      __ttlAssertReceiptName(request.collection);
-      if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
-        __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
-      }
-      const databaseObject = client.db(request.receiptsDatabase || database);
-      const namespaces = await databaseObject.listCollections({ name: request.collection }, { nameOnly: true }).toArray();
-      let expiryIndex = null;
-      if (namespaces.length) {
-        const indexes = await __readIndexes(collection);
-        expiryIndex = indexes.find((index) => index.name === "remote_debug_bulk_receipt_expiry") || null;
-      }
-      let rootState = "missing";
-      let rootMode;
-      try {
-        const stat = __fs.lstatSync(request.storageRoot);
-        rootState = stat.isDirectory() && !stat.isSymbolicLink() ? "directory" : "invalid";
-        rootMode = stat.mode & 0o777;
-      } catch (_error) {}
-      manifest.storageStatus = { rootState, rootMode, collectionExists: namespaces.length > 0, expiryIndexExists: Boolean(expiryIndex) };
-      manifest.affectedCount = 1;
-      manifest.changedFields = ["expiresAt"];
-    } else if (__request.kind === "import") {
-      const documents = __decode(request.documents);
-      const existing = await __findDocs(collection, { _id: { $in: request.documents.map((item) => item._id) } }, 1);
-      if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
-      manifest.affectedCount = documents.length;
-      manifest.affectedIds = documents.slice(0, 10).map((item) => __idSummary(item._id));
-      manifest.changedFields = [...new Set(request.documents.flatMap((item) => Object.keys(item)))].slice(0, 20).map((key) => key.slice(0, 128));
-    } else if (__request.kind === "transaction") {
-      const operationPlans = [];
-      for (const childRequest of request.operations) {
-        const childCollection = client.db(childRequest.database).collection(childRequest.collection);
-        operationPlans.push({
-          request: childRequest,
-          ...(await __prepareDocumentRequest(childRequest, childCollection)),
-        });
-      }
-      manifest.beforeOperations = operationPlans;
-      manifest.affectedCount = operationPlans.reduce((total, item) => total + item.affectedCount, 0);
-      manifest.affectedIds = operationPlans.flatMap((item) => item.affectedIds).slice(0, 100);
-      manifest.changedFields = [...new Set(operationPlans.flatMap((item) => item.changedFields))].slice(0, 100);
-    } else {
-      Object.assign(manifest, await __prepareDocumentRequest(request, collection));
-    }
-
-    manifest.planHash = __planHash(manifest);
-    if (__request.prepare) {
-      const control = JSON.parse(__fs.readFileSync(__path.join(__journalDir(), "prepare.json"), "utf8"));
-      // Reserve the plan durably before its manifest can be observed/executed.
-      // A subsequently missing manifest is loss of recovery state, not absence.
-      control.stage = "plan_reserved";
-      __writeJsonAtomic("prepare.json", control);
-    }
-    __writeJsonAtomic("manifest.json", manifest);
-    __appendJournal("planned", {
-      operationId: manifest.operationId,
-      kind: manifest.kind,
-      operation: request.operation,
-      planHash: manifest.planHash,
-      affectedCount: manifest.affectedCount,
-    });
-    return {
-      ...__summary(manifest),
-      preview: {
-        affectedCount: manifest.affectedCount,
-        affectedIds: manifest.affectedIds,
-        changedFields: manifest.changedFields,
-        rollbackMode: manifest.rollbackMode,
-      },
-    };
-  } finally {
-    await __cleanup(() => client.close());
-  }
-}
-
-async function __prepareImportPlan() {
-  if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
-  const plan = __request.mutation;
-  const results = [];
-  for (const batch of plan.batches) {
-    __request.mutationId = batch.mutationId;
-    __request.mutation = batch;
-    __request.kind = "import";
-    const releaseLock = __acquireMutationLock(false);
-    try {
-      const filePath = __path.join(__journalDir(), "manifest.json");
-      if (__fs.existsSync(filePath)) {
-        if (__fs.lstatSync(filePath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
-        __request.planHash = JSON.parse(__fs.readFileSync(filePath, "utf8")).planHash;
-        const manifest = __loadManifest();
-        const identity = (value) => { const { operationId, ...rest } = value; return rest; };
-        if (__hash(identity(manifest.request)) !== __hash(identity(batch))) __fail("MONGODB_IMPORT_PLAN_CONFLICT", "import journal belongs to a different request");
-        __assertNotExpired(manifest);
-        results.push(__summary(manifest));
-      } else {
-        results.push(await __prepare());
-      }
-    } catch (error) {
-      if (!results.length) throw error;
-      return { kind: "import_plan", importId: plan.importId, database: plan.database,
-        collection: plan.collection, affectedCount: plan.affectedCount, batchCount: plan.batches.length,
-        atomicity: "per_batch", status: "prepare_partial", batches: results, requiresConfirmation: true,
-        failedBatch: { batchIndex: batch.batchIndex, mutationId: batch.mutationId,
-          code: error.code || "MONGODB_IMPORT_PREPARE_FAILED" } };
-    } finally {
-      releaseLock();
-    }
-  }
-  return { kind: "import_plan", importId: plan.importId, database: plan.database,
-    collection: plan.collection, affectedCount: plan.affectedCount, batchCount: results.length,
-    atomicity: "per_batch", status: "prepared", batches: results, requiresConfirmation: true };
-}
-
-function __assertNotExpired(manifest) {
-  if (Date.parse(manifest.rollbackExpiresAt) <= Date.now()) __fail("MONGODB_ROLLBACK_EXPIRED", "mutation rollback window has expired");
-}
-
-async function __commitDocumentRequest(request, beforeValue, collection, session) {
-  const before = __decode(beforeValue || []);
-  if (request.operation === "insertOne") {
-    const document = __decode(request.document);
-    const existing = await collection.findOne({ _id: document._id }, { session });
-    if (existing) __fail("MONGODB_MUTATION_TARGET_EXISTS", "a document with the requested _id already exists");
-    await collection.insertOne(document, { session });
-    const inserted = await collection.findOne({ _id: document._id }, { session });
-    if (!inserted) __fail("MONGODB_MUTATION_COMMIT_UNKNOWN", "inserted document could not be verified in the transaction");
-    return [inserted];
-  }
-
-  const current = await __findByIds(collection, before, session);
-  if (current.length !== before.length || current.some((document) => {
-    const expected = before.find((item) => __hash(__encode(item._id)) === __hash(__encode(document._id)));
-    return !expected || __documentHash(expected) !== __documentHash(document);
-  })) {
-    __fail("MONGODB_MUTATION_CONFLICT", "mutation target changed after the plan was created");
-  }
-  const result = request.operation === "updateMany"
-    ? await collection.updateMany(__decode(request.filter), __decode(request.update), { session })
-    : await collection.updateOne(__decode(request.filter), __decode(request.update), { session });
-  const matchedCount = result.matchedCount != null ? result.matchedCount : result.n;
-  if (matchedCount !== before.length) __fail("MONGODB_MUTATION_CONFLICT", "mutation matched a different number of documents at commit time");
-  const after = await __findByIds(collection, before, session);
-  if (after.length !== before.length) __fail("MONGODB_MUTATION_CONFLICT", "a mutation target disappeared during commit");
-  return after;
-}
-
-async function __commitDocument(manifest, client, collection) {
-  const session = client.startSession();
-  let after;
-  try {
-    await session.withTransaction(async () => {
-      after = await __commitDocumentRequest(manifest.request, manifest.before, collection, session);
-    }, { readPreference: "primary" });
-  } finally {
-    await __cleanup(() => session.endSession());
-  }
-  manifest.afterHashes = __documentHashes(after || []);
-  manifest.status = "committed";
-  manifest.committedAt = new Date().toISOString();
-  __writeJsonAtomic("manifest.json", manifest);
-  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
-}
-
-// A batch is one transaction. Never infer ownership from matching documents after
-// an uncertain commit: stop for inspection instead of risking an unsafe rollback.
-async function __runImportTransaction(manifest, client, collection, rollback) {
-  if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
-  const session = client.startSession();
-  let committing = false;
-  try {
-    session.startTransaction({ readPreference: "primary" });
-    const documents = __decode(manifest.request.documents);
-    const filter = { _id: { $in: documents.map((item) => item._id) } };
-    const encodedFilter = { _id: { $in: manifest.request.documents.map((item) => item._id) } };
-    if (rollback) {
-      const current = await __findDocs(collection, encodedFilter, documents.length + 1, session);
-      const expected = new Map((manifest.afterHashes || []).map((item) => [__hash(item.id), item.hash]));
-      if (current.length !== documents.length || current.some((item) => expected.get(__hash(__encode(item._id))) !== __documentHash(item))) {
-        __fail("MONGODB_ROLLBACK_CONFLICT", "import targets changed after commit");
-      }
-      const result = await collection.deleteMany(filter, { session });
-      if ((result.deletedCount != null ? result.deletedCount : result.n) !== documents.length) __fail("MONGODB_ROLLBACK_CONFLICT", "import targets could not all be removed");
-    } else {
-      const existing = await __findDocs(collection, encodedFilter, 1, session);
-      if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
-      await collection.insertMany(documents, { session, ordered: true });
-      const inserted = await __findDocs(collection, encodedFilter, documents.length + 1, session);
-      if (inserted.length !== documents.length) __fail("MONGODB_MUTATION_COMMIT_UNKNOWN", "import document count could not be verified");
-      manifest.afterHashes = __documentHashes(inserted);
-      // Reserve journal capacity and durably save rollback hashes BEFORE commit.
-      __writeJsonAtomic("manifest.json", manifest);
-    }
-    committing = true;
-    await session.commitTransaction();
-    manifest.status = rollback ? "rolled_back" : "committed";
-    manifest[rollback ? "rolledBackAt" : "committedAt"] = new Date().toISOString();
-    __writeJsonAtomic("manifest.json", manifest);
-    __appendJournal(manifest.status, { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
-  } catch (error) {
-    // A failed commit command (or lost reply) is ambiguous, even if abort succeeds.
-    try { await session.abortTransaction(); } catch (_abortError) {}
-    manifest.status = committing
-      ? (rollback ? "rollback_unknown" : "commit_unknown")
-      : (rollback ? "rollback_retryable" : "commit_retryable");
-    try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-    try { __appendJournal(manifest.status, { code: error.code || "MONGODB_IMPORT_FAILED" }); } catch (_journalError) {}
-    throw error;
-  } finally {
-    await __cleanup(() => session.endSession());
-  }
-}
-
-async function __commitTransaction(manifest, client) {
-  const session = client.startSession();
-  const afterOperations = [];
-  try {
-    await session.withTransaction(async () => {
-      afterOperations.length = 0;
-      for (const item of manifest.beforeOperations || []) {
-        const collection = client.db(item.request.database).collection(item.request.collection);
-        const after = await __commitDocumentRequest(item.request, item.before, collection, session);
-        afterOperations.push({ request: item.request, before: item.before, afterHashes: __documentHashes(after) });
-      }
-    }, { readPreference: "primary" });
-  } finally {
-    await __cleanup(() => session.endSession());
-  }
-  manifest.afterOperations = afterOperations;
-  manifest.status = "committed";
-  manifest.committedAt = new Date().toISOString();
-  __writeJsonAtomic("manifest.json", manifest);
-  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
-}
-
-// DDL is never replayed after dispatch. Keep the command acknowledgement before
-// metadata verification, so reconciliation can finish without issuing DDL again.
-async function __commitIndex(manifest, collection, database) {
-  const request = manifest.request;
-  const current = __indexByName(await __readIndexes(collection), request.name);
-  const creating = request.operation === "createIndex";
-  if (creating) {
-    __ttlRejectBusinessIndex(request.options);
-    if (current) __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
-  } else {
-    __ttlRejectBusinessIndex(current);
-    if (!current || !manifest.beforeIndex || !__indexMatches(current, __decode(manifest.beforeIndex))) {
-      __fail("MONGODB_INDEX_CONFLICT", "index state changed after the plan was created");
-    }
-  }
-  manifest.indexReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash,
-    execution: manifest.execution, database: request.database, collection: request.collection,
-    operation: request.operation, stage: "dispatching", owned: false,
-    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } };
-  __writeJsonAtomic("manifest.json", manifest);
-  try {
-    const command = creating
-      ? { createIndexes: request.collection, indexes: [{ key: __decode(request.key), name: request.name, ...__decode(request.options) }] }
-      : { dropIndexes: request.collection, index: request.name };
-    const reply = await database.command({ ...command, maxTimeMS: __maxTimeMs,
-      writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
-    if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "index command did not acknowledge durable completion");
-    // createIndex's string return discards the server's no-op evidence. A same
-    // name/spec created concurrently must not become this mutation's rollback.
-    manifest.indexReceipt.stage = "acknowledged";
-    manifest.indexReceipt.numIndexesBefore = Number(reply.numIndexesBefore);
-    manifest.indexReceipt.numIndexesAfter = Number(reply.numIndexesAfter);
-    manifest.indexReceipt.noOp = Boolean(reply.note);
-    manifest.indexReceipt.owned = creating
-      ? Number.isFinite(Number(reply.numIndexesBefore)) && Number(reply.numIndexesAfter) === Number(reply.numIndexesBefore) + 1 && !reply.note
-      : true;
-    manifest.indexReceipt.acknowledgedAt = new Date().toISOString();
-    __writeJsonAtomic("manifest.json", manifest);
-  } catch (error) {
-    // Only definite server rejections prove that DDL did not commit. Network,
-    // timeout, write-concern and journal failures all remain ambiguous.
-    const rejected = error.name === "MongoServerError" || error.name === "MongoError";
-    if (rejected && [2, 13, 67, 72, 85, 86, 11000, 197].includes(Number(error.code)) && !error.writeConcernError) {
-      manifest.indexReceipt.stage = "rejected";
-    }
-    throw error;
-  }
-  if (!manifest.indexReceipt.owned) __fail("MONGODB_INDEX_OWNERSHIP_UNKNOWN", "index acknowledgement does not prove this operation created the index");
-  const after = await __verifyIndex(manifest, collection, !creating);
-  if (creating) manifest.afterIndex = __encode(__indexComparable(after));
-  manifest.status = "committed";
-  manifest.committedAt = manifest.indexReceipt.acknowledgedAt;
-  __writeJsonAtomic("manifest.json", manifest);
-  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1 });
-}
-
-async function __recoverExecution() {
-  // No lock age reclamation, business writes, or ownership inference from the
-  // live catalog. Historical helpers did not persist acknowledgements.
-  const release = __acquireMutationLock(false);
-  try {
-    const manifest = __loadManifest();
-    const ticket = __request.execution;
-    if (!ticket || !manifest.execution || __hash(ticket) !== __hash(manifest.execution)) {
-      return { ...__summary(manifest), indexRecovery: { reason: "legacy_execution_evidence_required" } };
-    }
-    if (manifest.request.database !== __request.database) __fail("MONGODB_MUTATION_SCOPE_MISMATCH", "recovery database does not match the original plan");
-    if (manifest.status === "committed" || manifest.status === "rolled_back") return __summary(manifest);
-    const rollback = manifest.status.indexOf("rollback_") === 0;
-    const receipt = rollback ? manifest.rollbackReceipt : manifest.indexReceipt;
-    if (manifest.kind !== "index" || !receipt || receipt.version !== 1 || receipt.mutationId !== manifest.mutationId ||
-        receipt.planHash !== manifest.planHash || receipt.database !== manifest.request.database || receipt.collection !== manifest.request.collection ||
-        receipt.operation !== manifest.request.operation ||
-        __hash(receipt.source) !== __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey }) ||
-        __hash(receipt.execution) !== __hash(ticket) || receipt.stage !== "acknowledged" || !receipt.owned ||
-        !(rollback ? ["rollback_started", "rollback_unknown"] : ["commit_started", "commit_unknown"]).includes(manifest.status)) {
-      return { ...__summary(manifest), indexRecovery: { reason: "execution_acknowledgement_required" } };
-    }
-    const { client } = await __loadClient();
-    try {
-      const collection = client.db(manifest.request.database).collection(manifest.request.collection);
-      const after = await __verifyIndex(manifest, collection,
-        rollback ? manifest.request.operation === "createIndex" : manifest.request.operation === "dropIndex",
-        rollback ? __decode(manifest.beforeIndex) : null);
-      if (after && !rollback) manifest.afterIndex = __encode(__indexComparable(after));
-      manifest.status = rollback ? "rolled_back" : "committed";
-      manifest[rollback ? "rolledBackAt" : "committedAt"] = receipt.acknowledgedAt;
-      manifest.indexRecovery = { reason: "acknowledgement_and_primary_catalog_verified" };
-      __writeJsonAtomic("manifest.json", manifest);
-      __appendJournal(rollback ? "rollback_reconciled" : "commit_reconciled", { planHash: manifest.planHash, intentId: ticket.intentId });
-      return __summary(manifest);
-    } finally { await __cleanup(() => client.close()); }
-  } finally { release(); }
-}
-
-async function __commitBulkStorage(manifest, client) {
-  const request = manifest.request;
-  __ttlAssertReceiptName(request.collection);
-  if (!__bulkEnabled || request.storageRoot !== __bulkRoot || request.collection !== __bulkReceiptsCollection) {
-    __fail("MONGODB_BULK_DISABLED", "bulk storage settings changed or are disabled");
-  }
-  try {
-    if (!__fs.existsSync(request.storageRoot)) __fs.mkdirSync(request.storageRoot, { recursive: true, mode: 0o700 });
-    const rootStat = __fs.lstatSync(request.storageRoot);
-    if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) __fail("MONGODB_BULK_STORAGE_INVALID", "bulk storage root must be a real directory");
-    __fs.chmodSync(request.storageRoot, 0o700);
-    const probePath = __path.join(request.storageRoot, ".write-probe-" + process.pid + "-" + __randomBytes(8).toString("hex"));
-    const probeFd = __fs.openSync(probePath, "wx", 0o600);
-    try {
-      __fs.writeFileSync(probeFd, "ready", "utf8");
-      __fs.fsyncSync(probeFd);
-    } finally { __fs.closeSync(probeFd); }
-    __fs.unlinkSync(probePath);
-    const directoryFd = __fs.openSync(request.storageRoot, "r");
-    try { __fs.fsyncSync(directoryFd); } finally { __fs.closeSync(directoryFd); }
-  } catch (error) {
-    if (error && error.code && error.code.indexOf("MONGODB_") === 0) throw error;
-    __fail("MONGODB_BULK_STORAGE_DURABILITY_UNAVAILABLE", "bulk storage could not complete a durable owner-only write probe");
-  }
-
-  await __ttlInitializeReceiptCollection(client, request.receiptsDatabase || request.database, request.collection);
-  const storageMarker = {
-    schemaVersion: 1,
-    database: request.database,
-    receiptsCollection: request.collection,
-    receiptsDatabase: request.receiptsDatabase || request.database,
-    initializedAt: new Date().toISOString(),
-  };
-  const markerPath = __path.join(request.storageRoot, ".storage-v1.json");
-  if (__fs.existsSync(markerPath)) {
-    const existingStat = __fs.lstatSync(markerPath);
-    if (existingStat.isSymbolicLink() || !existingStat.isFile() || (existingStat.mode & 0o777) !== 0o600) {
-      __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record must be a regular 0600 file");
-    }
-    let existingStorageMarker;
-    try { existingStorageMarker = JSON.parse(__fs.readFileSync(markerPath, "utf8")); }
-    catch (_error) { __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record is damaged"); }
-    if (!existingStorageMarker || existingStorageMarker.schemaVersion !== 1 || existingStorageMarker.database !== request.database || existingStorageMarker.receiptsCollection !== request.collection) {
-      __fail("MONGODB_BULK_STORAGE_CONFLICT", "storage initialization record belongs to a different configuration");
-    }
-    storageMarker.initializedAt = existingStorageMarker.initializedAt;
-  }
-  const markerText = JSON.stringify(storageMarker, null, 2) + "\\n";
-  const temporaryPath = markerPath + "." + process.pid + "." + __randomBytes(8).toString("hex") + ".tmp";
-  const markerFd = __fs.openSync(temporaryPath, "w", 0o600);
-  try {
-    __fs.writeFileSync(markerFd, markerText, "utf8");
-    __fs.fsyncSync(markerFd);
-  } finally { __fs.closeSync(markerFd); }
-  __fs.renameSync(temporaryPath, markerPath);
-  __fs.chmodSync(markerPath, 0o600);
-  const markerDirectoryFd = __fs.openSync(request.storageRoot, "r");
-  try { __fs.fsyncSync(markerDirectoryFd); } finally { __fs.closeSync(markerDirectoryFd); }
-  manifest.storageStatus = { rootState: "directory", rootMode: 0o700, collectionExists: true, expiryIndexExists: true };
-  manifest.status = "committed";
-  manifest.committedAt = new Date().toISOString();
-  __writeJsonAtomic("manifest.json", manifest);
-  __appendJournal("committed", { planHash: manifest.planHash, affectedCount: 1, kind: "bulk_storage" });
-}
-
-async function __loadMutationClient(manifest, rollback) {
-  try {
-    return await __loadClient();
-  } catch (error) {
-    if (manifest.kind === "import") {
-      manifest.status = rollback ? "rollback_retryable" : "commit_retryable";
-      try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-    }
-    throw error;
-  }
-}
-
-async function __commit() {
-  const releaseLock = __acquireMutationLock(false);
-  try {
-    const manifest = __loadManifest();
-    if (manifest.status === "committed") return __summary(manifest);
-    if (manifest.status === "rolled_back") __fail("MONGODB_MUTATION_ALREADY_ROLLED_BACK", "mutation was already rolled back");
-    if (manifest.status !== "planned" && !(manifest.kind === "import" && manifest.status === "commit_retryable") && !(manifest.kind === "bulk_storage" && manifest.status === "commit_retryable")) __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit; inspect uncertain outcomes before retrying");
-    __assertNotExpired(manifest);
-    __appendJournal("commit_started", { planHash: manifest.planHash });
-    manifest.status = "commit_started";
-    manifest.execution = __request.execution;
-    __writeJsonAtomic("manifest.json", manifest);
-    const { client } = await __loadMutationClient(manifest, false);
-    try {
-      const collection = manifest.request.collection
-        ? client.db(manifest.request.database).collection(manifest.request.collection)
-        : null;
-      if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
-      else if (manifest.kind === "index") await __commitIndex(manifest, collection, client.db(manifest.request.database));
-      else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
-      else if (manifest.kind === "transaction") await __commitTransaction(manifest, client);
-      else await __commitDocument(manifest, client, collection);
-      return __summary(manifest);
-    } catch (error) {
-      if (manifest.status !== "committed" && manifest.kind !== "import") {
-        manifest.status = manifest.kind === "bulk_storage" ? "commit_retryable"
-          : manifest.kind === "index" && manifest.indexReceipt && manifest.indexReceipt.stage !== "rejected" ? "commit_unknown" : "commit_failed";
-        try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-        try { __appendJournal(manifest.status, { code: error.code || "MONGODB_MUTATION_COMMIT_FAILED" }); } catch (_journalError) {}
-      }
-      throw error;
-    } finally {
-      await __cleanup(() => client.close());
-    }
-  } finally {
-    releaseLock();
-  }
-}
-
-async function __rollbackDocument(manifest, client, collection) {
-  const session = client.startSession();
-  try {
-    await session.withTransaction(async () => {
-      await __rollbackDocumentRequest(manifest.request, manifest.before, manifest.afterHashes, collection, session);
-    }, { readPreference: "primary" });
-  } finally {
-    await __cleanup(() => session.endSession());
-  }
-}
-
-async function __rollbackDocumentRequest(request, beforeValue, afterHashesValue, collection, session) {
-  const before = __decode(beforeValue || []);
-  const afterHashes = afterHashesValue || [];
-  const idDocuments = request.operation === "insertOne"
-    ? [{ _id: __decode(request.document._id) }]
-    : before;
-  const current = await __findByIds(collection, idDocuments, session);
-  if (current.length !== idDocuments.length || current.some((document) => {
-    const expected = afterHashes.find((item) => __hash(item.id) === __hash(__encode(document._id)));
-    return !expected || expected.hash !== __documentHash(document);
-  })) {
-    __fail("MONGODB_ROLLBACK_CONFLICT", "mutation target changed after the commit");
-  }
-  if (request.operation === "insertOne") {
-    const result = await collection.deleteOne({ _id: __decode(request.document._id) }, { session });
-    const deletedCount = result.deletedCount != null ? result.deletedCount : result.n;
-    if (deletedCount !== 1) __fail("MONGODB_ROLLBACK_CONFLICT", "inserted document could not be removed safely");
-    return;
-  }
-  for (const document of before) {
-    const result = await collection.replaceOne(
-      { _id: document._id },
-      document,
-      { session, upsert: false },
-    );
-    const matchedCount = result.matchedCount != null ? result.matchedCount : result.n;
-    if (matchedCount !== 1) __fail("MONGODB_ROLLBACK_CONFLICT", "original document could not be restored safely");
-  }
-}
-
-async function __rollbackTransaction(manifest, client) {
-  const session = client.startSession();
-  try {
-    await session.withTransaction(async () => {
-      const operations = manifest.afterOperations || [];
-      for (let index = operations.length - 1; index >= 0; index -= 1) {
-        const item = operations[index];
-        const collection = client.db(item.request.database).collection(item.request.collection);
-        await __rollbackDocumentRequest(item.request, item.before, item.afterHashes, collection, session);
-      }
-    }, { readPreference: "primary" });
-  } finally {
-    await __cleanup(() => session.endSession());
-  }
-}
-
-async function __rollbackIndex(manifest, collection, database) {
-  const request = manifest.request;
-  const current = __indexByName(await __readIndexes(collection), request.name);
-  const dropping = request.operation === "createIndex";
-  if (dropping) {
-    if (!current || !manifest.afterIndex || !__indexMatches(current, __decode(manifest.afterIndex))) {
-      __fail("MONGODB_ROLLBACK_CONFLICT", "created index is missing or has changed");
-    }
-  } else {
-    if (current) __fail("MONGODB_ROLLBACK_CONFLICT", "dropped index was recreated by another operation");
-    if (!manifest.beforeIndex) __fail("MONGODB_ROLLBACK_MANIFEST_INVALID", "original index definition is missing");
-    __ttlRejectBusinessIndex(__decode(manifest.beforeIndex));
-  }
-  const original = __decode(manifest.beforeIndex);
-  manifest.rollbackReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash,
-    execution: manifest.execution, database: request.database, collection: request.collection,
-    operation: request.operation, stage: "dispatching", owned: false,
-    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey } };
-  __writeJsonAtomic("manifest.json", manifest);
-  const command = dropping ? { dropIndexes: request.collection, index: request.name }
-    : { createIndexes: request.collection, indexes: [original] };
-  const reply = await database.command({ ...command, maxTimeMS: __maxTimeMs,
-    writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
-  if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_INDEX_COMMIT_UNKNOWN", "rollback index command did not acknowledge durable completion");
-  manifest.rollbackReceipt.stage = "acknowledged";
-  manifest.rollbackReceipt.numIndexesBefore = Number(reply.numIndexesBefore);
-  manifest.rollbackReceipt.numIndexesAfter = Number(reply.numIndexesAfter);
-  manifest.rollbackReceipt.noOp = Boolean(reply.note);
-  manifest.rollbackReceipt.owned = dropping || Number.isFinite(Number(reply.numIndexesBefore)) && Number(reply.numIndexesAfter) === Number(reply.numIndexesBefore) + 1 && !reply.note;
-  manifest.rollbackReceipt.acknowledgedAt = new Date().toISOString();
-  __writeJsonAtomic("manifest.json", manifest);
-  if (!manifest.rollbackReceipt.owned) __fail("MONGODB_INDEX_OWNERSHIP_UNKNOWN", "rollback command did not prove an index change");
-  await __verifyIndex(manifest, collection, dropping, original);
-}
-
-async function __rollback() {
-  const releaseLock = __acquireMutationLock(false);
-  try {
-    const manifest = __loadManifest();
-    if (manifest.status === "rolled_back") return __summary(manifest);
-    if (manifest.kind === "bulk_storage") __fail("MONGODB_BULK_STORAGE_NOT_ROLLBACKABLE", "bulk storage initialization is retained; disable bulk capability instead of deleting its records");
-    if (manifest.status !== "committed" && !(manifest.kind === "import" && manifest.status === "rollback_retryable")) __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
-    __assertNotExpired(manifest);
-    __appendJournal("rollback_started", { planHash: manifest.planHash });
-    manifest.status = "rollback_started";
-    manifest.execution = __request.execution;
-    __writeJsonAtomic("manifest.json", manifest);
-    const { client } = await __loadMutationClient(manifest, true);
-    try {
-      const collection = manifest.request.collection
-        ? client.db(manifest.request.database).collection(manifest.request.collection)
-        : null;
-      if (manifest.kind === "import") {
-        await __runImportTransaction(manifest, client, collection, true);
-        return __summary(manifest);
-      } else if (manifest.kind === "index") {
-        await __rollbackIndex(manifest, collection, client.db(manifest.request.database));
-      } else if (manifest.kind === "transaction") {
-        await __rollbackTransaction(manifest, client);
-      } else {
-        await __rollbackDocument(manifest, client, collection);
-      }
-      manifest.status = "rolled_back";
-      manifest.rolledBackAt = new Date().toISOString();
-      __writeJsonAtomic("manifest.json", manifest);
-      __appendJournal("rolled_back", { planHash: manifest.planHash });
-      return __summary(manifest);
-    } catch (error) {
-      if (manifest.kind !== "import") manifest.status = manifest.kind === "index" && manifest.rollbackReceipt ? "rollback_unknown" : "rollback_failed";
-      try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-      try { __appendJournal(manifest.status, { code: error.code || "MONGODB_ROLLBACK_FAILED" }); } catch (_journalError) {}
-      throw error;
-    } finally {
-      await __cleanup(() => client.close());
-    }
-  } finally {
-    releaseLock();
-  }
-}
-
-function __list() {
-  if (!__fs.existsSync(__journalRoot)) return { entries: [] };
-  if (__fs.lstatSync(__journalRoot).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation journal root cannot be a symbolic link");
-  const entries = [];
-  for (const name of __fs.readdirSync(__journalRoot)) {
-    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(name)) continue;
-    const filePath = __path.join(__journalRoot, name, "manifest.json");
-    try {
-      if (!__fs.existsSync(filePath) || __fs.lstatSync(filePath).isSymbolicLink()) continue;
-      const manifest = JSON.parse(__fs.readFileSync(filePath, "utf8"));
-      if (manifest.schemaVersion !== __schemaVersion) continue;
-      if (__request.status && manifest.status !== __request.status) continue;
-      entries.push(__summary(manifest));
-    } catch (_error) {
-      // Ignore incomplete or expired directories in a listing.
-    }
-  }
-  entries.sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || "")));
-  return { entries: entries.slice(0, ${MAX_MONGODB_MUTATION_LIST_ITEMS}) };
-}
-
-// A recovery fence and preparation share the same lock. Never age out this lock:
-// elapsed time cannot prove that a remote process has stopped using the journal.
-async function __guardedPrepare(recover) {
-  const release = __acquireMutationLock(false);
-  try {
-    const ticket = __request.prepare;
-    const controlPath = __path.join(__journalDir(), "prepare.json");
-    const manifestPath = __path.join(__journalDir(), "manifest.json");
-    const source = { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey };
-    let control;
-    if (__fs.existsSync(controlPath)) {
-      if (__fs.lstatSync(controlPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "prepare receipt cannot be a symbolic link");
-      try { control = JSON.parse(__fs.readFileSync(controlPath, "utf8")); }
-      catch (_error) { __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is invalid"); }
-      if (control.schemaVersion !== 1 || control.binding !== ticket.binding || control.requestDigest !== ticket.requestDigest ||
-          control.database !== __request.database || __hash(control.source) !== __hash(source) ||
-          !Number.isSafeInteger(control.fencedThrough) || control.fencedThrough < 0 || !["preparing", "plan_reserved"].includes(control.stage)) {
-        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "prepare identity or target does not match");
-      }
-    } else {
-      // Missing remote state may have been deleted or lost. It cannot prove that
-      // an earlier helper never ran, even when a mutation listing is empty.
-      if (recover || __fs.existsSync(manifestPath)) __fail("MONGODB_PREPARE_RECEIPT_INVALID", "prepare receipt is missing");
-      control = { schemaVersion: 1, binding: ticket.binding, requestDigest: ticket.requestDigest, database: __request.database, source, fencedThrough: 0, stage: "preparing" };
-      __writeJsonAtomic("prepare.json", control);
-    }
-    if (__fs.existsSync(manifestPath)) {
-      if (__fs.lstatSync(manifestPath).isSymbolicLink()) __fail("MONGODB_JOURNAL_SYMLINK_REJECTED", "mutation manifest cannot be a symbolic link");
-      let manifest;
-      try { manifest = JSON.parse(__fs.readFileSync(manifestPath, "utf8")); }
-      catch (_error) { __fail("MONGODB_MUTATION_MANIFEST_INVALID", "mutation manifest is invalid"); }
-      if (manifest.mutationId !== ticket.mutationId || __hash(manifest.prepare) !== __hash(ticket) ||
-          manifest.schemaVersion !== __schemaVersion || __planHash(manifest) !== manifest.planHash) {
-        __fail("MONGODB_PREPARE_RECEIPT_CONFLICT", "manifest does not match this preparation attempt");
-      }
-      __assertManifestScope(manifest);
-      return { ...__summary(manifest), prepare: ticket, recovery: "prepared" };
-    }
-    if (recover) {
-      if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
-      control.fencedThrough = Math.max(control.fencedThrough, ticket.attempt);
-      __writeJsonAtomic("prepare.json", control);
-      return { prepare: ticket, recovery: "fenced" };
-    }
-    if (control.stage !== "preparing") __fail("MONGODB_PREPARE_RECEIPT_INVALID", "reserved plan manifest is missing");
-    if (ticket.attempt <= control.fencedThrough) __fail("MONGODB_PREPARE_FENCED", "this preparation attempt was fenced by recovery");
-    return await __prepare();
-  } finally { release(); }
-}
-
-(async () => {
-  let client;
-  try {
-    let data;
-    if (__request.mode === "list") {
-      data = __list();
-    } else if (__request.mode === "recover_execution") {
-      data = await __recoverExecution();
-    } else if (__request.mode === "get") {
-      data = __summary(__loadManifest());
-    } else if (__request.mode === "recover_prepare") {
-      data = await __guardedPrepare(true);
-    } else if (__request.mode === "prepare") {
-      data = __request.prepare ? await __guardedPrepare(false) : __request.kind === "import_plan" ? await __prepareImportPlan() : await __prepare();
-    } else if (__request.mode === "commit") {
-      data = await __commit();
-    } else if (__request.mode === "rollback") {
-      data = await __rollback();
-    } else {
-      __fail("MONGODB_MUTATION_MODE_INVALID", "unsupported mutation mode");
-    }
-    process.stdout.write(__marker + JSON.stringify({ ok: true, data }) + "\\n");
-  } catch (error) {
-    process.stdout.write(__marker + JSON.stringify({
-      ok: false,
-      error: {
-        code: error.code || "MONGODB_MUTATION_FAILED",
-        message: String(error.message || error).slice(0, 2000),
-      },
-    }) + "\\n");
-    process.exitCode = 1;
-  } finally {
-    if (client) await __cleanup(() => client.close());
-  }
-})();
-`;
-  const scriptLimit = request.kind === "import_plan" ? MAX_MONGODB_IMPORT_BYTES + 1024 * 1024 : MAX_MONGODB_MUTATION_RESULT_BYTES * 2;
-  if (byteLength3(script) > scriptLimit) {
-    throw mutationError("MongoDB mutation helper script is too large", "MONGODB_MUTATION_SCRIPT_TOO_LARGE", 413);
-  }
-  return script;
-}
-function markerPayload2(stdout) {
-  const lines = String(stdout || "").split(/\r?\n/);
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
-    if (!lines[index].startsWith(MONGODB_RESULT_MARKER)) continue;
-    try {
-      return JSON.parse(lines[index].slice(MONGODB_RESULT_MARKER.length));
-    } catch {
-      throw mutationError("MongoDB mutation helper returned invalid JSON", "MONGODB_MUTATION_INVALID_RESPONSE", 502);
-    }
-  }
-  return null;
-}
-function normalizeMutationId(value) {
-  return normalizeName(value, "mutationId", SAFE_MUTATION_ID_PATTERN);
-}
-function normalizePlanHash(value) {
-  return normalizeName(value, "planHash", /^[a-f0-9]{64}$/);
-}
-async function runMongoMutation(input = {}, options = {}) {
-  const rawConfig = options.config?.mongodb || options.config || {};
-  const mode = input.mode || "prepare";
-  let request, config, script;
-  try {
-    config = normalizeMongoMutationConfig(rawConfig);
-    const execution2 = input._businessExecution;
-    if (execution2 !== void 0 && (!execution2 || !/^[a-f0-9]{64}$/.test(execution2.intentId || "") || typeof execution2.operationId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(execution2.operationId) || Object.keys(execution2).some((key) => !["intentId", "operationId"].includes(key)))) {
-      throw mutationError("invalid execution identity", "MONGODB_EXECUTION_IDENTITY_INVALID");
-    }
-    const ticket = input._businessPrepare;
-    if (ticket !== void 0 && !isPrepareTicket(ticket)) throw mutationError("invalid prepare identity", "MONGODB_PREPARE_IDENTITY_INVALID");
-    if (mode === "prepare") {
-      const kind = input.kind === "import_plan" ? "import_plan" : input.kind === "bulk_storage" ? "bulk_storage" : input.kind === "index" ? "index" : input.kind === "transaction" ? "transaction" : "document";
-      const mutation2 = kind === "import_plan" ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId }) : kind === "bulk_storage" ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId }) : kind === "index" ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId }) : kind === "transaction" ? normalizeMongoTransaction(input, config, { operationId: options.operation?.operationId }) : normalizeMongoMutation(input, config, { operationId: options.operation?.operationId });
-      request = {
-        mode: "prepare",
-        kind,
-        operationId: options.operation?.operationId || mutation2.operationId,
-        mutationId: ticket?.mutationId || (0, import_node_crypto9.randomUUID)(),
-        ...ticket ? { prepare: ticket, database: mutation2.database } : {},
-        mutation: mutation2
-      };
-      if (ticket && ["import_plan", "bulk_storage"].includes(kind)) throw mutationError("unsupported prepare identity kind", "MONGODB_PREPARE_IDENTITY_INVALID");
-    } else if (mode === "recover_prepare") {
-      if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");
-      request = { mode, mutationId: ticket.mutationId, prepare: ticket, database: assertDatabaseAllowed(input.database, config) };
-    } else if (mode === "recover_execution") {
-      request = {
-        mode,
-        mutationId: normalizeMutationId(input.mutationId),
-        planHash: normalizePlanHash(input.planHash),
-        database: assertDatabaseAllowed(input.database, config),
-        execution: execution2
-      };
-    } else if (mode === "get") {
-      request = { mode, mutationId: normalizeMutationId(input.mutationId), planHash: normalizePlanHash(input.planHash) };
-    } else if (mode === "commit" || mode === "rollback") {
-      request = {
-        mode,
-        execution: execution2,
-        mutationId: normalizeMutationId(input.mutationId),
-        planHash: normalizePlanHash(input.planHash),
-        operationId: options.operation?.operationId || (0, import_node_crypto9.randomUUID)()
-      };
-      const expectedConfirmation = mode === "commit" ? MONGODB_MUTATION_CONFIRMATION : MONGODB_ROLLBACK_CONFIRMATION;
-      if (input.confirmation !== expectedConfirmation) {
-        throw mutationError(
-          `confirmation must exactly equal ${expectedConfirmation}`,
-          mode === "commit" ? "MONGODB_MUTATION_CONFIRMATION_REQUIRED" : "MONGODB_ROLLBACK_CONFIRMATION_REQUIRED",
-          400
-        );
-      }
-    } else if (mode === "list") {
-      request = {
-        mode: "list",
-        status: typeof input.status === "string" ? input.status.trim().slice(0, 64) : void 0,
-        mutationId: (0, import_node_crypto9.randomUUID)(),
-        operationId: options.operation?.operationId || (0, import_node_crypto9.randomUUID)()
-      };
-    } else {
-      throw mutationError("unsupported MongoDB mutation mode", "MONGODB_MUTATION_MODE_INVALID");
-    }
-    if (typeof options.runSSH !== "function") {
-      throw mutationError("MongoDB SSH runner is not configured", "MONGODB_RUNNER_UNAVAILABLE", 500);
-    }
-    script = buildMongoMutationScript(request, config);
-  } catch (error2) {
-    if (mode === "prepare") error2.dispatchState = "not_dispatched";
-    throw error2;
-  }
-  let remoteResult;
-  try {
-    remoteResult = await options.runSSH(MONGODB_REMOTE_COMMAND, {
-      config: options.config,
-      operation: options.operation,
-      stdin: script,
-      taskType: "mongo_write"
-    });
-  } catch (error2) {
-    if (options.operation?.signal?.aborted) {
-      throw operationErrorForSignal(options.operation.signal, options.operation, {
-        layer: "mongodb-mutation",
-        phase: mode
-      });
-    }
-    throw operationError(redactMongoSecrets(error2.message || "MongoDB mutation helper could not be executed"), {
-      code: error2.code || "MONGODB_MUTATION_FAILED",
-      statusCode: error2.statusCode || 502,
-      operationId: options.operation?.operationId,
-      layer: "mongodb-mutation",
-      phase: mode,
-      retriable: !["commit", "rollback"].includes(mode) && error2.retriable === true,
-      cause: error2
-    });
-  }
-  if (remoteResult?.stdoutTruncated || byteLength3(remoteResult?.stdout || "") > MAX_MONGODB_MUTATION_RESULT_BYTES) {
-    throw operationError("MongoDB mutation result exceeded the response limit", {
-      code: "MONGODB_MUTATION_RESULT_TOO_LARGE",
-      statusCode: 413,
-      operationId: options.operation?.operationId,
-      layer: "mongodb-mutation",
-      phase: "response-size",
-      retriable: false
-    });
-  }
-  const payload = markerPayload2(remoteResult?.stdout);
-  if (!payload) {
-    throw operationError("MongoDB mutation helper returned no structured response", {
-      code: "MONGODB_MUTATION_INVALID_RESPONSE",
-      statusCode: 502,
-      operationId: options.operation?.operationId,
-      layer: "mongodb-mutation",
-      phase: "response-parse",
-      retriable: false,
-      cause: redactMongoSecrets(remoteResult?.stderr)
-    });
-  }
-  if (payload.ok !== true || remoteResult?.exitCode !== 0 || remoteResult?.timedOut) {
-    throw operationError(redactMongoSecrets(payload.error?.message || remoteResult?.stderr || "MongoDB mutation failed"), {
-      code: remoteResult?.timedOut ? "MONGODB_MUTATION_TIMEOUT" : payload.error?.code || "MONGODB_MUTATION_FAILED",
-      statusCode: remoteResult?.timedOut ? 408 : 400,
-      operationId: options.operation?.operationId,
-      layer: "mongodb-mutation",
-      phase: mode,
-      retriable: !["commit", "rollback"].includes(mode) && remoteResult?.timedOut === true,
-      cause: redactMongoSecrets(remoteResult?.stderr)
-    });
-  }
-  return {
-    ...payload.data || {},
-    timing: remoteResult.timing
-  };
-}
-
-// security.js
 var SECURITY_POLICY = {
   schemaVersion: 1,
   allowedExecutables: [
@@ -66789,6 +67066,26 @@ function configEnv(instance2, port, manager, cwd, memoryInit) {
     REMOTE_DEBUG_MEMORY_INIT: memoryInit ? "1" : "0"
   };
 }
+function workerConfigFingerprint(instance2, manager, cwd) {
+  return (0, import_node_crypto23.createHash)("sha256").update(JSON.stringify(configEnv(instance2, 0, manager, cwd, false))).digest("hex");
+}
+function assertMongoConfigurationCurrent(manager, id) {
+  const runtime2 = manager.runtime.get(id), instance2 = manager.registry.getInternal(id);
+  if (!runtime2 || runtime2.status !== "running" || !runtime2.workerPort) throw managerError(
+    "Instance worker is not running",
+    "INSTANCE_NOT_RUNNING",
+    409,
+    { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" }
+  );
+  if (!instance2 || !runtime2.configFingerprint || runtime2.configFingerprint !== workerConfigFingerprint(instance2, manager.managerConfig(), manager.cwd)) {
+    throw managerError(
+      "Worker configuration is not current; inspect in-flight work before explicitly refreshing this instance",
+      "WORKER_CONFIGURATION_STALE",
+      409,
+      { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" }
+    );
+  }
+}
 var WorkerManager = class {
   constructor(options = {}) {
     this.registry = options.registry;
@@ -66831,12 +67128,13 @@ var WorkerManager = class {
   publicInstances() {
     return this.registry.list().map((instance2) => ({
       ...instance2,
-      runtime: publicRuntime(this.runtime.get(instance2.id)),
+      runtime: this.runtimeFor(instance2.id),
       memory: this.memoryStore.summary(instance2)
     }));
   }
   runtimeFor(id) {
-    return publicRuntime(this.runtime.get(id));
+    const runtime2 = this.runtime.get(id), instance2 = this.registry.getInternal(id);
+    return { ...publicRuntime(runtime2), configuration: !runtime2?.configFingerprint ? "unknown" : instance2 && runtime2.configFingerprint === workerConfigFingerprint(instance2, this.managerConfig(), this.cwd) ? "current" : "refresh_required" };
   }
   restoreCandidates() {
     const instances = [];
@@ -67194,7 +67492,7 @@ var WorkerManager = class {
     }
   }
   async startInstance(id) {
-    const instance2 = this.registry.getInternal(id);
+    const instance2 = structuredClone(this.registry.getInternal(id));
     if (!instance2) {
       throw managerError(`instance not found: ${id}`, "INSTANCE_NOT_FOUND", 404);
     }
@@ -67207,11 +67505,12 @@ var WorkerManager = class {
         runtime: publicRuntime(current)
       };
     }
-    const manager = this.managerConfig();
+    const manager = structuredClone(this.managerConfig());
     const workerPort = await this.allocatePort(instance2);
     let shouldInitializeMemory = this.memoryStore.shouldInitialize(instance2);
     const runtime2 = {
       status: "starting",
+      configFingerprint: workerConfigFingerprint(instance2, manager, this.cwd),
       authToken: (0, import_node_crypto23.randomBytes)(32).toString("hex"),
       child: null,
       pid: null,
@@ -67666,6 +67965,9 @@ var WorkerManager = class {
   resolveInstanceId(instanceId2) {
     return this.registry.resolveId(instanceId2);
   }
+  assertMongoConfigurationCurrent(instanceId2) {
+    assertMongoConfigurationCurrent(this, this.resolveInstanceId(instanceId2));
+  }
   async callInstance(instanceId2, pathName, payload, headers = {}, options = {}) {
     const resolvedId = this.resolveInstanceId(instanceId2);
     const runtime2 = this.runtime.get(resolvedId);
@@ -67675,12 +67977,23 @@ var WorkerManager = class {
         "INSTANCE_NOT_RUNNING",
         409,
         {
-          instances: this.publicInstances()
+          instances: this.publicInstances(),
+          layer: "manager",
+          phase: "worker-admission",
+          dispatchState: "not_dispatched"
         }
       );
     }
     if (!/^[a-f0-9]{64}$/.test(runtime2.authToken || "")) {
-      throw managerError("worker authentication credentials are missing; refresh the instance", "LOCAL_AUTH_REQUIRED", 401);
+      throw managerError(
+        "worker authentication credentials are missing; refresh the instance",
+        "LOCAL_AUTH_REQUIRED",
+        401,
+        { layer: "manager", phase: "worker-admission", dispatchState: "not_dispatched" }
+      );
+    }
+    if (pathName.startsWith("/mongodb/")) {
+      assertMongoConfigurationCurrent(this, resolvedId);
     }
     const url = `http://${this.managerConfig().host}:${runtime2.workerPort}${pathName}`;
     const operation = {
@@ -69649,6 +69962,9 @@ function createApp(options = {}) {
     app.post(`/sandbox/${route2}`, (request, response) => handleMongoBulk(request, response, action, `/sandbox/${route2}`));
   }
   app.post("/mongodb/imports/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/imports/prepare"));
+  for (const [suffix, mode] of [["review", "import_review"], ["retire", "import_retire"], ["recover-prepare", "import_recover"]]) {
+    app.post(`/mongodb/imports/${suffix}`, (request, response) => handleMongoMutation(request, response, mode, `/mongodb/imports/${suffix}`));
+  }
   app.post("/mongodb/mutations/prepare", (request, response) => handleMongoMutation(request, response, "prepare", "/mongodb/mutations/prepare"));
   app.post("/mongodb/mutations/execute", (request, response) => handleMongoMutation(request, response, "commit", "/mongodb/mutations/execute"));
   app.post("/mongodb/mutations/rollback", (request, response) => handleMongoMutation(request, response, "rollback", "/mongodb/mutations/rollback"));
@@ -69958,9 +70274,10 @@ function createManagerApp(options = {}) {
   installPrivacyRoutes(app, {
     registry,
     service: options.privacyService,
+    preflight: (id) => workerManager.assertMongoConfigurationCurrent?.(id),
     dataDirectory: import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))),
     dispatch: async (id, route2, payload) => {
-      if (route2 !== "/mongodb/bulk/retire") await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload);
+      if (!["/mongodb/bulk/retire", "/mongodb/imports/retire"].includes(route2)) await assertMongoDispatchAdmission(app.locals.privacyService, id, route2, payload, registry.getInternal(id)?.mongodb?.database);
       return workerManager.callInstance(id, route2, payload, { "X-Remote-Debug-Source": "codex-plugin" });
     },
     directory: import_node_path17.default.join(import_node_path17.default.dirname(import_node_path17.default.dirname(config.runtime?.statePath || import_node_path17.default.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business")
@@ -70133,7 +70450,8 @@ function createManagerApp(options = {}) {
     response.json({
       ok: true,
       instance: instance2,
-      runtime: workerManager.runtimeFor(instance2.id)
+      runtime: workerManager.runtimeFor(instance2.id),
+      workerRefreshRequired: workerManager.runtimeFor(instance2.id).configuration !== "current"
     });
   }));
   app.get("/api/service-profiles", managerAsync(async (_request, response) => {
@@ -70607,7 +70925,7 @@ function createManagerApp(options = {}) {
     try {
       const resolvedId = registry.resolveId(instanceId2);
       response.set("X-Remote-Debug-Instance-Id", resolvedId);
-      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload);
+      await assertMongoDispatchAdmission(app.locals.privacyService, resolvedId, pathName, payload, registry.getInternal(resolvedId)?.mongodb?.database);
       if (pathName.startsWith("/services/")) {
         if (!instanceId2) throw serviceError("SERVICE_INSTANCE_REQUIRED", "Select an explicit instanceId for service lifecycle operations");
         const instance3 = registry.getInternal(resolvedId);

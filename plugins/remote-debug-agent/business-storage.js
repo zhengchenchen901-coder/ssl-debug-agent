@@ -119,14 +119,14 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
       privacy.acknowledge(checkpoint.aliases);
       refs = [...new Set([...refs, ...Object.values(checkpoint.aliases)])];
       const { operationId, deadlineAt, timeoutMs, ...request } = guard.sanitize(payload).value;
-      const identity = Object.fromEntries(["instanceId", "jobId", "mutationId", "planHash", "chunkIndex"].filter((field) => request[field] !== undefined).map((field) => [field, request[field]]));
+      const identity = Object.fromEntries(["instanceId", "jobId", "importId", ...(route === "/mongodb/imports/prepare" ? ["database", "collection"] : []), "mutationId", "planHash", "chunkIndex"].filter((field) => request[field] !== undefined).map((field) => [field, request[field]]));
       // pause/resume are explicitly requested state transitions. A completed
       // pause must not suppress a later pause after an intervening resume.
       const intent = await call(settings, { action: "intent", route, request, identity, scope, refs,
-        ...(["/mongodb/mutations/prepare", "/mongodb/bulk/prepare"].includes(route) ? { dispatchDigest: prepareRequestDigest(payload) } : {}),
+        ...(["/mongodb/mutations/prepare", "/mongodb/bulk/prepare", "/mongodb/imports/prepare"].includes(route) ? { dispatchDigest: prepareRequestDigest(payload) } : {}),
         renew: route === "/mongodb/bulk/control" }, signal);
       if (intent.state === "uncertain") {
-        if (intent.prepare || intent.bulkPrepare) {
+        if (intent.prepare || intent.bulkPrepare || intent.importPrepare) {
           const recovered = await call(settings, { action: "recover_operation", mode: "reconcile", scope, id: intent.id }, signal);
           if (["prepared", "complete"].includes(recovered.state)) return { id: intent.id, state: recovered.state, result: recovered.result };
           throw failure("BUSINESS_OPERATION_RECONCILIATION_REQUIRED", intent.id);
@@ -148,7 +148,7 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     },
     async dispatchPrepare(settings, intent, scope, request, operation) {
       try {
-        return await call(settings, { action: "dispatch_prepare", id: intent.id, attempt: (intent.prepare || intent.bulkPrepare).attempt,
+        return await call(settings, { action: "dispatch_prepare", id: intent.id, attempt: (intent.prepare || intent.bulkPrepare || intent.importPrepare).attempt,
           scope, request, operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: request.timeoutMs }, operation.signal);
       } catch (error) { error.intentId = intent.id; throw error; }
     },

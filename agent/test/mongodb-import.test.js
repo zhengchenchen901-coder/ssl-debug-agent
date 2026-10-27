@@ -6,11 +6,8 @@ import path from "node:path/posix";
 import { buildMongoMutationScript, normalizeMongoImport, normalizeMongoTransaction, runMongoMutation } from "../mongodb-mutations.js";
 import { MONGODB_RESULT_MARKER } from "../mongodb.js";
 
-const config = {
-  enabled: true, writeEnabled: true, configPath: "/home/app/config.json", driverPath: "/home/app/node_modules/mongodb",
-  configProfile: "test", uriKey: "url", database: "test", allowedDatabases: ["test"],
-  allowedCollections: ["members"], maxAffectedDocuments: 20,
-};
+import { importConfig as config, importHarness as harness } from "./helpers/import-fixture.js";
+
 const input = (count = 2000) => ({ importId: "seed-01", collection: "members", documents: Array.from({ length: count }, (_, i) => ({ _id: `m${i}`, value: i })) });
 
 test("import splits at 2000 independently of ordinary transaction limits and applies instance policy", () => {
@@ -42,126 +39,6 @@ test("import enforces allowlists, explicit unique ids, count/byte limits, and UT
 
 // Execute the generated remote helper, with transactional database and filesystem
 // doubles. This checks behavior across separate SSH invocations and lost replies.
-function harness({ cryptoModule = crypto, readPreference = "primary", legacyBson = false, cleanup = () => Promise.resolve() } = {}) {
-  const files = new Map([[config.configPath, JSON.stringify({ test: { url: "test-uri" } })]]);
-  const directories = new Set();
-  const fds = new Map();
-  let fd = 0;
-  const state = { rows: new Map(), find: 0, insert: 0, remove: 0, failInsert: false, loseCommitReply: false, failConnect: false };
-  const fs = {
-    constants: { O_CREAT: 1, O_APPEND: 2, O_WRONLY: 4 },
-    existsSync: (p) => files.has(p) || directories.has(p),
-    lstatSync: () => ({ isSymbolicLink: () => false, mtimeMs: Date.now() }),
-    statSync: () => ({ mtimeMs: Date.now() }),
-    mkdirSync: (p) => { directories.add(p); directories.add(path.dirname(p)); },
-    chmodSync() {}, fsyncSync() {},
-    openSync(p, flags) {
-      if (flags === "wx" && files.has(p)) throw Object.assign(new Error("exists"), { code: "EEXIST" });
-      if (flags === "w" || flags === "wx") files.set(p, "");
-      fds.set(++fd, { p, append: typeof flags === "number" });
-      return fd;
-    },
-    closeSync: (n) => fds.delete(n),
-    writeFileSync(n, value) { const { p, append } = fds.get(n); files.set(p, (append ? files.get(p) || "" : "") + value); },
-    readFileSync(p) { if (!files.has(p)) throw new Error(`missing ${p}`); return files.get(p); },
-    renameSync(a, b) { files.set(b, files.get(a)); files.delete(a); },
-    unlinkSync: (p) => files.delete(p),
-    readdirSync: (p) => [...directories].filter((d) => path.dirname(d) === p).map((d) => path.basename(d)),
-  };
-  class Oid {
-    constructor(hex) { this.hex = hex; this._bsontype = "ObjectID"; }
-    toJSON() { return this.hex; }
-    toHexString() { return this.hex; }
-  }
-  const encode = (v) => v instanceof Oid ? { $oid: v.hex } : Array.isArray(v) ? v.map(encode) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, value]) => [k, encode(value)])) : v;
-  const bson = { EJSON: { stringify: (v) => JSON.stringify(encode(v)), parse: (s) => JSON.parse(s, (_k, v) => v?.$oid ? new Oid(v.$oid) : v) } };
-  const key = (id) => JSON.stringify(encode(id));
-  const clone = (value) => bson.EJSON.parse(bson.EJSON.stringify(value));
-  const cloneRows = () => new Map([...state.rows].map(([k, v]) => [k, clone(v)]));
-  const collection = {
-    async findOne(filter, options) {
-      if (legacyBson && typeof filter._id === "object") assert.ok(filter._id instanceof Oid);
-      return clone((options?.session?.rows || state.rows).get(key(filter._id)) || null);
-    },
-    async insertOne(document, options) { return this.insertMany([document], options); },
-    async deleteOne(filter, options) { return this.deleteMany({ _id: { $in: [filter._id] } }, options); },
-    async updateOne(filter, update, { session }) {
-      if (legacyBson && typeof filter._id === "object") assert.ok(filter._id instanceof Oid);
-      const row = session.rows.get(key(filter._id));
-      if (!row) return { n: 0 };
-      Object.assign(row, clone(update.$set));
-      return { n: 1 };
-    },
-    async replaceOne(filter, document, { session }) {
-      if (legacyBson && typeof filter._id === "object") assert.ok(filter._id instanceof Oid);
-      if (!session.rows.has(key(filter._id))) return { n: 0 };
-      session.rows.set(key(filter._id), clone(document));
-      return { n: 1 };
-    },
-    find(filter, options) {
-      state.find++;
-      const requestedIds = filter._id.$in || [filter._id];
-      if (legacyBson) for (const id of requestedIds) if (typeof id === "object") assert.ok(id instanceof Oid);
-      const ids = new Set(requestedIds.map(key));
-      let limit = Infinity;
-      const cursor = { limit(n) { limit = n; return cursor; }, maxTimeMS() { return cursor; },
-        async toArray() { return [...(options?.session?.rows || state.rows)].filter(([k]) => ids.has(k)).slice(0, limit).map(([, v]) => clone(v)); } };
-      return cursor;
-    },
-    async insertMany(documents, { session }) {
-      state.insert++;
-      for (const document of documents) {
-        if (legacyBson && typeof document._id === "object") assert.ok(document._id instanceof Oid);
-        if (session.rows.has(key(document._id))) throw new Error("duplicate");
-        session.rows.set(key(document._id), clone(document));
-        if (state.failInsert) { state.failInsert = false; throw new Error("injected partial insert failure"); }
-      }
-    },
-    async deleteMany(filter, { session }) {
-      state.remove++;
-      let deletedCount = 0;
-      for (const id of filter._id.$in) if (session.rows.delete(key(id))) deletedCount++;
-      return { deletedCount };
-    },
-  };
-  class MongoClient {
-    async connect() { if (state.failConnect) throw new Error("connect failed"); }
-    close() { return cleanup(); }
-    db() { return { collection: () => collection }; }
-    startSession() {
-      return {
-        rows: null,
-        startTransaction(options = {}) {
-          const effectiveReadPreference = options.readPreference || readPreference;
-          if (effectiveReadPreference !== "primary") {
-            throw new Error(`Read preference in a transaction must be primary, not: ${effectiveReadPreference}`);
-          }
-          this.rows = cloneRows();
-        },
-        async commitTransaction() {
-          state.rows = this.rows;
-          if (state.loseCommitReply) { state.loseCommitReply = false; throw new Error("reply lost"); }
-        },
-        async abortTransaction() { this.rows = null; },
-        async withTransaction(callback, options) {
-          this.startTransaction(options);
-          try { await callback(); await this.commitTransaction(); }
-          catch (error) { await this.abortTransaction(); throw error; }
-        },
-        endSession() { return cleanup(); },
-      };
-    }
-  }
-  const require = (name) => ({ fs, path, crypto: cryptoModule, bson: legacyBson ? {} : bson, [config.driverPath]: { MongoClient, ObjectID: Oid } })[name];
-  require.resolve = () => "bson";
-  async function execute(script) {
-    let stdout = "";
-    const process = { pid: 42, exitCode: 0, stdout: { write: (s) => { stdout += s; } } };
-    await new vm.Script(script).runInNewContext({ require, process, Buffer });
-    return { stdout, stderr: "", exitCode: process.exitCode, timedOut: false };
-  }
-  return { state, files, key, run: (request, policy = config) => runMongoMutation(request, { config: policy, runSSH: async (_command, { stdin }) => execute(stdin) }) };
-}
 
 const commit = (batch) => ({ mode: "commit", mutationId: batch.mutationId, planHash: batch.planHash, confirmation: "确认执行" });
 const rollback = (batch) => ({ ...commit(batch), mode: "rollback", confirmation: "确认回滚" });

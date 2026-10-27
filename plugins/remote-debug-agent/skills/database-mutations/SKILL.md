@@ -240,12 +240,37 @@ The legacy admit_replacement mode remains a denial-only compatibility endpoint.
 When historical evidence cannot determine the outcome, use prepare_risk with
 that dispositionId/reviewHash, exact originalRequest and an exact
 replacementRequest. The candidate is a proposal, not another job or upload.
-Only a complete first chunk is supported. Its business effects, recipients,
+For bulk, only a complete first chunk is supported. Its business effects, recipients,
 amounts, unit order and batch expiry dates must equal the original; only scalar
 preimages on updated paths and explicit remediation_job_id/job_id associations
 can change. Identity/absence guards, payload changes or extra units are rejected.
 Changed guards produce a different exact review. Do not put the unauthorized
 52 records into this case's proposal or reset original batch dates.
+
+For an uncertain `/mongodb/imports/prepare`, provide the exact original import
+input and a replacement import input. Only `importId` may change: preserve the
+same target, collection, documents (including BSON field order), document order,
+batchSize, purpose and rollback TTL options. Never wrap an import in bulk units.
+The plan binds both ordered inputs and all deterministic transaction batch
+identities. Manager observations show exact matching batch manifests/plan hashes,
+current statuses or a bounded missing/conflict/unavailable result. Missing
+receipts never prove non-execution. Original bytes, uncertain history and recovery
+evidence stay pinned, including historical imports without an importId identity.
+
+The same independent workbench and fresh native OS verification approve import
+plans. Approval closes only the original import and its exact known batch IDs.
+`create_replacement` records and reads back durable import retirement/lineage
+controls before reserving one replacement intent, then prepares its exact batches
+without business writes. Do not seal an import with bulk tools. Inspect all
+returned batches and use normal mutation execute/rollback confirmations on each
+exact mutationId/planHash. Atomicity and rollback remain per batch. A partial
+prepare is explicitly partial. A terminal partial receipt can continue preparation
+with the exact same input/intent (or the same approved create_replacement plan);
+the prefix evidence and existing batch plans are preserved. An unknown attempt
+cannot be repeated. Lost replies reconcile the same import intent
+using positive exact receipts; absent/incomplete evidence stays uncertain. Do not
+change importId, repeat an uncertain dispatch or clear controls to recover it.
+Expired approval requires a fresh review of the same replacement identity.
 
 `BUSINESS_DISPOSITION_INPUT_INVALID` means the original or proposed first chunk
 failed local bulk validation before risk-plan storage or remote dispatch. Check
@@ -315,3 +340,11 @@ conflict is a failure to inspect, not permission to create a different task.
 The same replacement identity is reused after expiry or a lost reply.
 No deployment, migration, real disposition or new business job is performed just
 to verify this feature; use disposable local fixtures.
+
+New import prepare envelopes support atomic closure of an unclaimed attempt.
+Only a Manager/store `rejected_before_dispatch` result allows identical input
+to reserve a new attempt within the same intent. A delayed claim is fenced; a
+claim that wins first stays uncertain without exact positive remote evidence.
+Worker configuration mismatch is refused before transport, without automatic
+restart. Inspect in-flight work before explicitly refreshing; a refresh failure
+or a missing receipt never proves that an earlier request did not execute.

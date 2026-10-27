@@ -107,8 +107,8 @@ export function createBusinessPrivacy({ maxEntries = 100_000, maxBytes = 32 * 10
   function resolve(name, input, scope) {
     if (["remote_debug_mongodb_recover_operation", "remote_debug_mongodb_disposition"].includes(name) && input.originalRequest !== undefined) {
       const { originalRequest, replacementRequest, ...outer } = input;
-      return { ...resolve(name, outer, scope), originalRequest: resolve("remote_debug_mongodb_prepare_bulk", originalRequest, scope),
-        ...(replacementRequest !== undefined ? { replacementRequest: resolve("remote_debug_mongodb_prepare_bulk", replacementRequest, scope) } : {}) };
+      return { ...resolve(name, outer, scope), originalRequest: resolve(originalRequest?.importId !== undefined ? "remote_debug_mongodb_prepare_import" : "remote_debug_mongodb_prepare_bulk", originalRequest, scope),
+        ...(replacementRequest !== undefined ? { replacementRequest: resolve(replacementRequest?.importId !== undefined ? "remote_debug_mongodb_prepare_import" : "remote_debug_mongodb_prepare_bulk", replacementRequest, scope) } : {}) };
     }
     const check = budget();
     function walk(value, allowed, depth = 0) {

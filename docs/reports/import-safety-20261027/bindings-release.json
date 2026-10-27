@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "projectId": "ssl-debug-agent",
+  "basis": "codex-source-review",
+  "reviewRef": "verification/README.md: Import safety verification contract v1",
+  "unit": {
+    "isolation": "file-process-no-services",
+    "contractVersion": "import-safety-v1"
+  },
+  "selections": [
+    {
+      "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+      "assetFileHash": "1203da3e63d9e8bae641c3771ce8eba6357fd905b3d4360201cd4396473ee687",
+      "inputRefs": [
+        {
+          "file": "verification/import-safety.test.js",
+          "fileHash": "1203da3e63d9e8bae641c3771ce8eba6357fd905b3d4360201cd4396473ee687",
+          "start": 0,
+          "end": 5941
+        }
+      ],
+      "stateRefs": [
+        {
+          "file": "agent/test/helpers/import-risk-fixture.js",
+          "fileHash": "990cd90f4b99ee913ac2eebfb6c4035f7de86cb282456a808fe37abd9731717d",
+          "start": 0,
+          "end": 4352
+        }
+      ],
+      "assertionIds": [
+        "c953670d4edfbd7a514077f115f65ee90391e1afdf9d1f1d02211734732d8538",
+        "4f00c307b61481c8dbe6ffe5424325dba7560ceaea93722cc399e2cc736c891f",
+        "c82bef914524678e8ef597c6312384d8ad2c4ab31767117a5b1848687739b8f2",
+        "a368f410f836f34d67914a8b774fa18b34d80e83013c71eb0be083a5de3b27fe",
+        "6483519b2260ebdc3ea4728a9ea50b66588117a7a146fc8f5cae1e1e3653bfd9",
+        "b822f10ac8748fb825bada14296bd8e0d5691ce52608963144873dc9a822529d",
+        "bd8af3bc321b014fd6bb75b2e883c7fa0827578435dcfd3b692eeff803e150a7",
+        "11ab3524a68ecbfbc55aadd8b76957f174572da068e21212882d913dc14db334",
+        "517528e7809fb9b2fa87f24097756aed77a4810de2de201cf3ef7eae502732f9",
+        "ee419bea8b582e8b0da1b86bdfa2dd526b1ee2758426975cd3c951431ec70997",
+        "c22a6a4bb1fe09cb94d705d5212fb55a5ec540531bf5214e9bfe444c4e52266e",
+        "f7a8e07a8a9618cd73d18f3b8cab902a118b18dce86190c6ca66349557c52f51",
+        "ace56aab11ea565bd1bdd63064f787ca17caf246660757437b4bbb1335431c93",
+        "927038344bdb18bff7041d43afc63fb9f91c795c49d0389e5874b881b1e5e8f2",
+        "60c147df1b16a4f9b0d4b3d53689593ec2ffe0da6d79a60a1393995654620831",
+        "53b206d439d6b2d2e7538eae18ec3cb853f71c3906055041832d04e28503e9a9",
+        "41106eeeb2111d70819999a583325d120305ec67fdcbd4b61cca1691f3481257",
+        "c9f4aa744b3fbcf05b27fd9b473e39ba3c92e67854f362e85e0098e5c335d366",
+        "251c4ac062657ab86c3187099d07996dcbf48258c85e7dd541cd6afef582f431",
+        "04fc058908c4c7e13ef799f7bff56c4e6340cd63d365f6546e6e02bb78baa864",
+        "033d7f51936144bab56ea879de7da52313b08a2cefd32cd2416b9745e8493725",
+        "cda5d70ce2db8f5af6964a9376f4b5a68754de5234ba3fae4dae0d4f8c997dd1",
+        "a95bc66cd658fcf1784787573f2754fff1488797f5730b1cea88934ae53b493a",
+        "2f282e09b926eb3063a63c49f54bd320d6e34dced05db13a39f53efd1a7e83cc",
+        "b89932bd29cd5d52781508fc41dc7860f7824bf5287d6c2b79b761c95c5366be",
+        "8555fc9c08b21e0c0eda56c6039d129a5559252a8968cb349da9a5e03c128831",
+        "d8b89ddfd48d4da13f63a1c7368f09081232e67d1b9320bef1e26abe88daeae6",
+        "2282f88b861e13f3819a1d181e0e982a2900c41b61955a6587a6a09bc4580072",
+        "c13eb93dd6f5ee2fda063bfc790a40c41c97281afa9becc73fde66cf0361b4ab",
+        "116d66df4cce6dad5a19f9fcc8a9dd694e78e78f5076de72e79e165d2ff5ca36",
+        "6136b36c8eb3883265039f0c02d3aebaca5fdee57aa478b32f7ba59a9ce912c4",
+        "a1ceadb25be43e37de36d1032d804f324f85a69bd7000d6680a6d4a73b8d960f",
+        "9437d3b21d18adfba6760aa7b191648a8c9c8d4047739d5554da78493cb68974",
+        "057b6c649b30e10a74870b198e8c893e6a17f20cb95238b80edbd7bc8615e01d"
+      ]
+    }
+  ]
+}
