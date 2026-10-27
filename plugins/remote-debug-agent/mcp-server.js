@@ -568,7 +568,7 @@ const tools = [
   },
   {
     name: "remote_debug_mongodb_disposition",
-    description: "Review/quarantine an exact uncertain bulk or import intent, preserving its historical record. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Import proposals preserve exact documents, order, collection and options; only importId changes. Import batch receipts and per-batch rollback boundaries are reviewed independently. Creation never executes business writes; imports use normal mutation confirmation, bulk sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
+    description: "Review/quarantine an exact uncertain bulk or import intent, preserving its historical record. For an uncertain import EXECUTE use prepare_execution_risk with its exact intentId and existing unique replacement riskPlanId. This creates a separate human-execution-risk-v1 review; inspect_execution_risk reads it. Only the independent /api/execution-risk workbench with fresh native verification can approve. continue_execution consumes that approval to reserve one immutable child batch inside the SAME importId; it never executes documents, clears the original unknown, forges safe_terminal or creates another replacement import. Explicitly review UUID/prerequisite changes and confirm the returned child mutationId/planHash separately with the normal execute tool. A new unknown cannot auto-dispatch again. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Import proposals preserve exact documents, order, collection and options; only importId changes. Import batch receipts and per-batch rollback boundaries are reviewed independently. Creation never executes business writes; imports use normal mutation confirmation, bulk sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
     inputSchema: {
       type: "object", additionalProperties: false, required: ["instanceId", "database", "mode"],
       oneOf: [
@@ -579,10 +579,13 @@ const tools = [
         { properties: { mode: { const: "prepare_risk" } }, required: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"] },
         { properties: { mode: { const: "inspect_risk" } }, required: ["riskPlanId"] },
         { properties: { mode: { const: "create_replacement" } }, required: ["riskPlanId", "reviewHash"] },
+        { properties: { mode: { const: "prepare_execution_risk" } }, required: ["intentId", "riskPlanId"] },
+        { properties: { mode: { const: "inspect_execution_risk" } }, required: ["riskPlanId"] },
+        { properties: { mode: { const: "continue_execution" } }, required: ["riskPlanId", "reviewHash"] },
       ],
       properties: {
         instanceId: instanceIdProperty, database: { type: "string", minLength: 1, maxLength: 128 },
-        mode: { type: "string", enum: ["prepare", "inspect", "quarantine", "admit_replacement", "prepare_risk", "inspect_risk", "create_replacement"] },
+        mode: { type: "string", enum: ["prepare", "inspect", "quarantine", "admit_replacement", "prepare_risk", "inspect_risk", "create_replacement", "prepare_execution_risk", "inspect_execution_risk", "continue_execution"] },
         reviewMemo: { type: "string", maxLength: 4000, description: "Facts and remaining uncertainties for human review; caller statement, not trusted execution proof." },
         riskPlanId: { type: "string", pattern: "^[a-f0-9]{64}$" },
         intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
@@ -3191,7 +3194,8 @@ async function callTool(name, args, operation) {
     const common = ["instanceId", "database", "mode", "timeoutMs"];
     const byMode = { prepare: ["intentId", "originalRequest"], inspect: ["dispositionId"],
       quarantine: ["dispositionId", "reviewHash", "confirmation"], admit_replacement: ["dispositionId", "reviewHash"],
-      prepare_risk: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"], inspect_risk: ["riskPlanId"], create_replacement: ["riskPlanId", "reviewHash"] };
+      prepare_risk: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"], inspect_risk: ["riskPlanId"], create_replacement: ["riskPlanId", "reviewHash"],
+      prepare_execution_risk: ["intentId", "riskPlanId"], inspect_execution_risk: ["riskPlanId"], continue_execution: ["riskPlanId", "reviewHash"] };
     const optional = args?.mode === "prepare_risk" ? ["reviewMemo"] : [];
     const required = byMode[args?.mode];
     if (!required || !args.instanceId || !args.database || required.some(key => args[key] === undefined) ||

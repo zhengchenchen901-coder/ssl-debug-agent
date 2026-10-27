@@ -375,3 +375,60 @@ failed abort or rollback unknown remain protected. Historical records without
 these receipts remain uncertain even when current data is empty. Bounded
 error diagnostics contain category, phase and numeric server code, never raw
 errmsg or business documents.
+
+
+## Independent import execution risk acceptance (human-execution-risk-v1)
+
+An import **execute** intent that remains uncertain (including legacy .2 records
+with `legacy_execution_evidence_required`) has its own human review. Reapproving
+`human-risk-acceptance-v2` preparation cannot authorize it. Machine reconciliation
+continues to require exact receipts; human acceptance never creates such proof.
+
+Use `remote_debug_mongodb_disposition` with explicit original instance/database,
+`mode=prepare_execution_risk`, the protected execute `intentId`, and the existing
+unique replacement `riskPlanId`. The Manager reads the original immutable batch,
+exact execution operation/attempt (legacy unknown attempt stays null), existing
+retirement/unique-import lineage, ordered documents and current collection UUID.
+No historical terminal receipt is required for human review. Missing authoritative
+original execution identity or lineage still fails closed; do not invent them.
+The bounded independent review supports at most 128 KiB of exact document JSON.
+
+Read `mode=inspect_execution_risk` with the returned execution review riskPlanId.
+In the independent administrator workbench select **执行结果未知（独立批准）**,
+load that review, inspect exact instance/database/collection, intent/operation,
+legacy protocol gaps, unchanged input/types/field and document order, old/new UUID,
+new child mutationId/planHash, expiry and late/duplicate/partial-success risks.
+Final approval needs a fresh native OS identity check and the exact displayed
+risk phrase. Chat, MCP, Manager tokens, caller proof and old preparation reviews
+cannot approve; no business write occurs on approval.
+
+After approval, `mode=continue_execution` with that execution review riskPlanId
+and reviewHash consumes one durable reservation and prepares **one child batch
+inside the same importId**. This is an explicit new immutable plan, especially
+when the legacy plan lacked UUID. Original mutation/hash, unknown record, all
+attempts and the existing unique replacement lineage remain pinned. This is not
+a second replacement import or a rewrite of old v2 receipts. Repeating this
+structured continuation recovers only the same child after a lost reply/restart;
+it never executes documents. Inspect the child, obtain a separate explicit
+business confirmation for its exact mutationId/planHash, then use normal execute.
+Only child-owned acknowledged commits may use normal guarded rollback; never
+roll back an unknown historical import or drop a retained collection.
+
+The human review expires after 15 minutes (the workbench read window is five
+minutes), and the child request/rollback window is bounded by that fixed expiry.
+Expired, unreserved drafts/approvals require a new explicit review revision;
+reserved identities are never silently changed or replaced. A reservation with
+lost replies can finish an already-durable remote child even after expiry, but
+cannot create a new child after expiry. A UUID/fact drift after local reservation,
+failed durable storage or an unreclaimed old helper lock remains an explicit
+safety stop: inspect the same review, do not clear locks or create another review
+identity/import. New unknown executions never automatically redispatch or acquire
+another human child through this flow. Exact machine evidence remains available
+separately; late acknowledged original commits close child admission and are
+kept as separate audited observations without relabelling human acceptance as
+safe_terminal, not-executed or committed.
+
+Only managed future dispatch is closed. Already-dispatched legacy code may still
+commit; that residual risk is displayed and explicitly accepted, never described
+as global credential fencing. Current zero counts, lists, commit_retryable and
+lock age are not execution evidence or approval.

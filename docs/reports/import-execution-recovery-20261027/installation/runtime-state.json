@@ -1,0 +1,10 @@
+{
+  "pid": 11441,
+  "runtimeId": "2.4.0:11ac560dec7bef1fc01e6c3ef3e160d342cb28a46dae7d1c138df1568584e3c6",
+  "status": "listening",
+  "role": "manager",
+  "startedAt": "2026-10-27T06:50:13.253Z",
+  "workerStatesUnchanged": true,
+  "managerReplacementRequested": false,
+  "workerRefreshRequested": false
+}

@@ -73,3 +73,18 @@ the old implicit-collection transaction behavior, then checks explicit empty
 collection creation, a real unique-key server rejection/abort, exact next
 attempt, idempotency and rollback. It is not formal TestFlow unit evidence.
 Installed TestFlow's non-src coverage collection limitation remains unchanged.
+
+
+## Independent execution risk contract v1
+
+`execution-risk.test.js` exercises the actual protected store and serialized
+fixed helper with disposable synthetic data, including .2 unknown execution,
+legacy missing UUID, separate native-authority boundary, single child inside the
+same import, immutable original preservation, lost replies/restart, expiry,
+UUID drift, exact separate business confirmation and new-unknown replay denial.
+The native suites additionally run independent administrator HTTP authentication,
+real Manager/Worker HTTP and public MCP process, actual temporary filesystem
+faults and browser UI. Native owner verification and Mongo/SSH remain explicit
+doubles there. TestFlow unit results do not claim those native HTTP/browser
+cases or real Mongo integration. Strict coverage for non-src roots remains a
+known collector gap, reported separately from executed Jest assertions.

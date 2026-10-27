@@ -220,3 +220,68 @@ ignores a caller-supplied success object. Manager fetches the exact worker
 receipt through reconcile before completing local protection. Synthetic tests
 include actual SQLite SIGKILL before/after execution claim and next-attempt
 reservation transactions, in addition to remote filesystem process death.
+
+## Independent import execution acceptance: human-execution-risk-v1
+
+Preparation acceptance and execution acceptance are different authorities. A
+legacy execute unknown does not acquire a v2 machine acknowledgement by human
+approval. `prepare_execution_risk` binds an existing protected execute record,
+its exact operation and retained attempt (null for an unknown legacy ordinal),
+mutation/hash, original protected target/context, complete unique replacement
+lineage and the original ordered batch digest. The Manager alone fetches the
+fixed worker helper's current server/collection prerequisites and immutable
+proposal. At most 128 KiB of document JSON is supported for this bounded review.
+No new importId, replacement task, upload or business transaction is created.
+
+The independent workbench has a separate execution review slot and routes under
+`/api/execution-risk/`. It displays exact original facts, evidence gaps, ordered
+EJSON documents and request, old UUID (possibly absent), current UUID, child
+mutation/hash, lineage, expiry and late/duplicate/partial-success risks. Each
+final approval requires a fresh native OS identity check, the exact execution
+risk phrase and an unexpired five-minute session review. MCP/context/Manager
+bearers, caller proof, old prepare approval and old phrases cannot approve.
+The new human grant lasts at most fifteen minutes and does not assert
+not-executed, safe_terminal, cancellation, original ownership or committed.
+
+`continue_execution` first consumes the grant in a FULL/WAL SQLite transaction.
+It then rechecks the exact remote proposal (including observed UUID and source),
+durably closes only that original batch's future managed writes and publishes
+one deterministic immutable child manifest inside the **same importId**. The
+old immutable manifest, operation record and all original attempts stay intact.
+The child hash includes executionContinuation and exact ordered request; UUID
+changes are explicit new preconditions. Its request/rollback window ends at the
+review's fixed expiry. Each batch requires separate normal business confirmation
+for its returned child mutationId/planHash, and protected v2 execution tickets.
+Approval/continuation never inserts documents. Child transaction UUID guards,
+existing-document rejection, exact acknowledgements and owned rollback remain.
+
+The positive remote reservation contains the complete exact child. Lost replies
+and process death after this reservation recover only those same child bytes,
+without acquiring or deleting a dead original/global lock; concurrent publication
+is idempotent. Before any positive reservation, a busy/unrecoverable lock remains
+a safety stop, with no age-based reclamation or absence inference. SQLite crash
+before/after approval or consumption preserves the exact committed boundary.
+Remote publication is not a business execute and never retries an unknown write.
+Missing/corrupt storage, scope/UUID/fact drift or expiry before first remote
+reservation stop the reserved identity. It cannot be repointed or replaced.
+Unreserved expired proposals/approvals may be explicitly reviewed as a new
+archived revision; the old immutable proposal and audit remain pinned.
+
+Machine recovery remains a separate read-only path. After acceptance it stores
+late observations as independent audits and leaves the pinned original unknown
+record intact. An exact acknowledged original commit closes local child admission;
+the fixed helper also checks the original manifest at child admission and before
+commit. Already-dispatched legacy code can still commit between checks: this is
+explicit residual human risk, not a proven executor drain. New child unknowns
+remain protected and cannot create another child via this single-child flow.
+Neither current zero rows, commit_retryable, catalog lists nor lock age authorize
+execution. Other batches, old rollback and broader instance permissions gain no
+authority from this grant. No collection drop or historical compensation occurs.
+
+Protocol sources: `mongodb-execution-risk.js` (encrypted store/admission/audit),
+`mongodb-execution-risk-runtime.js` (fixed helper proposal/reservation),
+`privacy-service.js` (Manager evidence orchestration), independent workbench and
+public disposition MCP modes. Native tests include real public MCP, Manager and
+Worker HTTP, filesystem faults and SIGKILL; OS verification/SSH/Mongo substitutes
+are named explicitly. TestFlow unit coverage and separate real Mongo/browser
+integration evidence are reported independently.

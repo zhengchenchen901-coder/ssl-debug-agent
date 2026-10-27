@@ -207,9 +207,30 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     const common = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
     const fields = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine"
       ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"]
+        : input.mode === "prepare_execution_risk" ? ["id", "riskPlanId"]
+          : ["inspect_execution_risk", "continue_execution"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "continue_execution" ? ["reviewHash"] : [])]
         : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest", "reviewMemo"]
           : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "create_replacement" ? ["reviewHash"] : [])] : [];
     if (!fields.length || Object.keys(input).some(key => ![...common, ...fields].includes(key))) throw privacyError("BUSINESS_DISPOSITION_DENIED");
+    if (input.mode === "prepare_execution_risk") {
+      const context = await service.call("execution_risk_context", input);
+      if (context.existing) return context.existing;
+      const b = context.binding;
+      // Only Manager-fetched fixed-helper observations enter the protected store.
+      const observed = await dispatch(b.instanceId, "/mongodb/imports/execution-review", {
+        binding: b, _businessExecution: b.execution, operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+      if (observed?.ok !== true) throw privacyError("BUSINESS_EXECUTION_RISK_OBSERVATION_REQUIRED");
+      return service.call("execution_risk_prepare", { ...input, context, proposal: observed.proposal, proposalDigest: observed.proposalDigest });
+    }
+    if (input.mode === "inspect_execution_risk") return service.call("execution_risk_inspect", input);
+    if (input.mode === "continue_execution") {
+      const reserved = await service.call("execution_risk_reserve", input);
+      if (reserved.done) { const { done, ...result } = reserved; return result; }
+      const b = reserved.binding;
+      const result = await dispatch(b.instanceId, "/mongodb/imports/execution-continue", { ...reserved,
+        _businessExecution: b.execution, operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
+      return service.call("execution_risk_result", { ...input, result });
+    }
     if (input.mode === "prepare_risk") {
       const target = JSON.parse(input.scope), requests = {};
       for (const name of ["originalRequest", "replacementRequest"]) {
@@ -393,7 +414,7 @@ export async function assertMongoDispatchAdmission(service, instanceId, route, r
 }
 
 export async function humanRiskRequest(service, action, input, instance) {
-  const context = await service.call("human_risk_context", input);
+  const context = await service.call(action.startsWith("human_execution_risk_") ? "human_execution_risk_context" : "human_risk_context", input);
   const target = JSON.parse(context.targetScope), current = instance(input.instanceId);
   if (!current || current.enabled === false || context.targetScope !== riskTargetScope(target.endpoint, current, target.database)) throw privacyError("BUSINESS_REPLACEMENT_STALE");
   return service.call(action, { ...input, targetScope: context.targetScope });

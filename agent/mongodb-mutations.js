@@ -1,4 +1,5 @@
 import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
+import { EXECUTION_RISK_SCRIPT } from "./mongodb-execution-risk-runtime.js";
 import { IMPORT_CONTROL_SCRIPT } from "./mongodb-import-control-runtime.js";
 import { importBatchIdentity, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
@@ -823,6 +824,7 @@ function __hash(value) {
 }
 
 ${IMPORT_CONTROL_SCRIPT}
+${EXECUTION_RISK_SCRIPT}
 
 ${MONGODB_CODEC_SCRIPT}
 
@@ -1141,6 +1143,7 @@ function __importReceiptBound(manifest, receipt, ticket) {
 }
 function __beginImportExecution(manifest, rollback) {
   const ticket = __request.execution;
+  if (manifest.executionContinuation && (!ticket || ticket.version !== 2)) __fail("MONGODB_EXECUTION_IDENTITY_INVALID", "continuations require modern protected execution");
   let previous = manifest.importExecution;
   if (previous && (!ticket || ticket.version !== 2)) __fail("MONGODB_EXECUTION_IDENTITY_INVALID", "modern execution identity required for this journal");
   if (previous && rollback && manifest.status === "committed" && previous.mode === "commit" && previous.stage === "acknowledged") {
@@ -1257,6 +1260,7 @@ function __planHash(manifest) {
     beforeIndex: manifest.beforeIndex,
     beforeOperations: manifest.beforeOperations,
     ...(manifest.collectionIdentity ? { collectionIdentity: manifest.collectionIdentity } : {}),
+    ...(manifest.executionContinuation ? { executionContinuation: manifest.executionContinuation } : {}),
     ...(manifest.riskLineage ? { riskLineage: manifest.riskLineage, orderedRequest: JSON.stringify(manifest.request) } : {}),
     ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
   });
@@ -2109,7 +2113,9 @@ async function __guardedPrepare(recover) {
   let client;
   try {
     let data;
-    if (__request.mode === "import_review") {
+    if (["execution_risk_review", "execution_risk_continue"].includes(__request.mode)) {
+      data = await __executionRisk(__request.mode === "execution_risk_continue");
+    } else if (__request.mode === "import_review") {
       data = { importId: __request.importId, database: __request.database, batches: __reviewImportBatches(__request), historicalOutcome: "unknown" };
     } else if (__request.mode === "import_retire") {
       data = __retireImport(__request);
@@ -2249,6 +2255,22 @@ export async function runMongoMutation(input = {}, options = {}) {
         }
         request.originalBatches = validateBatches(input.originalBatches);
         request.replacementBatches = validateBatches(input.replacementBatches);
+      }
+    } else if (["execution_risk_review", "execution_risk_continue"].includes(mode)) {
+      const b = input.binding;
+      const hashes = ["reviewId", "riskPlanId", "intentId", "planHash", "batchRequestDigest", "originalPrepareIntentId", "replacementPrepareIntentId"];
+      if (!b || hashes.some(f => !/^[a-f0-9]{64}$/.test(b[f] || "")) || !execution ||
+          JSON.stringify(execution) !== JSON.stringify(b.execution) || !Number.isSafeInteger(b.expiresAt) ||
+          !/^[A-Za-z0-9._-]{1,64}$/.test(b.importId || "") || typeof b.contextId !== "string" ||
+          Object.keys(b).some(f => ![...hashes, "contextId", "instanceId", "database", "collection", "importId", "execution", "attempt", "executionProtocol", "mutationId", "expiresAt"].includes(f)))
+        throw mutationError("exact execution review binding required", "MONGODB_EXECUTION_REVIEW_CONFLICT");
+      const database = assertDatabaseAllowed(b.database, config);
+      assertCollectionAllowed(b.collection, config);
+      request = { mode, binding: b, execution, database, mutationId: normalizeMutationId(b.mutationId), planHash: normalizePlanHash(b.planHash) };
+      if (mode === "execution_risk_continue") {
+        if (![input.proposalDigest, input.approvalAuditId].every(v => /^[a-f0-9]{64}$/.test(v || "")))
+          throw mutationError("approved proposal required", "MONGODB_EXECUTION_REVIEW_CONFLICT");
+        request.proposalDigest = input.proposalDigest; request.approvalAuditId = input.approvalAuditId;
       }
     } else if (mode === "recover_prepare") {
       if (!isPrepareTicket(ticket)) throw mutationError("prepare identity required", "MONGODB_PREPARE_IDENTITY_INVALID");

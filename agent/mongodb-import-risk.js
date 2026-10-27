@@ -1,3 +1,4 @@
+import { executionRiskAdmission } from "./mongodb-execution-risk.js";
 import { privacyError } from "./privacy-key.js";
 import { prepareRequestDigest as digest, IMPORT_PREPARE_ROUTE as ROUTE, importPreparePayload } from "../plugins/remote-debug-agent/prepare-protocol.js";
 
@@ -184,6 +185,7 @@ export function importReplacementAdmission(store, instanceId, admission) {
     (admission.dispatchDigest || digest(importPreparePayload({ ...request, instanceId, database }))) === plan.requestDigest;
 }
 export function assertImportAdmission(store, instanceId, admission) {
+  if (executionRiskAdmission(store, instanceId, admission)) return true;
   const request = admission.request || admission.identity || {};
   let database = request.database;
   if (!database && admission.scope) { try { database = JSON.parse(admission.scope).database; } catch {} }

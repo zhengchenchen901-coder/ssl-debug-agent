@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-10-27T08:32:10.219Z",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261027.3",
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261027.3"
+  },
+  "installedRuntimeId": "2.4.0:925bf7f1718686c6de1a5975485ac91a4ddbd35164824db514445ee4d704c85f",
+  "toolCount": 52,
+  "collectionPreparationToolPresent": true,
+  "collectionPreparationSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "collection"
+    ],
+    "properties": {
+      "instanceId": {
+        "type": "string",
+        "description": "Remote Debug Agent instance id. Optional only when exactly one instance is configured."
+      },
+      "database": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "collection": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "purpose": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "rollbackTtlMs": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 604800000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 600000,
+        "description": "Total operation budget in milliseconds, including queueing, connection, execution, and cleanup. Defaults to 120000."
+      }
+    }
+  },
+  "capabilityKeys": [
+    "ok",
+    "capabilities",
+    "outputGuard"
+  ],
+  "instanceStatuses": [
+    {
+      "id": "default",
+      "status": "running",
+      "pid": 11964,
+      "health": "healthy"
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "pid": 27857,
+      "health": "healthy"
+    }
+  ],
+  "readOnlyToolsCalled": [
+    "remote_debug_get_capabilities",
+    "remote_debug_list_instances"
+  ],
+  "businessContextAttached": false,
+  "businessToolsCalled": [],
+  "managerReplacementRequested": false,
+  "stderrObserved": false
+}

@@ -174,6 +174,13 @@ window.addEventListener("pagehide", () => {
 });
 
 let currentRiskReview = null;
+const riskApi = () => element("riskStage").value === "execution" ? "/api/execution-risk/" : "/api/risk-replacement/";
+const prepareRiskIntro = element("riskIntro").textContent, prepareRiskFooter = element("riskFooter").textContent;
+element("riskStage").addEventListener("change", () => {
+  const execution = element("riskStage").value === "execution";
+  element("riskIntro").textContent = execution ? "原执行及历史在途事务结果仍未知。请核对原执行身份、精确文档和顺序、集合前置条件的变化，并明确接受迟到提交、重复及部分成功风险。本次审核独立于准备阶段审批。" : prepareRiskIntro;
+  element("riskFooter").textContent = execution ? "批准只允许在同一导入中准备一个新的精确接续计划。原执行仍未知；此页面不会执行业务写入。接续计划准备后，仍须单独确认其精确范围及计划身份。" : prepareRiskFooter;
+  currentRiskReview = null; element("riskDetails").textContent = ""; riskButtonState(); });
 function resetRiskReview() {
   resetTerminationReview();
   currentRiskReview = null;
@@ -185,6 +192,19 @@ function resetRiskReview() {
   element("riskNav").classList.remove("active");
 }
 function renderRiskReview(plan) {
+    element("riskPhrase").textContent = "确认语句：" + plan.confirmation;
+    if (plan.kind === "import_execution") {
+      element("riskDetails").textContent = JSON.stringify({
+        审核阶段: "执行结果未知：独立人工风险接受", 绑定身份: plan.binding, 原执行已知事实: plan.knownExecution,
+        原状态: plan.originalStatus, 历史结果: plan.historicalOutcome, 缺失证据: plan.missingEvidence, 唯一替代谱系: plan.lineage,
+        原集合UUID: plan.originalCollectionIdentity, 当前集合UUID: plan.collectionIdentity, 前置条件读取来源: plan.prerequisiteSource,
+        新批次: plan.mutationId, 新不可变计划: plan.planHash, 文档数: plan.documentCount,
+        精确文档含类型及顺序: plan.orderedDocuments, 精确批次请求: plan.orderedRequest,
+        剩余风险: plan.warning, 审核哈希: plan.reviewHash, 批准审计: plan.approvalAuditId,
+        迟到机器观测: plan.lateObservation, 已观察到原执行精确提交回执: plan.lateOriginalCommitObserved,
+        状态: plan.state, 到期时间: new Date(plan.expiresAt).toLocaleString()
+      }, null, 2); return;
+    }
     element("riskDetails").textContent = JSON.stringify({
       实例: plan.binding.instanceId, 数据库: plan.binding.database, 原意图: plan.binding.intentId, 任务类型: plan.kind || "bulk", 原任务: plan.binding.importId || plan.binding.jobId,
       原请求摘要: plan.binding.requestDigest, 原操作身份: plan.binding.originalOperationId,
@@ -225,7 +245,7 @@ element("riskLoad").addEventListener("click", async () => {
   currentRiskReview = null; riskButtonState(); element("riskMessage").textContent = "";
   element("riskAcknowledgement").checked = false; element("riskConfirmation").value = "";
   try {
-    const plan = await api("/api/risk-replacement/review", { riskPlanId: element("riskPlanId").value.trim() });
+    const plan = await api(riskApi() + "review", { riskPlanId: element("riskPlanId").value.trim() });
     currentRiskReview = plan;
     renderRiskReview(plan);
     element("riskMessage").textContent = plan.canApprove ? "请核对上方计划，再勾选风险确认并输入完整语句。" : "当前计划不可批准；请检查计划状态、有效期和是否已有替代任务。";
@@ -237,11 +257,11 @@ element("riskApprove").addEventListener("click", async () => {
   if (!plan || element("riskApprove").disabled) return;
   element("riskApprove").disabled = true;
   try {
-    const approved = await api("/api/risk-replacement/approve", { riskPlanId: plan.riskPlanId, reviewHash: plan.reviewHash,
+    const approved = await api(riskApi() + "approve", { riskPlanId: plan.riskPlanId, reviewHash: plan.reviewHash,
       confirmation: element("riskConfirmation").value });
     currentRiskReview = approved;
     renderRiskReview(approved);
-    element("riskMessage").textContent = "此计划已获人工批准。原任务已关闭本机后续调度；下一步将记录远端终止并建立关联替代任务，尚未执行补分。";
+    element("riskMessage").textContent = plan.kind === "import_execution" ? "已独立接受本次执行未知风险。尚未执行业务写入；请通过结构化接续入口建立同一导入的唯一新计划，再单独确认新 mutationId/planHash。原执行仍未知。" : "此计划已获人工批准。原任务已关闭本机后续调度；下一步将记录远端终止并建立关联替代任务，尚未执行补分。";
     lastInputAt = Date.now();
   } catch (error) { currentRiskReview = null; element("riskMessage").textContent = error.message + " 请重新读取计划。"; }
   riskButtonState();

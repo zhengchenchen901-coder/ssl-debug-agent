@@ -1,0 +1,59 @@
+{
+  "version": "2.4.0+codex.20261027.3",
+  "enabled": true,
+  "configurationChanged": [],
+  "immediatePostInstallRestoredProgramFiles": 760,
+  "oldProgramVersionsPreserved": 10,
+  "sourceVerification": "business executable unchanged from prior 31-case TestFlow and 401 native + 2 Mongo integration evidence",
+  "managerUnifiedReloadPending": true,
+  "artifactRoot": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-execution-install",
+  "artifacts": [
+    {
+      "file": "README.md",
+      "sha256": "835866eb3eb7b7ddfb5292f2621be3aec9fda68eff9e7f6a354add42aa73950a",
+      "bytes": 3310
+    },
+    {
+      "file": "install.json",
+      "sha256": "7afcfdd30ad5edbee39ad7634ca8b9cadb95bbeb7589495cbb17e9ed589c30ad",
+      "bytes": 327
+    },
+    {
+      "file": "integrity.json",
+      "sha256": "b456991d663071b2451274a6d8d6eef5ab4cf849f93c51a35adb37ad63ed6f20",
+      "bytes": 488
+    },
+    {
+      "file": "preservation.json",
+      "sha256": "9324cbad1def63d08a11b63543d2ca9d1169f2f3c990cebdef738296fb6ec55d",
+      "bytes": 1366
+    },
+    {
+      "file": "runtime-state.json",
+      "sha256": "4f14f7ceb7766b90ebe69c58939de02984ff64a8ce4cf18b5bb03a2e03257e44",
+      "bytes": 305
+    },
+    {
+      "file": "environment-check.json",
+      "sha256": "a58a62954e5c2d4992ecb613506a58898bd63a8a9c9ad7afbc3409e97cb7afcc",
+      "bytes": 6946
+    },
+    {
+      "file": "before-handshake.json",
+      "sha256": "23c54724fecde84755cd5067dc386aeaa25adec328de3a8f31fd81bacec7c069",
+      "bytes": 990
+    },
+    {
+      "file": "after-handshake.json",
+      "sha256": "2ccb1e0936f6927c20108576ed9859459cc692ec81f4d3e187789f913cc88442",
+      "bytes": 1972
+    },
+    {
+      "file": "testflow-freeze.json",
+      "sha256": "ad426aab7cb168445b24a90b04ff3ff123bf649821746f12849844771e4fe338",
+      "bytes": 975
+    }
+  ],
+  "protectedContentExportedOrCopied": false,
+  "preservationCheck": "metadata only for credential and protected-state paths; MCP handshake uses normal local authentication without exporting credentials"
+}

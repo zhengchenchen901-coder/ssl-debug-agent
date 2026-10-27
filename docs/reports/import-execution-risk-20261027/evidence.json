@@ -1,0 +1,563 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Shanghai",
+  "delivery": "local uncommitted source, tests, documentation and separately built candidate; not installed",
+  "baseRevision": "d6707ddc8858d49f1071d1a92a96ef3d93de8a3e",
+  "source": {
+    "snapshotId": "32eb85db36499eae2d55f4b807a2f91e03e6077983287f3399078666a3581bc0",
+    "contentHash": "fd02838338d9d4e03d776427456890403a7aebec42029830ad0b6fc78907c9f9",
+    "fileCount": 621,
+    "changedFrozenFiles": [],
+    "same": true
+  },
+  "candidate": {
+    "runtimeId": "2.4.0:fdef92d75b30857ce31fc6fe4a24148e7eaaa988fc4515bc5acaa01bf1859053",
+    "hashesVerified": 26,
+    "mismatches": [],
+    "installed": false,
+    "builtFromSnapshot": "32eb85db36499eae2d55f4b807a2f91e03e6077983287f3399078666a3581bc0"
+  },
+  "formalTestflow": {
+    "pilot": {
+      "jobId": "7c9a2488-6be6-4ade-b983-93dbf863e4c6",
+      "status": "passed",
+      "summary": {
+        "purpose": "pilot",
+        "selection": {
+          "selectedAssets": 1,
+          "completedAssetResults": 1,
+          "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+          "executedCases": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 7
+        },
+        "targetCoverage": {
+          "scopeId": "04529e5d7d4a72122e477db89bef066bb090362fa796dc4d11903fe0a3ecdf66",
+          "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+          "total": 1634,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 1634,
+          "byKind": {
+            "modified-block": {
+              "total": 1362,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 1362
+            },
+            "condition-outcome": {
+              "total": 204,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 204
+            },
+            "impacted-entry": {
+              "total": 7,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 7
+            },
+            "symbol-reference": {
+              "total": 10,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 10
+            },
+            "unexpanded-change": {
+              "total": 51,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 51
+            }
+          },
+          "outOfScopeChanges": [],
+          "excludedEntryIds": [],
+          "outOfScopeChangeCount": 11,
+          "excludedEntryCount": 109
+        },
+        "operationCompletion": {
+          "total": 1362,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 1362,
+          "basis": "精确操作目标证据；函数/语句入口和测试通过不替代完成"
+        },
+        "relatedEntries": {
+          "total": 7,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 7,
+          "basis": "仅表示精确入口观测，不证明复杂操作完成"
+        },
+        "directModifiedFunctionEntries": {
+          "total": 4,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 4,
+          "modifiedFunctions": 38,
+          "basis": "直接修改函数中已规划的入口目标；没有入口目标的函数不冒认已观察"
+        },
+        "coverageInterpretation": {
+          "sourceCounters": "顶层 sourceCounters 分列源码语句/函数/分支，含失败尝试的独立观测；缺失文件不补零",
+          "strictTargets": "targetCoverage 保留完整计划分母及范围外/排除入口；成功检查点决定最终严格覆盖",
+          "whyCountersCanHitWhileUnknown": "源码计数只证明计数位置执行；非唯一映射、短路子操作、调用/await 完成或不支持语义仍 unknown",
+          "orderedPaths": "未采集有序 trace，入口或分支命中不能替代有序路径"
+        },
+        "unknownReasons": [
+          {
+            "reasonCode": "source-coverage-missing",
+            "count": 1625,
+            "category": "binding-or-collection",
+            "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例"
+          },
+          {
+            "reasonCode": "source-reference-missing",
+            "count": 9,
+            "category": "binding-or-collection",
+            "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例"
+          }
+        ],
+        "environment": {
+          "dependencyPolicy": "exact-lock",
+          "lockMatch": true,
+          "serviceDoubles": [
+            {
+              "name": "synthetic-mongo-vm",
+              "verifies": "serialized helper protocol, exact batch identity, commit idempotency and rollback guards",
+              "doesNotVerify": "real MongoDB topology/driver, SSH transport, native OS owner verification or deployed worker"
+            }
+          ],
+          "serviceDoubleInventory": "declared-not-runtime-attested",
+          "runtimeCheckedServiceDoubles": [],
+          "businessPreflight": "not-declared",
+          "externalServices": "existing-test-doubles-and-network-egress-denied",
+          "notificationDelivery": "not-verified"
+        },
+        "pageValidation": "not-run-by-unit-adapter",
+        "deploymentValidation": "not-verified",
+        "orderedPathValidation": "not-observed-no-ordered-trace"
+      },
+      "sourceCounters": {
+        "files": [],
+        "mappedFiles": 0,
+        "missingFiles": 11,
+        "conflictingFiles": 0,
+        "statements": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "functions": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "branches": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖",
+        "observationBasis": "latest-file-evidence-including-failed-attempts"
+      },
+      "unknownReasons": {
+        "source-coverage-missing": 1625,
+        "source-reference-missing": 9
+      },
+      "pathValidation": "not-observed-no-ordered-trace",
+      "attemptSummary": {
+        "total": 1,
+        "failed": 0,
+        "blocked": 0
+      },
+      "reportHash": "c20fe7abdfadbe2ed51f815defd7adcd7897bb72c19ae0526de62ed3733271a4",
+      "artifact": ".testflow/jobs/7c9a2488-6be6-4ade-b983-93dbf863e4c6/job-evidence.json"
+    },
+    "regression": {
+      "jobId": "44f57300-d912-4617-b809-c938f79557f5",
+      "status": "passed",
+      "summary": {
+        "purpose": "regression",
+        "selection": {
+          "selectedAssets": 3,
+          "completedAssetResults": 3,
+          "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+          "executedCases": 39,
+          "passed": 39,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0
+        },
+        "targetCoverage": {
+          "scopeId": "04529e5d7d4a72122e477db89bef066bb090362fa796dc4d11903fe0a3ecdf66",
+          "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+          "total": 1634,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 1634,
+          "byKind": {
+            "modified-block": {
+              "total": 1362,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 1362
+            },
+            "condition-outcome": {
+              "total": 204,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 204
+            },
+            "impacted-entry": {
+              "total": 7,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 7
+            },
+            "symbol-reference": {
+              "total": 10,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 10
+            },
+            "unexpanded-change": {
+              "total": 51,
+              "covered": 0,
+              "notCovered": 0,
+              "unknown": 51
+            }
+          },
+          "outOfScopeChanges": [],
+          "excludedEntryIds": [],
+          "outOfScopeChangeCount": 11,
+          "excludedEntryCount": 109
+        },
+        "operationCompletion": {
+          "total": 1362,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 1362,
+          "basis": "精确操作目标证据；函数/语句入口和测试通过不替代完成"
+        },
+        "relatedEntries": {
+          "total": 7,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 7,
+          "basis": "仅表示精确入口观测，不证明复杂操作完成"
+        },
+        "directModifiedFunctionEntries": {
+          "total": 4,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 4,
+          "modifiedFunctions": 38,
+          "basis": "直接修改函数中已规划的入口目标；没有入口目标的函数不冒认已观察"
+        },
+        "coverageInterpretation": {
+          "sourceCounters": "顶层 sourceCounters 分列源码语句/函数/分支，含失败尝试的独立观测；缺失文件不补零",
+          "strictTargets": "targetCoverage 保留完整计划分母及范围外/排除入口；成功检查点决定最终严格覆盖",
+          "whyCountersCanHitWhileUnknown": "源码计数只证明计数位置执行；非唯一映射、短路子操作、调用/await 完成或不支持语义仍 unknown",
+          "orderedPaths": "未采集有序 trace，入口或分支命中不能替代有序路径"
+        },
+        "unknownReasons": [
+          {
+            "reasonCode": "source-coverage-missing",
+            "count": 1625,
+            "category": "binding-or-collection",
+            "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例"
+          },
+          {
+            "reasonCode": "source-reference-missing",
+            "count": 9,
+            "category": "binding-or-collection",
+            "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例"
+          }
+        ],
+        "environment": {
+          "dependencyPolicy": "exact-lock",
+          "lockMatch": true,
+          "serviceDoubles": [
+            {
+              "name": "synthetic-mongo-vm",
+              "verifies": "serialized helper protocol, exact batch identity, commit idempotency and rollback guards",
+              "doesNotVerify": "real MongoDB topology/driver, SSH transport, native OS owner verification or deployed worker"
+            }
+          ],
+          "serviceDoubleInventory": "declared-not-runtime-attested",
+          "runtimeCheckedServiceDoubles": [],
+          "businessPreflight": "not-declared",
+          "externalServices": "existing-test-doubles-and-network-egress-denied",
+          "notificationDelivery": "not-verified"
+        },
+        "pageValidation": "not-run-by-unit-adapter",
+        "deploymentValidation": "not-verified",
+        "orderedPathValidation": "not-observed-no-ordered-trace"
+      },
+      "sourceCounters": {
+        "files": [],
+        "mappedFiles": 0,
+        "missingFiles": 11,
+        "conflictingFiles": 0,
+        "statements": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "functions": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "branches": {
+          "total": 0,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 0
+        },
+        "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖",
+        "observationBasis": "latest-file-evidence-including-failed-attempts"
+      },
+      "unknownReasons": {
+        "source-coverage-missing": 1625,
+        "source-reference-missing": 9
+      },
+      "pathValidation": "not-observed-no-ordered-trace",
+      "attemptSummary": {
+        "total": 3,
+        "failed": 0,
+        "blocked": 0
+      },
+      "reportHash": "28bcaf6166cfeb360076c7c6db79e5af5849ef85ebee6a7e83fbd4d395e359e5",
+      "artifact": ".testflow/jobs/44f57300-d912-4617-b809-c938f79557f5/job-evidence.json"
+    },
+    "analyzeRunId": "0a692f8c-4197-4e19-9369-a0bb01a6c62e",
+    "scopeId": "04529e5d7d4a72122e477db89bef066bb090362fa796dc4d11903fe0a3ecdf66",
+    "graphRunId": "ee66e903-9dec-4abf-8f2c-6a417de635b1",
+    "planRunId": "37165e91-0dc7-407d-8596-15eedd2c43f3",
+    "pilotPrepareJobId": "051300a9-aafd-4416-858b-eac5d579fccd",
+    "pilotPrepareRunId": "9eadae5c-0758-4583-9262-bbe738f5fd64",
+    "regressionPrepareJobId": "ec38650d-06e9-4a2f-94ed-0cdf6e8570f6",
+    "regressionPrepareRunId": "f2e64b9a-71f7-487e-a7b8-36253fb11236",
+    "dependencyPolicy": "exact-lock",
+    "lockMatch": true,
+    "graphTruncated": true,
+    "scopeOutOfScopeChanges": 11,
+    "excludedEntries": 109
+  },
+  "supplemental": {
+    "native": {
+      "files": 36,
+      "tests": 419,
+      "passed": 419,
+      "failed": 0,
+      "skipped": 0,
+      "image": "sha256:61a0b3c3fa5e261a6600fc549814dffa70f96936374435151bb3765c7aa423dc",
+      "network": "none",
+      "fixedSnapshot": "32eb85db36499eae2d55f4b807a2f91e03e6077983287f3399078666a3581bc0",
+      "candidateBundleUsed": true
+    },
+    "mongodb": {
+      "42": {
+        "realMongo": true,
+        "helperImage": "sha256:2183345feff0a0c8c25640fdc8d2e3b111c5baf50d5a1ddb50a43ac5d9cb3dd4",
+        "databaseImage": "sha256:699d652ed67423d689258bad7b316cf005dfbb82b334118ec306f049042f3717",
+        "network": "internal, no published ports",
+        "container": "rda-import-risk-de2165a39855",
+        "cleaned": true,
+        "source": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-execution-risk/.testflow/snapshots/fd02838338d9d4e03d776427456890403a7aebec42029830ad0b6fc78907c9f9/files",
+        "exitCode": 0,
+        "cleanup": [
+          {
+            "type": "container",
+            "name": "rda-import-risk-de2165a39855",
+            "exitCode": 0
+          },
+          {
+            "type": "container",
+            "name": "rda-import-execution-db-de2165a39855",
+            "exitCode": 0
+          },
+          {
+            "type": "network",
+            "name": "rda-import-execution-net-de2165a39855",
+            "exitCode": 0
+          }
+        ]
+      },
+      "44": {
+        "realMongo": true,
+        "helperImage": "sha256:2183345feff0a0c8c25640fdc8d2e3b111c5baf50d5a1ddb50a43ac5d9cb3dd4",
+        "databaseImage": "sha256:9ef36ccfdfb42c68dbc7757af3d1e732eaca253ed0cc529a6dd4d728ea97fd44",
+        "network": "internal, no published ports",
+        "container": "rda-import-risk-2b597248e345",
+        "cleaned": true,
+        "source": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-execution-risk/.testflow/snapshots/fd02838338d9d4e03d776427456890403a7aebec42029830ad0b6fc78907c9f9/files",
+        "exitCode": 0,
+        "cleanup": [
+          {
+            "type": "container",
+            "name": "rda-import-risk-2b597248e345",
+            "exitCode": 0
+          },
+          {
+            "type": "container",
+            "name": "rda-import-execution-db-2b597248e345",
+            "exitCode": 0
+          },
+          {
+            "type": "network",
+            "name": "rda-import-execution-net-2b597248e345",
+            "exitCode": 0
+          }
+        ]
+      }
+    },
+    "browser": {
+      "passed": true,
+      "sourceVerifiedAgainstSnapshot": true,
+      "nativeOwnerVerification": "explicit test double",
+      "MongoDB": "synthetic VM",
+      "SSH": "synthetic VM",
+      "realIndependentWorkbenchHTTP": true,
+      "realChromium": true
+    },
+    "crashWindows": {
+      "sqliteSigkill": 4,
+      "remoteFilesystemSigkill": 2,
+      "childManifestIOFault": 1,
+      "powerLoss": "not verified"
+    }
+  },
+  "limitations": [
+    "strict source coverage unknown for all 1634 targets",
+    "native OS verification and actual SSH transport not exercised",
+    "no real business inputs, approval or original execute/rollback performed",
+    "review maximum document JSON 128 KiB; fifteen-minute review/child request window",
+    "only one continuation child per original unknown execute; another child unknown remains protected",
+    "no lock reclamation or safe replay before a positive remote reservation",
+    "post-consumption UUID/fact drift or expiry before remote reservation remains stopped",
+    "late legacy processes may still commit; human risk acceptance is not global fencing",
+    "new candidate is not installed and checked-in generated runtime remains unchanged"
+  ],
+  "priorFailures": [
+    {
+      "jobId": "8c93dd61-6528-4cbe-b01c-91fc98f7ac13",
+      "initialResult": "blocked before business tests; docker-memory-format-unknown from -- / --; cleanup completed",
+      "resumedResult": "1 passed, 7 filtered; evidence aggregation TypeError reading normalized",
+      "evidenceDiagnosticId": "45c89d29-e329-4d0c-a1f9-ed480c028128",
+      "resolution": "new clean prepare/execute on same final fixed input; separate verified pilot result retained"
+    },
+    {
+      "kind": "supplemental fixtures",
+      "result": "initial missing initialize hook; undefined transport property comparison; real-files parent directory fixture boundary; fixed before final freeze"
+    },
+    {
+      "kind": "real Mongo fixture",
+      "result": "initial alternate uriKey blocked by MONGODB_MUTATION_POLICY_CHANGED before tested scenario; changed fixture to same-profile actual unique-key rejection; database/containers cleaned"
+    },
+    {
+      "kind": "browser fixture",
+      "result": "first reload test expected a persistent login; corrected to explicit new login, preserving workbench session isolation"
+    },
+    {
+      "kind": "native wrapper",
+      "result": "first final wrapper recreated existing dependency symlink before tests; corrected isolated materialization; final 419 passed"
+    }
+  ],
+  "evidenceRoot": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-execution-risk",
+  "artifacts": [
+    {
+      "file": "native-final-verified.tap",
+      "sha256": "b54a30d5e06d1abdf79e6bd336dfa88786ae52470c05d54c645c81d869f0218e",
+      "bytes": 113648
+    },
+    {
+      "file": "browser-verified.log",
+      "sha256": "7ca4002da5d98683ab754533ebd95c71e7a146f6bac0031379c441650f8d6047",
+      "bytes": 576
+    },
+    {
+      "file": "browser-verified/execution-review.png",
+      "sha256": "63bb6e13e7b97e0fcd84ea366cd12f7aa52c6d169024e0b07f688c8eaf4ddeaf",
+      "bytes": 741152
+    },
+    {
+      "file": "browser-verified/execution-approved-no-write.png",
+      "sha256": "6b73d081451dcf1b9512f04c9d62d4443ea2cea980cc945fcadfada3ca209a96",
+      "bytes": 756213
+    },
+    {
+      "file": "mongo-42.tap",
+      "sha256": "a65b2503928f412fb81340adbfd35db0acbd27369008ed033f3354edef7a821e",
+      "bytes": 826
+    },
+    {
+      "file": "mongo-42-result.json",
+      "sha256": "4f1f893e7a57ff669bcfc9f44a76d5c8624b341ccae6e76f972609dac7b0642b",
+      "bytes": 874
+    },
+    {
+      "file": "mongo-44.tap",
+      "sha256": "e2f3b3403e860fb63232817e31bf3f88a8da5e41f0406a6754152332600dbcea",
+      "bytes": 825
+    },
+    {
+      "file": "mongo-44-result.json",
+      "sha256": "bc89af3b8e8c7b3cc20ecdd642e60a6c8999a90f6ec5f77897a20017463f2c52",
+      "bytes": 874
+    },
+    {
+      "file": "source-final-verification.json",
+      "sha256": "3c33c8e14bd3a60f792a9e579210f9283370315c4ff7c4292594af4e73677802",
+      "bytes": 236
+    },
+    {
+      "file": "candidate-final-integrity.json",
+      "sha256": "4f1be7635cc6d9d836839acd97ea86709f3ca86ad368c813e8c0f8a2db97405c",
+      "bytes": 249
+    },
+    {
+      "file": "final-candidate/build.log",
+      "sha256": "861ee6772a61375545dd682c8320d99155fdd84b0dea08e263ee6ceca1980272",
+      "bytes": 382
+    },
+    {
+      "file": "bindings-final.json",
+      "sha256": "645ecd0121238d2a112c0edd366d02e58227ff593d33bc53f20f3b59e1cf0b8f",
+      "bytes": 15487
+    },
+    {
+      "file": "final-regression-evidence.json",
+      "sha256": "ac26a7b1377801148b0e0aad14f81573cf77b82c7e3ffb0466cb8ad185527f45",
+      "bytes": 5377
+    },
+    {
+      "file": "final-pilot-evidence.json",
+      "sha256": "9ffd0017976f808613a44c4aa39d9bd59fa43ec7314dc198bffb9110404b765e",
+      "bytes": 5370
+    },
+    {
+      "file": "final-stages.json",
+      "sha256": "6a6aceb9686bbe69fb8643d10e0877ffa1e005a176213599957c030d9161c0d5",
+      "bytes": 29778
+    }
+  ],
+  "authorization": {
+    "realDatabaseTouched": false,
+    "realRiskApproval": false,
+    "realReplacementCreated": false,
+    "realImportReplayed": false,
+    "installedCacheModified": false,
+    "realManagerWorkerRefreshed": false,
+    "gitCommitPushPRDeploy": false,
+    "userChangesPreserved": true
+  }
+}

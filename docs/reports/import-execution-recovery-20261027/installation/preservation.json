@@ -1,0 +1,44 @@
+{
+  "configurationFingerprints": {
+    "/Users/zhengchenchen/.codex/config.toml": {
+      "sha256": "09ea6366e7efbf741d01910d21effa44f2c40fe8ccf157f9ee62d3c37fcd1add",
+      "bytes": 5927,
+      "mode": 384
+    },
+    "/Users/zhengchenchen/.remote-debug-agent/config.env": {
+      "sha256": "29ae61ec12e4975d20aa239aa7110625f986710b1864cf7dc8247659677af9b2",
+      "bytes": 81,
+      "mode": 384
+    },
+    "/Users/zhengchenchen/.remote-debug-agent/.remote-debug/instances.json": {
+      "sha256": "77cfa613d03ba919bcdfac75d783b20e4eb1909a39c157b7d3b933a77efcece7",
+      "bytes": 8888,
+      "mode": 384
+    }
+  },
+  "protectedMetadataOnly": {
+    "/Users/zhengchenchen/.remote-debug-agent/.runtime/http-auth.json": {
+      "inode": 6668892,
+      "mtimeNs": 1791965649946199450,
+      "bytes": 89,
+      "mode": 384
+    },
+    "/Users/zhengchenchen/.remote-debug-agent/.remote-debug/manual-admin/accounts.json": {
+      "inode": 10810767,
+      "mtimeNs": 1792161562874836112,
+      "bytes": 303,
+      "mode": 384
+    },
+    "/Users/zhengchenchen/.remote-debug-agent/.private/business": {
+      "inode": 13201274,
+      "mtimeNs": 1793084222080122443,
+      "bytes": 160,
+      "mode": 448
+    }
+  },
+  "configurationChanged": [],
+  "protectedMetadataChanged": [],
+  "oldProgramFilesVerified": 760,
+  "oldProgramFilesRestored": 0,
+  "protectedFilesRead": false
+}

@@ -39,6 +39,16 @@ function __importBatchIdentity(plan) {
 }
 function __importOrderedDigest(value) { return __createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 function __assertImportLive(request, mutationId) {
+  if (mutationId && __readImportFile(mutationId, "execution-continuation.json"))
+    __fail("MONGODB_EXECUTION_ORIGINAL_PROTECTED", "original execution remains unknown and closed to new managed writes");
+  const child = mutationId && __readImportFile(mutationId, "manifest.json");
+  if (child && child.executionContinuation) {
+    const b = child.executionContinuation.binding;
+    const reservation = __readImportFile(b.mutationId, "execution-continuation.json");
+    const original = __readImportFile(b.mutationId, "manifest.json");
+    if (!reservation || reservation.candidate.planHash !== child.planHash || !original || original.status === "committed")
+      __fail("MONGODB_EXECUTION_REVIEW_CONFLICT", "continuation reservation missing or late original commit observed");
+  }
   if (__readImportFile(__importControlId(request.database, request.importId), "retirement.json") ||
       mutationId && __readImportFile(mutationId, "import-retirement.json")) __fail("MONGODB_IMPORT_RETIRED", "original import is closed; historical outcome remains unknown");
 }

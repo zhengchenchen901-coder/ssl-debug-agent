@@ -46,6 +46,12 @@ export function importHarness({ cryptoModule = crypto, readPreference = "primary
     fs = { constants: realFs.constants, closeSync: realFs.closeSync, fsyncSync: realFs.fsyncSync };
     for (const method of ["existsSync", "lstatSync", "statSync", "mkdirSync", "chmodSync", "openSync", "unlinkSync", "readdirSync", "writeFileSync"])
       fs[method] = (p, ...args) => realFs[method](translate(p), ...args);
+    // Import control durability syncs the journal root's parent directory too.
+    // This fixture permits that single read-only directory handle, not writes
+    // outside its disposable journal root.
+    const openJournal = fs.openSync;
+    fs.openSync = (p, flags, ...args) => p === "/tmp/remote-debug-agent" && flags === "r"
+      ? realFs.openSync(path.dirname(realFiles), "r") : openJournal(p, flags, ...args);
     fs.readFileSync = (p, ...args) => p === importConfig.configPath ? JSON.stringify({ test: { url: "fixture-only" } }) : realFs.readFileSync(translate(p), ...args);
     fs.renameSync = (a, b) => { beforeRename?.(translate(a), translate(b)); realFs.renameSync(translate(a), translate(b)); fault?.(translate(b)); };
   }

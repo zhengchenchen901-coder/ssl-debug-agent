@@ -42,6 +42,7 @@ function sendError(error, _request, response, _next) {
   if (error.code?.startsWith("BUSINESS_TERMINATION_")) {
     error = manualError("MANUAL_TERMINATION_REJECTED", "终止审核已过期、任务状态或目标已变化，请重新读取；已批准的本地终止保护会继续保留。", 409);
   }
+  if (error.code?.startsWith("BUSINESS_EXECUTION_")) error = manualError("MANUAL_EXECUTION_RISK_REJECTED", "执行风险审核已过期、原状态或目标已变化，或本次批准不匹配。原执行仍受保护；请读取具体审核状态。", 409);
   if (error.code?.startsWith("BUSINESS_REPLACEMENT_")) {
     const messages = {
       BUSINESS_REPLACEMENT_FENCE_REQUIRED: "旧任务永久阻断回执缺失、无效或已过期，不能批准替代任务。",
@@ -324,6 +325,39 @@ export class ManualWorkbench {
         session.lastInputAt = this.now();
         response.json(result);
       } finally { session.riskApprovalPending = false; }
+    }));
+    app.post("/api/execution-risk/review", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId"]);
+      const session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const result = await this.riskReview("human_execution_risk_view", { riskPlanId: request.body.riskPlanId, instanceId: session.instanceId });
+      this.getSession(this.bearer(request));
+      session.executionRiskReview = { riskPlanId: result.riskPlanId, reviewHash: result.reviewHash, confirmation: result.confirmation,
+        canApprove: result.canApprove, expiresAt: Math.min(result.expiresAt, this.now() + 300000) };
+      session.lastInputAt = this.now();
+      response.json(result);
+    }));
+    app.post("/api/execution-risk/approve", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId", "reviewHash", "confirmation"]);
+      const token = this.bearer(request), session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const review = session.executionRiskReview;
+      if (!review?.canApprove || review.riskPlanId !== request.body.riskPlanId || review.reviewHash !== request.body.reviewHash ||
+          review.confirmation !== request.body.confirmation || review.expiresAt <= this.now() || session.executionRiskApprovalPending) {
+        throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "请在当前管理员会话中重新读取并确认具体风险计划。", 409);
+      }
+      session.executionRiskApprovalPending = true;
+      try {
+        // Fresh native OS verification is mandatory for EVERY final approval.
+        await this.ownerVerification.verify();
+        this.getSession(token);
+        if (session.executionRiskReview !== review || review.expiresAt <= this.now()) throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "审阅计划已变化，请重新核对。", 409);
+        session.executionRiskReview = null; // Consume before committing; no stale review reuse.
+        const result = await this.riskReview("human_execution_risk_approve", { ...request.body, instanceId: session.instanceId,
+          actor: { username: session.username, sessionId: session.id, verifiedAt: Date.now() } });
+        session.lastInputAt = this.now();
+        response.json(result);
+      } finally { session.executionRiskApprovalPending = false; }
     }));
     app.post("/api/job-termination/review", route(async (request, response) => {
       assertFields(request.body, ["database", "jobId", "planHash", "reason"]);

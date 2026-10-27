@@ -1,3 +1,4 @@
+import { executionRiskStoreAction, executionRiskHumanAction, recordExecutionRiskEvidence } from "./mongodb-execution-risk.js";
 import { recordImportPrepared, continuePartialImport } from "./mongodb-import-risk.js";
 import { DatabaseSync } from "node:sqlite";
 import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
@@ -104,6 +105,8 @@ export class PrivacyStore {
     if (action === "assert_instance_admission") return assertInstanceAdmission(this, input.instanceId, input);
     const termination = jobTerminationStoreAction(this, action, input);
     if (termination !== undefined) return termination;
+    const executionHuman = executionRiskHumanAction(this, action, input);
+    if (executionHuman !== undefined) return executionHuman;
     const humanRisk = humanRiskStoreAction(this, action, input);
     if (humanRisk !== undefined) return humanRisk;
     if (action === "create") return this.transaction(() => {
@@ -114,6 +117,8 @@ export class PrivacyStore {
     const ctx = this.authenticate(input.auth);
     if (action === "attach") return { contextId: ctx };
     const scope = this.hash("scope", input.scope);
+    const executionRisk = executionRiskStoreAction(this, action, input, ctx, scope);
+    if (executionRisk !== undefined) return executionRisk;
     const disposition = dispositionStoreAction(this, action, input, ctx, scope);
     if (disposition !== undefined) return disposition;
     const risk = riskStoreAction(this, action, input, ctx, scope);
@@ -365,6 +370,8 @@ export class PrivacyStore {
       return { id: input.id, ...value };
     });
     if (action === "outcome" || action === "reconcile") return this.transaction(() => {
+      const accepted = recordExecutionRiskEvidence(this, action, input, ctx, scope);
+      if (accepted !== undefined) return accepted;
       this.assertOperationAdmission(input.id, ctx, scope);
       const previous = this.get("operation", input.id, ctx, scope);
       if (!previous) throw privacyError("BUSINESS_OPERATION_DENIED");
