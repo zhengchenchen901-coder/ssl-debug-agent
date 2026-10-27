@@ -1,3 +1,4 @@
+import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
 import { fork } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import fsp from "node:fs/promises";
@@ -1279,6 +1280,7 @@ export class WorkerManager {
         },
       );
       error.payload = parsed;
+      if (parsed.error?.diagnostic) error.diagnostic = mutationDiagnostic(parsed.error.diagnostic);
       if (parsed.error?.dispatchState === "not_dispatched") error.dispatchState = "not_dispatched";
       throw error;
     }

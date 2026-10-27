@@ -21,12 +21,12 @@ function read(file) {
   return result;
 }
 const inventory = read(path.resolve(assetsFile));
-const file = 'verification/import-safety.test.js';
-const asset = inventory.assets.find(a => a.file === file && a.kind === 'test-file' && !a.disabled);
 const ref = file => { const bytes = fs.readFileSync(path.join(root, file)); return { file, fileHash: digest(bytes), start: 0, end: bytes.toString('utf8').length }; };
-const input = ref(file);
-if (!asset || asset.fileHash !== input.fileHash || !asset.assertionIds.length) throw Error('Fixed unit asset/actual assertions missing or drifted');
-const bindings = { schemaVersion: 1, projectId: 'ssl-debug-agent', basis: 'codex-source-review', reviewRef: 'verification/README.md: Import safety verification contract v1',
-  unit: { isolation: 'file-process-no-services', contractVersion: 'import-safety-v1' },
-  selections: [{ assetId: asset.id, assetFileHash: asset.fileHash, inputRefs: [input], stateRefs: [ref('agent/test/helpers/import-risk-fixture.js')], assertionIds: asset.assertionIds }] };
+const selections = ['verification/import-safety.test.js', 'verification/import-execution.test.js'].map(file => {
+  const asset = inventory.assets.find(a => a.file === file && a.kind === 'test-file' && !a.disabled), input = ref(file);
+  if (!asset || asset.fileHash !== input.fileHash || !asset.assertionIds.length) throw Error('Fixed unit asset/actual assertions missing or drifted');
+  return { assetId: asset.id, assetFileHash: asset.fileHash, inputRefs: [input], stateRefs: [ref('agent/test/helpers/import-risk-fixture.js'), ref('agent/test/helpers/import-fixture.js')], assertionIds: asset.assertionIds };
+});
+const bindings = { schemaVersion: 1, projectId: 'ssl-debug-agent', basis: 'codex-source-review', reviewRef: 'verification/README.md: Import execution verification contract v2',
+  unit: { isolation: 'file-process-no-services', contractVersion: 'import-execution-v2' }, selections };
 fs.writeFileSync(output, JSON.stringify(bindings, null, 2) + '\n', { flag: 'wx' });

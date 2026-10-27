@@ -348,3 +348,30 @@ claim that wins first stays uncertain without exact positive remote evidence.
 Worker configuration mismatch is refused before transport, without automatic
 restart. Inspect in-flight work before explicitly refreshing; a refresh failure
 or a missing receipt never proves that an earlier request did not execute.
+
+### Explicit collection preparation and import execution recovery
+
+Imports require an existing ordinary collection, sessions/transaction topology
+and an observable collection UUID; prepare can return `prepare_rejected` with
+an exact `preflight_rejected` receipt. Inspect its code/diagnostic. Continue only
+with identical input/importId after addressing the explicit prerequisite; no
+missing/unknown receipt permits redispatch. A changed collection UUID requires a
+fresh separately reviewed import plan, never rewriting a historical one.
+
+If a collection is intentionally needed, use
+`remote_debug_mongodb_prepare_collection` for one allowlisted empty ordinary
+collection. Inspect its target, plan hash, permissions and
+`rollbackMode=retained_non_rollbackable`, then obtain separate `确认执行` and use
+the ordinary execute tool. It grants no permissions, creates no business index,
+and does not support drop rollback. Concurrent/same-name objects are never
+adopted; later data must never be deleted to undo collection initialization.
+
+The `commit_retryable`/`rollback_retryable` label alone is insufficient. For new
+protocol-2 import executions, reconcile the original intent; only its exact
+safe terminal receipt can return `retryable`. A subsequent explicit call with
+the same plan, intent and actual confirmation reserves a new attempt. Do not
+repeat an old attempt, change task identity or clear locks. Unknown commit,
+failed abort or rollback unknown remain protected. Historical records without
+these receipts remain uncertain even when current data is empty. Bounded
+error diagnostics contain category, phase and numeric server code, never raw
+errmsg or business documents.

@@ -1,3 +1,4 @@
+import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
 import express from "express";
 import { installPrivacyRoutes, assertMongoDispatchAdmission, humanRiskRequest } from "./privacy-service.js";
 import { humanJobTerminationRequest } from "./mongodb-job-termination.js";
@@ -132,6 +133,7 @@ function businessErrorPayload(error) {
     code: /^[A-Z][A-Z0-9_]{1,80}$/.test(payload.code || "") ? payload.code : "MONGODB_OPERATION_FAILED",
     message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
     layer: payload.layer, phase: payload.phase, retriable: payload.retriable,
+    ...(error.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}),
     ...(error.dispatchState === "not_dispatched" ? { dispatchState: "not_dispatched" } : {}),
   } };
 }
@@ -1535,6 +1537,7 @@ export function createApp(options = {}) {
         operationId: requestOperation.operationId,
         errorLayer: payload.error.layer,
         errorPhase: payload.error.phase,
+        diagnostic: payload.error.diagnostic,
       });
       publishStage(activity, operation, "failed", {
         ok: false,

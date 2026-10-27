@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "projectId": "ssl-debug-agent",
+  "selection": {
+    "mode": "workspace",
+    "base": "3490a7905779d23195ecefacdb3fffec79af0635"
+  },
+  "base": {
+    "projectId": "ssl-debug-agent",
+    "kind": "git",
+    "revision": "3490a7905779d23195ecefacdb3fffec79af0635",
+    "tree": "6a3b47bcde2607aeee5ba1920b3e3d1b2ed9a2fd",
+    "contentHash": "06991fafad2e796bb822f6349139829c3b5e59d460e5724b1aaa242741989f9a"
+  },
+  "target": {
+    "projectId": "ssl-debug-agent",
+    "kind": "workspace",
+    "revision": "3490a7905779d23195ecefacdb3fffec79af0635",
+    "tree": "6a3b47bcde2607aeee5ba1920b3e3d1b2ed9a2fd",
+    "contentHash": "7e44cf535140f5ef9c13450f961e2c8a130568ec6d3a6c80a3e4a6ecca6951b3"
+  },
+  "commits": [],
+  "captureVerified": true,
+  "snapshotId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+  "source": "canonical frozen input; snapshot identity verified by final TestFlow stage metadata"
+}

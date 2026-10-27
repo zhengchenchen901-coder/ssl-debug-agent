@@ -143,7 +143,7 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     },
     async bindExecution(settings, intent, scope, operation) {
       try {
-        return await call(settings, { action: "claim_execution", id: intent.id, scope, operationId: operation.operationId }, operation.signal);
+        return await call(settings, { action: "claim_execution", id: intent.id, scope, operationId: operation.operationId, attempt: intent.executionAttempt }, operation.signal);
       } catch (error) { error.intentId = intent.id; throw error; }
     },
     async dispatchPrepare(settings, intent, scope, request, operation) {

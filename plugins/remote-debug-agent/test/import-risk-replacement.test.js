@@ -27,7 +27,7 @@ for (const bundled of [false, true]) test(`import public MCP and ${bundled ? "bu
   const service = new PrivacyService({ directory, key, ...(bundled ? { workerPath: path.resolve(import.meta.dirname, "../runtime/agent/privacy-worker.cjs") } : {}) });
   let nativeChecks = 0;
   const workerManager = { publicInstances: () => registry.list(), callInstance: async (_id, route, request) => {
-    const modes = { "/mongodb/imports/review": "import_review", "/mongodb/imports/retire": "import_retire", "/mongodb/imports/recover-prepare": "import_recover", "/mongodb/imports/prepare": "prepare", "/mongodb/mutations/execute": "commit", "/mongodb/mutations/rollback": "rollback" };
+    const modes = { "/mongodb/imports/review": "import_review", "/mongodb/imports/retire": "import_retire", "/mongodb/imports/recover-prepare": "import_recover", "/mongodb/imports/prepare": "prepare", "/mongodb/mutations/execute": "commit", "/mongodb/mutations/rollback": "rollback", "/mongodb/mutations/recover-execution": "recover_execution" };
     assert.ok(modes[route], "only fixed import/mutation routes are dispatched");
     return { ok: true, ...await h.run({ ...request, mode: modes[route], ...(route === "/mongodb/imports/prepare" ? { kind: "import_plan" } : {}) }, instance.mongodb) };
   } };
@@ -72,6 +72,16 @@ for (const bundled of [false, true]) test(`import public MCP and ${bundled ? "bu
   const batch = created.payload.result.batches[0];
   const mutation = (name, confirmation) => peer.call(name, { ...target, mutationId: batch.mutationId, planHash: batch.planHash, confirmation });
   assert.equal((await mutation("remote_debug_mongodb_execute_mutation", "wrong")).isError, true);
+  h.state.failInsert = true;
+  h.state.insertError = Object.assign(Error("PRIVATE_DOCUMENT_QUEUED and mongodb://private"), { name: "MongoServerError", code: 13 });
+  const failed = await mutation("remote_debug_mongodb_execute_mutation", "确认执行");
+  assert.equal(failed.isError, true);
+  assert.equal(failed.payload.error.code, "MONGODB_OPERATION_FAILED");
+  assert.deepEqual(failed.payload.error.diagnostic, { phase: "transaction_write", category: "permission", databaseCode: 13, serverMaxWireVersion: 9 });
+  assert.doesNotMatch(JSON.stringify(failed), /PRIVATE_DOCUMENT|mongodb:\/\/private/);
+  const recovered = await peer.call("remote_debug_mongodb_recover_operation", { ...target, intentId: failed.payload.error.intentId, mode: "reconcile" });
+  assert.equal(recovered.payload.state, "retryable", JSON.stringify(recovered));
+  assert.equal(h.state.rows.size, 0);
   const committed = await mutation("remote_debug_mongodb_execute_mutation", "确认执行"); assert.notEqual(committed.isError, true, JSON.stringify(committed)); assert.equal(committed.payload.status, "committed");
   const rollback = await mutation("remote_debug_mongodb_rollback_mutation", "确认回滚"); assert.notEqual(rollback.isError, true, JSON.stringify(rollback)); assert.equal(h.state.rows.size, 0);
   assert.equal((await peer.call("remote_debug_mongodb_prepare_import", original)).payload.error.code, "BUSINESS_ORIGINAL_JOB_TERMINATED");

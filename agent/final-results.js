@@ -1,3 +1,4 @@
+import { SAFE_MUTATION_ID_PATTERN } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
@@ -36,7 +37,7 @@ function validateReferences(references) {
   for (const [key, value] of Object.entries(references)) {
     if (key === "operationIds") {
       if (!Array.isArray(value) || value.length > 64 || value.some((id) => typeof id !== "string" || !UUID.test(id))) throw fail("FINAL_RESULT_INVALID");
-    } else if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(value)) throw fail("FINAL_RESULT_INVALID");
+    } else if (typeof value !== "string" || !(key === "mutationId" ? SAFE_MUTATION_ID_PATTERN : /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/).test(value)) throw fail("FINAL_RESULT_INVALID");
   }
 }
 

@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Shanghai",
+  "delivery": "local uncommitted source, tests, docs, rebuilt candidate runtime; not installed",
+  "snapshotId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+  "frozenFileCount": 584,
+  "sourceMatchesFrozenFiles": true,
+  "changedFrozenFiles": [],
+  "runtimeId": "2.4.0:925bf7f1718686c6de1a5975485ac91a4ddbd35164824db514445ee4d704c85f",
+  "runtimeManifestVerified": true,
+  "runtimeMismatches": [],
+  "sourceContentHash": "7e44cf535140f5ef9c13450f961e2c8a130568ec6d3a6c80a3e4a6ecca6951b3",
+  "baseRevision": "3490a7905779d23195ecefacdb3fffec79af0635",
+  "formalTestflow": {
+    "adapter": "jest-unit",
+    "snapshotId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+    "pilot": {
+      "prepareJobId": "ea3d1248-fc60-4403-9d84-732a339b1c2d",
+      "executeJobId": "3ea67021-edfb-4689-92be-1af71d77a095",
+      "result": {
+        "selectedAssets": 1,
+        "completedAssetResults": 1,
+        "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+        "executedCases": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "excludedByPattern": 26
+      },
+      "reportHash": "7512764c985d8ac8815e5c7725f5e27ed0809c76cb52dbd8577f1cb895e18c68"
+    },
+    "regression": {
+      "prepareJobId": "001b85d4-f08f-488b-847c-9ac7b24b2509",
+      "prepareRunId": "c63edc6c-e283-4787-858f-ef92051cd936",
+      "executeJobId": "7bb9685c-ba13-4156-bed6-5b0567cdc8d6",
+      "status": "passed",
+      "result": {
+        "selectedAssets": 2,
+        "completedAssetResults": 2,
+        "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+        "executedCases": 31,
+        "passed": 31,
+        "failed": 0,
+        "skipped": 0,
+        "excludedByPattern": 0
+      },
+      "reportHash": "e7fb09ca6c5e7b8d98663760ebd0480a21b207cfbfaaa1e3433ae81f6035ebf3"
+    },
+    "dependencyImage": "sha256:f285f1a29f9bff2da01186c7c0bc190ac0050d0a66dc8769915331a813098e9b",
+    "lockMatch": true,
+    "coverage": {
+      "scopeId": "8ed8027b509ab21b03e63824a432727ca697aaa3d5dffd2d6dc365c7d7b96b95",
+      "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+      "total": 1306,
+      "covered": 0,
+      "notCovered": 0,
+      "unknown": 1306,
+      "byKind": {
+        "modified-block": {
+          "total": 983,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 983
+        },
+        "condition-outcome": {
+          "total": 226,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 226
+        },
+        "impacted-entry": {
+          "total": 4,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 4
+        },
+        "symbol-reference": {
+          "total": 9,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 9
+        },
+        "unexpanded-change": {
+          "total": 84,
+          "covered": 0,
+          "notCovered": 0,
+          "unknown": 84
+        }
+      },
+      "outOfScopeChanges": [],
+      "excludedEntryIds": [],
+      "outOfScopeChangeCount": 0,
+      "excludedEntryCount": 119
+    },
+    "unknownReasons": {
+      "source-coverage-missing": 1294,
+      "source-reference-missing": 12
+    },
+    "sourceCounters": {
+      "files": [],
+      "mappedFiles": 0,
+      "missingFiles": 17,
+      "conflictingFiles": 0,
+      "statements": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "functions": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖",
+      "observationBasis": "latest-file-evidence-including-failed-attempts"
+    },
+    "pathValidation": "not-observed-no-ordered-trace",
+    "graphTruncated": true,
+    "boundedPlan": true
+  },
+  "supplemental": {
+    "native": {
+      "tests": 401,
+      "pass": 401,
+      "fail": 0,
+      "skipped": 0,
+      "files": 34,
+      "image": "sha256:61a0b3c3fa5e261a6600fc549814dffa70f96936374435151bb3765c7aa423dc",
+      "network": "none",
+      "sameSnapshot": true
+    },
+    "mongodb": {
+      "42": {
+        "realMongo": true,
+        "helperImage": "sha256:2183345feff0a0c8c25640fdc8d2e3b111c5baf50d5a1ddb50a43ac5d9cb3dd4",
+        "databaseImage": "sha256:699d652ed67423d689258bad7b316cf005dfbb82b334118ec306f049042f3717",
+        "network": "internal, no published ports",
+        "container": "rda-import-risk-328ed13d38b5",
+        "cleaned": true,
+        "source": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-execution/.testflow/snapshots/7e44cf535140f5ef9c13450f961e2c8a130568ec6d3a6c80a3e4a6ecca6951b3/files",
+        "exitCode": 0,
+        "cleanup": [
+          {
+            "type": "container",
+            "name": "rda-import-risk-328ed13d38b5",
+            "exitCode": 0
+          },
+          {
+            "type": "container",
+            "name": "rda-import-execution-db-328ed13d38b5",
+            "exitCode": 0
+          },
+          {
+            "type": "network",
+            "name": "rda-import-execution-net-328ed13d38b5",
+            "exitCode": 0
+          }
+        ]
+      },
+      "44": {
+        "realMongo": true,
+        "helperImage": "sha256:2183345feff0a0c8c25640fdc8d2e3b111c5baf50d5a1ddb50a43ac5d9cb3dd4",
+        "databaseImage": "sha256:9ef36ccfdfb42c68dbc7757af3d1e732eaca253ed0cc529a6dd4d728ea97fd44",
+        "network": "internal, no published ports",
+        "container": "rda-import-risk-a6a2c54ab37c",
+        "cleaned": true,
+        "source": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-execution/.testflow/snapshots/7e44cf535140f5ef9c13450f961e2c8a130568ec6d3a6c80a3e4a6ecca6951b3/files",
+        "exitCode": 0,
+        "cleanup": [
+          {
+            "type": "container",
+            "name": "rda-import-risk-a6a2c54ab37c",
+            "exitCode": 0
+          },
+          {
+            "type": "container",
+            "name": "rda-import-execution-db-a6a2c54ab37c",
+            "exitCode": 0
+          },
+          {
+            "type": "network",
+            "name": "rda-import-execution-net-a6a2c54ab37c",
+            "exitCode": 0
+          }
+        ]
+      }
+    },
+    "processCrashWindows": {
+      "localSQLiteNew": 4,
+      "remoteFilesystemNew": 4,
+      "powerLoss": "not verified"
+    },
+    "browser": {
+      "priorSnapshotId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+      "historicalOnly": true,
+      "nativeOwnerDialog": "test double",
+      "artifacts": [
+        {
+          "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-import.json",
+          "sha256": "91b910e894f22aab740d6b77b73e9e60b755af33d23c6e76d4651db804a87033",
+          "verified": true
+        },
+        {
+          "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-bulk.json",
+          "sha256": "9b05704704d7ea12e3e04e6d12a99c045eac0d2b8856df44ee05cca7fec29918",
+          "verified": true
+        },
+        {
+          "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-import/human-review.png",
+          "sha256": "d4d88bbe2db10cbc95486fe52a3dbdf608b9796c30bf4d0db9cc3cc93d3b2355",
+          "verified": true
+        },
+        {
+          "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-import/human-approved-no-job.png",
+          "sha256": "d31783986c5948881a35c2bf512f43f1fdd7daebbbe64ac5e13fd1ff879fe592",
+          "verified": true
+        },
+        {
+          "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-bulk/human-review.png",
+          "sha256": "6758310c3325f5c4ddc5f370e7d89ecc743c60d998d89684c98bdaeb32230bc8",
+          "verified": true
+        },
+        {
+          "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-bulk/human-approved-no-job.png",
+          "sha256": "98c6426663964d6184c520ec3ba6cc4383a889dec6c1cca4fa62e73654b22433",
+          "verified": true
+        }
+      ]
+    }
+  },
+  "realFailureConclusion": "missing collection is a verified prerequisite gap from supplied diagnostics, not the proven sole cause; real legacy outcomes remain unknown and protected",
+  "authorization": {
+    "realTestServerTouched": false,
+    "originalIntentsModified": false,
+    "realRiskApproved": false,
+    "realReplacementCreated": false,
+    "realCollectionCreated": false,
+    "realImportRetried": false,
+    "installedPluginCacheModified": false,
+    "workerRefreshed": false,
+    "gitCommitPushPr": false,
+    "publishedOrDeployed": false
+  },
+  "gaps": [
+    "1306 strict targets unknown; non-src collector limitation unchanged",
+    "server handshake is necessary only; FCV, all storage engines/shards and permissions are not certified",
+    "real OS owner verification remains test double",
+    "real SSH/worker and historical in-flight outcomes not tested",
+    "driver/network/write concern matrix outside recorded versions uses doubles",
+    "process-death locks remain blocked without age-based reclaim; power loss not certified",
+    "final snapshot browser UI not rerun; six historical browser artifact hashes independently verified",
+    "early overwritten Mongo attempt logs are not claimed as preserved raw evidence"
+  ],
+  "artifactRoot": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-execution",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "f62dad20d0d872fbaeeb0bedad53e86851dab43f5bc46531b5a8ac1cc52ffaba",
+      "bytes": 10119
+    },
+    {
+      "path": "testflow-freeze.json",
+      "sha256": "f18c3224dd5a61f100e7896bb3599845955ada0d157ddf658595b261cfb7377a",
+      "bytes": 944
+    },
+    {
+      "path": "bindings-final.json",
+      "sha256": "73c335dadf2cc42771d502f6e565de9b06aff9fd611a242729ce11a26d27ca9a",
+      "bytes": 11196
+    },
+    {
+      "path": "final-stages.json",
+      "sha256": "ce20c58bbf5fc49071631ed28932dbfc95d67bb5f6b08093d726abbf044aa6bb",
+      "bytes": 28898
+    },
+    {
+      "path": "final-testflow-jobs.json",
+      "sha256": "65c44b332d80a959c5ff83f68ddb17045abf64ec32c01e06ad147bb359526dde",
+      "bytes": 28860
+    },
+    {
+      "path": "final-pilot-evidence.json",
+      "sha256": "937da77be6d40788b38fe3a274f648e35889dee4e5981a36e332f1176a430de7",
+      "bytes": 21421
+    },
+    {
+      "path": "final-regression-evidence.json",
+      "sha256": "270f1417df5054a763a6c4f925000a585af8cff688947273d1d3087eb687bf4b",
+      "bytes": 28942
+    },
+    {
+      "path": "final-verification.json",
+      "sha256": "63697d7cb2f596ee76bf66b6d9619b809c73d49cad59a4c5c41f17c8dbaa3090",
+      "bytes": 328
+    },
+    {
+      "path": "native-final.tap",
+      "sha256": "3fe460c26220de939673710885e84e9c67734b79491d405c9bd6717dc5fcbd79",
+      "bytes": 108129
+    },
+    {
+      "path": "mongo-42.tap",
+      "sha256": "c9a072152d60cc7e9fdbbb2beb785404abb5d0e50a890a4f4d859683042b5e43",
+      "bytes": 640
+    },
+    {
+      "path": "mongo-44.tap",
+      "sha256": "b95afe13a6afdc6791c6674f3090be19d40a0160858df03cb39723c7b41d200c",
+      "bytes": 632
+    },
+    {
+      "path": "mongo-42-result.json",
+      "sha256": "e83086e5fc35d87efbc41948db858c4a66a60d6a72503bfcfc85413774065ff9",
+      "bytes": 876
+    },
+    {
+      "path": "mongo-44-result.json",
+      "sha256": "656fbc7398502e039380b72ba03657b3d344e839bc51b943132d6b95245d43d3",
+      "bytes": 876
+    },
+    {
+      "path": "prior-browser-verification.json",
+      "sha256": "475dc709fcc11c72bd109cb7344344b9bc412e6f7a08beee338ef220ba43cbf9",
+      "bytes": 1646
+    },
+    {
+      "path": "run-regression.sh",
+      "sha256": "9428233acac60525d02d72eecde6aecadc0cc1b0eac93009b4b0612b41e11228",
+      "bytes": 1517
+    },
+    {
+      "path": "run-mongo.py",
+      "sha256": "4c25d71a1836402d0bb0dbc670bd453993e71d56715bac0c0ce1fe4c49bfe6b6",
+      "bytes": 4305
+    }
+  ]
+}

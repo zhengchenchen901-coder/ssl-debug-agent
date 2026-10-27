@@ -207,8 +207,12 @@ test("new import protocol can retry exact pre-SSH rejection without a human risk
 
 import { importHarness } from "./helpers/import-fixture.js";
 test("partial import preparation continues the same batches and archives its terminal prefix evidence", async t => {
-  let closes = 0;
-  const h = importHarness({ cleanup: () => { if (++closes === 1) h.state.failConnect = true; } });
+  let injected = false;
+  // Preflight has its own read-only client. Inject at the business boundary:
+  // first batch manifest durably saved, before the second batch connects.
+  const h = importHarness({ cleanup: () => {
+    if (!injected && [...h.files.keys()].some(p => p.endsWith("/manifest.json"))) { injected = true; h.state.failConnect = true; }
+  } });
   const f = importRiskFixture(t, { harness: h }), p = f.approve(await f.prepare());
   const partial = await f.create(p); assert.equal(partial.result.status, "prepare_partial"); assert.equal(partial.result.batches.length, 1);
   assert.equal(f.inspect(p).state, "prepare_partial"); h.state.failConnect = false;

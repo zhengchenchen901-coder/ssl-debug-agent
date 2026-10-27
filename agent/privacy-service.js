@@ -1,3 +1,4 @@
+import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
 import { normalizeMongoImport } from "./mongodb-mutations.js";
 import { Worker } from "node:worker_threads";
 import path from "node:path";
@@ -84,7 +85,7 @@ async function bulkPrepareRequest(service, input, record, target, { instance, di
     notDispatched ||= !recovering && error.dispatchState === "not_dispatched";
     result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_BULK_FAILED",
       message: "Structured bulk preparation failed; inspect this exact protected intent.",
-      operationId: input.operationId, layer: error.layer, phase: error.phase, retriable: error.retriable } };
+      operationId: input.operationId, layer: error.layer, phase: error.phase, retriable: error.retriable, ...(error.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}) } };
   }
   const saved = await service.call("bulk_prepare_result", { ...input, bulkPrepare: record.bulkPrepare, result, notDispatched, unclaimed });
   if (!recovering && result?.ok === true && saved.state !== "complete") {
@@ -130,11 +131,11 @@ async function importPrepareRequest(service, input, record, target, { instance, 
         operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt });
     }
     result = createOutputGuard().sanitize(result).value;
-  } catch (error) { notDispatched = claimed && error.dispatchState === "not_dispatched"; result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_IMPORT_PREPARE_FAILED" } }; }
+  } catch (error) { notDispatched = claimed && error.dispatchState === "not_dispatched"; result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_IMPORT_PREPARE_FAILED", ...(error.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}) } }; }
   const saved = await service.call("import_prepare_result", { ...input, importPrepare: record.importPrepare, result, notDispatched, unclaimed });
   if (recovering) return view(saved, saved.state === "uncertain" ? "import_prepare_evidence_required" : undefined);
   return ["complete", "rejected_before_dispatch"].includes(saved.state) ? { ...result, intentId: input.id, intentState: saved.state } : {
-    ok: false, intentId: input.id, intentState: saved.state, error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED", causeCode: result.error?.code } };
+    ok: false, intentId: input.id, intentState: saved.state, error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED", causeCode: result.error?.code, diagnostic: result.error?.diagnostic } };
 }
 
 const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
@@ -193,6 +194,15 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     if (!current || current.enabled === false || target.endpoint !== origin || scope !== businessTargetScope(origin, current, target.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate(input.scope);
+  if (input.action === "outcome") {
+    const record = await service.call("inspect_operation", input);
+    if (record.executionProtocol === 2) {
+      // Never trust an MCP caller's successful result as execution proof. Fetch
+      // the exact worker receipt through the same reconciliation protocol.
+      return privacyRequest(service, { ...input, action: "recover_operation", mode: "reconcile", result: undefined },
+        { instance, origin, dispatch, preflight, historicalEvidence });
+    }
+  }
   if (input.action === "disposition") {
     const common = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
     const fields = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine"
@@ -277,7 +287,7 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     const record = await service.call("inspect_operation", input);
     const target = JSON.parse(input.scope);
     const view = (value, reason) => ({ ok: true, intentId: input.id, state: value.state, route: value.route,
-      attempt: (value.prepare || value.bulkPrepare || value.importPrepare)?.attempt, mutationId: value.prepare?.mutationId,
+      attempt: (value.prepare || value.bulkPrepare || value.importPrepare)?.attempt || value.executionAttempt, mutationId: value.prepare?.mutationId,
       legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason, recoveryCode: value.reconciliation?.code, ...(value.result ? { result: value.result } : {}) });
     if (input.action === "recover_operation") {
@@ -344,7 +354,7 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
       notDispatched = !recovering && error.dispatchState === "not_dispatched";
       result = { ok: false, error: { code: /^[A-Z][A-Z0-9_]{1,80}$/.test(error.code || "") ? error.code : "MONGODB_OPERATION_FAILED",
         message: "Structured MongoDB operation failed; inspect the error code and existing plan or job state.",
-        operationId: input.operationId, layer: error.layer, phase: error.phase, retriable: error.retriable } };
+        operationId: input.operationId, layer: error.layer, phase: error.phase, retriable: error.retriable, ...(error.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}) } };
     }
     const saved = await service.call("prepare_result", { ...input, prepare: record.prepare, result, notDispatched, fenced });
     return recovering ? view(saved, saved.state === "uncertain" ? "remote_evidence_unavailable" : fenced ? "old_attempt_fenced" : undefined)

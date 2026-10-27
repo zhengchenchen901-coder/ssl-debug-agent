@@ -1,0 +1,805 @@
+{
+  "pilotPrepare": {
+    "jobId": "ea3d1248-fc60-4403-9d84-732a339b1c2d",
+    "kind": "prepare",
+    "status": "ready",
+    "phase": "completed",
+    "completedFiles": null,
+    "totalFiles": null,
+    "completedCases": null,
+    "totalCases": null,
+    "workerAlive": false,
+    "failure": null,
+    "result": {
+      "stage": "execution-prepared",
+      "flowId": "06878a93-0d95-4558-ae92-fb5dc7a51813",
+      "runId": "470b5ff0-8e20-47ab-8ccc-893e28c6765f",
+      "purpose": "pilot",
+      "workflowId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+      "scopeId": "8ed8027b509ab21b03e63824a432727ca697aaa3d5dffd2d6dc365c7d7b96b95",
+      "selectionHash": "d2c7e6342e1a42ead06fdeb23bf3362243a8deae25a9351ed3b7ec58ba42397c",
+      "reuse": {
+        "build": "核验有效构建键后复用；生命周期独立执行",
+        "invalidation": [
+          "源码或补充资产变化需新计划并重验构建键",
+          "依赖、配置或执行器变化需重新预检"
+        ]
+      },
+      "projectId": "ssl-debug-agent",
+      "executable": true,
+      "files": 1,
+      "preflight": {
+        "runId": "5e96e206-caeb-40e5-8a61-b421441a71d0",
+        "status": "ready",
+        "evidenceHash": "c3e6fc01a92e01470a22c8baac7624b3d96fded080b5133d3addd963b32838f1",
+        "businessChecks": "not-declared",
+        "businessServiceDoubles": []
+      },
+      "environment": {
+        "isolation": "network-none-no-services",
+        "images": [
+          "sha256:f285f1a29f9bff2da01186c7c0bc190ac0050d0a66dc8769915331a813098e9b"
+        ],
+        "dependencies": {
+          "package:jest": "29.7.0",
+          "package:esbuild": "0.28.1",
+          "package:typescript": "5.9.3",
+          "package:istanbul-lib-coverage": "3.2.2",
+          "package:istanbul-lib-source-maps": "5.0.6",
+          "node": "v22.23.3",
+          "jest": "29.7.0",
+          "typescript": "5.9.3",
+          "sourceMaps": "5.0.6",
+          "coverage": "3.2.2",
+          "dependencyLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0"
+        },
+        "sourceLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0",
+        "lockMatch": true
+      },
+      "pathValidation": "binding-declared-runtime-pending",
+      "artifacts": {
+        "executablePlan": ".testflow/runs/470b5ff0-8e20-47ab-8ccc-893e28c6765f/executable-plan.json"
+      },
+      "manifestHash": "cade87fe4ff95821ca974781cd47ed644b77ae46f88acef335f37aaa063aecf8"
+    },
+    "progress": null,
+    "activeProgress": [],
+    "failureSummary": null,
+    "diagnostic": null,
+    "revision": "ec5d60a9bab0306f9c8ab6d6ea857f9aa5d71f7efaae2240102347fe4a51f9e5",
+    "changed": true,
+    "waitedMs": 4
+  },
+  "pilotExecute": {
+    "flowId": "06878a93-0d95-4558-ae92-fb5dc7a51813",
+    "jobId": "3ea67021-edfb-4689-92be-1af71d77a095",
+    "status": "queued",
+    "purpose": "pilot",
+    "workflowId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+    "projectId": "ssl-debug-agent",
+    "totalFiles": 1
+  },
+  "pilotEvidence": {
+    "schemaVersion": 1,
+    "selection": {
+      "failurePolicy": "stop",
+      "selected": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "blocked": 0,
+      "unexecutedAssetIds": []
+    },
+    "summary": {
+      "purpose": "pilot",
+      "selection": {
+        "selectedAssets": 1,
+        "completedAssetResults": 1,
+        "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+        "executedCases": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "excludedByPattern": 26
+      },
+      "targetCoverage": {
+        "scopeId": "8ed8027b509ab21b03e63824a432727ca697aaa3d5dffd2d6dc365c7d7b96b95",
+        "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+        "total": 1306,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 1306,
+        "byKind": {
+          "modified-block": {
+            "total": 983,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 983
+          },
+          "condition-outcome": {
+            "total": 226,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 226
+          },
+          "impacted-entry": {
+            "total": 4,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 4
+          },
+          "symbol-reference": {
+            "total": 9,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 9
+          },
+          "unexpanded-change": {
+            "total": 84,
+            "covered": 0,
+            "notCovered": 0,
+            "unknown": 84
+          }
+        },
+        "outOfScopeChanges": [],
+        "excludedEntryIds": [],
+        "outOfScopeChangeCount": 0,
+        "excludedEntryCount": 119
+      },
+      "operationCompletion": {
+        "total": 983,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 983,
+        "basis": "精确操作目标证据；函数/语句入口和测试通过不替代完成"
+      },
+      "relatedEntries": {
+        "total": 4,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 4,
+        "basis": "仅表示精确入口观测，不证明复杂操作完成"
+      },
+      "directModifiedFunctionEntries": {
+        "total": 2,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 2,
+        "modifiedFunctions": 52,
+        "basis": "直接修改函数中已规划的入口目标；没有入口目标的函数不冒认已观察"
+      },
+      "coverageInterpretation": {
+        "sourceCounters": "顶层 sourceCounters 分列源码语句/函数/分支，含失败尝试的独立观测；缺失文件不补零",
+        "strictTargets": "targetCoverage 保留完整计划分母及范围外/排除入口；成功检查点决定最终严格覆盖",
+        "whyCountersCanHitWhileUnknown": "源码计数只证明计数位置执行；非唯一映射、短路子操作、调用/await 完成或不支持语义仍 unknown",
+        "orderedPaths": "未采集有序 trace，入口或分支命中不能替代有序路径"
+      },
+      "unknownReasons": [
+        {
+          "reasonCode": "source-coverage-missing",
+          "count": 1294,
+          "category": "binding-or-collection",
+          "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例"
+        },
+        {
+          "reasonCode": "source-reference-missing",
+          "count": 12,
+          "category": "binding-or-collection",
+          "nextAction": "核验明确目标绑定、采集文件范围、固定输入和唯一 source map；未展开变化须重新构图规划，核验后再决定是否补用例"
+        }
+      ],
+      "environment": {
+        "dependencyPolicy": "exact-lock",
+        "lockMatch": true,
+        "serviceDoubles": [
+          {
+            "name": "synthetic-mongo-vm",
+            "verifies": "serialized helper protocol, exact batch identity, commit idempotency and rollback guards",
+            "doesNotVerify": "real MongoDB topology/driver, SSH transport, native OS owner verification or deployed worker"
+          }
+        ],
+        "serviceDoubleInventory": "declared-not-runtime-attested",
+        "runtimeCheckedServiceDoubles": [],
+        "businessPreflight": "not-declared",
+        "externalServices": "existing-test-doubles-and-network-egress-denied",
+        "notificationDelivery": "not-verified"
+      },
+      "pageValidation": "not-run-by-unit-adapter",
+      "deploymentValidation": "not-verified",
+      "orderedPathValidation": "not-observed-no-ordered-trace"
+    },
+    "timingSummary": {
+      "sessions": [
+        {
+          "runId": "6b9dfd2d-d90c-41ac-9784-89c702ffd4ce",
+          "scope": "attempt-session-including-failed-and-reused-files",
+          "timing": {
+            "hostWallMs": 3855,
+            "phases": [
+              {
+                "name": "fixed-input-validation",
+                "ms": 441,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "input-materialization",
+                "ms": 107,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "build-cache-acquisition",
+                "ms": 2,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "test-compile-cache-acquisition",
+                "ms": null,
+                "scope": "host",
+                "availability": "not-observed"
+              },
+              {
+                "name": "transform-cache-acquisition",
+                "ms": 1,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "resource-queue",
+                "ms": 2122,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "environment-startup",
+                "ms": 31,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "build",
+                "ms": 10,
+                "scope": "runner",
+                "availability": "observed"
+              },
+              {
+                "name": "supplemental-test-compile",
+                "ms": null,
+                "scope": "runner",
+                "availability": "not-observed"
+              },
+              {
+                "name": "jest-config-preflight",
+                "ms": null,
+                "scope": "runner",
+                "availability": "not-observed"
+              },
+              {
+                "name": "jest-execution",
+                "ms": 353,
+                "scope": "runner",
+                "availability": "observed"
+              },
+              {
+                "name": "source-map-mapping",
+                "ms": 20,
+                "scope": "runner",
+                "availability": "observed"
+              },
+              {
+                "name": "target-mapping",
+                "ms": 321,
+                "scope": "host",
+                "availability": "observed"
+              },
+              {
+                "name": "cleanup",
+                "ms": 90,
+                "scope": "host",
+                "availability": "observed"
+              }
+            ],
+            "files": [
+              {
+                "assetId": "7ccafdbf7ab6420d074066d6939a2b75801cb28da0e2499b47a3cef796d7595e",
+                "jestWallMs": 340,
+                "jestInitializationMs": 146,
+                "frameworkSetupMs": 55,
+                "testCollectionMs": 89,
+                "observedCaseWallMs": 30.806082999999944
+              }
+            ],
+            "additive": false,
+            "overlaps": [
+              {
+                "parent": "hostWallMs",
+                "children": "所有 host/runner 阶段"
+              },
+              {
+                "parent": "jest-execution",
+                "children": "Jest 初始化、setup、收集、用例事件及转换"
+              },
+              {
+                "parent": "observedCaseWallMs",
+                "children": "生命周期钩子、HTTP；并行/嵌套区间可能重叠"
+              }
+            ],
+            "meaning": "文件 Jest 墙钟之和不含完整准备/分析/排队成本；缓存锁获取含完整字节核验，不能全算作资源排队；null 不等于零，不相加估算端到端耗时"
+          },
+          "cache": {
+            "identity": {
+              "fullInput": "8cccfc93d410341feb31ffad901dfba0e8b3aa5d964b46f60695c2871a357b3e",
+              "buildInput": "source-jest-no-business-build-v1",
+              "testInput": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "transformInput": "8cccfc93d410341feb31ffad901dfba0e8b3aa5d964b46f60695c2871a357b3e",
+              "config": "b76e5bed964fd1f99e063255843f50b5fd0c17ec6b36b67666b3c7738fa96ea6",
+              "dependencies": "52a0898fb02358501ab5321fcade1a6acb85555b0b2b3f09c3f84a665b3289aa",
+              "runner": "f4f15d7f442d726d1baccd53d72173f03260d239976f0fc7014c8e1afae433e9",
+              "executor": "bd584b043fc64c122d4de09232b9cf53920897fb0ae74ce1f5f9b0a15a323e14",
+              "selection": "d2c7e6342e1a42ead06fdeb23bf3362243a8deae25a9351ed3b7ec58ba42397c"
+            },
+            "buildKey": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+            "testCompileKey": null,
+            "transformKey": "ada1079fbceef88369933d4293cd649b3e2c9266b39077164d4259580d266a7c",
+            "transformSeedKey": null,
+            "buildCacheHit": true,
+            "testCompileCacheHit": null,
+            "transformCacheHit": false,
+            "transformSeedReused": false,
+            "build": {
+              "key": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+              "hit": true,
+              "reason": "verified-key-and-complete-bytes"
+            },
+            "testCompile": {
+              "key": null,
+              "hit": null,
+              "reason": "disabled-or-not-applicable"
+            },
+            "transform": {
+              "key": "ada1079fbceef88369933d4293cd649b3e2c9266b39077164d4259580d266a7c",
+              "hit": false,
+              "reason": "key-changed-matching-cache-unavailable"
+            },
+            "transformSeed": {
+              "key": null,
+              "reused": false,
+              "basis": "not-reused"
+            },
+            "comparison": {
+              "sourceRunId": "1f2c45ba-5586-483a-9d45-f703ff39010b",
+              "sourceKind": "jest-unit-evidence",
+              "changedComponents": [
+                "fullInput",
+                "transformInput",
+                "selection"
+              ],
+              "basis": "verified-receipt"
+            },
+            "meaning": "key 固定实际输入、依赖/配置和执行器；miss 不单独证明首次冷启动；变化列表仅为身份差异，不推断全部重建原因"
+          },
+          "phaseTimings": {
+            "validationMs": 441,
+            "materializeMs": 107,
+            "buildWaitMs": 2,
+            "testCompileWaitMs": null,
+            "transformWaitMs": 1,
+            "targetMappingMs": 321,
+            "resourceWaitMs": 2122,
+            "environmentMs": 31,
+            "cleanupMs": 90,
+            "hostWallMs": 3855,
+            "materialize": 60,
+            "build": 10,
+            "test": 353,
+            "mapping": 20,
+            "file-completed": 38
+          }
+        }
+      ],
+      "preflight": {
+        "runId": "5e96e206-caeb-40e5-8a61-b421441a71d0",
+        "timing": {
+          "hostWallMs": 3350,
+          "phases": [
+            {
+              "name": "fixed-input-validation",
+              "ms": 514,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "input-materialization",
+              "ms": 178,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build-cache-acquisition",
+              "ms": 1,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "test-compile-cache-acquisition",
+              "ms": null,
+              "scope": "host",
+              "availability": "not-observed"
+            },
+            {
+              "name": "transform-cache-acquisition",
+              "ms": 0,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "resource-queue",
+              "ms": 2133,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "environment-startup",
+              "ms": 39,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "build",
+              "ms": 10,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "supplemental-test-compile",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "jest-config-preflight",
+              "ms": 47,
+              "scope": "runner",
+              "availability": "observed"
+            },
+            {
+              "name": "jest-execution",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "source-map-mapping",
+              "ms": null,
+              "scope": "runner",
+              "availability": "not-observed"
+            },
+            {
+              "name": "target-mapping",
+              "ms": 0,
+              "scope": "host",
+              "availability": "observed"
+            },
+            {
+              "name": "cleanup",
+              "ms": 89,
+              "scope": "host",
+              "availability": "observed"
+            }
+          ],
+          "files": [],
+          "additive": false,
+          "overlaps": [
+            {
+              "parent": "hostWallMs",
+              "children": "所有 host/runner 阶段"
+            },
+            {
+              "parent": "jest-execution",
+              "children": "Jest 初始化、setup、收集、用例事件及转换"
+            },
+            {
+              "parent": "observedCaseWallMs",
+              "children": "生命周期钩子、HTTP；并行/嵌套区间可能重叠"
+            }
+          ],
+          "meaning": "文件 Jest 墙钟之和不含完整准备/分析/排队成本；缓存锁获取含完整字节核验，不能全算作资源排队；null 不等于零，不相加估算端到端耗时"
+        },
+        "cache": {
+          "identity": {
+            "fullInput": "8cccfc93d410341feb31ffad901dfba0e8b3aa5d964b46f60695c2871a357b3e",
+            "buildInput": "source-jest-no-business-build-v1",
+            "testInput": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "transformInput": "8cccfc93d410341feb31ffad901dfba0e8b3aa5d964b46f60695c2871a357b3e",
+            "config": "b76e5bed964fd1f99e063255843f50b5fd0c17ec6b36b67666b3c7738fa96ea6",
+            "dependencies": "52a0898fb02358501ab5321fcade1a6acb85555b0b2b3f09c3f84a665b3289aa",
+            "runner": "f4f15d7f442d726d1baccd53d72173f03260d239976f0fc7014c8e1afae433e9",
+            "executor": "bd584b043fc64c122d4de09232b9cf53920897fb0ae74ce1f5f9b0a15a323e14",
+            "selection": "d2c7e6342e1a42ead06fdeb23bf3362243a8deae25a9351ed3b7ec58ba42397c"
+          },
+          "buildKey": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+          "testCompileKey": null,
+          "transformKey": null,
+          "transformSeedKey": null,
+          "buildCacheHit": true,
+          "testCompileCacheHit": null,
+          "transformCacheHit": null,
+          "transformSeedReused": null,
+          "build": {
+            "key": "7c54aaba54e1f2d1e536b13d76984c426f5de6a334b815cde2f7ffa5224e5096",
+            "hit": true,
+            "reason": "verified-key-and-complete-bytes"
+          },
+          "testCompile": {
+            "key": null,
+            "hit": null,
+            "reason": "disabled-or-not-applicable"
+          },
+          "transform": {
+            "key": null,
+            "hit": null,
+            "reason": "disabled-or-not-applicable"
+          },
+          "transformSeed": {
+            "key": null,
+            "reused": null,
+            "basis": "not-reused"
+          },
+          "comparison": {
+            "sourceRunId": null,
+            "sourceKind": null,
+            "changedComponents": null,
+            "basis": "no-comparable-identity"
+          },
+          "meaning": "key 固定实际输入、依赖/配置和执行器；miss 不单独证明首次冷启动；变化列表仅为身份差异，不推断全部重建原因"
+        }
+      },
+      "staticPhases": [
+        {
+          "stage": "analysis",
+          "runId": "82d035bd-d4c2-4806-91c9-33d6c983a592",
+          "metrics": {
+            "phasesMs": {
+              "snapshot": 168.5103329999838,
+              "indexes": 7548.007249999791,
+              "historical-changes": 226.642417000141,
+              "impact": 331.5910829999484
+            },
+            "totalMs": 8969.276457999833,
+            "peakRssBytes": 1760641024,
+            "heapUsedBytes": 784100944
+          },
+          "basis": "stage-manifest-observation-excludes-final-manifest-write",
+          "usage": "输入来源成本；复用输入不等于本次重新分析"
+        },
+        {
+          "stage": "graph",
+          "runId": "21116467-f624-4156-961e-59adc52bee61",
+          "metrics": {
+            "phasesMs": {
+              "load-inputs": 1036.5716669999529,
+              "functions": 4735.747041000053,
+              "link-evidence": 13.381250000093132
+            },
+            "totalMs": 6189.727916999953,
+            "peakRssBytes": 1760641024,
+            "heapUsedBytes": 592275120
+          },
+          "basis": "stage-manifest-observation-excludes-final-manifest-write",
+          "usage": "输入来源成本；复用输入不等于本次重新分析"
+        },
+        {
+          "stage": "planning",
+          "runId": "49d3fb46-1d0f-49fd-b46f-a34c82b55489",
+          "metrics": {
+            "phasesMs": {
+              "load-graph": 597.9960000000428,
+              "targets-assets": 105.35541599988937,
+              "search": 100.69841700000688,
+              "bindings": 0.1825000001117587
+            },
+            "totalMs": 831.3751250000205,
+            "peakRssBytes": 1760641024,
+            "heapUsedBytes": 248660464
+          },
+          "basis": "stage-manifest-observation-excludes-final-manifest-write",
+          "usage": "输入来源成本；复用输入不等于本次重新分析"
+        }
+      ],
+      "taskEndToEndMs": null,
+      "files": [
+        {
+          "assetId": "7ccafdbf7ab6420d074066d6939a2b75801cb28da0e2499b47a3cef796d7595e",
+          "runId": "6b9dfd2d-d90c-41ac-9784-89c702ffd4ce",
+          "file": "verification/import-execution.test.js",
+          "jestWallMs": 340,
+          "caseDurationMs": 30,
+          "observedCaseWallMs": 30.806082999999944,
+          "caseTimingCompleteness": "complete",
+          "collectionUntilFirstCaseMs": 144,
+          "jestInitializationMs": 146,
+          "frameworkSetupMs": 55,
+          "testCollectionMs": 89,
+          "runtimeArchitecture": "arm64",
+          "transformCalls": 28,
+          "seedPasswordCache": null,
+          "detailedTimingsObserved": false
+        }
+      ],
+      "jestWallMs": 340,
+      "observedCaseWallMs": 30.806082999999944,
+      "actualTransformCalls": 28,
+      "meaning": "逐文件墙钟之和；并行时不等于任务墙钟。事件墙钟包含钩子，细分区间可能重叠。",
+      "totalSessions": 1,
+      "sessionPagination": {
+        "offset": 0,
+        "limit": 20,
+        "hasMore": false
+      }
+    },
+    "failureSummary": {
+      "totalFailedCases": 0,
+      "files": [],
+      "omittedFiles": 0,
+      "limits": {
+        "files": 10,
+        "casesPerFile": 10
+      },
+      "scope": "all-verified-attempts-including-historical-failures"
+    },
+    "sourceCounters": {
+      "files": [],
+      "mappedFiles": 0,
+      "missingFiles": 17,
+      "conflictingFiles": 0,
+      "statements": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "functions": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "branches": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "denominator": "仅已映射文件的 Istanbul 源码计数器；缺失文件保留 unknown，不等于修改操作完成或有序路径覆盖",
+      "observationBasis": "latest-file-evidence-including-failed-attempts"
+    },
+    "coverageTasks": {
+      "total": 1306,
+      "unknown": 1306,
+      "notCovered": 0,
+      "artifact": ".testflow/jobs/3ea67021-edfb-4689-92be-1af71d77a095/coverage-tasks.json",
+      "hash": "a4e618c6475a69995bf134be0ff1fc40d70dee0ed02d4581b111b04a734241dc",
+      "byAction": {
+        "add-test": 0,
+        "binding-or-collection": 1306,
+        "instrumentation-or-semantics": 0,
+        "inspect-evidence": 0
+      }
+    },
+    "attempts": [],
+    "jobId": "3ea67021-edfb-4689-92be-1af71d77a095",
+    "projectId": "ssl-debug-agent",
+    "status": "passed",
+    "completedFiles": 1,
+    "totalFiles": 1,
+    "passed": 1,
+    "failed": 0,
+    "coveredTargetIds": [],
+    "targetCoverage": [],
+    "unknownReasons": {
+      "source-coverage-missing": 1294,
+      "source-reference-missing": 12
+    },
+    "unknownTargets": 1306,
+    "uncoveredTargets": 0,
+    "pathValidation": "not-observed-no-ordered-trace",
+    "evidence": [],
+    "attemptSummary": {
+      "total": 1,
+      "failed": 0,
+      "blocked": 0
+    },
+    "pagination": {
+      "offset": 0,
+      "limit": 100,
+      "totalTargets": 1306,
+      "totalEvidence": 1,
+      "totalAttempts": 1,
+      "hasMore": true
+    },
+    "reportHash": "7512764c985d8ac8815e5c7725f5e27ed0809c76cb52dbd8577f1cb895e18c68",
+    "artifact": ".testflow/jobs/3ea67021-edfb-4689-92be-1af71d77a095/job-evidence.json"
+  },
+  "regressionPrepare": {
+    "jobId": "001b85d4-f08f-488b-847c-9ac7b24b2509",
+    "kind": "prepare",
+    "status": "ready",
+    "phase": "completed",
+    "completedFiles": null,
+    "totalFiles": null,
+    "completedCases": null,
+    "totalCases": null,
+    "workerAlive": false,
+    "failure": null,
+    "result": {
+      "stage": "execution-prepared",
+      "flowId": "8eaa14df-d2b1-4535-b03b-497afcd67416",
+      "runId": "c63edc6c-e283-4787-858f-ef92051cd936",
+      "purpose": "regression",
+      "workflowId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+      "scopeId": "8ed8027b509ab21b03e63824a432727ca697aaa3d5dffd2d6dc365c7d7b96b95",
+      "selectionHash": "c8a692e30aa21e6cf67c2b4ef40b75be30a84b15ec7d27ec426690400ab1ee20",
+      "reuse": {
+        "build": "核验有效构建键后复用；生命周期独立执行",
+        "invalidation": [
+          "源码或补充资产变化需新计划并重验构建键",
+          "依赖、配置或执行器变化需重新预检"
+        ]
+      },
+      "projectId": "ssl-debug-agent",
+      "executable": true,
+      "files": 2,
+      "preflight": {
+        "runId": "3091c4bd-b04a-4f1b-82fc-531fff0f90cb",
+        "status": "ready",
+        "evidenceHash": "1cf99aa4ed7ecfdb4085973ba61e845d283803c44d1a185691acadf007e5bc3c",
+        "businessChecks": "not-declared",
+        "businessServiceDoubles": []
+      },
+      "environment": {
+        "isolation": "network-none-no-services",
+        "images": [
+          "sha256:f285f1a29f9bff2da01186c7c0bc190ac0050d0a66dc8769915331a813098e9b"
+        ],
+        "dependencies": {
+          "package:jest": "29.7.0",
+          "package:esbuild": "0.28.1",
+          "package:typescript": "5.9.3",
+          "package:istanbul-lib-coverage": "3.2.2",
+          "package:istanbul-lib-source-maps": "5.0.6",
+          "node": "v22.23.3",
+          "jest": "29.7.0",
+          "typescript": "5.9.3",
+          "sourceMaps": "5.0.6",
+          "coverage": "3.2.2",
+          "dependencyLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0"
+        },
+        "sourceLockHash": "dabfb335b852e36da7dc4173c0da7a8dad225d4765fc8593a8990efeb2f735d0",
+        "lockMatch": true
+      },
+      "pathValidation": "binding-declared-runtime-pending",
+      "artifacts": {
+        "executablePlan": ".testflow/runs/c63edc6c-e283-4787-858f-ef92051cd936/executable-plan.json"
+      },
+      "manifestHash": "40bb309f9ec8432b51e3665c4e34da8d67c06c17a731d134630d5ce4005b4d78"
+    },
+    "progress": null,
+    "activeProgress": [],
+    "failureSummary": null,
+    "diagnostic": null,
+    "revision": "ad38504143749ec0b419039fae8b4a4ea824d178b56fecae8bf353c191b05965",
+    "changed": true,
+    "waitedMs": 6
+  },
+  "regressionExecute": {
+    "flowId": "8eaa14df-d2b1-4535-b03b-497afcd67416",
+    "jobId": "7bb9685c-ba13-4156-bed6-5b0567cdc8d6",
+    "status": "queued",
+    "purpose": "regression",
+    "workflowId": "60550c46eaf623ff88719b5d1b8c99c9f5f417c5b68e447eedfcfa6a9e304ece",
+    "projectId": "ssl-debug-agent",
+    "totalFiles": 2
+  }
+}

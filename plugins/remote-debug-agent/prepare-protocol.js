@@ -34,3 +34,5 @@ export function importBatchIdentity(plan) {
     batchIndex: batch.batchIndex, documentCount: batch.documents.length,
     requestDigest: prepareRequestDigest(batch) }));
 }
+
+export const SAFE_MUTATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;

@@ -1,0 +1,37 @@
+{
+  "priorSnapshotId": "80361fce479fecc1eac21f8a83b147b09b835c0a91bd7ef9008c2eec20313668",
+  "historicalOnly": true,
+  "nativeOwnerDialog": "test double",
+  "artifacts": [
+    {
+      "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-import.json",
+      "sha256": "91b910e894f22aab740d6b77b73e9e60b755af33d23c6e76d4651db804a87033",
+      "verified": true
+    },
+    {
+      "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-bulk.json",
+      "sha256": "9b05704704d7ea12e3e04e6d12a99c045eac0d2b8856df44ee05cca7fec29918",
+      "verified": true
+    },
+    {
+      "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-import/human-review.png",
+      "sha256": "d4d88bbe2db10cbc95486fe52a3dbdf608b9796c30bf4d0db9cc3cc93d3b2355",
+      "verified": true
+    },
+    {
+      "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-import/human-approved-no-job.png",
+      "sha256": "d31783986c5948881a35c2bf512f43f1fdd7daebbbe64ac5e13fd1ff879fe592",
+      "verified": true
+    },
+    {
+      "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-bulk/human-review.png",
+      "sha256": "6758310c3325f5c4ddc5f370e7d89ecc743c60d998d89684c98bdaeb32230bc8",
+      "verified": true
+    },
+    {
+      "path": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-safety/browser-bulk/human-approved-no-job.png",
+      "sha256": "98c6426663964d6184c520ec3ba6cc4383a889dec6c1cca4fa62e73654b22433",
+      "verified": true
+    }
+  ]
+}

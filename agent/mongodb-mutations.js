@@ -1,8 +1,9 @@
+import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
 import { IMPORT_CONTROL_SCRIPT } from "./mongodb-import-control-runtime.js";
 import { importBatchIdentity, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { MONGODB_CODEC_SCRIPT } from "./mongodb-codec.js";
 import { MONGODB_TECHNICAL_RECEIPTS_COLLECTION, MONGODB_TTL_POLICY_SCRIPT } from "./mongodb-ttl-policy.js";
-import { isPrepareTicket } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { isPrepareTicket, SAFE_MUTATION_ID_PATTERN } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { normalizeMongoBulkStorage, DEFAULT_SANDBOX_DATABASE } from "./mongodb-bulk.js";
 import { createHash, randomUUID } from "node:crypto";
 import posixPath from "node:path/posix";
@@ -49,7 +50,6 @@ const SAFE_FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*
 // 数组下标只接受规范十进制，禁止位置通配符和超大下标。
 const SAFE_MUTATION_PATH_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,4}))*$/;
 const SAFE_INDEX_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
-const SAFE_MUTATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_INDEX_DIRECTIONS = new Set([-1, 1]);
 const ALLOWED_UPDATE_OPERATORS = new Set(["$set", "$unset", "$inc"]);
 const ALLOWED_EJSON_KEYS = new Set([
@@ -687,6 +687,12 @@ function normalizeIndexOptions(value = {}) {
   return options;
 }
 
+export function normalizeMongoCollectionCreate(input = {}, config = {}, options = {}) {
+  if (input.operation !== undefined && input.operation !== "createCollection") throw mutationError("only createCollection is supported", "INVALID_MONGODB_COLLECTION_OPERATION");
+  if (input.options !== undefined) throw mutationError("collection options are not supported", "INVALID_MONGODB_COLLECTION_OPTIONS");
+  return { ...normalizeCommonMutation(input, normalizeMongoMutationConfig(config), options.operationId, "collection"), operation: "createCollection", riskLevel: "high" };
+}
+
 export function normalizeMongoIndexChange(input = {}, config = {}, options = {}) {
   const normalizedConfig = normalizeMongoMutationConfig(config);
   const indexOptions = normalizeIndexOptions(input.options);
@@ -771,6 +777,20 @@ const __request = ${safeLiteral(request)};
 const __marker = ${safeLiteral(MONGODB_RESULT_MARKER)};
 const __schemaVersion = ${MONGODB_MUTATION_SCHEMA_VERSION};
 const __maxTimeMs = 15000;
+let __diagnosticPhase = "validation";
+let __serverWireVersion;
+let __driverVersion;
+function __diagnostic(error) {
+  const number = Number.isSafeInteger(error.code) ? error.code : undefined;
+  const category = error.writeConcernError || error.name === "MongoWriteConcernError" || [64, 79, 100].includes(number) ? "write_concern"
+    : number === 13 ? "permission" : number === 11000 ? "duplicate_key"
+    : [26, 48].includes(number) ? "namespace" : [20, 263, 303].includes(number) ? "transaction_support"
+    : ["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED"].includes(error.code) || ["MongoNetworkError", "MongoNetworkTimeoutError", "MongoServerSelectionError"].includes(error.name) ? "network"
+    : number !== undefined ? "server" : "client_or_control";
+  return { phase: __diagnosticPhase, category, databaseCode: number,
+    filesystemCode: ["EACCES", "EPERM", "EIO", "EROFS", "ENOSPC", "ELOOP", "EINVAL", "EMFILE", "ENFILE", "ENOTDIR"].includes(error.code) ? error.code : undefined,
+    serverMaxWireVersion: __serverWireVersion, driverVersion: __driverVersion };
+}
 let __bson;
 try {
   __bson = require(require.resolve("bson", { paths: [__driverPath] }));
@@ -958,11 +978,14 @@ function __summary(manifest) {
     storageStatus: manifest.storageStatus,
     execution: manifest.execution,
     indexRecovery: manifest.indexRecovery,
+    importExecution: manifest.importExecution,
+    diagnostic: manifest.diagnostic,
+    collectionReceipt: manifest.collectionReceipt,
     ...(manifest.kind === "index" ? { rollbackRestoresDocuments: false } : {}),
     ...(manifest.kind === "import" ? {
       importId: manifest.request.importId,
       batchIndex: manifest.request.batchIndex,
-      retryable: manifest.status === "commit_retryable" || manifest.status === "rollback_retryable",
+      retryable: ["commit_retryable", "rollback_retryable"].includes(manifest.status) && !!manifest.importExecution && manifest.importExecution.stage === "safe_terminal",
     } : {}),
     journalPath: __path.join(__journalRoot, manifest.mutationId),
   };
@@ -1028,12 +1051,17 @@ async function __loadClient() {
   const getPath = (value, keyPath) => keyPath.split(".").reduce((current, key) => current == null ? undefined : current[key], value);
   const uri = getPath(profile, __uriKey);
   if (typeof uri !== "string" || !uri) __fail("MONGODB_URI_NOT_FOUND", "MongoDB URI was not found in the configured profile");
+  __diagnosticPhase = "connect";
   const driver = require(__driverPath);
+  try { const v = require(__path.join(__driverPath, "package.json")).version;
+    if (/^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$/.test(v)) __driverVersion = v;
+  } catch (_versionError) {}
   const MongoClient = driver.MongoClient || (driver.default && driver.default.MongoClient);
   if (!MongoClient) __fail("MONGODB_DRIVER_INVALID", "MongoDB driver does not export MongoClient");
   const client = new MongoClient(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    monitorCommands: true,
     readPreference: "primary",
     serverSelectionTimeoutMS: __maxTimeMs,
   });
@@ -1044,6 +1072,114 @@ async function __loadClient() {
     throw error;
   }
   return { client };
+}
+
+// Server handshake facts, never a local mongosh or driver version. Require an
+// existing ordinary collection on every supported server, including 4.4+.
+async function __importPreconditions(client, request) {
+  __diagnosticPhase = "transaction_preflight";
+  const hello = await client.db(request.database).command({ isMaster: 1, maxTimeMS: __maxTimeMs }, { readPreference: "primary" });
+  __serverWireVersion = Number.isSafeInteger(hello.maxWireVersion) ? hello.maxWireVersion : undefined;
+  const sharded = hello.msg === "isdbgrid";
+  if (!Number.isSafeInteger(__serverWireVersion) || __serverWireVersion < (sharded ? 8 : 7) ||
+      (!sharded && !hello.setName) || !Number.isFinite(hello.logicalSessionTimeoutMinutes)) {
+    __fail("MONGODB_TRANSACTIONS_UNSUPPORTED", "server does not advertise the required transaction topology and sessions");
+  }
+  __diagnosticPhase = "collection_preflight";
+  const entries = await client.db(request.database).listCollections({ name: request.collection }, { nameOnly: false, maxTimeMS: __maxTimeMs }).toArray();
+  if (!entries.length) __fail("MONGODB_COLLECTION_REQUIRED", "prepare an explicit collection creation separately before import");
+  if (entries.length !== 1 || entries[0].type !== "collection" || entries[0].options &&
+      (entries[0].options.capped || entries[0].options.timeseries)) __fail("MONGODB_COLLECTION_UNSUPPORTED", "import requires an ordinary non-capped collection");
+  const uuid = entries[0].info && entries[0].info.uuid;
+  if (!uuid) __fail("MONGODB_COLLECTION_IDENTITY_REQUIRED", "collection UUID must be observable before import");
+  return __encode(uuid);
+}
+// Driver abortTransaction may deliberately swallow server/network failures.
+// Observe only command metadata for this exact session/transaction; never retain
+// command documents, errmsg or raw reply/error objects in receipts or logs.
+function __transactionAcknowledgements(client, session) {
+  if (typeof client.on !== "function" || typeof client.removeListener !== "function" || !session.id)
+    __fail("MONGODB_TRANSACTION_ACK_UNAVAILABLE", "driver command acknowledgements are required");
+  let transaction;
+  const pending = new Map();
+  const proof = { abort: false, commit: false };
+  const started = function(event) {
+    const cmd = event.command;
+    if (!cmd || !cmd.lsid || cmd.txnNumber === undefined || __hash(__encode(cmd.lsid)) !== __hash(__encode(session.id))) return;
+    const number = __hash(__encode(cmd.txnNumber));
+    if (!transaction) transaction = number;
+    if (number !== transaction || !["abortTransaction", "commitTransaction"].includes(event.commandName)) return;
+    pending.set(event.requestId, event.commandName);
+  };
+  const succeeded = function(event) {
+    const kind = pending.get(event.requestId); pending.delete(event.requestId);
+    if (kind !== event.commandName || !event.reply || Number(event.reply.ok) !== 1 || event.reply.writeConcernError ||
+        event.reply.writeConcernErrors && event.reply.writeConcernErrors.length) return;
+    const evidence = { kind: kind === "abortTransaction" ? "abort_acknowledged" : "commit_acknowledged",
+      sessionDigest: __hash(__encode(session.id)), transactionDigest: transaction, requestId: event.requestId };
+    if (kind === "abortTransaction") { proof.abort = true; proof.abortEvidence = evidence; }
+    if (kind === "commitTransaction") { proof.commit = true; proof.commitEvidence = evidence; }
+  };
+  const failed = function(event) {
+    const kind = pending.get(event.requestId); pending.delete(event.requestId);
+    // Positive server NoSuchTransaction before any commit was sent proves the
+    // exact transaction was terminated, even when the driver suppresses it.
+    if (kind === "abortTransaction" && event.commandName === kind && event.failure &&
+        ["MongoServerError", "MongoError"].includes(event.failure.name) && event.failure.code === 251 && !event.failure.writeConcernError) {
+      proof.abort = true; proof.abortEvidence = { kind: "server_no_such_transaction", sessionDigest: __hash(__encode(session.id)), transactionDigest: transaction, requestId: event.requestId };
+    }
+  };
+  client.on("commandStarted", started); client.on("commandSucceeded", succeeded); client.on("commandFailed", failed);
+  proof.close = function() { client.removeListener("commandStarted", started); client.removeListener("commandSucceeded", succeeded); client.removeListener("commandFailed", failed); };
+  return proof;
+}
+function __importReceiptBound(manifest, receipt, ticket) {
+  return receipt && receipt.version === 2 && receipt.mutationId === manifest.mutationId && receipt.planHash === manifest.planHash &&
+    receipt.database === manifest.request.database && receipt.collection === manifest.request.collection &&
+    __hash(receipt.source) === __hash({ configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey }) &&
+    __hash(receipt.execution) === __hash(ticket);
+}
+function __beginImportExecution(manifest, rollback) {
+  const ticket = __request.execution;
+  let previous = manifest.importExecution;
+  if (previous && (!ticket || ticket.version !== 2)) __fail("MONGODB_EXECUTION_IDENTITY_INVALID", "modern execution identity required for this journal");
+  if (previous && rollback && manifest.status === "committed" && previous.mode === "commit" && previous.stage === "acknowledged") {
+    __writeJsonAtomic("execution-" + previous.execution.intentId + "-" + previous.execution.attempt + ".json", manifest);
+    previous = null;
+  }
+  // Raw/legacy callers retain normal success behavior, but cannot acquire a
+  // modern recovery proof. Legacy retryable journals are deliberately fenced.
+  if (["commit_retryable", "rollback_retryable"].includes(manifest.status) && !previous) __fail("MONGODB_EXECUTION_EVIDENCE_REQUIRED", "legacy retryable state has no terminal receipt");
+  if (previous) {
+    if (__hash(previous.execution) === __hash(ticket)) __fail("MONGODB_EXECUTION_ATTEMPT_CLOSED", "an execution attempt is never dispatched twice");
+    if (!ticket || ticket.version !== 2 || !__importReceiptBound(manifest, previous, previous.execution) ||
+        previous.stage !== "safe_terminal" || ticket.intentId !== previous.execution.intentId || ticket.attempt !== previous.execution.attempt + 1 ||
+        previous.mode !== (rollback ? "rollback" : "commit")) __fail("MONGODB_EXECUTION_EVIDENCE_REQUIRED", "exact prior safe termination is required");
+    __writeJsonAtomic("execution-" + previous.execution.intentId + "-" + previous.execution.attempt + ".json", manifest);
+  }
+  if (!ticket || ticket.version !== 2) return;
+  if (ticket.mutationId !== manifest.mutationId || ticket.planHash !== manifest.planHash || !previous && ticket.attempt !== 1)
+    __fail("MONGODB_EXECUTION_IDENTITY_INVALID", "execution ticket does not bind this plan");
+  manifest.importExecution = { version: 2, execution: ticket, mutationId: manifest.mutationId, planHash: manifest.planHash,
+    database: manifest.request.database, collection: manifest.request.collection, mode: rollback ? "rollback" : "commit",
+    source: { configPath: __configPath, driverPath: __driverPath, profile: __profileName, uriKey: __uriKey },
+    confirmation: rollback ? "确认回滚" : "确认执行", stage: "started", at: new Date().toISOString() };
+}
+function __importStage(manifest, stage, evidence) {
+  if (manifest.importExecution) { manifest.importExecution.stage = stage; manifest.importExecution.at = new Date().toISOString();
+    if (evidence) manifest.importExecution.outcomeEvidence = evidence;
+  }
+  __writeJsonAtomic("manifest.json", manifest);
+}
+function __importFailure(manifest, rollback, safe, error, evidence = { kind: "before_transaction" }) {
+  manifest.status = safe ? (rollback ? "rollback_retryable" : "commit_retryable") : (rollback ? "rollback_unknown" : "commit_unknown");
+  manifest.diagnostic = __diagnostic(error);
+  // A known commit acknowledgement survives any later journal/log failure.
+  if (manifest.importExecution && manifest.importExecution.stage !== "acknowledged") {
+    manifest.importExecution.stage = safe ? "safe_terminal" : "unknown";
+    if (safe) manifest.importExecution.outcomeEvidence = evidence;
+  }
+  __writeJsonAtomic("manifest.json", manifest);
 }
 
 function __findOptions(session) {
@@ -1120,6 +1256,7 @@ function __planHash(manifest) {
     before: manifest.before,
     beforeIndex: manifest.beforeIndex,
     beforeOperations: manifest.beforeOperations,
+    ...(manifest.collectionIdentity ? { collectionIdentity: manifest.collectionIdentity } : {}),
     ...(manifest.riskLineage ? { riskLineage: manifest.riskLineage, orderedRequest: JSON.stringify(manifest.request) } : {}),
     ...(manifest.prepare ? { prepare: manifest.prepare, prepareSource: manifest.prepareSource, orderedRequest: JSON.stringify(manifest.request) } : {}),
   });
@@ -1174,7 +1311,7 @@ async function __prepare() {
       kind: __request.kind,
       request,
       status: "planned",
-      rollbackMode: __request.kind === "index"
+      rollbackMode: __request.kind === "collection" ? "retained_non_rollbackable" : __request.kind === "index"
         ? "compensating"
         : __request.kind === "bulk_storage"
           ? "retained_non_rollbackable"
@@ -1194,7 +1331,10 @@ async function __prepare() {
       changedFields: [],
     };
 
-    if (__request.kind === "index") {
+    if (__request.kind === "collection") {
+      await __collectionPreconditions(client, request);
+      manifest.affectedCount = 1;
+    } else if (__request.kind === "index") {
       const indexes = await __readIndexes(collection);
       const existing = __indexByName(indexes, request.name);
       if (request.operation === "createIndex") {
@@ -1243,6 +1383,7 @@ async function __prepare() {
       manifest.affectedCount = 1;
       manifest.changedFields = ["expiresAt"];
     } else if (__request.kind === "import") {
+      manifest.collectionIdentity = await __importPreconditions(client, request);
       const documents = __decode(request.documents);
       const existing = await __findDocs(collection, { _id: { $in: request.documents.map((item) => item._id) } }, 1);
       if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
@@ -1326,7 +1467,7 @@ async function __prepareImportPlan() {
         collection: plan.collection, affectedCount: plan.affectedCount, batchCount: plan.batches.length,
         atomicity: "per_batch", status: "prepare_partial", batches: results, requiresConfirmation: true,
         failedBatch: { batchIndex: batch.batchIndex, mutationId: batch.mutationId,
-          code: error.code || "MONGODB_IMPORT_PREPARE_FAILED" } };
+          code: typeof error.code === "string" && /^MONGODB_[A-Z0-9_]{1,70}$/.test(error.code) ? error.code : "MONGODB_IMPORT_PREPARE_FAILED", diagnostic: __diagnostic(error) } };
     } finally {
       releaseLock();
     }
@@ -1390,15 +1531,24 @@ async function __commitDocument(manifest, client, collection) {
 // an uncertain commit: stop for inspection instead of risking an unsafe rollback.
 async function __runImportTransaction(manifest, client, collection, rollback) {
   if (!__bson || !__bson.EJSON || !__bson.EJSON.parse || !__bson.EJSON.stringify) __fail("MONGODB_IMPORT_BSON_REQUIRED", "bulk import requires BSON EJSON support from the configured driver");
-  const session = client.startSession();
-  let committing = false;
+  let session, acknowledgements, started = false, committing = false;
   try {
+    const collectionIdentity = await __importPreconditions(client, manifest.request);
+    if (!manifest.collectionIdentity || __hash(collectionIdentity) !== __hash(manifest.collectionIdentity)) __fail("MONGODB_COLLECTION_IDENTITY_CHANGED", "collection identity differs from the prepared plan");
+    __diagnosticPhase = "transaction_start";
+    session = client.startSession();
+    acknowledgements = __transactionAcknowledgements(client, session);
     session.startTransaction({ readPreference: "primary" });
+    started = true;
+    __diagnosticPhase = rollback ? "transaction_rollback" : "transaction_write";
     const documents = __decode(manifest.request.documents);
     const filter = { _id: { $in: documents.map((item) => item._id) } };
     const encodedFilter = { _id: { $in: manifest.request.documents.map((item) => item._id) } };
     if (rollback) {
       const current = await __findDocs(collection, encodedFilter, documents.length + 1, session);
+      const currentIdentity = await __importPreconditions(client, manifest.request);
+      if (__hash(currentIdentity) !== __hash(manifest.collectionIdentity)) __fail("MONGODB_COLLECTION_IDENTITY_CHANGED", "collection changed before rollback acquired its read lock");
+      __diagnosticPhase = "transaction_rollback";
       const expected = new Map((manifest.afterHashes || []).map((item) => [__hash(item.id), item.hash]));
       if (current.length !== documents.length || current.some((item) => expected.get(__hash(__encode(item._id))) !== __documentHash(item))) {
         __fail("MONGODB_ROLLBACK_CONFLICT", "import targets changed after commit");
@@ -1407,6 +1557,9 @@ async function __runImportTransaction(manifest, client, collection, rollback) {
       if ((result.deletedCount != null ? result.deletedCount : result.n) !== documents.length) __fail("MONGODB_ROLLBACK_CONFLICT", "import targets could not all be removed");
     } else {
       const existing = await __findDocs(collection, encodedFilter, 1, session);
+      const currentIdentity = await __importPreconditions(client, manifest.request);
+      if (__hash(currentIdentity) !== __hash(manifest.collectionIdentity)) __fail("MONGODB_COLLECTION_IDENTITY_CHANGED", "collection changed before transaction acquired its read lock");
+      __diagnosticPhase = "transaction_write";
       if (existing.length) __fail("MONGODB_MUTATION_TARGET_EXISTS", "an import _id already exists; existing data will not be overwritten");
       await collection.insertMany(documents, { session, ordered: true });
       const inserted = await __findDocs(collection, encodedFilter, documents.length + 1, session);
@@ -1416,23 +1569,30 @@ async function __runImportTransaction(manifest, client, collection, rollback) {
       __writeJsonAtomic("manifest.json", manifest);
     }
     __assertImportLive(manifest.request, manifest.mutationId);
+    __diagnosticPhase = "transaction_commit";
+    __importStage(manifest, "commit_sent");
     committing = true;
     await session.commitTransaction();
+    if (!acknowledgements.commit) __fail("MONGODB_IMPORT_COMMIT_UNKNOWN", "exact commit command acknowledgement required");
+    __importStage(manifest, "acknowledged", acknowledgements.commitEvidence);
     manifest.status = rollback ? "rolled_back" : "committed";
     manifest[rollback ? "rolledBackAt" : "committedAt"] = new Date().toISOString();
     __writeJsonAtomic("manifest.json", manifest);
     __appendJournal(manifest.status, { planHash: manifest.planHash, affectedCount: manifest.affectedCount });
   } catch (error) {
-    // A failed commit command (or lost reply) is ambiguous, even if abort succeeds.
-    try { await session.abortTransaction(); } catch (_abortError) {}
-    manifest.status = committing
-      ? (rollback ? "rollback_unknown" : "commit_unknown")
-      : (rollback ? "rollback_retryable" : "commit_retryable");
-    try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
-    try { __appendJournal(manifest.status, { code: error.code || "MONGODB_IMPORT_FAILED" }); } catch (_journalError) {}
+    let aborted = false;
+    if (session && started && !committing) {
+      try { await session.abortTransaction(); } catch (_abortError) { __diagnosticPhase = "transaction_abort"; }
+      aborted = acknowledgements && acknowledgements.abort === true;
+      if (!aborted) __diagnosticPhase = "transaction_abort";
+    }
+    // commit_sent and failed abort remain unknown, regardless of error labels,
+    // code/text, current document counts or whether a later abort succeeds.
+    try { __importFailure(manifest, rollback, !committing && (!started || aborted), error, started && acknowledgements ? acknowledgements.abortEvidence : { kind: "before_transaction" }); } catch (_writeError) {}
     throw error;
   } finally {
-    await __cleanup(() => session.endSession());
+    if (acknowledgements) acknowledgements.close();
+    if (session) await __cleanup(() => session.endSession());
   }
 }
 
@@ -1525,6 +1685,30 @@ async function __recoverExecution() {
       return { ...__summary(manifest), indexRecovery: { reason: "legacy_execution_evidence_required" } };
     }
     if (manifest.request.database !== __request.database) __fail("MONGODB_MUTATION_SCOPE_MISMATCH", "recovery database does not match the original plan");
+    if (manifest.kind === "collection") {
+      const receipt = manifest.collectionReceipt;
+      if (!receipt || receipt.stage !== "acknowledged" || receipt.mutationId !== manifest.mutationId || receipt.planHash !== manifest.planHash ||
+          receipt.database !== manifest.request.database || receipt.collection !== manifest.request.collection || __hash(receipt.execution) !== __hash(ticket))
+        return { ...__summary(manifest), indexRecovery: { reason: "execution_acknowledgement_required" } };
+      manifest.status = "committed"; manifest.committedAt = receipt.acknowledgedAt;
+      __writeJsonAtomic("manifest.json", manifest);
+      return __summary(manifest);
+    }
+    if (manifest.kind === "import") {
+      const receipt = manifest.importExecution;
+      if (!ticket || ticket.version !== 2 || !__importReceiptBound(manifest, receipt, ticket) ||
+          receipt.confirmation !== (receipt.mode === "commit" ? "确认执行" : "确认回滚")) return { ...__summary(manifest), indexRecovery: { reason: "legacy_execution_evidence_required" } };
+      const evidence = receipt.outcomeEvidence || {};
+      const commandEvidence = /^[a-f0-9]{64}$/.test(evidence.sessionDigest || "") && /^[a-f0-9]{64}$/.test(evidence.transactionDigest || "") && Number.isSafeInteger(evidence.requestId);
+      if (receipt.stage === "safe_terminal" && !(evidence.kind === "before_transaction" || commandEvidence && ["abort_acknowledged", "server_no_such_transaction"].includes(evidence.kind)) ||
+          receipt.stage === "acknowledged" && !(commandEvidence && evidence.kind === "commit_acknowledged"))
+        return { ...__summary(manifest), indexRecovery: { reason: "execution_acknowledgement_required" } };
+      if (receipt.stage === "acknowledged") {
+        manifest.status = receipt.mode === "commit" ? "committed" : "rolled_back";
+        __writeJsonAtomic("manifest.json", manifest);
+      }
+      return { ...__summary(manifest), indexRecovery: { reason: receipt.stage === "safe_terminal" ? "exact_safe_terminal_receipt" : receipt.stage === "acknowledged" ? "exact_commit_acknowledgement" : "execution_acknowledgement_required" } };
+    }
     if (manifest.status === "committed" || manifest.status === "rolled_back") return __summary(manifest);
     const rollback = manifest.status.indexOf("rollback_") === 0;
     const receipt = rollback ? manifest.rollbackReceipt : manifest.indexReceipt;
@@ -1551,6 +1735,44 @@ async function __recoverExecution() {
       return __summary(manifest);
     } finally { await __cleanup(() => client.close()); }
   } finally { release(); }
+}
+
+// Dedicated empty collection creation. No business indexes/options and no drop
+// compensation: even an empty check cannot authorize deleting later data.
+async function __collectionPreconditions(client, request) {
+  __diagnosticPhase = "collection_preflight";
+  const db = client.db(request.database);
+  const existing = await db.listCollections({ name: request.collection }, { nameOnly: false, maxTimeMS: __maxTimeMs }).toArray();
+  if (existing.length) __fail("MONGODB_COLLECTION_ALREADY_EXISTS", "a namespace already exists; it will not be adopted");
+  const auth = await db.command({ connectionStatus: 1, showPrivileges: true }, { readPreference: "primary" });
+  const privileges = auth.authInfo && auth.authInfo.authenticatedUserPrivileges;
+  const permitted = Array.isArray(privileges) && privileges.some(function(p) {
+    const r = p.resource || {};
+    return Array.isArray(p.actions) && (p.actions.includes("createCollection") || p.actions.includes("anyAction")) &&
+      (r.anyResource === true || r.db === request.database && (r.collection === "" || r.collection === request.collection) || r.db === "" && r.collection === "");
+  });
+  if (!permitted) __fail("MONGODB_COLLECTION_PERMISSION_REQUIRED", "authenticated createCollection privilege must be explicitly observable");
+}
+async function __commitCollection(manifest, client) {
+  await __collectionPreconditions(client, manifest.request);
+  const request = manifest.request;
+  manifest.collectionReceipt = { version: 1, mutationId: manifest.mutationId, planHash: manifest.planHash, execution: manifest.execution,
+    database: request.database, collection: request.collection, stage: "command_started", rollbackMode: "retained_non_rollbackable" };
+  __writeJsonAtomic("manifest.json", manifest);
+  __diagnosticPhase = "collection_create";
+  const reply = await client.db(request.database).command({ create: request.collection, maxTimeMS: __maxTimeMs,
+    writeConcern: { w: "majority", wtimeout: __maxTimeMs } }, { readPreference: "primary" });
+  if (Number(reply.ok) !== 1 || reply.writeConcernError) __fail("MONGODB_COLLECTION_COMMIT_UNKNOWN", "collection creation has no durable acknowledgement");
+  // This acknowledges this command only. A later same-name namespace is never
+  // ownership proof, and is never eligible for automatic deletion.
+  manifest.collectionReceipt.stage = "acknowledged";
+  manifest.collectionReceipt.acknowledgedAt = new Date().toISOString();
+  __writeJsonAtomic("manifest.json", manifest);
+  const entries = await client.db(request.database).listCollections({ name: request.collection }, { nameOnly: false, maxTimeMS: __maxTimeMs }).toArray();
+  if (entries.length !== 1 || entries[0].type !== "collection") __fail("MONGODB_COLLECTION_COMMIT_UNKNOWN", "acknowledged collection is not currently observable");
+  manifest.status = "committed";
+  manifest.committedAt = manifest.collectionReceipt.acknowledgedAt;
+  __writeJsonAtomic("manifest.json", manifest);
 }
 
 async function __commitBulkStorage(manifest, client) {
@@ -1623,8 +1845,7 @@ async function __loadMutationClient(manifest, rollback) {
     return await __loadClient();
   } catch (error) {
     if (manifest.kind === "import") {
-      manifest.status = rollback ? "rollback_retryable" : "commit_retryable";
-      try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
+      try { __importFailure(manifest, rollback, true, error); } catch (_writeError) {}
     }
     throw error;
   }
@@ -1639,6 +1860,7 @@ async function __commit() {
     if (manifest.status === "rolled_back") __fail("MONGODB_MUTATION_ALREADY_ROLLED_BACK", "mutation was already rolled back");
     if (manifest.status !== "planned" && !(manifest.kind === "import" && manifest.status === "commit_retryable") && !(manifest.kind === "bulk_storage" && manifest.status === "commit_retryable")) __fail("MONGODB_MUTATION_STATE_INVALID", "mutation is not ready to commit; inspect uncertain outcomes before retrying");
     __assertNotExpired(manifest);
+    if (manifest.kind === "import") __beginImportExecution(manifest, false);
     __appendJournal("commit_started", { planHash: manifest.planHash });
     manifest.status = "commit_started";
     manifest.execution = __request.execution;
@@ -1648,8 +1870,8 @@ async function __commit() {
       const collection = manifest.request.collection
         ? client.db(manifest.request.database).collection(manifest.request.collection)
         : null;
-      if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
       if (manifest.kind === "import") await __runImportTransaction(manifest, client, collection, false);
+      else if (manifest.kind === "collection") await __commitCollection(manifest, client);
       else if (manifest.kind === "index") await __commitIndex(manifest, collection, client.db(manifest.request.database));
       else if (manifest.kind === "bulk_storage") await __commitBulkStorage(manifest, client);
       else if (manifest.kind === "transaction") await __commitTransaction(manifest, client);
@@ -1658,7 +1880,7 @@ async function __commit() {
     } catch (error) {
       if (manifest.status !== "committed" && manifest.kind !== "import") {
         manifest.status = manifest.kind === "bulk_storage" ? "commit_retryable"
-          : manifest.kind === "index" && manifest.indexReceipt && manifest.indexReceipt.stage !== "rejected" ? "commit_unknown" : "commit_failed";
+          : manifest.kind === "collection" ? "commit_unknown" : manifest.kind === "index" && manifest.indexReceipt && manifest.indexReceipt.stage !== "rejected" ? "commit_unknown" : "commit_failed";
         try { __writeJsonAtomic("manifest.json", manifest); } catch (_writeError) {}
         try { __appendJournal(manifest.status, { code: error.code || "MONGODB_MUTATION_COMMIT_FAILED" }); } catch (_journalError) {}
       }
@@ -1769,9 +1991,11 @@ async function __rollback() {
     const manifest = __loadManifest();
     if (manifest.kind === "import") __assertImportLive(manifest.request, manifest.mutationId);
     if (manifest.status === "rolled_back") return __summary(manifest);
+    if (manifest.kind === "collection") __fail("MONGODB_COLLECTION_NOT_ROLLBACKABLE", "created collections are retained; automatic drop could delete later business data");
     if (manifest.kind === "bulk_storage") __fail("MONGODB_BULK_STORAGE_NOT_ROLLBACKABLE", "bulk storage initialization is retained; disable bulk capability instead of deleting its records");
     if (manifest.status !== "committed" && !(manifest.kind === "import" && manifest.status === "rollback_retryable")) __fail("MONGODB_MUTATION_NOT_COMMITTED", "only a committed mutation can be rolled back");
     __assertNotExpired(manifest);
+    if (manifest.kind === "import") __beginImportExecution(manifest, true);
     __appendJournal("rollback_started", { planHash: manifest.planHash });
     manifest.status = "rollback_started";
     manifest.execution = __request.execution;
@@ -1913,8 +2137,9 @@ async function __guardedPrepare(recover) {
     process.stdout.write(__marker + JSON.stringify({
       ok: false,
       error: {
-        code: error.code || "MONGODB_MUTATION_FAILED",
-        message: String(error.message || error).slice(0, 2000),
+        code: typeof error.code === "string" && /^MONGODB_[A-Z0-9_]{1,70}$/.test(error.code) ? error.code : "MONGODB_OPERATION_FAILED",
+        message: "Structured MongoDB mutation failed",
+        diagnostic: __diagnostic(error),
       },
     }) + "\\n");
     process.exitCode = 1;
@@ -1961,7 +2186,9 @@ export async function runMongoMutation(input = {}, options = {}) {
     const execution = input._businessExecution;
     if (execution !== undefined && (!execution || !/^[a-f0-9]{64}$/.test(execution.intentId || "") ||
         typeof execution.operationId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(execution.operationId) ||
-        Object.keys(execution).some((key) => !["intentId", "operationId"].includes(key)))) {
+        Object.keys(execution).some((key) => !["intentId", "operationId", "version", "attempt", "mutationId", "planHash"].includes(key)) ||
+        execution.version !== undefined && (execution.version !== 2 || !Number.isSafeInteger(execution.attempt) || execution.attempt < 1 ||
+          !SAFE_MUTATION_ID_PATTERN.test(execution.mutationId || "") || !/^[a-f0-9]{64}$/.test(execution.planHash || "")))) {
       throw mutationError("invalid execution identity", "MONGODB_EXECUTION_IDENTITY_INVALID");
     }
     const importReceipt = input._businessImport || input.importReceipt;
@@ -1976,6 +2203,7 @@ export async function runMongoMutation(input = {}, options = {}) {
         ? "import_plan"
         : input.kind === "bulk_storage"
           ? "bulk_storage"
+        : input.kind === "collection" ? "collection"
         : input.kind === "index"
         ? "index"
         : input.kind === "transaction"
@@ -1985,6 +2213,7 @@ export async function runMongoMutation(input = {}, options = {}) {
         ? normalizeMongoImport(input, config, { operationId: options.operation?.operationId })
         : kind === "bulk_storage"
           ? normalizeMongoBulkStorage(input, rawConfig, { operationId: options.operation?.operationId })
+        : kind === "collection" ? normalizeMongoCollectionCreate(input, config, { operationId: options.operation?.operationId })
         : kind === "index"
         ? normalizeMongoIndexChange(input, config, { operationId: options.operation?.operationId })
         : kind === "transaction"
@@ -2117,15 +2346,17 @@ export async function runMongoMutation(input = {}, options = {}) {
     });
   }
   if (payload.ok !== true || remoteResult?.exitCode !== 0 || remoteResult?.timedOut) {
-    throw operationError(redactMongoSecrets(payload.error?.message || remoteResult?.stderr || "MongoDB mutation failed"), {
+    const failure = operationError("Structured MongoDB mutation failed", {
       code: remoteResult?.timedOut ? "MONGODB_MUTATION_TIMEOUT" : payload.error?.code || "MONGODB_MUTATION_FAILED",
       statusCode: remoteResult?.timedOut ? 408 : 400,
       operationId: options.operation?.operationId,
       layer: "mongodb-mutation",
       phase: mode,
       retriable: !["commit", "rollback"].includes(mode) && remoteResult?.timedOut === true,
-      cause: redactMongoSecrets(remoteResult?.stderr),
+      cause: undefined,
     });
+    failure.diagnostic = mutationDiagnostic(payload.error?.diagnostic);
+    throw failure;
   }
 
   return {

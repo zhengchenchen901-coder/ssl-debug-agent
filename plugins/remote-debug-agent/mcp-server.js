@@ -1,3 +1,4 @@
+import { mutationDiagnostic } from "./mutation-diagnostic.js";
 import { execFile, spawn } from "node:child_process";
 import { createHash, randomUUID, randomBytes } from "node:crypto";
 import fs from "node:fs";
@@ -201,6 +202,7 @@ const toolOperationPolicies = {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
     maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
   },
+  remote_debug_mongodb_prepare_collection: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_mongodb_prepare_index: {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
     maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS,
@@ -590,6 +592,16 @@ const tools = [
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
       },
     },
+  },
+  {
+    name: "remote_debug_mongodb_prepare_collection",
+    description: "Prepare explicit creation of one empty allowlisted ordinary MongoDB collection. Requires observable authenticated createCollection privilege and separate 确认执行 with the exact plan. No options, business indexes, automatic creation or drop rollback; the collection is retained to protect later business data.",
+    inputSchema: { type: "object", additionalProperties: false, required: ["collection"], properties: {
+      instanceId: instanceIdProperty, database: { type: "string", minLength: 1, maxLength: 128 },
+      collection: { type: "string", minLength: 1, maxLength: 128 }, purpose: { type: "string", maxLength: 500 },
+      rollbackTtlMs: { type: "integer", minimum: 1, maximum: 604800000 },
+      timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+    } },
   },
   {
     name: "remote_debug_mongodb_prepare_index",
@@ -3141,6 +3153,7 @@ async function requestAgent(pathName, payload, options = {}) {
     error.phase = parsed.error?.phase;
     error.retriable = parsed.error?.retriable;
     error.cause = parsed.error?.cause;
+    if (parsed.error?.diagnostic) error.diagnostic = mutationDiagnostic(parsed.error.diagnostic);
     error.payload = {
       agentUrl: settings.agentUrl,
       port: settings.port,
@@ -3241,6 +3254,10 @@ async function callTool(name, args, operation) {
     }, operation);
   }
 
+  if (name === "remote_debug_mongodb_prepare_collection") {
+    return callAgent("/mongodb/mutations/prepare", { instanceId: args?.instanceId, kind: "collection", operation: "createCollection",
+      database: args?.database, collection: args?.collection, purpose: args?.purpose, rollbackTtlMs: args?.rollbackTtlMs, timeoutMs: args?.timeoutMs }, operation);
+  }
   if (name === "remote_debug_mongodb_prepare_index") {
     return callAgent("/mongodb/mutations/prepare", {
       instanceId: args?.instanceId,
@@ -3604,6 +3621,7 @@ async function handleRequest(message) {
           retriable: error.retriable,
           cause: error.cause,
           intentId: error.intentId || operation.privacyIntent?.id,
+          ...(error.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}),
         },
         details: error.payload,
       }, true), { previewContext: operation });

@@ -1,3 +1,4 @@
+import { SAFE_MUTATION_ID_PATTERN } from "./prepare-protocol.js";
 const uuid = { type: "string", pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$" };
 const instanceId = { type: ["string", "null"], description: "Explicit instance ID, or null for a Manager-only task. Never infer from a chat ID." };
 const artifact = { type: "object", additionalProperties: false, required: ["category", "format", "name", "content"], properties: {
@@ -12,7 +13,7 @@ export const FINAL_RESULT_TOOLS = [
   { name: "remote_debug_publish_final_result", description: "Publish the assembled FINAL deliverables of one concluded user task to local output/, isolated by instance and task. Call once after investigation/execution and final synthesis, never for progress, polling, query pages, plans awaiting approval, or each tool response. Use one stable UUID taskId for retries; identical publication is idempotent, different contents conflict. Does not execute or retry business operations. Final partial/failed/cancelled summaries must accurately describe missing evidence. Preserve opaque business references; never decode them.",
     inputSchema: schema({ instanceId, taskId: uuid, title: { type: "string", minLength: 1, maxLength: 160 }, type: { type: "string", pattern: "^[a-z][a-z0-9_-]{0,63}$" },
       status: { type: "string", enum: ["completed", "partial", "failed", "cancelled"] }, final: { type: "boolean", const: true },
-      references: schema({ operationIds: { type: "array", maxItems: 64, items: uuid }, jobId: { type: "string" }, mutationId: { type: "string" }, resourceTaskId: uuid }, []),
+      references: schema({ operationIds: { type: "array", maxItems: 64, items: uuid }, jobId: { type: "string" }, mutationId: { type: "string", pattern: SAFE_MUTATION_ID_PATTERN.source, maxLength: 128 }, resourceTaskId: uuid }, []),
       artifacts: { type: "array", minItems: 1, maxItems: 32, items: artifact },
     }, ["instanceId", "taskId", "title", "status", "final", "artifacts"]) },
   { name: "remote_debug_list_final_results", description: "List persistent final task deliverables for an explicit instance (including deleted instances), or null for Manager tasks. Excludes all intermediate tool responses and progress.",

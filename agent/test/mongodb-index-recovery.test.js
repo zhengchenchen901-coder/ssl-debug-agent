@@ -64,7 +64,7 @@ for (const key of ["key", "unique", "sparse", "partialFilterExpression", "expire
 test("definite create failure is failed, does not acquire ownership or permit replay", async (t) => {
   const h = mutationPrepareHarness(t), p = await h.run(input);
   h.state.commandError = Object.assign(Error("duplicate key"), { name: "MongoServerError", code: 11000 });
-  await assert.rejects(h.run(commit(p)), { code: 11000 });
+  await assert.rejects(h.run(commit(p)), { code: "MONGODB_OPERATION_FAILED", diagnostic: { databaseCode: 11000, category: "duplicate_key", phase: "connect" } });
   assert.equal(manifest(h, p).status, "commit_failed"); assert.equal(manifest(h, p).indexReceipt.stage, "rejected");
   assert.equal((await h.run(recover(p))).indexRecovery.reason, "execution_acknowledgement_required");
   await assert.rejects(h.run(commit(p)), { code: "MONGODB_MUTATION_STATE_INVALID" });
@@ -74,7 +74,7 @@ test("definite create failure is failed, does not acquire ownership or permit re
 for (const code of ["ETIMEDOUT", "ECONNRESET"]) test(`${code} after DDL never infers ownership from matching catalog`, async (t) => {
   const h = mutationPrepareHarness(t), p = await h.run(input);
   h.state.afterWrite = () => { throw Object.assign(Error("lost acknowledgement"), { code, retriable: true }); };
-  await assert.rejects(h.run(commit(p)), (e) => e.code === code && e.retriable === false);
+  await assert.rejects(h.run(commit(p)), (e) => e.code === "MONGODB_OPERATION_FAILED" && e.diagnostic.category === "network" && e.retriable === false);
   assert.equal(manifest(h, p).status, "commit_unknown");
   const r = await h.run(recover(p)); assert.equal(r.status, "commit_unknown"); assert.equal(r.indexRecovery.reason, "execution_acknowledgement_required");
   await assert.rejects(h.run(commit(p)), { code: "MONGODB_MUTATION_STATE_INVALID" }); assert.equal(h.state.writes, 1);

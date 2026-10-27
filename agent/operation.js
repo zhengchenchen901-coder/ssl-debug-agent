@@ -1,3 +1,4 @@
+import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
 import { randomUUID } from "node:crypto";
 
 export const API_VERSION = 2;
@@ -238,5 +239,6 @@ export function operationErrorPayload(error, fallback = {}) {
     phase: error?.phase || fallback.phase,
     retriable: Boolean(error?.retriable),
     cause: error?.cause,
+    ...(error?.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}),
   };
 }

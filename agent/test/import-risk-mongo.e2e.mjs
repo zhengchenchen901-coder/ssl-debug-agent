@@ -23,6 +23,8 @@ const query = async () => {
 };
 test("real isolated MongoDB import review, native-helper retirement, lost reply reconciliation, transaction idempotency and rollback", { timeout: 90000 }, async t => {
   const h = { run: request => runMongoMutation(request, { config: importConfig, runSSH: async (_command, { stdin }) => node(stdin) }) };
+  // Explicit fixture seeding; import itself must never create a collection.
+  assert.equal((await node(`const {MongoClient}=require('/home/app/node_modules/mongodb');(async()=>{const c=await MongoClient.connect('mongodb://mongo:27017/test?replicaSet=fixture');try{await c.db('test').createCollection('members')}finally{await c.close()}})().catch(()=>process.exitCode=1)`)).exitCode, 0);
   const f = importRiskFixture(t, { harness: h });
   const historical = await h.run({ ...f.original, kind: "import_plan", mode: "prepare" });
   const before = f.call("inspect_operation", { id: f.old.id }), plan = await f.prepare();

@@ -1,0 +1,27 @@
+{
+  "realMongo": true,
+  "helperImage": "sha256:2183345feff0a0c8c25640fdc8d2e3b111c5baf50d5a1ddb50a43ac5d9cb3dd4",
+  "databaseImage": "sha256:9ef36ccfdfb42c68dbc7757af3d1e732eaca253ed0cc529a6dd4d728ea97fd44",
+  "network": "internal, no published ports",
+  "container": "rda-import-risk-a6a2c54ab37c",
+  "cleaned": true,
+  "source": "/Users/zhengchenchen/Documents/Codex/2026-10-27/ssl-debug-agent-import-execution/.testflow/snapshots/7e44cf535140f5ef9c13450f961e2c8a130568ec6d3a6c80a3e4a6ecca6951b3/files",
+  "exitCode": 0,
+  "cleanup": [
+    {
+      "type": "container",
+      "name": "rda-import-risk-a6a2c54ab37c",
+      "exitCode": 0
+    },
+    {
+      "type": "container",
+      "name": "rda-import-execution-db-a6a2c54ab37c",
+      "exitCode": 0
+    },
+    {
+      "type": "network",
+      "name": "rda-import-execution-net-a6a2c54ab37c",
+      "exitCode": 0
+    }
+  ]
+}

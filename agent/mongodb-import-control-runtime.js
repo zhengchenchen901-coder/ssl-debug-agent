@@ -100,9 +100,10 @@ async function __guardedImportPrepare(recover) {
     if (!receipt) return await __prepareImportPlan();
     if (prior && __hash(prior.receipt) !== __hash(receipt)) {
       const { attempt: oldAttempt, ...oldBinding } = prior.receipt, { attempt: newAttempt, ...newBinding } = receipt;
-      if (recover || prior.result && prior.result.status !== "prepare_partial" || !prior.result || newAttempt !== oldAttempt + 1 || __hash(oldBinding) !== __hash(newBinding)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "import belongs to another protected intent or an unknown attempt");
+      if (recover || prior.result && !["prepare_partial", "prepare_rejected"].includes(prior.result.status) || !prior.result || newAttempt !== oldAttempt + 1 || __hash(oldBinding) !== __hash(newBinding)) __fail("MONGODB_IMPORT_RECEIPT_CONFLICT", "import belongs to another protected intent or an unknown attempt");
       // Persist the new attempt before doing any work. A lost reply must now
       // reconcile this attempt, never infer completion from the old prefix.
+      __writeImportFile(controlId, "prepare-attempt-" + oldAttempt + ".json", prior);
       prior = { version: 1, receipt, batches: prior.batches };
       __writeImportFile(controlId, "prepare.json", prior);
     }
@@ -124,6 +125,20 @@ async function __guardedImportPrepare(recover) {
     }
     __request.importLineage = lineage ? { originalImportId: lineage.identity.importId, riskPlanId: lineage.identity.riskPlanId,
       dispositionId: lineage.identity.dispositionId, originalRequestDigest: lineage.identity.originalRequestDigest, replacementRequestDigest: lineage.identity.replacementRequestDigest } : undefined;
+    // No transaction or batch plan processing has begun in this attempt.
+    // Persist a positive, exact preflight rejection, not an absence inference.
+    let preflightClient;
+    try {
+      preflightClient = (await __loadClient()).client;
+      await __importPreconditions(preflightClient, plan);
+    } catch (error) {
+      const code = typeof error.code === "string" && /^MONGODB_[A-Z0-9_]{1,70}$/.test(error.code) ? error.code : "MONGODB_OPERATION_FAILED";
+      const rejected = { kind: "import_plan", importId, database, collection: plan.collection, affectedCount: plan.affectedCount,
+        batchCount: batches.length, status: "prepare_rejected", batches: [], requiresConfirmation: false, importReceipt: receipt,
+        prepareRejection: { version: 1, stage: "preflight_rejected", code, diagnostic: __diagnostic(error) } };
+      __writeImportFile(controlId, "prepare.json", { version: 1, receipt, batches, result: rejected });
+      return rejected;
+    } finally { if (preflightClient) await __cleanup(() => preflightClient.close()); }
     const result = { ...await __prepareImportPlan(), importReceipt: receipt };
     __writeImportFile(controlId, "prepare.json", { version: 1, receipt, batches, result });
     return result;

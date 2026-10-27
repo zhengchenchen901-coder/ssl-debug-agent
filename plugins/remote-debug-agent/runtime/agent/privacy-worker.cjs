@@ -478,10 +478,10 @@ function assertImportAdmission(store2, instanceId, admission) {
   return !!candidate;
 }
 function continuePartialImport(store2, id, record, ctx, scope) {
-  if (record.state !== "complete" || record.result?.status !== "prepare_partial") return record;
+  if (record.state !== "complete" || !["prepare_partial", "prepare_rejected"].includes(record.result?.status)) return record;
   const attempt = record.importPrepare.attempt;
   const evidenceId = store2.hash("import-prepare-evidence", ctx, scope, id, attempt);
-  store2.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, attempt, result: record.result, at: store2.now() }, MAX, true);
+  store2.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, attempt, result: record.result, record, at: store2.now() }, MAX, true);
   return {
     ...record,
     state: "uncertain",
@@ -970,7 +970,7 @@ var json = "json";
 var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key3) => [key3, scalar]));
 var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 var warning = fields("code message path source phase");
-var error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+var error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
 var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 var instance = {
@@ -996,7 +996,13 @@ var mutation = {
   storageStatus: json,
   rollbackRestoresDocuments: scalar,
   atomicity: scalar,
-  failedBatch: fields("batchIndex mutationId code"),
+  execution: fields("intentId operationId version attempt mutationId planHash"),
+  indexRecovery: fields("reason"),
+  diagnostic: error.diagnostic,
+  importExecution: { ...fields("version mutationId planHash database collection mode confirmation stage at"), outcomeEvidence: fields("kind sessionDigest transactionDigest requestId"), execution: fields("intentId operationId version attempt mutationId planHash") },
+  collectionReceipt: fields("version mutationId planHash database collection stage rollbackMode acknowledgedAt"),
+  failedBatch: { ...fields("batchIndex mutationId code"), diagnostic: error.diagnostic },
+  prepareRejection: { ...fields("version stage code"), diagnostic: error.diagnostic },
   preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
 };
 var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
@@ -1146,6 +1152,7 @@ var contracts = {
     result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } }
   },
   remote_debug_mongodb_prepare_write: mutation,
+  remote_debug_mongodb_prepare_collection: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,
   remote_debug_mongodb_prepare_import: mutation,
@@ -1712,7 +1719,7 @@ var PrivacyStore = class {
       const previous = this.get("operation", id, ctx, scope);
       const boundDigest = previous?.importPrepare?.requestDigest || previous?.bulkPrepare?.requestDigest || previous?.historicalRecovery?.requestDigest;
       if (boundDigest && boundDigest !== input.dispatchDigest) throw privacyError("BUSINESS_OPERATION_CONTENT_CONFLICT");
-      if (input.route === "/mongodb/imports/prepare" && previous?.importPrepare && previous.state === "complete" && previous.result?.status === "prepare_partial") {
+      if (input.route === "/mongodb/imports/prepare" && previous?.importPrepare && previous.state === "complete" && ["prepare_partial", "prepare_rejected"].includes(previous.result?.status)) {
         const record2 = continuePartialImport(this, id, previous, ctx, scope);
         this.put("operation", id, ctx, scope, record2, Number.MAX_SAFE_INTEGER, true);
         const taskId = this.hash("task", ctx, input.scope, "operation:" + id), task2 = this.get("task", taskId, ctx, scope);
@@ -1720,7 +1727,17 @@ var PrivacyStore = class {
         return { id, state: "new", importPrepare: record2.importPrepare };
       }
       const retryPrepare = previous?.state === "rejected_before_dispatch" && (previous.prepare || previous.bulkPrepare || previous.importPrepare) && input.dispatchDigest === (previous.prepare || previous.bulkPrepare || previous.importPrepare).requestDigest;
-      if (previous && !retryPrepare && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
+      const retryExecution = previous?.state === "retryable" && previous.executionProtocol === 2 && previous.execution;
+      if (retryExecution) this.put(
+        "execution_evidence",
+        this.hash("execution-attempt", ctx, input.scope, id, previous.executionAttempt),
+        ctx,
+        scope,
+        { intentId: id, ...previous },
+        Number.MAX_SAFE_INTEGER,
+        true
+      );
+      if (previous && !retryPrepare && !retryExecution && !(previous.state === "complete" && input.renew === true && input.route === "/mongodb/bulk/control")) return { id, ...previous };
       if (retryPrepare && previous.importPrepare) {
         const evidenceId = this.hash("import-attempt", ctx, input.scope, id, previous.importPrepare.attempt);
         if (!this.get("import_prepare_evidence", evidenceId, ctx, scope)) this.put(
@@ -1739,6 +1756,7 @@ var PrivacyStore = class {
         route: input.route,
         identity: input.identity,
         started: this.now(),
+        ...["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(input.route) && /^import-[a-f0-9]{64}$/.test(input.identity?.mutationId || "") ? { executionProtocol: 2, executionAttempt: (previous?.executionAttempt || 0) + 1 } : {},
         ...input.route === "/mongodb/imports/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { importPrepare: { binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.importPrepare?.attempt || 0) + 1 }, previousRejection: previous?.rejection } : {},
         ...prepare ? { prepare, previousRejection: previous?.rejection } : {},
         ...input.route === "/mongodb/bulk/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { bulkPrepare: { binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.bulkPrepare?.attempt || 0) + 1 }, previousRejection: previous?.rejection } : {}
@@ -1754,7 +1772,7 @@ var PrivacyStore = class {
         this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, task, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND id=?").run(ref);
       }
-      return { id, state: "new", ...prepare ? { prepare } : {}, ...record.bulkPrepare ? { bulkPrepare: record.bulkPrepare } : {}, ...record.importPrepare ? { importPrepare: record.importPrepare } : {} };
+      return { id, state: "new", ...record.executionProtocol ? { executionProtocol: 2, executionAttempt: record.executionAttempt } : {}, ...prepare ? { prepare } : {}, ...record.bulkPrepare ? { bulkPrepare: record.bulkPrepare } : {}, ...record.importPrepare ? { importPrepare: record.importPrepare } : {} };
     });
     if (action === "inspect_operation") {
       if (!/^[a-f0-9]{64}$/.test(input.id || "")) throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -1807,14 +1825,14 @@ var PrivacyStore = class {
       if (!record?.importPrepare || JSON.stringify(record.importPrepare) !== JSON.stringify(input.importPrepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
       if (record.state !== "uncertain") return { id: input.id, ...record };
       const batches = record.importBatches || [];
-      const proven = result?.ok === true && result.importReceipt?.binding === input.id && result.importReceipt.requestDigest === record.importPrepare.requestDigest && result.importReceipt.attempt === record.importPrepare.attempt && result.importId === record.identity.importId && result.kind === "import_plan" && result.importReceipt.riskPlanId === record.riskPlanId && result.collection === record.identity.collection && result.affectedCount === batches.reduce((n, b) => n + b.documentCount, 0) && result.batchCount === batches.length && result.importReceipt.batchesDigest === prepareRequestDigest({ batches }) && result.database === JSON.parse(input.scope).database && ["prepared", "prepare_partial"].includes(result.status) && Array.isArray(result.batches) && result.batches.length > 0 && result.batches.every((batch2, index) => batch2.mutationId === batches[index]?.mutationId && batch2.batchIndex === index && /^[a-f0-9]{64}$/.test(batch2.planHash || "")) && (result.status !== "prepared" || result.batches.length === batches.length);
+      const proven = result?.ok === true && result.importReceipt?.binding === input.id && result.importReceipt.requestDigest === record.importPrepare.requestDigest && result.importReceipt.attempt === record.importPrepare.attempt && result.importId === record.identity.importId && result.kind === "import_plan" && result.importReceipt.riskPlanId === record.riskPlanId && result.collection === record.identity.collection && result.affectedCount === batches.reduce((n, b) => n + b.documentCount, 0) && result.batchCount === batches.length && result.importReceipt.batchesDigest === prepareRequestDigest({ batches }) && result.database === JSON.parse(input.scope).database && ["prepared", "prepare_partial", "prepare_rejected"].includes(result.status) && Array.isArray(result.batches) && (result.status === "prepare_rejected" ? result.batches.length === 0 && result.prepareRejection?.version === 1 && result.prepareRejection.stage === "preflight_rejected" && /^MONGODB_[A-Z0-9_]{1,70}$/.test(result.prepareRejection.code || "") : result.batches.length > 0) && result.batches.every((batch2, index) => batch2.mutationId === batches[index]?.mutationId && batch2.batchIndex === index && /^[a-f0-9]{64}$/.test(batch2.planHash || "")) && (result.status !== "prepared" || result.batches.length === batches.length);
       const saved = proven ? { ...record, state: "complete", result, reconciliation: void 0 } : input.notDispatched === true || input.unclaimed === true && !record.dispatched ? { ...record, state: "rejected_before_dispatch", result, reconciliation: void 0, rejection: {
         attempt: record.importPrepare.attempt,
         code: result.error?.code,
         at: this.now(),
         evidence: input.unclaimed ? "unclaimed_attempt_fence" : "preflight_before_ssh"
       } } : { ...record, reconciliation: { code: result?.error?.code || "MONGODB_IMPORT_EVIDENCE_REQUIRED" } };
-      if (proven) recordImportPrepared(this, record, result);
+      if (proven && result.status !== "prepare_rejected") recordImportPrepared(this, record, result);
       this.put("operation", input.id, ctx, scope, saved, Number.MAX_SAFE_INTEGER, true);
       this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, { type: "import_prepare_state", operation: input.id, state: saved.state, code: saved.rejection?.code || saved.reconciliation?.code, evidence: saved.rejection?.evidence, at: this.now() }, Number.MAX_SAFE_INTEGER, true);
       return { id: input.id, ...saved };
@@ -1868,7 +1886,17 @@ var PrivacyStore = class {
       this.assertOperationAdmission(input.id, ctx, scope);
       const record = this.get("operation", input.id, ctx, scope);
       if (!record || record.state !== "uncertain" || record.execution || !["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(record.route) || typeof input.operationId !== "string") throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
-      const execution2 = { intentId: input.id, operationId: input.operationId };
+      if (record.executionProtocol === 2 && input.attempt !== record.executionAttempt) throw privacyError("BUSINESS_OPERATION_RECONCILIATION_REQUIRED");
+      const execution2 = {
+        intentId: input.id,
+        operationId: input.operationId,
+        ...record.executionProtocol === 2 ? {
+          version: 2,
+          attempt: record.executionAttempt,
+          mutationId: record.identity.mutationId,
+          planHash: record.identity.planHash
+        } : {}
+      };
       this.put("operation", input.id, ctx, scope, { ...record, execution: execution2 }, Number.MAX_SAFE_INTEGER, true);
       return execution2;
     });
@@ -1913,6 +1941,24 @@ var PrivacyStore = class {
       if (previous.route === "/mongodb/bulk/prepare") throw privacyError("BUSINESS_OPERATION_DENIED");
       let proof;
       const identity = previous.identity || {};
+      if (action === "outcome" && previous.executionProtocol === 2 && (previous.state !== "uncertain" || JSON.stringify(input.result?.execution) !== JSON.stringify(previous.execution) || input.result?.importExecution?.stage !== "acknowledged")) return { state: previous.state };
+      if (action === "reconcile" && previous.executionProtocol === 2) {
+        const entry2 = input.result?.ok === true && input.result.entries?.find((e) => e.mutationId === identity.mutationId && e.planHash === identity.planHash);
+        const receipt = entry2?.importExecution;
+        const exact = previous.state === "uncertain" && previous.execution && receipt?.version === 2 && JSON.stringify(entry2.execution) === JSON.stringify(previous.execution) && JSON.stringify(receipt.execution) === JSON.stringify(previous.execution) && receipt.mutationId === identity.mutationId && receipt.planHash === identity.planHash && receipt.database === JSON.parse(input.scope).database && entry2.database === receipt.database && entry2.collection === receipt.collection && receipt.mode === (previous.route.endsWith("rollback") ? "rollback" : "commit") && receipt.confirmation === (previous.route.endsWith("rollback") ? "确认回滚" : "确认执行");
+        if (exact && receipt.stage === "safe_terminal" && ["before_transaction", "abort_acknowledged", "server_no_such_transaction"].includes(receipt.outcomeEvidence?.kind) && entry2.status === (receipt.mode === "commit" ? "commit_retryable" : "rollback_retryable") && entry2.indexRecovery?.reason === "exact_safe_terminal_receipt") {
+          const value2 = { ...previous, state: "retryable", reconciliation: input.result, recovery: { evidence: "exact_safe_terminal_receipt", at: this.now() } };
+          this.put("operation", input.id, ctx, scope, value2, Number.MAX_SAFE_INTEGER, true);
+          this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, {
+            type: "execution_safe_terminal",
+            operation: input.id,
+            attempt: previous.executionAttempt,
+            operationId: previous.execution.operationId
+          }, Number.MAX_SAFE_INTEGER, true);
+          return { state: value2.state };
+        }
+        if (!exact) return { state: previous.state, ...previous.result ? { result: previous.result } : {} };
+      }
       if (action === "reconcile" && input.result?.ok === true && /^[a-f0-9]{64}$/.test(identity.planHash || "")) {
         if (identity.jobId && input.result.jobId === identity.jobId && input.result.planHash === identity.planHash && (previous.route === "/mongodb/bulk/execute" && input.result.status === "completed" || previous.route === "/mongodb/bulk/rollback" && input.result.status === "rolled_back")) proof = input.result;
         if (identity.mutationId) {

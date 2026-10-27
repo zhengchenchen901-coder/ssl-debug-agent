@@ -5,7 +5,7 @@ const json = "json";
 const fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
 const timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 const warning = fields("code message path source phase");
-const error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase databaseCode filesystemCode") };
+const error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
 const memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 const runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 const instance = {
@@ -22,7 +22,12 @@ const mutation = {
   ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
   collections: [scalar], changedFields: [scalar], affectedIds: json, storageStatus: json,
   rollbackRestoresDocuments: scalar, atomicity: scalar,
-  failedBatch: fields("batchIndex mutationId code"),
+  execution: fields("intentId operationId version attempt mutationId planHash"),
+  indexRecovery: fields("reason"), diagnostic: error.diagnostic,
+  importExecution: { ...fields("version mutationId planHash database collection mode confirmation stage at"), outcomeEvidence: fields("kind sessionDigest transactionDigest requestId"), execution: fields("intentId operationId version attempt mutationId planHash") },
+  collectionReceipt: fields("version mutationId planHash database collection stage rollbackMode acknowledgedAt"),
+  failedBatch: { ...fields("batchIndex mutationId code"), diagnostic: error.diagnostic },
+  prepareRejection: { ...fields("version stage code"), diagnostic: error.diagnostic },
   preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] },
 };
 const batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
@@ -119,6 +124,7 @@ const contracts = {
       binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash") },
     result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } } },
   remote_debug_mongodb_prepare_write: mutation,
+  remote_debug_mongodb_prepare_collection: mutation,
   remote_debug_mongodb_prepare_index: mutation,
   remote_debug_mongodb_prepare_transaction: mutation,
   remote_debug_mongodb_prepare_import: mutation,

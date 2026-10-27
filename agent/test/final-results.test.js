@@ -219,3 +219,13 @@ test("real MCP does not archive probes, publishes only final bundles, and retrie
   assert.deepEqual(await fs.readdir(folder), [value.taskId]);
   await peer.stop();
 });
+
+
+test("final publication accepts exact import mutation identifiers and rejects path/text references", async t => {
+  const { store } = await sandbox(t);
+  const mutationId = "import-" + "a".repeat(64);
+  const result = await store.publishFinalResult(input({ references: { mutationId } }));
+  assert.equal(result.result.references.mutationId, mutationId);
+  for (const invalid of ["../escape", "/tmp/file", "import-" + "a".repeat(128), "bad text", "id\nsecret"])
+    await assert.rejects(store.publishFinalResult(input({ references: { mutationId: invalid } })), { code: "FINAL_RESULT_INVALID" });
+});

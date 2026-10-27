@@ -114,3 +114,109 @@ only with the same handoff identity. A process killed while holding the global
 exclusive lock remains blocked; there is no age-based lock reclaim, cancellation
 proof or automatic replacement. Actual power-loss durability and legacy helper
 in-flight outcomes are not certified by the isolated process-crash tests.
+
+## Import collection preconditions and execution receipts v2
+
+Import preparation now reads the *server* handshake (`isMaster` for compatibility
+with MongoDB 4.0/4.2), requiring sessions and a replica set with wire version >=7,
+or mongos >=8. These are necessary advertised capabilities, not certification of
+FCV, every shard, transaction permissions or storage engine. The configured
+remote driver's bounded package version is diagnostic only; a local client
+version is never a server version. Runtime failures remain fail closed.
+
+All supported versions require an existing ordinary, non-capped, non-time-series
+collection with an observable UUID. This deliberately also applies to servers
+which permit implicit creation in transactions. The UUID enters the immutable
+plan hash. Execute/rollback recheck it before the transaction, take the normal
+transactional read, and recheck the primary catalog before writes. The existing
+collection's transaction read lock prevents a concurrent drop; a missing or
+recreated namespace cannot silently inherit the plan. Historical plans without
+this UUID are rejected, never rewritten. Sharded collection movement and
+server/version combinations beyond the recorded disposable replica-set tests
+remain unverified.
+
+A protected import prepare first records its exact binding/attempt, then runs
+read-only preflight before processing batch plans. `prepare_rejected` is a
+positive terminal receipt with `prepareRejection.stage=preflight_rejected`, the
+exact import receipt and a bounded code/diagnostic; it creates no business
+collection, transaction or batch plan in that attempt. It is distinct from an
+unknown failure or `prepare_partial`. Reconcile may recover that exact receipt;
+the identical input can reserve its next preparation attempt while retaining
+complete old local and remote preparation evidence. A missing receipt does not
+authorize continuation. Existing earlier batch journals, if any, are retained;
+this receipt makes no claim about their historical business execution.
+
+`remote_debug_mongodb_prepare_collection` prepares exactly one allowlisted empty
+ordinary collection, without options or business indexes. Preparation and
+execution require an observable authenticated `createCollection`/`anyAction`
+privilege for that resource from `connectionStatus(showPrivileges=true)`; unknown
+or unavailable privilege evidence rejects. This does not grant roles or change
+allowlists. Normal exact mutationId/planHash and `确认执行` are required separately.
+A concurrent namespace causes rejection; NamespaceExists or same-name metadata
+never transfers ownership. The create command has bounded majority write concern;
+its acknowledgement is persisted before reporting success. A lost/unacknowledged
+command stays unknown and cannot be repeated. Exact acknowledged recovery only
+completes command delivery, not ownership of any later same-name collection.
+`rollbackMode=retained_non_rollbackable`: automatic collection drop is always
+rejected, even if an empty check succeeds, to protect later business data. The
+retention deadline limits new execution requests; it is not a promise of DDL
+reversal. No generic dropCollection path is added.
+
+New protected `import-*` execute/rollback intents reserve execution protocol 2.
+An atomic claim binds intentId, operationId, mutationId, planHash and attempt;
+the keyed intent already fixes target and exact confirmation request. A stale
+claim cannot bind a new reservation. The worker saves the exact ticket, target,
+connection source and actual confirmation before client loading or transaction
+start. Stages are `started`, `commit_sent`, `acknowledged`, `safe_terminal`, and
+`unknown`. A failure before any transaction starts, or an acknowledged abort
+before any commit command is sent, may durably produce `safe_terminal` and
+`commit_retryable`/`rollback_retryable`. Failed abort, a sent commit with no
+acknowledgement, and unknown rollback keep their respective unknown states.
+Driver automatic commit retries, if performed inside the one driver call, do
+not create a new application attempt. Successful endSession/close is never
+business outcome evidence.
+
+Manager reconcile reads the exact locked remote manifest, checks ticket, target,
+source, plan, mode and confirmation, and transitions only that current local
+attempt. A safe terminal receipt produces `retryable` (not committed). A subsequent
+explicit identical execute/rollback call reserves the next attempt of the same
+intent/plan and still contains the required confirmation. It archives the full
+old local envelope, audit and remote manifest; old results cannot overwrite the
+new reservation. Reusing the old attempt is rejected. The worker only admits the
+next exact same-intent attempt after its own bound safe receipt. This is not an
+automatic retry loop. An acknowledged commit may be reconciled without replaying
+business writes. Read-only lists, current documents/counts, error text, missing
+files, lock age, or the string `commit_retryable` alone never authorize retry.
+
+Legacy envelopes/receipts are not upgraded or backfilled. In particular the
+real 2026-10-27 failed replacement batch remains protected: its historical
+`commit_retryable` has no protocol-2 safe terminal proof. This development work
+neither changes that intent nor authorizes its retry. SIGKILL leaves an exclusive
+lock; no age-based removal or liveness/fencing repair is implemented. I/O failure
+before terminal persistence preserves the earlier unknown stage. Actual power
+loss and already dispatched old helpers remain outside the tested guarantees.
+
+Mutation errors now expose only fixed codes/categories/phases, bounded numeric
+server codes, known filesystem codes, server wire version and a numeric driver
+version. Raw driver messages, stack, documents and credentials are withheld at
+the helper, worker/Manager, protected prepare and public output boundaries.
+Business final-result references reuse the actual mutation identifier contract
+(up to 128 safe characters, including `import-` plus 64 hex); path separators,
+whitespace and arbitrary text remain invalid.
+
+Driver abort promises are explicitly insufficient: mongodb 6.20.0 may suppress
+abort errors. Import helpers enable command monitoring and consume only
+metadata for the exact session ID digest and transaction number digest. They
+persist a positive commit/abort command acknowledgement (no write concern
+error), or exact server NoSuchTransaction=251 before any commit was sent.
+Receipts include only those digests, bounded request ID and fixed evidence kind;
+no command body, raw reply or errmsg is retained. A swallowed abort/network
+failure without that matching event remains unknown. A failure before any
+transaction starts instead carries `before_transaction`. Drivers without the
+necessary monitoring interface are rejected before transaction start.
+
+For protocol-2 execution, even the public protected-storage `outcome` action
+ignores a caller-supplied success object. Manager fetches the exact worker
+receipt through reconcile before completing local protection. Synthetic tests
+include actual SQLite SIGKILL before/after execution claim and next-attempt
+reservation transactions, in addition to remote filesystem process death.

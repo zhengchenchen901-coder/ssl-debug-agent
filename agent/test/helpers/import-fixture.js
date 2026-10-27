@@ -1,3 +1,4 @@
+import realFs from "node:fs";
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import crypto from "node:crypto";
@@ -9,13 +10,13 @@ export const importConfig = {
   allowedCollections: ["members"], maxAffectedDocuments: 20,
 };
 
-export function importHarness({ cryptoModule = crypto, readPreference = "primary", legacyBson = false, cleanup = () => Promise.resolve() } = {}) {
+export function importHarness({ cryptoModule = crypto, readPreference = "primary", legacyBson = false, cleanup = () => Promise.resolve(), realFiles, fault, beforeRename } = {}) {
   const files = new Map([[importConfig.configPath, JSON.stringify({ test: { url: "test-uri" } })]]);
   const directories = new Set();
   const fds = new Map();
   let fd = 0;
-  const state = { rows: new Map(), find: 0, insert: 0, remove: 0, failInsert: false, loseCommitReply: false, failConnect: false };
-  const fs = {
+  const state = { rows: new Map(), find: 0, insert: 0, remove: 0, failInsert: false, loseCommitReply: false, failConnect: false, collectionExists: true, collectionType: "collection", wireVersion: 9, replicaSet: true, sessions: 30, privileges: true, failAbort: false, swallowedAbort: false, preflightError: null, created: 0 };
+  let fs = {
     constants: { O_CREAT: 1, O_APPEND: 2, O_WRONLY: 4 },
     existsSync: (p) => files.has(p) || directories.has(p),
     lstatSync: () => ({ isSymbolicLink: () => false, mtimeMs: Date.now() }),
@@ -35,6 +36,19 @@ export function importHarness({ cryptoModule = crypto, readPreference = "primary
     unlinkSync: (p) => files.delete(p),
     readdirSync: (p) => [...directories].filter((d) => path.dirname(d) === p).map((d) => path.basename(d)),
   };
+  if (realFiles) {
+    const translate = p => {
+      if (typeof p === "number") return p;
+      const root = "/tmp/remote-debug-agent/mutations";
+      if (p !== root && !p.startsWith(root + "/")) throw Error("Unexpected fixture filesystem path");
+      return realFiles + p.slice(root.length);
+    };
+    fs = { constants: realFs.constants, closeSync: realFs.closeSync, fsyncSync: realFs.fsyncSync };
+    for (const method of ["existsSync", "lstatSync", "statSync", "mkdirSync", "chmodSync", "openSync", "unlinkSync", "readdirSync", "writeFileSync"])
+      fs[method] = (p, ...args) => realFs[method](translate(p), ...args);
+    fs.readFileSync = (p, ...args) => p === importConfig.configPath ? JSON.stringify({ test: { url: "fixture-only" } }) : realFs.readFileSync(translate(p), ...args);
+    fs.renameSync = (a, b) => { beforeRename?.(translate(a), translate(b)); realFs.renameSync(translate(a), translate(b)); fault?.(translate(b)); };
+  }
   class Oid {
     constructor(hex) { this.hex = hex; this._bsontype = "ObjectID"; }
     toJSON() { return this.hex; }
@@ -81,7 +95,7 @@ export function importHarness({ cryptoModule = crypto, readPreference = "primary
         if (legacyBson && typeof document._id === "object") assert.ok(document._id instanceof Oid);
         if (session.rows.has(key(document._id))) throw new Error("duplicate");
         session.rows.set(key(document._id), clone(document));
-        if (state.failInsert) { state.failInsert = false; throw new Error("injected partial insert failure"); }
+        if (state.failInsert) { state.failInsert = false; throw state.insertError || new Error("injected partial insert failure"); }
       }
     },
     async deleteMany(filter, { session }) {
@@ -92,11 +106,34 @@ export function importHarness({ cryptoModule = crypto, readPreference = "primary
     },
   };
   class MongoClient {
+    listeners = new Map();
+    on(name, callback) { const set = this.listeners.get(name) || new Set(); set.add(callback); this.listeners.set(name, set); }
+    removeListener(name, callback) { this.listeners.get(name)?.delete(callback); }
+    emit(name, event) { for (const callback of this.listeners.get(name) || []) callback(event); }
     async connect() { if (state.failConnect) throw new Error("connect failed"); }
     close() { return cleanup(); }
-    db() { return { collection: () => collection }; }
+    db() { return {
+      command: async command => {
+        if (state.preflightError) throw state.preflightError;
+        if (command.isMaster) return { maxWireVersion: state.wireVersion, setName: state.replicaSet ? "fixture" : undefined, logicalSessionTimeoutMinutes: state.sessions, ...(state.sharded ? { msg: "isdbgrid" } : {}) };
+        if (command.connectionStatus) return { authInfo: { authenticatedUserPrivileges: state.privileges ? [{ resource: { db: "test", collection: "members" }, actions: ["createCollection"] }] : [] } };
+        if (command.create) { if (state.collectionExists || state.concurrentCollection) throw Object.assign(Error("private namespace"), { code: 48 }); state.created++; state.collectionExists = true; return { ok: 1 }; }
+        throw Error("Unexpected fixture command");
+      },
+      listCollections: () => ({ toArray: async () => state.collectionExists ? [{ name: "members", type: state.collectionType, info: { uuid: state.collectionUuid || "synthetic-uuid-1" }, options: state.collectionOptions || {} }] : [] }),
+      collection: () => collection,
+    }; }
     startSession() {
+      const client = this;
+      let requestId = 0;
+      const observe = (session, commandName, failure) => {
+        const id = ++requestId;
+        client.emit('commandStarted', { requestId: id, commandName, command: { lsid: state.mismatchedAck && commandName === "abortTransaction" ? { id: "another-session" } : session.id, txnNumber: 1 } });
+        if (failure) client.emit('commandFailed', { requestId: id, commandName, failure });
+        else client.emit('commandSucceeded', { requestId: id, commandName, reply: { ok: 1 } });
+      };
       return {
+        id: { id: 'synthetic-session' },
         rows: null,
         startTransaction(options = {}) {
           const effectiveReadPreference = options.readPreference || readPreference;
@@ -107,9 +144,17 @@ export function importHarness({ cryptoModule = crypto, readPreference = "primary
         },
         async commitTransaction() {
           state.rows = this.rows;
-          if (state.loseCommitReply) { state.loseCommitReply = false; throw new Error("reply lost"); }
+          if (state.loseCommitReply) { state.loseCommitReply = false; observe(this, 'commitTransaction', Object.assign(Error('reply lost'), { name: 'MongoNetworkError' })); throw new Error("reply lost"); }
+          if (!state.suppressCommitAck) observe(this, 'commitTransaction');
         },
-        async abortTransaction() { this.rows = null; },
+        async abortTransaction() {
+          if (state.failAbort || state.swallowedAbort) {
+            observe(this, 'abortTransaction', Object.assign(Error('synthetic abort uncertainty'), { name: 'MongoNetworkError' }));
+            if (state.swallowedAbort) return;
+            throw Error('synthetic abort uncertainty');
+          }
+          this.rows = null; observe(this, 'abortTransaction');
+        },
         async withTransaction(callback, options) {
           this.startTransaction(options);
           try { await callback(); await this.commitTransaction(); }

@@ -207,10 +207,10 @@ export function assertImportAdmission(store, instanceId, admission) {
 // A terminal partial preparation may continue with the identical input and
 // identity. Keep its full evidence pinned before advancing the delivery attempt.
 export function continuePartialImport(store, id, record, ctx, scope) {
-  if (record.state !== "complete" || record.result?.status !== "prepare_partial") return record;
+  if (record.state !== "complete" || !["prepare_partial", "prepare_rejected"].includes(record.result?.status)) return record;
   const attempt = record.importPrepare.attempt;
   const evidenceId = store.hash("import-prepare-evidence", ctx, scope, id, attempt);
-  store.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, attempt, result: record.result, at: store.now() }, MAX, true);
+  store.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, attempt, result: record.result, record, at: store.now() }, MAX, true);
   return { ...record, state: "uncertain", importPrepare: { ...record.importPrepare, attempt: attempt + 1 },
     dispatched: undefined, operationId: undefined, result: undefined, reconciliation: undefined };
 }

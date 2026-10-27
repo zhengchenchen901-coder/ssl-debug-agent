@@ -51,3 +51,25 @@ Formal Jest test results can pass while all strict target coverage remains
 `source-coverage-missing`. Do not move/copy source or invent counters to hide
 this gap. Generalized coverage-root support and native node:test execution
 require changes to TestFlow outside this repository.
+
+## Import execution verification contract v2
+
+`import-execution.test.js` adds actual Jest cases for server/collection
+preconditions, UUID replacement rejection, explicit collection creation,
+permission/concurrent-namespace rejection, safe abort and next same-intent
+attempt, full evidence preservation, duplicate/network/write-concern diagnostics,
+unknown abort/commit, legacy protection, exact preflight rejection continuation,
+rollback and late claim/reconcile races. Four child-process SIGKILL scenarios
+use actual disposable files; filesystem faults inject before rename. Child
+MongoDB is still a synthetic transactional double: process/filesystem facts do
+not establish Mongo commit durability. Neither missing files nor stale locks
+are used as recovery proof. Both files are selected by bind-testflow.mjs; the
+pilot uses a case pattern and the complete regression executes both files.
+
+`agent/test/import-execution-mongo.e2e.mjs` is separate supplemental native
+integration against an explicitly named disposable internal Docker fixture.
+It reports the actual server build and configured driver's version, demonstrates
+the old implicit-collection transaction behavior, then checks explicit empty
+collection creation, a real unique-key server rejection/abort, exact next
+attempt, idempotency and rollback. It is not formal TestFlow unit evidence.
+Installed TestFlow's non-src coverage collection limitation remains unchanged.

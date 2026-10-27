@@ -40,8 +40,9 @@ test("import enforces allowlists, explicit unique ids, count/byte limits, and UT
 // Execute the generated remote helper, with transactional database and filesystem
 // doubles. This checks behavior across separate SSH invocations and lost replies.
 
-const commit = (batch) => ({ mode: "commit", mutationId: batch.mutationId, planHash: batch.planHash, confirmation: "确认执行" });
-const rollback = (batch) => ({ ...commit(batch), mode: "rollback", confirmation: "确认回滚" });
+const execution = (batch, attempt, rollback = false) => ({ version: 2, intentId: (rollback ? "b" : "a").repeat(64), operationId: `fixture-${attempt}`, attempt, mutationId: batch.mutationId, planHash: batch.planHash });
+const commit = (batch, attempt = 1) => ({ ...(batch.kind === "import" ? { _businessExecution: execution(batch, attempt) } : {}), mode: "commit", mutationId: batch.mutationId, planHash: batch.planHash, confirmation: "确认执行" });
+const rollback = (batch) => ({ ...commit(batch), ...(batch.kind === "import" ? { _businessExecution: execution(batch, 1, true) } : {}), mode: "rollback", confirmation: "确认回滚" });
 const prepare = (request) => ({ ...request, kind: "import_plan" });
 
 for (const [cleanupName, cleanup] of [
@@ -64,13 +65,13 @@ for (const [cleanupName, cleanup] of [
       assert.equal((await h.run(rollback(plan))).status, "rolled_back");
       assert.equal(h.state.remove, 1);
     });
-    test(`${kind} retains the original transaction error with ${cleanupName} cleanup`, async () => {
+    test(`${kind} retains a safe transaction failure diagnostic with ${cleanupName} cleanup`, async () => {
       const h = harness({ cleanup });
       const operation = { operation: "insertOne", collection: "members", document: { _id: "cleanup-check" } };
       const prepared = await h.run(kind === "import" ? prepare(input(1)) : kind === "transaction" ? { kind, operations: [operation] } : operation);
       const plan = kind === "import" ? prepared.batches[0] : prepared;
       h.state.failInsert = true;
-      await assert.rejects(h.run(commit(plan)), /injected partial insert failure/);
+      await assert.rejects(h.run(commit(plan)), { code: "MONGODB_OPERATION_FAILED" });
       assert.equal(h.state.rows.size, 0);
       const manifest = JSON.parse([...h.files].find(([p]) => p.endsWith(`/${plan.mutationId}/manifest.json`))[1]);
       assert.equal(manifest.status, kind === "import" ? "commit_retryable" : "commit_failed");
@@ -128,13 +129,13 @@ test("import commit retry and rollback override secondaryPreferred without chang
   const request = prepare(input(2));
   const batch = (await h.run(request)).batches[0];
   h.state.failInsert = true;
-  await assert.rejects(h.run(commit(batch)), /injected partial insert failure/);
+  await assert.rejects(h.run(commit(batch)), { code: "MONGODB_OPERATION_FAILED" });
   assert.equal(h.state.rows.size, 0);
   const retry = (await h.run(request)).batches[0];
   assert.equal(retry.status, "commit_retryable");
   assert.equal(retry.mutationId, batch.mutationId);
   assert.equal(retry.planHash, batch.planHash);
-  assert.equal((await h.run(commit(batch))).status, "committed");
+  assert.equal((await h.run(commit(batch, 2))).status, "committed");
   assert.equal(h.state.rows.size, 2);
   assert.equal((await h.run(rollback(batch))).status, "rolled_back");
   assert.equal(h.state.rows.size, 0);
@@ -197,7 +198,7 @@ test("failed batch aborts atomically and retries without repeating completed bat
   assert.equal(h.state.rows.size, 2);
   const again = await h.run(prepare({ ...input(3), batchSize: 2 }));
   assert.deepEqual(again.batches.map((b) => b.status), ["committed", "commit_retryable"]);
-  await h.run(commit(plan.batches[1]));
+  await h.run(commit(plan.batches[1], 2));
   assert.equal(h.state.rows.size, 3);
   await h.run(rollback(plan.batches[1]));
   assert.equal(h.state.rows.size, 2);
@@ -223,7 +224,7 @@ test("connection failures before a transaction can retry the same import plan", 
   await assert.rejects(h.run(commit(batch)));
   h.state.failConnect = false;
   assert.equal((await h.run(prepare(input(2)))).batches[0].status, "commit_retryable");
-  await h.run(commit(batch));
+  await h.run(commit(batch, 2));
   assert.equal(h.state.rows.size, 2);
 });
 
