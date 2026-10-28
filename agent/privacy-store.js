@@ -1,3 +1,4 @@
+import { orphanRiskStoreAction, orphanRiskHumanAction } from "./mongodb-orphan-risk.js";
 import { executionRiskStoreAction, executionRiskHumanAction, recordExecutionRiskEvidence } from "./mongodb-execution-risk.js";
 import { recordImportPrepared, continuePartialImport } from "./mongodb-import-risk.js";
 import { DatabaseSync } from "node:sqlite";
@@ -106,6 +107,8 @@ export class PrivacyStore {
     if (action === "assert_instance_admission") return assertInstanceAdmission(this, input.instanceId, input);
     const termination = jobTerminationStoreAction(this, action, input);
     if (termination !== undefined) return termination;
+    const orphanHuman = orphanRiskHumanAction(this, action, input);
+    if (orphanHuman !== undefined) return orphanHuman;
     const executionHuman = executionRiskHumanAction(this, action, input);
     if (executionHuman !== undefined) return executionHuman;
     const humanRisk = humanRiskStoreAction(this, action, input);
@@ -127,6 +130,8 @@ export class PrivacyStore {
         return result;
       } catch (error) { this.db.exec("ROLLBACK"); throw error; }
     }
+    const orphanRisk = orphanRiskStoreAction(this, action, input, ctx, scope);
+    if (orphanRisk !== undefined) return orphanRisk;
     const executionRisk = executionRiskStoreAction(this, action, input, ctx, scope);
     if (executionRisk !== undefined) return executionRisk;
     const disposition = dispositionStoreAction(this, action, input, ctx, scope);
@@ -185,7 +190,7 @@ export class PrivacyStore {
       return { aliases, deliveryId };
     });
     if (action === "intent") return this.transaction(() => {
-      if (isMongoAdmissionRoute(input.route) && input.identity?.instanceId) assertInstanceAdmission(this, input.identity.instanceId, { ...input, ctx });
+      if (isMongoAdmissionRoute(input.route) && input.identity?.instanceId) assertInstanceAdmission(this, input.identity.instanceId, { ...input, orphanIntentId: undefined, ctx });
       const id = this.hash("operation", ctx, input.scope, input.route, input.request);
       const previous = this.get("operation", id, ctx, scope);
       // Redacted request identity can collide when only a protected value
@@ -433,7 +438,7 @@ export class PrivacyStore {
     // Must run under the same BEGIN IMMEDIATE as the state transition: a
     // concurrent Manager cannot install a hold between this check and commit.
     const original = this.get("operation", id, ctx, scope);
-    if (original?.identity?.instanceId) assertInstanceAdmission(this, original.identity.instanceId, { route: original.route, identity: original.identity, dispatchDigest: original.importPrepare?.requestDigest || original.bulkPrepare?.requestDigest, ctx });
+    if (original?.identity?.instanceId) assertInstanceAdmission(this, original.identity.instanceId, { route: original.route, identity: original.identity, orphanIntentId: id, dispatchDigest: original.importPrepare?.requestDigest || original.bulkPrepare?.requestDigest, ctx });
   }
   cleanup(ctx, limit) {
     return this.transaction(() => {

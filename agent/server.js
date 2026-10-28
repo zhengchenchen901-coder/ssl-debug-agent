@@ -2016,7 +2016,7 @@ export function createManagerApp(options = {}) {
     dispatch: async (id, route, payload) => {
       // Internal to the already-approved handoff. Ordinary admissions for this
       // old job are now closed; no Manager proxy or MCP tool exposes retire.
-      if (!["/mongodb/bulk/retire", "/mongodb/imports/retire", "/mongodb/imports/execution-review", "/mongodb/imports/execution-continue"].includes(route)) await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload, registry.getInternal(id)?.mongodb?.database);
+      if (!["/mongodb/bulk/retire", "/mongodb/imports/retire", "/mongodb/imports/execution-review", "/mongodb/imports/execution-continue"].includes(route)) await assertMongoDispatchAdmission(app.locals.privacyService, id, route, payload, registry.getInternal(id)?.mongodb?.database, true);
       return workerManager.callInstance(id, route, payload, { "X-Remote-Debug-Source": "codex-plugin" });
     },
     directory: path.join(path.dirname(path.dirname(config.runtime?.statePath || path.join(options.cwd || process.cwd(), ".runtime", "agent-state.json"))), ".private", "business") });

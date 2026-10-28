@@ -174,12 +174,12 @@ window.addEventListener("pagehide", () => {
 });
 
 let currentRiskReview = null;
-const riskApi = () => element("riskStage").value === "execution" ? "/api/execution-risk/" : "/api/risk-replacement/";
+const riskApi = () => element("riskStage").value === "orphan" ? "/api/orphan-risk/" : element("riskStage").value === "execution" ? "/api/execution-risk/" : "/api/risk-replacement/";
 const prepareRiskIntro = element("riskIntro").textContent, prepareRiskFooter = element("riskFooter").textContent;
 element("riskStage").addEventListener("change", () => {
-  const execution = element("riskStage").value === "execution";
-  element("riskIntro").textContent = execution ? "原执行及历史在途事务结果仍未知。请核对原执行身份、精确文档和顺序、集合前置条件的变化，并明确接受迟到提交、重复及部分成功风险。本次审核独立于准备阶段审批。" : prepareRiskIntro;
-  element("riskFooter").textContent = execution ? "批准只允许在同一导入中准备一个新的精确接续计划。原执行仍未知；此页面不会执行业务写入。接续计划准备后，仍须单独确认其精确范围及计划身份。" : prepareRiskFooter;
+  const execution = element("riskStage").value === "execution", orphan = element("riskStage").value === "orphan";
+  element("riskIntro").textContent = orphan ? "没有原 intentId 或历史回执。请核对原 operationId/importId、固定输入摘要、实例/数据库及精确数据范围，审阅重复、迟到执行和回滚风险。原状态保持 unresolved/unknown。" : execution ? "原执行及历史在途事务结果仍未知。请核对原执行身份、精确文档和顺序、集合前置条件的变化，并明确接受迟到提交、重复及部分成功风险。本次审核独立于准备阶段审批。" : prepareRiskIntro;
+  element("riskFooter").textContent = orphan ? "批准只授权一次此精确导入准备；不证明历史未派发，不执行业务写入。每批实际执行或回滚仍需单独确认。处置结果未知时不能重派。" : execution ? "批准只允许在同一导入中准备一个新的精确接续计划。原执行仍未知；此页面不会执行业务写入。接续计划准备后，仍须单独确认其精确范围及计划身份。" : prepareRiskFooter;
   currentRiskReview = null; element("riskDetails").textContent = ""; riskButtonState(); });
 function resetRiskReview() {
   resetTerminationReview();
@@ -193,6 +193,17 @@ function resetRiskReview() {
 }
 function renderRiskReview(plan) {
     element("riskPhrase").textContent = "确认语句：" + plan.confirmation;
+    if (plan.kind === "orphan_import") {
+      element("riskDetails").textContent = JSON.stringify({
+        审核阶段: "无 intentId、缺历史回执", 绑定身份: plan.binding,
+        原状态: plan.originalStatus, 历史结果: plan.historicalOutcome, 已证明未派发: plan.provesNotDispatched,
+        系统观测: plan.observation, 唯一后续处置: plan.followup,
+        精确原请求: plan.orderedOriginalRequest, 精确后续请求: plan.orderedFollowupRequest,
+        调用者说明非证明: plan.reviewMemo, 剩余风险: plan.warning,
+        状态: plan.state, 审核哈希: plan.reviewHash, 批准审计: plan.approvalAuditId,
+        消费审计: plan.consumptionAuditId, 到期时间: new Date(plan.expiresAt).toLocaleString()
+      }, null, 2); return;
+    }
     if (plan.kind === "import_execution") {
       element("riskDetails").textContent = JSON.stringify({
         审核阶段: "执行结果未知：独立人工风险接受", 绑定身份: plan.binding, 原执行已知事实: plan.knownExecution,

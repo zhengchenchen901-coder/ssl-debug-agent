@@ -251,13 +251,41 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
   }
   if (input.action === "disposition") {
     const common = ["action", "auth", "scope", "mode", "operationId", "timeoutMs", "deadlineAt"];
-    const fields = input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine"
+    const fields = input.mode === "prepare_orphan_risk" ? ["originalOperationId", "importId", "requestDigest", "originalRequest", "replacementRequest", "reviewMemo"]
+      : ["inspect_orphan_risk", "consume_orphan_risk"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "consume_orphan_risk" ? ["reviewHash"] : [])]
+      : input.mode === "prepare" ? ["id", "originalRequest"] : input.mode === "quarantine"
       ? ["dispositionId", "reviewHash", "confirmation"] : input.mode === "admit_replacement" ? ["dispositionId", "reviewHash"] : input.mode === "inspect" ? ["dispositionId"]
         : input.mode === "prepare_execution_risk" ? ["id", "riskPlanId"]
           : ["inspect_execution_risk", "continue_execution"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "continue_execution" ? ["reviewHash"] : [])]
         : input.mode === "prepare_risk" ? ["dispositionId", "reviewHash", "originalRequest", "replacementRequest", "reviewMemo"]
           : ["inspect_risk", "create_replacement"].includes(input.mode) ? ["riskPlanId", ...(input.mode === "create_replacement" ? ["reviewHash"] : [])] : [];
     if (!fields.length || Object.keys(input).some(key => ![...common, ...fields].includes(key))) throw privacyError("BUSINESS_DISPOSITION_DENIED");
+    if (input.mode === "prepare_orphan_risk") {
+      validateImportLookup(input);
+      const target = JSON.parse(input.scope), requests = {};
+      for (const name of ["originalRequest", "replacementRequest"]) {
+        const raw = input[name];
+        if (!isImportRequest(raw) || Object.keys(raw).some(key => !["instanceId", "importId", "database", "collection", "documents", "batchSize", "rollbackTtlMs", "purpose", "operationId", "timeoutMs", "deadlineAt"].includes(key)) || raw.instanceId !== target.id || raw.database !== target.database || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+        const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
+        if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+        try { normalizeMongoImport(request, instance(target.id).mongodb); }
+        catch { throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID"); }
+        requests[name] = request;
+      }
+      if (input.reviewMemo !== undefined && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4000)) throw privacyError("BUSINESS_ORPHAN_RISK_DENIED");
+      const reviewMemo = createOutputGuard().sanitize({ reviewMemo: input.reviewMemo || "" }).value.reviewMemo;
+      const batches = importBatchIdentity(normalizeMongoImport(requests.replacementRequest, instance(target.id).mongodb));
+      return service.call("orphan_risk_prepare", { ...input, ...requests, reviewMemo, batches });
+    }
+    if (input.mode === "inspect_orphan_risk") return service.call("orphan_risk_inspect", input);
+    if (input.mode === "consume_orphan_risk") {
+      const reserved = await service.call("orphan_risk_consume", input);
+      if (reserved.done) { const { done, ...result } = reserved; return result; }
+      const record = reserved.intent, target = JSON.parse(input.scope);
+      const result = await importPrepareRequest(service, { ...input, id: record.id, attempt: 1,
+        action: "dispatch_prepare", request: reserved.request }, record, target, { instance, dispatch, preflight }, saved => saved);
+      return service.call("orphan_risk_result", { ...input, result });
+    }
     if (input.mode === "prepare_execution_risk") {
       const context = await service.call("execution_risk_context", input);
       if (context.existing) return context.existing;
@@ -456,12 +484,12 @@ export function installPrivacyRoutes(app, { directory, registry, service, dispat
 // Apply to Manager proxy calls as well as protected dispatch. This gate makes
 // new local admissions fail closed; it cannot recall a request already handed
 // to an old worker, SSH queue, helper or MongoDB transaction.
-export async function assertMongoDispatchAdmission(service, instanceId, route, request, defaultDatabase) {
-  if (isMongoAdmissionRoute(route)) await service.call("assert_instance_admission", { instanceId, route, request: route.startsWith("/mongodb/imports/") ? { ...request, database: request.database || defaultDatabase } : request });
+export async function assertMongoDispatchAdmission(service, instanceId, route, request, defaultDatabase, trustedPrivacyDispatch = false) {
+  if (isMongoAdmissionRoute(route)) await service.call("assert_instance_admission", { instanceId, route, ...(trustedPrivacyDispatch ? { orphanIntentId: request._businessImport?.binding } : {}), request: route.startsWith("/mongodb/imports/") ? { ...request, database: request.database || defaultDatabase } : request });
 }
 
 export async function humanRiskRequest(service, action, input, instance) {
-  const context = await service.call(action.startsWith("human_execution_risk_") ? "human_execution_risk_context" : "human_risk_context", input);
+  const context = await service.call(action.startsWith("human_orphan_risk_") ? "human_orphan_risk_context" : action.startsWith("human_execution_risk_") ? "human_execution_risk_context" : "human_risk_context", input);
   const target = JSON.parse(context.targetScope), current = instance(input.instanceId);
   if (!current || current.enabled === false || context.targetScope !== riskTargetScope(target.endpoint, current, target.database)) throw privacyError("BUSINESS_REPLACEMENT_STALE");
   return service.call(action, { ...input, targetScope: context.targetScope });

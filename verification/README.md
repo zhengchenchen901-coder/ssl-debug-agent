@@ -100,3 +100,24 @@ rows, links and pins. No real EJPOH input, live privacy database, SSH, business
 MongoDB or installed plugin cache is used. The same TestFlow `jest-unit` network
 isolation and exact-lock dependency image apply. Passed assertions do not prove
 coverage of non-src source roots or real-world historical recovery outcomes.
+
+## Missing intent independent risk contract v1
+
+`orphan-risk.test.js` covers a separate `human-orphan-import-risk-v1` protocol
+for records with no usable historical intent/receipt. Disposable encrypted SQLite
+and the synthetic fixed Mongo helper verify exact original operation/import,
+ordered input digest, explicit test-server/yennefer target and exact documents;
+fresh approval expiry, immutable candidate, single consumption, restart, late
+history, transactional faults, unknown replies, closed ordinary admissions,
+reviewed batch identity, and separate execution/rollback confirmation. It never
+claims that an unavailable receipt proves non-dispatch. Historical operation rows
+are compared byte for byte, and no original intent or receipt is manufactured.
+
+The independent administrator HTTP/native-verification boundary is exercised by
+`plugins/remote-debug-agent/test/orphan-risk.test.js` in a separate disposable
+network-none container, using actual public MCP and source/bundled Manager.
+Its OS verification and Mongo/SSH are explicit doubles. Formal TestFlow unit
+results remain separate from these HTTP/MCP/browser checks. Source coverage for
+non-src roots remains a collector limitation; assertion success is not full
+branch/path coverage. No live historical records or actual nine-item input is
+part of these synthetic fixtures.

@@ -585,7 +585,7 @@ const tools = [
   },
   {
     name: "remote_debug_mongodb_disposition",
-    description: "Review/quarantine an exact uncertain bulk or import intent, preserving its historical record. For an uncertain import EXECUTE use prepare_execution_risk with its exact intentId and existing unique replacement riskPlanId. This creates a separate human-execution-risk-v1 review; inspect_execution_risk reads it. Only the independent /api/execution-risk workbench with fresh native verification can approve. continue_execution consumes that approval to reserve one immutable child batch inside the SAME importId; it never executes documents, clears the original unknown, forges safe_terminal or creates another replacement import. Explicitly review UUID/prerequisite changes and confirm the returned child mutationId/planHash separately with the normal execute tool. A new unknown cannot auto-dispatch again. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Import proposals preserve exact documents, order, collection and options; only importId changes. Import batch receipts and per-batch rollback boundaries are reviewed independently. Creation never executes business writes; imports use normal mutation confirmation, bulk sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
+    description: "For missing intentId and historical receipts use prepare_orphan_risk with exact originalOperationId/importId/requestDigest, originalRequest and replacementRequest (only importId may change). The independent /api/orphan-risk administrator workbench alone approves after fresh native verification. inspect_orphan_risk reads; consume_orphan_risk authorizes exactly one preparation, never business writes. Original remains unresolved/unknown, never proven not dispatched. A consumed/unknown followup cannot dispatch again. Review/quarantine an exact uncertain bulk or import intent, preserving its historical record. For an uncertain import EXECUTE use prepare_execution_risk with its exact intentId and existing unique replacement riskPlanId. This creates a separate human-execution-risk-v1 review; inspect_execution_risk reads it. Only the independent /api/execution-risk workbench with fresh native verification can approve. continue_execution consumes that approval to reserve one immutable child batch inside the SAME importId; it never executes documents, clears the original unknown, forges safe_terminal or creates another replacement import. Explicitly review UUID/prerequisite changes and confirm the returned child mutationId/planHash separately with the normal execute tool. A new unknown cannot auto-dispatch again. prepare_risk binds originalRequest and a replacementRequest with identical business effects; only preimage guards and explicit job association fields may change. inspect_risk presents known facts, missing evidence, caller reviewMemo and residual risks. Final risk approval is ONLY in the independent administrator workbench with fresh native owner verification; MCP cannot approve it. New human-risk-acceptance-v2 plans let the independent human administrator accept unknown historical and in-flight outcomes; no external migration receipt is required. After approval, create_replacement records managed original-job termination and creates/uploads the unique linked replacement. Historical outcome remains unknown. Import proposals preserve exact documents, order, collection and options; only importId changes. Import batch receipts and per-batch rollback boundaries are reviewed independently. Creation never executes business writes; imports use normal mutation confirmation, bulk sealing and execution use normal bulk tools and immutable plan confirmation. Human acceptance is never a proof of non-execution or global legacy credential revocation; legacy policy plans retain their original requirements.",
     inputSchema: {
       type: "object", additionalProperties: false, required: ["instanceId", "database", "mode"],
       oneOf: [
@@ -599,10 +599,16 @@ const tools = [
         { properties: { mode: { const: "prepare_execution_risk" } }, required: ["intentId", "riskPlanId"] },
         { properties: { mode: { const: "inspect_execution_risk" } }, required: ["riskPlanId"] },
         { properties: { mode: { const: "continue_execution" } }, required: ["riskPlanId", "reviewHash"] },
+        { properties: { mode: { const: "prepare_orphan_risk" } }, required: ["originalOperationId", "importId", "requestDigest", "originalRequest", "replacementRequest"] },
+        { properties: { mode: { const: "inspect_orphan_risk" } }, required: ["riskPlanId"] },
+        { properties: { mode: { const: "consume_orphan_risk" } }, required: ["riskPlanId", "reviewHash"] },
       ],
       properties: {
         instanceId: instanceIdProperty, database: { type: "string", minLength: 1, maxLength: 128 },
-        mode: { type: "string", enum: ["prepare", "inspect", "quarantine", "admit_replacement", "prepare_risk", "inspect_risk", "create_replacement", "prepare_execution_risk", "inspect_execution_risk", "continue_execution"] },
+        mode: { type: "string", enum: ["prepare", "inspect", "quarantine", "admit_replacement", "prepare_risk", "inspect_risk", "create_replacement", "prepare_execution_risk", "inspect_execution_risk", "continue_execution", "prepare_orphan_risk", "inspect_orphan_risk", "consume_orphan_risk"] },
+        originalOperationId: { type: "string", pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$" },
+        importId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        requestDigest: { type: "string", pattern: "^[a-f0-9]{64}$" },
         reviewMemo: { type: "string", maxLength: 4000, description: "Facts and remaining uncertainties for human review; caller statement, not trusted execution proof." },
         riskPlanId: { type: "string", pattern: "^[a-f0-9]{64}$" },
         intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
@@ -3054,7 +3060,7 @@ async function requestAgent(pathName, payload, options = {}) {
       const candidate = payload[requestField];
       const importCandidate = pathName.endsWith("disposition") && isImportRequest(candidate);
       const allowed = tools.find((tool) => tool.name === (importCandidate ? "remote_debug_mongodb_prepare_import" : "remote_debug_mongodb_prepare_bulk")).inputSchema.properties;
-      if (!(pathName.endsWith("disposition") ? ["prepare", "prepare_risk"].includes(payload.mode) : payload.mode === "historical") || !candidate || typeof candidate !== "object" || Array.isArray(candidate) ||
+      if (!(pathName.endsWith("disposition") ? ["prepare", "prepare_risk", "prepare_orphan_risk"].includes(payload.mode) : payload.mode === "historical") || !candidate || typeof candidate !== "object" || Array.isArray(candidate) ||
           Object.keys(candidate).some((key) => !Object.hasOwn(allowed, key)) ||
           candidate.instanceId !== undefined && candidate.instanceId !== instanceId || candidate.database !== undefined && candidate.database !== database) {
         throw Object.assign(new Error("Historical recovery requires an exact original bulk request in the same target."), { code: "BUSINESS_OPERATION_DENIED" });
@@ -3220,8 +3226,10 @@ async function callTool(name, args, operation) {
     const byMode = { prepare: ["intentId", "originalRequest"], inspect: ["dispositionId"],
       quarantine: ["dispositionId", "reviewHash", "confirmation"], admit_replacement: ["dispositionId", "reviewHash"],
       prepare_risk: ["dispositionId", "reviewHash", "originalRequest", "replacementRequest"], inspect_risk: ["riskPlanId"], create_replacement: ["riskPlanId", "reviewHash"],
-      prepare_execution_risk: ["intentId", "riskPlanId"], inspect_execution_risk: ["riskPlanId"], continue_execution: ["riskPlanId", "reviewHash"] };
-    const optional = args?.mode === "prepare_risk" ? ["reviewMemo"] : [];
+      prepare_execution_risk: ["intentId", "riskPlanId"], inspect_execution_risk: ["riskPlanId"], continue_execution: ["riskPlanId", "reviewHash"],
+      prepare_orphan_risk: ["originalOperationId", "importId", "requestDigest", "originalRequest", "replacementRequest"],
+      inspect_orphan_risk: ["riskPlanId"], consume_orphan_risk: ["riskPlanId", "reviewHash"] };
+    const optional = ["prepare_risk", "prepare_orphan_risk"].includes(args?.mode) ? ["reviewMemo"] : [];
     const required = byMode[args?.mode];
     if (!required || !args.instanceId || !args.database || required.some(key => args[key] === undefined) ||
         Object.keys(args).some(key => ![...common, ...required, ...optional].includes(key))) {

@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "jobId": "3b8ab78c-7ba5-4a70-9023-a66023817495",
+  "status": "passed",
+  "reportHash": "8f1d64388f6c276361704a2a052a8f50b83bdd5c2293cd13a25d634684ae7320",
+  "snapshotId": "44116c4f30c40ffb1687d458021ea15bd1f3e5adee08ea52b7a475222ec12694",
+  "scopeId": "be97a73280916769a9820c51ab8dab48a8c95f96048431cdd7e505c27964d143",
+  "selection": {
+    "selectedAssets": 5,
+    "completedAssetResults": 5,
+    "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+    "executedCases": 62,
+    "passed": 62,
+    "failed": 0,
+    "skipped": 0,
+    "excludedByPattern": 0
+  },
+  "targetCoverage": {
+    "scopeId": "be97a73280916769a9820c51ab8dab48a8c95f96048431cdd7e505c27964d143",
+    "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+    "total": 2149,
+    "covered": 0,
+    "notCovered": 0,
+    "unknown": 2149,
+    "byKind": {
+      "modified-block": {
+        "total": 1890,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 1890
+      },
+      "condition-outcome": {
+        "total": 224,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 224
+      },
+      "impacted-entry": {
+        "total": 5,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 5
+      },
+      "symbol-reference": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "unexpanded-change": {
+        "total": 30,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 30
+      }
+    },
+    "outOfScopeChanges": [
+      {
+        "changeId": "agent/manual-workbench.js::symbol:ManualWorkbench/fn:listen",
+        "status": "out-of-scope",
+        "reason": "显式范围外待验，未作为未覆盖计数"
+      },
+      {
+        "changeId": "agent/manual-workbench.js::symbol:ManualWorkbench/fn:listen/fn:callback:route:0:e3b0c44298fc#10",
+        "status": "out-of-scope",
+        "reason": "显式范围外待验，未作为未覆盖计数"
+      },
+      {
+        "changeId": "agent/manual-workbench.js::symbol:ManualWorkbench/fn:listen/fn:callback:route:0:e3b0c44298fc#12",
+        "status": "out-of-scope",
+        "reason": "显式范围外待验，未作为未覆盖计数"
+      },
+      {
+        "changeId": "agent/manual-workbench.js::symbol:ManualWorkbench/fn:listen/fn:callback:route:0:e3b0c44298fc#13",
+        "status": "out-of-scope",
+        "reason": "显式范围外待验，未作为未覆盖计数"
+      },
+      {
+        "changeId": "agent/manual-workbench.js::symbol:ManualWorkbench/fn:listen/fn:callback:route:0:e3b0c44298fc#13/fn:callback:setInterval:0:644fa2d3750b",
+        "status": "out-of-scope",
+        "reason": "显式范围外待验，未作为未覆盖计数"
+      }
+    ],
+    "excludedEntryIds": [
+      "agent/mongodb-disposition.js::fn:isMongoAdmissionRoute",
+      "agent/mongodb-disposition.js::fn:dispositionStoreAction",
+      "agent/mongodb-disposition.js::fn:assertInstanceAdmission",
+      "agent/privacy-service.js::fn:installPrivacyRoutes",
+      "agent/privacy-service.js::fn:assertMongoDispatchAdmission"
+    ],
+    "outOfScopeChangeCount": 4892,
+    "excludedEntryCount": 22
+  },
+  "files": [
+    {
+      "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+      "runId": "b3fbf87f-4d6c-4df0-8cf0-f3eb0de4a092",
+      "evidenceHash": "33ac34657519eb925e1993c60475ad19315ad2b5ae661a1f2ca6dd6eaa987d15",
+      "status": "passed",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+          "file": "verification/import-safety.test.js",
+          "status": "passed",
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 2149
+        }
+      ]
+    },
+    {
+      "assetId": "7ccafdbf7ab6420d074066d6939a2b75801cb28da0e2499b47a3cef796d7595e",
+      "runId": "03132692-a908-47bf-884a-3227c5d66829",
+      "evidenceHash": "29c6140102384b484ed795df4dfc1c48b50ad5f1cca0bf6eb99f1ab742b01d7e",
+      "status": "passed",
+      "total": 27,
+      "passed": 27,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "7ccafdbf7ab6420d074066d6939a2b75801cb28da0e2499b47a3cef796d7595e",
+          "file": "verification/import-execution.test.js",
+          "status": "passed",
+          "total": 27,
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 2149
+        }
+      ]
+    },
+    {
+      "assetId": "c19b5b22e1222829ac50e9da5287c33f8078f94b5bf49e99c6b8ab9aad34c3d6",
+      "runId": "2cc6a999-50ae-4539-b2ef-8a6f59f3cf97",
+      "evidenceHash": "91e3de9f33172ee14a393365b8c15522d47c7efbd48f683bda256b8f8875299f",
+      "status": "passed",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "c19b5b22e1222829ac50e9da5287c33f8078f94b5bf49e99c6b8ab9aad34c3d6",
+          "file": "verification/execution-risk.test.js",
+          "status": "passed",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 2149
+        }
+      ]
+    },
+    {
+      "assetId": "36b5678721fb59549ae1589a7279ebb403323cd407dd0019b3b36b19b72b3299",
+      "runId": "0e176848-d3e8-4276-bdbd-19d5822f38d8",
+      "evidenceHash": "9e0be5911005754088257f1acae60a3d45ad2bbe36fbdd3d116a66bf62ef15d1",
+      "status": "passed",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "36b5678721fb59549ae1589a7279ebb403323cd407dd0019b3b36b19b72b3299",
+          "file": "verification/import-recovery.test.js",
+          "status": "passed",
+          "total": 13,
+          "passed": 13,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 2149
+        }
+      ]
+    },
+    {
+      "assetId": "da3de16378927ebf59a9ef068a121510d8335b1386e9c063307a668e84a210f9",
+      "runId": "7e08b047-9e8c-4a36-b777-e97db790a6d5",
+      "evidenceHash": "59ed6e0aa8ef5a45f53bab7d69ce61c8008a1b7d088dacc5a6c3446e71f7ec9f",
+      "status": "passed",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "da3de16378927ebf59a9ef068a121510d8335b1386e9c063307a668e84a210f9",
+          "file": "verification/orphan-risk.test.js",
+          "status": "passed",
+          "total": 10,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 2149
+        }
+      ]
+    }
+  ]
+}

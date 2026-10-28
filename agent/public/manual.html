@@ -124,7 +124,7 @@
           <section class="preview-panel" aria-labelledby="riskTitle">
             <h2 id="riskTitle">未知任务风险处置</h2>
             <p id="riskIntro">原任务的历史结果仍为未知，可能存在已提交、已回滚或未观察到的修改。接受此风险可能导致重复导入或重复业务写入。机器无法确定的历史及在途结果交由您裁决；批准表示接受剩余风险，并授权关闭原任务后续调度及建立唯一关联替代任务。</p>
-            <label>审核阶段<select id="riskStage"><option value="prepare">准备结果未知</option><option value="execution">执行结果未知（独立批准）</option></select></label>
+            <label>审核阶段<select id="riskStage"><option value="prepare">准备结果未知</option><option value="execution">执行结果未知（独立批准）</option><option value="orphan">无 intentId、缺历史回执（独立批准）</option></select></label>
             <label>风险计划 ID<input id="riskPlanId" maxlength="64" autocomplete="off" spellcheck="false"></label>
             <button id="riskLoad" class="button" type="button">读取具体计划</button>
             <pre id="riskDetails" style="white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"></pre>

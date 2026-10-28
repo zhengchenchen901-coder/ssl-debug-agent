@@ -1,3 +1,4 @@
+import { assertOrphanRiskAdmission } from "./mongodb-orphan-risk.js";
 import { privacyError } from "./privacy-key.js";
 import { prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
 import { replacementAdmission, riskRetirementStatus, assertRiskJobAdmission } from "./mongodb-risk-replacement.js";
@@ -122,6 +123,7 @@ export function dispositionStoreAction(store, action, input, ctx, scope) {
 
 export function assertInstanceAdmission(store, instanceId, admission = {}) {
   if (typeof instanceId !== "string" || !instanceId) denied();
+  assertOrphanRiskAdmission(store, instanceId, admission);
   assertJobNotTerminated(store, instanceId, admission);
   assertRiskJobAdmission(store, instanceId, admission);
   if (store.get("disposition_hold", store.hash("disposition-instance-hold", instanceId), "", "")) {

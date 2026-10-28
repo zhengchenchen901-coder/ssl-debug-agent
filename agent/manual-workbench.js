@@ -359,6 +359,39 @@ export class ManualWorkbench {
         response.json(result);
       } finally { session.executionRiskApprovalPending = false; }
     }));
+    app.post("/api/orphan-risk/review", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId"]);
+      const session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const result = await this.riskReview("human_orphan_risk_view", { riskPlanId: request.body.riskPlanId, instanceId: session.instanceId });
+      this.getSession(this.bearer(request));
+      session.orphanRiskReview = { riskPlanId: result.riskPlanId, reviewHash: result.reviewHash, confirmation: result.confirmation,
+        canApprove: result.canApprove, expiresAt: Math.min(result.expiresAt, this.now() + 300000) };
+      session.lastInputAt = this.now();
+      response.json(result);
+    }));
+    app.post("/api/orphan-risk/approve", route(async (request, response) => {
+      assertFields(request.body, ["riskPlanId", "reviewHash", "confirmation"]);
+      const token = this.bearer(request), session = authorize(request);
+      if (!this.riskReview) throw manualError("MANUAL_RISK_REVIEW_UNAVAILABLE", "此版本没有接入风险处置审阅。", 503);
+      const review = session.orphanRiskReview;
+      if (!review?.canApprove || review.riskPlanId !== request.body.riskPlanId || review.reviewHash !== request.body.reviewHash ||
+          review.confirmation !== request.body.confirmation || review.expiresAt <= this.now() || session.orphanRiskApprovalPending) {
+        throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "请在当前管理员会话中重新读取并确认具体风险计划。", 409);
+      }
+      session.orphanRiskApprovalPending = true;
+      try {
+        // Fresh native OS verification is mandatory for EVERY final approval.
+        await this.ownerVerification.verify();
+        this.getSession(token);
+        if (session.orphanRiskReview !== review || review.expiresAt <= this.now()) throw manualError("MANUAL_RISK_REVIEW_REQUIRED", "审阅计划已变化，请重新核对。", 409);
+        session.orphanRiskReview = null; // Consume before committing; no stale review reuse.
+        const result = await this.riskReview("human_orphan_risk_approve", { ...request.body, instanceId: session.instanceId,
+          actor: { username: session.username, sessionId: session.id, verifiedAt: Date.now() } });
+        session.lastInputAt = this.now();
+        response.json(result);
+      } finally { session.orphanRiskApprovalPending = false; }
+    }));
     app.post("/api/job-termination/review", route(async (request, response) => {
       assertFields(request.body, ["database", "jobId", "planHash", "reason"]);
       const token = this.bearer(request), session = authorize(request);
