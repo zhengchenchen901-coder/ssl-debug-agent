@@ -1,0 +1,18 @@
+{
+  "pluginId": "remote-debug-agent@remote-debug-local",
+  "name": "remote-debug-agent",
+  "marketplaceName": "remote-debug-local",
+  "version": "2.4.0+codex.20261028.3",
+  "installed": true,
+  "enabled": true,
+  "source": {
+    "source": "local",
+    "path": "/Users/zhengchenchen/od-projects/ssl-debug-agent/plugins/remote-debug-agent"
+  },
+  "marketplaceSource": {
+    "sourceType": "local",
+    "source": "/Users/zhengchenchen/od-projects/ssl-debug-agent"
+  },
+  "installPolicy": "AVAILABLE",
+  "authPolicy": "ON_INSTALL"
+}

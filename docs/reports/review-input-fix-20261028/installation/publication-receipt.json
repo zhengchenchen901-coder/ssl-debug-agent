@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "result": {
+    "version": 1,
+    "taskId": "f7cb5f2e-6e7e-4e4f-909d-33ae7536fc24",
+    "instanceId": "test-server",
+    "title": "插件 .3 已加载：五项真实审核准备及读取验证完成",
+    "type": "plugin_maintenance",
+    "status": "completed",
+    "final": true,
+    "publishedAt": "2026-10-28T06:29:18.433Z",
+    "fingerprint": "6faf0eab7073cd0a8dadc4957e75a08a68eaaf827e24d82e622c193b0b8e6310",
+    "privacy": {
+      "credentials": "[REDACTED]",
+      "binary": "verbatim",
+      "policyVersion": 1
+    },
+    "references": {
+      "operationIds": [
+        "451292e8-074f-4df7-8e7f-ab5caa1a5300",
+        "82d35fe0-4fc2-4270-8912-54fc7012e5eb",
+        "b68ac3da-cea2-461d-8839-27972aaa1cf9",
+        "c0f5e6a6-301b-4923-a16e-ab67ce7a6b91",
+        "f0cac78c-a513-435c-b785-ba09c5a61a33",
+        "bf787e32-3d52-4e5b-957b-8f50df18ee14",
+        "6c54d0e2-1686-498f-89ce-31b425f8a0cb",
+        "40c71b68-2408-4cc4-b1d7-525bbeecbc65",
+        "a6785f0e-cdc0-4660-b960-f9c5957c0fc7",
+        "78d460cf-988d-4e3c-b648-9a4f0451fc54"
+      ]
+    },
+    "totalBytes": 18265,
+    "files": [
+      {
+        "artifactId": "81af4914-8ead-4296-99f5-55d1f0985d60",
+        "category": "reports",
+        "format": "markdown",
+        "encoding": "utf8",
+        "name": "插件更新及五项真实审核验证.md",
+        "relativePath": "reports/81af4914-8ead-4296-99f5-55d1f0985d60.md",
+        "bytes": 6207,
+        "sha256": "caefc135ce1687d1b402c52212f8b7b785d2e547257033ba76d305b7fa22b944"
+      },
+      {
+        "artifactId": "183e52f7-b088-419c-ac03-d67bb9ff1de6",
+        "category": "results",
+        "format": "json",
+        "encoding": "utf8",
+        "name": "真实审核验证摘要.json",
+        "relativePath": "results/183e52f7-b088-419c-ac03-d67bb9ff1de6.json",
+        "bytes": 12058,
+        "sha256": "1e9dfaee4738a624bf2118c1970dc2f6b805b6b7daaaeaf7eefa112113edb6df"
+      }
+    ]
+  },
+  "duplicate": false,
+  "outputGuard": {
+    "policyVersion": 1,
+    "replacements": 1,
+    "omittedFields": 0,
+    "businessPrivacy": {
+      "contextId": "286328ea-a3b5-40f7-a98b-a5c8b7ecbe01",
+      "storage": "process_memory",
+      "policyVersion": 1
+    }
+  }
+}

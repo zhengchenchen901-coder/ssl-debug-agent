@@ -147,3 +147,9 @@ verified-results.json 来自实际 MCP evidence 返回的各文件 execution-res
 原 requestDigest、既有候选和同一 memo 调用 prepare_orphan_risk，读取其返回的同一 riskPlanId。
 必须逐项记录新调用标识、绑定、状态及 inspect/read 证据；任何冲突继续停止，不能换身份。
 该加载授权仍不包括风险批准、consume、业务导入或回滚。本轮没有自动请求或执行这些业务动作。
+
+## 后续已获授权并完成加载
+
+本报告上述 0/5 为当时未授权加载时的结果。用户随后明确要求“更新插件”，现已安装并加载
+2.4.0+codex.20261028.3，5/5 真实审核准备和读取通过，均 awaiting_human，未批准/consume/写入。
+原证据保留不改写；最新结果及逐项标识见 [安装与真实审核验收](installation/README.md)。

@@ -1,0 +1,959 @@
+{
+  "scope": {
+    "instanceId": "test-server",
+    "database": "yennefer",
+    "contextId": "87281bfb-b6f9-46a0-8a55-11ef57869d9e"
+  },
+  "rows": [
+    {
+      "collection": "Customer",
+      "documentCount": 71,
+      "originalOperationId": "15d32144-7f38-446f-82bb-62931fd4eaab",
+      "oldReviewFailureOperationId": "50796dc8-3713-4403-a9cc-3e257be42092",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-customer",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-67d2f7b84ac0432c5f98",
+      "requestDigest": "047df81e2639c31aeac7e02daa772dd0e8ce5d5b2c0227b78ac82b68b24c03e6",
+      "result": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "efe475b9d23cfbe87994633db6b3aa85e3ba9f8eada9b634d399a23dcc4d8fd2",
+        "reviewHash": "e6101de0932bc9fbcb366bbb579b708343da33f9e8334fcea823b282ede47fd4",
+        "humanApproved": false,
+        "expiresAt": 1793172186490,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-67d2f7b84ac0432c5f98",
+          "requestDigest": "5eaecb4a2c07ce4fd182c4b0ccf771075ad1fb1ae369bf46c43db5e903cdbeac",
+          "collection": "Customer",
+          "documentCount": 71,
+          "batches": [
+            {
+              "mutationId": "import-77d9c37f2d8c64fab4f9371ec01dc3a7e6c9063cb8fd2c7b45c3380205387bd3",
+              "batchIndex": 0,
+              "documentCount": 71,
+              "requestDigest": "87a884c5f7e54e6ba163cfb2f109514278aa948dbafdab59cb3183ac17dbd2e2"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "15d32144-7f38-446f-82bb-62931fd4eaab",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-customer",
+          "requestDigest": "047df81e2639c31aeac7e02daa772dd0e8ce5d5b2c0227b78ac82b68b24c03e6",
+          "collection": "Customer"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      },
+      "inspection": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "efe475b9d23cfbe87994633db6b3aa85e3ba9f8eada9b634d399a23dcc4d8fd2",
+        "reviewHash": "e6101de0932bc9fbcb366bbb579b708343da33f9e8334fcea823b282ede47fd4",
+        "humanApproved": false,
+        "expiresAt": 1793172186490,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-67d2f7b84ac0432c5f98",
+          "requestDigest": "5eaecb4a2c07ce4fd182c4b0ccf771075ad1fb1ae369bf46c43db5e903cdbeac",
+          "collection": "Customer",
+          "documentCount": 71,
+          "batches": [
+            {
+              "mutationId": "import-77d9c37f2d8c64fab4f9371ec01dc3a7e6c9063cb8fd2c7b45c3380205387bd3",
+              "batchIndex": 0,
+              "documentCount": 71,
+              "requestDigest": "87a884c5f7e54e6ba163cfb2f109514278aa948dbafdab59cb3183ac17dbd2e2"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "15d32144-7f38-446f-82bb-62931fd4eaab",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-customer",
+          "requestDigest": "047df81e2639c31aeac7e02daa772dd0e8ce5d5b2c0227b78ac82b68b24c03e6",
+          "collection": "Customer"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      }
+    },
+    {
+      "collection": "RestaurantLog",
+      "documentCount": 29,
+      "originalOperationId": "8948b344-939a-4a7d-8d8c-8a82c75e401a",
+      "oldReviewFailureOperationId": "a3e1f978-451d-4b9c-b2ca-952f4012a81e",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-restaurantlog",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-d03de53d276e081f4d46",
+      "requestDigest": "b43e794710ad1b77d016a60c7faffba996936ae1b71288d814bd67af96db249d",
+      "result": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "2a6d94c16b1a6fd97d0dc7e5f54259b14a489ee4324bf6e2e644ca376763d1c3",
+        "reviewHash": "b86e9d0d48a7b8d2f240a0ed119c7390dcbd8c0911320ef20efb31b95737a132",
+        "humanApproved": false,
+        "expiresAt": 1793172186791,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-d03de53d276e081f4d46",
+          "requestDigest": "dfdc3c15a864f688006ff07e83c0e6ebf61a9d3b735c5ac1a08b7e75a6837993",
+          "collection": "RestaurantLog",
+          "documentCount": 29,
+          "batches": [
+            {
+              "mutationId": "import-31c44d2d092750cdd80d7819ea8a7246bb863c8f54285ad571e294ad82d44f13",
+              "batchIndex": 0,
+              "documentCount": 9,
+              "requestDigest": "1cd31c3d90f1b5d17d18f611f28d46cfff6da7b08df439339fe9dfe2f51cdb53"
+            },
+            {
+              "mutationId": "import-13ebe8e59a495bfa2e8b09a3ab7b8191074985c90ec18fe63e86d052f02c389b",
+              "batchIndex": 1,
+              "documentCount": 8,
+              "requestDigest": "8bf930b3b9147e0680c0a4d5c2b1e598d8d5a3216acc8926edf6e84abce77119"
+            },
+            {
+              "mutationId": "import-5d2d6099d8ec85679dd06a9d984b97b89db3867b392cb2ce2eaa3ca103ae5f0f",
+              "batchIndex": 2,
+              "documentCount": 8,
+              "requestDigest": "e62cd1e8b9e32642c3681f718b35ff486a9d101e2ea14588c8ade34dcc1c25a9"
+            },
+            {
+              "mutationId": "import-d08c7a4e56da7359624b602e33c258a28a3c8f16ac8fa9387e60bbbced16f374",
+              "batchIndex": 3,
+              "documentCount": 4,
+              "requestDigest": "f9a2fbe559c12141e5336de82e6147713b3408d2294e84f6c361320a2f729ac6"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "8948b344-939a-4a7d-8d8c-8a82c75e401a",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-restaurantlog",
+          "requestDigest": "b43e794710ad1b77d016a60c7faffba996936ae1b71288d814bd67af96db249d",
+          "collection": "RestaurantLog"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      },
+      "inspection": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "2a6d94c16b1a6fd97d0dc7e5f54259b14a489ee4324bf6e2e644ca376763d1c3",
+        "reviewHash": "b86e9d0d48a7b8d2f240a0ed119c7390dcbd8c0911320ef20efb31b95737a132",
+        "humanApproved": false,
+        "expiresAt": 1793172186791,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-d03de53d276e081f4d46",
+          "requestDigest": "dfdc3c15a864f688006ff07e83c0e6ebf61a9d3b735c5ac1a08b7e75a6837993",
+          "collection": "RestaurantLog",
+          "documentCount": 29,
+          "batches": [
+            {
+              "mutationId": "import-31c44d2d092750cdd80d7819ea8a7246bb863c8f54285ad571e294ad82d44f13",
+              "batchIndex": 0,
+              "documentCount": 9,
+              "requestDigest": "1cd31c3d90f1b5d17d18f611f28d46cfff6da7b08df439339fe9dfe2f51cdb53"
+            },
+            {
+              "mutationId": "import-13ebe8e59a495bfa2e8b09a3ab7b8191074985c90ec18fe63e86d052f02c389b",
+              "batchIndex": 1,
+              "documentCount": 8,
+              "requestDigest": "8bf930b3b9147e0680c0a4d5c2b1e598d8d5a3216acc8926edf6e84abce77119"
+            },
+            {
+              "mutationId": "import-5d2d6099d8ec85679dd06a9d984b97b89db3867b392cb2ce2eaa3ca103ae5f0f",
+              "batchIndex": 2,
+              "documentCount": 8,
+              "requestDigest": "e62cd1e8b9e32642c3681f718b35ff486a9d101e2ea14588c8ade34dcc1c25a9"
+            },
+            {
+              "mutationId": "import-d08c7a4e56da7359624b602e33c258a28a3c8f16ac8fa9387e60bbbced16f374",
+              "batchIndex": 3,
+              "documentCount": 4,
+              "requestDigest": "f9a2fbe559c12141e5336de82e6147713b3408d2294e84f6c361320a2f729ac6"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "8948b344-939a-4a7d-8d8c-8a82c75e401a",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-restaurantlog",
+          "requestDigest": "b43e794710ad1b77d016a60c7faffba996936ae1b71288d814bd67af96db249d",
+          "collection": "RestaurantLog"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      }
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_History",
+      "documentCount": 448,
+      "originalOperationId": "539e0df0-007c-440d-8de7-b5eb2707fe8c",
+      "oldReviewFailureOperationId": "32708b7e-f18d-458f-ac8b-addb2fd812d0",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-history",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-2c8e7789040866236c58",
+      "requestDigest": "3d1cc74d9f3d9e3bf776bb38ef94188a0ef668fd8552e1714d5f8f5ef64b877b",
+      "result": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "e081e127b4c67d511fd08115368dd3c88be40a8c5a9f75dae084ff16dccf8b81",
+        "reviewHash": "f662bab432b36af870dc543b6948112668a8567a981ed47b1240bdc05f24cecf",
+        "humanApproved": false,
+        "expiresAt": 1793172186962,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-2c8e7789040866236c58",
+          "requestDigest": "183a534a527b606ae2538429a0e0fae0f00647b94079c687b4869614e4afee9f",
+          "collection": "Res_EJPOH_Booking_Order_History",
+          "documentCount": 448,
+          "batches": [
+            {
+              "mutationId": "import-7f81a46fdfde0dcb961be39b005d7683a8224ed9f7a6c666af56d422f373a02b",
+              "batchIndex": 0,
+              "documentCount": 448,
+              "requestDigest": "3852a5f63bd163ea18fa570d38fbbf44dc4ebd4c6beeff687f6fa371bbec2306"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "539e0df0-007c-440d-8de7-b5eb2707fe8c",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-history",
+          "requestDigest": "3d1cc74d9f3d9e3bf776bb38ef94188a0ef668fd8552e1714d5f8f5ef64b877b",
+          "collection": "Res_EJPOH_Booking_Order_History"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      },
+      "inspection": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "e081e127b4c67d511fd08115368dd3c88be40a8c5a9f75dae084ff16dccf8b81",
+        "reviewHash": "f662bab432b36af870dc543b6948112668a8567a981ed47b1240bdc05f24cecf",
+        "humanApproved": false,
+        "expiresAt": 1793172186962,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-2c8e7789040866236c58",
+          "requestDigest": "183a534a527b606ae2538429a0e0fae0f00647b94079c687b4869614e4afee9f",
+          "collection": "Res_EJPOH_Booking_Order_History",
+          "documentCount": 448,
+          "batches": [
+            {
+              "mutationId": "import-7f81a46fdfde0dcb961be39b005d7683a8224ed9f7a6c666af56d422f373a02b",
+              "batchIndex": 0,
+              "documentCount": 448,
+              "requestDigest": "3852a5f63bd163ea18fa570d38fbbf44dc4ebd4c6beeff687f6fa371bbec2306"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "539e0df0-007c-440d-8de7-b5eb2707fe8c",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-history",
+          "requestDigest": "3d1cc74d9f3d9e3bf776bb38ef94188a0ef668fd8552e1714d5f8f5ef64b877b",
+          "collection": "Res_EJPOH_Booking_Order_History"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      }
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_Log",
+      "documentCount": 176,
+      "originalOperationId": "b4c1f446-38ac-43bc-938e-0e65195ae2a5",
+      "oldReviewFailureOperationId": "1897d0e7-b3c2-4d41-81a8-2818c007ff69",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-log",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-7c01ec085bdb444edac0",
+      "requestDigest": "dbc24d52f5dcdb7cf520768da11fb1d28b80ec51fde85e3c6262d75bbd766f5c",
+      "result": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "cde15c3d25a3ae4fe110ad4990d5046af4ad32549a62e92854dab911c4aae915",
+        "reviewHash": "4f339cd307e7a4746ec1bfded8b2f5b8fcec7acba3db50dad0adf99ad301731a",
+        "humanApproved": false,
+        "expiresAt": 1793172187046,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-7c01ec085bdb444edac0",
+          "requestDigest": "424f8d9056535654ad1dee1915721823becfa96cdbb9e892c527e91ee0f6e2f4",
+          "collection": "Res_EJPOH_Booking_Order_Log",
+          "documentCount": 176,
+          "batches": [
+            {
+              "mutationId": "import-3692b097530d7938db78854ccc7bf1f250cf82f063fb9cf3f6bbdac30de45355",
+              "batchIndex": 0,
+              "documentCount": 176,
+              "requestDigest": "b79548797e09c2d7e9cee5579fbf81d11a0268d7791f8cf327ed256ee2bd834d"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "b4c1f446-38ac-43bc-938e-0e65195ae2a5",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-log",
+          "requestDigest": "dbc24d52f5dcdb7cf520768da11fb1d28b80ec51fde85e3c6262d75bbd766f5c",
+          "collection": "Res_EJPOH_Booking_Order_Log"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      },
+      "inspection": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "cde15c3d25a3ae4fe110ad4990d5046af4ad32549a62e92854dab911c4aae915",
+        "reviewHash": "4f339cd307e7a4746ec1bfded8b2f5b8fcec7acba3db50dad0adf99ad301731a",
+        "humanApproved": false,
+        "expiresAt": 1793172187046,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-7c01ec085bdb444edac0",
+          "requestDigest": "424f8d9056535654ad1dee1915721823becfa96cdbb9e892c527e91ee0f6e2f4",
+          "collection": "Res_EJPOH_Booking_Order_Log",
+          "documentCount": 176,
+          "batches": [
+            {
+              "mutationId": "import-3692b097530d7938db78854ccc7bf1f250cf82f063fb9cf3f6bbdac30de45355",
+              "batchIndex": 0,
+              "documentCount": 176,
+              "requestDigest": "b79548797e09c2d7e9cee5579fbf81d11a0268d7791f8cf327ed256ee2bd834d"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "b4c1f446-38ac-43bc-938e-0e65195ae2a5",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-log",
+          "requestDigest": "dbc24d52f5dcdb7cf520768da11fb1d28b80ec51fde85e3c6262d75bbd766f5c",
+          "collection": "Res_EJPOH_Booking_Order_Log"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      }
+    },
+    {
+      "collection": "tag_definitions",
+      "documentCount": 491,
+      "originalOperationId": "011bf920-d034-4979-8c48-02fae58e5512",
+      "oldReviewFailureOperationId": "241357a7-a397-4ac6-9d6f-f83bccd433e8",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-tag-definitions",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-d7cdde51ac1303fd61cb",
+      "requestDigest": "d64e67ceb6b4b4e22c6f23cfb27f25717fe1ba8208e0ff40b291d2e09e2ad54f",
+      "result": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "b4d82c5d4119ead2a6876f5b8298f2c85e8a0e862fa2720f145a53dce9a9e97a",
+        "reviewHash": "127d1f7bd89f56fe52ba7b5c3d9e18f4ccd9e8a403ce0386a5d13aa69580d60e",
+        "humanApproved": false,
+        "expiresAt": 1793172187140,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-d7cdde51ac1303fd61cb",
+          "requestDigest": "5b9effb481d32e7ce87c66b7c5bc3dc704c783d8bd843625041e57e6ee668bf6",
+          "collection": "tag_definitions",
+          "documentCount": 491,
+          "batches": [
+            {
+              "mutationId": "import-106790c4dd063f526d3be8c6d63b47e3ca4b6173fa65b270b181e8a128562fba",
+              "batchIndex": 0,
+              "documentCount": 491,
+              "requestDigest": "307faf0c1d682a1b9f497eddac87828f4ec470465a4d387972d989bb033bf730"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "011bf920-d034-4979-8c48-02fae58e5512",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-tag-definitions",
+          "requestDigest": "d64e67ceb6b4b4e22c6f23cfb27f25717fe1ba8208e0ff40b291d2e09e2ad54f",
+          "collection": "tag_definitions"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      },
+      "inspection": {
+        "ok": true,
+        "state": "awaiting_human",
+        "riskPlanId": "b4d82c5d4119ead2a6876f5b8298f2c85e8a0e862fa2720f145a53dce9a9e97a",
+        "reviewHash": "127d1f7bd89f56fe52ba7b5c3d9e18f4ccd9e8a403ce0386a5d13aa69580d60e",
+        "humanApproved": false,
+        "expiresAt": 1793172187140,
+        "followup": {
+          "action": "prepare_import_once",
+          "importId": "ejpoh-orphan-20261028-d7cdde51ac1303fd61cb",
+          "requestDigest": "5b9effb481d32e7ce87c66b7c5bc3dc704c783d8bd843625041e57e6ee668bf6",
+          "collection": "tag_definitions",
+          "documentCount": 491,
+          "batches": [
+            {
+              "mutationId": "import-106790c4dd063f526d3be8c6d63b47e3ca4b6173fa65b270b181e8a128562fba",
+              "batchIndex": 0,
+              "documentCount": 491,
+              "requestDigest": "307faf0c1d682a1b9f497eddac87828f4ec470465a4d387972d989bb033bf730"
+            }
+          ]
+        },
+        "binding": {
+          "instanceId": "test-server",
+          "database": "yennefer",
+          "originalOperationId": "011bf920-d034-4979-8c48-02fae58e5512",
+          "importId": "ejpoh-20261028-remaining-a27ceed64856-tag-definitions",
+          "requestDigest": "d64e67ceb6b4b4e22c6f23cfb27f25717fe1ba8208e0ff40b291d2e09e2ad54f",
+          "collection": "tag_definitions"
+        },
+        "originalStatus": "unresolved",
+        "historicalOutcome": "unknown",
+        "provesNotDispatched": false
+      }
+    }
+  ],
+  "before": {
+    "SensitivityLog": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "590b58046b1c5c33908a8a05e99aae1b72e746d40056baf5c56b433b4282fe8a",
+      "riskPlanId": "063673a3f336f758f62854ae63e4e3f7251168291ed48826ea50272f11193836",
+      "reviewHash": "3a49953aa75f9ab9ab6f8a0acc544c22b808394efc30fdc83c50bec71d2b2f03",
+      "humanApproved": true,
+      "expiresAt": 1793164769502,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-c14875a92b56d80e15ee",
+        "requestDigest": "a0bc875b590b3d9e6e32ae16a9d45a12e09120e22a2c8b51da39424fe8421972",
+        "collection": "SensitivityLog",
+        "documentCount": 29,
+        "batches": [
+          {
+            "mutationId": "import-781c6fed249bf391dbc702b87435fc37fd98dbc5ad9eb247a707e7cc328a4559",
+            "batchIndex": 0,
+            "documentCount": 29,
+            "requestDigest": "619588fa2c883e017123f2c54adf91cfc578e08aa1f98b85c9bc7a5e9ab0e43d"
+          }
+        ]
+      },
+      "approvalAuditId": "f13e9f0d5ca0d24548145fed684075efacb862e2adadb822d5edb191626e9b41",
+      "consumptionAuditId": "9182cb525aea28e03a89eb9d7da19ce1def783d24b30ba49cb0812392db130c8",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c2808abb-5b10-4bf5-96c8-6e50eb4badb5",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-sensitivitylog",
+        "requestDigest": "4aedf977943e94034069cd04ae0210412002a83d90aed7e949b48e3fd4c3e38c",
+        "collection": "SensitivityLog"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "WhatsappStatistics": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "8299973caddc661ed912f4c57efa93cb3e04261a3fc39f372ad84f0be0e0b98f",
+      "riskPlanId": "3791051f778e4f033314aed597f333a0685ad3d9e22d2a99f830c65e5ceb0265",
+      "reviewHash": "0a2920db6a1b79f928ca8aae19b9fd78dbf1b7cc37553563421afde9194ca882",
+      "humanApproved": true,
+      "expiresAt": 1793164772345,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-57c10359fabbfd74015e",
+        "requestDigest": "2ba06d03c05ce1d4cd6ed78d033d1316b57df8826766070be55cbb4b3ecb3bc0",
+        "collection": "WhatsappStatistics",
+        "documentCount": 440,
+        "batches": [
+          {
+            "mutationId": "import-6268c70e0717b62db5a29c73446707a2e556b939f6cfebc91f1949acf70f98c3",
+            "batchIndex": 0,
+            "documentCount": 440,
+            "requestDigest": "e344a5373c893ce2cb7bc35e455cc4e70f92e49e2cb10a6d9220c6f5e6726542"
+          }
+        ]
+      },
+      "approvalAuditId": "bd2ce7eb347485b636032a5a381e248741c9dc89e11da5ac5f1cdd180916f781",
+      "consumptionAuditId": "5024744eed61345cc74fd7effd68e8bab3a24b30b682e4d1150b9cf62904b8c5",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c3c2bc4a-563a-4bb5-b1a0-de6d03a50370",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-whatsappstatistics",
+        "requestDigest": "3cd14be45a461e7970500e0784c268f03f91aa199782ce2840e959fc0c29c622",
+        "collection": "WhatsappStatistics"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Coupon_Package": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "ef45cf7a8b7bffbcc84cb886f90aee8511b4a51142f768632ed71d4ef95e987a",
+      "riskPlanId": "7e6f989fa73000fd0064783d62a6d6fbddbf94580589b23fa8b9357332638072",
+      "reviewHash": "5d671c650cf947459555d01f85fe6bc216de8500fb6e8472ca71498b209e59cb",
+      "humanApproved": true,
+      "expiresAt": 1793164782599,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-fb2bd154de72ae3ea92e",
+        "requestDigest": "0ac3d809847ac8d870ece12c5e01503569d12e54b6dd92cbbd65bebb567a993b",
+        "collection": "Res_EJPOH_Coupon_Package",
+        "documentCount": 7,
+        "batches": [
+          {
+            "mutationId": "import-32aa93700c257df10938ffe1742adb36596ce0a6d482b5ae679dba1241914c34",
+            "batchIndex": 0,
+            "documentCount": 7,
+            "requestDigest": "c19cc264e92824468ba6c5cecab614049d1687ec2baceab62dfdde5d1832ff25"
+          }
+        ]
+      },
+      "approvalAuditId": "22d4d7f8e528bedf5fa1868885d0d6b99595258d11deefc0fce3a8127ee98061",
+      "consumptionAuditId": "a4e2c674023872ce0f8ff349d886e7dad9fc28f3cd2adbb2c05d26479c6ea079",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "e2ca2ce2-8078-4933-bbf9-871981be7c30",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-coupon-package",
+        "requestDigest": "89e58ba2c6319c826a702a1467f6aa03fb613fc649833f9d87436002336aca07",
+        "collection": "Res_EJPOH_Coupon_Package"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Dish": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "7e427c7205ec410a3b8a592853d384f9af6c5d4d56aa6e9ebf1b7ffee4900cdb",
+      "riskPlanId": "38ae42c95e18919fe9caaf975771e9f95a1773bcf7f4e108709e09e173504c73",
+      "reviewHash": "a7876110064b74603b920dca131be6bc8aaeb3b90bb902daeb1a449a0d82c9eb",
+      "humanApproved": true,
+      "expiresAt": 1793164784760,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-3c4c85af394905bccb25",
+        "requestDigest": "2a6e498cc106dd7ed88411e0d7b6104c48ade6b04d55f81447d5e2a0703dba1e",
+        "collection": "Res_EJPOH_Dish",
+        "documentCount": 165,
+        "batches": [
+          {
+            "mutationId": "import-d9a2d4a6a2d25edd2e82afe563621bd31148200639010d5162df56349f840387",
+            "batchIndex": 0,
+            "documentCount": 165,
+            "requestDigest": "e6217e72a1cf070487c6b51dc9f20876005a787d4fb95c4e235c5854e8d480d1"
+          }
+        ]
+      },
+      "approvalAuditId": "3418c2a58e4086e08f07ed1f346d473b987a88440e7f65e61e6c588abcdd1412",
+      "consumptionAuditId": "bcbd24c9fef167fbf9cb72eac80292ab4ceec0d7a16124e46cfb210dac61a896",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "f53325ac-ddae-4285-b690-c7e32245652e",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-dish",
+        "requestDigest": "94972b10a7f14dae65ae26f2c2eb4e3391741983b8077649f24df4838842c513",
+        "collection": "Res_EJPOH_Dish"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Google": {
+      "ok": true,
+      "state": "uncertain",
+      "intentId": "5388d193402ef9f9826a47837aae7f57d51e91168d9025a565350458108e5354",
+      "route": "/mongodb/mutations/execute"
+    }
+  },
+  "after": {
+    "SensitivityLog": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "590b58046b1c5c33908a8a05e99aae1b72e746d40056baf5c56b433b4282fe8a",
+      "riskPlanId": "063673a3f336f758f62854ae63e4e3f7251168291ed48826ea50272f11193836",
+      "reviewHash": "3a49953aa75f9ab9ab6f8a0acc544c22b808394efc30fdc83c50bec71d2b2f03",
+      "humanApproved": true,
+      "expiresAt": 1793164769502,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-c14875a92b56d80e15ee",
+        "requestDigest": "a0bc875b590b3d9e6e32ae16a9d45a12e09120e22a2c8b51da39424fe8421972",
+        "collection": "SensitivityLog",
+        "documentCount": 29,
+        "batches": [
+          {
+            "mutationId": "import-781c6fed249bf391dbc702b87435fc37fd98dbc5ad9eb247a707e7cc328a4559",
+            "batchIndex": 0,
+            "documentCount": 29,
+            "requestDigest": "619588fa2c883e017123f2c54adf91cfc578e08aa1f98b85c9bc7a5e9ab0e43d"
+          }
+        ]
+      },
+      "approvalAuditId": "f13e9f0d5ca0d24548145fed684075efacb862e2adadb822d5edb191626e9b41",
+      "consumptionAuditId": "9182cb525aea28e03a89eb9d7da19ce1def783d24b30ba49cb0812392db130c8",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c2808abb-5b10-4bf5-96c8-6e50eb4badb5",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-sensitivitylog",
+        "requestDigest": "4aedf977943e94034069cd04ae0210412002a83d90aed7e949b48e3fd4c3e38c",
+        "collection": "SensitivityLog"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "WhatsappStatistics": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "8299973caddc661ed912f4c57efa93cb3e04261a3fc39f372ad84f0be0e0b98f",
+      "riskPlanId": "3791051f778e4f033314aed597f333a0685ad3d9e22d2a99f830c65e5ceb0265",
+      "reviewHash": "0a2920db6a1b79f928ca8aae19b9fd78dbf1b7cc37553563421afde9194ca882",
+      "humanApproved": true,
+      "expiresAt": 1793164772345,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-57c10359fabbfd74015e",
+        "requestDigest": "2ba06d03c05ce1d4cd6ed78d033d1316b57df8826766070be55cbb4b3ecb3bc0",
+        "collection": "WhatsappStatistics",
+        "documentCount": 440,
+        "batches": [
+          {
+            "mutationId": "import-6268c70e0717b62db5a29c73446707a2e556b939f6cfebc91f1949acf70f98c3",
+            "batchIndex": 0,
+            "documentCount": 440,
+            "requestDigest": "e344a5373c893ce2cb7bc35e455cc4e70f92e49e2cb10a6d9220c6f5e6726542"
+          }
+        ]
+      },
+      "approvalAuditId": "bd2ce7eb347485b636032a5a381e248741c9dc89e11da5ac5f1cdd180916f781",
+      "consumptionAuditId": "5024744eed61345cc74fd7effd68e8bab3a24b30b682e4d1150b9cf62904b8c5",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c3c2bc4a-563a-4bb5-b1a0-de6d03a50370",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-whatsappstatistics",
+        "requestDigest": "3cd14be45a461e7970500e0784c268f03f91aa199782ce2840e959fc0c29c622",
+        "collection": "WhatsappStatistics"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Coupon_Package": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "ef45cf7a8b7bffbcc84cb886f90aee8511b4a51142f768632ed71d4ef95e987a",
+      "riskPlanId": "7e6f989fa73000fd0064783d62a6d6fbddbf94580589b23fa8b9357332638072",
+      "reviewHash": "5d671c650cf947459555d01f85fe6bc216de8500fb6e8472ca71498b209e59cb",
+      "humanApproved": true,
+      "expiresAt": 1793164782599,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-fb2bd154de72ae3ea92e",
+        "requestDigest": "0ac3d809847ac8d870ece12c5e01503569d12e54b6dd92cbbd65bebb567a993b",
+        "collection": "Res_EJPOH_Coupon_Package",
+        "documentCount": 7,
+        "batches": [
+          {
+            "mutationId": "import-32aa93700c257df10938ffe1742adb36596ce0a6d482b5ae679dba1241914c34",
+            "batchIndex": 0,
+            "documentCount": 7,
+            "requestDigest": "c19cc264e92824468ba6c5cecab614049d1687ec2baceab62dfdde5d1832ff25"
+          }
+        ]
+      },
+      "approvalAuditId": "22d4d7f8e528bedf5fa1868885d0d6b99595258d11deefc0fce3a8127ee98061",
+      "consumptionAuditId": "a4e2c674023872ce0f8ff349d886e7dad9fc28f3cd2adbb2c05d26479c6ea079",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "e2ca2ce2-8078-4933-bbf9-871981be7c30",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-coupon-package",
+        "requestDigest": "89e58ba2c6319c826a702a1467f6aa03fb613fc649833f9d87436002336aca07",
+        "collection": "Res_EJPOH_Coupon_Package"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Dish": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "7e427c7205ec410a3b8a592853d384f9af6c5d4d56aa6e9ebf1b7ffee4900cdb",
+      "riskPlanId": "38ae42c95e18919fe9caaf975771e9f95a1773bcf7f4e108709e09e173504c73",
+      "reviewHash": "a7876110064b74603b920dca131be6bc8aaeb3b90bb902daeb1a449a0d82c9eb",
+      "humanApproved": true,
+      "expiresAt": 1793164784760,
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-3c4c85af394905bccb25",
+        "requestDigest": "2a6e498cc106dd7ed88411e0d7b6104c48ade6b04d55f81447d5e2a0703dba1e",
+        "collection": "Res_EJPOH_Dish",
+        "documentCount": 165,
+        "batches": [
+          {
+            "mutationId": "import-d9a2d4a6a2d25edd2e82afe563621bd31148200639010d5162df56349f840387",
+            "batchIndex": 0,
+            "documentCount": 165,
+            "requestDigest": "e6217e72a1cf070487c6b51dc9f20876005a787d4fb95c4e235c5854e8d480d1"
+          }
+        ]
+      },
+      "approvalAuditId": "3418c2a58e4086e08f07ed1f346d473b987a88440e7f65e61e6c588abcdd1412",
+      "consumptionAuditId": "bcbd24c9fef167fbf9cb72eac80292ab4ceec0d7a16124e46cfb210dac61a896",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "f53325ac-ddae-4285-b690-c7e32245652e",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-dish",
+        "requestDigest": "94972b10a7f14dae65ae26f2c2eb4e3391741983b8077649f24df4838842c513",
+        "collection": "Res_EJPOH_Dish"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Google": {
+      "ok": true,
+      "state": "uncertain",
+      "intentId": "5388d193402ef9f9826a47837aae7f57d51e91168d9025a565350458108e5354",
+      "route": "/mongodb/mutations/execute"
+    }
+  },
+  "methods": [
+    {
+      "name": "remote_debug_get_capabilities"
+    },
+    {
+      "name": "remote_debug_list_instances"
+    },
+    {
+      "name": "remote_debug_restart_instance"
+    },
+    {
+      "name": "remote_debug_list_instances"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect"
+    }
+  ],
+  "businessCalls": 0,
+  "consumeCalls": 0,
+  "protectedDatabaseOpened": false,
+  "installedCodeModified": false,
+  "runtime": {
+    "agent": {
+      "host": "127.0.0.1",
+      "port": 4343,
+      "pid": 94821,
+      "configFingerprint": "dbf2c44983b038a6a58602fd7508d96da746bb2148ba857e445dfc8e8cacd956",
+      "runtimeId": "2.4.0:a703f5d11670e5fcba09091ca9ac1f2bce243390d6294a154a49a20099bb9a6a",
+      "role": "manager"
+    },
+    "installedRuntimeId": "2.4.0:a703f5d11670e5fcba09091ca9ac1f2bce243390d6294a154a49a20099bb9a6a",
+    "candidateRuntimeId": "2.4.0:a703f5d11670e5fcba09091ca9ac1f2bce243390d6294a154a49a20099bb9a6a"
+  },
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261028.3"
+  },
+  "recoveryPolicy": {
+    "allowedFrom": [
+      "stopped",
+      "unhealthy"
+    ],
+    "runningBehavior": "no-op",
+    "transitionalBehavior": "reject"
+  },
+  "recoveryBefore": {
+    "status": "stopped",
+    "lastError": null,
+    "events": []
+  },
+  "recoveryAttempt": 1,
+  "recoveryResult": {
+    "ok": true,
+    "runtime": {
+      "status": "running",
+      "pid": 95521,
+      "workerPort": 4400,
+      "startedAt": "2026-10-28T06:22:56.321Z",
+      "lastHeartbeatAt": "2026-10-28T06:23:06.252Z",
+      "lastError": null,
+      "health": {
+        "overall": "healthy",
+        "transport": {
+          "status": "ready",
+          "generation": 1,
+          "reconnectCount": 0,
+          "connectedAt": "[REDACTED]",
+          "lastActivityAt": "[REDACTED]",
+          "reconnectAttempts": 0,
+          "nextRetryAt": null,
+          "lastError": null
+        },
+        "authentication": "[REDACTED]",
+        "hostVerification": {
+          "status": "verified",
+          "observedFingerprint": "SHA256:rydhdBksmRhVb7ZIKZ806it7fUzOabPeJEQ2wnJyfkU"
+        },
+        "target": {
+          "status": "reachable",
+          "lastCheckedAt": "[REDACTED]",
+          "lastError": null
+        },
+        "operations": {
+          "active": 0,
+          "activeBusiness": 0,
+          "activeControl": 0,
+          "activeBackground": 0,
+          "activeBulk": 0,
+          "queued": 0,
+          "queuedByPriority": {
+            "control": 0,
+            "interactive": 0,
+            "background": 0,
+            "bulk": 0
+          },
+          "maxBusiness": 4,
+          "maxControl": 1,
+          "maxBackground": 2,
+          "maxBulk": 2,
+          "maxQueue": 100,
+          "activeChannels": 0
+        },
+        "worker": {
+          "status": "healthy",
+          "pid": 95521,
+          "lastHeartbeatAt": "2026-10-28T06:23:06.252Z"
+        }
+      },
+      "events": [
+        {
+          "time": "2026-10-28T06:22:56.321Z",
+          "type": "starting",
+          "workerPort": 4400
+        },
+        {
+          "time": "2026-10-28T06:22:56.322Z",
+          "type": "spawned",
+          "pid": 95521
+        },
+        {
+          "time": "2026-10-28T06:22:56.323Z",
+          "type": "waiting-ready",
+          "timeoutMs": 10000
+        },
+        {
+          "time": "2026-10-28T06:23:06.252Z",
+          "type": "running",
+          "pid": 95521,
+          "workerPort": 4400
+        }
+      ]
+    }
+  },
+  "recoveryAfter": {
+    "status": "running",
+    "pid": 95521,
+    "health": "healthy"
+  },
+  "installedFilesUnchanged": true,
+  "finishedAt": "2026-10-28T06:23:07.307Z"
+}

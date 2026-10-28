@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "file": "/Users/zhengchenchen/.codex/config.toml",
+      "unchanged": true
+    },
+    {
+      "file": "/Users/zhengchenchen/.remote-debug-agent/config.env",
+      "unchanged": true
+    },
+    {
+      "file": "/Users/zhengchenchen/.remote-debug-agent/.remote-debug/instances.json",
+      "unchanged": true
+    }
+  ],
+  "protectedCredentialsAndAdminAccountsMetadataUnchanged": true,
+  "businessDirectorySameInodeAndPermissions": true,
+  "businessDirectoryContentsChangedOnlyThroughSupportedProtocol": true,
+  "oldConsumedReviewsPreserved": true,
+  "googleOriginalStillUncertain": true,
+  "protectedDatabaseOpenedByMaintenanceScript": false,
+  "consumeCalls": 0,
+  "businessWrites": 0
+}

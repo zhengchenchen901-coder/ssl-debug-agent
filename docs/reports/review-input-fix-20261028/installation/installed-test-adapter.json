@@ -1,0 +1,36 @@
+{
+  "sourceFile": "plugins/remote-debug-agent/test/review-input.test.js",
+  "sourceHash": "5946ab3188c4d06e0668d7833c70eeb312a2cdd7ad71fa3f6ece89d03929208a",
+  "adapterHash": "cd94b03cdb63daf0730fe2a8e865d0dcc4825b745d7b07e6287ffed048f62284",
+  "replacements": [
+    [
+      "'../../../agent/",
+      "'/workspace/agent/"
+    ],
+    [
+      "import { createManagerApp } from '/workspace/agent/server.js';",
+      "import bundledManager from '/installed/runtime/agent/server.cjs';\nconst { createManagerApp } = bundledManager;"
+    ],
+    [
+      "'../prepare-protocol.js'",
+      "'/installed/prepare-protocol.js'"
+    ],
+    [
+      "'./helpers/local-mcp.js'",
+      "'/workspace/plugins/remote-debug-agent/test/helpers/local-mcp.js'"
+    ],
+    [
+      "'../local-auth.cjs'",
+      "'/installed/local-auth.cjs'"
+    ],
+    [
+      "new PrivacyService({directory,key})",
+      "new PrivacyService({directory,key,workerPath:'/installed/runtime/agent/privacy-worker.cjs'})"
+    ],
+    [
+      "mcpPeer(t,{root,url:origin,contextFile})",
+      "mcpPeer(t,{root,url:origin,contextFile,pluginRoot:'/installed'})"
+    ]
+  ],
+  "assertionsChanged": false
+}

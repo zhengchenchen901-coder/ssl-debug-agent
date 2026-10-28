@@ -1,0 +1,86 @@
+{
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261028.3"
+  },
+  "toolCount": 53,
+  "expectedRuntimeId": "2.4.0:a703f5d11670e5fcba09091ca9ac1f2bce243390d6294a154a49a20099bb9a6a",
+  "before": {
+    "agent": {
+      "host": "127.0.0.1",
+      "port": 4343,
+      "pid": 82501,
+      "configFingerprint": "dbf2c44983b038a6a58602fd7508d96da746bb2148ba857e445dfc8e8cacd956",
+      "runtimeId": "2.4.0:dd6590b6d124997ae5c99a03061d7eee9d20ba0110643e4e91f0a9d9dc920497",
+      "role": "manager"
+    },
+    "lifecycle": {
+      "lifetime": "desktop",
+      "activeLeaseCount": 8
+    },
+    "instances": [
+      {
+        "id": "default",
+        "status": "stopped",
+        "pid": null,
+        "workerHealth": "stopped"
+      },
+      {
+        "id": "test-server",
+        "status": "running",
+        "pid": 83268,
+        "operations": {
+          "active": 0,
+          "activeBusiness": 0,
+          "activeControl": 0,
+          "activeBackground": 0,
+          "activeBulk": 0,
+          "queued": 0,
+          "queuedByPriority": {
+            "control": 0,
+            "interactive": 0,
+            "background": 0,
+            "bulk": 0
+          },
+          "maxBusiness": 4,
+          "maxControl": 1,
+          "maxBackground": 2,
+          "maxBulk": 2,
+          "maxQueue": 100,
+          "activeChannels": 0
+        },
+        "workerHealth": "healthy"
+      }
+    ]
+  },
+  "after": {
+    "agent": {
+      "host": "127.0.0.1",
+      "port": 4343,
+      "pid": 94821,
+      "configFingerprint": "dbf2c44983b038a6a58602fd7508d96da746bb2148ba857e445dfc8e8cacd956",
+      "runtimeId": "2.4.0:a703f5d11670e5fcba09091ca9ac1f2bce243390d6294a154a49a20099bb9a6a",
+      "role": "manager"
+    },
+    "lifecycle": {
+      "lifetime": "desktop",
+      "activeLeaseCount": 1
+    },
+    "instances": [
+      {
+        "id": "default",
+        "status": "stopped",
+        "pid": null,
+        "workerHealth": "stopped"
+      },
+      {
+        "id": "test-server",
+        "status": "stopped",
+        "pid": null,
+        "workerHealth": "stopped"
+      }
+    ]
+  },
+  "businessToolsCalled": [],
+  "automaticLifecycleUsed": true
+}

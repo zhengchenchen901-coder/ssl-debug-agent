@@ -1,0 +1,12 @@
+{
+  "comparedFiles": 312,
+  "executableSourceDrift": false,
+  "metadataOnlyDifferences": [
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json",
+    "plugins/remote-debug-agent/.codex-plugin/plugin.json"
+  ],
+  "testedSnapshotId": "b01ce478dc6cd0eac8215e4813d5ea549648796e97ea6b557c3fdd17641008ff",
+  "testflowJobId": "103a04f8-fa80-4f6a-afb5-81f38e8b2aa4",
+  "casesPassed": 71,
+  "strictTargetsUnknown": 862
+}

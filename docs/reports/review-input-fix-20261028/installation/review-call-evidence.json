@@ -1,0 +1,480 @@
+{
+  "source": "sanitized MCP lifecycle records paired by exact process pid and JSON-RPC requestId, with actual response binding verification",
+  "mcpPid": 95520,
+  "sourceResponseSha256": "ec3d6ab31bcaf416ed7b8572183dc01a0f06cba3259dd5a6304abf21066fef38",
+  "sourceLog": "/Users/zhengchenchen/.remote-debug-agent/logs/mcp-error.log",
+  "calls": [
+    {
+      "requestId": 2,
+      "operationId": "49b539d3-c534-4634-90f7-6cc38f425702",
+      "toolName": "remote_debug_get_capabilities",
+      "mode": null,
+      "startedAt": "2026-10-28T06:22:56.262Z",
+      "completedAt": "2026-10-28T06:22:56.280Z"
+    },
+    {
+      "requestId": 3,
+      "operationId": "71702f1d-6e96-436b-b5fa-231acc0e006a",
+      "toolName": "remote_debug_list_instances",
+      "mode": null,
+      "startedAt": "2026-10-28T06:22:56.295Z",
+      "completedAt": "2026-10-28T06:22:56.301Z"
+    },
+    {
+      "requestId": 4,
+      "operationId": "c75f6c06-1fc0-4216-90cd-f7f8d808195f",
+      "toolName": "remote_debug_restart_instance",
+      "mode": null,
+      "startedAt": "2026-10-28T06:22:56.314Z",
+      "completedAt": "2026-10-28T06:23:06.255Z"
+    },
+    {
+      "requestId": 5,
+      "operationId": "e9f14a49-9259-4848-9006-69efe0509248",
+      "toolName": "remote_debug_list_instances",
+      "mode": null,
+      "startedAt": "2026-10-28T06:23:06.264Z",
+      "completedAt": "2026-10-28T06:23:06.269Z"
+    },
+    {
+      "requestId": 6,
+      "operationId": "42fd5906-8a03-420f-8876-7f31e3ac02ac",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.284Z",
+      "completedAt": "2026-10-28T06:23:06.326Z"
+    },
+    {
+      "requestId": 7,
+      "operationId": "6eaa4548-304a-4851-bf43-57c623970814",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.353Z",
+      "completedAt": "2026-10-28T06:23:06.361Z"
+    },
+    {
+      "requestId": 8,
+      "operationId": "43e9c135-acce-4183-aad3-a7663f669657",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.383Z",
+      "completedAt": "2026-10-28T06:23:06.390Z"
+    },
+    {
+      "requestId": 9,
+      "operationId": "4c7d8fe5-35e6-4da3-8268-d0e644e1f239",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.412Z",
+      "completedAt": "2026-10-28T06:23:06.419Z"
+    },
+    {
+      "requestId": 10,
+      "operationId": "663551c8-d1a8-4ada-9aaf-50e439f0e79a",
+      "toolName": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect",
+      "startedAt": "2026-10-28T06:23:06.442Z",
+      "completedAt": "2026-10-28T06:23:06.448Z"
+    },
+    {
+      "requestId": 11,
+      "operationId": "451292e8-074f-4df7-8e7f-ab5caa1a5300",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.454Z",
+      "completedAt": "2026-10-28T06:23:06.493Z"
+    },
+    {
+      "requestId": 12,
+      "operationId": "82d35fe0-4fc2-4270-8912-54fc7012e5eb",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.510Z",
+      "completedAt": "2026-10-28T06:23:06.516Z"
+    },
+    {
+      "requestId": 13,
+      "operationId": "b68ac3da-cea2-461d-8839-27972aaa1cf9",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.569Z",
+      "completedAt": "2026-10-28T06:23:06.830Z"
+    },
+    {
+      "requestId": 14,
+      "operationId": "c0f5e6a6-301b-4923-a16e-ab67ce7a6b91",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.858Z",
+      "completedAt": "2026-10-28T06:23:06.873Z"
+    },
+    {
+      "requestId": 15,
+      "operationId": "f0cac78c-a513-435c-b785-ba09c5a61a33",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.907Z",
+      "completedAt": "2026-10-28T06:23:06.969Z"
+    },
+    {
+      "requestId": 16,
+      "operationId": "bf787e32-3d52-4e5b-957b-8f50df18ee14",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:06.985Z",
+      "completedAt": "2026-10-28T06:23:06.993Z"
+    },
+    {
+      "requestId": 17,
+      "operationId": "6c54d0e2-1686-498f-89ce-31b425f8a0cb",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.011Z",
+      "completedAt": "2026-10-28T06:23:07.050Z"
+    },
+    {
+      "requestId": 18,
+      "operationId": "40c71b68-2408-4cc4-b1d7-525bbeecbc65",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.066Z",
+      "completedAt": "2026-10-28T06:23:07.073Z"
+    },
+    {
+      "requestId": 19,
+      "operationId": "a6785f0e-cdc0-4660-b960-f9c5957c0fc7",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.092Z",
+      "completedAt": "2026-10-28T06:23:07.146Z"
+    },
+    {
+      "requestId": 20,
+      "operationId": "78d460cf-988d-4e3c-b648-9a4f0451fc54",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.162Z",
+      "completedAt": "2026-10-28T06:23:07.169Z"
+    },
+    {
+      "requestId": 21,
+      "operationId": "9f708a10-cfc0-4857-b3ca-46372086e9fb",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.185Z",
+      "completedAt": "2026-10-28T06:23:07.192Z"
+    },
+    {
+      "requestId": 22,
+      "operationId": "06461f7e-63f1-46d1-98c5-4b6f5d928ca7",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.213Z",
+      "completedAt": "2026-10-28T06:23:07.222Z"
+    },
+    {
+      "requestId": 23,
+      "operationId": "6cb504d5-c233-4b7a-ace6-873cf7ac6293",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.243Z",
+      "completedAt": "2026-10-28T06:23:07.249Z"
+    },
+    {
+      "requestId": 24,
+      "operationId": "a67c5ebc-5dde-4966-8f8c-54be405fd265",
+      "toolName": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk",
+      "startedAt": "2026-10-28T06:23:07.270Z",
+      "completedAt": "2026-10-28T06:23:07.276Z"
+    },
+    {
+      "requestId": 25,
+      "operationId": "71fc1e5f-3561-4af7-bcb7-bd49a1facad7",
+      "toolName": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect",
+      "startedAt": "2026-10-28T06:23:07.298Z",
+      "completedAt": "2026-10-28T06:23:07.304Z"
+    }
+  ],
+  "verifiedReviews": [
+    {
+      "collection": "Customer",
+      "documentCount": 71,
+      "riskPlanId": "efe475b9d23cfbe87994633db6b3aa85e3ba9f8eada9b634d399a23dcc4d8fd2",
+      "reviewHash": "e6101de0932bc9fbcb366bbb579b708343da33f9e8334fcea823b282ede47fd4",
+      "state": "awaiting_human",
+      "humanApproved": false,
+      "expiresAt": 1793172186490,
+      "expiresAtAsiaShanghai": "2026-10-28T15:23:06+08:00",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "15d32144-7f38-446f-82bb-62931fd4eaab",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-customer",
+        "requestDigest": "047df81e2639c31aeac7e02daa772dd0e8ce5d5b2c0227b78ac82b68b24c03e6",
+        "collection": "Customer"
+      },
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-67d2f7b84ac0432c5f98",
+        "requestDigest": "5eaecb4a2c07ce4fd182c4b0ccf771075ad1fb1ae369bf46c43db5e903cdbeac",
+        "collection": "Customer",
+        "documentCount": 71,
+        "batches": [
+          {
+            "mutationId": "import-77d9c37f2d8c64fab4f9371ec01dc3a7e6c9063cb8fd2c7b45c3380205387bd3",
+            "batchIndex": 0,
+            "documentCount": 71,
+            "requestDigest": "87a884c5f7e54e6ba163cfb2f109514278aa948dbafdab59cb3183ac17dbd2e2"
+          }
+        ]
+      },
+      "prepareCall": {
+        "requestId": 11,
+        "operationId": "451292e8-074f-4df7-8e7f-ab5caa1a5300",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "prepare_orphan_risk",
+        "startedAt": "2026-10-28T06:23:06.454Z",
+        "completedAt": "2026-10-28T06:23:06.493Z"
+      },
+      "inspectCall": {
+        "requestId": 12,
+        "operationId": "82d35fe0-4fc2-4270-8912-54fc7012e5eb",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "inspect_orphan_risk",
+        "startedAt": "2026-10-28T06:23:06.510Z",
+        "completedAt": "2026-10-28T06:23:06.516Z"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    {
+      "collection": "RestaurantLog",
+      "documentCount": 29,
+      "riskPlanId": "2a6d94c16b1a6fd97d0dc7e5f54259b14a489ee4324bf6e2e644ca376763d1c3",
+      "reviewHash": "b86e9d0d48a7b8d2f240a0ed119c7390dcbd8c0911320ef20efb31b95737a132",
+      "state": "awaiting_human",
+      "humanApproved": false,
+      "expiresAt": 1793172186791,
+      "expiresAtAsiaShanghai": "2026-10-28T15:23:06+08:00",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "8948b344-939a-4a7d-8d8c-8a82c75e401a",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-restaurantlog",
+        "requestDigest": "b43e794710ad1b77d016a60c7faffba996936ae1b71288d814bd67af96db249d",
+        "collection": "RestaurantLog"
+      },
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-d03de53d276e081f4d46",
+        "requestDigest": "dfdc3c15a864f688006ff07e83c0e6ebf61a9d3b735c5ac1a08b7e75a6837993",
+        "collection": "RestaurantLog",
+        "documentCount": 29,
+        "batches": [
+          {
+            "mutationId": "import-31c44d2d092750cdd80d7819ea8a7246bb863c8f54285ad571e294ad82d44f13",
+            "batchIndex": 0,
+            "documentCount": 9,
+            "requestDigest": "1cd31c3d90f1b5d17d18f611f28d46cfff6da7b08df439339fe9dfe2f51cdb53"
+          },
+          {
+            "mutationId": "import-13ebe8e59a495bfa2e8b09a3ab7b8191074985c90ec18fe63e86d052f02c389b",
+            "batchIndex": 1,
+            "documentCount": 8,
+            "requestDigest": "8bf930b3b9147e0680c0a4d5c2b1e598d8d5a3216acc8926edf6e84abce77119"
+          },
+          {
+            "mutationId": "import-5d2d6099d8ec85679dd06a9d984b97b89db3867b392cb2ce2eaa3ca103ae5f0f",
+            "batchIndex": 2,
+            "documentCount": 8,
+            "requestDigest": "e62cd1e8b9e32642c3681f718b35ff486a9d101e2ea14588c8ade34dcc1c25a9"
+          },
+          {
+            "mutationId": "import-d08c7a4e56da7359624b602e33c258a28a3c8f16ac8fa9387e60bbbced16f374",
+            "batchIndex": 3,
+            "documentCount": 4,
+            "requestDigest": "f9a2fbe559c12141e5336de82e6147713b3408d2294e84f6c361320a2f729ac6"
+          }
+        ]
+      },
+      "prepareCall": {
+        "requestId": 13,
+        "operationId": "b68ac3da-cea2-461d-8839-27972aaa1cf9",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "prepare_orphan_risk",
+        "startedAt": "2026-10-28T06:23:06.569Z",
+        "completedAt": "2026-10-28T06:23:06.830Z"
+      },
+      "inspectCall": {
+        "requestId": 14,
+        "operationId": "c0f5e6a6-301b-4923-a16e-ab67ce7a6b91",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "inspect_orphan_risk",
+        "startedAt": "2026-10-28T06:23:06.858Z",
+        "completedAt": "2026-10-28T06:23:06.873Z"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_History",
+      "documentCount": 448,
+      "riskPlanId": "e081e127b4c67d511fd08115368dd3c88be40a8c5a9f75dae084ff16dccf8b81",
+      "reviewHash": "f662bab432b36af870dc543b6948112668a8567a981ed47b1240bdc05f24cecf",
+      "state": "awaiting_human",
+      "humanApproved": false,
+      "expiresAt": 1793172186962,
+      "expiresAtAsiaShanghai": "2026-10-28T15:23:06+08:00",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "539e0df0-007c-440d-8de7-b5eb2707fe8c",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-history",
+        "requestDigest": "3d1cc74d9f3d9e3bf776bb38ef94188a0ef668fd8552e1714d5f8f5ef64b877b",
+        "collection": "Res_EJPOH_Booking_Order_History"
+      },
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-2c8e7789040866236c58",
+        "requestDigest": "183a534a527b606ae2538429a0e0fae0f00647b94079c687b4869614e4afee9f",
+        "collection": "Res_EJPOH_Booking_Order_History",
+        "documentCount": 448,
+        "batches": [
+          {
+            "mutationId": "import-7f81a46fdfde0dcb961be39b005d7683a8224ed9f7a6c666af56d422f373a02b",
+            "batchIndex": 0,
+            "documentCount": 448,
+            "requestDigest": "3852a5f63bd163ea18fa570d38fbbf44dc4ebd4c6beeff687f6fa371bbec2306"
+          }
+        ]
+      },
+      "prepareCall": {
+        "requestId": 15,
+        "operationId": "f0cac78c-a513-435c-b785-ba09c5a61a33",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "prepare_orphan_risk",
+        "startedAt": "2026-10-28T06:23:06.907Z",
+        "completedAt": "2026-10-28T06:23:06.969Z"
+      },
+      "inspectCall": {
+        "requestId": 16,
+        "operationId": "bf787e32-3d52-4e5b-957b-8f50df18ee14",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "inspect_orphan_risk",
+        "startedAt": "2026-10-28T06:23:06.985Z",
+        "completedAt": "2026-10-28T06:23:06.993Z"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_Log",
+      "documentCount": 176,
+      "riskPlanId": "cde15c3d25a3ae4fe110ad4990d5046af4ad32549a62e92854dab911c4aae915",
+      "reviewHash": "4f339cd307e7a4746ec1bfded8b2f5b8fcec7acba3db50dad0adf99ad301731a",
+      "state": "awaiting_human",
+      "humanApproved": false,
+      "expiresAt": 1793172187046,
+      "expiresAtAsiaShanghai": "2026-10-28T15:23:07+08:00",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "b4c1f446-38ac-43bc-938e-0e65195ae2a5",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-log",
+        "requestDigest": "dbc24d52f5dcdb7cf520768da11fb1d28b80ec51fde85e3c6262d75bbd766f5c",
+        "collection": "Res_EJPOH_Booking_Order_Log"
+      },
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-7c01ec085bdb444edac0",
+        "requestDigest": "424f8d9056535654ad1dee1915721823becfa96cdbb9e892c527e91ee0f6e2f4",
+        "collection": "Res_EJPOH_Booking_Order_Log",
+        "documentCount": 176,
+        "batches": [
+          {
+            "mutationId": "import-3692b097530d7938db78854ccc7bf1f250cf82f063fb9cf3f6bbdac30de45355",
+            "batchIndex": 0,
+            "documentCount": 176,
+            "requestDigest": "b79548797e09c2d7e9cee5579fbf81d11a0268d7791f8cf327ed256ee2bd834d"
+          }
+        ]
+      },
+      "prepareCall": {
+        "requestId": 17,
+        "operationId": "6c54d0e2-1686-498f-89ce-31b425f8a0cb",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "prepare_orphan_risk",
+        "startedAt": "2026-10-28T06:23:07.011Z",
+        "completedAt": "2026-10-28T06:23:07.050Z"
+      },
+      "inspectCall": {
+        "requestId": 18,
+        "operationId": "40c71b68-2408-4cc4-b1d7-525bbeecbc65",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "inspect_orphan_risk",
+        "startedAt": "2026-10-28T06:23:07.066Z",
+        "completedAt": "2026-10-28T06:23:07.073Z"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    {
+      "collection": "tag_definitions",
+      "documentCount": 491,
+      "riskPlanId": "b4d82c5d4119ead2a6876f5b8298f2c85e8a0e862fa2720f145a53dce9a9e97a",
+      "reviewHash": "127d1f7bd89f56fe52ba7b5c3d9e18f4ccd9e8a403ce0386a5d13aa69580d60e",
+      "state": "awaiting_human",
+      "humanApproved": false,
+      "expiresAt": 1793172187140,
+      "expiresAtAsiaShanghai": "2026-10-28T15:23:07+08:00",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "011bf920-d034-4979-8c48-02fae58e5512",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-tag-definitions",
+        "requestDigest": "d64e67ceb6b4b4e22c6f23cfb27f25717fe1ba8208e0ff40b291d2e09e2ad54f",
+        "collection": "tag_definitions"
+      },
+      "followup": {
+        "action": "prepare_import_once",
+        "importId": "ejpoh-orphan-20261028-d7cdde51ac1303fd61cb",
+        "requestDigest": "5b9effb481d32e7ce87c66b7c5bc3dc704c783d8bd843625041e57e6ee668bf6",
+        "collection": "tag_definitions",
+        "documentCount": 491,
+        "batches": [
+          {
+            "mutationId": "import-106790c4dd063f526d3be8c6d63b47e3ca4b6173fa65b270b181e8a128562fba",
+            "batchIndex": 0,
+            "documentCount": 491,
+            "requestDigest": "307faf0c1d682a1b9f497eddac87828f4ec470465a4d387972d989bb033bf730"
+          }
+        ]
+      },
+      "prepareCall": {
+        "requestId": 19,
+        "operationId": "a6785f0e-cdc0-4660-b960-f9c5957c0fc7",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "prepare_orphan_risk",
+        "startedAt": "2026-10-28T06:23:07.092Z",
+        "completedAt": "2026-10-28T06:23:07.146Z"
+      },
+      "inspectCall": {
+        "requestId": 20,
+        "operationId": "78d460cf-988d-4e3c-b648-9a4f0451fc54",
+        "toolName": "remote_debug_mongodb_disposition",
+        "mode": "inspect_orphan_risk",
+        "startedAt": "2026-10-28T06:23:07.162Z",
+        "completedAt": "2026-10-28T06:23:07.169Z"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    }
+  ]
+}
