@@ -1,3 +1,4 @@
+import { importReviewDiagnostic } from "./review-diagnostic.js";
 import { mutationDiagnostic } from "./mutation-diagnostic.js";
 import { execFile, spawn } from "node:child_process";
 import { createHash, randomUUID, randomBytes } from "node:crypto";
@@ -3659,6 +3660,7 @@ async function handleRequest(message) {
           cause: error.cause,
           intentId: error.intentId || operation.privacyIntent?.id,
           ...(error.diagnostic ? { diagnostic: mutationDiagnostic(error.diagnostic) } : {}),
+          ...(importReviewDiagnostic(error.inputDiagnostic) ? { inputDiagnostic: importReviewDiagnostic(error.inputDiagnostic) } : {}),
         },
         details: error.payload,
       }, true), { previewContext: operation });

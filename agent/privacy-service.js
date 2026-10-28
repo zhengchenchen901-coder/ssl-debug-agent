@@ -1,3 +1,4 @@
+import { normalizeExactImportReview, importReviewDiagnostic } from "./mongodb-import-review.js";
 import { mutationDiagnostic } from "../plugins/remote-debug-agent/mutation-diagnostic.js";
 import { normalizeMongoImport } from "./mongodb-mutations.js";
 import { Worker } from "node:worker_threads";
@@ -264,13 +265,7 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
       validateImportLookup(input);
       const target = JSON.parse(input.scope), requests = {};
       for (const name of ["originalRequest", "replacementRequest"]) {
-        const raw = input[name];
-        if (!isImportRequest(raw) || Object.keys(raw).some(key => !["instanceId", "importId", "database", "collection", "documents", "batchSize", "rollbackTtlMs", "purpose", "operationId", "timeoutMs", "deadlineAt"].includes(key)) || raw.instanceId !== target.id || raw.database !== target.database || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
-        const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
-        if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
-        try { normalizeMongoImport(request, instance(target.id).mongodb); }
-        catch { throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID"); }
-        requests[name] = request;
+        requests[name] = normalizeExactImportReview(input[name], target, instance(target.id).mongodb, name);
       }
       if (input.reviewMemo !== undefined && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4000)) throw privacyError("BUSINESS_ORPHAN_RISK_DENIED");
       const reviewMemo = createOutputGuard().sanitize({ reviewMemo: input.reviewMemo || "" }).value.reviewMemo;
@@ -476,7 +471,7 @@ export function installPrivacyRoutes(app, { directory, registry, service, dispat
     } catch (error) {
       response.status(409).json({ ok: false, error: { code: error.code?.startsWith("BUSINESS_") ? error.code : "BUSINESS_STORAGE_UNAVAILABLE",
         message: error.code === "BUSINESS_DISPOSITION_INPUT_INVALID" ? "Risk replacement input failed bulk validation; inspect the exact original and proposed first chunks. No request was dispatched." : privacyError().message,
-        retriable: false } });
+        retriable: false, ...(importReviewDiagnostic(error.inputDiagnostic) ? { inputDiagnostic: importReviewDiagnostic(error.inputDiagnostic) } : {}) } });
     }
   });
 }

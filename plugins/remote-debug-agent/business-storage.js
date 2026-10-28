@@ -1,3 +1,4 @@
+import { importReviewDiagnostic } from "./review-diagnostic.js";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -39,9 +40,9 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
         timeoutMs: ["dispatch_prepare", "recover_operation", "resolve_import"].includes(input.action)
           ? Math.max(1, Math.min(605000, (input.deadlineAt || Date.now() + 120000) - Date.now() + 5000)) : 25000, signal,
       });
-      if (!response.ok || parsed.ok !== true || !parsed.result) throw failure(parsed.error?.code?.startsWith("BUSINESS_") ? parsed.error.code : undefined);
+      if (!response.ok || parsed.ok !== true || !parsed.result) throw Object.assign(failure(parsed.error?.code?.startsWith("BUSINESS_") ? parsed.error.code : undefined), { inputDiagnostic: importReviewDiagnostic(parsed.error?.inputDiagnostic) });
       return parsed.result;
-    } catch (error) { throw failure(error.code?.startsWith("BUSINESS_") ? error.code : undefined); }
+    } catch (error) { throw Object.assign(failure(error.code?.startsWith("BUSINESS_") ? error.code : undefined), { inputDiagnostic: importReviewDiagnostic(error.inputDiagnostic) }); }
   }
   async function attach(settings) {
     const origin = new URL(settings.agentUrl).origin;

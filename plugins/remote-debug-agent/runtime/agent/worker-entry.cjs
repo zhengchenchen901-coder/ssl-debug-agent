@@ -53691,7 +53691,7 @@ function normalizeMongoMutation(input = {}, config = {}, options = {}) {
 function normalizeMongoImport(input = {}, config = {}, options = {}) {
   const policy = normalizeMongoMutationConfig(config);
   const common2 = normalizeCommonMutation(input, policy, options.operationId, "import");
-  const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+  const importId = normalizeName(input.importId, "importId", options.historicalReviewOnly === true ? /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/ : /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
   if (!Array.isArray(input.documents) || !input.documents.length || input.documents.length > MAX_MONGODB_IMPORT_DOCUMENTS) {
     throw mutationError("documents must contain between 1 and 10000 documents", "MONGODB_IMPORT_COUNT_LIMIT");
   }
@@ -57554,54 +57554,17 @@ function assertSshConfig(config) {
 // server.js
 var import_express3 = __toESM(require_express2(), 1);
 
-// privacy-service.js
-var import_node_worker_threads = require("node:worker_threads");
-var import_node_path4 = __toESM(require("node:path"), 1);
-var import_node_url = require("node:url");
+// ../plugins/remote-debug-agent/review-diagnostic.js
+var CODES = /* @__PURE__ */ new Set(["INVALID_MONGODB_MUTATION", "MONGODB_IMPORT_COUNT_LIMIT", "MONGODB_IMPORT_SIZE_LIMIT", "MONGODB_IMPORT_ID_INVALID", "MONGODB_IMPORT_DUPLICATE_ID", "MONGODB_IMPORT_BATCH_LIMIT", "MONGODB_MUTATION_DOCUMENT_TOO_LARGE", "MONGODB_MUTATION_ID_REQUIRED", "MONGODB_FIELD_REJECTED", "MONGODB_OPERATOR_REJECTED", "MONGODB_DATABASE_NOT_ALLOWED", "MONGODB_COLLECTION_NOT_ALLOWED"]);
+function importReviewDiagnostic(input) {
+  if (!["originalRequest", "replacementRequest"].includes(input?.requestField) || !CODES.has(input?.code)) return void 0;
+  return { requestField: input.requestField, code: input.code };
+}
 
 // privacy-key.js
 var import_windows_privacy = __toESM(require_windows_privacy(), 1);
 function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
   return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
-}
-
-// ../plugins/remote-debug-agent/business-privacy.js
-function fail(code = "BUSINESS_REFERENCE_INVALID") {
-  throw Object.assign(new Error("Business reference is unavailable or is not valid for this target or argument. Re-query the data in this MCP session."), { code, retriable: false });
-}
-function stable(value) {
-  if (Array.isArray(value)) return value.map(stable);
-  if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
-  return value;
-}
-function encoded(value) {
-  return JSON.stringify(stable(value));
-}
-function businessTargetScope(endpoint, instance2, database) {
-  if (!instance2?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
-  return encoded({
-    endpoint,
-    id: instance2.id,
-    host: instance2.host,
-    port: instance2.port,
-    username: instance2.username,
-    createdAt: instance2.createdAt,
-    configPath: instance2.mongodb?.configPath,
-    driverPath: instance2.mongodb?.driverPath,
-    configProfile: instance2.mongodb?.configProfile,
-    uriKey: instance2.mongodb?.uriKey,
-    database
-  });
-}
-
-// mongodb-import-recovery.js
-var DIGEST = /^[a-f0-9]{64}$/;
-var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-var MAX_BYTES = 8 * 1024 * 1024;
-function validateImportLookup(input) {
-  if (!UUID.test(input.originalOperationId || "") || !DIGEST.test(input.requestDigest || "") || typeof input.importId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(input.importId)) {
-    throw privacyError("BUSINESS_OPERATION_LOOKUP_INVALID");
-  }
 }
 
 // ../plugins/remote-debug-agent/output-contracts.js
@@ -57610,7 +57573,7 @@ var json = "json";
 var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
 var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 var warning = fields("code message path source phase");
-var error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
+var error = { inputDiagnostic: fields("requestField code"), ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
 var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 var instance = {
@@ -57865,7 +57828,7 @@ var GUARD_BLOCKED = Object.freeze({
   ok: false,
   error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
 });
-var MAX_BYTES2 = 8 * 1024 * 1024;
+var MAX_BYTES = 8 * 1024 * 1024;
 var MAX_NODES = 1e5;
 var MAX_DEPTH = 40;
 var MAX_SECRETS = 2048;
@@ -57886,7 +57849,7 @@ function decodeEscapes(value) {
     (_, unicode, hex, literal) => literal || String.fromCharCode(parseInt(unicode || hex, 16))
   );
 }
-function createOutputGuard({ maxBytes = MAX_BYTES2, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1e3, businessPrivacy } = {}) {
+function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1e3, businessPrivacy } = {}) {
   const secrets = /* @__PURE__ */ new Set();
   let unavailable = false;
   function remember(value) {
@@ -58099,7 +58062,94 @@ function createOutputGuard({ maxBytes = MAX_BYTES2, maxNodes = MAX_NODES, maxDep
       return Buffer.from(JSON.stringify({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] } }));
     }
   }
-  return { remember, sanitize, toolResult, serialize };
+  function learnSecrets(value) {
+    const ctx = context();
+    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
+    learn(value, ctx);
+    for (const secret of ctx.secrets) remember(secret);
+    if (unavailable) blocked();
+  }
+  return { remember, learnSecrets, sanitize, toolResult, serialize };
+}
+
+// mongodb-import-review.js
+var FIELDS = /* @__PURE__ */ new Set(["instanceId", "importId", "database", "collection", "documents", "batchSize", "rollbackTtlMs", "purpose", "operationId", "timeoutMs", "deadlineAt"]);
+function exactJson(raw) {
+  let nodes = 0;
+  const visit = (value, depth) => {
+    if (++nodes > 4e5 || depth > 16) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+    if (value === null || ["string", "boolean", "undefined"].includes(typeof value)) return;
+    if (typeof value === "number" && Number.isFinite(value)) return;
+    if (!value || typeof value !== "object" || !Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) {
+      if (descriptor.get || descriptor.set) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+      if (descriptor.enumerable) visit(descriptor.value, depth + 1);
+    }
+  };
+  visit(raw, 0);
+  const bytes = JSON.stringify(raw);
+  if (typeof bytes !== "string" || Buffer.byteLength(bytes) > 5 * 1024 * 1024) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+  if (bytes.includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+  return JSON.parse(bytes);
+}
+function normalizeExactImportReview(raw, target2, config, requestField) {
+  const incoming = exactJson(raw);
+  if (!isImportRequest(incoming) || Object.keys(incoming).some((key) => !FIELDS.has(key)) || incoming.instanceId !== target2.id || incoming.database !== target2.database) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+  const { operationId, deadlineAt, timeoutMs, ...request } = incoming;
+  try {
+    const plan = normalizeMongoImport(request, config, { historicalReviewOnly: requestField === "originalRequest" });
+    if (plan.importId !== request.importId || plan.database !== request.database || plan.collection !== request.collection) throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+  } catch (error2) {
+    const rejected = privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
+    rejected.inputDiagnostic = importReviewDiagnostic({ requestField, code: error2.code });
+    throw rejected;
+  }
+  if (prepareRequestDigest(incoming) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
+  return request;
+}
+
+// privacy-service.js
+var import_node_worker_threads = require("node:worker_threads");
+var import_node_path4 = __toESM(require("node:path"), 1);
+var import_node_url = require("node:url");
+
+// ../plugins/remote-debug-agent/business-privacy.js
+function fail(code = "BUSINESS_REFERENCE_INVALID") {
+  throw Object.assign(new Error("Business reference is unavailable or is not valid for this target or argument. Re-query the data in this MCP session."), { code, retriable: false });
+}
+function stable(value) {
+  if (Array.isArray(value)) return value.map(stable);
+  if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
+  return value;
+}
+function encoded(value) {
+  return JSON.stringify(stable(value));
+}
+function businessTargetScope(endpoint, instance2, database) {
+  if (!instance2?.id || typeof database !== "string" || !database) fail("BUSINESS_PRIVACY_SCOPE_REQUIRED");
+  return encoded({
+    endpoint,
+    id: instance2.id,
+    host: instance2.host,
+    port: instance2.port,
+    username: instance2.username,
+    createdAt: instance2.createdAt,
+    configPath: instance2.mongodb?.configPath,
+    driverPath: instance2.mongodb?.driverPath,
+    configProfile: instance2.mongodb?.configProfile,
+    uriKey: instance2.mongodb?.uriKey,
+    database
+  });
+}
+
+// mongodb-import-recovery.js
+var DIGEST = /^[a-f0-9]{64}$/;
+var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+var MAX_BYTES2 = 8 * 1024 * 1024;
+function validateImportLookup(input) {
+  if (!UUID.test(input.originalOperationId || "") || !DIGEST.test(input.requestDigest || "") || typeof input.importId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(input.importId)) {
+    throw privacyError("BUSINESS_OPERATION_LOOKUP_INVALID");
+  }
 }
 
 // mongodb-bulk-history.js
@@ -58615,16 +58665,7 @@ async function privacyRequest(service, input, { instance: instance2, origin, dis
       validateImportLookup(input);
       const target2 = JSON.parse(input.scope), requests = {};
       for (const name2 of ["originalRequest", "replacementRequest"]) {
-        const raw = input[name2];
-        if (!isImportRequest(raw) || Object.keys(raw).some((key) => !["instanceId", "importId", "database", "collection", "documents", "batchSize", "rollbackTtlMs", "purpose", "operationId", "timeoutMs", "deadlineAt"].includes(key)) || raw.instanceId !== target2.id || raw.database !== target2.database || JSON.stringify(raw).includes("[REDACTED]")) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
-        const { operationId, deadlineAt, timeoutMs, ...request } = createOutputGuard().sanitize(raw).value;
-        if (prepareRequestDigest(raw) !== prepareRequestDigest(request)) throw privacyError("BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED");
-        try {
-          normalizeMongoImport(request, instance2(target2.id).mongodb);
-        } catch {
-          throw privacyError("BUSINESS_DISPOSITION_INPUT_INVALID");
-        }
-        requests[name2] = request;
+        requests[name2] = normalizeExactImportReview(input[name2], target2, instance2(target2.id).mongodb, name2);
       }
       if (input.reviewMemo !== void 0 && (typeof input.reviewMemo !== "string" || input.reviewMemo.length > 4e3)) throw privacyError("BUSINESS_ORPHAN_RISK_DENIED");
       const reviewMemo = createOutputGuard().sanitize({ reviewMemo: input.reviewMemo || "" }).value.reviewMemo;
@@ -58913,7 +58954,8 @@ function installPrivacyRoutes(app, { directory, registry, service, dispatch, pre
       response.status(409).json({ ok: false, error: {
         code: error2.code?.startsWith("BUSINESS_") ? error2.code : "BUSINESS_STORAGE_UNAVAILABLE",
         message: error2.code === "BUSINESS_DISPOSITION_INPUT_INVALID" ? "Risk replacement input failed bulk validation; inspect the exact original and proposed first chunks. No request was dispatched." : privacyError().message,
-        retriable: false
+        retriable: false,
+        ...importReviewDiagnostic(error2.inputDiagnostic) ? { inputDiagnostic: importReviewDiagnostic(error2.inputDiagnostic) } : {}
       } });
     }
   });

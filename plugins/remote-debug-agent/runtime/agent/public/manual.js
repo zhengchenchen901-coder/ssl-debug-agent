@@ -198,7 +198,8 @@ function renderRiskReview(plan) {
         审核阶段: "无 intentId、缺历史回执", 绑定身份: plan.binding,
         原状态: plan.originalStatus, 历史结果: plan.historicalOutcome, 已证明未派发: plan.provesNotDispatched,
         系统观测: plan.observation, 唯一后续处置: plan.followup,
-        精确原请求: plan.orderedOriginalRequest, 精确后续请求: plan.orderedFollowupRequest,
+        原请求审核展示: plan.orderedOriginalRequest, 后续请求审核展示: plan.orderedFollowupRequest,
+        展示脱敏状态: plan.requestDisplay,
         调用者说明非证明: plan.reviewMemo, 剩余风险: plan.warning,
         状态: plan.state, 审核哈希: plan.reviewHash, 批准审计: plan.approvalAuditId,
         消费审计: plan.consumptionAuditId, 到期时间: new Date(plan.expiresAt).toLocaleString()

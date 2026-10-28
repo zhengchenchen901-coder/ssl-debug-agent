@@ -1,0 +1,35 @@
+{
+  "basis": "instrumented local diagnostic copy; numeric exception counters only",
+  "sourceSha256": "92680bcaa86cd86f8982bcd425c954a4aa970f2a1664a749a61edc65ff7d3c41",
+  "diagnosticSha256": "56e57e46f6c5857116e2ffa5d1fc15671f34dca8773f05d5e2751d05e101e2a5",
+  "installedSourceChanged": false,
+  "rows": [
+    {
+      "collection": "RestaurantLog",
+      "reason": "nodes",
+      "nodes": 100001,
+      "maxNodes": 100000,
+      "depth": 9,
+      "maxDepth": 40,
+      "accumulatedStringBytes": 741483
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_History",
+      "reason": "nodes",
+      "nodes": 100001,
+      "maxNodes": 100000,
+      "depth": 0,
+      "maxDepth": 40,
+      "accumulatedStringBytes": 266576
+    },
+    {
+      "collection": "tag_definitions",
+      "reason": "nodes",
+      "nodes": 100001,
+      "maxNodes": 100000,
+      "depth": 3,
+      "maxDepth": 40,
+      "accumulatedStringBytes": 965388
+    }
+  ]
+}

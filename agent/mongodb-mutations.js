@@ -540,7 +540,7 @@ export function normalizeMongoMutation(input = {}, config = {}, options = {}) {
 export function normalizeMongoImport(input = {}, config = {}, options = {}) {
   const policy = normalizeMongoMutationConfig(config);
   const common = normalizeCommonMutation(input, policy, options.operationId, "import");
-  const importId = normalizeName(input.importId, "importId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+  const importId = normalizeName(input.importId, "importId", options.historicalReviewOnly === true ? /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/ : /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
   if (!Array.isArray(input.documents) || !input.documents.length || input.documents.length > MAX_MONGODB_IMPORT_DOCUMENTS) {
     throw mutationError("documents must contain between 1 and 10000 documents", "MONGODB_IMPORT_COUNT_LIMIT");
   }

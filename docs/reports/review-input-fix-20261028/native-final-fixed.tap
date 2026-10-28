@@ -1,0 +1,398 @@
+TAP version 13
+# (node:17) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: remote SIGKILL after durable closure recovers only the same child without clearing dead locks
+ok 1 - remote SIGKILL after durable closure recovers only the same child without clearing dead locks
+  ---
+  duration_ms: 128.205709
+  type: 'test'
+  ...
+# Subtest: remote SIGKILL after durable child recovers only the same child without clearing dead locks
+ok 2 - remote SIGKILL after durable child recovers only the same child without clearing dead locks
+  ---
+  duration_ms: 118.167959
+  type: 'test'
+  ...
+# Subtest: SIGKILL beforeCommit of human_execution_risk_approve recovers its exact durable authorization
+ok 3 - SIGKILL beforeCommit of human_execution_risk_approve recovers its exact durable authorization
+  ---
+  duration_ms: 68.630667
+  type: 'test'
+  ...
+# Subtest: SIGKILL afterCommit of human_execution_risk_approve recovers its exact durable authorization
+ok 4 - SIGKILL afterCommit of human_execution_risk_approve recovers its exact durable authorization
+  ---
+  duration_ms: 68.391458
+  type: 'test'
+  ...
+# Subtest: SIGKILL beforeCommit of execution_risk_reserve recovers its exact durable authorization
+ok 5 - SIGKILL beforeCommit of execution_risk_reserve recovers its exact durable authorization
+  ---
+  duration_ms: 68.222208
+  type: 'test'
+  ...
+# Subtest: SIGKILL afterCommit of execution_risk_reserve recovers its exact durable authorization
+ok 6 - SIGKILL afterCommit of execution_risk_reserve recovers its exact durable authorization
+  ---
+  duration_ms: 74.144917
+  type: 'test'
+  ...
+# Subtest: historical plan without collection UUID is retained; only explicitly reviewed child binds the current UUID
+ok 7 - historical plan without collection UUID is retained; only explicitly reviewed child binds the current UUID
+  ---
+  duration_ms: 59.639208
+  type: 'test'
+  ...
+# Subtest: legacy .2 execution gets independent human review and one same-import immutable child
+ok 8 - legacy .2 execution gets independent human review and one same-import immutable child
+  ---
+  duration_ms: 76.4625
+  type: 'test'
+  ...
+# Subtest: v2 unknown execution gets independent human review and one same-import immutable child
+ok 9 - v2 unknown execution gets independent human review and one same-import immutable child
+  ---
+  duration_ms: 76.009709
+  type: 'test'
+  ...
+# Subtest: old prepare approval, caller proof and cross-context requests cannot authorize execution risk
+ok 10 - old prepare approval, caller proof and cross-context requests cannot authorize execution risk
+  ---
+  duration_ms: 42.452459
+  type: 'test'
+  ...
+# Subtest: UUID change, duplicates and expiry never silently change approved plan; expired drafts retain revisions
+ok 11 - UUID change, duplicates and expiry never silently change approved plan; expired drafts retain revisions
+  ---
+  duration_ms: 100.199167
+  type: 'test'
+  ...
+# Subtest: lost remote reply and concurrent consumption recover the one durable reservation after restart
+ok 12 - lost remote reply and concurrent consumption recover the one durable reservation after restart
+  ---
+  duration_ms: 42.443709
+  type: 'test'
+  ...
+# Subtest: late machine evidence stays separate and closes child admission; unknown child cannot get another review
+ok 13 - late machine evidence stays separate and closes child admission; unknown child cannot get another review
+  ---
+  duration_ms: 40.204084
+  type: 'test'
+  ...
+# Subtest: execution workbench uses separate review session, rejects Manager/context tokens, and verifies native identity freshly
+ok 14 - execution workbench uses separate review session, rejects Manager/context tokens, and verifies native identity freshly
+  ---
+  duration_ms: 155.7145
+  type: 'test'
+  ...
+# Subtest: remote original closure survives child manifest I/O failure and recovers only the identical reserved child
+ok 15 - remote original closure survives child manifest I/O failure and recovers only the identical reserved child
+  ---
+  duration_ms: 48.040125
+  type: 'test'
+  ...
+# Subtest: remote old-journal lock rejection releases the separate global lock without clearing the old lock
+ok 16 - remote old-journal lock rejection releases the separate global lock without clearing the old lock
+  ---
+  duration_ms: 25.2185
+  type: 'test'
+  ...
+# Subtest: duplicate prerequisites, wrong execution operation and changed UUID cannot enter human approval
+ok 17 - duplicate prerequisites, wrong execution operation and changed UUID cannot enter human approval
+  ---
+  duration_ms: 24.517417
+  type: 'test'
+  ...
+# (node:18) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: import human risk review binds historical bytes, exact batches, observations and preserves original uncertainty
+ok 18 - import human risk review binds historical bytes, exact batches, observations and preserves original uncertainty
+  ---
+  duration_ms: 46.504
+  type: 'test'
+  ...
+# Subtest: import proposal rejects payload, order, BSON field order, collection, target and batching changes
+ok 19 - import proposal rejects payload, order, BSON field order, collection, target and batching changes
+  ---
+  duration_ms: 22.973041
+  type: 'test'
+  ...
+# Subtest: import candidates and originals are gated across contexts; human approval creates no replacement
+ok 20 - import candidates and originals are gated across contexts; human approval creates no replacement
+  ---
+  duration_ms: 12.939542
+  type: 'test'
+  ...
+# Subtest: import retirement and lost preparation replies resume only the one replacement after restart
+ok 21 - import retirement and lost preparation replies resume only the one replacement after restart
+  ---
+  duration_ms: 52.08475
+  type: 'test'
+  ...
+# Subtest: missing terminal import receipt stays uncertain and cannot replay preparation
+ok 22 - missing terminal import receipt stays uncertain and cannot replay preparation
+  ---
+  duration_ms: 27.010583
+  type: 'test'
+  ...
+# Subtest: import approval expires, competing proposal is rejected, exact identity can be reviewed again
+ok 23 - import approval expires, competing proposal is rejected, exact identity can be reviewed again
+  ---
+  duration_ms: 39.371625
+  type: 'test'
+  ...
+# Subtest: import public API cannot supply approval, evidence or direct store actions
+ok 24 - import public API cannot supply approval, evidence or direct store actions
+  ---
+  duration_ms: 12.845583
+  type: 'test'
+  ...
+# Subtest: independent import workbench requires same-session review and fresh native verification; cancellation is not approval
+ok 25 - independent import workbench requires same-session review and fresh native verification; cancellation is not approval
+  ---
+  duration_ms: 147.255917
+  type: 'test'
+  ...
+# Subtest: import approval renewal after creation retains exact lineage and terminal receipt
+ok 26 - import approval renewal after creation retains exact lineage and terminal receipt
+  ---
+  duration_ms: 35.447042
+  type: 'test'
+  ...
+# Subtest: import batch review reports committed and unknown receipts without discharging historical intent
+ok 27 - import batch review reports committed and unknown receipts without discharging historical intent
+  ---
+  duration_ms: 39.487459
+  type: 'test'
+  ...
+# Subtest: existing remote replacement manifests cannot be adopted, even with identical documents
+ok 28 - existing remote replacement manifests cannot be adopted, even with identical documents
+  ---
+  duration_ms: 17.54875
+  type: 'test'
+  ...
+# Subtest: import receipt target mismatch, corruption or a partial batch list cannot be reported as complete preparation
+ok 29 - import receipt target mismatch, corruption or a partial batch list cannot be reported as complete preparation
+  ---
+  duration_ms: 79.543667
+  type: 'test'
+  ...
+# Subtest: import SIGKILL human_risk_approve beforeCommit preserves one lineage and historical bytes
+ok 30 - import SIGKILL human_risk_approve beforeCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 72.747917
+  type: 'test'
+  ...
+# Subtest: import SIGKILL human_risk_approve afterCommit preserves one lineage and historical bytes
+ok 31 - import SIGKILL human_risk_approve afterCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 64.399625
+  type: 'test'
+  ...
+# Subtest: import SIGKILL create_risk_replacement beforeCommit preserves one lineage and historical bytes
+ok 32 - import SIGKILL create_risk_replacement beforeCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 73.437625
+  type: 'test'
+  ...
+# Subtest: import SIGKILL create_risk_replacement afterCommit preserves one lineage and historical bytes
+ok 33 - import SIGKILL create_risk_replacement afterCommit preserves one lineage and historical bytes
+  ---
+  duration_ms: 63.306416
+  type: 'test'
+  ...
+# Subtest: new import protocol can retry exact pre-SSH rejection without a human risk override
+ok 34 - new import protocol can retry exact pre-SSH rejection without a human risk override
+  ---
+  duration_ms: 27.526542
+  type: 'test'
+  ...
+# Subtest: partial import preparation continues the same batches and archives its terminal prefix evidence
+ok 35 - partial import preparation continues the same batches and archives its terminal prefix evidence
+  ---
+  duration_ms: 42.36075
+  type: 'test'
+  ...
+# (node:19) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: final risk approval requires independent admin login, same-origin review and fresh native owner verification
+ok 36 - final risk approval requires independent admin login, same-origin review and fresh native owner verification
+  ---
+  duration_ms: 162.913667
+  type: 'test'
+  ...
+# Subtest: knowing an MCP plan hash without reading it in the human session cannot approve
+ok 37 - knowing an MCP plan hash without reading it in the human session cannot approve
+  ---
+  duration_ms: 132.337833
+  type: 'test'
+  ...
+# Subtest: cancelled native approval, session logout during prompt and changed evidence create no replacement
+ok 38 - cancelled native approval, session logout during prompt and changed evidence create no replacement
+  ---
+  duration_ms: 130.84275
+  type: 'test'
+  ...
+# Subtest: risk review displays exact immutable plan and never exposes business preimages or authority key
+ok 39 - risk review displays exact immutable plan and never exposes business preimages or authority key
+  ---
+  duration_ms: 121.033084
+  type: 'test'
+  ...
+# Subtest: v2 human workbench can approve without an external receipt or whole-instance quarantine
+ok 40 - v2 human workbench can approve without an external receipt or whole-instance quarantine
+  ---
+  duration_ms: 141.802625
+  type: 'test'
+  ...
+# Subtest: v2 native prompt cannot approve after the enrolled target changes
+ok 41 - v2 native prompt cannot approve after the enrolled target changes
+  ---
+  duration_ms: 124.665125
+  type: 'test'
+  ...
+# (node:25) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:25) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: import public MCP and source Manager require native admin review and preserve per-batch confirmation
+ok 42 - import public MCP and source Manager require native admin review and preserve per-batch confirmation
+  ---
+  duration_ms: 501.330875
+  type: 'test'
+  ...
+# (node:25) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: import public MCP and bundled Manager require native admin review and preserve per-batch confirmation
+ok 43 - import public MCP and bundled Manager require native admin review and preserve per-batch confirmation
+  ---
+  duration_ms: 494.023084
+  type: 'test'
+  ...
+# (node:31) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:31) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: orphan risk public MCP / source Manager: independent native approval, one prepare and separate business confirmation
+ok 44 - orphan risk public MCP / source Manager: independent native approval, one prepare and separate business confirmation
+  ---
+  duration_ms: 484.318
+  type: 'test'
+  ...
+# (node:31) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: orphan risk public MCP / bundled Manager: independent native approval, one prepare and separate business confirmation
+ok 45 - orphan risk public MCP / bundled Manager: independent native approval, one prepare and separate business confirmation
+  ---
+  duration_ms: 457.272167
+  type: 'test'
+  ...
+# Subtest: background log output preserves progress and redacts evidence and group messages
+ok 46 - background log output preserves progress and redacts evidence and group messages
+  ---
+  duration_ms: 5.032958
+  type: 'test'
+  ...
+# Subtest: closed output contracts omit unknown metadata, including nested instance fields
+ok 47 - closed output contracts omit unknown metadata, including nested instance fields
+  ---
+  duration_ms: 0.395458
+  type: 'test'
+  ...
+# Subtest: sensitive fields of every JSON type are masked and sibling copies are removed
+ok 48 - sensitive fields of every JSON type are masked and sibling copies are removed
+  ---
+  duration_ms: 0.303125
+  type: 'test'
+  ...
+# Subtest: credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+ok 49 - credentials are removed from stdout, stderr, keys, repeated log content and encoded JSON
+  ---
+  duration_ms: 1.63575
+  type: 'test'
+  ...
+# Subtest: known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+ok 50 - known secrets and secrets discovered late in log strings mask earlier unlabelled copies
+  ---
+  duration_ms: 0.285541
+  type: 'test'
+  ...
+# Subtest: diagnostic errors have closed contracts and redact message, cause and approved details
+ok 51 - diagnostic errors have closed contracts and redact message, cause and approved details
+  ---
+  duration_ms: 0.611917
+  type: 'test'
+  ...
+# Subtest: operation IDs, hashes, confirmations, counts and normal diagnostics survive
+ok 52 - operation IDs, hashes, confirmations, counts and normal diagnostics survive
+  ---
+  duration_ms: 0.892792
+  type: 'test'
+  ...
+# Subtest: limits, malformed shapes, cycles, getters and unsupported values fail closed
+ok 53 - limits, malformed shapes, cycles, getters and unsupported values fail closed
+  ---
+  duration_ms: 0.361375
+  type: 'test'
+  ...
+# Subtest: final transport sanitizes protocol errors and serializes UTF-8 bytes
+ok 54 - final transport sanitizes protocol errors and serializes UTF-8 bytes
+  ---
+  duration_ms: 0.425875
+  type: 'test'
+  ...
+# Subtest: each registered tool must have an output contract
+ok 55 - each registered tool must have an output contract
+  ---
+  duration_ms: 6.250667
+  type: 'test'
+  ...
+# Subtest: unknown media/structured responses are blocked and credential presence flags stay boolean
+ok 56 - unknown media/structured responses are blocked and credential presence flags stay boolean
+  ---
+  duration_ms: 0.899625
+  type: 'test'
+  ...
+# Subtest: a large normal log stays useful and one response cannot poison subsequent results
+ok 57 - a large normal log stays useful and one response cannot poison subsequent results
+  ---
+  duration_ms: 33.521417
+  type: 'test'
+  ...
+# Subtest: known-secret overlaps cannot obscure credential syntax or leak suffixes
+ok 58 - known-secret overlaps cannot obscure credential syntax or leak suffixes
+  ---
+  duration_ms: 0.222459
+  type: 'test'
+  ...
+# Subtest: service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+ok 59 - service output contracts preserve evidence and omit arbitrary environment or PM2 payloads
+  ---
+  duration_ms: 0.581916
+  type: 'test'
+  ...
+# Subtest: bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted
+ok 60 - bulk diagnostic metadata survives MCP output contract while arbitrary nested error data is omitted
+  ---
+  duration_ms: 0.577708
+  type: 'test'
+  ...
+# (node:48) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:48) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: public MCP and real Manager HTTP prepare/read five synthetic review shapes without dispatch, credential loss or historical edits
+ok 61 - public MCP and real Manager HTTP prepare/read five synthetic review shapes without dispatch, credential loss or historical edits
+  ---
+  duration_ms: 2258.108501
+  type: 'test'
+  ...
+1..61
+# tests 61
+# suites 0
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2377.078751

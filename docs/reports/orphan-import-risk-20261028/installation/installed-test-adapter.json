@@ -1,0 +1,36 @@
+{
+  "sourceFile": "plugins/remote-debug-agent/test/orphan-risk.test.js",
+  "sourceSha256": "cf1201ac3fd75769028a16f6be1e8755df4bef5e6a5123770e2bfe4eaec8463a",
+  "adapterSha256": "5376a54fb4e8d4bd15da9a33181e5510a7314cf5f752023efe2488ed5935b751",
+  "replacements": [
+    [
+      "\"../../../agent/",
+      "\"/workspace/agent/"
+    ],
+    [
+      "\"../prepare-protocol.js\"",
+      "\"/workspace/plugins/remote-debug-agent/prepare-protocol.js\""
+    ],
+    [
+      "\"./helpers/local-mcp.js\"",
+      "\"/workspace/plugins/remote-debug-agent/test/helpers/local-mcp.js\""
+    ],
+    [
+      "\"../local-auth.cjs\"",
+      "\"/installed/local-auth.cjs\""
+    ],
+    [
+      "path.resolve(import.meta.dirname, \"../runtime/agent/privacy-worker.cjs\")",
+      "\"/installed/runtime/agent/privacy-worker.cjs\""
+    ],
+    [
+      "createRequire(import.meta.url)(\"../runtime/agent/server.cjs\")",
+      "createRequire(import.meta.url)(\"/installed/runtime/agent/server.cjs\")"
+    ],
+    [
+      "mcpPeer(t, { root, url: origin, contextFile })",
+      "mcpPeer(t, { root, url: origin, contextFile, pluginRoot: \"/installed\" })"
+    ]
+  ],
+  "assertionsChanged": false
+}

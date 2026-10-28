@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "jobId": "103a04f8-fa80-4f6a-afb5-81f38e8b2aa4",
+  "status": "passed",
+  "reportHash": "0a1e38f2c6f230eef983451c2c20a50e312e8d3b5b4b9e5b8500e0ba70f86fbe",
+  "snapshotId": "b01ce478dc6cd0eac8215e4813d5ea549648796e97ea6b557c3fdd17641008ff",
+  "selection": {
+    "selectedAssets": 6,
+    "completedAssetResults": 6,
+    "selectedCases": "由运行时筛选结果确定，静态清单不冒认用例数量",
+    "executedCases": 71,
+    "passed": 71,
+    "failed": 0,
+    "skipped": 0,
+    "excludedByPattern": 0
+  },
+  "targetCoverage": {
+    "scopeId": "7d33849317b9d87855d42c9143a0ce9419cdb9d42c4fae9deb8443f7b6f7afe6",
+    "denominator": "本计划目标；不同目标类型不合并为全部分支覆盖率",
+    "total": 862,
+    "covered": 0,
+    "notCovered": 0,
+    "unknown": 862,
+    "byKind": {
+      "modified-block": {
+        "total": 759,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 759
+      },
+      "condition-outcome": {
+        "total": 86,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 86
+      },
+      "impacted-entry": {
+        "total": 7,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 7
+      },
+      "symbol-reference": {
+        "total": 0,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 0
+      },
+      "unexpanded-change": {
+        "total": 10,
+        "covered": 0,
+        "notCovered": 0,
+        "unknown": 10
+      }
+    },
+    "outOfScopeChanges": [],
+    "excludedEntryIds": [],
+    "outOfScopeChangeCount": 90,
+    "excludedEntryCount": 28
+  },
+  "files": [
+    {
+      "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+      "runId": "f7826788-0140-4916-8599-6532d7340dbd",
+      "evidenceHash": "dece154b93d32b8ae9103b902da704d190d0b8e14d684400224da195544423fc",
+      "status": "passed",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "3457f432cb9b807874cf68001b1be13b7bc40af1ea6fb0cb294fb2255fdb8be4",
+          "file": "verification/import-safety.test.js",
+          "status": "passed",
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 862
+        }
+      ]
+    },
+    {
+      "assetId": "7ccafdbf7ab6420d074066d6939a2b75801cb28da0e2499b47a3cef796d7595e",
+      "runId": "96dd787a-5bf4-4f23-b5e3-4115322dcfff",
+      "evidenceHash": "00782d6a1b9e6d88eb12ffe63df3dba0c58de1d8d65c201f2530b241fd442662",
+      "status": "passed",
+      "total": 27,
+      "passed": 27,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "7ccafdbf7ab6420d074066d6939a2b75801cb28da0e2499b47a3cef796d7595e",
+          "file": "verification/import-execution.test.js",
+          "status": "passed",
+          "total": 27,
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 862
+        }
+      ]
+    },
+    {
+      "assetId": "c19b5b22e1222829ac50e9da5287c33f8078f94b5bf49e99c6b8ab9aad34c3d6",
+      "runId": "859f6ada-1e87-482b-8d44-9e0319d824fd",
+      "evidenceHash": "f2cd0038bb263bc62a42eebbfaa2854174e41de05cebac2622b756de30939128",
+      "status": "passed",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "c19b5b22e1222829ac50e9da5287c33f8078f94b5bf49e99c6b8ab9aad34c3d6",
+          "file": "verification/execution-risk.test.js",
+          "status": "passed",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 862
+        }
+      ]
+    },
+    {
+      "assetId": "36b5678721fb59549ae1589a7279ebb403323cd407dd0019b3b36b19b72b3299",
+      "runId": "2afefc66-dfa4-4606-95d1-51c951814769",
+      "evidenceHash": "87f3e1926b93189ed0162540155536e440f67bb515acedeaf69de2c8e1bc4549",
+      "status": "passed",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "36b5678721fb59549ae1589a7279ebb403323cd407dd0019b3b36b19b72b3299",
+          "file": "verification/import-recovery.test.js",
+          "status": "passed",
+          "total": 13,
+          "passed": 13,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 862
+        }
+      ]
+    },
+    {
+      "assetId": "da3de16378927ebf59a9ef068a121510d8335b1386e9c063307a668e84a210f9",
+      "runId": "f4df7115-3db8-427a-aaec-d6b31773ea44",
+      "evidenceHash": "85a6cca5c6e97e830b534a77c5f32e44161b737cef7838c46531056429cf81ac",
+      "status": "passed",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "da3de16378927ebf59a9ef068a121510d8335b1386e9c063307a668e84a210f9",
+          "file": "verification/orphan-risk.test.js",
+          "status": "passed",
+          "total": 10,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 862
+        }
+      ]
+    },
+    {
+      "assetId": "d69ddf249f0c8220e831096550ac222201668bb770316f907d896ccd81dd8cc5",
+      "runId": "e0ab4f58-cddd-4311-8548-bff98bf9341d",
+      "evidenceHash": "7eb30ffaea88208c8f6058a8f154900ac4a1f13ddc2749b010ca911e2294fc61",
+      "status": "passed",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "fixedInputVerified": true,
+      "executionSourceUnchanged": true,
+      "workspaceStateUnchanged": true,
+      "sourceUnchanged": null,
+      "cleanup": "completed",
+      "files": [
+        {
+          "assetId": "d69ddf249f0c8220e831096550ac222201668bb770316f907d896ccd81dd8cc5",
+          "file": "verification/review-input.test.js",
+          "status": "passed",
+          "total": 9,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "excludedByPattern": 0,
+          "coveredTargets": 0,
+          "uncoveredTargets": 0,
+          "unknownTargets": 862
+        }
+      ]
+    }
+  ]
+}

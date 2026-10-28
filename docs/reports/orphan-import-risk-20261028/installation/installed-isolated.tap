@@ -1,0 +1,28 @@
+TAP version 13
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: orphan risk public MCP / source Manager: independent native approval, one prepare and separate business confirmation
+ok 1 - orphan risk public MCP / source Manager: independent native approval, one prepare and separate business confirmation
+  ---
+  duration_ms: 368.017459
+  type: 'test'
+  ...
+# (node:16) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: orphan risk public MCP / bundled Manager: independent native approval, one prepare and separate business confirmation
+ok 2 - orphan risk public MCP / bundled Manager: independent native approval, one prepare and separate business confirmation
+  ---
+  duration_ms: 402.58425
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 863.402543

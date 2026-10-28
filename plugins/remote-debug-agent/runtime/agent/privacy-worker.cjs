@@ -99,42 +99,513 @@ var require_windows_privacy = __commonJS({
 // privacy-worker.js
 var import_node_worker_threads = require("node:worker_threads");
 
-// privacy-key.js
-var import_node_child_process = require("node:child_process");
-var import_node_crypto = require("node:crypto");
-var import_windows_privacy = __toESM(require_windows_privacy(), 1);
-function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
-  return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
-}
-function loadPrivacyKey(directory, { platform = process.platform, run = import_node_child_process.execFileSync, existing = false } = {}) {
-  if (platform === "win32") return import_windows_privacy.default.loadKey(directory, { existing, run });
-  if (platform !== "darwin") throw privacyError("BUSINESS_KEYSTORE_UNSUPPORTED");
-  const service = "com.remote-debug-agent.business-privacy.v1";
-  const account = (0, import_node_crypto.createHash)("sha256").update(directory).digest("hex");
-  const read = () => {
-    const value = run("/usr/bin/security", ["find-generic-password", "-s", service, "-a", account, "-w"], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 15e3 }).trim();
-    if (!/^[a-f0-9]{64}$/.test(value)) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
-    return Buffer.from(value, "hex");
+// ../plugins/remote-debug-agent/output-contracts.js
+var scalar = "scalar";
+var json = "json";
+var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key4) => [key4, scalar]));
+var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
+var warning = fields("code message path source phase");
+var error = { inputDiagnostic: fields("requestField code"), ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
+var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
+var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
+var instance = {
+  ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
+  sourceRoots: json,
+  logProjects: json,
+  serviceProfiles: json,
+  approvedCommands: json,
+  commandReview: json,
+  mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
+  runtime,
+  memory,
+  hasPassphrase: "boolean"
+};
+instance.mongodb.hasSandboxManagementPassword = "boolean";
+var common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
+var entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
+var mutation = {
+  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
+  collections: [scalar],
+  changedFields: [scalar],
+  affectedIds: json,
+  storageStatus: json,
+  rollbackRestoresDocuments: scalar,
+  atomicity: scalar,
+  execution: fields("intentId operationId version attempt mutationId planHash"),
+  indexRecovery: fields("reason"),
+  diagnostic: error.diagnostic,
+  importExecution: { ...fields("version mutationId planHash database collection mode confirmation stage at"), outcomeEvidence: fields("kind sessionDigest transactionDigest requestId"), execution: fields("intentId operationId version attempt mutationId planHash") },
+  collectionReceipt: fields("version mutationId planHash database collection stage rollbackMode acknowledgedAt"),
+  failedBatch: { ...fields("batchIndex mutationId code"), diagnostic: error.diagnostic },
+  prepareRejection: { ...fields("version stage code"), diagnostic: error.diagnostic },
+  preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
+};
+var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
+mutation.batches = [batch];
+var receiptStorage = fields("database collection legacy scope schemaVersion");
+function bulkFailure(depth = 2) {
+  const shape = {
+    ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
+    ...fields("category driverCode writeErrorCount writeErrorsTruncated"),
+    errorLabels: [scalar],
+    writeErrors: [fields("code index category")],
+    writeConcernErrors: [fields("code index category")],
+    driverFrames: [fields("module line column")],
+    frames: [fields("function line column")]
   };
-  try {
-    return read();
-  } catch (error2) {
-    if (existing || error2.status !== 44) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
+  if (depth > 0) for (const key4 of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key4] = bulkFailure(depth - 1);
+  return shape;
+}
+var bulk = {
+  ...fields("terminationId reviewHash previousStatus"),
+  lastFailure: bulkFailure(),
+  ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
+  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
+  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
+  managedAdmissionClosed: "boolean",
+  originalJobFound: "boolean",
+  receiptStorage,
+  activeBatchIndexes: [scalar],
+  committed: fields("matched modified inserted unchanged"),
+  differences: json,
+  changedFields: [scalar],
+  planPreview: [batch],
+  batches: [batch]
+};
+var historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
+var bulkHistory = {
+  ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
+  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan }
+};
+var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
+var execution = {
+  ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
+  results: [{ ...fields("commandIndex command commandPreview cmd ok stdout stderr exitCode durationMs timedOut"), timing }],
+  stopped: fields("commandIndex reason exitCode")
+};
+var violation = fields("commandIndex code severity rule reason message");
+var model = { ...fields("status errorCode attempts durationMs decision isReadOnly riskLevel summary"), violations: [violation] };
+var review = { ...fields("reason reviewedAt"), staticViolations: [violation], violations: [violation], model };
+var sandbox = {
+  ...fields("sandboxDatabase storageRoot jobCount bytes initialized activeFilesRetained jobId scannedBytes truncated cleanupHash fileCount retainedUntil removedFiles removedBytes removedReceipts"),
+  receiptStorage,
+  files: [fields("name bytes modified")],
+  records: json,
+  jobs: [{ ...fields("jobId status rollbackExpiresAt"), receiptStorage }],
+  hasMore: scalar
+};
+var access = {
+  ...fields("setupId planHash status expiresAt instanceId sandboxDatabase collection managerUser managerRole executorRole managementProfile configPath configModeAfter backupMode collectionsInitialized passwordReset requiresConfirmation confirmation rollbackMode"),
+  executionUser: fields("user db"),
+  environment: json,
+  managerPrivileges: json,
+  executorPrivileges: json,
+  existing: { ...fields("manager profile executorGranted"), roles: json }
+};
+var logResources = {
+  ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
+  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason")
+};
+var fileReceipt = {
+  ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
+  source: fields("size modifyTime changeTime inode device"),
+  error,
+  warnings: [fields("code message memberPath lineNumber")]
+};
+var logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
+var logJob = {
+  ...logProgress,
+  ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
+  resourceTaskId: scalar,
+  evidenceLimits: fields("count bytes"),
+  fileResults: [fileReceipt],
+  scopeControls: fields("dateFrom dateTo stopAfterFile"),
+  progress: logProgress,
+  resources: logResources,
+  error,
+  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
+  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
+  groups: [fields("level route method code message count")],
+  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
+};
+var finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
+var finalResult = {
+  ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"),
+  final: "boolean",
+  privacy: fields("credentials binary policyVersion"),
+  references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") },
+  files: [finalFile]
+};
+var contracts = {
+  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
+  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
+  remote_debug_get_final_result: { result: finalResult },
+  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
+  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
+    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
+    target: fields("host port username"),
+    envFiles: [scalar],
+    processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }]
+  } }] }] },
+  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
+  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map((name) => [name, {
+    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
+    started: [scalar],
+    attempted: [scalar],
+    missing: [scalar],
+    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }],
+    error
+  }])),
+  remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
+  remote_debug_get_capabilities: { capabilities: json },
+  remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
+  remote_debug_mongodb_resolve_import: { ...fields("intentId state route attempt protectedState reason evidenceSource"), readOnly: "boolean", archived: "boolean", result: { ...common, ...mutation, ...bulk } },
+  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode protectedState evidenceSource"), readOnly: "boolean", result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
+  remote_debug_mongodb_disposition: {
+    ...fields("intentId consumptionAuditId"),
+    provesNotDispatched: "boolean",
+    followup: { ...fields("action importId requestDigest collection documentCount"), batches: [fields("mutationId batchIndex documentCount requestDigest")] },
+    observation: { ...fields("source reason observedAt historicalReceipts historicalOutcome"), provesNotDispatched: "boolean" },
+    ...fields("mutationId proposalDigest originalStatus reservationAuditId effectDigest"),
+    lateOriginalCommitObserved: "boolean",
+    lateObservation: { ...fields("receiptDigest status observedAt auditId"), exactAcknowledgedCommit: "boolean" },
+    managedOriginalClosed: "boolean",
+    missingEvidence: [scalar],
+    originalCollectionIdentity: json,
+    collectionIdentity: json,
+    ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
+    requiresConfirmation: "boolean",
+    localContainment: "boolean",
+    remoteFenceConfirmed: "boolean",
+    replacementAllowed: "boolean",
+    missingRequirements: [scalar],
+    historicalEvidenceGaps: [scalar],
+    ...fields("kind replacementImportId batchCount documentCount atomicity riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
+    humanConfirmationRequired: "boolean",
+    humanApproved: "boolean",
+    canApprove: "boolean",
+    collections: [scalar],
+    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
+    acceptedResidualRisk: "boolean",
+    originalBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    replacementBatches: [fields("mutationId batchIndex documentCount requestDigest")],
+    batches: [fields("mutationId planHash batchIndex status")],
+    observations: { ...fields("source observedAt status code historicalOutcome"), batches: [fields("mutationId batchIndex status code planHash rollbackExpiresAt historicalOutcome")] },
+    binding: { ...fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash reviewId riskPlanId originalPrepareIntentId replacementPrepareIntentId attempt executionProtocol mutationId batchRequestDigest expiresAt"), execution: fields("intentId operationId version attempt mutationId planHash") },
+    fenceChallenge: {
+      ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
+      binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
+    },
+    result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } }
+  },
+  remote_debug_mongodb_prepare_write: mutation,
+  remote_debug_mongodb_prepare_collection: mutation,
+  remote_debug_mongodb_prepare_index: mutation,
+  remote_debug_mongodb_prepare_transaction: mutation,
+  remote_debug_mongodb_prepare_import: mutation,
+  remote_debug_mongodb_prepare_bulk_storage: mutation,
+  remote_debug_mongodb_execute_mutation: mutation,
+  remote_debug_mongodb_rollback_mutation: mutation,
+  remote_debug_mongodb_list_mutations: { entries: [mutation] },
+  remote_debug_mongodb_prepare_bulk: bulk,
+  remote_debug_mongodb_execute_bulk: bulk,
+  remote_debug_mongodb_get_bulk_job: bulk,
+  remote_debug_mongodb_control_bulk_job: bulk,
+  remote_debug_mongodb_rollback_bulk_job: bulk,
+  remote_debug_mongodb_list_bulk_jobs: { ...fields("offset limit total hasMore"), jobs: [bulk] },
+  remote_debug_prepare_sandbox_access: access,
+  remote_debug_configure_sandbox_access: access,
+  remote_debug_get_sandbox: sandbox,
+  remote_debug_export_sandbox_log: sandbox,
+  remote_debug_prepare_sandbox_cleanup: sandbox,
+  remote_debug_cleanup_sandbox: sandbox,
+  remote_debug_restart_instance: { ...fields("restarted action previousStatus"), instance, runtime },
+  remote_debug_update_memory: { note: { ...fields("topic summary updatedAt"), facts: [scalar] } },
+  remote_debug_run_command: fields("stdout stderr exitCode timedOut"),
+  remote_debug_read_file: fields("path content truncated"),
+  remote_debug_list_dir: { path: scalar, entries: [entry] },
+  remote_debug_list_logs: { ...fields("category nextCursor hasMore truncated scannedEntries sourceCount"), entries: [entry], warnings: [warning] },
+  remote_debug_list_log_archive_members: { ...fields("path compression nextCursor hasMore truncated scannedBytes"), members: [entry] },
+  remote_debug_read_log: fields("path memberPath compression content truncated scannedTruncated scannedBytes archiveScannedBytes totalLines matchedLines"),
+  remote_debug_query_logs: {
+    ...fields("mode projectId content returnedLines matchedLines scannedLines scannedBytes expandedBytes outputBytes outputTruncated scanTruncated complete coverage countsAreComplete hasMoreFiles nextFileOffset hasMoreMembers nextMemberOffset memberBytes directoryListingTruncated warningsTruncated"),
+    files: [entry],
+    scannedFiles: [fields("path scannedBytes startByte endByte")],
+    records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
+    members: [entry],
+    warnings: [warning]
+  },
+  remote_debug_start_log_query: logJob,
+  remote_debug_get_log_query: logJob,
+  remote_debug_control_log_query: logJob,
+  remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
+  remote_debug_set_log_project: { projects: json },
+  remote_debug_prepare_command_draft: draft,
+  remote_debug_get_command_draft: draft,
+  remote_debug_execute_command_draft: execution,
+  remote_debug_review_command_draft: { ...draft, draft, decision: scalar, review, execution }
+};
+var OUTPUT_CONTRACTS = Object.freeze(Object.fromEntries(
+  Object.entries(contracts).map(([name, shape]) => [name, { ...common, ...shape }])
+));
+var ERROR_CONTRACT = {
+  ...common,
+  error,
+  details: { ...fields("ok operationId code layer phase retriable cause agentUrl port manifestPath"), error }
+};
+
+// ../plugins/remote-debug-agent/output-guard.js
+var REDACTED = "[REDACTED]";
+var GUARD_BLOCKED = Object.freeze({
+  ok: false,
+  error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
+});
+var MAX_BYTES = 8 * 1024 * 1024;
+var MAX_NODES = 1e5;
+var MAX_DEPTH = 40;
+var MAX_SECRETS = 2048;
+var SECRET_NAME = /(?:password|passwd|passphrase|pwd|secret|token|apikey|privatekey|authorization|cookie|credentials?|connectionstring|dsn|accesskey(?:id)?|signingkey|encryptionkey)(?:s|hash|digest)?$/i;
+var ASSIGNMENT_NAME = String.raw`[\w.-]*(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key(?:[_-]?id)?|connection[_-]?string|dsn)`;
+var ASSIGNMENT = new RegExp(String.raw`(\b${ASSIGNMENT_NAME}["']?\s*[=:]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}&]+)`, "gi");
+var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pass|token|secret|api[-_]?key|client[-_]?secret)(?:=|\s+))("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s;]+)`, "gi");
+function isSensitiveKey(key4) {
+  const normalized = key4.replace(/[^a-z0-9]/gi, "");
+  return SECRET_NAME.test(normalized) || /^(?:auth|authentication)$/i.test(normalized);
+}
+function blocked() {
+  throw new Error("OUTPUT_GUARD_BLOCKED");
+}
+function decodeEscapes(value) {
+  return value.replace(
+    /\\u([0-9a-f]{4})|\\x([0-9a-f]{2})|\\([\\"'/=:])/gi,
+    (_, unicode, hex, literal) => literal || String.fromCharCode(parseInt(unicode || hex, 16))
+  );
+}
+function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, maxDepth = MAX_DEPTH, budgetMs = 1e3, businessPrivacy } = {}) {
+  const secrets = /* @__PURE__ */ new Set();
+  let unavailable = false;
+  function remember(value) {
+    if (typeof value !== "string" || !value || value === REDACTED) return;
+    if (value.length > maxBytes || secrets.size >= MAX_SECRETS && !secrets.has(value)) {
+      unavailable = true;
+      return;
+    }
+    secrets.add(value);
   }
-  const key4 = (0, import_node_crypto.randomBytes)(32);
-  try {
-    run("/usr/bin/security", ["-i"], { input: `add-generic-password -s ${service} -a ${account} -w ${key4.toString("hex")}
-`, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 15e3 });
-    return read();
-  } catch {
-    throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
-  } finally {
-    key4.fill(0);
+  function context() {
+    if (unavailable) blocked();
+    const deadline = performance.now() + budgetMs;
+    let nodes = 0, bytes = 0;
+    const localSecrets = new Set(secrets);
+    return { secrets: localSecrets, replacements: 0, omittedFields: 0, remember(value) {
+      if (typeof value !== "string" || !value || value === REDACTED) return;
+      if (value.length > maxBytes || localSecrets.size >= MAX_SECRETS && !localSecrets.has(value)) blocked();
+      localSecrets.add(value);
+    }, check(value, depth) {
+      if (++nodes > maxNodes || depth > maxDepth || performance.now() > deadline) blocked();
+      if (typeof value === "string") bytes += Buffer.byteLength(value);
+      if (bytes > maxBytes * 8) blocked();
+    } };
   }
+  function learn(value, ctx, depth = 0) {
+    ctx.check(value, depth);
+    if (typeof value === "string") {
+      const decoded = decodeEscapes(value);
+      if (decoded !== value) learn(decoded, ctx, depth + 1);
+      if (/^[\[{"]/.test(value.trim())) {
+        let parsed;
+        try {
+          parsed = JSON.parse(value);
+        } catch {
+        }
+        if (parsed !== void 0 && parsed !== value) learn(parsed, ctx, depth + 1);
+      }
+      for (const pattern of [ASSIGNMENT, CLI_SECRET]) {
+        for (const match of value.matchAll(pattern)) {
+          const secret = match[2].replace(/^["']|["']$/g, "");
+          ctx.remember(secret);
+        }
+      }
+      for (const match of value.matchAll(/\b(?:Bearer|Basic)\s+([a-z0-9._~+/=-]+)/gi)) ctx.remember(match[1]);
+    } else if (Array.isArray(value)) {
+      for (const item of value) learn(item, ctx, depth + 1);
+    } else if (value && typeof value === "object") {
+      if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) blocked();
+      for (const [key4, child] of Object.entries(value)) {
+        learn(key4, ctx, depth + 1);
+        if (isSensitiveKey(key4)) learnSecret(child, ctx, depth + 1);
+        else learn(child, ctx, depth + 1);
+      }
+    } else if (!["string", "number", "boolean", "undefined"].includes(typeof value) && value !== null) blocked();
+  }
+  function learnSecret(value, ctx, depth) {
+    if (typeof value === "string") {
+      ctx.check(value, depth);
+      ctx.remember(value);
+    } else if (typeof value === "number") {
+      ctx.check(value, depth);
+      ctx.remember(String(value));
+    } else if (Array.isArray(value)) {
+      for (const item of value) learnSecret(item, ctx, depth + 1);
+    } else if (value && typeof value === "object") {
+      ctx.check(value, depth);
+      for (const child of Object.values(value)) learnSecret(child, ctx, depth + 1);
+    } else ctx.check(value, depth);
+  }
+  function replacePatterns(text2, ctx) {
+    let result = text2.replace(/-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----|$)/g, REDACTED).replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s"'<>]*@/gi, `$1${REDACTED}@`).replace(/\b(?:Bearer|Basic)\s+[a-z0-9._~+/=-]+/gi, REDACTED).replace(/\b(?:authorization|proxy-authorization|cookie|set-cookie)\s*:\s*[^\r\n]+/gi, REDACTED).replace(CLI_SECRET, `$1${REDACTED}`).replace(ASSIGNMENT, `$1${REDACTED}`).replace(/\b(?:sk-(?:proj-|svcacct-)?[a-z0-9_-]{16,}|gh[pousr]_[a-z0-9]{20,}|github_pat_[a-z0-9_]{20,}|xox[baprs]-[a-z0-9-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16})\b/gi, REDACTED).replace(/\beyJ[a-z0-9_-]{5,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\b/gi, REDACTED);
+    for (const secret of [...ctx.secrets].sort((left, right) => right.length - left.length)) {
+      ctx.check?.(void 0, 0);
+      const variants = [.../* @__PURE__ */ new Set([secret, encodeURIComponent(secret), JSON.stringify(secret).slice(1, -1)])].sort((left, right) => right.length - left.length);
+      for (const variant of variants) {
+        result = variant.includes(REDACTED) ? result.split(variant).join(REDACTED) : result.split(REDACTED).map((part) => part.split(variant).join(REDACTED)).join(REDACTED);
+      }
+    }
+    return result;
+  }
+  function text(value, ctx, depth) {
+    const trimmed = value.trim();
+    if (/^[\[{"]/.test(trimmed)) {
+      let parsed;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+      }
+      if (parsed !== void 0 && parsed !== value) {
+        learn(parsed, ctx, depth + 1);
+        const safe = walk(parsed, "json", ctx, depth + 1);
+        if (JSON.stringify(parsed) !== JSON.stringify(safe)) return JSON.stringify(safe);
+        return value;
+      }
+    }
+    let result = replacePatterns(value, ctx);
+    let decoded = value;
+    for (let round = 0; round < 3 && decoded.includes("\\"); round++) {
+      decoded = decodeEscapes(decoded);
+      if (replacePatterns(decoded, ctx) !== decoded) {
+        result = REDACTED;
+        break;
+      }
+    }
+    if (result !== value) ctx.replacements++;
+    ctx.check(void 0, depth);
+    return result;
+  }
+  function walk(value, shape, ctx, depth = 0) {
+    ctx.check(value, depth);
+    if (value === void 0 || value === null) return value;
+    if (shape === "boolean") {
+      if (typeof value !== "boolean") blocked();
+      return value;
+    }
+    if (shape === "scalar" && typeof value === "object") blocked();
+    if (shape !== "scalar" && shape !== "json" && typeof value !== "object") blocked();
+    if (typeof value === "string") return text(value, ctx, depth);
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) blocked();
+      if (ctx.secrets.has(String(value))) {
+        ctx.replacements++;
+        return REDACTED;
+      }
+      return value;
+    }
+    if (Array.isArray(value)) {
+      if (shape !== "json" && !Array.isArray(shape)) blocked();
+      return value.map((item) => walk(item, shape === "json" ? "json" : shape[0], ctx, depth + 1));
+    }
+    if (!value || typeof value !== "object" || Array.isArray(shape) || shape === "scalar") blocked();
+    const output = /* @__PURE__ */ Object.create(null);
+    for (const [key4, child] of Object.entries(value)) {
+      ctx.check(key4, depth);
+      if (shape !== "json" && !Object.hasOwn(shape, key4)) {
+        ctx.omittedFields++;
+        continue;
+      }
+      const safeKey = text(key4, ctx, depth + 1);
+      if (Object.hasOwn(output, safeKey)) blocked();
+      if (shape !== "json" && shape[key4] === "boolean" || typeof child === "boolean" && /^has[A-Z]/.test(key4)) output[safeKey] = walk(child, "boolean", ctx, depth + 1);
+      else if (isSensitiveKey(key4)) {
+        output[safeKey] = REDACTED;
+        if (child !== REDACTED) ctx.replacements++;
+      } else output[safeKey] = walk(child, shape === "json" ? "json" : shape[key4], ctx, depth + 1);
+    }
+    return output;
+  }
+  function sanitize(value, shape = "json") {
+    const ctx = context();
+    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
+    learn(value, ctx);
+    if (unavailable) blocked();
+    const safe = walk(value, shape, ctx);
+    const checked = walk(safe, shape, ctx);
+    return { value: checked, stats: { policyVersion: 1, replacements: ctx.replacements, omittedFields: ctx.omittedFields } };
+  }
+  function toolResult(name, payload, isError = false, privacyContext) {
+    try {
+      const shape = isError ? ERROR_CONTRACT : Object.hasOwn(OUTPUT_CONTRACTS, name) ? OUTPUT_CONTRACTS[name] : void 0;
+      if (!shape || !payload || typeof payload !== "object" || Array.isArray(payload)) blocked();
+      const safe = sanitize(payload, shape);
+      if (businessPrivacy) {
+        const protectedBusiness = businessPrivacy.protect(name, safe.value, privacyContext);
+        safe.value = protectedBusiness.value;
+        safe.stats.replacements += protectedBusiness.replacements;
+        safe.value = businessPrivacy.scrubKnown(safe.value, shape);
+        safe.stats.businessPrivacy = businessPrivacy.metadata();
+      }
+      safe.value.outputGuard = safe.stats;
+      return { ...isError ? { isError: true } : {}, content: [{ type: "text", text: JSON.stringify(safe.value, null, 2) }] };
+    } catch {
+      return { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] };
+    }
+  }
+  function serialize(message, { staticResult = false } = {}) {
+    try {
+      const safeId = businessPrivacy ? businessPrivacy.scrubKnown(sanitize(message.id).value) : sanitize(message.id).value;
+      if (safeId !== message.id) blocked();
+      const result = message.result;
+      if (result && (Object.hasOwn(result, "content") || Object.hasOwn(result, "structuredContent"))) {
+        if (Object.keys(message.result).some((key4) => !["content", "isError"].includes(key4))) blocked();
+        if (!Array.isArray(message.result.content) || message.result.content.length !== 1) blocked();
+        const content = message.result.content[0];
+        if (content.type !== "text" || typeof content.text !== "string" || Object.keys(content).some((key4) => !["type", "text"].includes(key4))) blocked();
+        const payload = JSON.parse(content.text);
+        if (payload?.outputGuard?.policyVersion !== 1 && payload?.error?.code !== "OUTPUT_GUARD_BLOCKED") blocked();
+      } else if (result !== void 0 && !staticResult) {
+        if (!result || typeof result !== "object" || Array.isArray(result)) blocked();
+        const keys = Object.keys(result);
+        const initialized = keys.length === 3 && keys.every((key4) => ["protocolVersion", "capabilities", "serverInfo"].includes(key4));
+        const resources = keys.length === 1 && Array.isArray(result.resources) && result.resources.length === 0;
+        if (keys.length && !initialized && !resources) blocked();
+      }
+      if (staticResult && (!Array.isArray(message.result?.tools) || Object.keys(message.result).length !== 1)) blocked();
+      let safe = staticResult ? message : sanitize(message).value;
+      if (businessPrivacy && !staticResult && !result?.content) safe = businessPrivacy.scrubKnown(safe);
+      const body = JSON.stringify(safe);
+      if (Buffer.byteLength(body) > maxBytes) blocked();
+      return Buffer.from(body, "utf8");
+    } catch {
+      let id = typeof message.id === "number" && Number.isSafeInteger(message.id) ? message.id : null;
+      if (secrets.has(String(id))) id = null;
+      if (typeof message.id === "string" && message.id.length <= 128) {
+        const ctx = { secrets };
+        if (replacePatterns(message.id, ctx) === message.id) id = message.id;
+      }
+      return Buffer.from(JSON.stringify({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] } }));
+    }
+  }
+  function learnSecrets(value) {
+    const ctx = context();
+    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
+    learn(value, ctx);
+    for (const secret of ctx.secrets) remember(secret);
+    if (unavailable) blocked();
+  }
+  return { remember, learnSecrets, sanitize, toolResult, serialize };
 }
 
 // ../plugins/remote-debug-agent/prepare-protocol.js
-var import_node_crypto2 = require("node:crypto");
+var import_node_crypto = require("node:crypto");
 function bulkPreparePayload(args) {
   return {
     instanceId: args.instanceId,
@@ -151,7 +622,7 @@ function bulkPreparePayload(args) {
 }
 function prepareRequestDigest(input) {
   const { operationId, deadlineAt, timeoutMs, _businessPrepare, _businessImport, ...request } = input;
-  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
+  return (0, import_node_crypto.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
 }
 function isPrepareTicket(value) {
   return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
@@ -175,11 +646,74 @@ function importPrepareResultMatches(record, intentId, database, result) {
   return Boolean(result?.ok === true && record.importPrepare && result.importReceipt?.binding === intentId && result.importReceipt.requestDigest === record.importPrepare.requestDigest && result.importReceipt.attempt === record.importPrepare.attempt && result.importReceipt.riskPlanId === record.riskPlanId && result.importId === record.identity.importId && result.kind === "import_plan" && result.collection === record.identity.collection && result.affectedCount === batches.reduce((n, b) => n + b.documentCount, 0) && result.batchCount === batches.length && result.importReceipt.batchesDigest === prepareRequestDigest({ batches }) && result.database === database && ["prepared", "prepare_partial", "prepare_rejected"].includes(result.status) && Array.isArray(result.batches) && (result.status === "prepare_rejected" ? result.batches.length === 0 && result.prepareRejection?.version === 1 && result.prepareRejection.stage === "preflight_rejected" && /^MONGODB_[A-Z0-9_]{1,70}$/.test(result.prepareRejection.code || "") : result.batches.length > 0) && result.batches.every((batch2, index) => batch2.mutationId === batches[index]?.mutationId && batch2.batchIndex === index && /^[a-f0-9]{64}$/.test(batch2.planHash || "")) && (result.status !== "prepared" || result.batches.length === batches.length));
 }
 
+// mongodb-import-review-display.js
+function importReviewDisplay(request) {
+  let redacted = false, withheldDocuments = 0;
+  const guard = createOutputGuard();
+  const { documents: _documents, ...metadata } = request;
+  try {
+    guard.learnSecrets(metadata);
+    for (const document of request.documents) guard.learnSecrets(document);
+  } catch {
+    return { orderedRequest: JSON.stringify({ displayUnavailable: true, requestDigest: prepareRequestDigest(request) }), redacted: true, withheldDocuments: request.documents.length };
+  }
+  const deadline = performance.now() + 1e3;
+  const documents = request.documents.map((document) => {
+    try {
+      if (performance.now() > deadline) throw new Error("DISPLAY_BUDGET");
+      const result = guard.sanitize(document);
+      redacted ||= JSON.stringify(result.value) !== JSON.stringify(document);
+      return result.value;
+    } catch {
+      redacted = true;
+      withheldDocuments++;
+      return { displayUnavailable: true, documentDigest: prepareRequestDigest({ document }) };
+    }
+  });
+  const safe = guard.sanitize(metadata).value;
+  redacted ||= JSON.stringify(safe) !== JSON.stringify(metadata);
+  return { orderedRequest: JSON.stringify(Object.fromEntries(Object.keys(request).map((key4) => [key4, key4 === "documents" ? documents : safe[key4]]))), redacted, withheldDocuments };
+}
+
+// privacy-key.js
+var import_node_child_process = require("node:child_process");
+var import_node_crypto2 = require("node:crypto");
+var import_windows_privacy = __toESM(require_windows_privacy(), 1);
+function privacyError(code = "BUSINESS_STORAGE_UNAVAILABLE") {
+  return Object.assign(new Error("Protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
+}
+function loadPrivacyKey(directory, { platform = process.platform, run = import_node_child_process.execFileSync, existing = false } = {}) {
+  if (platform === "win32") return import_windows_privacy.default.loadKey(directory, { existing, run });
+  if (platform !== "darwin") throw privacyError("BUSINESS_KEYSTORE_UNSUPPORTED");
+  const service = "com.remote-debug-agent.business-privacy.v1";
+  const account = (0, import_node_crypto2.createHash)("sha256").update(directory).digest("hex");
+  const read = () => {
+    const value = run("/usr/bin/security", ["find-generic-password", "-s", service, "-a", account, "-w"], { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 15e3 }).trim();
+    if (!/^[a-f0-9]{64}$/.test(value)) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
+    return Buffer.from(value, "hex");
+  };
+  try {
+    return read();
+  } catch (error2) {
+    if (existing || error2.status !== 44) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
+  }
+  const key4 = (0, import_node_crypto2.randomBytes)(32);
+  try {
+    run("/usr/bin/security", ["-i"], { input: `add-generic-password -s ${service} -a ${account} -w ${key4.toString("hex")}
+`, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 15e3 });
+    return read();
+  } catch {
+    throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
+  } finally {
+    key4.fill(0);
+  }
+}
+
 // mongodb-import-recovery.js
 var DIGEST = /^[a-f0-9]{64}$/;
 var UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 var IMPORT_LOOKUP_MAX_RECORDS = 1e3;
-var MAX_BYTES = 8 * 1024 * 1024;
+var MAX_BYTES2 = 8 * 1024 * 1024;
 function validateImportLookup(input) {
   if (!UUID.test(input.originalOperationId || "") || !DIGEST.test(input.requestDigest || "") || typeof input.importId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(input.importId)) {
     throw privacyError("BUSINESS_OPERATION_LOOKUP_INVALID");
@@ -189,7 +723,7 @@ function resolveImportOperation(store2, input, ctx, scope) {
   validateImportLookup(input);
   const target = JSON.parse(input.scope);
   const rows = store2.db.prepare("SELECT kind,id,length(envelope) bytes FROM records WHERE ctx=? AND scope=? AND kind IN ('operation','import_prepare_evidence') ORDER BY kind,id LIMIT ?").all(ctx, scope, IMPORT_LOOKUP_MAX_RECORDS + 1);
-  if (rows.length > IMPORT_LOOKUP_MAX_RECORDS || rows.reduce((n, row) => n + row.bytes, 0) > MAX_BYTES) {
+  if (rows.length > IMPORT_LOOKUP_MAX_RECORDS || rows.reduce((n, row) => n + row.bytes, 0) > MAX_BYTES2) {
     return { state: "unresolved", reason: "trusted_lookup_budget_exceeded" };
   }
   const matches = /* @__PURE__ */ new Map();
@@ -261,6 +795,7 @@ function current(s, p, ctx, scope) {
   }
 }
 function view(s, p, human = false) {
+  const originalDisplay = human && importReviewDisplay(p.originalRequest), followupDisplay = human && importReviewDisplay(p.replacementRequest);
   return {
     ok: true,
     kind: "orphan_import",
@@ -291,7 +826,11 @@ function view(s, p, human = false) {
     memoSource: "caller_statement_not_execution_proof",
     intentId: p.followupIntentId,
     result: p.result,
-    ...human ? { orderedOriginalRequest: JSON.stringify(p.originalRequest), orderedFollowupRequest: JSON.stringify(p.replacementRequest) } : {},
+    ...human ? {
+      orderedOriginalRequest: originalDisplay.orderedRequest,
+      orderedFollowupRequest: followupDisplay.orderedRequest,
+      requestDisplay: { redacted: originalDisplay.redacted || followupDisplay.redacted, withheldDocuments: originalDisplay.withheldDocuments + followupDisplay.withheldDocuments, originalBytes: "encrypted_only", projectionIsInputProof: false }
+    } : {},
     warning: "没有历史 intentId 或精确回执，旧状态保持 unresolved/unknown。当前缺少数据不证明未派发。须接受重复、迟到提交、部分成功、回滚无法覆盖历史写入及回滚冲突风险。批准只授权一次精确导入准备；不保证召回旧执行器，不执行业务写入。每批执行和回滚仍需独立确认。处置结果未知时不得再次派发。"
   };
 }
@@ -1440,271 +1979,6 @@ function assertRiskJobAdmission(store2, instanceId, admission = {}) {
   const candidate = store2.get("risk_candidate", store2.hash("risk-candidate", instanceId, identity.jobId), "", "");
   if (candidate && !replacementAdmission(store2, instanceId, admission)) denied2("BUSINESS_REPLACEMENT_NOT_ADMITTED");
 }
-
-// ../plugins/remote-debug-agent/output-contracts.js
-var scalar = "scalar";
-var json = "json";
-var fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key4) => [key4, scalar]));
-var timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
-var warning = fields("code message path source phase");
-var error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
-var memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
-var runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
-var instance = {
-  ...fields("id name enabled host port username privateKeyPath hasPassphrase connectOnStart createdAt updatedAt"),
-  sourceRoots: json,
-  logProjects: json,
-  serviceProfiles: json,
-  approvedCommands: json,
-  commandReview: json,
-  mongodb: { ...fields("enabled configPath driverPath configProfile uriKey database hasSandboxManagementPassword writeEnabled mutationsEnabled rollbackRoot rollbackTtlMs maxAffectedDocuments maxImportBatchDocuments bulkEnabled bulkRoot sandboxDatabase sandboxManagementProfile sandboxManagementUriKey bulkReceiptsCollection bulkBatchDocuments bulkBatchBytes bulkMaxDocuments bulkMaxBytes bulkMaxJobs bulkMaxFiles bulkConcurrency"), allowedDatabases: [scalar], allowedCollections: [scalar] },
-  runtime,
-  memory,
-  hasPassphrase: "boolean"
-};
-instance.mongodb.hasSandboxManagementPassword = "boolean";
-var common = { ...fields("ok instanceId operationId durationMs"), timing, memory };
-var entry = fields("name path size modifyTime modified mtime permissions type isDirectory compression category source readable readReason linkName");
-var mutation = {
-  ...fields("mutationId operationId kind operation database collection name status rollbackMode riskLevel requiresConfirmation purpose createdAt committedAt rolledBackAt rollbackExpiresAt planHash affectedCount storageRoot receiptsDatabase importId batchCount batchIndex retryable journalPath intentId intentState"),
-  collections: [scalar],
-  changedFields: [scalar],
-  affectedIds: json,
-  storageStatus: json,
-  rollbackRestoresDocuments: scalar,
-  atomicity: scalar,
-  execution: fields("intentId operationId version attempt mutationId planHash"),
-  indexRecovery: fields("reason"),
-  diagnostic: error.diagnostic,
-  importExecution: { ...fields("version mutationId planHash database collection mode confirmation stage at"), outcomeEvidence: fields("kind sessionDigest transactionDigest requestId"), execution: fields("intentId operationId version attempt mutationId planHash") },
-  collectionReceipt: fields("version mutationId planHash database collection stage rollbackMode acknowledgedAt"),
-  failedBatch: { ...fields("batchIndex mutationId code"), diagnostic: error.diagnostic },
-  prepareRejection: { ...fields("version stage code"), diagnostic: error.diagnostic },
-  preview: { ...fields("affectedCount rollbackMode"), affectedIds: json, changedFields: [scalar] }
-};
-var batch = { ...mutation, ...fields("batchIndex operationCount unitCount rollbackBytes"), changedFields: [scalar], sampleIds: json };
-mutation.batches = [batch];
-var receiptStorage = fields("database collection legacy scope schemaVersion");
-function bulkFailure(depth = 2) {
-  const shape = {
-    ...fields("version at code name message messageRedacted messageFingerprint layer phase batchIndex operationId parentOperationId outcome recovery retriable driverVersion nodeVersion collectionIndex collectionOperationCount"),
-    ...fields("category driverCode writeErrorCount writeErrorsTruncated"),
-    errorLabels: [scalar],
-    writeErrors: [fields("code index category")],
-    writeConcernErrors: [fields("code index category")],
-    driverFrames: [fields("module line column")],
-    frames: [fields("function line column")]
-  };
-  if (depth > 0) for (const key4 of ["cause", "receiptCheckFailure", "persistenceFailure"]) shape[key4] = bulkFailure(depth - 1);
-  return shape;
-}
-var bulk = {
-  ...fields("terminationId reviewHash previousStatus"),
-  lastFailure: bulkFailure(),
-  ...fields("jobId database status mode desiredState createdAt updatedAt planHash rollbackExpiresAt operationCount unitCount batchCount nextBatch nextVerifyBatch nextRollbackBatch committedBatchCount rolledBackBatchCount activePhase queuedBatchCount verifiedBatchCount differenceOffset differenceLimit differenceCount hasMoreDifferences pauseReason effectiveConcurrency requiresConfirmation atomicity chunkIndex chunkHash nextChunkIndex duplicate inputBytes leaseId accepted background command"),
-  riskLineage: fields("originalJobId riskPlanId dispositionId replacementRequestDigest historicalOutcome"),
-  ...fields("replacementJobId riskPlanId dispositionId originalRequestDigest replacementRequestDigest approvalAuditId recordedAt controlRecordDigest historicalOutcome legacyInFlightOutcome"),
-  managedAdmissionClosed: "boolean",
-  originalJobFound: "boolean",
-  receiptStorage,
-  activeBatchIndexes: [scalar],
-  committed: fields("matched modified inserted unchanged"),
-  differences: json,
-  changedFields: [scalar],
-  planPreview: [batch],
-  batches: [batch]
-};
-var historyScan = { ...fields("status complete snapshotBytes"), matches: [fields("operationId kind code validationRejected line sha256")] };
-var bulkHistory = {
-  ...fields("requestMatched recordFingerprint jobId chunkIndex evidence remoteEvidenceCode"),
-  diagnostics: { ...fields("trust scanStatus intentBound requestDigestBound candidateCount"), mcp: historyScan, worker: historyScan }
-};
-var draft = { ...fields("draftId purpose commandHash commandCount commandBlock status createdAt expiresAt executedAt"), commands: [scalar], instructions: [scalar] };
-var execution = {
-  ...fields("ok commandsOk draftId commandHash status executedAt durationMs operationId"),
-  results: [{ ...fields("commandIndex command commandPreview cmd ok stdout stderr exitCode durationMs timedOut"), timing }],
-  stopped: fields("commandIndex reason exitCode")
-};
-var violation = fields("commandIndex code severity rule reason message");
-var model = { ...fields("status errorCode attempts durationMs decision isReadOnly riskLevel summary"), violations: [violation] };
-var review = { ...fields("reason reviewedAt"), staticViolations: [violation], violations: [violation], model };
-var sandbox = {
-  ...fields("sandboxDatabase storageRoot jobCount bytes initialized activeFilesRetained jobId scannedBytes truncated cleanupHash fileCount retainedUntil removedFiles removedBytes removedReceipts"),
-  receiptStorage,
-  files: [fields("name bytes modified")],
-  records: json,
-  jobs: [{ ...fields("jobId status rollbackExpiresAt"), receiptStorage }],
-  hasMore: scalar
-};
-var access = {
-  ...fields("setupId planHash status expiresAt instanceId sandboxDatabase collection managerUser managerRole executorRole managementProfile configPath configModeAfter backupMode collectionsInitialized passwordReset requiresConfirmation confirmation rollbackMode"),
-  executionUser: fields("user db"),
-  environment: json,
-  managerPrivileges: json,
-  executorPrivileges: json,
-  existing: { ...fields("manager profile executorGranted"), roles: json }
-};
-var logResources = {
-  ...fields("rssBytes peakRssBytes cpuMs readBytes processedBytes elapsedMs resourceState budgetRevision"),
-  budget: fields("cpuMilliCores readBytesPerSecond processBytesPerSecond transferBytesPerSecond rssLimitBytes parallelism dispatchDelayMs mode reason")
-};
-var fileReceipt = {
-  ...fields("queryId fileIndex path compression status startedAt finishedAt scannedBytes expandedBytes scannedLines matchedLines selectedMembers completedMembers retainedEvidenceCount evidenceBytes evidenceTruncated scanComplete countsAreComplete evidenceComplete warningsTruncated reason"),
-  source: fields("size modifyTime changeTime inode device"),
-  error,
-  warnings: [fields("code message memberPath lineNumber")]
-};
-var logProgress = { ...fields("status scannedBytes expandedBytes matchedLines scannedLines totalFiles completedFiles failedFiles selectedMembers completedMembers currentFile currentMember batchesCompleted outputTruncated scanTruncated directoryListingTruncated countsAreComplete skippedFiles stoppedAtBoundary remainingDateFrom remainingDateTo stopAfterFile scanComplete"), resources: logResources, currentFileProgress: fileReceipt };
-var logJob = {
-  ...logProgress,
-  ...fields("jobId createdAt startedAt finishedAt expiresAt returnedLines outputBytes complete coverage warningsTruncated groupsTruncated hasMoreRecords nextOffset requestedAction stopReason evidenceComplete evidenceTruncated retainedEvidenceCount paginationScope observedMatchedLines fileResultCount hasMoreFileResults nextFileOffset"),
-  resourceTaskId: scalar,
-  evidenceLimits: fields("count bytes"),
-  fileResults: [fileReceipt],
-  scopeControls: fields("dateFrom dateTo stopAfterFile"),
-  progress: logProgress,
-  resources: logResources,
-  error,
-  limits: fields("jobTimeoutMs cpuPercent readBytesPerSecond processBytesPerSecond rssLimitBytes batchScanBytes"),
-  records: [fields("text file memberPath lineNumber timestamp level route method truncated")],
-  groups: [fields("level route method code message count")],
-  warnings: [{ ...warning, ...fields("file memberPath lineNumber") }]
-};
-var finalFile = fields("artifactId category format encoding name relativePath bytes sha256");
-var finalResult = {
-  ...fields("version taskId instanceId title type status publishedAt fingerprint totalBytes"),
-  final: "boolean",
-  privacy: fields("credentials binary policyVersion"),
-  references: { operationIds: [scalar], ...fields("jobId mutationId resourceTaskId") },
-  files: [finalFile]
-};
-var contracts = {
-  remote_debug_publish_final_result: { result: finalResult, duplicate: "boolean" },
-  remote_debug_list_final_results: { results: [finalResult], ...fields("total totalBytes unavailable nextOffset outputDirectory") },
-  remote_debug_get_final_result: { result: finalResult },
-  remote_debug_read_final_artifact: { file: finalFile, content: scalar, truncated: "boolean", previewAvailable: "boolean" },
-  remote_debug_list_service_profiles: { instances: [{ instanceId: scalar, profiles: [{ ...fields("serviceId profileHash"), profile: {
-    ...fields("instanceId enabled cwd releaseRoot entry mode interpreter nodeVersion pm2Path pm2Home maxMemoryRestart restartDelayMs stableMs startupTimeoutMs startupMarker persist"),
-    target: fields("host port username"),
-    envFiles: [scalar],
-    processes: [{ name: scalar, ports: [scalar], env: fields("NODE_ENV PORT WS_PORT CRON_PRIMARY TRANSLATION_ENABLED ORDER_AI_ENABLED ORDER_AI_ALLOWED_RESTAURANTS") }]
-  } }] }] },
-  remote_debug_set_service_profile: fields("serviceId profileHash workerRefreshRequired"),
-  ...Object.fromEntries(["remote_debug_inspect_service", "remote_debug_start_service"].map((name) => [name, {
-    ...fields("serviceId profileHash status phase resolvedCwd nodeVersion mode persisted unchanged persistenceWarning recovery"),
-    started: [scalar],
-    attempted: [scalar],
-    missing: [scalar],
-    verified: [{ ...fields("name pid status restarts startupMarkerSeen interpreterVerified environmentVerified"), ports: [scalar] }],
-    error
-  }])),
-  remote_debug_list_instances: { ...fields("defaultInstanceId"), manager: json, lifecycle: json, instances: [instance] },
-  remote_debug_get_capabilities: { capabilities: json },
-  remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
-  remote_debug_mongodb_resolve_import: { ...fields("intentId state route attempt protectedState reason evidenceSource"), readOnly: "boolean", archived: "boolean", result: { ...common, ...mutation, ...bulk } },
-  remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode protectedState evidenceSource"), readOnly: "boolean", result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
-  remote_debug_mongodb_disposition: {
-    ...fields("intentId consumptionAuditId"),
-    provesNotDispatched: "boolean",
-    followup: { ...fields("action importId requestDigest collection documentCount"), batches: [fields("mutationId batchIndex documentCount requestDigest")] },
-    observation: { ...fields("source reason observedAt historicalReceipts historicalOutcome"), provesNotDispatched: "boolean" },
-    ...fields("mutationId proposalDigest originalStatus reservationAuditId effectDigest"),
-    lateOriginalCommitObserved: "boolean",
-    lateObservation: { ...fields("receiptDigest status observedAt auditId"), exactAcknowledgedCommit: "boolean" },
-    managedOriginalClosed: "boolean",
-    missingEvidence: [scalar],
-    originalCollectionIdentity: json,
-    collectionIdentity: json,
-    ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
-    requiresConfirmation: "boolean",
-    localContainment: "boolean",
-    remoteFenceConfirmed: "boolean",
-    replacementAllowed: "boolean",
-    missingRequirements: [scalar],
-    historicalEvidenceGaps: [scalar],
-    ...fields("kind replacementImportId batchCount documentCount atomicity riskPlanId replacementJobId replacementRequestDigest sealRequestDigest effectDigest risk fenceReason fenceReceiptId fenceFingerprint fenceValidUntil unitCount operationCount approvalAuditId creationAuditId replacementIntentId planHash"),
-    humanConfirmationRequired: "boolean",
-    humanApproved: "boolean",
-    canApprove: "boolean",
-    collections: [scalar],
-    ...fields("approvalPolicy approvalAuthority reviewMemo memoSource originalTaskState terminationScope remoteTermination legacyInFlightOutcome warning"),
-    acceptedResidualRisk: "boolean",
-    originalBatches: [fields("mutationId batchIndex documentCount requestDigest")],
-    replacementBatches: [fields("mutationId batchIndex documentCount requestDigest")],
-    batches: [fields("mutationId planHash batchIndex status")],
-    observations: { ...fields("source observedAt status code historicalOutcome"), batches: [fields("mutationId batchIndex status code planHash rollbackExpiresAt historicalOutcome")] },
-    binding: { ...fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash reviewId riskPlanId originalPrepareIntentId replacementPrepareIntentId attempt executionProtocol mutationId batchRequestDigest expiresAt"), execution: fields("intentId operationId version attempt mutationId planHash") },
-    fenceChallenge: {
-      ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
-      binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
-    },
-    result: { ...common, ...bulk, ...mutation, error, ...fields("intentId intentState state"), result: { ...common, ...bulk, ...mutation } }
-  },
-  remote_debug_mongodb_prepare_write: mutation,
-  remote_debug_mongodb_prepare_collection: mutation,
-  remote_debug_mongodb_prepare_index: mutation,
-  remote_debug_mongodb_prepare_transaction: mutation,
-  remote_debug_mongodb_prepare_import: mutation,
-  remote_debug_mongodb_prepare_bulk_storage: mutation,
-  remote_debug_mongodb_execute_mutation: mutation,
-  remote_debug_mongodb_rollback_mutation: mutation,
-  remote_debug_mongodb_list_mutations: { entries: [mutation] },
-  remote_debug_mongodb_prepare_bulk: bulk,
-  remote_debug_mongodb_execute_bulk: bulk,
-  remote_debug_mongodb_get_bulk_job: bulk,
-  remote_debug_mongodb_control_bulk_job: bulk,
-  remote_debug_mongodb_rollback_bulk_job: bulk,
-  remote_debug_mongodb_list_bulk_jobs: { ...fields("offset limit total hasMore"), jobs: [bulk] },
-  remote_debug_prepare_sandbox_access: access,
-  remote_debug_configure_sandbox_access: access,
-  remote_debug_get_sandbox: sandbox,
-  remote_debug_export_sandbox_log: sandbox,
-  remote_debug_prepare_sandbox_cleanup: sandbox,
-  remote_debug_cleanup_sandbox: sandbox,
-  remote_debug_restart_instance: { ...fields("restarted action previousStatus"), instance, runtime },
-  remote_debug_update_memory: { note: { ...fields("topic summary updatedAt"), facts: [scalar] } },
-  remote_debug_run_command: fields("stdout stderr exitCode timedOut"),
-  remote_debug_read_file: fields("path content truncated"),
-  remote_debug_list_dir: { path: scalar, entries: [entry] },
-  remote_debug_list_logs: { ...fields("category nextCursor hasMore truncated scannedEntries sourceCount"), entries: [entry], warnings: [warning] },
-  remote_debug_list_log_archive_members: { ...fields("path compression nextCursor hasMore truncated scannedBytes"), members: [entry] },
-  remote_debug_read_log: fields("path memberPath compression content truncated scannedTruncated scannedBytes archiveScannedBytes totalLines matchedLines"),
-  remote_debug_query_logs: {
-    ...fields("mode projectId content returnedLines matchedLines scannedLines scannedBytes expandedBytes outputBytes outputTruncated scanTruncated complete coverage countsAreComplete hasMoreFiles nextFileOffset hasMoreMembers nextMemberOffset memberBytes directoryListingTruncated warningsTruncated"),
-    files: [entry],
-    scannedFiles: [fields("path scannedBytes startByte endByte")],
-    records: [{ ...fields("text file path memberPath lineNumber lineFromEnd timestamp level route method truncated"), source: json }],
-    members: [entry],
-    warnings: [warning]
-  },
-  remote_debug_start_log_query: logJob,
-  remote_debug_get_log_query: logJob,
-  remote_debug_control_log_query: logJob,
-  remote_debug_list_log_projects: { instances: [{ instanceId: scalar, projects: json }] },
-  remote_debug_set_log_project: { projects: json },
-  remote_debug_prepare_command_draft: draft,
-  remote_debug_get_command_draft: draft,
-  remote_debug_execute_command_draft: execution,
-  remote_debug_review_command_draft: { ...draft, draft, decision: scalar, review, execution }
-};
-var OUTPUT_CONTRACTS = Object.freeze(Object.fromEntries(
-  Object.entries(contracts).map(([name, shape]) => [name, { ...common, ...shape }])
-));
-var ERROR_CONTRACT = {
-  ...common,
-  error,
-  details: { ...fields("ok operationId code layer phase retriable cause agentUrl port manifestPath"), error }
-};
-
-// ../plugins/remote-debug-agent/output-guard.js
-var GUARD_BLOCKED = Object.freeze({
-  ok: false,
-  error: Object.freeze({ code: "OUTPUT_GUARD_BLOCKED", message: "Output was blocked by the sensitive information guard.", retriable: false })
-});
-var MAX_BYTES2 = 8 * 1024 * 1024;
-var ASSIGNMENT_NAME = String.raw`[\w.-]*(?:password|passwd|passphrase|pwd|secret|token|api[_-]?key|private[_-]?key|client[_-]?secret|access[_-]?key(?:[_-]?id)?|connection[_-]?string|dsn)`;
-var ASSIGNMENT = new RegExp(String.raw`(\b${ASSIGNMENT_NAME}["']?\s*[=:]\s*)("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s,;}&]+)`, "gi");
-var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pass|token|secret|api[-_]?key|client[-_]?secret)(?:=|\s+))("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|[^\s;]+)`, "gi");
 
 // mongodb-job-termination.js
 var TERMINATION_CONFIRMATION = "我确认永久终止此任务，不再恢复或重试";

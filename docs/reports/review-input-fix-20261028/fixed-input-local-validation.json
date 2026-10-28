@@ -1,0 +1,76 @@
+{
+  "fixedHash": "a27ceed64856937953497af06e43e237ea74245e14de95982589b2895da26e97",
+  "method": "local pure input validation only; no real review object",
+  "rows": [
+    {
+      "collection": "Customer",
+      "requestDigest": "047df81e2639c31aeac7e02daa772dd0e8ce5d5b2c0227b78ac82b68b24c03e6",
+      "retainedInputSha256": "de990ff87a87ed62bb621a247546cb845ae672dbb31a8a7f092526168866a1df",
+      "rawWireBytesUnchanged": true,
+      "originalOperationId": "15d32144-7f38-446f-82bb-62931fd4eaab",
+      "reviewFailureOperationId": "50796dc8-3713-4403-a9cc-3e257be42092",
+      "replacementImportId": "ejpoh-orphan-20261028-67d2f7b84ac0432c5f98",
+      "documents": 71,
+      "displayRedacted": true,
+      "withheldDocuments": 0,
+      "projectionIsInputProof": false,
+      "actualProtectedStoreAccess": false
+    },
+    {
+      "collection": "RestaurantLog",
+      "requestDigest": "b43e794710ad1b77d016a60c7faffba996936ae1b71288d814bd67af96db249d",
+      "retainedInputSha256": "8a01c01fce9da2492b3dc806685904a1e735139234f7a29ec91db134b78efa8e",
+      "rawWireBytesUnchanged": true,
+      "originalOperationId": "8948b344-939a-4a7d-8d8c-8a82c75e401a",
+      "reviewFailureOperationId": "a3e1f978-451d-4b9c-b2ca-952f4012a81e",
+      "replacementImportId": "ejpoh-orphan-20261028-d03de53d276e081f4d46",
+      "documents": 29,
+      "displayRedacted": false,
+      "withheldDocuments": 0,
+      "projectionIsInputProof": false,
+      "actualProtectedStoreAccess": false
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_History",
+      "requestDigest": "3d1cc74d9f3d9e3bf776bb38ef94188a0ef668fd8552e1714d5f8f5ef64b877b",
+      "retainedInputSha256": "1f12748b1744a6322eff479c8dc831aeb7df31957ce4cfeb41b785b6accdab52",
+      "rawWireBytesUnchanged": true,
+      "originalOperationId": "539e0df0-007c-440d-8de7-b5eb2707fe8c",
+      "reviewFailureOperationId": "32708b7e-f18d-458f-ac8b-addb2fd812d0",
+      "replacementImportId": "ejpoh-orphan-20261028-2c8e7789040866236c58",
+      "documents": 448,
+      "displayRedacted": true,
+      "withheldDocuments": 327,
+      "projectionIsInputProof": false,
+      "actualProtectedStoreAccess": false
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_Log",
+      "requestDigest": "dbc24d52f5dcdb7cf520768da11fb1d28b80ec51fde85e3c6262d75bbd766f5c",
+      "retainedInputSha256": "81a53c9b65a2e7172b4047a107b154f982a65d2c81e5783f6668dbe0db3796b8",
+      "rawWireBytesUnchanged": true,
+      "originalOperationId": "b4c1f446-38ac-43bc-938e-0e65195ae2a5",
+      "reviewFailureOperationId": "1897d0e7-b3c2-4d41-81a8-2818c007ff69",
+      "replacementImportId": "ejpoh-orphan-20261028-7c01ec085bdb444edac0",
+      "documents": 176,
+      "displayRedacted": false,
+      "withheldDocuments": 0,
+      "projectionIsInputProof": false,
+      "actualProtectedStoreAccess": false
+    },
+    {
+      "collection": "tag_definitions",
+      "requestDigest": "d64e67ceb6b4b4e22c6f23cfb27f25717fe1ba8208e0ff40b291d2e09e2ad54f",
+      "retainedInputSha256": "4788c439d969749993011e0d96e9a893902516d097e7af05061cdbf0c19584f0",
+      "rawWireBytesUnchanged": true,
+      "originalOperationId": "011bf920-d034-4979-8c48-02fae58e5512",
+      "reviewFailureOperationId": "241357a7-a397-4ac6-9d6f-f83bccd433e8",
+      "replacementImportId": "ejpoh-orphan-20261028-d7cdde51ac1303fd61cb",
+      "documents": 491,
+      "displayRedacted": false,
+      "withheldDocuments": 0,
+      "projectionIsInputProof": false,
+      "actualProtectedStoreAccess": false
+    }
+  ]
+}

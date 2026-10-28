@@ -121,3 +121,18 @@ results remain separate from these HTTP/MCP/browser checks. Source coverage for
 non-src roots remains a collector limitation; assertion success is not full
 branch/path coverage. No live historical records or actual nine-item input is
 part of these synthetic fixtures.
+
+## Review input compatibility contract v2
+
+`review-input.test.js` exercises a bounded inbound JSON validator independent of
+output sanitization. Credential-shaped document fields and ordered original bytes
+stay in encrypted review storage; output budgets and cross-document secret masking
+remain enforced. Historical import identities up to 128 characters are review-only;
+new preparation stays limited to 64 characters. The suite checks large input,
+read/prepare idempotency, exact bounds, unsupported/getter/cycle rejection, output
+withholding by digest and closed validation diagnostics. It uses synthetic data.
+`plugins/remote-debug-agent/test/review-input.test.js` separately drives actual MCP,
+Manager HTTP, protected worker, and independent administrator reads for five
+synthetic shapes; it never dispatches prepare/execute/consume. Real business
+objects in the existing production protection context are a separate acceptance
+item; pure local validation and these tests do not establish their creation.

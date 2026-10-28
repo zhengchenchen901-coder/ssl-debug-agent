@@ -1,3 +1,4 @@
+import { importReviewDisplay } from "./mongodb-import-review-display.js";
 import { privacyError } from "./privacy-key.js";
 import { resolveImportOperation, validateImportLookup } from "./mongodb-import-recovery.js";
 import { IMPORT_PREPARE_ROUTE, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
@@ -41,6 +42,7 @@ function current(s, p, ctx, scope) {
   }
 }
 function view(s, p, human = false) {
+  const originalDisplay = human && importReviewDisplay(p.originalRequest), followupDisplay = human && importReviewDisplay(p.replacementRequest);
   return { ok: true, kind: "orphan_import", riskPlanId: p.id, approvalPolicy: ORPHAN_RISK_POLICY,
     binding: p.binding, reviewHash: p.reviewHash, state: p.state, originalStatus: "unresolved", historicalOutcome: "unknown",
     provesNotDispatched: false, expiresAt: p.expiresAt, confirmation: ORPHAN_RISK_CONFIRMATION,
@@ -50,7 +52,8 @@ function view(s, p, human = false) {
       collection: p.originalRequest.collection, documentCount: p.originalRequest.documents.length, batches: p.batches },
     observation: p.observation, reviewMemo: p.reviewMemo, memoSource: "caller_statement_not_execution_proof",
     intentId: p.followupIntentId, result: p.result,
-    ...(human ? { orderedOriginalRequest: JSON.stringify(p.originalRequest), orderedFollowupRequest: JSON.stringify(p.replacementRequest) } : {}),
+    ...(human ? { orderedOriginalRequest: originalDisplay.orderedRequest, orderedFollowupRequest: followupDisplay.orderedRequest,
+      requestDisplay: { redacted: originalDisplay.redacted || followupDisplay.redacted, withheldDocuments: originalDisplay.withheldDocuments + followupDisplay.withheldDocuments, originalBytes: "encrypted_only", projectionIsInputProof: false } } : {}),
     warning: "没有历史 intentId 或精确回执，旧状态保持 unresolved/unknown。当前缺少数据不证明未派发。须接受重复、迟到提交、部分成功、回滚无法覆盖历史写入及回滚冲突风险。批准只授权一次精确导入准备；不保证召回旧执行器，不执行业务写入。每批执行和回滚仍需独立确认。处置结果未知时不得再次派发。" };
 }
 export function orphanRiskHumanAction(s, action, input) {

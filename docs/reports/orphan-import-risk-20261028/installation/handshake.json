@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261028.2"
+  },
+  "toolCount": 53,
+  "orphanRiskModes": [
+    "prepare_orphan_risk",
+    "inspect_orphan_risk",
+    "consume_orphan_risk"
+  ],
+  "managerStarted": false,
+  "realPrivacyContextAttached": false,
+  "businessToolsCalled": [],
+  "methodsCalled": [
+    "initialize",
+    "tools/list"
+  ]
+}

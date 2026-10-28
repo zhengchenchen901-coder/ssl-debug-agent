@@ -5,7 +5,7 @@ const json = "json";
 const fields = (names) => Object.fromEntries(names.split(/\s+/).filter(Boolean).map((key) => [key, scalar]));
 const timing = fields("connectionGeneration queueMs connectMs validationMs executionMs errorLayer errorPhase");
 const warning = fields("code message path source phase");
-const error = { ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
+const error = { inputDiagnostic: fields("requestField code"), ...fields("operationId code message layer phase retriable cause causeCode intentId"), diagnostic: fields("phase category databaseCode filesystemCode serverMaxWireVersion driverVersion") };
 const memory = { ...fields("status updatedAt initializedAt lastCheckedAt"), summary: json, changedSections: [scalar] };
 const runtime = { ...fields("status workerPort pid startedAt stoppedAt lastHeartbeatAt lastUsedAt exitCode signal"), lastError: error, health: json, connection: json, memory, events: json };
 const instance = {

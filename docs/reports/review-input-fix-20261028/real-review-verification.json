@@ -1,0 +1,367 @@
+{
+  "scope": {
+    "instanceId": "test-server",
+    "database": "yennefer",
+    "contextId": "87281bfb-b6f9-46a0-8a55-11ef57869d9e"
+  },
+  "rows": [
+    {
+      "collection": "Customer",
+      "documentCount": 71,
+      "originalOperationId": "15d32144-7f38-446f-82bb-62931fd4eaab",
+      "oldReviewFailureOperationId": "50796dc8-3713-4403-a9cc-3e257be42092",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-customer",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-67d2f7b84ac0432c5f98",
+      "requestDigest": "047df81e2639c31aeac7e02daa772dd0e8ce5d5b2c0227b78ac82b68b24c03e6",
+      "result": {
+        "ok": false,
+        "error": {
+          "operationId": "71fe31e8-e378-4a3f-a34b-7d071b0c19b4",
+          "code": "BUSINESS_DISPOSITION_ORIGINAL_BYTES_REQUIRED",
+          "message": "Protected local state requires recovery or reconciliation. No uncertain write was replayed.",
+          "retriable": false
+        }
+      }
+    },
+    {
+      "collection": "RestaurantLog",
+      "documentCount": 29,
+      "originalOperationId": "8948b344-939a-4a7d-8d8c-8a82c75e401a",
+      "oldReviewFailureOperationId": "a3e1f978-451d-4b9c-b2ca-952f4012a81e",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-restaurantlog",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-d03de53d276e081f4d46",
+      "requestDigest": "b43e794710ad1b77d016a60c7faffba996936ae1b71288d814bd67af96db249d",
+      "result": {
+        "ok": false,
+        "error": {
+          "operationId": "88ea2242-d420-4a10-809d-a2abadc9dc86",
+          "code": "BUSINESS_STORAGE_UNAVAILABLE",
+          "message": "Protected local state requires recovery or reconciliation. No uncertain write was replayed.",
+          "retriable": false
+        }
+      }
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_History",
+      "documentCount": 448,
+      "originalOperationId": "539e0df0-007c-440d-8de7-b5eb2707fe8c",
+      "oldReviewFailureOperationId": "32708b7e-f18d-458f-ac8b-addb2fd812d0",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-history",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-2c8e7789040866236c58",
+      "requestDigest": "3d1cc74d9f3d9e3bf776bb38ef94188a0ef668fd8552e1714d5f8f5ef64b877b",
+      "result": {
+        "ok": false,
+        "error": {
+          "operationId": "4bf0ea41-fef2-4a8c-b870-8fbba688ff95",
+          "code": "BUSINESS_STORAGE_UNAVAILABLE",
+          "message": "Protected local state requires recovery or reconciliation. No uncertain write was replayed.",
+          "retriable": false
+        }
+      }
+    },
+    {
+      "collection": "Res_EJPOH_Booking_Order_Log",
+      "documentCount": 176,
+      "originalOperationId": "b4c1f446-38ac-43bc-938e-0e65195ae2a5",
+      "oldReviewFailureOperationId": "1897d0e7-b3c2-4d41-81a8-2818c007ff69",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-booking-order-log",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-7c01ec085bdb444edac0",
+      "requestDigest": "dbc24d52f5dcdb7cf520768da11fb1d28b80ec51fde85e3c6262d75bbd766f5c",
+      "result": {
+        "ok": false,
+        "error": {
+          "operationId": "8e6192c3-0c55-478e-9c3d-8685a35340a1",
+          "code": "BUSINESS_DISPOSITION_INPUT_INVALID",
+          "message": "Protected local state requires recovery or reconciliation. No uncertain write was replayed.",
+          "retriable": false
+        }
+      }
+    },
+    {
+      "collection": "tag_definitions",
+      "documentCount": 491,
+      "originalOperationId": "011bf920-d034-4979-8c48-02fae58e5512",
+      "oldReviewFailureOperationId": "241357a7-a397-4ac6-9d6f-f83bccd433e8",
+      "originalImportId": "ejpoh-20261028-remaining-a27ceed64856-tag-definitions",
+      "existingReplacementImportId": "ejpoh-orphan-20261028-d7cdde51ac1303fd61cb",
+      "requestDigest": "d64e67ceb6b4b4e22c6f23cfb27f25717fe1ba8208e0ff40b291d2e09e2ad54f",
+      "result": {
+        "ok": false,
+        "error": {
+          "operationId": "56a2431b-f9ff-4dee-b9ad-17b2d8faf696",
+          "code": "BUSINESS_STORAGE_UNAVAILABLE",
+          "message": "Protected local state requires recovery or reconciliation. No uncertain write was replayed.",
+          "retriable": false
+        }
+      }
+    }
+  ],
+  "before": {
+    "SensitivityLog": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "590b58046b1c5c33908a8a05e99aae1b72e746d40056baf5c56b433b4282fe8a",
+      "riskPlanId": "063673a3f336f758f62854ae63e4e3f7251168291ed48826ea50272f11193836",
+      "reviewHash": "3a49953aa75f9ab9ab6f8a0acc544c22b808394efc30fdc83c50bec71d2b2f03",
+      "humanApproved": true,
+      "approvalAuditId": "f13e9f0d5ca0d24548145fed684075efacb862e2adadb822d5edb191626e9b41",
+      "consumptionAuditId": "9182cb525aea28e03a89eb9d7da19ce1def783d24b30ba49cb0812392db130c8",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c2808abb-5b10-4bf5-96c8-6e50eb4badb5",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-sensitivitylog",
+        "requestDigest": "4aedf977943e94034069cd04ae0210412002a83d90aed7e949b48e3fd4c3e38c",
+        "collection": "SensitivityLog"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "WhatsappStatistics": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "8299973caddc661ed912f4c57efa93cb3e04261a3fc39f372ad84f0be0e0b98f",
+      "riskPlanId": "3791051f778e4f033314aed597f333a0685ad3d9e22d2a99f830c65e5ceb0265",
+      "reviewHash": "0a2920db6a1b79f928ca8aae19b9fd78dbf1b7cc37553563421afde9194ca882",
+      "humanApproved": true,
+      "approvalAuditId": "bd2ce7eb347485b636032a5a381e248741c9dc89e11da5ac5f1cdd180916f781",
+      "consumptionAuditId": "5024744eed61345cc74fd7effd68e8bab3a24b30b682e4d1150b9cf62904b8c5",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c3c2bc4a-563a-4bb5-b1a0-de6d03a50370",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-whatsappstatistics",
+        "requestDigest": "3cd14be45a461e7970500e0784c268f03f91aa199782ce2840e959fc0c29c622",
+        "collection": "WhatsappStatistics"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Coupon_Package": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "ef45cf7a8b7bffbcc84cb886f90aee8511b4a51142f768632ed71d4ef95e987a",
+      "riskPlanId": "7e6f989fa73000fd0064783d62a6d6fbddbf94580589b23fa8b9357332638072",
+      "reviewHash": "5d671c650cf947459555d01f85fe6bc216de8500fb6e8472ca71498b209e59cb",
+      "humanApproved": true,
+      "approvalAuditId": "22d4d7f8e528bedf5fa1868885d0d6b99595258d11deefc0fce3a8127ee98061",
+      "consumptionAuditId": "a4e2c674023872ce0f8ff349d886e7dad9fc28f3cd2adbb2c05d26479c6ea079",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "e2ca2ce2-8078-4933-bbf9-871981be7c30",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-coupon-package",
+        "requestDigest": "89e58ba2c6319c826a702a1467f6aa03fb613fc649833f9d87436002336aca07",
+        "collection": "Res_EJPOH_Coupon_Package"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Dish": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "7e427c7205ec410a3b8a592853d384f9af6c5d4d56aa6e9ebf1b7ffee4900cdb",
+      "riskPlanId": "38ae42c95e18919fe9caaf975771e9f95a1773bcf7f4e108709e09e173504c73",
+      "reviewHash": "a7876110064b74603b920dca131be6bc8aaeb3b90bb902daeb1a449a0d82c9eb",
+      "humanApproved": true,
+      "approvalAuditId": "3418c2a58e4086e08f07ed1f346d473b987a88440e7f65e61e6c588abcdd1412",
+      "consumptionAuditId": "bcbd24c9fef167fbf9cb72eac80292ab4ceec0d7a16124e46cfb210dac61a896",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "f53325ac-ddae-4285-b690-c7e32245652e",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-dish",
+        "requestDigest": "94972b10a7f14dae65ae26f2c2eb4e3391741983b8077649f24df4838842c513",
+        "collection": "Res_EJPOH_Dish"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Google": {
+      "ok": true,
+      "state": "uncertain",
+      "intentId": "5388d193402ef9f9826a47837aae7f57d51e91168d9025a565350458108e5354",
+      "route": "/mongodb/mutations/execute"
+    }
+  },
+  "after": {
+    "SensitivityLog": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "590b58046b1c5c33908a8a05e99aae1b72e746d40056baf5c56b433b4282fe8a",
+      "riskPlanId": "063673a3f336f758f62854ae63e4e3f7251168291ed48826ea50272f11193836",
+      "reviewHash": "3a49953aa75f9ab9ab6f8a0acc544c22b808394efc30fdc83c50bec71d2b2f03",
+      "humanApproved": true,
+      "approvalAuditId": "f13e9f0d5ca0d24548145fed684075efacb862e2adadb822d5edb191626e9b41",
+      "consumptionAuditId": "9182cb525aea28e03a89eb9d7da19ce1def783d24b30ba49cb0812392db130c8",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c2808abb-5b10-4bf5-96c8-6e50eb4badb5",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-sensitivitylog",
+        "requestDigest": "4aedf977943e94034069cd04ae0210412002a83d90aed7e949b48e3fd4c3e38c",
+        "collection": "SensitivityLog"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "WhatsappStatistics": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "8299973caddc661ed912f4c57efa93cb3e04261a3fc39f372ad84f0be0e0b98f",
+      "riskPlanId": "3791051f778e4f033314aed597f333a0685ad3d9e22d2a99f830c65e5ceb0265",
+      "reviewHash": "0a2920db6a1b79f928ca8aae19b9fd78dbf1b7cc37553563421afde9194ca882",
+      "humanApproved": true,
+      "approvalAuditId": "bd2ce7eb347485b636032a5a381e248741c9dc89e11da5ac5f1cdd180916f781",
+      "consumptionAuditId": "5024744eed61345cc74fd7effd68e8bab3a24b30b682e4d1150b9cf62904b8c5",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "c3c2bc4a-563a-4bb5-b1a0-de6d03a50370",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-whatsappstatistics",
+        "requestDigest": "3cd14be45a461e7970500e0784c268f03f91aa199782ce2840e959fc0c29c622",
+        "collection": "WhatsappStatistics"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Coupon_Package": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "ef45cf7a8b7bffbcc84cb886f90aee8511b4a51142f768632ed71d4ef95e987a",
+      "riskPlanId": "7e6f989fa73000fd0064783d62a6d6fbddbf94580589b23fa8b9357332638072",
+      "reviewHash": "5d671c650cf947459555d01f85fe6bc216de8500fb6e8472ca71498b209e59cb",
+      "humanApproved": true,
+      "approvalAuditId": "22d4d7f8e528bedf5fa1868885d0d6b99595258d11deefc0fce3a8127ee98061",
+      "consumptionAuditId": "a4e2c674023872ce0f8ff349d886e7dad9fc28f3cd2adbb2c05d26479c6ea079",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "e2ca2ce2-8078-4933-bbf9-871981be7c30",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-coupon-package",
+        "requestDigest": "89e58ba2c6319c826a702a1467f6aa03fb613fc649833f9d87436002336aca07",
+        "collection": "Res_EJPOH_Coupon_Package"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Res_EJPOH_Dish": {
+      "ok": true,
+      "state": "consumed",
+      "intentId": "7e427c7205ec410a3b8a592853d384f9af6c5d4d56aa6e9ebf1b7ffee4900cdb",
+      "riskPlanId": "38ae42c95e18919fe9caaf975771e9f95a1773bcf7f4e108709e09e173504c73",
+      "reviewHash": "a7876110064b74603b920dca131be6bc8aaeb3b90bb902daeb1a449a0d82c9eb",
+      "humanApproved": true,
+      "approvalAuditId": "3418c2a58e4086e08f07ed1f346d473b987a88440e7f65e61e6c588abcdd1412",
+      "consumptionAuditId": "bcbd24c9fef167fbf9cb72eac80292ab4ceec0d7a16124e46cfb210dac61a896",
+      "binding": {
+        "instanceId": "test-server",
+        "database": "yennefer",
+        "originalOperationId": "f53325ac-ddae-4285-b690-c7e32245652e",
+        "importId": "ejpoh-20261028-remaining-a27ceed64856-res-ejpoh-dish",
+        "requestDigest": "94972b10a7f14dae65ae26f2c2eb4e3391741983b8077649f24df4838842c513",
+        "collection": "Res_EJPOH_Dish"
+      },
+      "originalStatus": "unresolved",
+      "historicalOutcome": "unknown",
+      "provesNotDispatched": false
+    },
+    "Google": {
+      "ok": true,
+      "state": "uncertain",
+      "intentId": "5388d193402ef9f9826a47837aae7f57d51e91168d9025a565350458108e5354",
+      "route": "/mongodb/mutations/execute"
+    }
+  },
+  "methods": [
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "prepare_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_disposition",
+      "mode": "inspect_orphan_risk"
+    },
+    {
+      "name": "remote_debug_mongodb_recover_operation",
+      "mode": "inspect"
+    }
+  ],
+  "businessCalls": 0,
+  "consumeCalls": 0,
+  "protectedDatabaseOpened": false,
+  "installedCodeModified": false,
+  "runtime": {
+    "agent": {
+      "host": "127.0.0.1",
+      "port": 4343,
+      "pid": 82501,
+      "configFingerprint": "dbf2c44983b038a6a58602fd7508d96da746bb2148ba857e445dfc8e8cacd956",
+      "runtimeId": "2.4.0:dd6590b6d124997ae5c99a03061d7eee9d20ba0110643e4e91f0a9d9dc920497",
+      "role": "manager"
+    },
+    "installedRuntimeId": "2.4.0:dd6590b6d124997ae5c99a03061d7eee9d20ba0110643e4e91f0a9d9dc920497",
+    "candidateRuntimeId": "2.4.0:faf98188178efe60ee3d7f70dc8944bd61ab0cef71b49535f186048a00e00737"
+  },
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261028.2"
+  },
+  "installedFilesUnchanged": true,
+  "finishedAt": "2026-10-28T06:03:24.332Z"
+}

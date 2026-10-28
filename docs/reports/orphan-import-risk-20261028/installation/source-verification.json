@@ -1,0 +1,11 @@
+{
+  "comparedFiles": 307,
+  "executableSourceDrift": false,
+  "releaseMetadataOnlyDifferences": [
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json",
+    "plugins/remote-debug-agent/.codex-plugin/plugin.json"
+  ],
+  "originalTestflowRegressionJob": "3b8ab78c-7ba5-4a70-9023-a66023817495",
+  "originalTestflowPassed": 62,
+  "strictTargetsUnknown": 2149
+}

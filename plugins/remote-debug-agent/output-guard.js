@@ -228,5 +228,12 @@ export function createOutputGuard({ maxBytes = MAX_BYTES, maxNodes = MAX_NODES, 
       return Buffer.from(JSON.stringify({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: JSON.stringify(GUARD_BLOCKED) }] } }));
     }
   }
-  return { remember, sanitize, toolResult, serialize };
+  function learnSecrets(value) {
+    const ctx = context();
+    if (Buffer.byteLength(JSON.stringify(value) ?? "") > maxBytes) blocked();
+    learn(value, ctx);
+    for (const secret of ctx.secrets) remember(secret);
+    if (unavailable) blocked();
+  }
+  return { remember, learnSecrets, sanitize, toolResult, serialize };
 }
