@@ -36,7 +36,7 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     try {
       const { response, parsed } = await fetchJson(settings, "/api/private/business-storage", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
-        timeoutMs: ["dispatch_prepare", "recover_operation"].includes(input.action)
+        timeoutMs: ["dispatch_prepare", "recover_operation", "resolve_import"].includes(input.action)
           ? Math.max(1, Math.min(605000, (input.deadlineAt || Date.now() + 120000) - Date.now() + 5000)) : 25000, signal,
       });
       if (!response.ok || parsed.ok !== true || !parsed.result) throw failure(parsed.error?.code?.startsWith("BUSINESS_") ? parsed.error.code : undefined);
@@ -155,6 +155,11 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
     async recover(settings, input, scope, operation) {
       return call(settings, { action: "recover_operation", id: input.intentId, mode: input.mode || "inspect", scope,
         ...(input.originalRequest !== undefined ? { originalRequest: input.originalRequest } : {}),
+        operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: input.timeoutMs }, operation.signal);
+    },
+    async resolveImport(settings, input, scope, operation) {
+      return call(settings, { action: "resolve_import", scope,
+        originalOperationId: input.originalOperationId, importId: input.importId, requestDigest: input.requestDigest,
         operationId: operation.operationId, deadlineAt: operation.deadlineAt, timeoutMs: input.timeoutMs }, operation.signal);
     },
     async disposition(settings, input, scope, operation) {

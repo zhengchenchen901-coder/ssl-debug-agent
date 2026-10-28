@@ -88,3 +88,15 @@ faults and browser UI. Native owner verification and Mongo/SSH remain explicit
 doubles there. TestFlow unit results do not claim those native HTTP/browser
 cases or real Mongo integration. Strict coverage for non-src roots remains a
 known collector gap, reported separately from executed Jest assertions.
+
+## Read-only import recovery contract v1
+
+`import-recovery.test.js` uses disposable encrypted SQLite stores and the existing
+synthetic remote helper. It verifies exact original context/target/operation/
+import/digest binding, original prepared receipts and remote lost-reply recovery,
+existing rejection evidence and archived attempts, unknown/no-intent/legacy
+records, forbidden caller proof, bounded/ambiguous lookup, and unchanged SQLite
+rows, links and pins. No real EJPOH input, live privacy database, SSH, business
+MongoDB or installed plugin cache is used. The same TestFlow `jest-unit` network
+isolation and exact-lock dependency image apply. Passed assertions do not prove
+coverage of non-src source roots or real-world historical recovery outcomes.

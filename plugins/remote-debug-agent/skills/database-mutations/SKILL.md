@@ -44,6 +44,20 @@ Legacy ordinary intents without a verifiable identity remain protected
 with `legacy_evidence_required`; missing lists/indexes and elapsed lock age are
 not recovery proof. Never clear a journal, local record or lock to bypass this.
 
+For an import error that did not expose intentId, use
+`remote_debug_mongodb_resolve_import` in the original attached context with
+explicit instance/database, originalOperationId/importId and the fixed protocol
+requestDigest (`prepareRequestDigest(importPreparePayload(originalArgs))`, not a
+file hash or a digest of opaque aliases). It only reads exact protected records
+and existing preparation receipts. Missing, ambiguous, legacy or inadequate
+records remain unresolved. `mode=observe` on the ordinary recovery tool shares
+this read-only evidence path; it never fences an attempt or updates protection.
+Only an already durable exact rejection can return rejected_before_dispatch.
+No-intent records without a trusted dispatch-termination certificate stay
+unresolved; never reconstruct a historical receipt from logs or missing plans.
+A returned positive observation does not authorize retry or execution. Preserve
+all original identities, locks, windows and protected state.
+
 For an original historical bulk intent, use the same tool with
 `mode=historical` in its original protected context. Without `originalRequest`
 it returns bounded Manager/worker log diagnostics and a protected-record

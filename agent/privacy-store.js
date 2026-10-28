@@ -5,7 +5,8 @@ import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, ra
 import fs from "node:fs";
 import path from "node:path";
 import { loadPrivacyKey, privacyError } from "./privacy-key.js";
-import { isPrepareTicket, prepareRequestDigest } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { isPrepareTicket, prepareRequestDigest, importPrepareResultMatches } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { resolveImportOperation } from "./mongodb-import-recovery.js";
 import windowsPrivacy from "../plugins/remote-debug-agent/windows-privacy.cjs";
 import { dispositionStoreAction, assertInstanceAdmission, isMongoAdmissionRoute } from "./mongodb-disposition.js";
 import { riskStoreAction, humanRiskStoreAction, recordReplacementPrepared } from "./mongodb-risk-replacement.js";
@@ -117,6 +118,15 @@ export class PrivacyStore {
     const ctx = this.authenticate(input.auth);
     if (action === "attach") return { contextId: ctx };
     const scope = this.hash("scope", input.scope);
+    if (action === "resolve_import_operation") {
+      // A consistent read snapshot, never BEGIN IMMEDIATE or a state migration.
+      this.db.exec("BEGIN");
+      try {
+        const result = resolveImportOperation(this, input, ctx, scope);
+        this.db.exec("COMMIT");
+        return result;
+      } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+    }
     const executionRisk = executionRiskStoreAction(this, action, input, ctx, scope);
     if (executionRisk !== undefined) return executionRisk;
     const disposition = dispositionStoreAction(this, action, input, ctx, scope);
@@ -272,17 +282,7 @@ export class PrivacyStore {
       const record = this.get("operation", input.id, ctx, scope), result = input.result;
       if (!record?.importPrepare || JSON.stringify(record.importPrepare) !== JSON.stringify(input.importPrepare)) throw privacyError("BUSINESS_OPERATION_DENIED");
       if (record.state !== "uncertain") return { id: input.id, ...record };
-      const batches = record.importBatches || [];
-      const proven = result?.ok === true && result.importReceipt?.binding === input.id && result.importReceipt.requestDigest === record.importPrepare.requestDigest && result.importReceipt.attempt === record.importPrepare.attempt &&
-        result.importId === record.identity.importId && result.kind === "import_plan" &&
-        result.importReceipt.riskPlanId === record.riskPlanId && result.collection === record.identity.collection &&
-        result.affectedCount === batches.reduce((n, b) => n + b.documentCount, 0) && result.batchCount === batches.length &&
-        result.importReceipt.batchesDigest === prepareRequestDigest({ batches }) && result.database === JSON.parse(input.scope).database &&
-        ["prepared", "prepare_partial", "prepare_rejected"].includes(result.status) && Array.isArray(result.batches) &&
-        (result.status === "prepare_rejected" ? result.batches.length === 0 && result.prepareRejection?.version === 1 && result.prepareRejection.stage === "preflight_rejected" &&
-          /^MONGODB_[A-Z0-9_]{1,70}$/.test(result.prepareRejection.code || "") : result.batches.length > 0) &&
-        result.batches.every((batch, index) => batch.mutationId === batches[index]?.mutationId && batch.batchIndex === index && /^[a-f0-9]{64}$/.test(batch.planHash || "")) &&
-        (result.status !== "prepared" || result.batches.length === batches.length);
+      const proven = importPrepareResultMatches(record, input.id, JSON.parse(input.scope).database, result);
       const saved = proven ? { ...record, state: "complete", result, reconciliation: undefined } : input.notDispatched === true || input.unclaimed === true && !record.dispatched
         ? { ...record, state: "rejected_before_dispatch", result, reconciliation: undefined, rejection: { attempt: record.importPrepare.attempt, code: result.error?.code, at: this.now(),
           evidence: input.unclaimed ? "unclaimed_attempt_fence" : "preflight_before_ssh" } }

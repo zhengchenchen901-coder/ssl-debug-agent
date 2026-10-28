@@ -5,7 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { privacyError } from "./privacy-key.js";
 import { businessTargetScope } from "../plugins/remote-debug-agent/business-privacy.js";
-import { prepareRequestDigest, importBatchIdentity, IMPORT_PREPARE_ROUTE, isImportRequest } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { prepareRequestDigest, importBatchIdentity, IMPORT_PREPARE_ROUTE, isImportRequest, importPrepareResultMatches } from "../plugins/remote-debug-agent/prepare-protocol.js";
+import { validateImportLookup } from "./mongodb-import-recovery.js";
 import { createOutputGuard } from "../plugins/remote-debug-agent/output-guard.js";
 import { normalizeMongoBulkChunk } from "./mongodb-bulk.js";
 import { createBulkHistoryReader } from "./mongodb-bulk-history.js";
@@ -138,6 +139,41 @@ async function importPrepareRequest(service, input, record, target, { instance, 
     ok: false, intentId: input.id, intentState: saved.state, error: { code: "BUSINESS_OPERATION_RECONCILIATION_REQUIRED", causeCode: result.error?.code, diagnostic: result.error?.diagnostic } };
 }
 
+// Observation shares exact receipt validation with normal recovery, but never
+// fences an unclaimed attempt or persists a result. It grants no retry admission.
+async function observeImportPreparation(input, record, target, { dispatch }) {
+  const base = { ok: true, readOnly: true, intentId: input.id, route: record.route,
+    attempt: record.importPrepare?.attempt, protectedState: record.state };
+  const unresolved = reason => ({ ...base, state: "unresolved", reason });
+  if (record.route !== IMPORT_PREPARE_ROUTE || record.identity?.instanceId !== target.id || !record.importPrepare) {
+    return unresolved("import_prepare_identity_required");
+  }
+  if (record.state === "rejected_before_dispatch") {
+    return record.rejection?.attempt === record.importPrepare.attempt &&
+      ["unclaimed_attempt_fence", "preflight_before_ssh"].includes(record.rejection.evidence)
+      ? { ...base, state: "rejected_before_dispatch", evidenceSource: "protected_rejection", result: record.result }
+      : unresolved("pre_dispatch_evidence_required");
+  }
+  if (record.state === "complete") {
+    return importPrepareResultMatches(record, input.id, target.database, record.result)
+      ? { ...base, state: "complete", evidenceSource: "protected_receipt", result: record.result }
+      : unresolved("import_prepare_evidence_required");
+  }
+  if (record.state !== "uncertain" || !record.dispatched || !record.importBatches?.length || !dispatch) {
+    return unresolved("import_prepare_evidence_required");
+  }
+  try {
+    const result = createOutputGuard().sanitize(await dispatch(target.id, "/mongodb/imports/recover-prepare", {
+      database: target.database, importId: record.identity.importId,
+      importReceipt: { ...record.importPrepare, ...(record.riskPlanId ? { riskPlanId: record.riskPlanId } : {}), batchesDigest: prepareRequestDigest({ batches: record.importBatches }) },
+      operationId: input.operationId, timeoutMs: input.timeoutMs, deadlineAt: input.deadlineAt,
+    })).value;
+    return importPrepareResultMatches(record, input.id, target.database, result)
+      ? { ...base, state: "complete", evidenceSource: "exact_remote_receipt", result }
+      : unresolved("import_prepare_evidence_required");
+  } catch { return unresolved("remote_evidence_unavailable"); }
+}
+
 const here = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 export class PrivacyService {
   constructor({ directory, key, maxQueue = 32, workerPath, fenceAuthority } = {}) {
@@ -185,7 +221,7 @@ export class PrivacyService {
 export async function privacyRequest(service, input, { instance, origin, dispatch, preflight, historicalEvidence } = {}) {
   // Reconciliation proof is fetched below by the Manager, never accepted from
   // an MCP caller's result object. The store action remains internal.
-  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "disposition"];
+  const actions = ["create", "attach", "resolve", "commit", "intent", "outcome", "delivered", "cleanup", "dispatch_prepare", "claim_execution", "recover_operation", "resolve_import", "disposition"];
   if (!actions.includes(input?.action)) throw privacyError("BUSINESS_STORAGE_ACTION_DENIED");
   const validate = (scope) => {
     if (typeof scope !== "string" || scope.length > 8192) throw privacyError("BUSINESS_PRIVACY_SCOPE_REQUIRED");
@@ -194,6 +230,16 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
     if (!current || current.enabled === false || target.endpoint !== origin || scope !== businessTargetScope(origin, current, target.database)) throw privacyError("BUSINESS_REFERENCE_INVALID");
   };
   if (!["create", "attach", "cleanup"].includes(input.action)) validate(input.scope);
+  if (input.action === "resolve_import") {
+    const allowed = ["action", "auth", "scope", "originalOperationId", "importId", "requestDigest", "operationId", "timeoutMs", "deadlineAt"];
+    if (Object.keys(input).some(key => !allowed.includes(key))) throw privacyError("BUSINESS_OPERATION_LOOKUP_INVALID");
+    validateImportLookup(input);
+    const found = await service.call("resolve_import_operation", input);
+    if (found.state !== "resolved") return { ok: true, readOnly: true, ...found };
+    // The resolved record came from authenticated storage, never from callers,
+    // logs, a reconstructed identity or a second prepare call.
+    return { ...await observeImportPreparation({ ...input, id: found.id }, found.record, JSON.parse(input.scope), { dispatch }), archived: found.archived };
+  }
   if (input.action === "outcome") {
     const record = await service.call("inspect_operation", input);
     if (record.executionProtocol === 2) {
@@ -312,7 +358,8 @@ export async function privacyRequest(service, input, { instance, origin, dispatc
       legacy: value.route === "/mongodb/mutations/prepare" && !value.prepare || value.route === "/mongodb/bulk/prepare" && !value.bulkPrepare,
       reason, recoveryCode: value.reconciliation?.code, ...(value.result ? { result: value.result } : {}) });
     if (input.action === "recover_operation") {
-      if (!["inspect", "reconcile", "historical"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (!["inspect", "reconcile", "historical", "observe"].includes(input.mode)) throw privacyError("BUSINESS_STORAGE_INVALID");
+      if (input.mode === "observe") return observeImportPreparation(input, record, target, { dispatch });
       if (input.mode === "historical") {
         if (record.route !== "/mongodb/bulk/prepare" || record.bulkPrepare) throw privacyError("BUSINESS_OPERATION_DENIED");
         return historicalBulkRequest(service, input, record, target, { instance, dispatch, historicalEvidence }, view);

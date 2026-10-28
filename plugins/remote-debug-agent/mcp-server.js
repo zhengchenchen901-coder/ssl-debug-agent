@@ -197,6 +197,7 @@ const toolOperationPolicies = {
     maxMs: MAX_MONGODB_TIMEOUT_MS,
   },
   remote_debug_mongodb_recover_operation: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
+  remote_debug_mongodb_resolve_import: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_mongodb_disposition: { defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, maxMs: MAX_MONGODB_MUTATION_TIMEOUT_MS },
   remote_debug_mongodb_prepare_write: {
     defaultMs: DEFAULT_MONGODB_MUTATION_TIMEOUT_MS,
@@ -553,15 +554,31 @@ const tools = [
     },
   },
   {
+    name: "remote_debug_mongodb_resolve_import",
+    description: "Read-only recovery lookup in the original protected context. Requires explicit instance/database, original operationId/importId and the ordered import wire requestDigest. Returns only an exact existing intent and verified original preparation/rejection receipt. Missing, legacy, ambiguous or incomplete evidence stays unresolved. Never registers an intent/attempt, fences, changes protection, prepares or executes an import. Does not accept caller proof or reconstruct historical receipts.",
+    inputSchema: {
+      type: "object", additionalProperties: false,
+      required: ["instanceId", "database", "originalOperationId", "importId", "requestDigest"],
+      properties: {
+        instanceId: { ...instanceIdProperty, minLength: 1 },
+        database: { type: "string", minLength: 1, maxLength: 128 },
+        originalOperationId: { type: "string", pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$" },
+        importId: { type: "string", pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        requestDigest: { type: "string", pattern: "^[a-f0-9]{64}$", description: "prepareRequestDigest(importPreparePayload(originalArgs)); transport fields excluded, BSON/document order preserved. A file SHA-256 is not interchangeable." },
+        timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
+      },
+    },
+  },
+  {
     name: "remote_debug_mongodb_recover_operation",
-    description: "Inspect or reconcile an exact protected MongoDB operation. mode=historical inspects original legacy bulk diagnostics and optionally verifies originalRequest against the keyed original intent, then reads exact remote chunk/plan evidence. Text logs and missing jobs cannot release protection. It never uploads or executes. Use the original intentId and protected context; never create a replacement job.",
+    description: "Inspect or reconcile an exact protected MongoDB operation. mode=observe reads exact import preparation evidence without fencing or updating protection; unknown stays unresolved. mode=historical inspects original legacy bulk diagnostics and optionally verifies originalRequest against the keyed original intent, then reads exact remote chunk/plan evidence. Text logs and missing jobs cannot release protection. It never uploads or executes. Use the original intentId and protected context; never create a replacement job.",
     inputSchema: {
       type: "object", additionalProperties: false, required: ["instanceId", "database", "intentId"],
       properties: {
         instanceId: instanceIdProperty,
         database: { type: "string", minLength: 1, maxLength: 128 },
         intentId: { type: "string", pattern: "^[a-f0-9]{64}$" },
-        mode: { type: "string", enum: ["inspect", "reconcile", "historical"], default: "inspect" },
+        mode: { type: "string", enum: ["inspect", "reconcile", "historical", "observe"], default: "inspect" },
         timeoutMs: timeoutProperty(DEFAULT_MONGODB_MUTATION_TIMEOUT_MS, MAX_MONGODB_MUTATION_TIMEOUT_MS),
       },
     },
@@ -3049,6 +3066,7 @@ async function requestAgent(pathName, payload, options = {}) {
     payload = { ...payload, instanceId, ...(database && acceptsDatabase ? { database } : {}) };
     operation.privacyContext = { scope, scopeForDatabase, queryOperation: payload.operation, queryPipeline: payload.pipeline };
     if (pathName === "/mongodb/operations/recover") return businessStorage.recover(settings, payload, scope, operation);
+    if (pathName === "/mongodb/operations/resolve-import") return businessStorage.resolveImport(settings, payload, scope, operation);
     if (pathName === "/mongodb/operations/disposition") return businessStorage.disposition(settings, payload, scope, operation);
     businessPrivacy.learnInput(operation.toolName, outputGuard.sanitize(payload).value, scope);
     operation.privacyInput = payload;
@@ -3185,6 +3203,13 @@ async function callTool(name, args, operation) {
       get: (route) => getAgent(route, operation),
       sanitize: (input) => businessPrivacy.scrubKnown(outputGuard.sanitize(input).value),
     });
+  }
+  if (name === "remote_debug_mongodb_resolve_import") {
+    const fields = ["instanceId", "database", "originalOperationId", "importId", "requestDigest", "timeoutMs"];
+    if (!args?.instanceId || !args.database || Object.keys(args).some(key => !fields.includes(key))) {
+      throw Object.assign(new Error("Exact original import lookup fields and explicit target required."), { code: "BUSINESS_OPERATION_LOOKUP_INVALID" });
+    }
+    return callAgent("/mongodb/operations/resolve-import", args, operation);
   }
   if (name === "remote_debug_mongodb_recover_operation") {
     return callAgent("/mongodb/operations/recover", { instanceId: args?.instanceId, database: args?.database,
