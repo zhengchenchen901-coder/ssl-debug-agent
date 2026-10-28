@@ -34,7 +34,7 @@ var require_windows_privacy = __commonJS({
     "use strict";
     var fs3 = require("fs");
     var path3 = require("path");
-    var { createHash: createHash4 } = require("crypto");
+    var { createHash: createHash5 } = require("crypto");
     var { execFileSync: execFileSync2 } = require("child_process");
     function fail2(code = "BUSINESS_STORAGE_UNAVAILABLE") {
       return Object.assign(new Error("Windows protected local storage is unavailable; no business operation was replayed."), { code, statusCode: 409, retriable: false });
@@ -47,7 +47,7 @@ var require_windows_privacy = __commonJS({
         const helper = path3.join(__dirname, "native/windows-privacy.ps1");
         const manifestPath = fs3.existsSync(path3.join(__dirname, "runtime-manifest.json")) ? path3.join(__dirname, "runtime-manifest.json") : path3.join(__dirname, "runtime/agent/runtime-manifest.json");
         const expected = JSON.parse(fs3.readFileSync(manifestPath, "utf8")).hashes?.["native/windows-privacy.ps1"];
-        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash4("sha256").update(fs3.readFileSync(helper)).digest("hex") !== expected) throw fail2("BUSINESS_STORAGE_INTEGRITY_INVALID");
+        if (!/^[a-f0-9]{64}$/.test(expected || "") || createHash5("sha256").update(fs3.readFileSync(helper)).digest("hex") !== expected) throw fail2("BUSINESS_STORAGE_INTEGRITY_INVALID");
         const raw = run(
           path3.join(systemRoot, "System32/WindowsPowerShell/v1.0/powershell.exe"),
           ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper],
@@ -69,7 +69,7 @@ var require_windows_privacy = __commonJS({
       }
     }
     function targetFor(directory) {
-      return "RemoteDebugAgent/business-privacy/v1/" + createHash4("sha256").update(fs3.realpathSync.native(directory)).digest("hex");
+      return "RemoteDebugAgent/business-privacy/v1/" + createHash5("sha256").update(fs3.realpathSync.native(directory)).digest("hex");
     }
     function prepareStore(directory) {
       return native("prepare-store", { directory });
@@ -133,8 +133,232 @@ function loadPrivacyKey(directory, { platform = process.platform, run = import_n
   }
 }
 
-// ../plugins/remote-debug-agent/prepare-protocol.js
+// mongodb-execution-risk.js
 var import_node_crypto2 = require("node:crypto");
+var digest = (value) => (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify(value)).digest("hex");
+var EXECUTION_RISK_POLICY = "human-execution-risk-v1";
+var EXECUTION_RISK_CONFIRMATION = "我接受此执行结果未知及迟到提交、重复和部分成功风险，并批准唯一接续计划";
+var MAX = Number.MAX_SAFE_INTEGER;
+var denied = (code = "BUSINESS_EXECUTION_RISK_DENIED") => {
+  throw privacyError(code);
+};
+var gateId = (s, instanceId, mutationId) => s.hash("execution-risk-gate", instanceId, mutationId);
+function load(s, id, ctx, scope) {
+  const row = s.db.prepare("SELECT * FROM records WHERE kind='execution_risk' AND id=?").get(id);
+  if (!row || ctx && (ctx !== row.ctx || scope !== row.scope)) denied();
+  return { p: s.open(row), ctx: row.ctx, scope: row.scope };
+}
+function audit(s, type, p, ctx, scope, details = {}) {
+  const id = s.hash("execution-risk-audit", type, p.id, p.reviewHash, details);
+  if (!s.get("event", id, ctx, scope)) s.put(
+    "event",
+    id,
+    ctx,
+    scope,
+    { type, reviewId: p.id, binding: p.binding, historicalOutcome: "unknown", at: s.now(), ...details },
+    MAX,
+    true
+  );
+  return id;
+}
+function current(s, p, ctx, scope) {
+  const old = s.get("operation", p.binding.intentId, ctx, scope);
+  if (old?.state !== "uncertain" || s.hash("execution-risk-original", old) !== p.recordFingerprint) denied("BUSINESS_EXECUTION_RISK_STALE");
+}
+function view(s, p, human = false) {
+  const c = p.proposal?.candidate;
+  return {
+    ok: true,
+    kind: "import_execution",
+    riskPlanId: p.id,
+    reviewHash: p.reviewHash,
+    state: p.state,
+    approvalPolicy: EXECUTION_RISK_POLICY,
+    approvalAuthority: "independent-human-administrator",
+    binding: p.binding,
+    historicalOutcome: "unknown",
+    legacyInFlightOutcome: "unknown",
+    humanApproved: !!p.approval,
+    canApprove: !p.lateCommitted && p.state === "awaiting_human" && s.now() < p.binding.expiresAt,
+    lateOriginalCommitObserved: !!p.lateCommitted,
+    lateObservation: p.latestMachineObservation,
+    expiresAt: p.binding.expiresAt,
+    confirmation: EXECUTION_RISK_CONFIRMATION,
+    proposalDigest: p.proposalDigest,
+    originalStatus: p.proposal.originalStatus,
+    originalCollectionIdentity: p.proposal.originalCollectionIdentity,
+    collectionIdentity: p.proposal.collectionIdentity,
+    mutationId: c.mutationId,
+    planHash: c.planHash,
+    documentCount: c.request.documents.length,
+    effectDigest: digest({ documents: c.request.documents }),
+    missingEvidence: p.proposal.missingEvidence,
+    approvalAuditId: p.approval?.auditId,
+    reservationAuditId: p.reservationAuditId,
+    result: p.result,
+    ...human ? {
+      orderedDocuments: JSON.stringify(c.request.documents),
+      orderedRequest: JSON.stringify(c.request),
+      knownExecution: p.original,
+      lineage: p.lineage,
+      prerequisiteSource: p.proposal.source
+    } : {},
+    warning: "原执行结果仍未知；当前缺少文档不是历史未执行证明。接受历史进程迟到提交、重复、部分成功和唯一键冲突风险。只批准同一导入的一个接续计划；不证明安全终止、不授予历史所有权、不执行写入。新计划仍需独立精确业务确认；新未知不会自动重派。"
+  };
+}
+function executionRiskHumanAction(s, action, input) {
+  if (typeof action !== "string" || !action.startsWith("human_execution_risk_")) return;
+  const found = load(s, input.riskPlanId), { p, ctx, scope } = found;
+  if (input.instanceId !== p.binding.instanceId) denied();
+  if (action === "human_execution_risk_context") return { targetScope: p.targetScope, database: p.binding.database };
+  if (input.targetScope !== p.targetScope) denied();
+  if (action === "human_execution_risk_view") {
+    current(s, p, ctx, scope);
+    return view(s, p, true);
+  }
+  if (action !== "human_execution_risk_approve") denied();
+  return s.transaction(() => {
+    const { p: p2 } = load(s, input.riskPlanId);
+    current(s, p2, ctx, scope);
+    if (p2.lateCommitted) denied("BUSINESS_EXECUTION_RISK_STALE");
+    if (input.reviewHash !== p2.reviewHash || input.confirmation !== EXECUTION_RISK_CONFIRMATION || !input.actor?.username || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) || input.actor.verifiedAt > s.now() || s.now() - input.actor.verifiedAt > 6e4 || s.now() >= p2.binding.expiresAt) denied();
+    if (p2.state !== "awaiting_human") return view(s, p2, true);
+    const approval = { ...input.actor, reviewHash: p2.reviewHash, validUntil: p2.binding.expiresAt };
+    approval.auditId = audit(s, "execution_risk_human_approved", p2, ctx, scope, approval);
+    const saved = { ...p2, state: "human_approved", approval };
+    s.put("execution_risk", p2.id, ctx, scope, saved, MAX, true);
+    return view(s, saved, true);
+  });
+}
+function executionRiskStoreAction(s, action, input, ctx, scope) {
+  if (action === "execution_risk_context") {
+    const target = JSON.parse(input.scope), old = s.get("operation", input.id, ctx, scope);
+    const row = s.db.prepare("SELECT * FROM records WHERE kind='risk_replacement' AND id=? AND ctx=? AND scope=?").get(input.riskPlanId, ctx, scope);
+    const lineage = row && s.open(row), execution2 = old?.execution;
+    const batch2 = lineage?.preparedBatches?.find((b) => b.mutationId === old?.identity?.mutationId && b.planHash === old?.identity?.planHash);
+    const originalBatch = lineage?.replacementBatches?.find((b) => b.mutationId === batch2?.mutationId);
+    if (old?.state !== "uncertain" || old.route !== "/mongodb/mutations/execute" || !execution2 || execution2.intentId !== input.id || typeof execution2.operationId !== "string" || !execution2.operationId || lineage?.kind !== "import" || !lineage.creationAuditId || !lineage.remoteRetirement || !batch2 || !originalBatch || old.identity.instanceId !== target.id || lineage.targetScope !== input.scope || lineage.binding.database !== target.database || lineage.binding.instanceId !== target.id) denied();
+    const id = s.hash("execution-risk", ctx, input.scope, input.id);
+    const previous = s.get("execution_risk", id, ctx, scope);
+    if (previous && (!["awaiting_human", "human_approved"].includes(previous.state) || s.now() < previous.binding.expiresAt)) return { existing: view(s, previous) };
+    const binding = {
+      reviewId: id,
+      contextId: ctx,
+      instanceId: target.id,
+      database: target.database,
+      collection: lineage.replacementRequest.collection,
+      importId: lineage.replacementRequest.importId,
+      riskPlanId: lineage.id,
+      originalPrepareIntentId: lineage.binding.intentId,
+      replacementPrepareIntentId: lineage.replacementIntentId,
+      intentId: input.id,
+      execution: execution2,
+      attempt: old.executionAttempt || null,
+      executionProtocol: old.executionProtocol || null,
+      mutationId: batch2.mutationId,
+      planHash: batch2.planHash,
+      batchRequestDigest: originalBatch.requestDigest,
+      expiresAt: s.now() + 9e5
+    };
+    return {
+      binding,
+      recordFingerprint: s.hash("execution-risk-original", old),
+      original: old,
+      lineage: {
+        riskPlanId: lineage.id,
+        originalImportId: lineage.binding.importId,
+        replacementImportId: lineage.replacementRequest.importId,
+        originalBatches: lineage.originalBatches,
+        replacementBatches: lineage.replacementBatches,
+        remoteRetirement: lineage.remoteRetirement
+      }
+    };
+  }
+  if (action === "execution_risk_prepare") return s.transaction(() => {
+    const proposal = input.proposal, b = input.context.binding;
+    if (!proposal || digest(proposal) !== input.proposalDigest || digest(proposal.binding) !== digest(b) || proposal.candidate.executionContinuation?.binding?.reviewId !== b.reviewId || proposal.candidate.request.database !== b.database || proposal.candidate.request.collection !== b.collection || proposal.candidate.request.importId !== b.importId) denied();
+    const p = {
+      id: b.reviewId,
+      binding: b,
+      targetScope: input.scope,
+      state: "awaiting_human",
+      proposal,
+      proposalDigest: input.proposalDigest,
+      recordFingerprint: input.context.recordFingerprint,
+      original: input.context.original,
+      lineage: input.context.lineage
+    };
+    current(s, p, ctx, scope);
+    const prior = s.get("execution_risk", p.id, ctx, scope);
+    if (prior && !["awaiting_human", "human_approved"].includes(prior.state)) return view(s, prior);
+    if (prior && s.now() < prior.binding.expiresAt) return view(s, prior);
+    if (prior) s.put("execution_risk_revision", s.hash("execution-risk-revision", p.id, prior.reviewHash), ctx, scope, prior, MAX, true);
+    p.reviewHash = s.hash("execution-risk-review", p);
+    p.auditId = audit(s, "execution_risk_prepared", p, ctx, scope);
+    s.put("execution_risk", p.id, ctx, scope, p, MAX, true);
+    s.put("execution_risk_gate", gateId(s, b.instanceId, b.mutationId), "", "", { reviewId: p.id, ctx, scope, role: "original" }, MAX, true);
+    return view(s, p);
+  });
+  if (!["execution_risk_inspect", "execution_risk_reserve", "execution_risk_result"].includes(action)) return;
+  return s.transaction(() => {
+    const { p } = load(s, input.riskPlanId, ctx, scope);
+    if (action === "execution_risk_inspect") return view(s, p);
+    if (input.reviewHash !== p.reviewHash || !p.approval) denied("BUSINESS_EXECUTION_RISK_HUMAN_REQUIRED");
+    if (action === "execution_risk_reserve") {
+      if (p.lateCommitted) denied("BUSINESS_EXECUTION_RISK_STALE");
+      if (p.state === "prepared") return { ...view(s, p), done: true };
+      if (p.state !== "reserved") {
+        current(s, p, ctx, scope);
+        if (s.now() >= p.approval.validUntil) denied("BUSINESS_EXECUTION_RISK_EXPIRED");
+        p.state = "reserved";
+        p.reservationAuditId = audit(s, "execution_risk_reserved", p, ctx, scope, { approvalAuditId: p.approval.auditId });
+        s.put("execution_risk", p.id, ctx, scope, p, MAX, true);
+      }
+      return { binding: p.binding, proposalDigest: p.proposalDigest, approvalAuditId: p.approval.auditId };
+    }
+    if (p.state === "prepared") return view(s, p);
+    const r = input.result, c = p.proposal.candidate;
+    if (p.state !== "reserved" || r?.ok !== true || r.reviewId !== p.id || r.proposalDigest !== p.proposalDigest || r.approvalAuditId !== p.approval.auditId || r.managedOriginalClosed !== true || r.historicalOutcome !== "unknown" || r.mutationId !== c.mutationId || r.planHash !== c.planHash || r.database !== p.binding.database || r.collection !== p.binding.collection) denied();
+    p.state = "prepared";
+    p.result = JSON.parse(JSON.stringify(r));
+    p.completionAuditId = audit(s, "execution_risk_child_prepared", p, ctx, scope, { mutationId: r.mutationId, planHash: r.planHash });
+    s.put("execution_risk", p.id, ctx, scope, p, MAX, true);
+    s.put("execution_risk_gate", gateId(s, p.binding.instanceId, c.mutationId), "", "", { reviewId: p.id, ctx, scope, role: "child" }, MAX, true);
+    return view(s, p);
+  });
+}
+function executionRiskAdmission(s, instanceId, admission) {
+  const r = admission.request || admission.identity || {};
+  const gate = s.get("execution_risk_gate", gateId(s, instanceId, r.mutationId), "", "");
+  if (!gate) return false;
+  if (gate.role === "original") denied("BUSINESS_EXECUTION_ORIGINAL_PROTECTED");
+  const { p } = load(s, gate.reviewId), c = p.proposal.candidate;
+  if (p.state !== "prepared" || p.lateCommitted || admission.ctx && admission.ctx !== gate.ctx || r.planHash !== c.planHash || !["/mongodb/mutations/execute", "/mongodb/mutations/rollback"].includes(admission.route)) denied();
+  return true;
+}
+function recordExecutionRiskEvidence(s, action, input, ctx, scope) {
+  const old = s.get("operation", input.id, ctx, scope);
+  const gate = old && s.get("execution_risk_gate", gateId(s, old.identity?.instanceId, old.identity?.mutationId), "", "");
+  if (gate?.role !== "original") return;
+  if (ctx !== gate.ctx || scope !== gate.scope) denied();
+  const { p } = load(s, gate.reviewId);
+  const entry2 = action === "reconcile" && input.result?.ok === true && input.result.entries?.find((e) => e.mutationId === p.binding.mutationId && e.planHash === p.binding.planHash);
+  if (entry2) {
+    const receiptDigest = digest(entry2);
+    const auditId = audit(s, "execution_risk_late_observation", p, ctx, scope, { receiptDigest, status: entry2.status });
+    const receipt = entry2.importExecution;
+    const exactAcknowledgedCommit = entry2.status === "committed" && receipt?.version === 2 && receipt.stage === "acknowledged" && digest(entry2.execution) === digest(p.binding.execution) && digest(receipt.execution) === digest(p.binding.execution) && receipt.mutationId === p.binding.mutationId && receipt.planHash === p.binding.planHash && receipt.database === p.binding.database && receipt.collection === p.binding.collection && receipt.mode === "commit" && receipt.confirmation === "确认执行";
+    s.put("execution_risk", p.id, ctx, scope, {
+      ...p,
+      lateCommitted: !!(p.lateCommitted || exactAcknowledgedCommit),
+      latestMachineObservation: { receiptDigest, status: entry2.status, observedAt: s.now(), exactAcknowledgedCommit: !!exactAcknowledgedCommit, auditId }
+    }, MAX, true);
+  }
+  return { state: old.state };
+}
+
+// ../plugins/remote-debug-agent/prepare-protocol.js
+var import_node_crypto3 = require("node:crypto");
 function bulkPreparePayload(args) {
   return {
     instanceId: args.instanceId,
@@ -151,7 +375,7 @@ function bulkPreparePayload(args) {
 }
 function prepareRequestDigest(input) {
   const { operationId, deadlineAt, timeoutMs, _businessPrepare, _businessImport, ...request } = input;
-  return (0, import_node_crypto2.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
+  return (0, import_node_crypto3.createHash)("sha256").update(JSON.stringify(request)).digest("hex");
 }
 function isPrepareTicket(value) {
   return value && /^[a-f0-9-]{36}$/.test(value.mutationId || "") && /^[a-f0-9]{64}$/.test(value.binding || "") && /^[a-f0-9]{64}$/.test(value.requestDigest || "") && Number.isSafeInteger(value.attempt) && value.attempt > 0;
@@ -172,21 +396,21 @@ function importPreparePayload(args) {
 var IMPORT_PREPARE_ROUTE = "/mongodb/imports/prepare";
 
 // mongodb-import-risk.js
-var MAX = Number.MAX_SAFE_INTEGER;
+var MAX2 = Number.MAX_SAFE_INTEGER;
 var POLICY = "human-risk-acceptance-v2";
 var CONFIRM = "我接受历史结果未知的风险，并批准建立此替代任务";
 var fail = (code = "BUSINESS_REPLACEMENT_DENIED") => {
   throw privacyError(code);
 };
 var key = (store2, kind, instanceId, database, id) => store2.hash("risk-import-" + kind, instanceId, database, id);
-function load(store2, id) {
+function load2(store2, id) {
   const row = store2.db.prepare("SELECT * FROM records WHERE kind='risk_replacement' AND id=?").get(id);
   if (!row) fail();
   const plan = store2.open(row);
   if (plan.kind !== "import") fail();
   return { plan, ctx: row.ctx, scope: row.scope };
 }
-function current(store2, plan, ctx, scope) {
+function current2(store2, plan, ctx, scope) {
   const record = store2.get("operation", plan.binding.intentId, ctx, scope);
   if (record?.state !== "uncertain" || store2.hash("operation-record", ctx, plan.targetScope, plan.binding.intentId, record) !== plan.recordFingerprint) fail("BUSINESS_REPLACEMENT_STALE");
 }
@@ -207,7 +431,7 @@ function event(store2, type, plan, ctx, scope, details = {}) {
       at: store2.now(),
       ...details
     },
-    MAX,
+    MAX2,
     true
   );
   return id;
@@ -231,11 +455,11 @@ function reviewHash(store2, plan) {
   );
 }
 function importRiskView(store2, plan) {
-  const { ctx, scope } = load(store2, plan.id);
+  const { ctx, scope } = load2(store2, plan.id);
   const parent = store2.get("disposition", plan.dispositionId, ctx, scope);
   let unchanged = true;
   try {
-    current(store2, plan, ctx, scope);
+    current2(store2, plan, ctx, scope);
   } catch {
     unchanged = false;
   }
@@ -316,7 +540,7 @@ function prepareImportRisk(store2, input, ctx, scope) {
       createdAt: old?.createdAt || store2.now(),
       expiresAt: store2.now() + 36e5
     };
-    current(store2, plan, ctx, scope);
+    current2(store2, plan, ctx, scope);
     for (const [kind, k] of [["risk_import_candidate", candidateKey(store2, plan)], ["risk_import_gate", gateKey(store2, plan)]]) {
       const existing = store2.get(kind, k, "", "");
       if (existing && existing.riskPlanId !== id) fail("BUSINESS_REPLACEMENT_JOB_CONFLICT");
@@ -324,12 +548,12 @@ function prepareImportRisk(store2, input, ctx, scope) {
     const retired = store2.get("risk_import_retirement", retirementKey(store2, plan), "", "");
     if (retired && retired.riskPlanId !== id) fail("BUSINESS_REPLACEMENT_JOB_CONFLICT");
     plan.auditId = event(store2, "risk_import_prepared", plan, ctx, scope, { revision: store2.now() });
-    store2.put("risk_replacement", id, ctx, scope, plan, MAX, true);
-    store2.put("risk_import_candidate", candidateKey(store2, plan), "", "", { riskPlanId: id, ctx, scope }, MAX, true);
+    store2.put("risk_replacement", id, ctx, scope, plan, MAX2, true);
+    store2.put("risk_import_candidate", candidateKey(store2, plan), "", "", { riskPlanId: id, ctx, scope }, MAX2, true);
     for (const batch2 of plan.replacementBatches) {
       const k = key(store2, "batch", b.instanceId, "", batch2.mutationId), existing = store2.get("risk_import_batch", k, "", "");
       if (existing && existing.riskPlanId !== id) fail("BUSINESS_REPLACEMENT_JOB_CONFLICT");
-      store2.put("risk_import_batch", k, "", "", { riskPlanId: id, role: "replacement", ctx, scope }, MAX, true);
+      store2.put("risk_import_batch", k, "", "", { riskPlanId: id, role: "replacement", ctx, scope }, MAX2, true);
     }
     return importRiskView(store2, plan);
   });
@@ -352,29 +576,29 @@ function importHumanAction(store2, action, input, found) {
     const approval = { ...input.actor, reviewHash: input.reviewHash, policy: POLICY, validUntil: Math.min(plan.expiresAt, store2.now() + 9e5) };
     approval.auditId = event(store2, "risk_import_human_approved", plan, ctx, scope, approval);
     const retirement = { riskPlanId: plan.id, replacementImportId: plan.replacementRequest.importId, approvalAuditId: approval.auditId, at: store2.now() };
-    store2.put("risk_import_retirement", retirementKey(store2, plan), "", "", { ...retirement, database: plan.binding.database, importId: plan.binding.importId }, MAX, true);
+    store2.put("risk_import_retirement", retirementKey(store2, plan), "", "", { ...retirement, database: plan.binding.database, importId: plan.binding.importId }, MAX2, true);
     for (const batch2 of plan.originalBatches) store2.put(
       "risk_import_batch",
       key(store2, "batch", plan.binding.instanceId, "", batch2.mutationId),
       "",
       "",
       { riskPlanId: plan.id, role: "original", ctx, scope },
-      MAX,
+      MAX2,
       true
     );
     const parent = store2.get("disposition", plan.dispositionId, ctx, scope);
-    if (parent.state !== "retired_unknown") store2.put("disposition", parent.id, ctx, scope, { ...parent, state: "termination_requested", retirement }, MAX, true);
+    if (parent.state !== "retired_unknown") store2.put("disposition", parent.id, ctx, scope, { ...parent, state: "termination_requested", retirement }, MAX2, true);
     const taskId = store2.hash("task", ctx, plan.targetScope, "operation:" + plan.binding.intentId), task = store2.get("task", taskId, ctx, scope);
-    if (task) store2.put("task", taskId, ctx, scope, { ...task, active: false, status: "terminated_unknown" }, MAX, true);
+    if (task) store2.put("task", taskId, ctx, scope, { ...task, active: false, status: "terminated_unknown" }, MAX2, true);
     const saved = { ...plan, state: "human_approved", approval };
-    store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX, true);
+    store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX2, true);
     return importRiskView(store2, saved);
   });
 }
 function requireApproval(store2, plan, input, ctx, scope) {
   if (plan.approval?.policy !== POLICY || input.reviewHash !== plan.approval.reviewHash) fail("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
   if (store2.now() >= plan.approval.validUntil) fail("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
-  current(store2, plan, ctx, scope);
+  current2(store2, plan, ctx, scope);
   if (store2.get("risk_import_retirement", retirementKey(store2, plan), "", "")?.riskPlanId !== plan.id) fail("BUSINESS_REPLACEMENT_JOB_CONFLICT");
 }
 function importRiskAction(store2, action, input, found) {
@@ -399,7 +623,7 @@ function importRiskAction(store2, action, input, found) {
     const result = input.result;
     if (result?.ok !== true || result.status !== "terminated_unknown" || result.managedAdmissionClosed !== true || result.riskPlanId !== plan.id || result.originalRequestDigest !== plan.binding.requestDigest || result.replacementRequestDigest !== plan.requestDigest || result.importId !== plan.binding.importId || result.replacementImportId !== plan.replacementRequest.importId || result.database !== plan.binding.database || result.dispositionId !== plan.dispositionId || result.approvalAuditId !== plan.approval.auditId || JSON.stringify(result.originalBatches) !== JSON.stringify(plan.originalBatches) || JSON.stringify(result.replacementBatches) !== JSON.stringify(plan.replacementBatches) || !/^[a-f0-9]{64}$/.test(result.controlRecordDigest || "")) fail("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
     const saved2 = { ...plan, remoteRetirement: { ...request, controlRecordDigest: result.controlRecordDigest, recordedAt: store2.now() } };
-    store2.put("risk_replacement", plan.id, ctx, scope, saved2, MAX, true);
+    store2.put("risk_replacement", plan.id, ctx, scope, saved2, MAX2, true);
     event(store2, "risk_import_remote_retirement", saved2, ctx, scope, { controlRecordDigest: result.controlRecordDigest });
     return { ok: true };
   }
@@ -410,7 +634,7 @@ function importRiskAction(store2, action, input, found) {
   if (previous && !gate || gate && gate.riskPlanId !== plan.id) fail("BUSINESS_REPLACEMENT_JOB_CONFLICT");
   if (previous?.state === "rejected_before_dispatch") {
     const evidenceId = store2.hash("import-attempt", ctx, plan.targetScope, id, previous.importPrepare.attempt);
-    if (!store2.get("import_prepare_evidence", evidenceId, ctx, scope)) store2.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, ...previous }, MAX, true);
+    if (!store2.get("import_prepare_evidence", evidenceId, ctx, scope)) store2.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, ...previous }, MAX2, true);
   }
   const record = previous && previous.state !== "rejected_before_dispatch" ? previous : {
     route: IMPORT_PREPARE_ROUTE,
@@ -426,16 +650,16 @@ function importRiskAction(store2, action, input, found) {
     importBatches: plan.replacementBatches,
     riskPlanId: plan.id
   };
-  if (!previous || previous.state === "rejected_before_dispatch" || previous !== previousRecord) store2.put("operation", id, ctx, scope, record, MAX, true);
+  if (!previous || previous.state === "rejected_before_dispatch" || previous !== previousRecord) store2.put("operation", id, ctx, scope, record, MAX2, true);
   const taskId = store2.hash("task", ctx, plan.targetScope, "operation:" + id), oldTask = store2.hash("task", ctx, plan.targetScope, "operation:" + plan.binding.intentId);
-  store2.put("task", taskId, ctx, scope, { id: "operation:" + id, active: record.state === "uncertain", expires: MAX }, MAX, true);
+  store2.put("task", taskId, ctx, scope, { id: "operation:" + id, active: record.state === "uncertain", expires: MAX2 }, MAX2, true);
   store2.db.prepare("INSERT OR IGNORE INTO links SELECT ctx,scope,?,ref FROM links WHERE ctx=? AND scope=? AND task=?").run(taskId, ctx, scope, oldTask);
   const creationAuditId = plan.creationAuditId || event(store2, "risk_import_creation_reserved", plan, ctx, scope, { replacementIntentId: id, approvalAuditId: plan.approval.auditId });
   const saved = { ...plan, state: record.state === "complete" ? "prepared" : "creating", creationAuditId, replacementIntentId: id };
-  store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX, true);
-  store2.put("risk_import_gate", gateKey(store2, plan), "", "", { riskPlanId: plan.id, ctx, scope }, MAX, true);
+  store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX2, true);
+  store2.put("risk_import_gate", gateKey(store2, plan), "", "", { riskPlanId: plan.id, ctx, scope }, MAX2, true);
   const parent = store2.get("disposition", plan.dispositionId, ctx, scope);
-  store2.put("disposition", parent.id, ctx, scope, { ...parent, state: "retired_unknown", retirement: { ...parent.retirement, replacementIntentId: id } }, MAX, true);
+  store2.put("disposition", parent.id, ctx, scope, { ...parent, state: "retired_unknown", retirement: { ...parent.retirement, replacementIntentId: id } }, MAX2, true);
   return { intent: { id, ...record }, request: plan.replacementRequest, risk: importRiskView(store2, saved) };
 }
 function importReplacementAdmission(store2, instanceId, admission) {
@@ -449,11 +673,12 @@ function importReplacementAdmission(store2, instanceId, admission) {
   if (!database || typeof request.importId !== "string") return false;
   const gate = store2.get("risk_import_gate", key(store2, "gate", instanceId, database, request.importId), "", "");
   if (!gate) return false;
-  const { plan } = load(store2, gate.riskPlanId);
+  const { plan } = load2(store2, gate.riskPlanId);
   if (admission.ctx && admission.ctx !== gate.ctx) return false;
   return admission.route === IMPORT_PREPARE_ROUTE && !!plan.approval && store2.now() < plan.approval.validUntil && (admission.dispatchDigest || prepareRequestDigest(importPreparePayload({ ...request, instanceId, database }))) === plan.requestDigest;
 }
 function assertImportAdmission(store2, instanceId, admission) {
+  if (executionRiskAdmission(store2, instanceId, admission)) return true;
   const request = admission.request || admission.identity || {};
   let database = request.database;
   if (!database && admission.scope) {
@@ -464,7 +689,7 @@ function assertImportAdmission(store2, instanceId, admission) {
   }
   const found = typeof request.mutationId === "string" && store2.get("risk_import_batch", key(store2, "batch", instanceId, "", request.mutationId), "", "");
   if (found) {
-    const { plan } = load(store2, found.riskPlanId);
+    const { plan } = load2(store2, found.riskPlanId);
     if (database && plan.binding.database !== database) fail("BUSINESS_REPLACEMENT_NOT_ADMITTED");
     if (found.role === "original") fail("BUSINESS_ORIGINAL_JOB_TERMINATED");
     const batch2 = plan.preparedBatches?.find((b) => b.mutationId === request.mutationId);
@@ -481,7 +706,7 @@ function continuePartialImport(store2, id, record, ctx, scope) {
   if (record.state !== "complete" || !["prepare_partial", "prepare_rejected"].includes(record.result?.status)) return record;
   const attempt = record.importPrepare.attempt;
   const evidenceId = store2.hash("import-prepare-evidence", ctx, scope, id, attempt);
-  store2.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, attempt, result: record.result, record, at: store2.now() }, MAX, true);
+  store2.put("import_prepare_evidence", evidenceId, ctx, scope, { intentId: id, attempt, result: record.result, record, at: store2.now() }, MAX2, true);
   return {
     ...record,
     state: "uncertain",
@@ -494,16 +719,16 @@ function continuePartialImport(store2, id, record, ctx, scope) {
 }
 function recordImportPrepared(store2, record, result) {
   if (!record.riskPlanId) return;
-  const { plan, ctx, scope } = load(store2, record.riskPlanId);
+  const { plan, ctx, scope } = load2(store2, record.riskPlanId);
   const batches = result.batches.map(({ mutationId, planHash, batchIndex, status }) => ({ mutationId, planHash, batchIndex, status }));
   const saved = { ...plan, state: result.status === "prepared" ? "prepared" : "prepare_partial", preparedBatches: batches };
   saved.preparedAuditId = event(store2, "risk_import_prepared_remotely", plan, ctx, scope, { batches });
-  store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX, true);
+  store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX2, true);
 }
 
 // privacy-store.js
 var import_node_sqlite = require("node:sqlite");
-var import_node_crypto4 = require("node:crypto");
+var import_node_crypto5 = require("node:crypto");
 var import_node_fs2 = __toESM(require("node:fs"), 1);
 var import_node_path2 = __toESM(require("node:path"), 1);
 var import_windows_privacy2 = __toESM(require_windows_privacy(), 1);
@@ -511,14 +736,14 @@ var import_windows_privacy2 = __toESM(require_windows_privacy(), 1);
 // mongodb-fence-authority.js
 var import_node_fs = __toESM(require("node:fs"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
-var import_node_crypto3 = require("node:crypto");
+var import_node_crypto4 = require("node:crypto");
 var FENCE_COVERAGE = Object.freeze(["dispatch", "upload", "execute", "resume", "replay", "old_processes", "queues", "leases", "restart", "authenticated_sessions", "inflight_transactions", "legacy_credentials"]);
-var digest = (value) => (0, import_node_crypto3.createHash)("sha256").update(JSON.stringify(value)).digest("hex");
+var digest2 = (value) => (0, import_node_crypto4.createHash)("sha256").update(JSON.stringify(value)).digest("hex");
 function fenceChallenge(plan) {
   return {
     version: 1,
     binding: plan.binding,
-    targetScopeDigest: digest(plan.targetScope),
+    targetScopeDigest: digest2(plan.targetScope),
     replacementJobId: plan.replacementRequest.jobId,
     replacementRequestDigest: plan.requestDigest,
     sealRequestDigest: plan.sealDigest,
@@ -536,8 +761,8 @@ function readOwnedFile(filename) {
   try {
     const before = import_node_fs.default.fstatSync(fd);
     if (!before.isFile() || before.nlink !== 1 || before.size > 65536 || process.platform !== "win32" && (before.mode & 63 || ![0, process.getuid()].includes(before.uid))) throw Error();
-    const value = JSON.parse(import_node_fs.default.readFileSync(fd, "utf8")), after = import_node_fs.default.fstatSync(fd), current2 = import_node_fs.default.lstatSync(filename);
-    if (before.ino !== current2.ino || before.dev !== current2.dev || current2.isSymbolicLink() || before.size !== after.size || before.mtimeMs !== after.mtimeMs) throw Error();
+    const value = JSON.parse(import_node_fs.default.readFileSync(fd, "utf8")), after = import_node_fs.default.fstatSync(fd), current3 = import_node_fs.default.lstatSync(filename);
+    if (before.ino !== current3.ino || before.dev !== current3.dev || current3.isSymbolicLink() || before.size !== after.size || before.mtimeMs !== after.mtimeMs) throw Error();
     return value;
   } finally {
     import_node_fs.default.closeSync(fd);
@@ -551,12 +776,12 @@ function inspectFenceAuthority(plan, options = {}, now = Date.now()) {
     const trust = readOwnedFile(options.trustFile);
     const receipt = readOwnedFile(import_node_path.default.join(options.receiptDirectory, plan.id + ".json"));
     if (trust.version !== 1 || trust.boundaryType !== "externally-enforced-legacy-retirement-v1" || typeof trust.issuer !== "string") throw Error();
-    const key3 = (0, import_node_crypto3.createPublicKey)(trust.publicKey);
+    const key3 = (0, import_node_crypto4.createPublicKey)(trust.publicKey);
     if (key3.asymmetricKeyType !== "ed25519" || receipt.version !== 1 || typeof receipt.signature !== "string" || !/^[A-Za-z0-9+/]{86}==$/.test(receipt.signature)) throw Error();
     const p = receipt.payload;
-    if (!p || !(0, import_node_crypto3.verify)(null, Buffer.from(JSON.stringify(p)), key3, Buffer.from(receipt.signature, "base64"))) throw Error();
-    if (p.issuer !== trust.issuer || p.challengeDigest !== digest(fenceChallenge(plan)) || p.riskPlanId !== plan.id || typeof p.receiptId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(p.receiptId) || !Number.isSafeInteger(p.issuedAt) || !Number.isSafeInteger(p.validUntil) || p.issuedAt > now || p.validUntil <= now || p.validUntil - p.issuedAt > 36e5 || p.issuedAt < plan.createdAt || p.protection !== "permanent" || p.historicalOutcome !== "unknown" || p.inFlightTransactions !== "terminal" || p.restartSafe !== true || p.legacyCredentialsRevoked !== true || p.oldSessionsDrained !== true || p.oldQueuesDrained !== true || !Array.isArray(p.coverage) || p.coverage.length !== FENCE_COVERAGE.length || FENCE_COVERAGE.some((x) => !p.coverage.includes(x))) throw Error();
-    return { confirmed: true, issuer: trust.issuer, receiptId: p.receiptId, fingerprint: digest(receipt), validUntil: p.validUntil };
+    if (!p || !(0, import_node_crypto4.verify)(null, Buffer.from(JSON.stringify(p)), key3, Buffer.from(receipt.signature, "base64"))) throw Error();
+    if (p.issuer !== trust.issuer || p.challengeDigest !== digest2(fenceChallenge(plan)) || p.riskPlanId !== plan.id || typeof p.receiptId !== "string" || !/^[A-Za-z0-9._:-]{1,128}$/.test(p.receiptId) || !Number.isSafeInteger(p.issuedAt) || !Number.isSafeInteger(p.validUntil) || p.issuedAt > now || p.validUntil <= now || p.validUntil - p.issuedAt > 36e5 || p.issuedAt < plan.createdAt || p.protection !== "permanent" || p.historicalOutcome !== "unknown" || p.inFlightTransactions !== "terminal" || p.restartSafe !== true || p.legacyCredentialsRevoked !== true || p.oldSessionsDrained !== true || p.oldQueuesDrained !== true || !Array.isArray(p.coverage) || p.coverage.length !== FENCE_COVERAGE.length || FENCE_COVERAGE.some((x) => !p.coverage.includes(x))) throw Error();
+    return { confirmed: true, issuer: trust.issuer, receiptId: p.receiptId, fingerprint: digest2(receipt), validUntil: p.validUntil };
   } catch {
     return { confirmed: false, reason: "executor_fence_receipt_missing_invalid_or_expired" };
   }
@@ -573,8 +798,8 @@ var HUMAN_RISK_POLICY = "human-risk-acceptance-v2";
 var humanPolicy = (plan) => plan.approvalPolicy === HUMAN_RISK_POLICY;
 var retirementKey2 = (store2, plan) => store2.hash("risk-job-retirement", plan.binding.instanceId, plan.binding.jobId);
 var HASH = /^[a-f0-9]{64}$/;
-var MAX2 = Number.MAX_SAFE_INTEGER;
-var denied = (code = "BUSINESS_REPLACEMENT_DENIED") => {
+var MAX3 = Number.MAX_SAFE_INTEGER;
+var denied2 = (code = "BUSINESS_REPLACEMENT_DENIED") => {
   throw privacyError(code);
 };
 var wire = (value) => JSON.parse(JSON.stringify(bulkPreparePayload(value)));
@@ -597,7 +822,7 @@ function effects(request, originalJobId) {
 }
 function originalCurrent(store2, plan, ctx, scope) {
   const original = store2.get("operation", plan.binding.intentId, ctx, scope);
-  if (!original || original.state !== "uncertain" || store2.hash("operation-record", ctx, plan.targetScope, plan.binding.intentId, original) !== plan.recordFingerprint) denied("BUSINESS_REPLACEMENT_STALE");
+  if (!original || original.state !== "uncertain" || store2.hash("operation-record", ctx, plan.targetScope, plan.binding.intentId, original) !== plan.recordFingerprint) denied2("BUSINESS_REPLACEMENT_STALE");
 }
 function humanHash(store2, plan, proof) {
   if (humanPolicy(plan)) return store2.hash("risk-human-review-v2", plan.id, plan.requestDigest, plan.sealDigest, plan.recordFingerprint, plan.expiresAt, plan.reviewMemo, plan.observations, plan.approvalPolicy);
@@ -660,13 +885,13 @@ function riskView(store2, plan) {
     fenceChallenge: fenceChallenge(plan)
   };
 }
-function load2(store2, id, ctx, scope) {
-  if (!HASH.test(id || "")) denied();
+function load3(store2, id, ctx, scope) {
+  if (!HASH.test(id || "")) denied2();
   const row = store2.db.prepare("SELECT * FROM records WHERE kind='risk_replacement' AND id=?").get(id);
-  if (!row || ctx !== void 0 && (row.ctx !== ctx || row.scope !== scope)) denied();
+  if (!row || ctx !== void 0 && (row.ctx !== ctx || row.scope !== scope)) denied2();
   return { plan: store2.open(row), ctx: row.ctx, scope: row.scope };
 }
-function audit(store2, type, plan, ctx, scope, extra = {}) {
+function audit2(store2, type, plan, ctx, scope, extra = {}) {
   const id = store2.hash("risk-audit", type, plan.id, extra);
   if (!store2.get("event", id, ctx, scope)) store2.put(
     "event",
@@ -683,7 +908,7 @@ function audit(store2, type, plan, ctx, scope, extra = {}) {
       at: store2.now(),
       ...extra
     },
-    MAX2,
+    MAX3,
     true
   );
   return id;
@@ -692,15 +917,15 @@ function riskStoreAction(store2, action, input, ctx, scope) {
   if (action === "prepare_risk_replacement" && input.originalRequest?.importId !== void 0) return prepareImportRisk(store2, input, ctx, scope);
   if (action === "prepare_risk_replacement") return store2.transaction(() => {
     const parent = store2.get("disposition", input.dispositionId, ctx, scope), original = input.originalRequest, replacement = input.replacementRequest;
-    if (!parent || input.reviewHash !== parent.reviewHash || !original || !replacement || parent.binding.contextId !== ctx || original.instanceId !== parent.binding.instanceId || original.database !== parent.binding.database || replacement.instanceId !== original.instanceId || replacement.database !== original.database || prepareRequestDigest(original) !== parent.binding.requestDigest || store2.hash("operation", ctx, input.scope, "/mongodb/bulk/prepare", original) !== parent.binding.intentId || original.chunkIndex !== 0 || original.endOfUpload === true || replacement.chunkIndex !== 0 || replacement.endOfUpload === true || !Array.isArray(original.units) || !original.units.length || !Array.isArray(replacement.units) || typeof replacement.jobId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(replacement.jobId) || replacement.jobId === original.jobId || digest(effects(original, original.jobId)) !== digest(effects(replacement, original.jobId))) denied();
-    const gateId = store2.hash("replacement-gate", replacement.instanceId, replacement.jobId);
-    const existingGate = store2.get("replacement_gate", gateId, "", "");
+    if (!parent || input.reviewHash !== parent.reviewHash || !original || !replacement || parent.binding.contextId !== ctx || original.instanceId !== parent.binding.instanceId || original.database !== parent.binding.database || replacement.instanceId !== original.instanceId || replacement.database !== original.database || prepareRequestDigest(original) !== parent.binding.requestDigest || store2.hash("operation", ctx, input.scope, "/mongodb/bulk/prepare", original) !== parent.binding.intentId || original.chunkIndex !== 0 || original.endOfUpload === true || replacement.chunkIndex !== 0 || replacement.endOfUpload === true || !Array.isArray(original.units) || !original.units.length || !Array.isArray(replacement.units) || typeof replacement.jobId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(replacement.jobId) || replacement.jobId === original.jobId || digest2(effects(original, original.jobId)) !== digest2(effects(replacement, original.jobId))) denied2();
+    const gateId2 = store2.hash("replacement-gate", replacement.instanceId, replacement.jobId);
+    const existingGate = store2.get("replacement_gate", gateId2, "", "");
     const request = wire(replacement), seal = wire({ ...replacement, chunkIndex: 1, chunkHash: void 0, units: [], endOfUpload: true });
     const approvalPolicy = store2.riskPolicy === "external-fence-v1" ? "external-fence-v1" : HUMAN_RISK_POLICY;
     const reviewMemo = input.reviewMemo || "";
-    if (typeof reviewMemo !== "string" || reviewMemo.length > 4e3) denied();
+    if (typeof reviewMemo !== "string" || reviewMemo.length > 4e3) denied2();
     const id = store2.hash(approvalPolicy === HUMAN_RISK_POLICY ? "human-risk-replacement-v2" : "risk-replacement", ctx, input.scope, parent.id, prepareRequestDigest(request), parent.recordFingerprint, ...approvalPolicy === HUMAN_RISK_POLICY ? [reviewMemo] : []);
-    if (existingGate && existingGate.riskPlanId !== id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+    if (existingGate && existingGate.riskPlanId !== id) denied2("BUSINESS_REPLACEMENT_JOB_CONFLICT");
     const old = store2.get("risk_replacement", id, ctx, scope);
     if (old && (old.approval ? store2.now() < old.approval.validUntil : store2.now() < old.expiresAt)) return riskView(store2, old);
     const plan = {
@@ -717,29 +942,29 @@ function riskStoreAction(store2, action, input, ctx, scope) {
       requestDigest: prepareRequestDigest(request),
       sealRequest: seal,
       sealDigest: prepareRequestDigest(seal),
-      effectDigest: digest(effects(original, original.jobId)),
+      effectDigest: digest2(effects(original, original.jobId)),
       createdAt: old?.createdAt || store2.now(),
       expiresAt: store2.now() + 36e5,
       ...old?.creationAuditId ? { creationAuditId: old.creationAuditId, replacementIntentId: old.replacementIntentId, planHash: old.planHash, remoteRetirement: old.remoteRetirement } : {}
     };
     originalCurrent(store2, plan, ctx, scope);
-    plan.auditId = audit(store2, "risk_replacement_prepared", plan, ctx, scope, { revision: store2.now() });
-    store2.put("risk_replacement", id, ctx, scope, plan, MAX2, true);
+    plan.auditId = audit2(store2, "risk_replacement_prepared", plan, ctx, scope, { revision: store2.now() });
+    store2.put("risk_replacement", id, ctx, scope, plan, MAX3, true);
     if (humanPolicy(plan)) {
       const candidateKey2 = store2.hash("risk-candidate", plan.binding.instanceId, request.jobId);
       const prior = store2.get("risk_candidate", candidateKey2, "", "");
       if (prior && prior.riskPlanId !== id) {
-        const other = load2(store2, prior.riskPlanId).plan;
-        if (other.approval || other.creationAuditId) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+        const other = load3(store2, prior.riskPlanId).plan;
+        if (other.approval || other.creationAuditId) denied2("BUSINESS_REPLACEMENT_JOB_CONFLICT");
       }
-      store2.put("risk_candidate", candidateKey2, "", "", { riskPlanId: id, ctx, scope }, MAX2, true);
+      store2.put("risk_candidate", candidateKey2, "", "", { riskPlanId: id, ctx, scope }, MAX3, true);
     }
     return riskView(store2, plan);
   });
   if (["inspect_risk_replacement", "create_risk_replacement", "risk_handoff_context", "record_risk_retirement"].includes(action)) return store2.transaction(() => {
-    const found = load2(store2, input.riskPlanId, ctx, scope), { plan } = found;
+    const found = load3(store2, input.riskPlanId, ctx, scope), { plan } = found;
     if (plan.kind === "import") return importRiskAction(store2, action, input, found);
-    if (plan.targetScope !== input.scope) denied();
+    if (plan.targetScope !== input.scope) denied2();
     if (action === "inspect_risk_replacement") return riskView(store2, plan);
     if (action === "risk_handoff_context" || action === "record_risk_retirement") {
       if (!humanPolicy(plan)) return { required: false };
@@ -755,7 +980,7 @@ function riskStoreAction(store2, action, input, ctx, scope) {
       };
       if (action === "risk_handoff_context") return { required: true, request };
       const result = input.result;
-      if (!result || result.status !== "terminated_unknown" || result.managedAdmissionClosed !== true || !HASH.test(result.controlRecordDigest || "") || Object.entries(request).some(([key3, value]) => key3 !== "approvalAuditId" && result[key3] !== value)) denied("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
+      if (!result || result.status !== "terminated_unknown" || result.managedAdmissionClosed !== true || !HASH.test(result.controlRecordDigest || "") || Object.entries(request).some(([key3, value]) => key3 !== "approvalAuditId" && result[key3] !== value)) denied2("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
       const saved = { ...plan, remoteRetirement: {
         ...request,
         recordedAt: store2.now(),
@@ -763,8 +988,8 @@ function riskStoreAction(store2, action, input, ctx, scope) {
         legacyInFlightOutcome: "unknown",
         controlRecordDigest: result.controlRecordDigest
       } };
-      store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX2, true);
-      audit(store2, "risk_original_remote_termination_recorded", saved, ctx, scope, saved.remoteRetirement);
+      store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX3, true);
+      audit2(store2, "risk_original_remote_termination_recorded", saved, ctx, scope, saved.remoteRetirement);
       return { ok: true };
     }
     return createReplacementIntent(store2, plan, input, ctx, scope);
@@ -773,42 +998,42 @@ function riskStoreAction(store2, action, input, ctx, scope) {
 }
 function humanRiskStoreAction(store2, action, input) {
   if (!["human_risk_context", "human_risk_view", "human_risk_approve"].includes(action)) return void 0;
-  const found = load2(store2, input.riskPlanId);
+  const found = load3(store2, input.riskPlanId);
   if (found.plan.kind === "import") return importHumanAction(store2, action, input, found);
-  if (found.plan.binding.instanceId !== input.instanceId) denied();
+  if (found.plan.binding.instanceId !== input.instanceId) denied2();
   if (action === "human_risk_context") return { targetScope: found.plan.targetScope, database: found.plan.binding.database };
   return store2.transaction(() => {
-    const { plan, ctx, scope } = load2(store2, input.riskPlanId);
-    if (plan.targetScope !== input.targetScope || plan.binding.instanceId !== input.instanceId) denied();
+    const { plan, ctx, scope } = load3(store2, input.riskPlanId);
+    if (plan.targetScope !== input.targetScope || plan.binding.instanceId !== input.instanceId) denied2();
     if (action === "human_risk_view") return riskView(store2, plan);
-    if (input.confirmation !== RISK_CONFIRMATION || typeof input.actor?.username !== "string" || !input.actor.username || typeof input.actor.sessionId !== "string" || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) || input.actor.verifiedAt > store2.now() || store2.now() - input.actor.verifiedAt > 6e4) denied();
+    if (input.confirmation !== RISK_CONFIRMATION || typeof input.actor?.username !== "string" || !input.actor.username || typeof input.actor.sessionId !== "string" || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) || input.actor.verifiedAt > store2.now() || store2.now() - input.actor.verifiedAt > 6e4) denied2();
     const proof = humanPolicy(plan) ? {} : requireFenceAuthority(plan, store2);
-    if (input.reviewHash !== humanHash(store2, plan, proof)) denied("BUSINESS_REPLACEMENT_STALE");
+    if (input.reviewHash !== humanHash(store2, plan, proof)) denied2("BUSINESS_REPLACEMENT_STALE");
     if (plan.approval) {
-      if (plan.approval.reviewHash !== input.reviewHash || store2.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
+      if (plan.approval.reviewHash !== input.reviewHash || store2.now() >= plan.approval.validUntil) denied2("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
       return riskView(store2, plan);
     }
-    if (store2.now() >= plan.expiresAt) denied("BUSINESS_REPLACEMENT_REVIEW_EXPIRED");
+    if (store2.now() >= plan.expiresAt) denied2("BUSINESS_REPLACEMENT_REVIEW_EXPIRED");
     originalCurrent(store2, plan, ctx, scope);
-    if (humanPolicy(plan) && store2.get("risk_candidate", store2.hash("risk-candidate", plan.binding.instanceId, plan.replacementRequest.jobId), "", "")?.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_STALE");
+    if (humanPolicy(plan) && store2.get("risk_candidate", store2.hash("risk-candidate", plan.binding.instanceId, plan.replacementRequest.jobId), "", "")?.riskPlanId !== plan.id) denied2("BUSINESS_REPLACEMENT_STALE");
     const parent = store2.get("disposition", plan.dispositionId, ctx, scope);
-    if (!(humanPolicy(plan) && ["review_required", "termination_requested"].includes(parent?.state) || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
-    const gateId = store2.hash("replacement-gate", plan.binding.instanceId, plan.replacementRequest.jobId);
-    const gate = store2.get("replacement_gate", gateId, "", "");
-    if (gate && gate.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+    if (!(humanPolicy(plan) && ["review_required", "termination_requested"].includes(parent?.state) || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied2("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
+    const gateId2 = store2.hash("replacement-gate", plan.binding.instanceId, plan.replacementRequest.jobId);
+    const gate = store2.get("replacement_gate", gateId2, "", "");
+    if (gate && gate.riskPlanId !== plan.id) denied2("BUSINESS_REPLACEMENT_JOB_CONFLICT");
     const approval = {
       ...input.actor,
       reviewHash: input.reviewHash,
       fenceFingerprint: proof.fingerprint,
-      validUntil: Math.min(plan.expiresAt, proof.validUntil || MAX2, store2.now() + 9e5),
+      validUntil: Math.min(plan.expiresAt, proof.validUntil || MAX3, store2.now() + 9e5),
       policy: plan.approvalPolicy,
       residualRiskAccepted: humanPolicy(plan)
     };
-    approval.auditId = audit(store2, "risk_replacement_human_approved", plan, ctx, scope, approval);
+    approval.auditId = audit2(store2, "risk_replacement_human_approved", plan, ctx, scope, approval);
     const saved = { ...plan, state: "human_approved", approval };
     if (humanPolicy(plan)) {
       const key3 = retirementKey2(store2, plan), retired = store2.get("risk_job_retirement", key3, "", "");
-      if (retired && retired.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+      if (retired && retired.riskPlanId !== plan.id) denied2("BUSINESS_REPLACEMENT_JOB_CONFLICT");
       store2.put("risk_job_retirement", key3, "", "", {
         instanceId: plan.binding.instanceId,
         jobId: plan.binding.jobId,
@@ -819,44 +1044,44 @@ function humanRiskStoreAction(store2, action, input) {
         approvalAuditId: approval.auditId,
         historicalOutcome: "unknown",
         at: store2.now()
-      }, MAX2, true);
+      }, MAX3, true);
       const taskId = store2.hash("task", ctx, plan.targetScope, "operation:" + plan.binding.intentId);
       const task = store2.get("task", taskId, ctx, scope);
-      if (task) store2.put("task", taskId, ctx, scope, { ...task, active: false, status: "terminated_unknown", replacementJobId: plan.replacementRequest.jobId }, MAX2, true);
+      if (task) store2.put("task", taskId, ctx, scope, { ...task, active: false, status: "terminated_unknown", replacementJobId: plan.replacementRequest.jobId }, MAX3, true);
       if (parent.state !== "retired_unknown") store2.put("disposition", parent.id, ctx, scope, {
         ...parent,
         state: "termination_requested",
         retirement: { riskPlanId: plan.id, replacementJobId: plan.replacementRequest.jobId, approvalAuditId: approval.auditId, at: store2.now() }
-      }, MAX2, true);
+      }, MAX3, true);
     }
-    store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX2, true);
-    if (gate) store2.put("replacement_gate", gateId, "", "", { ...gate, approvalAuditId: approval.auditId, fenceFingerprint: proof.fingerprint }, MAX2, true);
+    store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX3, true);
+    if (gate) store2.put("replacement_gate", gateId2, "", "", { ...gate, approvalAuditId: approval.auditId, fenceFingerprint: proof.fingerprint }, MAX3, true);
     return riskView(store2, saved);
   });
 }
 function requireHumanApproval(store2, plan, input, ctx, scope) {
-  if (!plan.approval || plan.approval.policy !== HUMAN_RISK_POLICY || input.reviewHash !== plan.approval.reviewHash) denied("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
-  if (store2.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
+  if (!plan.approval || plan.approval.policy !== HUMAN_RISK_POLICY || input.reviewHash !== plan.approval.reviewHash) denied2("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
+  if (store2.now() >= plan.approval.validUntil) denied2("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
   originalCurrent(store2, plan, ctx, scope);
   const retirement = store2.get("risk_job_retirement", retirementKey2(store2, plan), "", "");
-  if (retirement?.riskPlanId !== plan.id) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+  if (retirement?.riskPlanId !== plan.id) denied2("BUSINESS_REPLACEMENT_JOB_CONFLICT");
 }
 function createReplacementIntent(store2, plan, input, ctx, scope) {
-  if (!plan.approval || input.reviewHash !== plan.approval.reviewHash) denied("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
+  if (!plan.approval || input.reviewHash !== plan.approval.reviewHash) denied2("BUSINESS_REPLACEMENT_HUMAN_CONFIRMATION_REQUIRED");
   if (humanPolicy(plan)) {
     requireHumanApproval(store2, plan, input, ctx, scope);
-    if (!plan.remoteRetirement) denied("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
+    if (!plan.remoteRetirement) denied2("BUSINESS_REPLACEMENT_TERMINATION_REQUIRED");
   }
   const proof = humanPolicy(plan) ? {} : requireFenceAuthority(plan, store2);
-  if (!humanPolicy(plan) && proof.fingerprint !== plan.approval.fenceFingerprint || store2.now() >= plan.approval.validUntil) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
+  if (!humanPolicy(plan) && proof.fingerprint !== plan.approval.fenceFingerprint || store2.now() >= plan.approval.validUntil) denied2("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
   originalCurrent(store2, plan, ctx, scope);
   const parent = store2.get("disposition", plan.dispositionId, ctx, scope);
-  if (!(humanPolicy(plan) && parent?.state === "termination_requested" && parent.retirement?.riskPlanId === plan.id || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
+  if (!(humanPolicy(plan) && parent?.state === "termination_requested" && parent.retirement?.riskPlanId === plan.id || parent?.state === "quarantined" || parent?.state === "retired_unknown" && parent.retirement?.riskPlanId === plan.id)) denied2("BUSINESS_REPLACEMENT_QUARANTINE_REQUIRED");
   const id = store2.hash("operation", ctx, plan.targetScope, "/mongodb/bulk/prepare", plan.replacementRequest);
   const previous = store2.get("operation", id, ctx, scope);
-  const gateId = store2.hash("replacement-gate", plan.binding.instanceId, plan.replacementRequest.jobId);
-  const existingGate = store2.get("replacement_gate", gateId, "", "");
-  if (existingGate && existingGate.riskPlanId !== plan.id || previous && !existingGate) denied("BUSINESS_REPLACEMENT_JOB_CONFLICT");
+  const gateId2 = store2.hash("replacement-gate", plan.binding.instanceId, plan.replacementRequest.jobId);
+  const existingGate = store2.get("replacement_gate", gateId2, "", "");
+  if (existingGate && existingGate.riskPlanId !== plan.id || previous && !existingGate) denied2("BUSINESS_REPLACEMENT_JOB_CONFLICT");
   const record = previous && previous.state !== "rejected_before_dispatch" ? previous : {
     state: "uncertain",
     route: "/mongodb/bulk/prepare",
@@ -864,12 +1089,12 @@ function createReplacementIntent(store2, plan, input, ctx, scope) {
     started: store2.now(),
     bulkPrepare: { binding: id, requestDigest: plan.requestDigest, attempt: (previous?.bulkPrepare?.attempt || 0) + 1 }
   };
-  if (!previous || previous.state === "rejected_before_dispatch") store2.put("operation", id, ctx, scope, record, MAX2, true);
+  if (!previous || previous.state === "rejected_before_dispatch") store2.put("operation", id, ctx, scope, record, MAX3, true);
   const taskId = store2.hash("task", ctx, plan.targetScope, "operation:" + id);
-  store2.put("task", taskId, ctx, scope, { id: "operation:" + id, active: true, expires: MAX2 }, MAX2, true);
+  store2.put("task", taskId, ctx, scope, { id: "operation:" + id, active: true, expires: MAX3 }, MAX3, true);
   const oldTask = store2.hash("task", ctx, plan.targetScope, "operation:" + plan.binding.intentId);
   store2.db.prepare("INSERT OR IGNORE INTO links SELECT ctx,scope,?,ref FROM links WHERE ctx=? AND scope=? AND task=?").run(taskId, ctx, scope, oldTask);
-  const creationAuditId = plan.creationAuditId || audit(
+  const creationAuditId = plan.creationAuditId || audit2(
     store2,
     "risk_replacement_creation_reserved",
     plan,
@@ -878,7 +1103,7 @@ function createReplacementIntent(store2, plan, input, ctx, scope) {
     { replacementIntentId: id, fenceFingerprint: proof.fingerprint, approvalAuditId: plan.approval.auditId }
   );
   const saved = { ...plan, state: plan.planHash ? "prepared" : plan.state === "uploaded" ? "uploaded" : "creating", replacementIntentId: id, creationAuditId };
-  store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX2, true);
+  store2.put("risk_replacement", plan.id, ctx, scope, saved, MAX3, true);
   if (parent.state !== "retired_unknown") store2.put("disposition", parent.id, ctx, scope, {
     ...parent,
     state: "retired_unknown",
@@ -891,20 +1116,20 @@ function createReplacementIntent(store2, plan, input, ctx, scope) {
       fenceFingerprint: proof.fingerprint,
       at: store2.now()
     }
-  }, MAX2, true);
-  store2.put("replacement_gate", gateId, "", "", { ...existingGate || {
+  }, MAX3, true);
+  store2.put("replacement_gate", gateId2, "", "", { ...existingGate || {
     riskPlanId: plan.id,
     ctx,
     scope,
     instanceId: plan.binding.instanceId,
     jobId: plan.replacementRequest.jobId
-  }, approvalAuditId: plan.approval.auditId, fenceFingerprint: proof.fingerprint }, MAX2, true);
+  }, approvalAuditId: plan.approval.auditId, fenceFingerprint: proof.fingerprint }, MAX3, true);
   return { intent: { id, ...record }, request: plan.replacementRequest, risk: riskView(store2, saved) };
 }
 function riskRetirementStatus(store2, parent) {
   if (!parent.retirement) return {};
-  const { plan, ctx } = load2(store2, parent.retirement.riskPlanId);
-  if (ctx !== parent.binding.contextId || plan.dispositionId !== parent.id || plan.binding.intentId !== parent.binding.intentId) denied();
+  const { plan, ctx } = load3(store2, parent.retirement.riskPlanId);
+  if (ctx !== parent.binding.contextId || plan.dispositionId !== parent.id || plan.binding.intentId !== parent.binding.intentId) denied2();
   if (plan.kind === "import") return { riskPlanId: plan.id, replacementImportId: plan.replacementRequest.importId, historicalOutcome: "unknown", approvalPolicy: plan.approvalPolicy, acceptedResidualRisk: !!plan.approval, replacementAllowed: false, missingRequirements: plan.remoteRetirement ? [] : ["remote_managed_import_termination_pending"] };
   const proof = humanPolicy(plan) ? { confirmed: false, reason: "human_risk_acceptance_no_external_attestation" } : inspectFenceAuthority(plan, store2.fenceAuthority, store2.now());
   return {
@@ -928,9 +1153,9 @@ function replacementAdmission(store2, instanceId, admission = {}) {
   if (!identity.jobId || typeof identity.jobId !== "string") return false;
   const gate = store2.get("replacement_gate", store2.hash("replacement-gate", instanceId, identity.jobId), "", "");
   if (!gate) return false;
-  const { plan } = load2(store2, gate.riskPlanId, gate.ctx, gate.scope);
+  const { plan } = load3(store2, gate.riskPlanId, gate.ctx, gate.scope);
   const proof = humanPolicy(plan) ? {} : requireFenceAuthority(plan, store2);
-  if (!plan.approval || !humanPolicy(plan) && proof.fingerprint !== plan.approval.fenceFingerprint || store2.now() >= plan.approval.validUntil || plan.binding.instanceId !== instanceId || admission.ctx && admission.ctx !== gate.ctx) denied("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
+  if (!plan.approval || !humanPolicy(plan) && proof.fingerprint !== plan.approval.fenceFingerprint || store2.now() >= plan.approval.validUntil || plan.binding.instanceId !== instanceId || admission.ctx && admission.ctx !== gate.ctx) denied2("BUSINESS_REPLACEMENT_APPROVAL_EXPIRED");
   if (admission.route === "/mongodb/bulk/prepare") {
     const candidate = admission.dispatchDigest || prepareRequestDigest(wire({ ...request, instanceId }));
     return [plan.requestDigest, plan.sealDigest].includes(candidate);
@@ -940,28 +1165,28 @@ function replacementAdmission(store2, instanceId, admission = {}) {
 function recordReplacementPrepared(store2, record, result) {
   const instanceId = record.identity?.instanceId, jobId = record.identity?.jobId;
   if (!instanceId || !jobId || !record.bulkChunk) return;
-  const gateId = store2.hash("replacement-gate", instanceId, jobId), gate = store2.get("replacement_gate", gateId, "", "");
+  const gateId2 = store2.hash("replacement-gate", instanceId, jobId), gate = store2.get("replacement_gate", gateId2, "", "");
   if (!gate) return;
-  const { plan, ctx, scope } = load2(store2, gate.riskPlanId, gate.ctx, gate.scope);
+  const { plan, ctx, scope } = load3(store2, gate.riskPlanId, gate.ctx, gate.scope);
   if (!record.bulkChunk.endOfUpload) {
-    if (record.bulkPrepare.requestDigest !== plan.requestDigest) denied();
-    const firstUploadAuditId = audit(store2, "risk_replacement_uploaded", plan, ctx, scope, { chunkHash: result.chunkHash });
-    store2.put("risk_replacement", plan.id, ctx, scope, { ...plan, state: plan.planHash ? "prepared" : "uploaded", firstUploadAuditId }, MAX2, true);
+    if (record.bulkPrepare.requestDigest !== plan.requestDigest) denied2();
+    const firstUploadAuditId = audit2(store2, "risk_replacement_uploaded", plan, ctx, scope, { chunkHash: result.chunkHash });
+    store2.put("risk_replacement", plan.id, ctx, scope, { ...plan, state: plan.planHash ? "prepared" : "uploaded", firstUploadAuditId }, MAX3, true);
     return;
   }
-  if (record.bulkPrepare.requestDigest !== plan.sealDigest || !HASH.test(result.planHash || "") || gate.planHash && gate.planHash !== result.planHash) denied();
-  store2.put("replacement_gate", gateId, "", "", { ...gate, planHash: result.planHash }, MAX2, true);
-  const auditId = audit(store2, "risk_replacement_prepared_remotely", plan, ctx, scope, { planHash: result.planHash });
-  store2.put("risk_replacement", plan.id, ctx, scope, { ...plan, state: "prepared", planHash: result.planHash, preparedAuditId: auditId }, MAX2, true);
+  if (record.bulkPrepare.requestDigest !== plan.sealDigest || !HASH.test(result.planHash || "") || gate.planHash && gate.planHash !== result.planHash) denied2();
+  store2.put("replacement_gate", gateId2, "", "", { ...gate, planHash: result.planHash }, MAX3, true);
+  const auditId = audit2(store2, "risk_replacement_prepared_remotely", plan, ctx, scope, { planHash: result.planHash });
+  store2.put("risk_replacement", plan.id, ctx, scope, { ...plan, state: "prepared", planHash: result.planHash, preparedAuditId: auditId }, MAX3, true);
 }
 function assertRiskJobAdmission(store2, instanceId, admission = {}) {
   assertImportAdmission(store2, instanceId, admission);
   const identity = admission.identity || admission.request || {};
   if (typeof identity.jobId !== "string") return;
   const retired = store2.get("risk_job_retirement", store2.hash("risk-job-retirement", instanceId, identity.jobId), "", "");
-  if (retired) denied("BUSINESS_ORIGINAL_JOB_TERMINATED");
+  if (retired) denied2("BUSINESS_ORIGINAL_JOB_TERMINATED");
   const candidate = store2.get("risk_candidate", store2.hash("risk-candidate", instanceId, identity.jobId), "", "");
-  if (candidate && !replacementAdmission(store2, instanceId, admission)) denied("BUSINESS_REPLACEMENT_NOT_ADMITTED");
+  if (candidate && !replacementAdmission(store2, instanceId, admission)) denied2("BUSINESS_REPLACEMENT_NOT_ADMITTED");
 }
 
 // ../plugins/remote-debug-agent/output-contracts.js
@@ -1126,6 +1351,13 @@ var contracts = {
   remote_debug_mongodb_query: { ...fields("operation database collection resultCount"), data: json },
   remote_debug_mongodb_recover_operation: { ...fields("intentId state route attempt mutationId legacy reason recoveryCode"), result: { ...common, ...mutation, ...bulk }, history: bulkHistory },
   remote_debug_mongodb_disposition: {
+    ...fields("mutationId proposalDigest originalStatus reservationAuditId effectDigest"),
+    lateOriginalCommitObserved: "boolean",
+    lateObservation: { ...fields("receiptDigest status observedAt auditId"), exactAcknowledgedCommit: "boolean" },
+    managedOriginalClosed: "boolean",
+    missingEvidence: [scalar],
+    originalCollectionIdentity: json,
+    collectionIdentity: json,
     ...fields("dispositionId reviewHash state recordFingerprint createdAt expiresAt quarantinedAt auditId admission admissionAuditId containmentScope historicalOutcome confirmation"),
     requiresConfirmation: "boolean",
     localContainment: "boolean",
@@ -1144,7 +1376,7 @@ var contracts = {
     replacementBatches: [fields("mutationId batchIndex documentCount requestDigest")],
     batches: [fields("mutationId planHash batchIndex status")],
     observations: { ...fields("source observedAt status code historicalOutcome"), batches: [fields("mutationId batchIndex status code planHash rollbackExpiresAt historicalOutcome")] },
-    binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash"),
+    binding: { ...fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash reviewId riskPlanId originalPrepareIntentId replacementPrepareIntentId attempt executionProtocol mutationId batchRequestDigest expiresAt"), execution: fields("intentId operationId version attempt mutationId planHash") },
     fenceChallenge: {
       ...fields("version targetScopeDigest replacementJobId replacementRequestDigest sealRequestDigest effectDigest"),
       binding: fields("kind route importId collection contextId instanceId database intentId requestDigest originalOperationId jobId chunkIndex chunkHash planHash")
@@ -1219,15 +1451,15 @@ var CLI_SECRET = new RegExp(String.raw`(--?(?:password|passwd|passphrase|pwd|pas
 
 // mongodb-job-termination.js
 var TERMINATION_CONFIRMATION = "我确认永久终止此任务，不再恢复或重试";
-var MAX3 = Number.MAX_SAFE_INTEGER;
+var MAX4 = Number.MAX_SAFE_INTEGER;
 var HASH2 = /^[a-f0-9]{64}$/;
 var JOB = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 var deny = (code = "BUSINESS_TERMINATION_REVIEW_REQUIRED") => {
   throw privacyError(code);
 };
 var key2 = (store2, instanceId, jobId) => store2.hash("job-termination", instanceId, jobId);
-var load3 = (store2, id) => store2.get("job_termination", id, "", "") || deny();
-var view = (store2, p) => ({
+var load4 = (store2, id) => store2.get("job_termination", id, "", "") || deny();
+var view2 = (store2, p) => ({
   ok: true,
   terminationId: p.id,
   instanceId: p.instanceId,
@@ -1255,7 +1487,7 @@ function jobTerminationStoreAction(store2, action, input) {
     if (!JOB.test(input.jobId || "") || !HASH2.test(input.planHash || "") || typeof input.reason !== "string" || !input.reason.trim() || input.reason.length > 1e3 || input.observations?.jobId !== input.jobId || input.observations.planHash !== input.planHash || input.observations.database !== input.database) deny();
     const id = key2(store2, input.instanceId, input.jobId), old = store2.get("job_termination", id, "", "");
     if (old && (old.planHash !== input.planHash || old.targetScope !== input.targetScope)) deny("BUSINESS_TERMINATION_TARGET_CHANGED");
-    if (old?.approval) return view(store2, old);
+    if (old?.approval) return view2(store2, old);
     const p2 = {
       id,
       instanceId: input.instanceId,
@@ -1269,21 +1501,21 @@ function jobTerminationStoreAction(store2, action, input) {
       expiresAt: store2.now() + 3e5
     };
     p2.reviewHash = store2.hash("termination-review-v1", p2);
-    store2.put("job_termination", id, "", "", p2, MAX3, true);
-    return view(store2, p2);
+    store2.put("job_termination", id, "", "", p2, MAX4, true);
+    return view2(store2, p2);
   });
-  const p = load3(store2, input.terminationId);
+  const p = load4(store2, input.terminationId);
   if (p.instanceId !== input.instanceId || input.targetScope !== void 0 && p.targetScope !== input.targetScope) deny("BUSINESS_TERMINATION_TARGET_CHANGED");
   if (action === "human_job_termination_context") return { targetScope: p.targetScope, database: p.database, jobId: p.jobId, planHash: p.planHash, state: p.state };
-  if (action === "human_job_termination_view") return view(store2, p);
+  if (action === "human_job_termination_view") return view2(store2, p);
   if (action === "human_job_termination_approve") return store2.transaction(() => {
-    const current2 = load3(store2, p.id);
-    if (current2.reviewHash !== input.reviewHash || input.confirmation !== TERMINATION_CONFIRMATION || typeof input.actor?.username !== "string" || !input.actor.username || typeof input.actor.sessionId !== "string" || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) || input.actor.verifiedAt > store2.now() || store2.now() - input.actor.verifiedAt > 6e4) deny();
-    if (current2.approval) return view(store2, current2);
-    if (store2.now() >= current2.expiresAt || store2.hash("termination-observations", input.observations) !== store2.hash("termination-observations", current2.observations)) deny("BUSINESS_TERMINATION_REVIEW_STALE");
-    const auditId = store2.hash("job-termination-approved", current2.id, current2.reviewHash, input.actor);
-    const saved = { ...current2, state: "termination_pending", approval: { ...input.actor, auditId, at: store2.now() } };
-    store2.put("job_termination", p.id, "", "", saved, MAX3, true);
+    const current3 = load4(store2, p.id);
+    if (current3.reviewHash !== input.reviewHash || input.confirmation !== TERMINATION_CONFIRMATION || typeof input.actor?.username !== "string" || !input.actor.username || typeof input.actor.sessionId !== "string" || !input.actor.sessionId || !Number.isSafeInteger(input.actor.verifiedAt) || input.actor.verifiedAt > store2.now() || store2.now() - input.actor.verifiedAt > 6e4) deny();
+    if (current3.approval) return view2(store2, current3);
+    if (store2.now() >= current3.expiresAt || store2.hash("termination-observations", input.observations) !== store2.hash("termination-observations", current3.observations)) deny("BUSINESS_TERMINATION_REVIEW_STALE");
+    const auditId = store2.hash("job-termination-approved", current3.id, current3.reviewHash, input.actor);
+    const saved = { ...current3, state: "termination_pending", approval: { ...input.actor, auditId, at: store2.now() } };
+    store2.put("job_termination", p.id, "", "", saved, MAX4, true);
     store2.put("event", auditId, "", "", {
       type: "bulk_job_termination_approved",
       terminationId: p.id,
@@ -1294,7 +1526,7 @@ function jobTerminationStoreAction(store2, action, input) {
       actor: input.actor,
       historicalOutcome: "unknown",
       at: store2.now()
-    }, MAX3, true);
+    }, MAX4, true);
     for (const row of store2.db.prepare("SELECT * FROM records WHERE kind='task'").all()) {
       const task = store2.open(row);
       if (task.id !== p.jobId) continue;
@@ -1314,21 +1546,21 @@ function jobTerminationStoreAction(store2, action, input) {
         row.ctx,
         row.scope,
         { ...task, active: false, status: "termination_pending", terminationId: p.id },
-        MAX3,
+        MAX4,
         true
       );
     }
-    return view(store2, saved);
+    return view2(store2, saved);
   });
   if (action === "human_job_termination_dispatch") {
     if (!p.approval) deny();
     return { jobId: p.jobId, planHash: p.planHash, terminationId: p.id, reviewHash: p.reviewHash, approvalAuditId: p.approval.auditId };
   }
   if (action === "human_job_termination_record") return store2.transaction(() => {
-    const current2 = load3(store2, p.id), r = input.result;
-    if (!current2.approval || r?.ok !== true || r.jobId !== p.jobId || r.database !== p.database || r.planHash !== p.planHash || r.terminationId !== p.id || r.reviewHash !== p.reviewHash || r.approvalAuditId !== current2.approval.auditId || r.status !== "terminated_unknown" || r.managedAdmissionClosed !== true || !HASH2.test(r.controlRecordDigest || "")) deny("BUSINESS_TERMINATION_ACK_REQUIRED");
-    const saved = { ...current2, state: "terminated_unknown", receipt: r };
-    store2.put("job_termination", p.id, "", "", saved, MAX3, true);
+    const current3 = load4(store2, p.id), r = input.result;
+    if (!current3.approval || r?.ok !== true || r.jobId !== p.jobId || r.database !== p.database || r.planHash !== p.planHash || r.terminationId !== p.id || r.reviewHash !== p.reviewHash || r.approvalAuditId !== current3.approval.auditId || r.status !== "terminated_unknown" || r.managedAdmissionClosed !== true || !HASH2.test(r.controlRecordDigest || "")) deny("BUSINESS_TERMINATION_ACK_REQUIRED");
+    const saved = { ...current3, state: "terminated_unknown", receipt: r };
+    store2.put("job_termination", p.id, "", "", saved, MAX4, true);
     const auditId = store2.hash("job-termination-recorded", p.id, r.controlRecordDigest);
     store2.put("event", auditId, "", "", {
       type: "bulk_job_termination_recorded",
@@ -1339,8 +1571,8 @@ function jobTerminationStoreAction(store2, action, input) {
       controlRecordDigest: r.controlRecordDigest,
       historicalOutcome: "unknown",
       at: store2.now()
-    }, MAX3, true);
-    return view(store2, saved);
+    }, MAX4, true);
+    return view2(store2, saved);
   });
   deny();
 }
@@ -1380,7 +1612,7 @@ var requirements = Object.freeze([
   "durable_remote_fence_receipt_required",
   "historical_transaction_receipts_required"
 ]);
-function denied2() {
+function denied3() {
   throw privacyError("BUSINESS_DISPOSITION_DENIED");
 }
 function targetOf(input) {
@@ -1388,12 +1620,12 @@ function targetOf(input) {
   try {
     target = JSON.parse(input.scope);
   } catch {
-    denied2();
+    denied3();
   }
-  if (!target?.id || !target.database) denied2();
+  if (!target?.id || !target.database) denied3();
   return target;
 }
-function view2(store2, record) {
+function view3(store2, record) {
   const instanceHold = !!store2.get("disposition_hold", store2.hash("disposition-instance-hold", record.binding.instanceId), "", "");
   return {
     ok: true,
@@ -1420,9 +1652,9 @@ function view2(store2, record) {
 function dispositionStoreAction(store2, action, input, ctx, scope) {
   if (action === "prepare_disposition") return store2.transaction(() => {
     const target = targetOf(input), original = store2.get("operation", input.id, ctx, scope), request = input.request;
-    if (!HASH3.test(input.id || "") || !original || original.state !== "uncertain" || !["/mongodb/bulk/prepare", "/mongodb/imports/prepare"].includes(original.route) || original.identity?.instanceId !== target.id || !request || request.instanceId !== target.id || request.database !== target.database || store2.hash("operation", ctx, input.scope, original.route, request) !== input.id || (original.route === "/mongodb/bulk/prepare" ? typeof original.identity.jobId !== "string" || original.identity.jobId !== request.jobId || !Number.isSafeInteger(original.identity.chunkIndex) || original.identity.chunkIndex !== request.chunkIndex : typeof request.importId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(request.importId) || request.jobId !== void 0 || original.identity.importId !== void 0 && original.identity.importId !== request.importId) || input.requestDigest !== prepareRequestDigest(request)) denied2();
-    if (original.importPrepare && original.importPrepare.requestDigest !== input.requestDigest) denied2();
-    if (original.bulkPrepare && original.bulkPrepare.requestDigest !== input.requestDigest) denied2();
+    if (!HASH3.test(input.id || "") || !original || original.state !== "uncertain" || !["/mongodb/bulk/prepare", "/mongodb/imports/prepare"].includes(original.route) || original.identity?.instanceId !== target.id || !request || request.instanceId !== target.id || request.database !== target.database || store2.hash("operation", ctx, input.scope, original.route, request) !== input.id || (original.route === "/mongodb/bulk/prepare" ? typeof original.identity.jobId !== "string" || original.identity.jobId !== request.jobId || !Number.isSafeInteger(original.identity.chunkIndex) || original.identity.chunkIndex !== request.chunkIndex : typeof request.importId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(request.importId) || request.jobId !== void 0 || original.identity.importId !== void 0 && original.identity.importId !== request.importId) || input.requestDigest !== prepareRequestDigest(request)) denied3();
+    if (original.importPrepare && original.importPrepare.requestDigest !== input.requestDigest) denied3();
+    if (original.bulkPrepare && original.bulkPrepare.requestDigest !== input.requestDigest) denied3();
     const fingerprint = store2.hash("operation-record", ctx, input.scope, input.id, original);
     const binding = {
       ...original.route === "/mongodb/imports/prepare" ? { kind: "import", route: original.route, importId: request.importId, collection: request.collection } : {},
@@ -1444,7 +1676,7 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
     }
     const id = store2.hash("disposition", ctx, input.scope, binding, fingerprint);
     const previous = store2.get("disposition", id, ctx, scope);
-    if (previous && (["quarantined", "retired_unknown"].includes(previous.state) || store2.now() < previous.expiresAt)) return view2(store2, previous);
+    if (previous && (["quarantined", "retired_unknown"].includes(previous.state) || store2.now() < previous.expiresAt)) return view3(store2, previous);
     const createdAt = store2.now(), expiresAt = createdAt + DAY;
     const record = {
       id,
@@ -1466,14 +1698,14 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
       reviewHash: record.reviewHash,
       at: createdAt
     }, Number.MAX_SAFE_INTEGER, true);
-    return view2(store2, record);
+    return view3(store2, record);
   });
   if (["inspect_disposition", "quarantine_disposition", "admit_disposition"].includes(action)) return store2.transaction(() => {
-    if (!HASH3.test(input.dispositionId || "")) denied2();
+    if (!HASH3.test(input.dispositionId || "")) denied3();
     const record = store2.get("disposition", input.dispositionId, ctx, scope);
-    if (!record || record.binding.contextId !== ctx || record.binding.instanceId !== targetOf(input).id || record.binding.database !== targetOf(input).database) denied2();
-    if (action === "inspect_disposition") return view2(store2, record);
-    if (input.reviewHash !== record.reviewHash) denied2();
+    if (!record || record.binding.contextId !== ctx || record.binding.instanceId !== targetOf(input).id || record.binding.database !== targetOf(input).database) denied3();
+    if (action === "inspect_disposition") return view3(store2, record);
+    if (input.reviewHash !== record.reviewHash) denied3();
     if (action === "admit_disposition") {
       const auditId2 = store2.hash("disposition-audit", record.id, "replacement_denied");
       if (!store2.get("event", auditId2, ctx, scope)) store2.put(
@@ -1485,16 +1717,16 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
         Number.MAX_SAFE_INTEGER,
         true
       );
-      return { ...view2(store2, record), admission: "blocked", admissionAuditId: auditId2 };
+      return { ...view3(store2, record), admission: "blocked", admissionAuditId: auditId2 };
     }
-    if (input.confirmation !== DISPOSITION_CONFIRMATION) denied2();
-    if (["quarantined", "retired_unknown"].includes(record.state)) return view2(store2, record);
+    if (input.confirmation !== DISPOSITION_CONFIRMATION) denied3();
+    if (["quarantined", "retired_unknown"].includes(record.state)) return view3(store2, record);
     if (store2.now() >= record.expiresAt) throw privacyError("BUSINESS_DISPOSITION_REVIEW_EXPIRED");
     const original = store2.get("operation", record.binding.intentId, ctx, scope);
     if (!original || original.state !== "uncertain" || record.recordFingerprint !== store2.hash("operation-record", ctx, input.scope, record.binding.intentId, original)) throw privacyError("BUSINESS_DISPOSITION_STALE");
     const holdId = store2.hash("disposition-instance-hold", record.binding.instanceId);
     const hold = store2.get("disposition_hold", holdId, "", "");
-    if (hold && hold.instanceId !== record.binding.instanceId) denied2();
+    if (hold && hold.instanceId !== record.binding.instanceId) denied3();
     const at = store2.now(), auditId = store2.hash("disposition-audit", record.id, "quarantine");
     store2.put("disposition_hold", holdId, "", "", hold || { instanceId: record.binding.instanceId, firstDispositionId: record.id, at }, Number.MAX_SAFE_INTEGER, true);
     const saved = { ...record, state: "quarantined", quarantinedAt: at, auditId };
@@ -1510,12 +1742,12 @@ function dispositionStoreAction(store2, action, input, ctx, scope) {
       replacementAllowed: false,
       at
     }, Number.MAX_SAFE_INTEGER, true);
-    return view2(store2, saved);
+    return view3(store2, saved);
   });
   return void 0;
 }
 function assertInstanceAdmission(store2, instanceId, admission = {}) {
-  if (typeof instanceId !== "string" || !instanceId) denied2();
+  if (typeof instanceId !== "string" || !instanceId) denied3();
   assertJobNotTerminated(store2, instanceId, admission);
   assertRiskJobAdmission(store2, instanceId, admission);
   if (store2.get("disposition_hold", store2.hash("disposition-instance-hold", instanceId), "", "")) {
@@ -1554,8 +1786,8 @@ var PrivacyStore = class {
     const filename = import_node_path2.default.join(this.directory, "privacy.sqlite");
     const master = key3 ? Buffer.from(key3) : loadPrivacyKey(this.directory, { existing: process.platform === "win32" ? windowsExisting : import_node_fs2.default.existsSync(filename) });
     if (master.length !== 32) throw privacyError("BUSINESS_KEYSTORE_UNAVAILABLE");
-    this.enc = Buffer.from((0, import_node_crypto4.hkdfSync)("sha256", master, "rda-privacy-v1", "encryption", 32));
-    this.index = Buffer.from((0, import_node_crypto4.hkdfSync)("sha256", master, "rda-privacy-v1", "reverse-index", 32));
+    this.enc = Buffer.from((0, import_node_crypto5.hkdfSync)("sha256", master, "rda-privacy-v1", "encryption", 32));
+    this.index = Buffer.from((0, import_node_crypto5.hkdfSync)("sha256", master, "rda-privacy-v1", "reverse-index", 32));
     master.fill(0);
     try {
       this.db = new import_node_sqlite.DatabaseSync(filename);
@@ -1585,13 +1817,13 @@ var PrivacyStore = class {
     }
   }
   hash(...items) {
-    return (0, import_node_crypto4.createHmac)("sha256", this.index).update(JSON.stringify(items)).digest("hex");
+    return (0, import_node_crypto5.createHmac)("sha256", this.index).update(JSON.stringify(items)).digest("hex");
   }
   aad(kind, id, ctx, scope) {
     return Buffer.from(JSON.stringify(["rda", 1, 1, kind, id, ctx, scope]));
   }
   seal(kind, id, ctx, scope, value) {
-    const nonce = (0, import_node_crypto4.randomBytes)(12), cipher = (0, import_node_crypto4.createCipheriv)("aes-256-gcm", this.enc, nonce);
+    const nonce = (0, import_node_crypto5.randomBytes)(12), cipher = (0, import_node_crypto5.createCipheriv)("aes-256-gcm", this.enc, nonce);
     cipher.setAAD(this.aad(kind, id, ctx, scope));
     return JSON.stringify({ v: 1, k: 1, n: nonce.toString("base64"), c: Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]).toString("base64"), t: cipher.getAuthTag().toString("base64") });
   }
@@ -1599,7 +1831,7 @@ var PrivacyStore = class {
     try {
       const e = JSON.parse(row.envelope);
       if (e.v !== 1 || e.k !== 1) throw privacyError();
-      const cipher = (0, import_node_crypto4.createDecipheriv)("aes-256-gcm", this.enc, Buffer.from(e.n, "base64"));
+      const cipher = (0, import_node_crypto5.createDecipheriv)("aes-256-gcm", this.enc, Buffer.from(e.n, "base64"));
       cipher.setAAD(this.aad(row.kind, row.id, row.ctx, row.scope));
       cipher.setAuthTag(Buffer.from(e.t, "base64"));
       const value = JSON.parse(Buffer.concat([cipher.update(Buffer.from(e.c, "base64")), cipher.final()]).toString("utf8"));
@@ -1634,23 +1866,27 @@ var PrivacyStore = class {
     if (!auth || typeof auth.contextId !== "string" || !/^[a-f0-9]{64}$/.test(auth.capability || "")) throw privacyError("BUSINESS_CONTEXT_DENIED");
     const context = this.get("context", auth.contextId, auth.contextId, "");
     const proof = this.hash("capability", auth.capability);
-    if (!context || context.expires <= this.now() || !(0, import_node_crypto4.timingSafeEqual)(Buffer.from(context.proof), Buffer.from(proof))) throw privacyError("BUSINESS_CONTEXT_DENIED");
+    if (!context || context.expires <= this.now() || !(0, import_node_crypto5.timingSafeEqual)(Buffer.from(context.proof), Buffer.from(proof))) throw privacyError("BUSINESS_CONTEXT_DENIED");
     return auth.contextId;
   }
   execute(action, input = {}) {
     if (action === "assert_instance_admission") return assertInstanceAdmission(this, input.instanceId, input);
     const termination = jobTerminationStoreAction(this, action, input);
     if (termination !== void 0) return termination;
+    const executionHuman = executionRiskHumanAction(this, action, input);
+    if (executionHuman !== void 0) return executionHuman;
     const humanRisk = humanRiskStoreAction(this, action, input);
     if (humanRisk !== void 0) return humanRisk;
     if (action === "create") return this.transaction(() => {
-      const contextId = (0, import_node_crypto4.randomUUID)(), capability = (0, import_node_crypto4.randomBytes)(32).toString("hex"), expires = this.now() + 365 * DAY2;
+      const contextId = (0, import_node_crypto5.randomUUID)(), capability = (0, import_node_crypto5.randomBytes)(32).toString("hex"), expires = this.now() + 365 * DAY2;
       this.put("context", contextId, contextId, "", { proof: this.hash("capability", capability), expires }, expires);
       return { contextId, capability };
     });
     const ctx = this.authenticate(input.auth);
     if (action === "attach") return { contextId: ctx };
     const scope = this.hash("scope", input.scope);
+    const executionRisk = executionRiskStoreAction(this, action, input, ctx, scope);
+    if (executionRisk !== void 0) return executionRisk;
     const disposition = dispositionStoreAction(this, action, input, ctx, scope);
     if (disposition !== void 0) return disposition;
     const risk = riskStoreAction(this, action, input, ctx, scope);
@@ -1707,10 +1943,10 @@ var PrivacyStore = class {
         for (const ref of refs) this.db.prepare("INSERT OR IGNORE INTO links VALUES(?,?,?,?)").run(ctx, scope, taskId, ref);
         this.db.prepare("UPDATE records SET pinned=1 WHERE kind='mapping' AND ctx=? AND id IN (SELECT ref FROM links WHERE ctx=? AND task=?)").run(ctx, ctx, taskId);
       }
-      const deliveryId = input.deliveryId || (0, import_node_crypto4.randomUUID)();
+      const deliveryId = input.deliveryId || (0, import_node_crypto5.randomUUID)();
       const canonicalize = (value) => typeof value === "string" ? aliases[value] || value : Array.isArray(value) ? value.map(canonicalize) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([key3, child]) => [key3, canonicalize(child)])) : value;
       this.put("delivery", deliveryId, ctx, scope, { aliases, output: canonicalize(input.output), delivered: false }, this.now() + 30 * DAY2);
-      this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, { type: "references_committed", count: refs.size, deliveryId }, this.now() + 30 * DAY2);
+      this.put("event", (0, import_node_crypto5.randomUUID)(), ctx, scope, { type: "references_committed", count: refs.size, deliveryId }, this.now() + 30 * DAY2);
       return { aliases, deliveryId };
     });
     if (action === "intent") return this.transaction(() => {
@@ -1750,7 +1986,7 @@ var PrivacyStore = class {
           true
         );
       }
-      const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { mutationId: previous?.prepare?.mutationId || (0, import_node_crypto4.randomUUID)(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : void 0;
+      const prepare = input.route === "/mongodb/mutations/prepare" && /^[a-f0-9]{64}$/.test(input.dispatchDigest || "") ? { mutationId: previous?.prepare?.mutationId || (0, import_node_crypto5.randomUUID)(), binding: id, requestDigest: input.dispatchDigest, attempt: (previous?.prepare?.attempt || 0) + 1 } : void 0;
       const record = {
         state: "uncertain",
         route: input.route,
@@ -1800,7 +2036,7 @@ var PrivacyStore = class {
         operationId: input.operationId
       } };
       this.put("operation", input.id, ctx, scope, value, this.now() + 90 * DAY2, false);
-      this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, {
+      this.put("event", (0, import_node_crypto5.randomUUID)(), ctx, scope, {
         type: "historical_bulk_recovered",
         operation: input.id,
         evidence: "exact_remote_chunk",
@@ -1834,7 +2070,7 @@ var PrivacyStore = class {
       } } : { ...record, reconciliation: { code: result?.error?.code || "MONGODB_IMPORT_EVIDENCE_REQUIRED" } };
       if (proven && result.status !== "prepare_rejected") recordImportPrepared(this, record, result);
       this.put("operation", input.id, ctx, scope, saved, Number.MAX_SAFE_INTEGER, true);
-      this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, { type: "import_prepare_state", operation: input.id, state: saved.state, code: saved.rejection?.code || saved.reconciliation?.code, evidence: saved.rejection?.evidence, at: this.now() }, Number.MAX_SAFE_INTEGER, true);
+      this.put("event", (0, import_node_crypto5.randomUUID)(), ctx, scope, { type: "import_prepare_state", operation: input.id, state: saved.state, code: saved.rejection?.code || saved.reconciliation?.code, evidence: saved.rejection?.evidence, at: this.now() }, Number.MAX_SAFE_INTEGER, true);
       return { id: input.id, ...saved };
     });
     if (action === "claim_prepare") return this.transaction(() => {
@@ -1867,7 +2103,7 @@ var PrivacyStore = class {
       const resolved = value.state !== "uncertain";
       if (proven) recordReplacementPrepared(this, record, result);
       this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY2 : Number.MAX_SAFE_INTEGER, !resolved);
-      this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, {
+      this.put("event", (0, import_node_crypto5.randomUUID)(), ctx, scope, {
         type: "bulk_prepare_state",
         operation: input.id,
         state: value.state,
@@ -1918,7 +2154,7 @@ var PrivacyStore = class {
       } else value = { ...record, reconciliation: { state: "unavailable", code: input.result?.error?.code } };
       const resolved = value.state !== "uncertain";
       this.put("operation", input.id, ctx, scope, value, resolved ? this.now() + 90 * DAY2 : Number.MAX_SAFE_INTEGER, !resolved);
-      this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, {
+      this.put("event", (0, import_node_crypto5.randomUUID)(), ctx, scope, {
         type: "prepare_state",
         operation: input.id,
         state: value.state,
@@ -1935,6 +2171,8 @@ var PrivacyStore = class {
       return { id: input.id, ...value };
     });
     if (action === "outcome" || action === "reconcile") return this.transaction(() => {
+      const accepted = recordExecutionRiskEvidence(this, action, input, ctx, scope);
+      if (accepted !== void 0) return accepted;
       this.assertOperationAdmission(input.id, ctx, scope);
       const previous = this.get("operation", input.id, ctx, scope);
       if (!previous) throw privacyError("BUSINESS_OPERATION_DENIED");
@@ -1949,7 +2187,7 @@ var PrivacyStore = class {
         if (exact && receipt.stage === "safe_terminal" && ["before_transaction", "abort_acknowledged", "server_no_such_transaction"].includes(receipt.outcomeEvidence?.kind) && entry2.status === (receipt.mode === "commit" ? "commit_retryable" : "rollback_retryable") && entry2.indexRecovery?.reason === "exact_safe_terminal_receipt") {
           const value2 = { ...previous, state: "retryable", reconciliation: input.result, recovery: { evidence: "exact_safe_terminal_receipt", at: this.now() } };
           this.put("operation", input.id, ctx, scope, value2, Number.MAX_SAFE_INTEGER, true);
-          this.put("event", (0, import_node_crypto4.randomUUID)(), ctx, scope, {
+          this.put("event", (0, import_node_crypto5.randomUUID)(), ctx, scope, {
             type: "execution_safe_terminal",
             operation: input.id,
             attempt: previous.executionAttempt,

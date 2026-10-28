@@ -1,0 +1,14 @@
+{
+  "testedSnapshotId": "32eb85db36499eae2d55f4b807a2f91e03e6077983287f3399078666a3581bc0",
+  "changesSinceTestedSnapshot": [
+    "plugins/remote-debug-agent/runtime/agent/privacy-worker.cjs",
+    "plugins/remote-debug-agent/runtime/agent/worker-entry.cjs",
+    "plugins/remote-debug-agent/runtime/agent/server.cjs",
+    "plugins/remote-debug-agent/runtime/agent/runtime-manifest.json",
+    "plugins/remote-debug-agent/runtime/agent/public/manual.js",
+    "plugins/remote-debug-agent/runtime/agent/public/manual.html",
+    "plugins/remote-debug-agent/.codex-plugin/plugin.json"
+  ],
+  "businessSourcesUnchanged": true,
+  "runtimeBytesMatchTestedCandidate": true
+}

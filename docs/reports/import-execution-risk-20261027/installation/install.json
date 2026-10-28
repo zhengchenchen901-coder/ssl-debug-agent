@@ -1,0 +1,8 @@
+{
+  "pluginId": "remote-debug-agent@remote-debug-local",
+  "name": "remote-debug-agent",
+  "marketplaceName": "remote-debug-local",
+  "version": "2.4.0+codex.20261027.4",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261027.4",
+  "authPolicy": "ON_INSTALL"
+}

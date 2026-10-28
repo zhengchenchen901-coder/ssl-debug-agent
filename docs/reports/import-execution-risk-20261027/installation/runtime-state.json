@@ -1,0 +1,12 @@
+{
+  "pid": 29676,
+  "runtimeId": "2.4.0:925bf7f1718686c6de1a5975485ac91a4ddbd35164824db514445ee4d704c85f",
+  "status": "listening",
+  "role": "manager",
+  "startedAt": "2026-10-27T08:35:26.235Z",
+  "port": 4343,
+  "host": "127.0.0.1",
+  "managerProcessUnchanged": true,
+  "managerReplacementRequested": false,
+  "workerRefreshRequested": false
+}

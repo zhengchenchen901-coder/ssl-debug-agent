@@ -123,16 +123,17 @@
         <section id="riskWorkArea" class="work-area" hidden>
           <section class="preview-panel" aria-labelledby="riskTitle">
             <h2 id="riskTitle">未知任务风险处置</h2>
-            <p>原任务的历史结果仍为未知，可能存在已提交、已回滚或未观察到的修改。接受此风险可能导致重复导入或重复业务写入。机器无法确定的历史及在途结果交由您裁决；批准表示接受剩余风险，并授权关闭原任务后续调度及建立唯一关联替代任务。</p>
+            <p id="riskIntro">原任务的历史结果仍为未知，可能存在已提交、已回滚或未观察到的修改。接受此风险可能导致重复导入或重复业务写入。机器无法确定的历史及在途结果交由您裁决；批准表示接受剩余风险，并授权关闭原任务后续调度及建立唯一关联替代任务。</p>
+            <label>审核阶段<select id="riskStage"><option value="prepare">准备结果未知</option><option value="execution">执行结果未知（独立批准）</option></select></label>
             <label>风险计划 ID<input id="riskPlanId" maxlength="64" autocomplete="off" spellcheck="false"></label>
             <button id="riskLoad" class="button" type="button">读取具体计划</button>
             <pre id="riskDetails" style="white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"></pre>
             <label><input id="riskAcknowledgement" type="checkbox">我已核对目标、原任务及替代范围，接受历史结果未知和可能重复业务写入的风险。</label>
             <label>输入最终确认语句<input id="riskConfirmation" autocomplete="off" spellcheck="false"></label>
-            <p>确认语句：我接受历史结果未知的风险，并批准建立此替代任务</p>
+            <p id="riskPhrase">确认语句：读取具体计划后显示</p>
             <button id="riskApprove" class="button primary" type="button" disabled>系统身份验证并批准此计划</button>
             <p id="riskMessage" class="message" role="status"></p>
-            <p>批准只允许随后建立这一份替代任务。本机将关闭原任务后续调度；此页面不会上传或执行业务写入；业务执行仍需核对准备结果及正常执行确认。</p>
+            <p id="riskFooter">批准只允许随后建立这一份替代任务。本机将关闭原任务后续调度；此页面不会上传或执行业务写入；业务执行仍需核对准备结果及正常执行确认。</p>
           </section>
         </section>
       </section>

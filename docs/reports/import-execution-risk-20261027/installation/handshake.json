@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-10-27T10:01:18.434Z",
+  "installedPath": "/Users/zhengchenchen/.codex/plugins/cache/remote-debug-local/remote-debug-agent/2.4.0+codex.20261027.4",
+  "serverInfo": {
+    "name": "remote-debug-agent",
+    "version": "2.4.0+codex.20261027.4"
+  },
+  "installedRuntimeId": "2.4.0:fdef92d75b30857ce31fc6fe4a24148e7eaaa988fc4515bc5acaa01bf1859053",
+  "toolCount": 52,
+  "executionRiskModes": [
+    "prepare_execution_risk",
+    "inspect_execution_risk",
+    "continue_execution"
+  ],
+  "collectionPreparationToolPresent": true,
+  "collectionPreparationSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "collection"
+    ],
+    "properties": {
+      "instanceId": {
+        "type": "string",
+        "description": "Remote Debug Agent instance id. Optional only when exactly one instance is configured."
+      },
+      "database": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "collection": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "purpose": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "rollbackTtlMs": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 604800000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 600000,
+        "description": "Total operation budget in milliseconds, including queueing, connection, execution, and cleanup. Defaults to 120000."
+      }
+    }
+  },
+  "capabilityKeys": [
+    "ok",
+    "capabilities",
+    "outputGuard"
+  ],
+  "instanceStatuses": [
+    {
+      "id": "default",
+      "status": "stopped",
+      "pid": null,
+      "health": "stopped"
+    },
+    {
+      "id": "test-server",
+      "status": "running",
+      "pid": 31110,
+      "health": "healthy"
+    }
+  ],
+  "readOnlyToolsCalled": [
+    "remote_debug_get_capabilities",
+    "remote_debug_list_instances"
+  ],
+  "businessContextAttached": false,
+  "businessToolsCalled": [],
+  "managerReplacementRequested": false,
+  "stderrObserved": false
+}

@@ -1,6 +1,6 @@
 {
   "name": "remote-debug-agent",
-  "version": "2.4.0+codex.20261027.3",
+  "version": "2.4.0+codex.20261027.4",
   "description": "Safe remote Linux debugging through a local SSH-backed agent.",
   "author": {
     "name": "Local Developer"
@@ -42,7 +42,7 @@
       "Check MongoDB records on test-server",
       "Prepare and roll back a bounded MongoDB change",
       "Prepare and roll back a resumable MongoDB bulk job",
-      "启动 test-server 的 be"
+      "\u542f\u52a8 test-server \u7684 be"
     ],
     "brandColor": "#0F766E",
     "screenshots": []
