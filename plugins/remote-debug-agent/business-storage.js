@@ -1,9 +1,9 @@
 import { importReviewDiagnostic } from "./review-diagnostic.js";
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { prepareRequestDigest } from "./prepare-protocol.js";
 import { attachWindowsContext } from "./windows-business-context.js";
+import { attachPosixContext } from "./posix-business-context.js";
+import { selectContext, contextFailure } from "./business-context.js";
 
 function failure(code = "BUSINESS_STORAGE_UNAVAILABLE", intentId) {
   return Object.assign(new Error("Protected local state requires recovery or reconciliation. No uncertain write was replayed."), { code, retriable: false, intentId });
@@ -46,45 +46,27 @@ export function createBusinessStorage({ privacy, guard, fetchJson }) {
   }
   async function attach(settings) {
     const origin = new URL(settings.agentUrl).origin;
-    if (attached) { if (attached.origin !== origin) throw failure("BUSINESS_CONTEXT_DENIED"); return; }
-    if (attaching) return attaching;
+    const selection = selectContext(settings);
+    const selectionKey = JSON.stringify([origin, selection.filename, selection.existingOnly]);
+    if (attached) { if (attached.selectionKey !== selectionKey) throw contextFailure("BUSINESS_CONTEXT_CHANGED"); return; }
+    if (attaching) { await attaching; return attach(settings); }
     attaching = (async () => {
       if (process.platform === "win32") {
         const auth = await attachWindowsContext(settings, origin, () => rpc(settings, { action: "create" }));
         guard.remember(auth.capability);
         await rpc(settings, { action: "attach", auth });
-        attached = { origin, auth }; privacy.attach(auth.contextId);
+        attached = { origin, auth, selectionKey }; privacy.attach(auth.contextId);
         return;
       }
-      const directory = path.join(settings.dataDir, ".private", "contexts");
-      fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-      const configured = settings.env.REMOTE_DEBUG_PRIVACY_CONTEXT_FILE;
-      let filename = configured ? path.resolve(configured) : path.join(directory, randomUUID() + ".json");
-      for (let p = path.dirname(filename); p !== path.dirname(p); p = path.dirname(p)) if (fs.lstatSync(p).isSymbolicLink() && !(process.platform === "darwin" && ["/tmp", "/var"].includes(p))) throw failure("BUSINESS_CONTEXT_DENIED");
-      let auth;
-      const read = () => {
-        const stat = fs.lstatSync(filename);
-        if (!stat.isFile() || stat.isSymbolicLink() || stat.mode & 0o077 || stat.uid !== process.getuid?.()) throw failure("BUSINESS_CONTEXT_DENIED");
-        const saved = JSON.parse(fs.readFileSync(filename, "utf8"));
-        if (saved.origin !== origin) throw failure("BUSINESS_CONTEXT_DENIED");
-        return saved.auth;
-      };
-      if (fs.existsSync(filename)) auth = read();
-      else {
-        auth = await rpc(settings, { action: "create" });
-        if (!configured) filename = path.join(directory, auth.contextId + ".json");
-        try {
-          const fd = fs.openSync(filename, "wx", 0o600);
-          try { fs.writeFileSync(fd, JSON.stringify({ version: 1, origin, auth })); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
-          const parent = fs.openSync(path.dirname(filename), "r"); try { fs.fsyncSync(parent); } finally { fs.closeSync(parent); }
-        } catch (error) {
-          if (error.code === "EEXIST") auth = read(); else throw failure("BUSINESS_CONTEXT_DENIED");
-        }
-      }
+      const auth = await attachPosixContext(settings, origin, () => rpc(settings, { action: "create" }));
       guard.remember(auth.capability);
       await rpc(settings, { action: "attach", auth });
-      attached = { origin, auth }; privacy.attach(auth.contextId);
-    })().catch((error) => { attaching = undefined; throw error; });
+      attached = { origin, auth, selectionKey }; privacy.attach(auth.contextId);
+    })().catch((error) => {
+      attaching = undefined;
+      if (error.code === "BUSINESS_CONTEXT_DENIED") throw contextFailure(error.code);
+      throw error;
+    });
     return attaching;
   }
   async function call(settings, input, signal) {

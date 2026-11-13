@@ -68,18 +68,19 @@ export async function localMcp(t, { instance, handler, framing = "json-line", na
   });
   return { call: (...args) => peer.call(...args), requests, previews, wire, diagnostics, root,
     dropNextReply: (route) => { dropReply = route; },
-    restart: async () => {
+    restart: async (selection = {}) => {
       await peer.stop("SIGKILL"); await privacyService.close();
+      Object.assign(peerOptions, selection);
       privacyService = new PrivacyService(storageOptions); peer = await mcpPeer(t, peerOptions);
     },
   };
 }
 
-export async function mcpPeer(t, { root, url, framing = "json-line", contextFile = "", wire = [], diagnostics = [], pluginRoot }) {
+export async function mcpPeer(t, { root, url, framing = "json-line", contextFile = "", contextId = "", wire = [], diagnostics = [], pluginRoot }) {
   const child = spawn(process.execPath, [pluginRoot ? path.join(pluginRoot, "mcp-server.js") : path.resolve(import.meta.dirname, "../../mcp-server.js")], {
     env: { ...process.env, REMOTE_DEBUG_DATA_DIR: root, REMOTE_DEBUG_PROJECT_ROOT: "", REMOTE_DEBUG_INSTANCE_REGISTRY: "",
       REMOTE_DEBUG_ENV_PATH: path.join(root, "config.env"), REMOTE_DEBUG_AUTH_FILE: localAuth.resolveAuthFile(root),
-      REMOTE_DEBUG_PRIVACY_CONTEXT_FILE: contextFile, REMOTE_DEBUG_AGENT_URL: url }, stdio: ["pipe", "pipe", "pipe"],
+      REMOTE_DEBUG_PRIVACY_CONTEXT_FILE: contextFile, REMOTE_DEBUG_PRIVACY_CONTEXT_ID: contextId, REMOTE_DEBUG_AGENT_URL: url }, stdio: ["pipe", "pipe", "pipe"],
   });
   const messages = [], waiters = []; let buffer = Buffer.alloc(0), id = 0;
   child.stderr.on("data", (chunk) => diagnostics.push(chunk.toString()));

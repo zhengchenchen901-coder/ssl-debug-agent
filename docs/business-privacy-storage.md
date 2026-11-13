@@ -18,11 +18,23 @@ Windows 仅支持本机固定 NTFS/ReFS 卷，不使用 Unix `statfs.type`。目
 
 ## 上下文附着
 
-每个 MCP 默认创建独立上下文，并将附着文件保存为 `<data-dir>/.private/contexts/<contextId>.json`。文件是 0600 的本机能力凭据，包含 Manager origin 和随机 capability，不含主密钥或业务值。输出只报告 context ID；知道 ID 并不能附着。
+MCP 必须明确选择上下文，未选择时返回 `BUSINESS_CONTEXT_SELECTION_REQUIRED`，不再默认创建随机上下文。旧版本创建的附着文件仍位于 `<data-dir>/.private/contexts/<contextId>.json`。文件是 0600（Windows 为当前用户专用 ACL）的本机能力凭据，包含 Manager origin 和随机 capability，不含主密钥或业务值。知道 ID 本身并不能绕过本机文件权限或 Manager capability 校验。
 
 在宿主的本机 MCP 环境或 `config.env` 设置 `REMOTE_DEBUG_PRIVACY_CONTEXT_FILE` 为该文件的绝对路径，然后重新启动相应 MCP。多个 MCP 明确使用同一个文件才共享上下文。也可预先设置一个尚不存在的本机文件路径，让首次调用创建它，后续进程复用。父目录须已存在。不要将文件正文、capability 或密钥交给模型；不根据 Codex chat ID 猜测上下文。
 
+恢复旧版默认文件时，也可设置 `REMOTE_DEBUG_PRIVACY_CONTEXT_ID=<原 contextId>`，程序只读取上述目录中该 ID 对应的文件，同时核对文件内 ID；缺失时返回 `BUSINESS_CONTEXT_MISSING`，绝不新建。该 ID 必须来自原任务已有的上下文信息或由操作者确认的原文件名；不自动枚举内容、选择最新文件、合并历史上下文或尝试多个文件。显式 FILE 配置优先于 ID，保留已有配置行为。已有任务优先使用 ID 的只恢复模式；FILE 仍保留“路径不存在则首次创建”的兼容行为，故恢复时务必确认原文件存在。
+
+本仓库的 stdio MCP 初始化只提供客户端名称/版本，没有可信的逐调用聊天身份。检查到启动环境存在 `CODEX_THREAD_ID` / `CODEX_SESSION_ID`，但尚无宿主契约证明它们是该 MCP 所有调用所属聊天的稳定身份；因此不使用这些变量或工作目录推断归属，也不建立猜测的聊天关联表。当前采用用户明确选择的文件作为持久关联：同一任务跨进程保留相同选择，不同任务选择不同文件。若宿主共享同一个 MCP 进程，必须为不同隔离范围配置独立 MCP 实例，不能靠不同聊天标题实现隔离。
+
+首次使用：为新任务明确配置一个独有的新 FILE 路径（本机非同步目录），第一次业务调用创建后保留该配置。恢复使用：确认原 Windows/macOS 用户、原数据目录和原 Manager origin，配置原 FILE 或原 ID 并重新加载 MCP，再用原 intentId、引用和 task/job/mutation ID 进行 inspect。恢复不会复制历史、创建替代任务、清除未知状态或锁，也不会自动重放数据库写入。只修改配置而不重启已附着的进程会返回 `BUSINESS_CONTEXT_CHANGED`；同进程并发调用也不能切换上下文。
+
+失败处理：`BUSINESS_CONTEXT_MISSING` 要求恢复原文件或纠正选择；`BUSINESS_CONTEXT_DENIED` 要求核对内容完整性、原用户权限和 Manager origin，以及 Manager 对 capability 的有效性校验。不要通过删文件、放宽 ACL、改 origin 或新建上下文修复旧任务。普通诊断调用不要求业务上下文选择。
+
 Windows 上下文使用创建时即生效的当前用户 ACL 和 `CreateNew` 独占创建；写入后刷盘，读者使用独占句柄等待首次写入完成。并发创建复用已完整保存的文件，来源、版本、能力凭据、ACL、链接或内容异常返回 `BUSINESS_CONTEXT_DENIED`，不覆盖损坏文件，不依赖 Unix uid/mode 或目录 fsync。
+
+macOS 使用独立 POSIX 上下文适配器，FILE/ID 选择规则与 Windows 相同。上下文目录要求当前用户所有、0700，文件要求当前用户所有且无组/其他用户权限（新文件0600）；不会自动放宽或修正已有权限。读取以 `O_NOFOLLOW` 打开，并再次核对句柄的权限、所有者和文件身份。只允许真实指向 `/private/tmp`、`/private/var` 的系统 `/tmp`、`/var` 别名，拒绝自建符号链接。新文件先在同目录以0600完整写入并刷盘，再用不覆盖目标的原子硬链接发布；并发调用复用胜出文件，失败只清理自己创建的临时文件，不删除原文件或任何锁。Keychain、加密数据库和原任务恢复协议不变。
+
+macOS 验证命令：`node --test plugins/remote-debug-agent/test/posix-context-recovery.test.js plugins/remote-debug-agent/test/context-recovery.test.js plugins/remote-debug-agent/test/business-privacy-protocol.test.js`（Node 22.18–22.x）。POSIX 测试包括真实子进程并发与文件权限测试，并使用临时目录、合成能力凭据；通用 MCP 测试使用独立本机 Manager fixture 和注入的测试密钥，不读取登录 Keychain 或真实业务配置。Windows 可运行 macOS 文件系统模型测试，但会明确跳过原生 POSIX 测试；模型通过不代表 macOS 真机验收通过。
 
 Manager 必须通过现有回环 HTTP 身份证明和 Bearer 认证。私有存储接口还检查上下文 capability、当前实例配置和 origin。引用绑定实例目标、profile、数据库；换端口/origin、目标或 profile 后旧引用不会被重定向。引用接口不提供任意 SQL、原值枚举、反查搜索或映射/密钥导出；只按调用已经持有的完整引用精确取回所需值。操作恢复工具只按精确意图 ID 返回脱敏状态或已有回执，不暴露上下文能力或密钥。
 
